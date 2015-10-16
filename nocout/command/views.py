@@ -27,7 +27,7 @@ from models import Command
 from forms import CommandForm
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
 
 
 class CommandList(PermissionsRequiredMixin, ListView):
@@ -55,7 +55,7 @@ class CommandList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class CommandListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class CommandListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     View to show list of commands in datatable.
         URL - 'http://127.0.0.1:8000/command'

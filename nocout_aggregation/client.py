@@ -7,7 +7,6 @@ asynchronous execution
 
 
 from datetime import datetime, timedelta
-import resource
 
 from celery import chord, chain, group
 from celery.utils.log import get_task_logger
@@ -29,11 +28,13 @@ def prepare_data(**extra_opts):
     Breaks hosts into batches and sends tasks for each batch
     """
      
-    warning('Memory usage at start: %s (kb)' % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)    
     data_values = []
     end_time = datetime.now()
+    # adding buffer window for 5 minutes live data [for edge cases]
+    #end_time = datetime(2015, 9, 4, 16, 30)
+    end_time = end_time - timedelta(minutes=4)
     start_time = end_time - timedelta(hours=extra_opts.get('hours'))
-    start_time = start_time - timedelta(minutes=1)
+    #start_time = start_time - timedelta(minutes=1)
     print start_time, end_time
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
     extra_opts.update({'start_time': start_time,
@@ -60,7 +61,9 @@ def prepare_data(**extra_opts):
 	    machine=str(extra_opts.get('machine')), 
 	    all=extra_opts.get('all')))
     # prepare batches, a list of list of devices
+    #devices = ['11473']
     devices_in_batches = get_batches(devices)
+    #devices_in_batches = devices
     if devices_in_batches:
 	    dispatch_batches.delay(None, devices_in_batches, **extra_opts)
 
@@ -88,7 +91,7 @@ def task_caller(device_set, **extra_opts):
 def dispatch_batches(results, batches, **extra_opts):
 	""" Process the tasks into one batch at a time.
 	Uses chord to defer remaing task batches"""
-	warning('dispatch-batches called')
+	#warning('dispatch-batches called')
 	# Batch contains list of devices to be processed at one time
 	batch = batches.pop(0)
 	tasks = [task_caller.s(device_set, **extra_opts) for device_set in batch]
@@ -120,8 +123,8 @@ def main(**extra_opts):
 
 if __name__ == '__main__':
 	defaults = {
-			'source_perf_table': 'performance_performanceservice',
-			'destination_perf_table': 'performance_performanceservicebihourly',
+			'source_perf_table': 'performance_utilization',
+			'destination_perf_table': 'performance_utilizationbihourly',
 			'read_from': 'mysql',
 			'time_frame': 'half_hourly',
 			'hours': 0.5,

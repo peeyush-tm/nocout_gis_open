@@ -21,7 +21,7 @@ var perf_that = "",
         {"id": "live", "title": "Live"}
     ],
     poll_now_tab = [
-        { "id" : "live_poll_now", "title" : "Live Polling", disabled_url : true }
+        { "id" : "live_poll_now", "title" : "On Demand Poll", disabled_url : true }
     ],
     tabs_with_historical = [
         {"id": "bihourly", "title": "Half-Hourly"},
@@ -439,6 +439,11 @@ function nocoutPerfLib() {
                                     data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
                                     <i class="fa fa-stop text-danger"> </i>\
                                 </button>\
+                                <div align="right" class="pull-right"> \
+                                    <button class="btn btn-default btn-sm play_pause_btns reset_live_polling" title="Clear all polled data"> \
+                                        <i class="fa fa-trash-o text-danger"></i> \
+                                    </button> \
+                                </div> \
                             </div>\
                             <div class="clearfix"></div></div>\
                             <div class="clearfix"></div><div class="divide-20"></div>';
@@ -561,14 +566,14 @@ function nocoutPerfLib() {
                                         var tab_info_obj = {
                                                 'active_class' : active_class,
                                                 'unique_key' : unique_item_key,
-                                                'icon_class' : 'fa fa-arrow-circle-o-right',
+                                                'icon_class' : 'fa ' + default_left_tab_icon,
                                                 'api_url' : value.url,
                                                 'title' : value.title
                                             },
                                             content_info_obj = {
                                                 'active_class' : active_class,
                                                 'unique_key' : unique_item_key,
-                                                'show_last_updated' : true
+                                                'show_last_updated' : true,
                                             };
 
 
@@ -640,7 +645,7 @@ function nocoutPerfLib() {
                                                         var inner_tab_info_obj = {
                                                                 'active_class' : inner_active_class,
                                                                 'unique_key' : id + "_" + unique_item_key,
-                                                                'icon_class' : 'fa fa-caret-right',
+                                                                'icon_class' : 'fa fa-clock-o',
                                                                 'api_url' : data_url,
                                                                 'title' : title
                                                             };
@@ -801,6 +806,15 @@ function nocoutPerfLib() {
             },
             complete: function () {
                 if (active_tab_url && active_tab_id) {
+                    // remove the 'active_left_tab_icon' class from all link (if exists)
+                    $('.left_tabs_container li a i').removeClass(active_left_tab_icon);
+                    //  Add 'default_left_tab_icon' class to active link
+                    $('.left_tabs_container li a i').addClass(default_left_tab_icon);
+                    //  Add 'active_left_tab_icon' class to active link
+                    $('#' + active_tab_id + '_tab i').addClass(active_left_tab_icon);
+                    //  Remove 'default_left_tab_icon' class to active link
+                    $('#' + active_tab_id + '_tab i').removeClass(default_left_tab_icon);
+
                     /*Reset Variables & counters */
                     clearTimeout(timeInterval);
                     nocout_destroyDataTable('other_perf_table');
@@ -1716,6 +1730,46 @@ $(".perfContainerBlock").delegate('.poll_pause_btn', 'click', function(e) {
 
 $(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
     nocout_stopPollNow();
+});
+
+$(".perfContainerBlock").delegate('.reset_live_polling', 'click', function(e) {
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        tab_id = active_tab_obj["active_dom_id"];
+
+    if (poll_now_data_dict[tab_id] && poll_now_data_dict[tab_id].length > 0) {
+        try {
+            if ($("#" + tab_id + "_chart").highcharts()) {
+                var chart = $("#" + tab_id + "_chart").highcharts(),
+                    chart_series = chart.series;
+
+                if (chart_series && chart_series.length > 0) {
+                    // Remove series from highchart
+                    while(chart_series.length > 0) {
+                        chart_series[0].remove(true);
+                    }
+                }
+                // Destroy highchart
+                $("#" + tab_id + "_chart").highcharts().destroy();
+            }
+
+            if ($("#" + tab_id + "_bottom_table").length) {
+                $("#" + tab_id + "_bottom_table").html("");
+            }
+
+            nocout_destroyDataTable('other_perf_table');
+        } catch(e) {
+            // console.log(e);
+        }
+
+        // Reset the global variable
+        poll_now_data_dict[tab_id] = [];
+        // Reset the min, max & avg legends DOM
+        if(!$('#' + tab_id + '_legends_block').hasClass('hide')) {
+            $('#' + tab_id + '_legends_block').addClass('hide');
+        }
+    } else {
+        bootbox.alert("You don't have any live polled data for this service/data source.");
+    }
 });
 
 $('input[name="service_view_type"]').change(function(e) {

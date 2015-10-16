@@ -38,7 +38,8 @@ class Config:
         BROKER_URL = 'redis://' + str(REDIS_HOST) + ':' + str(REDIS_PORT) + '/' + str(REDIS_DB+1)
 
 	CELERY_IMPORTS = (
-			'tasks', 'db_tasks', 'client')
+			'tasks', 'db_tasks', 
+			'client', 'mysql_clean_by_partitions')
 	#CELERY_ALWAYS_EAGER = True
 	CELERY_TASK_RESULT_EXPIRES = timedelta(minutes=30)
 	CELERYD_MAX_TASKS_PER_CHILD = 200
@@ -62,11 +63,13 @@ class Config:
 	## Celery beat configurations
 	CELERY_TIMEZONE = 'Asia/Calcutta'
 	#CELERYBEAT_SCHEDULE
+	one_30_MIN = '1-59/30'
+	two_30_MIN = '2-59/30'
 	CELERYBEAT_SCHEDULE = {
 		# hourly
 		'aggr-hourly-network': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute=10),
+        		'schedule': crontab(minute=15),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetworkbihourly',
 				'destination_perf_table': 'performance_performancenetworkhourly',
@@ -79,7 +82,7 @@ class Config:
     		},
 		'aggr-hourly-service': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute=15),
+        		'schedule': crontab(minute=20),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservicebihourly',
 				'destination_perf_table': 'performance_performanceservicehourly',
@@ -90,7 +93,20 @@ class Config:
 				'all': True
 			}
     		},
-		# daily
+		'aggr-hourly-util': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=10),
+        		'kwargs': {
+				'source_perf_table': 'performance_utilizationbihourly',
+				'destination_perf_table': 'performance_utilizationhourly',
+				'read_from': 'mysql',
+				'time_frame': 'hourly',
+				'hours': 1,
+				'machine': 'historical',
+				'all': True
+			}
+    		},
+		# daily network
 		'aggr-daily-network': {
         		'task': 'aggregation-main',
         		'schedule': crontab(minute=25, hour=0),
@@ -104,6 +120,7 @@ class Config:
 				'all': True
 			}
     		},
+		# daily service
 		'aggr-daily-service': {
         		'task': 'aggregation-main',
         		'schedule': crontab(minute=40, hour=0),
@@ -117,10 +134,220 @@ class Config:
 				'all': True
 			}
     		},
+		# daily utilization
+		'aggr-daily-util': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=45, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_utilizationhourly',
+				'destination_perf_table': 'performance_utilizationdaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'historical',
+				'all': True
+			}
+    		},
+		# daily interface ospf1
+		'aggr-daily-interface-ospf1': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=15, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performancestatus',
+				'destination_perf_table': 'performance_performancestatusdaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'ospf1',
+				'all': False
+			}
+    		},
+		# daily interface ospf2
+		'aggr-daily-interface-ospf2': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=15, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performancestatus',
+				'destination_perf_table': 'performance_performancestatusdaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'ospf2',
+				'all': False
+			}
+    		},
+		# daily interface ospf3
+		'aggr-daily-interface-ospf3': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=15, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performancestatus',
+				'destination_perf_table': 'performance_performancestatusdaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'ospf3',
+				'all': False
+			}
+    		},
+		# daily interface ospf4
+		'aggr-daily-interface-ospf4': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=15, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performancestatus',
+				'destination_perf_table': 'performance_performancestatusdaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'ospf4',
+				'all': False
+			}
+    		},
+		# daily interface ospf5
+		'aggr-daily-interface-ospf5': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=15, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performancestatus',
+				'destination_perf_table': 'performance_performancestatusdaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'ospf5',
+				'all': False
+			}
+    		},
+		# daily interface vrfprv
+		'aggr-daily-interface-vrfprv': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=15, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performancestatus',
+				'destination_perf_table': 'performance_performancestatusdaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'vrfprv',
+				'all': False
+			}
+    		},
+		# daily interface pub
+		'aggr-daily-interface-pub': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=15, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performancestatus',
+				'destination_perf_table': 'performance_performancestatusdaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'pub',
+				'all': False
+			}
+    		},
+		# daily inventory ospf1
+		'aggr-daily-inventory-ospf1': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=40, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performanceinventory',
+				'destination_perf_table': 'performance_performanceinventorydaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'ospf1',
+				'all': False
+			}
+    		},
+		# daily inventory ospf2
+		'aggr-daily-inventory-ospf2': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=40, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performanceinventory',
+				'destination_perf_table': 'performance_performanceinventorydaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'ospf2',
+				'all': False
+			}
+    		},
+		# daily inventory pub
+		'aggr-daily-inventory-pub': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=40, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performanceinventory',
+				'destination_perf_table': 'performance_performanceinventorydaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'pub',
+				'all': False
+			}
+    		},
+		# daily inventory ospf3
+		'aggr-daily-inventory-ospf3': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=40, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performanceinventory',
+				'destination_perf_table': 'performance_performanceinventorydaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'ospf3',
+				'all': False
+			}
+    		},
+		# daily inventory ospf4
+		'aggr-daily-inventory-ospf4': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=40, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performanceinventory',
+				'destination_perf_table': 'performance_performanceinventorydaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'ospf4',
+				'all': False
+			}
+    		},
+		# daily inventory ospf5
+		'aggr-daily-inventory-ospf5': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=40, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performanceinventory',
+				'destination_perf_table': 'performance_performanceinventorydaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'ospf5',
+				'all': False
+			}
+    		},
+		# daily inventory vrfprv
+		'aggr-daily-inventory-vrfprv': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=40, hour=1),
+        		'kwargs': {
+				'source_perf_table': 'performance_performanceinventory',
+				'destination_perf_table': 'performance_performanceinventorydaily',
+				'read_from': 'mysql',
+				'time_frame': 'daily',
+				'hours': 24,
+				'machine': 'vrfprv',
+				'all': False
+			}
+    		},
 		## bihourly ospf1
 		'aggr-bihourly-network-ospf1': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/31'),
+        		'schedule': crontab(minute=one_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetwork',
 				'destination_perf_table': 'performance_performancenetworkbihourly',
@@ -133,7 +360,7 @@ class Config:
     		},
 		'aggr-bihourly-service-ospf1': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/31'),
+        		'schedule': crontab(minute=one_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservice',
 				'destination_perf_table': 'performance_performanceservicebihourly',
@@ -144,10 +371,23 @@ class Config:
 				'all': False
 			}
     		},
+		'aggr-bihourly-util-ospf1': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=one_30_MIN),
+        		'kwargs': {
+				'source_perf_table': 'performance_utilization',
+				'destination_perf_table': 'performance_utilizationbihourly',
+				'read_from': 'mysql',
+				'time_frame': 'half_hourly',
+				'hours': 0.5,
+				'machine': 'ospf1',
+				'all': False
+			}
+    		},
 		# bihourly, ospf2
 		'aggr-bihourly-network-ospf2': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/31'),
+        		'schedule': crontab(minute=one_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetwork',
 				'destination_perf_table': 'performance_performancenetworkbihourly',
@@ -160,7 +400,7 @@ class Config:
     		},
 		'aggr-bihourly-service-ospf2': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/31'),
+        		'schedule': crontab(minute=one_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservice',
 				'destination_perf_table': 'performance_performanceservicebihourly',
@@ -171,10 +411,23 @@ class Config:
 				'all': False
 			}
     		},
+		'aggr-bihourly-util-ospf2': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=one_30_MIN),
+        		'kwargs': {
+				'source_perf_table': 'performance_utilization',
+				'destination_perf_table': 'performance_utilizationbihourly',
+				'read_from': 'mysql',
+				'time_frame': 'half_hourly',
+				'hours': 0.5,
+				'machine': 'ospf2',
+				'all': False
+			}
+    		},
 		# bihourly, ospf3
 		'aggr-bihourly-network-ospf3': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/31'),
+        		'schedule': crontab(minute=one_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetwork',
 				'destination_perf_table': 'performance_performancenetworkbihourly',
@@ -187,7 +440,7 @@ class Config:
     		},
 		'aggr-bihourly-service-ospf3': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/31'),
+        		'schedule': crontab(minute=one_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservice',
 				'destination_perf_table': 'performance_performanceservicebihourly',
@@ -198,10 +451,23 @@ class Config:
 				'all': False
 			}
     		},
+		'aggr-bihourly-util-ospf3': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=one_30_MIN),
+        		'kwargs': {
+				'source_perf_table': 'performance_utilization',
+				'destination_perf_table': 'performance_utilizationbihourly',
+				'read_from': 'mysql',
+				'time_frame': 'half_hourly',
+				'hours': 0.5,
+				'machine': 'ospf3',
+				'all': False
+			}
+    		},
 		# bihourly, ospf4
 		'aggr-bihourly-network-ospf4': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/32'),
+        		'schedule': crontab(minute=two_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetwork',
 				'destination_perf_table': 'performance_performancenetworkbihourly',
@@ -214,7 +480,7 @@ class Config:
     		},
 		'aggr-bihourly-service-ospf4': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/32'),
+        		'schedule': crontab(minute=two_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservice',
 				'destination_perf_table': 'performance_performanceservicebihourly',
@@ -225,10 +491,23 @@ class Config:
 				'all': False
 			}
     		},
+		'aggr-bihourly-util-ospf4': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=one_30_MIN),
+        		'kwargs': {
+				'source_perf_table': 'performance_utilization',
+				'destination_perf_table': 'performance_utilizationbihourly',
+				'read_from': 'mysql',
+				'time_frame': 'half_hourly',
+				'hours': 0.5,
+				'machine': 'ospf4',
+				'all': False
+			}
+    		},
 		# bihourly, ospf5
 		'aggr-bihourly-network-ospf5': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/32'),
+        		'schedule': crontab(minute=two_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetwork',
 				'destination_perf_table': 'performance_performancenetworkbihourly',
@@ -241,7 +520,7 @@ class Config:
     		},
 		'aggr-bihourly-service-ospf5': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/32'),
+        		'schedule': crontab(minute=two_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservice',
 				'destination_perf_table': 'performance_performanceservicebihourly',
@@ -252,10 +531,23 @@ class Config:
 				'all': False
 			}
     		},
+		'aggr-bihourly-util-ospf5': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=one_30_MIN),
+        		'kwargs': {
+				'source_perf_table': 'performance_utilization',
+				'destination_perf_table': 'performance_utilizationbihourly',
+				'read_from': 'mysql',
+				'time_frame': 'half_hourly',
+				'hours': 0.5,
+				'machine': 'ospf5',
+				'all': False
+			}
+    		},
 		# bihourly, vrfprv
 		'aggr-bihourly-network-vrfprv': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/32'),
+        		'schedule': crontab(minute=two_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetwork',
 				'destination_perf_table': 'performance_performancenetworkbihourly',
@@ -268,7 +560,7 @@ class Config:
     		},
 		'aggr-bihourly-service-vrfprv': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/32'),
+        		'schedule': crontab(minute=two_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservice',
 				'destination_perf_table': 'performance_performanceservicebihourly',
@@ -279,10 +571,23 @@ class Config:
 				'all': False
 			}
     		},
+		'aggr-bihourly-util-vrfprv': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=one_30_MIN),
+        		'kwargs': {
+				'source_perf_table': 'performance_utilization',
+				'destination_perf_table': 'performance_utilizationbihourly',
+				'read_from': 'mysql',
+				'time_frame': 'half_hourly',
+				'hours': 0.5,
+				'machine': 'vrfprv',
+				'all': False
+			}
+    		},
 		# bihourly, pub
 		'aggr-bihourly-network-pub': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/32'),
+        		'schedule': crontab(minute=two_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetwork',
 				'destination_perf_table': 'performance_performancenetworkbihourly',
@@ -295,10 +600,23 @@ class Config:
     		},
 		'aggr-bihourly-service-pub': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/32'),
+        		'schedule': crontab(minute=two_30_MIN),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservice',
 				'destination_perf_table': 'performance_performanceservicebihourly',
+				'read_from': 'mysql',
+				'time_frame': 'half_hourly',
+				'hours': 0.5,
+				'machine': 'pub',
+				'all': False
+			}
+    		},
+		'aggr-bihourly-util-pub': {
+        		'task': 'aggregation-main',
+        		'schedule': crontab(minute=one_30_MIN),
+        		'kwargs': {
+				'source_perf_table': 'performance_utilization',
+				'destination_perf_table': 'performance_utilizationbihourly',
 				'read_from': 'mysql',
 				'time_frame': 'half_hourly',
 				'hours': 0.5,

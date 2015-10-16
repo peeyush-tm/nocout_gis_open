@@ -33,6 +33,8 @@ info , warning, error = logger.info, logger.warning, logger.error
 DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
 INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
 SENTINELS = getattr(app.conf, 'SENTINELS', None)
+MEMCACHE_CONFIG = getattr(app.conf,'MEMCACHE_CONFIG',None)
+
 
 class DatabaseTask(Task):
 	abstract = True
@@ -42,7 +44,7 @@ class DatabaseTask(Task):
 	# mongo connections
 	mo_conn_pool = {}
 	# redis connection object
-	memc_conn_pool = {}
+	memc_conn = None
 	# memc connection object
 	redis_conn = None
 
@@ -93,15 +95,19 @@ class DatabaseTask(Task):
 				#raise self.retry(max_retries=2, countdown=10, exc=exc)
 
 		return self.my_conn_pool.get(key)
-	def memc_cnx(self,key):
-		if not self.memc_conn_pool.get(key):
+	@property
+	def memc_cnx(self):
+		if not self.memc_conn:
 			try:
 				#memc_conf = []
-				self.memc_conn_pool[key] = memcache.Client(['10.133.19.165:11211','10.133.12.163:11211'], debug=1)
+				self.memc_conn = memcache.Client(
+						MEMCACHE_CONFIG, debug=1
+						)
 			except Exception as e:
 				error('Memc connection problem, retrying... {0}'.format(e))
-    				#self.memc_conn_pool[key] =None
-		return self.memc_conn_pool.get(key)	
+
+		return self.memc_conn
+
 
 class RedisInterface(object):
 	""" Implements various redis operations"""
@@ -231,14 +237,83 @@ class RedisInterface(object):
 		except Exception as exc:
 		    error('Redis pipe error in multi_set: {0}'.format(exc))
 
+@app.task(base=DatabaseTask, name='threshold-kpi-services', bind=True)
+def store_threshold_for_kpi_services(self):
+	memc = store_threshold_for_kpi_services.memc_cnx
+	query = (
+	"select devicetype.name as devicetype, "
+	"service.name as service, "
+	"datasource.name as datasource, "
+	"devicetype_svc_ds.warning as dtype_ds_warning, "
+	"devicetype_svc_ds.critical as dtype_ds_critical, "
+	"svcds.warning as service_warning, "
+	"svcds.critical as service_critical, "
+	"datasource.warning as warning, "
+	"datasource.critical as critical "
+	"from device_devicetype as devicetype "
+	"left join ( "
+	"service_service as service, "
+	"device_devicetypeservice as devicetype_svc, "
+	"service_servicespecificdatasource as svcds, "
+	"service_servicedatasource as datasource "
+	") "
+	"on ( "
+	"svcds.service_id = service.id "
+	"and "
+	"svcds.service_data_sources_id = datasource.id "
+	"and "
+	"devicetype_svc.service_id = service.id "
+	"and "
+	"devicetype.id = devicetype_svc.device_type_id "
+	") "
+	"left join "
+	"device_devicetypeservicedatasource as devicetype_svc_ds "
+	"on "
+	"( "
+	"devicetype_svc_ds.device_type_service_id = devicetype_svc.id "
+	"and "
+	"devicetype_svc_ds.service_data_sources_id = datasource.id "
+	")"
+	"where devicetype.name <> 'Default' and service.name like '%_kpi'; "
+	)
+	#info('sample {0}'.format('Testing'))
+	cur = store_threshold_for_kpi_services.mysql_cnx('historical').cursor()
+	cur.execute(query)
+	out = cur.fetchall()
+	info('out: {0}'.format(out))
+	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
+	rds_cnx = rds_cli.redis_cnx
+	processed_service = []
+	try:
+		for entry in out:
+			key = str(entry[1])
+			if key not in processed_service:
+				war_key = key + ":" + "war"
+				crit_key = key + ":" + "crit"
+				if entry[3] or entry[4]: 
+					rds_cnx.set(war_key,entry[3])	
+					rds_cnx.set(crit_key,entry[4])	
+				elif entry[5] or entry[6]: 
+					rds_cnx.set(war_key,entry[5])	
+					rds_cnx.set(crit_key,entry[6])	
+				elif entry[7] or entry[8]: 
+					rds_cnx.set(war_key,entry[7])	
+					rds_cnx.set(crit_key,entry[8])
+				processed_service.append(key)
+	except:
+		error('KPI threshold values loading into redis failed')
+	
+	else:
+		info('KPI threshold values loading into redis success')
 
+		
 @app.task(base=DatabaseTask, name='load-inventory', bind=True)
 def load_inventory(self):
 	"""
 	Loads appropriate inventory data into redis and memcache
 	"""
 	query = (
-		"SELECT DISTINCT D.device_name, site_instance_siteinstance.name, "
+		"SELECT DISTINCT D.device_name, machine_machine.name, "
 		"D.ip_address, device_devicetype.name AS dev_type, "
 		"device_devicetechnology.name AS dev_tech ,"
 		"inventory_circuit.qos_bandwidth as qos_bw "
@@ -263,7 +338,7 @@ def load_inventory(self):
 		"WHERE "
 		"D.is_deleted = 0 AND "
 		"D.host_state <> 'Disable' AND "
-		"device_devicetechnology.name IN ('WiMAX', 'P2P', 'PMP', 'Mrotek', 'RiCi')"
+		"device_devicetechnology.name IN ('WiMAX', 'P2P', 'PMP')"
 	)
 	dr_query = (
 		"SELECT "
@@ -295,16 +370,60 @@ def load_inventory(self):
 	cur = load_inventory.mysql_cnx('historical').cursor()
 	cur.execute(query)
 	out = cur.fetchall()
-	# info('out: {0}'.format(out))
+	backhaul_query  = ( 
+	"select device_device.device_name, "
+    	"machine_machine.name, "
+	"device_device.ip_address, "
+    	"device_devicetype.name, "
+    	"device_devicetechnology.name as techno_name, "
+    	"group_concat(service_servicedatasource.name separator '$$') as port_name, " 
+    	"group_concat(inventory_basestation.bh_port_name separator '$$') as port_alias, "
+    	"group_concat(inventory_basestation.bh_capacity separator '$$') as port_wise_capacity "
+    	"from device_device "
+    	"inner join "
+    	"(device_devicetechnology, device_devicetype, "
+   	"machine_machine, site_instance_siteinstance) "
+    	"on "
+    	"( "
+    	"device_devicetype.id = device_device.device_type and "
+    	"device_devicetechnology.id = device_device.device_technology and "
+    	"machine_machine.id = device_device.machine_id and "
+    	"site_instance_siteinstance.id = device_device.site_instance_id "
+    	") "
+    	"inner join "
+    	"(inventory_backhaul) "
+    	"on "
+    	"(device_device.id = inventory_backhaul.bh_configured_on_id OR device_device.id = inventory_backhaul.aggregator_id OR "
+     	"device_device.id = inventory_backhaul.pop_id OR "
+     	"device_device.id = inventory_backhaul.bh_switch_id) "
+    	"left join "
+    	"(inventory_basestation) "
+    	"on "
+    	"(inventory_backhaul.id = inventory_basestation.backhaul_id) "
+    	"left join "
+    	"(service_servicedatasource) "
+    	"on "
+    	"(inventory_basestation.bh_port_name = service_servicedatasource.alias) "
+    	"where "
+    	"device_device.is_deleted=0 and "
+    	"device_device.host_state <> 'Disable' "
+    	"and "
+    	"device_devicetype.name in ('Switch', 'RiCi', 'PINE') "
+    	"group by device_device.ip_address;" )
+	
+	cur.execute(backhaul_query)
+	backhaul_out = cur.fetchall()
 
+	#info('out: {0}'.format(backhaul_out))
+	
 	# e.g. keeping invent data in database number 3
 	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
 	rds_cli.redis_cnx.flushdb()
 	rds_pipe = rds_cli.redis_cnx.pipeline(transaction=True)
 
 	# memc client
-	memc = memcache.Client(['10.133.19.165:11211'])
-
+	#memc = memcache.Client(['10.133.19.165:11211'])
+        memc =  load_inventory.memc_cnx
 	wimax_bs_list = []
 
 	# device_name --> ip mapping (in memc)
@@ -313,9 +432,12 @@ def load_inventory(self):
 	# keeping extra iteration for name and ip map
 	for d in out:
 		device_name_ip_map[d[0]] = d[2]
+	for d in backhaul_out:
+		device_name_ip_map[d[0]] = d[2]
 
 	# group based on device technologies and load the devices info to redis
 	out = sorted(out, key=itemgetter(3))
+	backhaul_out = sorted(backhaul_out, key=itemgetter(3))
 
 	for grp, grp_vals in groupby(out, key=itemgetter(3)):
 		grouped_devices = list(grp_vals)
@@ -329,8 +451,12 @@ def load_inventory(self):
 			load_devicetechno_wise(wimax_bs_list, rds_pipe, extra=dr_info)
 		else:
 			load_devicetechno_wise(grouped_devices, rds_pipe)
+	for bk_grp, bk_grp_vals in groupby(backhaul_out, key=itemgetter(3)):
+		bk_grouped_devices = list(bk_grp_vals)
+		load_backhaul_data(bk_grouped_devices, rds_pipe)
 	try:
 		rds_pipe.execute()
+		store_threshold_for_kpi_services()
 	except Exception as exc:
 		error('Error in redis inventory loading... {0}'.format(exc))
 	else:
@@ -343,6 +469,42 @@ def load_inventory(self):
 	else:
 		warning('Inventory loading into memc, done.')
 
+@app.task(name='load-backhaul-data')
+def load_backhaul_data(data_values, p, extra=None):
+	t = data_values[0]
+	processed = []
+	#info('PORT-Data: {0}'.format(data_values))
+	# key:: <device-tech>:<device-type>:<site-name>:<ip>
+	key = '%s:%s:%s:%s' % (str(t[3]).lower(),
+					'ss' if t[3].endswith('SS') else 'bs',
+					'%s',
+					'%s')
+	invent_key = 'device_inventory:%s'
+	for device in data_values:
+		device_attr = []
+		if str(device[3].lower()) == 'Cisco' or str(device[3].lower()) == 'Juniper':
+			port_wise_capacities = [0]*26
+		else:
+			port_wise_capacities = [0]*8
+		if  str(device[0]) in processed:
+		    continue
+		if '_' in str(device[5]):
+		    try:
+			int_ports = map(lambda x: x.split('_')[-1], device[5].split('$$'))
+			capacities = device[7].split('$$') if device[7] else device[7]
+			#info('PORT-Data: {0}'.format(capacities))
+			for p_n, p_cap in zip(int_ports, capacities):
+			    #port_wise_capacities[int(p_n)-1] = p_cap
+			    port_wise_capacities[int(p_n)-1] = p_cap
+		    except (IndexError, TypeError, AttributeError) as err:
+			#info('ERR-Data: {0}'.format(err))
+			port_wise_capacities = [0]*8
+		p.set(invent_key % device[0], device[2])
+		device_attr.extend([device[0],device[1],device[2]])
+		device_attr.append(port_wise_capacities)
+		#info('Output-Data: {0}'.format(device_attr))
+		p.rpush(key % (device[1], device[2]), device_attr)
+		processed.append(str(device[0]))
 
 @app.task(name='load-devicetechno-wise')
 def load_devicetechno_wise(data_values, p, extra=None):
@@ -514,6 +676,42 @@ def mysql_insert(self, table, data_values, mongo_col, site, columns=None):
 		lcl_cnx.rollback()
 		error('Error in mysql_insert task, {0}'.format(exc))
 
+@app.task(base=DatabaseTask, name='availibility-mysql-insert', bind=True,
+		default_retry_delay=40, max_retries=1)
+def availibility_mysql_insert(self, table, data_values, site, columns=None):
+	""" mysql batch insert"""
+
+	#warning('Called with table: {0}'.format(table))
+	default_columns = ('device_name', 'service_name', 'machine_name',
+			'site_name', 'ip_address', 'data_source', 'severity',
+			'current_value', 'min_value', 'max_value', 'avg_value',
+			'warning_threshold', 'critical_threshold', 'sys_timestamp',
+			'check_timestamp')
+	columns = columns if columns else default_columns
+	p0 = "INSERT INTO %(table)s " % {'table': table}
+	p1 = ' (%s) ' % ','.join(columns)
+	p2 = ' , '.join(map(lambda x: ' %('+ x + ')s', columns))
+	query = p0 + p1 + ' VALUES (' + p2 + ') '
+	try:
+		lcl_cnx = mysql_insert.mysql_cnx(site)
+		cur = lcl_cnx.cursor()
+		# cur.executemany(qry, map(lambda x: fmt_qry(**x), data_values))
+		cur.executemany(query, data_values)
+		lcl_cnx.commit()
+		cur.close()
+	except (OperationalError, InterfaceError) as db_exc:
+		lcl_cnx.rollback()
+		error('Error in mysql_insert task, {0}'.format(db_exc))
+		#if self.request.retries >= self.max_retries:
+		# store the data into mongo, as a backup
+		#mongo_insert.s(data_values, mongo_col, site).apply_async()
+		# else:
+		#	# perform a retry before taking data backup in mongo
+		#	raise self.retry(exc=db_exc)
+	except Exception as exc:
+		# rollback transaction
+		lcl_cnx.rollback()
+		error('Error in mysql_insert task, {0}'.format(exc))
 
 def delete_old_topology(cnx, old_topology):
 	query = """

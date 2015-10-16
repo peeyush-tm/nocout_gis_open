@@ -67,16 +67,16 @@
 
                         <div class="form-group">
                             <div class="col-sm-offset-3 col-sm-9">
-                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Next</button>
+                                <button type="submit" class="btn btn-default"><i class="fa fa-pencil text-success"></i> {{ save_text }} &amp; Next</button>
                                 &nbsp;
-                                <button type="submit" id="id_update_and_show" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Show</button>
+                                <button type="submit" id="id_update_and_show" class="btn btn-default"><i class="fa fa-pencil text-success"></i> {{ save_text }} &amp; Show</button>
                                 {% if skip_url %}
                                 &nbsp;
-                                <button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ skip_url }}')"><i class="fa fa-times"></i>Skip</button>
+                                <button type="reset" class="btn btn-default" onclick="window.location.replace('{{ skip_url }}')"><i class="fa fa-times text-warning"></i> Skip</button>
                                 {% endif %}
                                 &nbsp;
                                 {% url 'device_type_list' as cancel_url %}
-                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('{{ cancel_url }}')"><i class="fa fa-times"></i>Cancel</button>
+                                <button type="reset" class="btn btn-default" onclick="window.location.replace('{{ cancel_url }}')"><i class="fa fa-times text-danger"></i> Cancel</button>
                             </div>
                         </div>
                     </form>

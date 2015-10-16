@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 """
 Poller script which runs on ss and calculates 
 the ul utilization of the ss connected from BS.
@@ -19,7 +20,7 @@ import pymongo
 import sys
 import socket
 import time
-
+from ConfigParser import ConfigParser
 from celery import chord,group
 
 #from sys import path
@@ -144,7 +145,8 @@ def extract_wimax_bs_ul_data(ul_issue_list,host_name,site,ip,sect_id,sec_type,**
 	except:
 		perf = ';%s;%s;%s' % (args['war'],args['crit'],sect_id)
 	args['service'] = 'wimax_bs_ul_issue_kpi'
-    	bs_service_dict = service_dict_for_kpi_services(perf,state_string,host_name,site,ip,**args)
+	age_of_state = age_since_last_state(host_name, args['service'], state_string)
+    	bs_service_dict = service_dict_for_kpi_services(perf,state_string,host_name,site,ip,age_of_state,**args)
 	bs_service_dict['refer'] =sect_id
 	ul_issue_list.append(bs_service_dict)		
 	#warning('wimax bs entry: {0}'.format(ul_issue_list))
@@ -239,19 +241,6 @@ def extract_radwin_util_data(host_params,**args):
 		warning('memc: {0}'.format(e))
         	sec_id = ''
     	try:
-		"""
-		if not rad_util:
-			service_name = 'radwin_%s_utilization' % util_type	
-			query_string = "GET services\nColumns: service_perf_data\nFilter: host_name =%s\n" % (hostname) +\
-	       		"Filter: service_description = %s\n" % service_name +\
-	       		"OutputFormat: python\n"
-			output = extract_data_from_live(hostname,site,query_string)
-			try:
-				if output[0][0]:
-					rad_util = output[0][0].split('=')[1].split(';')[0]
-			except:
-				rad_util = None
-		"""
 		if rad_util and bw:
 			rad_util = (float(rad_util)/float(bw)) * 100
 			rad_util = round(rad_util,2)
@@ -270,7 +259,7 @@ def extract_radwin_util_data(host_params,**args):
 		perf = 'rad_%s_util_kpi' % util_type + "=;%s;%s;%s" %(args['war'],args['crit'],sec_id)
 
 	# calculate age since last state change
-	age_of_state = age_since_last_state(host, args['service'], state_string)
+	age_of_state = age_since_last_state(hostname, args['service'], state_string)
 
 	service_dict = service_dict_for_kpi_services(
 			perf, state_string, hostname, site, ip_address, age_of_state, **args)
@@ -278,6 +267,187 @@ def extract_radwin_util_data(host_params,**args):
 	service_list.append(service_dict)
 
 	rad_util = ''
+	sec_id = ''
+	perf = ''
+    	state_string = "unknown"
+    if len(service_list) > 0: 	
+    	build_export.s(args['site_name'], service_list).apply_async()
+    return None
+
+def extract_mrotek_util_data(host_params,**args):
+    perf = mrotek_util = sec_id = plugin_message = ''
+    state = 3
+    state_string = "unknown"
+    service_list = []
+    #warning('host_params: {0}'.format(host_params))
+    util_type = args['service'].split('_')[1]
+    for entry in host_params:
+	if entry and len(eval(entry[0])) == 4 :
+		hostname,site,ip_address,capacity = eval(entry[0])
+	else:
+		break
+    	try:
+        	if args['memc']:
+        		#sec_id = args['memc'].get(str(hostname) + "_sec_id")
+			mrotek_util = args['memc'].get(str(hostname) + "_" + util_type)
+			#warning('radwin util: {0}'.format(rad_util))
+			if mrotek_util:
+				mrotek_util = literal_eval(mrotek_util)
+    	except Exception,e:
+		warning('memc: {0}'.format(e))
+        	sec_id = ''
+    	try:
+		if mrotek_util and capacity[0]:
+			mrotek_util = (float(mrotek_util)/float(capacity[0])) * 100
+			mrotek_util = round(mrotek_util,2)
+			if mrotek_util < args['war']:
+				state = 0
+				state_string = "ok"
+			elif mrotek_util >= args['crit']:
+				state = 2
+				state_string = "critical"
+			else:
+				state = 1
+				state_string = "warning"
+			perf = 'fe_1' % util_type + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
+	except Exception,e:
+		#warning('cam ss util: {0}'.format(e))
+		perf = 'fe_1' % util_type + "=;%s;%s" %(args['war'],args['crit'])
+
+	# calculate age since last state change
+	age_of_state = age_since_last_state(hostname, args['service'], state_string)
+
+	service_dict = service_dict_for_kpi_services(
+			perf, state_string, hostname, site, ip_address, age_of_state, **args)
+	service_dict['refer'] = sec_id
+	service_list.append(service_dict)
+
+	mrotek_util = ''
+	sec_id = ''
+	perf = ''
+    	state_string = "unknown"
+    if len(service_list) > 0: 	
+    	build_export.s(args['site_name'], service_list).apply_async()
+    return None
+
+def extract_mrotek_util_data(host_params,**args):
+    perf = mrotek_util = sec_id = plugin_message = ''
+    state = 3
+    state_string = "unknown"
+    service_list = []
+    #warning('host_params: {0}'.format(host_params))
+    util_type = args['service'].split('_')[1]
+    for entry in host_params:
+	if entry and len(eval(entry[0])) == 4 :
+		hostname,site,ip_address,capacity = eval(entry[0])
+	else:
+		break
+    	try:
+        	if args['memc']:
+        		#sec_id = args['memc'].get(str(hostname) + "_sec_id")
+			mrotek_util = args['memc'].get(str(hostname) + "_" + util_type)
+			#warning('radwin util: {0}'.format(rad_util))
+			if mrotek_util:
+				mrotek_util = literal_eval(mrotek_util)
+    	except Exception,e:
+		warning('memc: {0}'.format(e))
+        	sec_id = ''
+    	try:
+		if mrotek_util and capacity[0]:
+			mrotek_util = (float(mrotek_util)/float(capacity[0])) * 100
+			mrotek_util = round(mrotek_util,2)
+			if mrotek_util < args['war']:
+				state = 0
+				state_string = "ok"
+			elif mrotek_util >= args['crit']:
+				state = 2
+				state_string = "critical"
+			else:
+				state = 1
+				state_string = "warning"
+			perf = 'fe_1' % util_type + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
+	except Exception,e:
+		#warning('cam ss util: {0}'.format(e))
+		perf = 'fe_1' % util_type + "=;%s;%s" %(args['war'],args['crit'])
+
+	# calculate age since last state change
+	age_of_state = age_since_last_state(hostname, args['service'], state_string)
+
+	service_dict = service_dict_for_kpi_services(
+			perf, state_string, hostname, site, ip_address, age_of_state, **args)
+	service_dict['refer'] = sec_id
+	service_list.append(service_dict)
+
+	mrotek_util = ''
+	sec_id = ''
+	perf = ''
+    	state_string = "unknown"
+    if len(service_list) > 0: 	
+    	build_export.s(args['site_name'], service_list).apply_async()
+    return None
+
+def extract_rici_util_data(host_params,**args):
+    perf = rici_util = sec_id = plugin_message = ''
+    state = 3
+    state_string = "unknown"
+    service_list = []
+    #warning('host_params: {0}'.format(host_params))
+    util_type = args['service'].split('_')[1]
+    for entry in host_params:
+	if entry and len(eval(entry[0])) == 4 :
+		hostname,site,ip_address,capacity = eval(entry[0])
+	else:
+		break
+    	try:
+        	if args['memc']:
+        		#sec_id = args['memc'].get(str(hostname) + "_sec_id")
+			rici_util = args['memc'].get(str(hostname) + "_" + util_type)
+			#warning('radwin util: {0}'.format(rad_util))
+			if rici_util:
+				rici_util = literal_eval(rici_util)
+    	except Exception,e:
+		warning('memc: {0}'.format(e))
+        	sec_id = ''
+    	try:
+		for index,entry in enumerate(rici_util):
+			rici_kpi =  rici_util[entry]
+			try:
+				index1 = int(entry.split('_')[1])
+				if rici_kpi and capacity[index1-1]:
+					rici_kpi = (float(rici_kpi)/float(capacity[index1-1])) *100
+					rici_kpi  = round(rici_kpi,2)
+			except Exception,e:
+				continue
+			if rici_kpi:
+				perf += str(entry) + "=%s;%s;%s;%s " % (rici_kpi,args['war'],args['crit'],capacity[index1-1])
+				if rici_kpi >= args['crit']:
+					crit_flag = 1
+				elif rici_kpi >= args['war'] and rici_kpi < args['crit']:
+					warn_flag = 1
+				else:
+					normal_flag = 1
+		if crit_flag:
+			state =2
+			state_string = "critical"
+		elif warn_flag:
+			state =1
+			state_string = "warning"
+		elif normal_flag:
+			state = 0
+			state_string = "ok"
+	except Exception,e:
+		#warning('cam ss util: {0}'.format(e))
+		perf = ''
+
+	# calculate age since last state change
+	age_of_state = age_since_last_state(hostname, args['service'], state_string)
+
+	service_dict = service_dict_for_kpi_services(
+			perf, state_string, hostname, site, ip_address, age_of_state, **args)
+	service_dict['refer'] = sec_id
+	service_list.append(service_dict)
+
+	rici_util = ''
 	sec_id = ''
 	perf = ''
     	state_string = "unknown"
@@ -415,6 +585,7 @@ def extract_wimax_util_data(host_params,**args):
     #return None
 
 
+@app.task(base=DatabaseTask, name='age_since_last_state')
 def age_since_last_state(host, service, state):
 	""" Calculates the age since when service 
 	was in the given state
@@ -423,13 +594,14 @@ def age_since_last_state(host, service, state):
 	prefix = 'util:'
 	key = prefix + host + ':' + service
 	# memc connection to get the state
-	memc = memcache.Client(['10.133.19.165:11211'])
-	out = memc.get(key)
+	#memc = memcache.Client(['10.133.19.165:11211'])
+	memc = age_since_last_state.memc_cnx
+	out = memc.get(str(key))
 	set_key = True
 
 	now = datetime.now().strftime('%s')
 	age = now
-	value = state + ',' + time_since
+	value = state + ',' + age
 
 	if out:
 		out = out.split(',')
@@ -440,7 +612,7 @@ def age_since_last_state(host, service, state):
 			set_key = False
 			age = time_since
 	if set_key:
-		memc.set(key, value)
+		memc.set(str(key), value)
 
 	return int(age)
 
@@ -484,8 +656,11 @@ def extract_data_from_live(hostname,site,query):
 		query_output = ''
 
 	return query_output
+
+
 def service_dict_for_kpi_services(
-		perf, state, hostname, site, ip_address, age_of_state, **args):	
+		perf, state, hostname, site, 
+		ip_address, age_of_state, **args):	
     service_dict = {}
     service_dict['host_name'] = hostname
     service_dict['address'] = ip_address 
@@ -498,6 +673,7 @@ def service_dict_for_kpi_services(
     service_dict['age']= age_of_state
 
     return service_dict	
+
 
 @app.task(base=DatabaseTask,name='extract_ss_ul_issue_data')
 def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,bs_ip_address,sect_id,sec_type,redis_conn,**args):
@@ -541,9 +717,12 @@ def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,bs_ip_address,sec
 		perf += 'ul_issue' + "=%s;;;" % (ul_issue)
 	except Exception ,e:
 		warning('error: {0}'.format(e))
-		perf = '' 
-	service_dict = service_dict_for_kpi_services(perf,state_string,host_name,site,ip_address,**args)
+		perf = ''
+
+	age_of_state = age_since_last_state(host_name, args['service'], state_string)
+	service_dict = service_dict_for_kpi_services(perf,state_string,host_name,site,ip_address,age_of_state,**args)
 	service_dict_list.append(service_dict)
+
 	#redis_conn = str(args['redis'])
 	#arg['redis'] = ''
     #warning(' info: {0}'.format(service_dict_list))
@@ -556,32 +735,56 @@ def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,bs_ip_address,sec
 
 @app.task(base=DatabaseTask,name='call_kpi_services')
 def call_kpi_services(**opts):
+	DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
+	conf = ConfigParser()
+	conf.read(DB_CONF)
+	opts = {'site_name': conf.get('machine','machine_name')}
 	rds_cli_invent = RedisInterface(custom_conf={'db': INVENTORY_DB})
 	#wimax_bs_key = rds_cli.redis_cnx.keys(pattern="wimax:bs:*")
-	wimax_bs_key = rds_cli_invent.redis_cnx.keys(pattern="wimax:bs:pub_slave_1:*")
+	wimax_bs_key = rds_cli_invent.redis_cnx.keys(pattern="wimax:bs:%s:*" % opts['site_name'])
 	#wimax_ss_key = rds_cli.redis_cnx.keys(pattern="wimax:ss:*")
-	wimax_ss_key = rds_cli_invent.redis_cnx.keys(pattern="wimax:ss:pub_slave_1:*")
-	pmp_bs_key = rds_cli_invent.redis_cnx.keys(pattern="pmp:bs:pub_slave_1:*")
-	pmp_ss_key = rds_cli_invent.redis_cnx.keys(pattern="pmp:ss:pub_slave_1:*")
-	radwin_ss_key = rds_cli_invent.redis_cnx.keys(pattern="p2p:ss:pub_slave_1:*")
+	wimax_ss_key = rds_cli_invent.redis_cnx.keys(pattern="wimax:ss:%s:*" % opts['site_name'])
+	pmp_bs_key = rds_cli_invent.redis_cnx.keys(pattern="pmp:bs:%s:*" % opts['site_name'])
+	pmp_ss_key = rds_cli_invent.redis_cnx.keys(pattern="pmp:ss:%s:*" % opts['site_name'])
+	radwin_ss_key = rds_cli_invent.redis_cnx.keys(pattern="p2p:ss:%s:*" % opts['site_name'])
+	mrotek_bs_key = rds_cli_invent.redis_cnx.keys(pattern="pine:bs:%s:*" % opts['site_name'])
+	rici_bs_key = rds_cli_invent.redis_cnx.keys(pattern="rici:bs:%s:*" % opts['site_name'])
 	p = rds_cli_invent.redis_cnx.pipeline()
 	wimax_util_kpi_services = ['wimax_pmp1_dl_util_kpi','wimax_pmp2_dl_util_kpi','wimax_pmp1_ul_util_kpi','wimax_pmp2_ul_util_kpi','wimax_ss_ul_issue_kpi','wimax_ss_provis_kpi']
 	cambium_util_kpi_services = ['cambium_dl_util_kpi','cambium_ul_util_kpi','cambium_ss_ul_issue_kpi','cambium_ss_porvis_kpi']
         radwin_util_kpi_services = ['radwin_dl_util_kpi','radwin_ul_util_kpi']
+	mrotek_util_kpi_services = ['mrotek_dl_util_kpi','mrotek_ul_util_kpi']
+	rici_util_kpi_services = ['rici_dl_util_kpi','rici_ul_util_kpi']
+	service_threshold = {}
+	total_services = []
+	total_services.extend(wimax_util_kpi_services)
+	total_services.extend(cambium_util_kpi_services)
+	total_services.extend(radwin_util_kpi_services)
+	total_services.extend(mrotek_util_kpi_services)
+	total_services.extend(rici_util_kpi_services)
+	for service_name in total_services:
+		bs_war_key  = service_name + ':war'
+		bs_crit_key  = service_name + ':crit'
+		service_threshold[bs_war_key]  =  rds_cli_invent.redis_cnx.get(bs_war_key) 
+		service_threshold[bs_crit_key]  =  rds_cli_invent.redis_cnx.get(bs_crit_key) 
+		
 	for i in izip_longest(*[iter(wimax_bs_key)] * 500):	
 		[p.lrange(k, 0 , -1) for k  in i]
 		#[p.lrange(k, 0,-1) for k  in ]
 		#[p.lrange(k, 0,-1) for k  in wimax_ss_key]
 		wimax_bs_params = p.execute()
 		args = {}
+		args['site_name'] =  opts['site_name']
 		args['host_info'] = wimax_bs_params
 		args['my_function'] = 'extract_wimax_util_data'
 		args['provis_bw'] = 4
-		args['war']  = 80 
-		args['crit']  = 90
 		args['memc']  = call_kpi_services.memc_cnx
 		#warning('memc: {0}'.format(args['memc']))
 		args['service'] = wimax_util_kpi_services[0]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		extract_kpi_services_data.s(**args).apply_async()
@@ -589,28 +792,39 @@ def call_kpi_services(**opts):
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['service'] = wimax_util_kpi_services[1]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
 		extract_kpi_services_data.s(**args).apply_async()
 	
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['provis_bw'] = 2
 		args['service'] = wimax_util_kpi_services[2]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
 		extract_kpi_services_data.s(**args).apply_async()
 	
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['service'] = wimax_util_kpi_services[3]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
 		extract_kpi_services_data.s(**args).apply_async()
 
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
-		args['war'] = 20
-		args['crit'] = 40
 		args['service'] = wimax_util_kpi_services[4]
 		extract_wimax_ul_issue_data.s(**args).apply_async()
 		
 	for i in izip_longest(*[iter(wimax_ss_key)] * 500):
 		args = {}	
+		args['site_name'] =  opts['site_name']
 		[p.lrange(k, 0, -1) for k  in i]
 		wimax_ss_params = p.execute()
 		
@@ -627,6 +841,7 @@ def call_kpi_services(**opts):
 	
 	for i in izip_longest(*[iter(pmp_bs_key)] * 500):	
 		args = {}	
+		args['site_name'] =  opts['site_name']
 		[p.lrange(k, 0 ,-1) for k  in i]
 		cambium_bs_params = p.execute()
 	
@@ -635,28 +850,33 @@ def call_kpi_services(**opts):
 		args['memc']  = call_kpi_services.memc_cnx
 
 		args['provis_bw'] = 4.76
-		args['war']  = 80 
-		args['crit']  = 90
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['service'] = cambium_util_kpi_services[0]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
 		extract_kpi_services_data.s(**args).apply_async()
 	
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['provis_bw'] = 2.24
 		args['service'] = cambium_util_kpi_services[1]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
 		extract_kpi_services_data.s(**args).apply_async()
 
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
-		args['war']  = 20 
-		args['crit']  = 40
 		args['service'] = cambium_util_kpi_services[2]
 		extract_cambium_ul_issue_data.s(**args).apply_async()	
 		
 	for i in izip_longest(*[iter(pmp_ss_key)] * 500):	
 		args = {}	
+		args['site_name'] =  opts['site_name']
 		[p.lrange(k, 0 ,-1) for k  in i]
 		cambium_ss_params = p.execute()
 
@@ -668,6 +888,7 @@ def call_kpi_services(**opts):
 		extract_kpi_services_data.s(**args).apply_async()	
 	for i in izip_longest(*[iter(radwin_ss_key)] * 500):	
 		args = {}	
+		args['site_name'] =  opts['site_name']
 		[p.lrange(k, 0 ,-1) for k  in i]
 		radwin_ss_params = p.execute()
 		args['memc']  = call_kpi_services.memc_cnx
@@ -676,17 +897,80 @@ def call_kpi_services(**opts):
 		args['host_info'] = radwin_ss_params
 		args['my_function'] = 'extract_radwin_util_data' 
 
-		args['war']  = 80 
-		args['crit']  = 90
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['service'] = radwin_util_kpi_services[0]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
 		extract_kpi_services_data.s(**args).apply_async()
 		
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['service'] = radwin_util_kpi_services[1]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
 		extract_kpi_services_data.s(**args).apply_async()
+	for i in izip_longest(*[iter(mrotek_bs_key)] * 500):	
+		args = {}	
+		args['site_name'] =  opts['site_name']
+		[p.lrange(k, 0 ,-1) for k  in i]
+		mrotek_bs_params = p.execute()
+		args['memc']  = call_kpi_services.memc_cnx
+		#warning('memc: {0}'.format(args['memc']))
+	
+		args['host_info'] = mrotek_bs_params
+		args['my_function'] = 'extract_mrotek_util_data' 
+
+		rds_cli = RedisInterface()
+		args['redis'] = rds_cli
+		args['service'] = mrotek_util_kpi_services[0]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
+		extract_kpi_services_data.s(**args).apply_async()
+		
+		rds_cli = RedisInterface()
+		args['redis'] = rds_cli
+		args['service'] = mrotek_util_kpi_services[1]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
+		extract_kpi_services_data.s(**args).apply_async()
+	for i in izip_longest(*[iter(rici_bs_key)] * 500):	
+		args = {}	
+		args['site_name'] =  opts['site_name']
+		[p.lrange(k, 0 ,-1) for k  in i]
+		rici_bs_params = p.execute()
+		args['memc']  = call_kpi_services.memc_cnx
+		#warning('memc: {0}'.format(args['memc']))
+	
+		args['host_info'] = rici_bs_params
+		args['my_function'] = 'extract_rici_util_data' 
+
+		rds_cli = RedisInterface()
+		args['redis'] = rds_cli
+		args['service'] = rici_util_kpi_services[0]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
+		extract_kpi_services_data.s(**args).apply_async()
+		
+		rds_cli = RedisInterface()
+		args['redis'] = rds_cli
+		args['service'] = rici_util_kpi_services[1]
+		bs_war_key  = args['service'] + ':war'
+		bs_crit_key  = args['service'] + ':crit'
+		args['war']  = service_threshold[bs_war_key] 
+		args['crit']  = service_threshold[bs_crit_key]
+		extract_kpi_services_data.s(**args).apply_async()
+		
 		
 
 @app.task(base=DatabaseTask, name='extract_cambium_ss_provis_data')		
@@ -840,7 +1124,6 @@ def extract_kpi_services_data(**args):
     my_function  = args['my_function']
     service_list = []
     fun = eval(my_function)
-    args['site_name'] = 'pub_slave_1'
     #for host_name,site,ip_address in host_info:
     fun(host_info,**args)
 		
@@ -883,7 +1166,8 @@ def extract_cambium_bs_ul_data(ul_issue_list,host_name,site,ip,sect_id,**args):
 		perf = 'bs_ul_issue'+'=;%s;%s;%s' % (args['war'],args['crit'],sect_id)
 		
 	args['service'] = 'cambium_bs_ul_issue_kpi'
-    	bs_service_dict = service_dict_for_kpi_services(perf,state_string,host_name,site,ip,**args)
+	age_of_state = age_since_last_state(host_name, args['service'], state_string)
+    	bs_service_dict = service_dict_for_kpi_services(perf,state_string,host_name,site,ip,age_of_state,**args)
 	bs_service_dict['refer'] =sect_id
 	ul_issue_list.append(bs_service_dict)		
 	#warning('cambium bs entry: {0}'.format(ul_issue_list))
@@ -898,7 +1182,6 @@ def extract_wimax_ul_issue_data(**args):
     pmp2_service_list = []
     pmp1_ss_info = []
     pmp2_ss_info = []
-    site_name = 'pub_slave_1'
     rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
     p = rds_cli.redis_cnx.pipeline()
     args['memc']  = ''

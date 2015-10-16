@@ -9,10 +9,11 @@ running on all configured devices for this poller.
 
 
 from ast import literal_eval
+from ConfigParser import ConfigParser
 from datetime import datetime, timedelta
 from itertools import izip_longest
 import re
-import socket
+import socket,time
 from sys import path
 
 from celery import group
@@ -20,8 +21,9 @@ from celery import group
 #path.append('/omd/nocout_etl')
 
 from handlers.db_ops import *
-from handlers.send_db_tasks import send_db_tasks
 from start.start import app
+
+DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
 
 logger = get_task_logger(__name__)
 info , warning, error = logger.info, logger.warning, logger.error
@@ -105,6 +107,7 @@ def build_export(site, network_perf_data):
 	# last down time for devices
 	rds_cli = RedisInterface()
 	last_down_all = rds_cli.multi_get(key_prefix='last_down')
+	p = rds_cli.redis_cnx.pipeline(transaction=True)
 	# values updated during current execution, only these
 	# values should be updated into redis
 	last_down_updated_all = []
@@ -154,6 +157,8 @@ def build_export(site, network_perf_data):
 						device_name, ds_values, local_timestamp)
 				if device_down_entry:
 					last_down_updated_all.append(device_down_entry)
+				key = 'availibility' + ':' + site + ':' + device_name + ':' + str(h_chk_val['address'])
+				p.rpush(key,ds_values.get('cur'))
 			if ds == 'rta':
 				host_severity = calculate_host_severity_for_letency(ds_values, host_severity)	
 			data_dict.update({
@@ -162,7 +167,7 @@ def build_export(site, network_perf_data):
 				# not be altered or else mysql insert will fail
 				'device_name': device_name,
 				'service_name': 'ping',
-				'machine_name': site[:-8], 
+				'machine_name': site, 
 				'site_name': site,
 				'ip_address': str(h_chk_val['address']),
 				'data_source': ds,
@@ -181,12 +186,49 @@ def build_export(site, network_perf_data):
 			data_array.append(data_dict)
 			data_dict = {}
 		
-	# send the data export task
-	send_db_tasks.s(
-			network_data=data_array, 
-			last_down_devices=last_down_updated_all, 
-			site=site
-			).apply_async()
+	# send aggregator task
+	aggregator.s(data_array, last_down_updated_all, site).apply_async()
+	try:
+		p.execute()
+	except Exception,e:
+		warning('Network-Error: {0}'.format(e))
+		pass
+
+@app.task(name='device_availibility', ignore_result=True)
+def device_availibility(site_name=None):
+	service = 'availibilty'
+	DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
+	conf = ConfigParser()
+	conf.read(DB_CONF)
+	site = conf.get('machine','machine_name')
+	redis_cli =RedisInterface()
+	p = redis_cli.redis_cnx.pipeline()
+	host_keys = redis_cli.redis_cnx.keys(pattern="availibility:%s:*" % site)
+	[p.lrange(k, 0,-1) for k  in host_keys]
+	host_availibility_info = p.execute()
+	ds="availability"
+	host_state = "ok"
+	availability_list = []
+	for key,value in zip(host_keys,host_availibility_info):
+		key_names = key.split(':')
+		ip_address = key_names[3]
+		host_name = key_names[4]
+		value = eval(value)
+		down_count = value.count('100')
+		total_down = ((down_count * 5)/(24*60.0) *100)
+		if total_down >=100:
+			total_down = 100.0
+		total_up = "%.2f" % (100 -total_down )
+		current_time = int(time.time())
+		availability_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=host_name,
+						service_name=service,current_value=total_up,min_value=0,max_value=0,avg_value=0,
+						data_source=ds,severity=host_state,site_name=site,warning_threshold=0,
+						machine_name=site,
+						critical_threshold=0,ip_address=ip_address)
+		availability_list.append(availability_dict)	
+		availability_dict = {}
+	availibility_mysql_insert.s( 'performance_networkavailabilitydaily',availability_list,site).apply_async()
+	warning('host availibility: {0}'.format(availability_list))
 
 
 @app.task(name='get-host-checks', ignore_result=True)
@@ -231,10 +273,21 @@ def aggregator(data_values, last_down_devices, site):
 	""" sends task messages"""
 
 	if data_values:
+		# redis/mysql inserts/updates
+		#group(
+		#		[rds_cli.redis_update.s(data_values, perf_type='status'),
+		#			rds_cli.redis_insert.s(data_values, perf_type='live'),
+		#			mysql_insert_handler.s(data_values, site)]
+		#		).apply_async()
+
 		# mongo/mysql inserts/updates
 		rds_cli = RedisInterface()
+		warning('site name in network etl: {0}'.format(site))
 		group([
 			rds_cli.redis_update.s(last_down_devices, perf_type='last_down'),
+			#mongo_update.s(data_values, 
+			#	('device_name', 'service_name', 'data_source'), 'network_status', site), 
+			#mongo_insert.s(data_values, 'network_perf', site),
 			mysql_insert_handler.s(data_values, 'performance_performancenetwork', 
 				'performance_networkstatus', 'network_perf', site)
 			]
@@ -309,7 +362,12 @@ def pivot_timestamp_fwd(timestamp):
 
 @app.task(name='network-main')
 def main(**opts):
-	opts = {'site_name': 'pub_slave_1'}
+	#opts = {'site_name': 'pub_slave_1'}
+	DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
+	conf = ConfigParser()
+	conf.read(DB_CONF)
+	opts = {'site_name': conf.get('machine','machine_name')}
+
 	get_host_checks_output.s(**opts).apply_async()
 
 
