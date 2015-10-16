@@ -31,9 +31,8 @@
         margin: 0 auto;
         margin-top: 48px;
     }
-    #main_dashboard_container .col-md-3 div.pull-right i.trends_icon,
-    .row.col-md-6 div.pull-right i.trends_icon,
-    .row.col-md-4 div.pull-right i.trends_icon {
+    i.trends_icon {
+        border:1px solid transparent;
         padding: 5px 8px;
         cursor:pointer;
     }
@@ -45,17 +44,9 @@
     .row.col-md-6:hover div.pull-right i.trends_icon,
     .row.col-md-4:hover div.pull-right i.trends_icon {
         border:1px solid rgba(0, 0, 0, 0.1);
-        border-radius: 2px;       
+        border-bottom:1px solid rgba(0, 0, 0, 0.2);
+        border-radius: 2px;
     }
-    
-    /*#main_dashboard_container div[class^="col-md-"] .pull-right i.trends_icon,
-    .row.col-md-6 div .pull-right i.trends_icon {
-        color: #555 !important;
-    }
-    #main_dashboard_container div[class^="col-md-"]:hover .pull-right i.trends_icon,
-    .row.col-md-6:hover div .pull-right > i.trends_icon {
-        color:#468847 !important;
-    }*/
 
 </style>
 
@@ -165,7 +156,7 @@
         <hr/>
         
         <div class="col-md-6 border_right" align="center">
-            <h4 class="bigger">- Sales Opportunity</h4><br/>
+            <h4 class="bigger dashboard_headings">- Sales Opportunity</h4><br/>
 
              <!-- Capacity pie Charts & city table Start -->
             <div class="row col-md-6" align="center">
@@ -214,7 +205,7 @@
         
 
         <div class="col-md-6" align="center">
-            <h4 class="bigger">- Sector Capacity</h4><br/>
+            <h4 class="bigger dashboard_headings">- Sector Capacity</h4><br/>
 
             <div class="row col-md-6" align="center">
             <div class="custom_seperator">&nbsp;</div>
@@ -262,10 +253,11 @@
         
         
         <!-- ********** SECOND ROW END **********-->
+        <div class="clearfix"></div>
         <hr/>
 
         <div class="col-md-9 border_right" align="center">
-            <h4 class="bigger">- Backhaul Capacity</h4><br/>
+            <h4 class="bigger dashboard_headings">- Backhaul Capacity</h4><br/>
 
             <div class="col-md-4 row" align="center">
                 <div class="custom_seperator">&nbsp;</div>

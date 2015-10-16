@@ -70,10 +70,11 @@ def mysql_export(self, table, data_values):
 		cursor.close()
 		print 'Mysql Export Error, retrying...', exc
 		raise self.retry(args=(table, data_values), max_retries=1, 
-			countdown=20, exc=exc)
+			countdown=10, exc=exc)
 	else:
 		cnx.commit()
 		cursor.close()
+		#print '## Data Exported ##'
 	#db.close()
 
 
@@ -178,7 +179,7 @@ def read_data(self, device_list, table, start_time, end_time, machine='historica
 						end_time), 
 					kwargs={'machine': machine},
 					max_retries=1, 
-					countdown=20, 
+					countdown=10, 
 					exc=err)
 	#print 'devices %s, %s docs', len(device_list), len(docs)
 	return sorted(docs, key=itemgetter(0))

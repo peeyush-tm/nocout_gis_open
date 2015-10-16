@@ -1540,15 +1540,18 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
         service_name = current_target_attr['service_name'] ? current_target_attr['service_name'].value : "",
         ds_name = current_target_attr['ds_name'] ? current_target_attr['ds_name'].value : "",
         device_name = current_target_attr['device_name'] ? [current_target_attr['device_name'].value] : "",
+        device_type = current_target_attr['device_type'] ? current_target_attr['device_type'].value : "",
+        is_radwin5 = device_type && device_type.toLowerCase().indexOf('radwin5') > -1 ? 1 : 0,
         false_param = false,
         true_param = true;
 
         var extra_info_obj = {
-            'container_dom_id' : false_param,
-            'sparkline_dom_id' : false_param,
-            'hidden_input_dom_id' : false_param,
-            'polled_val_shown_dom_id' : false_param,
-            'show_sparkline_chart' : true_param
+            'container_dom_id': false_param,
+            'sparkline_dom_id': false_param,
+            'hidden_input_dom_id': false_param,
+            'polled_val_shown_dom_id': false_param,
+            'show_sparkline_chart': true_param,
+            'is_radwin5': is_radwin5
         };
 
         if(service_name && ds_name && device_name) {
@@ -1597,7 +1600,9 @@ $('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) 
     var current_target_attr = e.currentTarget.attributes,
         device_name = current_target_attr['device_name'] ? [current_target_attr['device_name'].value] : "",
         marker_key = current_target_attr['marker_key'] ? current_target_attr['marker_key'].value : "",
-        marker_type = current_target_attr['marker_type'] ? current_target_attr['marker_type'].value : "";
+        marker_type = current_target_attr['marker_type'] ? current_target_attr['marker_type'].value : "",
+        device_type = current_target_attr['device_type'] ? current_target_attr['device_type'].value : "",
+        is_radwin5 = device_type && device_type.toLowerCase().indexOf('radwin5') > -1 ? 1 : 0;
 
     var themetics_radio = $("input:radio[name=thematic_type]"),
         checked_themetics_radio = $("input:radio[name=thematic_type]"),
@@ -1618,7 +1623,7 @@ $('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) 
 
             // Make Ajax Call to Fetch Live Poll Data For opened device.
             $.ajax({
-                url : base_url+"/"+"device/lp_bulk_data/?devices="+JSON.stringify(device_name)+"&ts_type="+selected_thematics,
+                url : base_url+"/"+"device/lp_bulk_data/?devices="+JSON.stringify(device_name)+"&ts_type="+selected_thematics+"&is_radwin5="+is_radwin5,
                 type : "GET",
                 success : function(response) {
                     var result = "";

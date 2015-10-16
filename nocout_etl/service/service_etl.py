@@ -2,12 +2,14 @@
 service_etl.py
 ================
 
-Module to process data input from redis backed queue.
-Outputs data to module which exports tha data to
-databases, further.
+This script collects and stores data for host checks
+running on all configured devices for this poller.
+
 """
 
 
+from ast import literal_eval
+from ConfigParser import ConfigParser
 from datetime import datetime, timedelta
 import re
 from sys import path
@@ -23,7 +25,6 @@ info, warning, error = logger.info, logger.warning, logger.error
 
 path.append('/omd/nocout_etl')
 
-# redis db no for inventory devices
 INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
 
 
@@ -122,6 +123,7 @@ def update_topology(li, data_values, name_ip_mapping, delete_old_topology, site)
 	""" processes and updates bs-ss connections topology"""
 	# splitter = lambda x, sep, i: x.split(sep)[i]
 	perf_out = data_values.get('output')
+	ss_ips = []
 	if perf_out:
 		d = {}
 		device_name = str(data_values.get('host_name'))
@@ -149,7 +151,7 @@ def update_topology(li, data_values, name_ip_mapping, delete_old_topology, site)
 				ss_ips = splitter(ss_wise_values, ('=', ','), (1, 9))
 				ss_ports = splitter(ss_wise_values, ('=', ','), (1, -1))
 		except Exception as exc:
-			error('Error in topology output: {0}'.format(exc))
+			error('Error in topology output: {0}, {1}'.format(exc,ss_wise_values))
 		else:
 			machine_name = site[:-8]
 			for i, ss_ip in enumerate(ss_ips):
@@ -179,6 +181,7 @@ def build_export(site, perf_data):
 
 	# contains one dict value for each service data source
 	serv_data = []
+	warning('build_export site {0}'.format(site))
 	# topology perf data
 	topology_serv_data = []
 	# util services data
@@ -318,7 +321,7 @@ def make_dicts_from_perf(outs, ins, name_ip_mapping,site, multi=False):
 				# not be altered or else mysql insert will fail
 				'device_name': device_name,
 				'service_name': service_name,
-				'machine_name': site[:-8],
+				'machine_name': site,
 				'site_name': site,
 				'ip_address': ip_address,
 				'data_source': ds,
@@ -352,7 +355,8 @@ def get_service_checks_output(site_name=None):
 	# pulling 2000 values from queue, at a time
 	queue = RedisInterface(perf_q='q:perf:service')
 	check_results = queue.get(0, -1)
-	warning('Queue len, size of obj: {0}, {1}'.format(len(check_results), sys.getsizeof(check_results)))
+	warning('Queue len, size of obj: {0}, {1}'.format(
+		len(check_results), sys.getsizeof(check_results)))
 	if check_results:
 		build_export.s(site_name, check_results).apply_async()
 
@@ -360,6 +364,10 @@ def get_service_checks_output(site_name=None):
 def get_ul_issue_service_checks_output(site_name=None):
 	# get check results from redis backed queue
 	# pulling 2000 values from queue, at a time
+	DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
+	conf = ConfigParser()
+	conf.read(DB_CONF)
+	site_name = conf.get('machine','machine_name')
 	queue = RedisInterface(perf_q='queue:ul_issue')
 	check_results = queue.get(0, -1)
 	warning('ul_issue Queue len: {0}'.format(len(check_results)))
@@ -375,7 +383,9 @@ def send_db_tasks(**kw):
 	                        'site_name', 'sys_timestamp', 'check_timestamp', 
 	                        'ip_address', 'sector_id', 'connected_device_ip', 
 	                        'connected_device_mac', 'mac_address')
+	#warning('send-db-send**********')
 	site = kw.get('site')
+	warning('site name: {0}'.format(site))
 	# tasks to be sent
 	tasks = []
 	rds_cli = RedisInterface()
@@ -493,7 +503,11 @@ def get_or_update_mrc(host_value, util_values):
 @app.task(name='build-export-dr-mrc', ignore_result=True)
 def build_export_util(**kw):
 	""" """
-	site = kw.get('site_name')
+	DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
+	conf = ConfigParser()
+	conf.read(DB_CONF)
+	site = conf.get('machine','machine_name')
+	warning('build-export-util: {0}'.format(site))
 	matching_criteria = ['host', 'service', 'data_source']
 	cnx = RedisInterface()
 	# get values having key prefix as `util`
@@ -615,8 +629,12 @@ def pivot_timestamp_fwd(timestamp):
 
 @app.task(name='service-main')
 def main(**opts):
-	opts = {'site_name': 'pub_slave_1'}
 	# srv_etl = ServiceEtl()
+	DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
+	conf = ConfigParser()
+	conf.read(DB_CONF)
+	opts = {'site_name': conf.get('machine','machine_name')}
+
 	get_service_checks_output.s(**opts).apply_async()
 
 

@@ -412,7 +412,8 @@ th.vAlign_middle, .vAlign_middle b {
   padding-top: 8px !important;
   padding-bottom: 10px !important;
 }
-#page_header_container .date-range, #content .breadcrumb {
+#page_header_container .date-range,
+#content .breadcrumb {
   padding-top: 5px;
   padding-bottom: 5px;
   margin: 0px;
@@ -587,7 +588,7 @@ th.vAlign_middle, .vAlign_middle b {
 }
 
 h5.bigger, .h5 {
-  font-size: 16px !important;
+  font-size: 15px !important;
   font-weight: normal !important;
   color:#333;
 }
@@ -633,18 +634,24 @@ table.dataTable thead th, table.dataTable tfoot th{
   cursor: pointer;
 }
 /*Full Screen Button*/
-.transitionbtn {
-  border-radius: 2px;
-  transition-property: background, border-radius;
-  transition-duration: 0.2s;
+.controls_container ul li a.btn-sm,
+.btn-default {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  /*border-bottom-width: 2px !important;*/
+  transition-property: border-bottom-color;
+  transition-duration: 0.1s;
   transition-timing-function: linear;
 }
-.transitionbtn:hover {
-  border-radius: 50% !important;
-  background: transparent !important;
+.controls_container ul.list-inline > li:first-child {
+  padding-left: 5px;
+}
+.controls_container ul li .btn-sm:hover,
+.btn-default:hover {
+  /*border-radius: 50% !important;*/
+  border-bottom-color: rgba(0, 0, 0, 0.40) !important;
 }
 .box .header-tabs .nav-tabs > li {
-  border-right: 1px inset #dddddd !important;
+  border-right: 1px solid #dddddd !important;
   border-left: 0px none!important;
   margin-bottom: 0px;
 }
@@ -666,8 +673,11 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
   border-bottom: 3px solid transparent;
 }
 #goFullScreen {
-  margin-left: -4px;
+  margin-left: -3px;
+  border:1px solid rgba(0, 0, 0, 0.1);
+  margin-left: -3px;
 }
+
 .box.border {
   border-color: #dddddd;
 }
@@ -677,4 +687,15 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
 }
 .severity_block {
   cursor: pointer;
+}
+.datatable tbody tr td a {
+  padding: 0px;
+  margin: 0px;
+}
+.datatable tbody tr td a i {
+  padding-left: 2.5px;
+  padding-right: 2.5px;
+}
+.datatable tbody tr td a:hover {
+  text-decoration: none;
 }

@@ -64,11 +64,16 @@ class RedisEnqueueBroker(BaseModule):
 				sentinels.append(tuple(sentinels_conf[:2]))
 				sentinels_conf = sentinels_conf[2:]
 		sentinels_service_name = getattr(mod_conf, 'service_name', 'mymaster')
-		self.redis_conf.update({'sentinels': sentinels, 
-			'sentinels_service_name': sentinels_service_name})
 		min_other_sentinels = getattr(mod_conf, 'min_other_sentinels', 0)
-		# redis queue
-		self.queue = RedisQueue(**self.redis_conf)
+
+		self.redis_conf.update({
+			'sentinels': sentinels, 
+			'sentinels_service_name': sentinels_service_name,
+			'min_other_sentinels': min_other_sentinels
+			})
+
+		# redis conn
+		self.rds_cnx = RedisQueue(**self.redis_conf)
 
 
 	def main(self):
@@ -82,7 +87,7 @@ class RedisEnqueueBroker(BaseModule):
 					try:
 						msg = dict([(k, v) for  k, v in brok.data.iteritems() if 
 							k in self.valid_attrs])
-						self.queue.put(msg)
+						self.rds_cnx.put(msg)
 					except Exception as exc:
 						error('[%s] Problem with brok: '
 						     	 	 '%s' % (self.name, exc))
@@ -100,24 +105,29 @@ class RedisEnqueueBroker(BaseModule):
 			alrt_type = data['alert_type']
 			if alrt_type == 'HOST':
 				data.update({'service_desc': 'ping'})
-				self.queue.put('event:host', data)
+				self.rds_cnx.put('event:host', data)
 			elif alrt_type == 'SERVICE':
-				self.queue.put('event:service', data)
+				self.rds_cnx.put('event:service', data)
 
 
 	# called by base module
 	def manage_host_check_result_brok(self, brok):
-		#info('[%s] Start manage_host_check_result_brok' % self.name)
 		# get broks from queue broks
 		#broks = self.broks
 		if brok.type in self.host_valid_broks:
 			try:
+				# don't process the host data more than once in 5 mins window
+				host_name = brok.data['host_name']
+				host_key = ':'.join(['volatile', host_name])
+				if self.rds_cnx.get(host_key):
+					return
+				else:
+					self.rds_cnx.setex(host_key, 300, 1)
+
 				#info('[%s] brok: %s' % (self.name, brok.data.items()))
-				#if '10.165.178.12' == str(brok.data['address']):
-					#info('[%s] brok: %s' % (self.name, brok.data.items()))
 				msg = dict([(k, v) for  k, v in brok.data.iteritems() if 
 					k in self.host_valid_attrs])
-				self.queue.put('perf:host', msg)
+				self.rds_cnx.put('perf:host', msg)
 			except Exception as exc:
 				error('[%s] Problem with brok: '
 						     '%s' % (self.name, exc))
@@ -127,7 +137,7 @@ class RedisEnqueueBroker(BaseModule):
 		service_valid_attrs = self.service_valid_attrs
 		#info('[%s] Start manage_service_check_result_brok' % self.name)
 		if brok.type in self.service_valid_broks:
-			#info('[%s] brok: %s' % (self.name, brok))
+			#info('[%s] brok: %s' % (self.name, brok.data))
 			service = str(brok.data['service_description'])
 			if service == 'Check_MK':
 				return
@@ -139,7 +149,7 @@ class RedisEnqueueBroker(BaseModule):
 				# for load testing purposes
 				li = []
 				[li.append(msg.copy()) for _ in range(1)]
-				self.queue.put('perf:service', *li)
+				self.rds_cnx.put('perf:service', *li)
 			except Exception as exc:
 				error('[%s] Problem with brok: '
 						     '%s' % (self.name, exc))
@@ -157,9 +167,15 @@ class RedisQueue:
 		s = Sentinel(sentinels, **redis_conf)
 		self.db = s.master_for(sentinels_service_name)
 		#self.db = StrictRedis(**redis_conf)
-		self.key = '%s:%s' % (self.prefix, '%s')
 
 	def put(self, suffix, *items):
-		self.db.rpush(self.key % suffix, *items)
+		key = '%s:%s' % (self.prefix, '%s')
+		self.db.rpush(key % suffix, *items)
 		# save on disk
 		#self.db.save()
+
+	def get(self, key):
+		return self.db.get(key)
+
+	def setex(self, key, time, value):
+		return self.db.setex(key, time, value)
