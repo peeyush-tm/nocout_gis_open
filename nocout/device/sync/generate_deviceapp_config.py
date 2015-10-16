@@ -1219,10 +1219,10 @@ def write_rules_file(settings_out, final_active_checks):
         f.write("ping_levels += %s" % pformat(settings_out.ping_levels_db))
         f.write("\n\n\n\n")
 
-        for service in final_active_checks.keys():
-            f.write("active_checks.setdefault('" + service + "', [])\n")
-        for service, check_list in final_active_checks.iteritems():
-            f.write("active_checks['" + service + "'] += %s\n\n" % pformat(check_list))
+        #for service in final_active_checks.keys():
+        #    f.write("active_checks.setdefault('" + service + "', [])\n")
+        #for service, check_list in final_active_checks.iteritems():
+        #    f.write("active_checks['" + service + "'] += %s\n\n" % pformat(check_list))
 
         f.write("checks += %s" % pformat(settings_out.default_checks))
         f.write("\n\n\n")

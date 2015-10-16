@@ -58,9 +58,12 @@ def call_sync_apis(**kw):
 	if machines:
 		for ip, port in machines.iteritems():
 			urls.append(
-					scheme + str(ip) + ':' + str(port) + '/local_sync'
+					scheme + str(ip) + ':' + str(port)
 					)
-		warning('url: {0}'.format(urls))
+		urls = [
+				'http://10.133.19.165:5019'
+			]
+		warning('urls: {0}'.format(urls))
 		header = group([get_request.s(url=url) for url in urls]).apply_async()
 		#callback = api_callback.s(len(urls))
 		#chord(header)(callback)
@@ -110,20 +113,34 @@ def get_request(**kw):
 	""" Sends the get request using requests"""
 
 	retval = False
+
+	url = kw.get('url')
+	sync_api = url + '/local_sync'
+	restart_api = url + '/restart'
+
+	warning('sync_api: {0}, restart_api: {1}'.format(sync_api, restart_api))
+
 	try:
 		os.chdir(SYNC_BASE_DIR)
 		files = {'file': ('da_config.tar.gz', open('da_config.tar.gz', 'rb'))}
-		r = requests.post(kw.get('url'), files=files)
+		r = requests.post(sync_api, files=files)
 		res = r.text
+		status_code = r.status_code
 	except IOError as exc:
 		error('Problem in reading tar file: {0}'.format(exc))
-	except requests.exceptions.RequestException as exc:
-		error('Problem with the request: {0}'.format(exc))
+	except Exception as exc:
+		error('Error in sending request: {0}'.format(exc))
 	else:
-		res = json.loads(res)
-		warning('API response: {0}'.format(res))
-		#if res.get('success') == 1:
-		#	retval = True
+		try:
+			jsn_res = r.json()
+			warning('Sync Response: {0}'.format(jsn_res))
+			if status_code == 200 and jsn_res.get('success') == 1:
+				retval = True
+				# restart monitoring core
+				r = requests.post(restart_api)
+				warning('Restart Response: {0}'.format(r.text))
+		except Exception as exc:
+			error('Error in response: {0}'.format(exc))
 	
 	update_sync_status(retval)
 
