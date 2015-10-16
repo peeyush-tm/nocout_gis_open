@@ -1,0 +1,106 @@
+#!/usr/bin/python
+# ######################################################################
+# Function: check_rad5k_ul_es_invent
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+def live_query_for_rad5k_ss_ul_es(serial_number):
+        """
+                live_query_for_rad5k_ss_ul_es function calculates the SS Uplink ES by extracting data
+                from memory using SS Serial number as key from memcache; if data is not present in memcache
+                it retrieves the data from Livestatus by making a socket connection and reading plugin output
+                of 'rad5k_topology_discover' through the details of its corresponded Base Station whose
+                details are fetched from memcache or MySQL DB(if not present in memcache)
+
+                Args:
+                        serial_number(str) Sub Station Serial Number
+
+                Returns:
+                        ul_es(string): SS Uplink ES
+
+                Raises:
+                        Exception
+        """
+        exit_value = 3
+        ul_es = None
+        bs_params = None
+        if memc:
+                key = serial_number + "_param"
+                value_list = memc.get(key)
+                if value_list:
+                        try:
+                                ul_es = value_list[9]
+                        except:
+                                ul_es = None
+        return ul_es
+
+def check_rad5k_ul_es_invent(item, params, info):
+	"""
+            check_rad5k_ul_es_invent function calculates the Uplink ES
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter results
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                                    3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - ul_es=1
+
+                    Raises:
+                            ValueError ,Exception
+
+
+	"""
+        try:
+                warn , crit = params
+        except ValueError :
+                war = 1
+                crit = 5
+
+	state = 3
+	infotext = "unknown_value"
+	ul_es= None
+	try:
+		if info :
+	        	ss_serial_number = info[0][0]
+        		if ss_serial_number:
+                		ul_es =live_query_for_rad5k_ss_ul_es(ss_serial_number)
+                		if ul_es is not None :
+                        		if int(ul_es) >= warn and int(ul_es) < crit:
+                                		state = 1
+	                        	elif  int(ul_es) >= crit:
+        	                        	state = 2
+                	        	elif  int(ul_es) == 0:
+                        	        	state = 0
+
+                        		infotext = "ul_es=%s" % ul_es
+	except ValueError:
+        	infotext = "type_mismatch_value"
+	except Exception,e:
+		#print e
+        	infotext = "unknown_value"
+
+	return (state, infotext,[("ul_es",ul_es,warn,crit)])
+
+check_info["rad5k_ul_es_invent"] = {
+    'check_function': check_rad5k_ul_es_invent,
+    'service_description': 'rad5k_ul_es_invent',
+    'has_perfdata': True,
+}
+
+#########################################################################
+#       SNMP OID for the Uplink ES
+#########################################################################
+snmp_info["rad5k_ul_es_invent"] = ( ".1.3.6.1.4.1.4458.1000.1.1", ["29.0"] )
+
+

@@ -1,0 +1,127 @@
+#!/usr/bin/python
+
+import sys
+from telnetlib import Telnet
+import socket
+import json
+import os
+import binascii
+import mysql.connector
+"""
+operating Frequency of ss device  Poller script.
+
+This is part of device application. 
+Poller script determines the operating ptx of device. 
+poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.1.2.0 from snmp agent of device at specific interval.
+Device on which Frequency operating is sent to device application 
+
+"""
+# ######################################################################
+# Function: check_wimax_ss_frequency
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+
+
+def extract_bsinfo_from_wimax_topology(ss_host_mac):
+	from mysql_connection import db
+	query = """
+	select device_name,ip_address,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+	#db = mysql_conn()
+	cur = db.cursor()
+	cur.execute(query)
+	data = cur.fetchall()
+	cur.close()
+	db.close()
+	return data
+
+
+
+
+def check_wimax_ss_frequency(item, _no_params, info):
+    """
+            check_wimax_ss_frequency function calcdlates the operating ptx
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter resdlts
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - 5835
+
+                    Raises:
+                            ValueError ,Exception
+"""
+    state = 3
+    infotext = "unknown_value"
+    ss_frequency =None
+    bs_ip = None
+    pmp_port = None
+    try:
+
+	mac_info = sum(info,[])
+        mac_list=map(lambda x: convert(x),mac_info)
+        if mac_list[1] != '00:00:00:00:00:00':
+                ss_mac= mac_list[1]
+                state = 0
+        else:
+                index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
+                index =index[0]
+                ss_mac = mac_list[index]
+	if ss_mac:
+		try:
+			if memc:
+				value_list = memc.get(ss_mac)
+        			if value_list:
+                        		bs_ip = value_list[12]
+					pmp_port = value_list[11]
+					if bs_ip and pmp_port:
+						if int(pmp_port)  == 1:
+							key = bs_ip + "_pmp1"
+						elif int(pmp_port) == 2:
+							key = bs_ip + "_pmp2"
+			 			ss_frequency = memc.get(key)
+					if not ss_frequency:
+						key1 = g_hostname + "_freq"
+						ss_frequency = memc.get(key1) 
+		except:
+			pass
+				
+		if ss_frequency:
+			if memc:
+				try:
+					key = g_hostname + "_freq"
+					memc.set(key ,ss_frequency,86520)
+				except:
+					pass
+			state = 0
+        		infotext = "%s" % ss_frequency
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext,[("frequency",ss_frequency)])
+
+
+check_info["wimax_ss_frequency"] = {
+    'check_function': check_wimax_ss_frequency,
+    'service_description': 'wimax_ss_frequency',
+    'has_perfdata': True,
+}
+
+#########################################################################
+#	SNMP OID for the operating ptx
+#########################################################################
+snmp_info["wimax_ss_frequency"] = ( ".1.3.6.1.2.1.10.184.1.3.1.1.1", ["17.1"] )

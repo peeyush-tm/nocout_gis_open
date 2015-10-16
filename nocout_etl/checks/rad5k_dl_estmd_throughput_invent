@@ -1,0 +1,93 @@
+#!/usr/bin/python
+# ######################################################################
+# Function: check_rad5k_dl_estmd_throughput_invent
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+def live_query_for_rad5k_ss_dl_estimated_throughput(serial_number):
+        """
+            live_query_for_rad5k_ss_dl_estimated_throughput function calculates the SS DownLink Estimated
+	    Throughput by extracting data from memory using SS Serial number as key from memcache;
+	    if data is not present in memcache it retrieves the data from Livestatus by making a 
+   	    socket connection and reading plugin output of 'rad5k_topology_discover' through the details 
+            of its corresponded Base Station whose details are fetched from memcache or MySQL DB(if not present in memcache)
+
+            Args:
+                    ss_host_serial_number(str) Sub Station Serial Number
+
+            Returns:
+
+                    dl_estimated_throughput(string): SS DownLink Estimated Throughput
+
+            Raises:
+                    Exception
+
+        """
+
+        exit_value = 3
+        dl_estimated_throughput = None
+        bs_params = None
+        if memc:
+                key = serial_number + "_param"
+                value_list = memc.get(key)
+                if value_list:
+                        try:
+                                dl_estimated_throughput = value_list[6]
+                        except:
+                                dl_estimated_throughput = None
+
+        return dl_estimated_throughput
+
+def check_rad5k_dl_estmd_throughput_invent(item, _no_params, info):
+	"""
+           check_rad5k_dl_estmd_throughput_invent function calculates the SS DownLink Estimated Throughput
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter results
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                                    3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - dl_estimated_throughput=1
+
+                    Raises:
+                            ValueError ,Exception
+	"""
+	state = 3
+	infotext = "unknown_value"
+	dl_estimated_throughput= None
+	try:
+		if info :
+	        	ss_serial_number = info[0][0]
+        		if ss_serial_number:
+                		dl_estimated_throughput =live_query_for_rad5k_ss_dl_estimated_throughput(ss_serial_number)
+                		if dl_estimated_throughput is not None:
+                        		infotext = "dl_estimated_throughput=%s" % dl_estimated_throughput
+                     		   	state = 0
+	except ValueError:
+        	infotext = "type_mismatch_value"
+	except:
+        	infotext = "unknown_value"
+
+	return (state, infotext,[("dl_estimated_throughput",dl_estimated_throughput)])
+
+check_info["rad5k_dl_estmd_throughput_invent"] = {
+    'check_function': check_rad5k_dl_estmd_throughput_invent,
+    'service_description': 'rad5k_dl_estmd_throughput_invent',
+    'has_perfdata': True,
+}
+
+#########################################################################
+#       SNMP OID for the Downlink Estimated throughput
+#########################################################################
+snmp_info["rad5k_dl_estmd_throughput_invent"] = (  ".1.3.6.1.4.1.4458.1000.1.1", ["29.0"] )
