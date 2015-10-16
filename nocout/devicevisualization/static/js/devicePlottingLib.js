@@ -1550,14 +1550,14 @@ function devicePlottingClass_gmap() {
 				isBsDeviceInBound = "";
 			if(window.location.pathname.indexOf("wmap")> -1) {
 				isBsDeviceInBound = whiteMapClass.checkIfPointLiesInside({
-					lon: current_device_set.data.lon,
-					lat: current_device_set.data.lat
+					lon: current_device_set.lon,
+					lat: current_device_set.lat
 				});
 			} else {
 				isBsDeviceInBound = mapInstance.getBounds().contains(
 					new google.maps.LatLng(
-						current_device_set.data.lat,
-						current_device_set.data.lon
+						current_device_set.lat,
+						current_device_set.lon
 					)
 				);
 			}
@@ -1654,7 +1654,7 @@ function devicePlottingClass_gmap() {
 		for(var i=bs_ss_devices.length;i--;) {
 
 			// BS marker url
-			var fetched_bs_markerurl = bs_ss_devices[i].data.markerUrl,
+			var fetched_bs_markerurl = bs_ss_devices[i]['icon_url'],
 				bs_marker_url = fetched_bs_markerurl ? fetched_bs_markerurl : "static/img/icons/bs.png"; 
 
 			// BS marker icon obj
@@ -1663,36 +1663,41 @@ function devicePlottingClass_gmap() {
 				"base_station"
 			);
 
-			var fetched_status = bs_ss_devices[i].data.maintenance_status,
-				bs_maintenance_status = fetched_status ? $.trim(fetched_status) : "No";
+			var fetched_status = bs_ss_devices[i]['maintenance_status'],
+				bs_maintenance_status = fetched_status ? $.trim(fetched_status) : "No",
+				bs_lat = bs_ss_devices[i].lat,
+				bs_lon = bs_ss_devices[i].lon;
 
 			/*Create BS Marker Object*/
 			var bs_marker_object = {
-				position  	       : 	new google.maps.LatLng(bs_ss_devices[i].data.lat,bs_ss_devices[i].data.lon),
-				ptLat 		       : 	bs_ss_devices[i].data.lat,
-				ptLon 		       : 	bs_ss_devices[i].data.lon,
+				position  	       : 	new google.maps.LatLng(bs_ss_devices[i].lat,bs_ss_devices[i].lon),
+				ptLat 		       : 	bs_lat,
+				ptLon 		       : 	bs_lon,
 				icon 	  	       : 	bs_marker_icon_obj,
-				bh_id 			   : 	bs_ss_devices[i].data.bh_id,
-				bh_device_id 	   : 	bs_ss_devices[i].data.bh_device_id,
-				bh_device_type 	   : 	bs_ss_devices[i].data.bh_device_type,
-				bh_device_tech 	   : 	bs_ss_devices[i].data.bh_device_tech,
+				bh_id 			   : 	bs_ss_devices[i].bh_id,
+				bh_device_id 	   : 	bs_ss_devices[i].bh_device_id,
+				bh_device_type 	   : 	bs_ss_devices[i].bh_device_type,
+				bh_device_tech 	   : 	bs_ss_devices[i].bh_device_tech,
 				pl 				   : 	"",
 				oldIcon 	       : 	bs_marker_icon_obj,
 				clusterIcon 	   : 	bs_marker_icon_obj,
 				pointType	       : 	stationType,
 				item_index		   : 	0,
 				maintenance_status : 	bs_maintenance_status,
-				device_name 	   : 	bs_ss_devices[i].data.device_name,
-				bsInfo 			   : 	bs_ss_devices[i].data.param.base_station,
-				bhInfo 			   : 	bs_ss_devices[i].data.param.backhual,
+				device_name 	   : 	bs_ss_devices[i].device_name,
+				bsInfo 			   : 	bs_ss_devices[i].info ? bs_ss_devices[i].info : [],
+				bhInfo 			   : 	bs_ss_devices[i].bh_info ? bs_ss_devices[i].bh_info : [],
 				bhInfo_polled 	   :    [],
 				bhSeverity 		   :    "",
 				bs_name 		   : 	bs_ss_devices[i].name,
 				alias 		   	   :    bs_ss_devices[i].alias,
 				bs_alias 		   :    bs_ss_devices[i].alias,
 				name 		 	   : 	bs_ss_devices[i].name,
-				filter_data 	   : 	{"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId},
-				antenna_height     : 	bs_ss_devices[i].data.antenna_height,
+				filter_data 	   : 	{
+					"bs_name" : bs_ss_devices[i].name,
+					"bs_id" : bs_ss_devices[i].bs_id
+				},
+				// antenna_height     : 	bs_ss_devices[i].antenna_height,
 				zIndex 			   : 	250,
 				optimized 		   : 	false,
 				markerType 		   : 	'BS',
@@ -1718,10 +1723,8 @@ function devicePlottingClass_gmap() {
 			masterClusterInstance.addMarker(bs_marker);
 
 			/*Sectors Array*/
-			var sector_array = bs_ss_devices[i].data.param.sector ? bs_ss_devices[i].data.param.sector : [],
-				lat = bs_ss_devices[i].data.lat,
-				lon = bs_ss_devices[i].data.lon,
-				sector_info_list = bs_ss_devices[i].data.param.sectors_info_list,
+			var sector_array = bs_ss_devices[i].sectors ? bs_ss_devices[i].sectors : [],
+				sector_info_list = '',//bs_ss_devices[i].data.param.sectors_info_list,
 				sector_infoWindow_content = sector_info_list ? sector_info_list : [],
 				deviceIDArray= [];
 
@@ -1754,24 +1757,19 @@ function devicePlottingClass_gmap() {
 					},
 					sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
 					orientation = $.trim(sector_array[j].polarization),
-					sector_child = sector_array[j].sub_station,
+					sector_child = sector_array[j].sub_stations,
 					sectorRadius = sector_array[j].radius ? +(sector_array[j].radius) : 0,
-					rad = sectorRadius && (sectorRadius > 0) ? sectorRadius : 0.5,
+					rad = sectorRadius && sectorRadius > 0 ? sectorRadius : 0.5,
 					startLon = "",
 					startLat = "",
-					sect_height = gisPerformanceClass.getKeyValue(
-						sector_infoWindow_content,
-						"antenna_height",
-						true,
-						sector_item_index
-					);
+					sect_height = sector_array[j].antenna_height;
 
 				var startEndObj = {};
 
 				// if(sector_tech != "ptp" && sector_tech != "p2p") {
 				if(ptp_tech_list.indexOf(sector_tech)  == -1) {
 					/*Call createSectorData function to get the points array to plot the sector on google maps.*/
-					gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
+					gmap_self.createSectorData(bs_lat,bs_lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
 
 						var halfPt = Math.floor(pointsArray.length / (+2)),
 							polyStartLat = "",
@@ -1793,8 +1791,8 @@ function devicePlottingClass_gmap() {
 
 						/*Plot sector on map with the retrived points*/
 						gmap_self.plotSector_gmap(
-							lat,
-							lon,
+							bs_lat,
+							bs_lon,
 							pointsArray,
 							sectorInfo,
 							sector_color,
@@ -1815,16 +1813,16 @@ function devicePlottingClass_gmap() {
 					});
 				} else {
 
-					startEndObj["startLat"] = bs_ss_devices[i].data.lat;
-	    			startEndObj["startLon"] = bs_ss_devices[i].data.lon;
+					startEndObj["startLat"] = bs_lat;
+	    			startEndObj["startLon"] = bs_lon;
 	    			
-	    			startEndObj["sectorLat"] = bs_ss_devices[i].data.lat;
-					startEndObj["sectorLon"] = bs_ss_devices[i].data.lon;
+	    			startEndObj["sectorLat"] = bs_lat;
+					startEndObj["sectorLon"] = bs_lon;
 				}
 
 				if(ptp_tech_list.indexOf(sector_tech) > -1) {
 
-					if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
+					// if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
 						
 						var sector_icon_obj = gmap_self.getMarkerImageBySize(
 							base_url+"/"+sector_array[j].markerUrl,
@@ -1832,9 +1830,9 @@ function devicePlottingClass_gmap() {
 						);
 
 						var sectors_Markers_Obj = {
-							position 		 	: new google.maps.LatLng(lat, lon),
-							ptLat 			 	: lat,
-							ptLon 			 	: lon,
+							position 		 	: new google.maps.LatLng(bs_lat, bs_lon),
+							ptLat 			 	: bs_lat,
+							ptLon 			 	: bs_lon,
 							alias 		   	   	: sector_array[j].sector_configured_on,
 							icon 			 	: hiddenIconImageObj,
 							oldIcon 		 	: sector_icon_obj,
@@ -1845,16 +1843,21 @@ function devicePlottingClass_gmap() {
 							vendor 				: sector_array[j].vendor,
 							deviceExtraInfo 	: sector_infoWindow_content,
 							item_index			: sector_item_index,
-							deviceInfo 			: sector_array[j].device_info,
+							deviceInfo 			: sector_array[j].device_info ? sector_array[j].device_info : [],
 							poll_info 			: [],
 							pl 					: "",
 							rta					: "",
 							perf_url 			: sector_perf_url,
 							inventory_url 		: sector_inventory_url,
-							sectorName  		: sector_array[j].sector_configured_on,
-							device_name  		: sector_array[j].sector_configured_on_device,
-							name  				: sector_array[j].sector_configured_on_device,
-							filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
+							// sectorName  		: sector_array[j].sector_configured_on,
+							// device_name  		: sector_array[j].sector_configured_on_device,
+							// name  				: sector_array[j].sector_configured_on_device,
+							filter_data 	    : {
+								"bs_name" : bs_ss_devices[i].name,
+								// "sector_name" : sector_array[j].sector_configured_on,
+								"bs_id" : bs_ss_devices[i].bs_id,
+								// "sector_id" : sector_array[j].sector_id
+							},
 							sector_lat  		: startEndObj["startLat"],
 							sector_lon  		: startEndObj["startLon"],
 							cktId 				: "",
@@ -1864,7 +1867,7 @@ function devicePlottingClass_gmap() {
 	                        isActive 			: 1,
 							windowTitle 	    : "Base Station Device"
 	                    }
-	                }
+	                // }
 
 					/*Create Sector Marker*/
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
@@ -1919,7 +1922,7 @@ function devicePlottingClass_gmap() {
 
 					/*End of Create Sector Marker*/
 					
-					deviceIDArray.push(sector_array[j]['device_info'][1]['value']);
+					// deviceIDArray.push(sector_array[j]['device_info'][1]['value']);
 				}
 
 				/*Plot Sub-Station*/
@@ -2139,15 +2142,15 @@ function devicePlottingClass_gmap() {
 		    }
 
 	    	//Add markers to markersMasterObj with LatLong at key so it can be fetched later.
-			markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
+			markersMasterObj['BS'][String(bs_ss_devices[i].lat)+bs_ss_devices[i].lon]= bs_marker;
 			markersMasterObj['BSNamae'][String(bs_ss_devices[i].name)]= bs_marker;
 
 	    	/*Add parent markers to the OverlappingMarkerSpiderfier*/
 		    oms.addMarker(bs_marker);
 
 		    /*Push All BS Lat & Lon*/
-			bsLatArray.push(bs_ss_devices[i].data.lat);
-			bsLonArray.push(bs_ss_devices[i].data.lon);			
+			bsLatArray.push(bs_ss_devices[i].lat);
+			bsLonArray.push(bs_ss_devices[i].lon);			
 		}
 
 		if(isCallCompleted == 1) {

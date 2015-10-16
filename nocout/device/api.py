@@ -140,16 +140,24 @@ def prepare_raw_result_v2(resultset=None):
         sector_info_str = bs.get('SECT_STR', '')
 
         temp_dict = {
-            'tech_str': '',
-            'vendor_str': '',
-            'freq_str': '',
-            'polarization_str': '',
             'bs_id': bs.get('BSID'),
+            'name': bs.get('BSNAME'),
+            'alias': bs.get('BSALIAS'),
             'city': bs.get('BSCITY'),
             'state': bs.get('BSSTATE'),
             'total_ss': bs.get('TOTALSS'),
             'lat': bs.get('BSLAT'),
             'lon': bs.get('BSLON'),
+            'icon_url': 'static/img/icons/bs.png',
+            'bh_id': bs.get('BHID'),
+            'bh_device_id': bs.get('BHDEVICEID'),
+            'bh_device_type': bs.get('BHDEVICETYPE'),
+            'bh_device_tech': bs.get('BHDEVICETECH'),
+            'maintenance_status': bs.get('BSMAINTENANCESTATUS'),
+            'tech_str': '',
+            'vendor_str': '',
+            'freq_str': '',
+            'polarization_str': '',
             'sectors': []
         }
 
@@ -200,9 +208,25 @@ def prepare_raw_result_v2(resultset=None):
                     except Exception, e:
                         polarization = 'NA'
 
+                    try:
+                        azimuth_angle = splitted_str[7]
+                    except Exception, e:
+                        azimuth_angle = 'NA'
+
+                    try:
+                        beamwidth = splitted_str[8]
+                    except Exception, e:
+                        beamwidth = 'NA'
+
+                    try:
+                        antenna_height = splitted_str[9]
+                    except Exception, e:
+                        antenna_height = 'NA'
+
                     gmap_icon = ''
                     freq_val = ''
                     color = ''
+                    radius = ''
                     # fetch marker icon from device_type dict
                     if device_type in device_type_dict:
                         device_type_obj = device_type_dict.get(device_type)
@@ -213,10 +237,12 @@ def prepare_raw_result_v2(resultset=None):
                         freq_obj = freq_dict.get(freq_id)
                         color = freq_obj.get('color')
                         freq_val = freq_obj.get('value')
+                        radius = freq_obj.get('frequency_radius')
 
-                    temp_dict['tech_str'] += '|' + technology
-                    temp_dict['vendor_str'] += '|' + vendor
-                    temp_dict['freq_str'] += '|' + freq_val
+                    temp_dict['tech_str'] += technology + '|'
+                    temp_dict['vendor_str'] += vendor + '|'
+                    temp_dict['freq_str'] += freq_val + '|'
+                    temp_dict['polarization_str'] += polarization + '|'
 
                     sector = {
                         'id': sector_pk,
@@ -224,10 +250,15 @@ def prepare_raw_result_v2(resultset=None):
                         'technology': technology,
                         'vendor': vendor,
                         'device_type': device_type,
-                        'icon': gmap_icon,
+                        'azimuth_angle': azimuth_angle,
+                        'beamwidth': beamwidth,
+                        'markerUrl': gmap_icon,
                         'color': color,
+                        'radius': radius,
                         'freq': freq_val,
-                        'polarization': polarization
+                        'polarization': polarization,
+                        'antenna_height': antenna_height,
+                        'sub_stations': []
                     }
                     sector_list.append(sector)
                 except Exception, e:

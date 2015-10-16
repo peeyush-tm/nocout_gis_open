@@ -223,122 +223,122 @@ function GisPerformance() {
      */
     this.makePeriodicAjaxCall = function(bs_id,counter) {
 
-        var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal",
-            bs_data_object = all_devices_loki_db.where(function(bs) {
-                return bs.originalId == bs_id
-            })[0];
+        // var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal",
+        //     bs_data_object = all_devices_loki_db.where(function(bs) {
+        //         return bs.originalId == bs_id
+        //     })[0];
 
-        // Show Loader on Current BS
-        if(bs_data_object && bs_data_object.name) {
-            var base_station_name = bs_data_object.name;
-                bs_marker_lat = bs_data_object.data.lat,
-                bs_marker_lon = bs_data_object.data.lon,
-                loader_label = "",
-                allMarkersObject = "";
+        // // Show Loader on Current BS
+        // if(bs_data_object && bs_data_object.name) {
+        //     var base_station_name = bs_data_object.name;
+        //         bs_marker_lat = bs_data_object.data.lat,
+        //         bs_marker_lon = bs_data_object.data.lon,
+        //         loader_label = "",
+        //         allMarkersObject = "";
             
-            if(window.location.pathname.indexOf("wmap") > -1) {
-                allMarkersObject = allMarkersObject_wmap;    
-            } else if(window.location.pathname.indexOf("gearth") > -1) {
-                // pass
-            } else {
-                allMarkersObject = allMarkersObject_gmap;
-            }
+        //     if(window.location.pathname.indexOf("wmap") > -1) {
+        //         allMarkersObject = allMarkersObject_wmap;    
+        //     } else if(window.location.pathname.indexOf("gearth") > -1) {
+        //         // pass
+        //     } else {
+        //         allMarkersObject = allMarkersObject_gmap;
+        //     }
 
-            if(allMarkersObject) {
-                base_station_marker = allMarkersObject['base_station']['bs_'+base_station_name];
-                loader_icon_dict[base_station_name] = true;
-                if(base_station_marker) {
-                    perf_self.animateBaseStationIcon(base_station_marker);
-                }
-            }
-        }
+        //     if(allMarkersObject) {
+        //         base_station_marker = allMarkersObject['base_station']['bs_'+base_station_name];
+        //         loader_icon_dict[base_station_name] = true;
+        //         if(base_station_marker) {
+        //             perf_self.animateBaseStationIcon(base_station_marker);
+        //         }
+        //     }
+        // }
 
 
-        //Ajax Request
-        gis_perf_call_instance = $.ajax({
-            url: base_url + '/network_maps/static_info/?base_stations=['+bs_id+']&ts='+selected_thematics+'&freeze_time=' + freezedAt,
-            // url: base_url + '/static/new_perf_ptp.json',
-            type: 'GET',
-            dataType: 'json',
-            //In success
-            success: function (response) {
+        // //Ajax Request
+        // gis_perf_call_instance = $.ajax({
+        //     url: base_url + '/network_maps/static_info/?base_stations=['+bs_id+']&ts='+selected_thematics+'&freeze_time=' + freezedAt,
+        //     // url: base_url + '/static/new_perf_ptp.json',
+        //     type: 'GET',
+        //     dataType: 'json',
+        //     //In success
+        //     success: function (response) {
 
-                var result = "";
-                // Type check of response
-                if(typeof response == 'string') {
-                    result = JSON.parse(response);
-                } else {
-                    result = response;
-                }
+        //         var result = "";
+        //         // Type check of response
+        //         if(typeof response == 'string') {
+        //             result = JSON.parse(response);
+        //         } else {
+        //             result = response;
+        //         }
 
-                var data = result.constructor == Array ? result[0] : result;
-                //If data is there
-                if(data) {
-                    //Store data in gisData
-                    if(data.id) {
-                        if(window.location.pathname.indexOf("wmap") > -1) {
-                            //Update Map with the data
-                            perf_self.updateMap(data,function(response) {
-                                calls_completed++;
-                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
-                                    // Reset Calls Completed Counter
-                                    calls_completed = 0;
+        //         var data = result.constructor == Array ? result[0] : result;
+        //         //If data is there
+        //         if(data) {
+        //             //Store data in gisData
+        //             if(data.id) {
+        //                 if(window.location.pathname.indexOf("wmap") > -1) {
+        //                     //Update Map with the data
+        //                     perf_self.updateMap(data,function(response) {
+        //                         calls_completed++;
+        //                         if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
+        //                             // Reset Calls Completed Counter
+        //                             calls_completed = 0;
 
-                                    //Send Request for the next counter
-                                    perf_self.sendRequest(counter);
-                                }
-                            });
-                        } else if(window.location.pathname.indexOf("gearth") > -1) {
-                            //Update Map with the data
-                            perf_self.updateMap(data,function(response) {
-                                calls_completed++;
-                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
-                                    // Reset Calls Completed Counter
-                                    calls_completed = 0;
+        //                             //Send Request for the next counter
+        //                             perf_self.sendRequest(counter);
+        //                         }
+        //                     });
+        //                 } else if(window.location.pathname.indexOf("gearth") > -1) {
+        //                     //Update Map with the data
+        //                     perf_self.updateMap(data,function(response) {
+        //                         calls_completed++;
+        //                         if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
+        //                             // Reset Calls Completed Counter
+        //                             calls_completed = 0;
 
-                                    //Send Request for the next counter
-                                    perf_self.sendRequest(counter);
-                                }
-                            });
-                        } else {
-                            //Update Map with the data
-                            perf_self.updateMap(data,function(response) {
-                                calls_completed++;
-                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
-                                    // Reset Calls Completed Counter
-                                    calls_completed = 0;
+        //                             //Send Request for the next counter
+        //                             perf_self.sendRequest(counter);
+        //                         }
+        //                     });
+        //                 } else {
+        //                     //Update Map with the data
+        //                     perf_self.updateMap(data,function(response) {
+        //                         calls_completed++;
+        //                         if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
+        //                             // Reset Calls Completed Counter
+        //                             calls_completed = 0;
 
-                                    //Send Request for the next counter
-                                    perf_self.sendRequest(counter);
-                                }
-                            });
-                        }
-                    } else {
-                        calls_completed++;
+        //                             //Send Request for the next counter
+        //                             perf_self.sendRequest(counter);
+        //                         }
+        //                     });
+        //                 }
+        //             } else {
+        //                 calls_completed++;
                         
-                        if(calls_completed >= periodic_poll_process_count) {
-                            // Reset Calls Completed Counter
-                            calls_completed = 0;
+        //                 if(calls_completed >= periodic_poll_process_count) {
+        //                     // Reset Calls Completed Counter
+        //                     calls_completed = 0;
 
-                            //Send Request for the next counter
-                            perf_self.sendRequest(counter);
-                        }
-                    }
-                }
+        //                     //Send Request for the next counter
+        //                     perf_self.sendRequest(counter);
+        //                 }
+        //             }
+        //         }
 
-            },
-            //On Error, do nothing
-            error: function (err) {
-                //Send Request for the next counter
-                // perf_self.sendRequest(counter);
-            },
-            complete : function() {
-                if(loader_icon_dict[base_station_name]) {
-                    loader_icon_dict[base_station_name] = false;
-                    delete loader_icon_dict[base_station_name];
-                }
-            }
-        });
+        //     },
+        //     //On Error, do nothing
+        //     error: function (err) {
+        //         //Send Request for the next counter
+        //         // perf_self.sendRequest(counter);
+        //     },
+        //     complete : function() {
+        //         if(loader_icon_dict[base_station_name]) {
+        //             loader_icon_dict[base_station_name] = false;
+        //             delete loader_icon_dict[base_station_name];
+        //         }
+        //     }
+        // });
     };
 
     /*

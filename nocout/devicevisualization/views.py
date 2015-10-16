@@ -34,7 +34,7 @@ from performance.formulae import rta_null, display_time
 # Import service utils gateway class
 from service.utils.util import ServiceUtilsGateway
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway
+from nocout.utils.util import NocoutUtilsGateway, getBSInventoryInfo, getSSInventoryInfo, getSectorInventoryInfo
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
 # Import advance filtering mixin for BaseDatatableView
@@ -44,6 +44,29 @@ logger = logging.getLogger(__name__)
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
+
+# Global Variables for infowindow keys
+BS_INFOWINDOW_LIST = [
+    'name', 'base_station_alias', 'bs_site_name', 'bs_site_id',
+    'building_height', 'tower_height', 'bs_type', 'bs_gps_type',
+    'bs_address', 'bs_city', 'bs_state', 'lat_lon',
+    'bs_infra_provider', 'tag1', 'tag2'
+]
+
+BH_INFOWINDOW_LIST = [
+    'bh_capacity', 'bh_connectivity', 'bh_type', 'bh_circuit_id',
+    'bh_ttsl_circuit_id', 'bh_pe_hostname', 'pe_ip', 'bs_switch_ip',
+    'aggregation_switch', 'aggregation_switch_port', 'bs_converter_ip', 'pop',
+    'bh_device_type', 'bh_configured_on', 'bh_device_port'
+]
+
+SS_INFOWINDOW_LIST = [
+    'cktid', 'customer_alias', 'ss_ip', 'pe_ip',
+    'qos_bandwidth', 'antenna_height', 'polarisation',
+    'mount_type', 'antenna_type', 'cable_length', 'ethernet_extender',
+    'building_height', 'tower_height', 'ss_technology', 'lat_lon',
+    'customer_address', 'alias', 'dl_rssi_during_acceptance', 'date_of_acceptance'
+]
 
 
 def init_network_maps(request, device_name="default_device_name", page_type="gmap"):
@@ -3936,8 +3959,7 @@ class GISStaticInfo(View):
                     backhaul_data = self.get_backhaul_info(bh_device, complete_performance['network_perf_data'])
                     inventory['data']['param']['bh_polled_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
                     inventory['data']['param']['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
-                    inventory['data']['param']['bhSeverity'] = backhaul_data[
-                        'bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
+                    inventory['data']['param']['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
 
                 # ********************************** BACKHAUL PERF INFO (END) ************************************
 
@@ -5187,3 +5209,111 @@ def get_complete_performance(machine_dict):
     }
 
     return result
+
+
+class GetInfoWindowContent(View):
+    """
+
+    """
+
+    def get(self, request, *args, **kwargs):
+        """
+
+        """
+        result = {
+            'success': 0,
+            'message': 'Data not fetched',
+            'data': []
+        }
+
+        elem_type = request.GET.get('elem_type')
+        elem_id = request.GET.get('elem_id')
+        child_id = request.GET.get('child_id', 0)
+
+        if elem_type and elem_id:
+            info_list = list()
+            child_info_list = list()
+            if elem_type == 'base_station':
+                info_list = getBSInventoryInfo(base_station_id=elem_id)
+            elif elem_type == 'sub_station':
+                info_list = getSSInventoryInfo(sub_station_id=elem_id)
+            elif elem_type == 'sector':
+                info_list = getSectorInventoryInfo(sector_id=elem_id)
+            elif elem_type == 'circuit':
+                info_list = getBSInventoryInfo(base_station_id=elem_id)
+                child_info_list = getSSInventoryInfo(sub_station_id=child_id)
+            else:
+                result.update(message='Invalid element type.')
+
+            if len(info_list) > 0:
+                info_list = info_list[0]
+                if elem_type == 'base_station' or elem_type == 'circuit':
+                    bs_info = list()
+                    bh_info = list()
+
+                    for key in info_list:
+                        temp_dict = {
+                            'name': key,
+                            'title': key,
+                            'value': info_list.get(key, 'NA')
+                        }
+                        if key in BS_INFOWINDOW_LIST:
+                            bs_info.append(temp_dict)
+                        elif key in BH_INFOWINDOW_LIST:
+                            bh_info.append(temp_dict)
+                        else:
+                            continue
+
+                    result.update(
+                        data={
+                            'base_station': bs_info,
+                            'backhaul': bh_info
+                        }
+                    )
+
+                    if elem_type == 'circuit' and len(child_info_list) > 0:
+                        ss_info = list()
+                        child_info_list = child_info_list[0]
+                        for key in child_info_list:
+                            temp_dict = {
+                                'name': key,
+                                'title': key,
+                                'value': child_info_list.get(key, 'NA')
+                            }
+                            if key in SS_INFOWINDOW_LIST:
+                                ss_info.append(temp_dict)
+                            else:
+                                continue
+
+                        result.update(
+                            data={
+                                'base_station': bs_info,
+                                'backhaul': bh_info,
+                                'sub_station': ss_info
+                            }
+                        )
+                else:
+                    dataset = list()
+                    for key in info_list:
+                        temp_dict = {
+                            'name': key,
+                            'title': key,
+                            'value': info_list.get(key, 'NA')
+                        }
+
+                        dataset.append(temp_dict)
+
+
+                    result.update(
+                        data=dataset
+                    )
+
+                result.update(
+                    success=1,
+                    message='Data fetched successfully.'
+                )
+
+        else:
+            result.update(message='Invalid element type & id.')
+
+        return HttpResponse(json.dumps(result))
