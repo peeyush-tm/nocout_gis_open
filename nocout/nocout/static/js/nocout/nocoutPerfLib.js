@@ -21,7 +21,7 @@ var perf_that = "",
         {"id": "live", "title": "Live"}
     ],
     poll_now_tab = [
-        { "id" : "live_poll_now", "title" : "Live Polling", disabled_url : true }
+        { "id" : "live_poll_now", "title" : "On Demand Poll", disabled_url : true }
     ],
     tabs_with_historical = [
         {"id": "bihourly", "title": "Half-Hourly"},
@@ -439,6 +439,11 @@ function nocoutPerfLib() {
                                     data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
                                     <i class="fa fa-stop text-danger"> </i>\
                                 </button>\
+                                <div align="right" class="pull-right"> \
+                                    <button class="btn btn-default btn-sm play_pause_btns reset_live_polling" title="Clear all polled data"> \
+                                        <i class="fa fa-trash-o text-danger"></i> \
+                                    </button> \
+                                </div> \
                             </div>\
                             <div class="clearfix"></div></div>\
                             <div class="clearfix"></div><div class="divide-20"></div>';
@@ -1725,6 +1730,46 @@ $(".perfContainerBlock").delegate('.poll_pause_btn', 'click', function(e) {
 
 $(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
     nocout_stopPollNow();
+});
+
+$(".perfContainerBlock").delegate('.reset_live_polling', 'click', function(e) {
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        tab_id = active_tab_obj["active_dom_id"];
+
+    if (poll_now_data_dict[tab_id] && poll_now_data_dict[tab_id].length > 0) {
+        try {
+            if ($("#" + tab_id + "_chart").highcharts()) {
+                var chart = $("#" + tab_id + "_chart").highcharts(),
+                    chart_series = chart.series;
+
+                if (chart_series && chart_series.length > 0) {
+                    // Remove series from highchart
+                    while(chart_series.length > 0) {
+                        chart_series[0].remove(true);
+                    }
+                }
+                // Destroy highchart
+                $("#" + tab_id + "_chart").highcharts().destroy();
+            }
+
+            if ($("#" + tab_id + "_bottom_table").length) {
+                $("#" + tab_id + "_bottom_table").html("");
+            }
+
+            nocout_destroyDataTable('other_perf_table');
+        } catch(e) {
+            // console.log(e);
+        }
+
+        // Reset the global variable
+        poll_now_data_dict[tab_id] = [];
+        // Reset the min, max & avg legends DOM
+        if(!$('#' + tab_id + '_legends_block').hasClass('hide')) {
+            $('#' + tab_id + '_legends_block').addClass('hide');
+        }
+    } else {
+        bootbox.alert("You don't have any live polled data for this service/data source.");
+    }
 });
 
 $('input[name="service_view_type"]').change(function(e) {

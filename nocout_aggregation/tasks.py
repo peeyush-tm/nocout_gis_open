@@ -47,10 +47,21 @@ def quantify_perf_data(host_specific_data, **kw):
 		hr, min = 23, 0
 	timestamp = timestamp.replace(day=day, month=mon, hour=hr, minute=min)
 	check_time = host_specific_data[-1][13]
+
+	# extra condition added bcz inventory and interface tables
+	# does not contain min, max and avg in live tables
+	interface_daily_cond = (host_specific_data[0][1].endswith('_status') 
+			and time_frame == 'daily')
+	inventory_daily_cond = (host_specific_data[0][1].endswith('_invent') 
+			and time_frame == 'daily')
+	util_bihourly_cond = ('utilization' in kw.get('destination_perf_table')
+			and time_frame == 'half_hourly')
+
 	for doc in host_specific_data:
 		try:
 			# need to convert `str` into proper int, float values, where ever possible
 			doc = type_caste(doc)
+			#warning('***DOC***{0}'.format(doc))
 			aggr_data = ()
 			find_query = ()
 
@@ -60,9 +71,17 @@ def quantify_perf_data(host_specific_data, **kw):
 
 			if doc[8] in (None, ''):
 				continue
+
 			# Ex. ('host_name', 'radwin_rssi', 'rssi', -78, [-79], [-74], [-77.7])
-			aggr_data = (doc[0], doc[1], doc[2], doc[6], [doc[7]], 
-					[doc[8]], [doc[9]])
+			if (interface_daily_cond or inventory_daily_cond or 
+					util_bihourly_cond):
+				aggr_data = (doc[0], doc[1], doc[2], doc[6], [doc[6]], 
+						[doc[6]], [doc[6]])
+			else:
+				aggr_data = (doc[0], doc[1], doc[2], doc[6], [doc[7]], 
+						[doc[8]], [doc[9]])
+			#warning('aggr_data: {0}'.format(aggr_data))
+
 			find_query = (doc[0], doc[1], doc[2])
 
 			existing_doc, existing_doc_index = find_existing_entry(find_query,
@@ -90,6 +109,7 @@ def quantify_perf_data(host_specific_data, **kw):
 					doc[6], aggr_data[4], aggr_data[5], aggr_data[6],
 					doc[10], doc[11], timestamp, check_time, doc[14], doc[15]
 				)
+				#warning('+++updated aggr_data++{0}'.format(aggr_data))
 			except:
 				print 'Exception in aggr_data !!'
 				continue
@@ -120,6 +140,7 @@ def calc_values(docs, **kw):
 		]
 		calculated_values = []
 		for doc in docs:
+			#warning('%%%calculated doc%%%{0}'.format(doc))
 			final_tup = ()
 			current_value = doc[6]
 			min_list = doc[7]
@@ -149,6 +170,9 @@ def calc_values(docs, **kw):
 					occur[val] += 1
 				max_val = max(occur, key=occur.get)
 				avg_val = None
+
+				#warning('service: %s; min-list: %s; max-list: %s; avg-list: %s' % (
+					#service, min_list, max_list, avg_list))
 			else:
 				try:
 					min_val = min(min_list)
@@ -170,13 +194,14 @@ def calc_values(docs, **kw):
 			             current_value, min_value, max_value, avg_value,
 			             doc[10], doc[11], doc[12].strftime('%s'),
 			             doc[13], doc[14], doc[15])
+			#warning('###final calculated doc###{0}'.format(final_tup))
 			calculated_values.append(final_tup)
 
 	except Exception as exc:
 		warning('Problem in calc_values: %s' % exc)
 	# call mysql insert, instead of returning result  
 	mysql_export.s(kw.get('destination_perf_table'), calculated_values
-			).apply_async(countdown=randint(10, 60))
+			).apply_async(countdown=randint(10, 40))
 
 
 @app.task(name='type_caste-new')
