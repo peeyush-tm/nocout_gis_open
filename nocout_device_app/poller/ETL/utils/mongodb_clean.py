@@ -14,21 +14,22 @@ db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_
 
 def main(**configs):
 	set_name  = [nocout_site_name + "_network",nocout_site_name + "_service",nocout_site_name + "_kpi",nocout_site_name + "_interface"]
-	for i in range(len(set_name):
+	for i in range(len(set_name)):
 		end_time =datetime.today() + timedelta(days=-2)
 		start_time =datetime.today() + timedelta(days=-1)
 		end_time = end_time + timedelta(minutes=-(end_time.minute % 5))
 		start_time = start_time + timedelta(minutes=-(start_time.minute % 5))
 		end_time = end_time.replace(second=0,microsecond=0)
-		end_time =int(time.mktime(end_time.timetuple())
+		end_time =int(time.mktime(end_time.timetuple()))
 		start_time = start_time.replace(second=0,microsecond=0)
-		start_time =int(time.mktime(start_time.timetuple())
+		start_time =int(time.mktime(start_time.timetuple()))
 		#start_time =datetime.today() + datetime.timedelta(days=-2)
 		#start_epoch = int(time.mktime(start_time.timetuple()))
 		try:
 			redis_obj = db_ops_module.RedisInterface()
-			doc_len  = redis_obj.zremrangebyscore_remove(set_name[0],start_time,end_time)
-			print set_name[0],doc_len
+			print start_time,end_time
+			doc_len  = redis_obj.zremrangebyscore_remove(set_name[i],start_time,end_time)
+			print set_name[i],doc_len
 		except Exception as e:
 			print e
 			continue
