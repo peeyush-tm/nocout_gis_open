@@ -13,6 +13,7 @@ def uploaded_file_name(instance, filename):
 
     return '{}/{}/{}'.format(path, year_month_date, filename)
 
+
 class ProcessedReportDetails(models.Model):
     """
     class for putting in processed data excel
@@ -30,6 +31,7 @@ class ReportSettings(models.Model):
     """
     page_name = models.CharField('Name of The Page for report', max_length=128)
     report_name = models.CharField('Report Name', max_length=255)
+    report_title = models.CharField('Report Title', max_length=255, null=True, blank=True)
     report_frequency = models.CharField('Frequency of Report to be generated', max_length=128)
 
 
