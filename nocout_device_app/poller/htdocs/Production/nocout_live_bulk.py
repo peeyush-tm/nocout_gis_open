@@ -59,6 +59,7 @@ def poll_device():
 		service_list = literal_eval(html.var('service_list'))
 		bs_name_ss_mac_mapping = literal_eval(html.var('bs_name_ss_mac_mapping'))
 		ss_name_mac_mapping = literal_eval(html.var('ss_name_mac_mapping'))
+		is_first_call = literal_eval(html.var('is_first_call'))
 	except Exception as e:
 		logger.info('excep: ' + pformat(e))
 	logger.info('device_list : %s and service_list : %s' % (device_list, service_list))
@@ -98,7 +99,8 @@ def poll_device():
 					'service_list': service_list,
 					'data_source_list': data_source_list,
 					'bs_name_ss_mac_mapping': bs_name_ss_mac_mapping,
-					'ss_name_mac_mapping': ss_name_mac_mapping
+					'ss_name_mac_mapping': ss_name_mac_mapping,
+					'is_first_call': is_first_call
 					}
 				) for device in device_list
 			]
