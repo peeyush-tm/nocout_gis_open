@@ -423,7 +423,7 @@ th.vAlign_middle, .vAlign_middle b {
   top: 18px;
   right: 20px;
 }
-#reservationtime {
+#reservationtime, #bsoutage_daterange {
   cursor: text;
   background: #FFFFFF;
 }

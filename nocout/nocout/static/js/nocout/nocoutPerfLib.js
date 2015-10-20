@@ -165,9 +165,9 @@ function nocoutPerfLib() {
                 'This Month': [moment().startOf('month'), moment().endOf('month')],
                 'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
             },
-            buttonClasses: ['btn btn-default'],
-            applyClass: 'btn-small btn-primary',
-            cancelClass: 'btn-small',
+            buttonClasses: ['btn btn-sm'],
+            applyClass: 'btn-primary',
+            cancelClass: 'btn-default',
             format: "DD-MM-YYYY HH:mm:ss",
             separator: ' to ',
             startDate: oldStartDate,
