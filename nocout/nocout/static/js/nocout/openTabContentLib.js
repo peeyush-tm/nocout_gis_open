@@ -15,8 +15,13 @@ var tables_info = {},
     refresh_time = '';
 
 $(".nav-tabs li a").click(function (e, isFirst) {
+
+    var tab_txt = $.trim($(this).text());
+    if (window.location.href.indexOf('bs_outage_daily') > -1) {
+        tab_txt = 'BS Outage '+ tab_txt;
+    }
     // Update the breadcrumb as per clicked tab
-    $(".breadcrumb li.active").html($.trim($(this).text()));
+    $(".breadcrumb li.active").html(tab_txt);
 
     /*Initialize the timer in seconds.Right now its 1 year*/
     /*86400 is 24 hrs miliseconds*/
