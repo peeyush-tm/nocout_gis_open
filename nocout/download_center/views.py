@@ -588,7 +588,7 @@ class BSOutageCustomReportListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        return self.model.objects.filter(report_id__in=self.report_ids).values(*self.columns)
+        return self.model.objects.filter(processed_report__in=self.report_ids).values(*self.columns)
 
     def get_context_data(self, *args, **kwargs):
         """

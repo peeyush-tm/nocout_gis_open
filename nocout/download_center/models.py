@@ -989,8 +989,9 @@ class BSOutageMasterStructure(models.Model):
     """
 
     """
-    report_id = models.ForeignKey(BSOutageReports)
-    organization = models.CharField('Organization', max_length=128)
+    # report_id = models.ForeignKey(BSOutageReports)
+    # organization = models.CharField('Organization', max_length=128)
+    processed_report = models.ForeignKey(ProcessedReportDetails, null=True, blank=True)
     week_number = models.CharField('Week of the Year', max_length=128)
     ticket_number = models.CharField('Trouble Ticket Number', max_length=128)
     total_affected_bs = models.CharField('Number of BS Affected', max_length=128)
@@ -1061,75 +1062,65 @@ class BSOutageMasterMonthly(BSOutageMasterStructure):
     pass
 
 
-class BSOutageFaultStructure(models.Model):
-    """
-
-    """
-    report_id = models.ForeignKey(BSOutageReports)
-    organization = models.CharField('Organization', max_length=128)
-    city = models.CharField('City', max_length=256)
-    fault_type = models.CharField('Type of Fault', max_length=128)
-    outage_min_per_site = models.CharField('Outage Per Site(Min.)', max_length=128)
-    outage_count = models.CharField('Outage Count', max_length=128)
-    uploaded_at = models.DateTimeField('Uploaded At', auto_now_add=True, blank=True)
-
-    class Meta:
-        abstract = True
-
-class BSOutageFaultDaily(BSOutageFaultStructure):
-    """
-
-    """
-    pass
-
-
-class BSOutageFaultWeekly(BSOutageFaultStructure):
-    """
-
-    """
-    pass
-
-
-class BSOutageFaultMonthly(BSOutageFaultStructure):
-    """
-
-    """
-    pass
-
-
-class BSOutageMTTRProcessed(models.Model):
-    """
-    BSOutage Processed Report Details
-    """
-    report_id = models.ForeignKey(BSOutageReports)
-    organization = models.CharField('Organization', max_length=128)
-    city = models.CharField('City', max_length=256)
-    bs_name = models.CharField('BaseStation Name', max_length=256)
-    rfo = models.CharField('RFO', max_length=256, null=True, blank=True)
-    processed_on = models.CharField('Processed Date and Time', max_length=128)
-    time_frame = models.CharField('4-8 or Greater than 8 hrs', max_length=128)
-    processed_key = models.CharField('Key for Processing', max_length=128)
-    processed_value = models.CharField('Value of Processing', max_length=64)
-
-
-class BSOutageUptimeReport(models.Model):
-    """
-
-    """
-    report_id = models.ForeignKey(BSOutageReports)
-    organization = models.CharField('Organization', max_length=128)
-    city = models.CharField('City', max_length=256)
-    bs_name = models.CharField('BaseStation Name', max_length=256)
-    bs_uptime = models.CharField('BS Uptime', max_length=128)
-    total_uptime_min = models.CharField('Total Uptime(Min.)', max_length=128)
-    total_uptime_percent = models.CharField('Uptime in %', max_length=128)
-
-
-# class BSOutageEquipmentReplacedReport(models.Model):
+# class BSOutageFaultStructure(models.Model):
 #     """
 
 #     """
-#     report_id = models.ForeignKey(BSOutageReports)
-#     organization = models.CharField('Organization', max_length=150)
+#     # report_id = models.ForeignKey(BSOutageReports)
+#     organization = models.CharField('Organization', max_length=128)
 #     city = models.CharField('City', max_length=256)
-#     
+#     fault_type = models.CharField('Type of Fault', max_length=128)
+#     outage_min_per_site = models.CharField('Outage Per Site(Min.)', max_length=128)
+#     outage_count = models.CharField('Outage Count', max_length=128)
+#     uploaded_at = models.DateTimeField('Uploaded At', auto_now_add=True, blank=True)
+
+#     class Meta:
+#         abstract = True
+
+# class BSOutageFaultDaily(BSOutageFaultStructure):
+#     """
+
+#     """
+#     pass
+
+
+# class BSOutageFaultWeekly(BSOutageFaultStructure):
+#     """
+
+#     """
+#     pass
+
+
+# class BSOutageFaultMonthly(BSOutageFaultStructure):
+#     """
+
+#     """
+#     pass
+
+
+# class BSOutageMTTRProcessed(models.Model):
+#     """
+#     BSOutage Processed Report Details
+#     """
+#     # report_id = models.ForeignKey(BSOutageReports)
+#     organization = models.CharField('Organization', max_length=128)
+#     city = models.CharField('City', max_length=256)
+#     bs_name = models.CharField('BaseStation Name', max_length=256)
+#     rfo = models.CharField('RFO', max_length=256, null=True, blank=True)
+#     processed_on = models.CharField('Processed Date and Time', max_length=128)
+#     time_frame = models.CharField('4-8 or Greater than 8 hrs', max_length=128)
+#     processed_key = models.CharField('Key for Processing', max_length=128)
+#     processed_value = models.CharField('Value of Processing', max_length=64)
+
+
+# class BSOutageUptimeReport(models.Model):
+#     """
+
+#     """
+#     # report_id = models.ForeignKey(BSOutageReports)
+#     organization = models.CharField('Organization', max_length=128)
+#     city = models.CharField('City', max_length=256)
+#     bs_name = models.CharField('BaseStation Name', max_length=256)
+#     bs_uptime = models.CharField('BS Uptime', max_length=128)
+#     total_uptime_min = models.CharField('Total Uptime(Min.)', max_length=128)
+#     total_uptime_percent = models.CharField('Uptime in %', max_length=128)
