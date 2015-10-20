@@ -9,7 +9,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
 from download_center.forms import CityCharterSettingsForm
 from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon, \
-    CityCharterSettings
+    CityCharterSettings, BSOutageMasterDaily
 from django.db.models import Q
 from django.conf import settings
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -20,6 +20,7 @@ from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
 
 import os
 import logging
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -39,19 +40,39 @@ class DownloadCenter(ListView):
         # get page type
         page_type = self.kwargs['page_type']
 
-        # get report name
-        report_name = ""
+        custom_columns = []
+
+        # get report name & title
+        report_name = ''
+        report_title = ''
         try:
-            report_name = ReportSettings.objects.get(page_name=page_type).report_name
+            report_setting_obj = ReportSettings.objects.get(page_name=page_type)
+            report_name = report_setting_obj.report_name
+            report_title = report_setting_obj.report_title.strip()
+
+            if not report_title:
+                report_title = report_name
+
+            if 'Report' not in report_title:
+                report_title += ' Report'
         except Exception as e:
             pass
+
+        if 'bs_outage' in page_type:
+            self.template_name = 'download_center/bs_outage_list.html'
+            custom_columns = [
+                {'mData': 'report_name', 'sTitle': 'Name', 'sWidth': 'auto'},
+                {'mData': 'created_on', 'sTitle': 'Created On', 'sWidth': 'auto'},
+                {'mData': 'report_date', 'sTitle': 'Report Date', 'sWidth': 'auto'},
+                {'mData': 'path', 'sTitle': 'Report', 'sWidth': 'auto', 'bSortable': False}    
+            ]
 
         context = super(DownloadCenter, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'report_name', 'sTitle': 'Name', 'sWidth': 'auto'},
-            {'mData': 'path', 'sTitle': 'Alias', 'sWidth': 'auto'},
             {'mData': 'created_on', 'sTitle': 'Created On', 'sWidth': 'auto'},
             {'mData': 'report_date', 'sTitle': 'Report Date', 'sWidth': 'auto'},
+            {'mData': 'path', 'sTitle': 'Report', 'sWidth': 'auto', 'bSortable': False}
         ]
         if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
@@ -59,6 +80,7 @@ class DownloadCenter(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['page_type'] = page_type
         context['report_name'] = report_name
+        context['report_title'] = report_title
 
         return context
 
@@ -68,8 +90,8 @@ class DownloadCenterListing(BaseDatatableView, AdvanceFilteringMixin):
     A generic class based view for the reports data table rendering.
     """
     model = ProcessedReportDetails
-    columns = ['report_name', 'path', 'created_on', 'report_date']
-    order_columns = ['report_name', 'path', 'created_on', 'report_date']
+    columns = ['report_name', 'created_on', 'report_date', 'path']
+    order_columns = ['report_name', 'created_on', 'report_date']
 
     def filter_queryset(self, qs):
         """
@@ -236,6 +258,7 @@ class DownloadCenterReportDelete(SuperUserRequiredMixin, DeleteView):
 
         # if successfull, return to
         return HttpResponseRedirect(reverse_lazy('InventoryDownloadCenter', kwargs={'page_type': page_type}))
+
 
 class CityCharterReportHeaders(ListView):
     """
@@ -444,3 +467,178 @@ class CityCharterSettingsView(FormView):
                 pass
 
         return HttpResponseRedirect('/city_charter_settings/')
+
+
+class BSOutageCustomReportHeaders(ListView):
+    """
+
+    """
+    model = BSOutageMasterDaily
+    template_name = 'download_center/download_center_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(BSOutageCustomReportHeaders, self).get_context_data(**kwargs)
+        datatable_headers = [
+            { 'mData': 'week_number', 'sTitle': 'Week of the Year' },
+            { 'mData': 'ticket_number', 'sTitle': 'Trouble Ticket Number' },
+            { 'mData': 'total_affected_bs', 'sTitle': 'Number of BS Affected' },
+            { 'mData': 'city', 'sTitle': 'City' },
+            { 'mData': 'type_of_city', 'sTitle': 'Type of City' },
+            { 'mData': 'bs_name', 'sTitle': 'BaseStation Name' },
+            { 'mData': 'bs_type', 'sTitle': 'BaseStation Type' },
+            { 'mData': 'fault_type', 'sTitle': 'Type of Fault' },
+            { 'mData': 'bs_ip', 'sTitle': 'BS IP Address' },
+            { 'mData': 'bs_sw_version', 'sTitle': 'BS Software Version' },
+            { 'mData': 'total_affected_sector', 'sTitle': 'Number of Sectors Affected' },
+            { 'mData': 'switch_reachability', 'sTitle': 'Switch Reachability' },
+            { 'mData': 'outage_timestamp', 'sTitle': 'Outage Date And Time'},
+            { 'mData': 'restored_timestamp', 'sTitle': 'Restored Date And Time'},
+            { 'mData': 'alarm_restored_timestamp', 'sTitle': 'Alarm Restored Date And Time'},
+            { 'mData': 'outage_min_per_site', 'sTitle': 'Outage Per Site(Min.)' },
+            { 'mData': 'mttr_hrs', 'sTitle': 'MTTR Hrs' },
+            { 'mData': 'mttr', 'sTitle': 'MTTR' },
+            { 'mData': 'outage_total_min', 'sTitle': 'Outage Total(Min.)' },
+            { 'mData': 'alarm_outage_min', 'sTitle': 'Alarm Outage(Min.)' },
+            { 'mData': 'total_affected_enterprise_ss', 'sTitle': 'Number of Enterprise SS Affected' },
+            { 'mData': 'total_affected_retail_ss', 'sTitle': 'Number of Retail SS Affected' },
+            { 'mData': 'l1_engg_name', 'sTitle': 'Name of L1 Engineer' },
+            { 'mData': 'l2_engg_name', 'sTitle': 'Name of L2 Engineer' },
+            { 'mData': 'call_assigned_to', 'sTitle': 'Call Assigned To' },
+            { 'mData': 'last_modified_by', 'sTitle': 'Last Modified By' },
+            { 'mData': 'tac_tt_number', 'sTitle': 'Tac TT Number' },
+            { 'mData': 'cause_code', 'sTitle': 'Cause Code' },
+            { 'mData': 'sub_cause_code', 'sTitle': 'Sub Cause Code' },
+            { 'mData': 'unit_replaced', 'sTitle': 'Unit Replaced' },
+            { 'mData': 'equipment_replaced', 'sTitle': 'Equipment Replaced' },
+            { 'mData': 'old_sr_number', 'sTitle': 'Old Sno.' },
+            { 'mData': 'new_sr_number', 'sTitle': 'New Sno.' },
+            { 'mData': 'alarm_observer', 'sTitle': 'Alarm Observed' },
+            { 'mData': 'delay', 'sTitle': 'Delay' },
+            { 'mData': 'delay_reason', 'sTitle': 'Delay Reason' },
+            { 'mData': 'restore_action', 'sTitle': 'Action Taken to Restore the BS' },
+            { 'mData': 'fault_description', 'sTitle': 'Remark/Detail Fault Description'},
+            { 'mData': 'status', 'sTitle': 'Status' },
+            { 'mData': 'infra_provider', 'sTitle': 'INFRA Provider' },
+            { 'mData': 'site_id', 'sTitle': 'Site ID' },
+            { 'mData': 'spot_cases', 'sTitle': 'Spot Cases' },
+            { 'mData': 'fault_history', 'sTitle': 'Fault History'},
+            { 'mData': 'rfo', 'sTitle': 'RFO' }
+        ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+
+        return context
+
+
+class BSOutageCustomReportListing(BaseDatatableView):
+    """
+
+    """
+    model = BSOutageMasterDaily
+    columns = [
+        'week_number', 'ticket_number', 'total_affected_bs', 'city',
+        'type_of_city', 'bs_name', 'bs_type', 'fault_type',
+        'bs_ip', 'bs_sw_version', 'total_affected_sector', 'switch_reachability',
+        'outage_timestamp', 'restored_timestamp', 'alarm_restored_timestamp', 'outage_min_per_site',
+        'mttr_hrs', 'mttr', 'outage_total_min', 'alarm_outage_min',
+        'total_affected_enterprise_ss', 'total_affected_retail_ss', 'l1_engg_name', 'l2_engg_name',
+        'call_assigned_to', 'last_modified_by', 'tac_tt_number', 'cause_code',
+        'sub_cause_code', 'unit_replaced', 'equipment_replaced', 'old_sr_number',
+        'new_sr_number', 'alarm_observer', 'delay', 'delay_reason',
+        'restore_action', 'fault_description', 'status', 'infra_provider',
+        'site_id', 'spot_cases', 'fault_history', 'rfo'
+    ]
+
+    order_columns = columns
+    report_name_list = ['DailyRawBaseStationOutage']
+    report_ids = list()
+
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
+        # search keyword
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
+            query = []
+            exec_query = "qs = qs.filter("
+            for column in self.columns:
+                # avoid search on columns in exclude list
+                if column in exclude_columns:
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        return self.model.objects.filter(processed_report__in=self.report_ids).values(*self.columns)
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        start_time = request.GET.get('start_time')
+        end_time = request.GET.get('end_time')
+
+        if start_time and end_time:
+            start_time_obj = datetime.datetime.fromtimestamp(float(start_time))
+            end_time_obj = datetime.datetime.fromtimestamp(float(end_time))
+        else:
+            start_time_obj = datetime.datetime.now() - datetime.timedelta(1)
+            end_time_obj = datetime.datetime.now()
+
+        # Fetch report ids as per the selected date range
+        self.report_ids = list(ProcessedReportDetails.objects.filter(
+                        report_name__in=self.report_name_list,
+                        report_date__gte=start_time_obj,
+                        report_date__lte=end_time_obj
+                    ).values_list('id', flat=True))
+        
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+        return ret
