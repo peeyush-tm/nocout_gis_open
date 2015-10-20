@@ -20,6 +20,7 @@ from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
 
 import os
 import logging
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -479,7 +480,7 @@ class BSOutageCustomReportHeaders(ListView):
         """
         Preparing the Context Variable required in the template rendering.
         """
-        context = super(BSOutageCustomReport, self).get_context_data(**kwargs)
+        context = super(BSOutageCustomReportHeaders, self).get_context_data(**kwargs)
         datatable_headers = [
             { 'mData': 'week_number', 'sTitle': 'Week of the Year' },
             { 'mData': 'ticket_number', 'sTitle': 'Trouble Ticket Number' },

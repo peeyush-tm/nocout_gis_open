@@ -69,6 +69,9 @@
 			            </table>
 	                </div>
 	                <div class="tab-pane" id="custom_outage_block">
+	                	<div class="col-md-2">
+	                		<label style="vertical-align: sub;">Select Date Range: </label>
+	                	</div>
 	                	<div class="input-group col-md-4 row">
 	                        <span class="input-group-addon">
 	                            <i class="fa fa-calendar"></i>
@@ -188,7 +191,7 @@
 				        url_get_param = '';
 
 				    // prepare get params
-				    url_get_param += "app=performance";
+				    url_get_param += "app=download_center";
 				    url_get_param += "&rows="+data_class_name;
 				    url_get_param += "&rows_data={" + row_data_param + "}"
 				    url_get_param += "&headers="+header_class_name;
