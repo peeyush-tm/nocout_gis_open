@@ -51,6 +51,9 @@ class UserForm(forms.ModelForm):
 
         super(UserForm, self).__init__(*args, **kwargs)
 
+        if self.request.user.username != "gisadmin":
+            del self.fields['user_permissions']
+
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
 
@@ -98,8 +101,8 @@ class UserForm(forms.ModelForm):
         """
         model = UserProfile
         fields = (
-            'username', 'first_name', 'last_name', 'email', 'role', 'organization', 'parent', 'designation', 'company',
-            'address', 'phone_number', 'comment',
+            'username', 'first_name', 'last_name', 'email', 'role', 'organization', 'parent', 'user_permissions',
+            'designation', 'company', 'address', 'phone_number', 'comment'
         )
         widgets = {
             'role': MultipleToSingleSelectionWidget,
