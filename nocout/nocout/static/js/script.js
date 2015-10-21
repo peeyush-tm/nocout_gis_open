@@ -62,7 +62,7 @@ var App = function () {
 	/*	Sidebar
 	/*-----------------------------------------------------------------------------------*/
 	var handleSidebar = function () {
-	jQuery('.sidebar-menu .has-sub > a').click(function () {
+	    jQuery('.sidebar-menu .has-sub > a').click(function () {
             var last = jQuery('.has-sub.open', $('.sidebar-menu'));
             last.removeClass("open");
             jQuery('.arrow', last).removeClass("open");
@@ -94,12 +94,31 @@ var App = function () {
             }
         });
 		
-	// Handle sub-sub menus
-	jQuery('.sidebar-menu .has-sub .sub .has-sub-sub > a').click(function () {
+	    // Handle sub-sub menus
+	    jQuery('.sidebar-menu .has-sub .sub .has-sub-sub > a').click(function () {
             var last = jQuery('.has-sub-sub.open', $('.sidebar-menu'));
             last.removeClass("open");
             jQuery('.arrow', last).removeClass("open");
             jQuery('.sub', last).slideUp(200);
+                
+            var sub = jQuery(this).next();
+            if (sub.is(":visible")) {
+                jQuery('.arrow', jQuery(this)).removeClass("open");
+                jQuery(this).parent().removeClass("open");
+                sub.slideUp(200);
+            } else {
+                jQuery('.arrow', jQuery(this)).addClass("open");
+                jQuery(this).parent().addClass("open");
+                sub.slideDown(200);
+            }
+        });
+
+        // Handle sub-sub-sub menus
+        jQuery('.sidebar-menu .has-sub .sub .has-sub-sub .sub-sub .has-sub-sub-sub > a').click(function () {
+            var last = jQuery('.has-sub-sub-sub.open', $('.sidebar-menu'));
+            last.removeClass("open");
+            jQuery('.arrow', last).removeClass("open");
+            jQuery('.sub-sub', last).slideUp(200);
                 
             var sub = jQuery(this).next();
             if (sub.is(":visible")) {
