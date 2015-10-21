@@ -110,15 +110,19 @@
   border-top: 1px solid #FAFAFA;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset;
 }
-.sidebar-menu > ul > li.has-sub .sub .has-sub-sub .sub-sub {
+.sidebar-menu > ul > li.has-sub .sub .has-sub-sub .sub-sub,
+.sidebar-menu > ul > li.has-sub .sub .has-sub-sub .sub-sub .has-sub-sub-sub .sub-sub-sub {
   background: #FAFAFA;
   border-top: 1px solid #EEEEEE;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset;
 }
-.sidebar-menu > ul > li > ul.sub > li:before {
+.sidebar-menu > ul > li > ul.sub > li:before,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li:before {
   border-top: 1px dotted #CA1E25;
 }
-.sidebar-menu > ul > li > ul.sub:before {
+.sidebar-menu > ul > li > ul.sub:before,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub:before,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li > ul.sub-sub-sub:before {
   border-color: #CA1E25;
 }
 .sidebar-menu > ul > li > a {

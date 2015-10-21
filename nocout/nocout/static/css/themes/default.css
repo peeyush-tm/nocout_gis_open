@@ -350,12 +350,13 @@
   font-weight: 300;
   text-shadow: none;
 }
-.sidebar-menu > ul > li > ul.sub:before {
+.sidebar-menu > ul > li > ul.sub:before,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub:before {
   -moz-border-bottom-colors: none;
   -moz-border-left-colors: none;
   -moz-border-right-colors: none;
   -moz-border-top-colors: none;
-  border-color: #3b3b3b;
+  border-color: #5e87b0;
   border-image: none;
   border-style: dotted;
   border-width: 0 0 0 1px;
@@ -366,8 +367,9 @@
   top: 0;
   z-index: 1;
 }
-.sidebar-menu > ul > li > ul.sub > li:before {
-  border-top: 1px dotted #3b3b3b;
+.sidebar-menu > ul > li > ul.sub > li:before,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li:before {
+  border-top: 1px dotted #5e87b0;
   content: "";
   display: inline-block;
   position: absolute;
