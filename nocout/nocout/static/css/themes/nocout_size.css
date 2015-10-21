@@ -78,9 +78,9 @@
   display: block;
 }
 .dropdown-menu .footer a {
-	font-weight: 600;
-  	line-height: 30px;
-  	text-align: center;
+  font-weight: 600;
+    line-height: 30px;
+    text-align: center;
 }
 .dropdown-menu .footer a i {
   margin-left: 5px;
@@ -385,11 +385,11 @@ table.dataTable thead th, table.dataTable tfoot th {
 }
 .sidebar-menu > ul > li.has-sub,
 .sidebar-menu > ul > li.has-sub .sub,
-.sidebar-menu > ul > li.has-sub .sub .has-sub-sub .sub-sub,
+.sidebar-menu > ul > li.has-sub > .sub > li.has-sub-sub .sub-sub,
 .mini-menu#sidebar #quicklaunch {
   position: relative;
 }
-.sidebar-menu ul > li > a .arrow:before {
+.sidebar-menu ul > li > a .arrow:before{
   float: right;
   margin-top: 1px;
   margin-right: 5px;
@@ -401,7 +401,8 @@ table.dataTable thead th, table.dataTable tfoot th {
   font-weight: 300;
   text-shadow: none;
 }
-.sidebar-menu > ul > li > ul.sub:before {
+.sidebar-menu > ul > li > ul.sub:before,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub:before {
   -moz-border-bottom-colors: none;
   -moz-border-left-colors: none;
   -moz-border-right-colors: none;
@@ -416,33 +417,42 @@ table.dataTable thead th, table.dataTable tfoot th {
   top: 0;
   z-index: 1;
 }
-.sidebar-menu > ul > li > ul.sub > li:before {
+.sidebar-menu > ul > li > ul.sub > li:before,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li:before,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li > ul.sub-sub-sub > li:before {
   content: "";
   display: inline-block;
   position: absolute;
   width: 17px;
   margin: 5% 0 0;
 }
-.sidebar-menu > ul > li > ul.sub {
+.sidebar-menu > ul > li > ul.sub,
+.sidebar-menu > ul > li > ul.sub > ul.sub-sub,
+.sidebar-menu > ul > li > ul.sub > ul.sub-sub > ul.sub-sub-sub {
   padding-left: 25px;
 }
 .sidebar-menu > ul > li > ul.sub, 
-.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub {
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub,
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub .has-sub-sub-sub ul.sub-sub-sub {
   display: none;
   list-style: none;
   clear: both;
 }
 .sidebar-menu > ul > li.active > ul.sub,
-.sidebar-menu > ul > li.active > ul.sub .has-sub-sub ul.sub-sub {
-  display: block;
+.sidebar-menu > ul > li.active > ul.sub .has-sub-sub.active ul.sub-sub,
+.sidebar-menu ul li.active ul.sub .has-sub-sub.active ul.sub-sub li.has-sub-sub-sub.active ul.sub-sub-sub {
+  display: block !important;
 }
 .sidebar-menu > ul > li > ul.sub > li,
-.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li {
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li,
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub .has-sub-sub-sub ul.sub-sub-sub > li {
   background: none;
   margin: 0px;
   padding: 0px;
 }
-.sidebar-menu > ul > li > ul.sub > li > a {
+.sidebar-menu > ul > li > ul.sub > li > a,
+.sidebar-menu > ul > li > ul.sub > li > ul > li > a,
+.sidebar-menu > ul > li > ul.sub > li > ul > li > ul > li > a {
   display: block;
   margin: 0px 0px 0px 0px;
   padding: 5px 0px;
@@ -453,7 +463,8 @@ table.dataTable thead th, table.dataTable tfoot th {
   font-weight: 300;
   background: none;
 }
-.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li > a {
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li > a,
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub .has-sub-sub-sub ul.sub-sub-sub > li > a {
   display: block;
   margin: 0px 0px 0px 0px;
   padding: 5px 0px;
@@ -464,15 +475,19 @@ table.dataTable thead th, table.dataTable tfoot th {
   font-weight: 300;
   background: none;
 }
-.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li:hover,
-.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li:focus {
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li:not(.has-sub-sub-sub):hover,
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li:not(.has-sub-sub-sub):focus,
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub .has-sub-sub-sub ul.sub-sub-sub > li:hover,
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub .has-sub-sub-sub ul.sub-sub-sub > li:focus {
   text-decoration: underline;
 }
 .sidebar-menu > ul > li > ul.sub > li > a > i,
 .sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li > a > i {
   font-size: 13px;
 }
-.sidebar-menu > ul > li > ul.sub > li > a {
+.sidebar-menu > ul > li > ul.sub > li > a,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li > a,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li > ul.sub-sub-sub > li > a {
   color: #555555;
   margin-left: 0px;
   padding-left: 5px;

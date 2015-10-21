@@ -1,0 +1,131 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-file-excel-o'></i> Download Center" "javascript:;" %}
+    {% breadcrumb_safe 'Fault Reports' "javascript:;" %}
+    {% breadcrumb_safe report_title "javascript:;" %}
+    {% breadcrumb_safe 'Service Affecting I' "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}{{ report_title }}{% endblock %}
+{% block content_description %}List of reports{% endblock %}
+{% block content %}
+	<style type="text/css">
+		.outage_content {
+			margin-top: -30px;
+			overflow-y:auto;
+		}
+	</style>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>{{ report_title }}</h4>
+        </div>
+        <div id="tableContainer" class="box-body">
+        	<div class="tabbable header-tabs">
+	            <ul class="nav nav-tabs">
+	                <li>
+	                    <a href="#nsa_2_block" id="nsa_2_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">Non Service Affecting II</span>
+	                    </a>
+	                </li>
+	                <li>
+	                    <a href="#nsa_1_block" id="nsa_1_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">Non Service Affecting I</span>
+	                    </a>
+	                </li>
+	                <li>
+	                    <a href="#sa_2_block" id="sa_2_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">Service Affecting II</span>
+	                    </a>
+	                </li>
+	                <li class="active">
+	                    <a href="#sa_1_block" id="sa_1_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">Service Affecting I</span>
+	                    </a>
+	                </li>
+	            </ul>
+	            <div class="tab-content outage_content">
+	                <div class="tab-pane active" id="sa_1_block">
+	                	<table class="datatable table table-striped table-bordered table-hover" id="sa_1_listing">
+			                <thead></thead>
+			                <tbody></tbody>
+			            </table>
+	                </div>
+	                <div class="tab-pane" id="sa_2_block">
+	                	<table class="datatable table table-striped table-bordered table-hover" id="sa_2_listing">
+			                <thead></thead>
+			                <tbody></tbody>
+			            </table>
+	                </div>
+	                <div class="tab-pane" id="nsa_1_block">
+	                	<table class="datatable table table-striped table-bordered table-hover" id="nsa_1_listing">
+			                <thead></thead>
+			                <tbody></tbody>
+			            </table>
+	                </div>
+	                <div class="tab-pane" id="nsa_2_block">
+	                	<table class="datatable table table-striped table-bordered table-hover" id="nsa_2_listing">
+			                <thead></thead>
+			                <tbody></tbody>
+			            </table>
+	                </div>
+	            </div>
+	        </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+    <script type="text/javascript">
+        var dataTableInstance = '',
+        	custom_startdate = '',
+			custom_enddate = '';
+
+        $(document).ready(function (e) {
+        	var destroy=false,
+            	location_array = window.location.href.split("#");
+
+            // Disable advance filtering
+            create_advance_filters = false;
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+
+            /*Grid headers object*/
+            var gridHeadersObj = '{{ datatable_headers|safe }}';
+
+            /*Ajax url to get grid data*/
+            var sa_1_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=bs_outage_sa_1',
+            	sa_2_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=bs_outage_sa_2',
+            	nsa_1_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=bs_outage_nsa_1',
+            	nsa_2_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=bs_outage_nsa_2';
+
+            $("#sa_1_tab").attr("data_url", sa_1_ajax_url);
+            $("#sa_1_tab").attr("data_header", gridHeadersObj);
+
+            $("#sa_2_tab").attr("data_url", sa_2_ajax_url);
+            $("#sa_2_tab").attr("data_header", gridHeadersObj);
+
+            $("#nsa_1_tab").attr("data_url", nsa_1_ajax_url);
+            $("#nsa_1_tab").attr("data_header", gridHeadersObj);
+
+            $("#nsa_2_tab").attr("data_url", nsa_2_ajax_url);
+            $("#nsa_2_tab").attr("data_header", gridHeadersObj);
+
+            if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+                /*Trigger click event on active tab to load its data*/
+                $("#sa_1_tab").trigger('click', true);
+            }
+        });
+    </script>
+{% endblock %}
