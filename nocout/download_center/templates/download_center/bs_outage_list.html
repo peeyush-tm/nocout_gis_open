@@ -5,6 +5,8 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-file-excel-o'></i> Download Center" "javascript:;" %}
+    {% breadcrumb_safe 'Fault Reports' "javascript:;" %}
+    {% breadcrumb_safe 'Raw BS Outage Reports' "javascript:;" %}
     {% breadcrumb_safe report_title "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
