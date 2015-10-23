@@ -441,7 +441,7 @@ table.dataTable thead th, table.dataTable tfoot th {
 .sidebar-menu > ul > li.active > ul.sub,
 .sidebar-menu > ul > li.active > ul.sub .has-sub-sub.active ul.sub-sub,
 .sidebar-menu ul li.active ul.sub .has-sub-sub.active ul.sub-sub li.has-sub-sub-sub.active ul.sub-sub-sub {
-  display: block !important;
+  display: block;
 }
 .sidebar-menu > ul > li > ul.sub > li,
 .sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li,

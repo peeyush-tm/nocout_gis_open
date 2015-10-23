@@ -112,6 +112,8 @@ function applySelectedClasses(menuTag) {
 
         /*Add current class to parent element*/
         closest_li.addClass("current");
+
+        $(".sidebar-menu ul li.active ul.sub .has-sub-sub.active ul.sub-sub li.has-sub-sub-sub.active ul.sub-sub-sub").show();
     } else if(closest_has_sub.length > 0 && closest_has_sub_sub.length > 0 && closest_has_sub_sub_sub.length == 0) {
         closest_has_sub.addClass("active");
         var main_child_length = closest_has_sub.children().first()[0].children.length,
