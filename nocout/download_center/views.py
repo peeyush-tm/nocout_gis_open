@@ -59,12 +59,6 @@ class DownloadCenter(ListView):
         if 'bs_outage_daily' in page_type:
             report_title = 'Raw BS Outage Report'
             self.template_name = 'download_center/bs_outage_list.html'
-        # elif 'bs_outage_sa' in page_type or 'bs_outage_nsa' in page_type:
-        #     report_title = 'Daily Fault Report'
-        #     self.template_name = 'download_center/daily_fault_report_list.html'
-        # elif 'monthly_outage_graph' in page_type:
-        #     report_title = 'Monthly Uptime Report'
-        #     self.template_name = 'download_center/monthly_uptime_report_list.html'
 
         context = super(DownloadCenter, self).get_context_data(**kwargs)
         datatable_headers = [
