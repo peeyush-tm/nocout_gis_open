@@ -37,27 +37,29 @@ class Config:
 		    ('10.133.19.165', 26380), 
 		    ('10.133.12.163', 26379)
 		    ]
+    MEMCACHE_CONFIG = ['10.133.19.165:11211','10.133.12.163:11211']
 
     # quorum
     MIN_OTHER_SENTINELS = 2
     SERVICE_NAME = 'mymaster'
-    # options needed for celery broker connection
-    #BROKER_TRANSPORT_OPTIONS = {
-	#	    'service_name': 'mymaster',
-	#	    'sentinels': SENTINELS,
-	#	    'min_other_sentinels': 2,
-	#	    'db': 15
-	#	    }
-    BROKER_URL = 'redis://'
 
-    CELERY_RESULT_BACKEND = 'amqp://'
+    # options needed for celery broker connection
+    BROKER_TRANSPORT_OPTIONS = {
+		    'service_name': 'mymaster',
+		    'sentinels': SENTINELS,
+		    'min_other_sentinels': 2,
+		    'db': 15
+		    }
+    BROKER_URL = 'redis-sentinel://'
+
+    #CELERY_RESULT_BACKEND = 'amqp://'
 
     CELERY_IMPORTS = (
             'handlers.db_ops',
-            'handlers.distribute',
             'network.network_etl',
             'service.service_etl',
-            'service.kpi_etl',
+	    'service.kpi_etl', 
+	    'add_dummy'
 	)
     d_route = {'queue': 'service', 'routing_key': 'service'}
     #CELERY_QUEUES = (
@@ -77,39 +79,35 @@ class Config:
     #CELERY_IGNORE_RESULT = True
     CNX_FROM_CONF = os.path.join(PROJ_DIR, 'db_conf.ini')
     CELERYBEAT_SCHEDULE = {
-    		'distribute-task': {
-    			'task': 'distribute',
-    			'schedule': crontab(),
-    			'kwargs': {
-    				'site_name': 'pub_slave_1',
-    				'Q': 'q:perf:service',
-    				'module': 'service.service_etl'
-    				}
-    			},
-            #'network-main': {
-            #    'task': 'network-main',
-            #    'schedule': crontab(),
-            #    'kwargs' : {'site_name':'pub_slave_1'},
+            #'add-dummy': {
+            #    'task': 'add-dummy',
+            #    'schedule': crontab(minute='*/5'),
+            #    'args': (2, 3),
             #    },
-            #'service-main': {
-            #    'task': 'service-main',
-            #    'schedule': crontab(),
-            #    'kwargs' : {'site_name':'pub_slave_1'},
-            #    },
-            'get-ul-issue-service-checks': {
-            	'task' : 'get-ul-issue-service-checks',
-            	'schedule': crontab(minute='*/2'),
-            	'kwargs' : {'site_name':'pub_slave_1'},
-            	},
-            'build-export-dr-mrc':{
-	        	'task' : 'build-export-dr-mrc',
-	        	'schedule': crontab(minute='*/5'),
-	        	'kwargs' : {'site_name':'pub_slave_1'},
-	        	},
-	     #'call_kpi_services':{
-	     #   'task' : 'call_kpi_services',
-	     #   'schedule': crontab(minute='*/5'),
-	     # }
+            'network-main': {
+                'task': 'network-main',
+                'schedule': crontab()
+                },
+            'service-main': {
+                'task': 'service-main',
+                'schedule': crontab(),
+                },
+	     'get-ul-issue-service-checks':{
+	        'task' : 'get-ul-issue-service-checks',
+	        'schedule': crontab(minute='*/2'),
+	     },
+	     'build-export-dr-mrc':{
+	        'task' : 'build-export-dr-mrc',
+	        'schedule': crontab(minute='*/5'),
+	     },
+	     'call_kpi_services':{
+	        'task' : 'call_kpi_services',
+	        'schedule': crontab(minute='*/5'),
+	      },
+	     'device_availibility':{
+	        'task' : 'device_availibility',
+	        'schedule': crontab(hour=22,minute=30),
+	      }
             }
 
 app.config_from_object(Config)

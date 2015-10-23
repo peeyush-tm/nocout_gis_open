@@ -1,0 +1,94 @@
+#!/usr/bin/python
+# ######################################################################
+# Function: check_rad5k_ss_cmd_rx_pwr_invent
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+def live_query_for_rad5k_ss_cmd_rx_pwr(serial_number):
+        """
+            live_query_for_rad5k_ss_cmd_rx_pwr function calculates the SS Commanded RX Power by extracting
+            data from memory using SS Serial number as key from memcache ;if data is not present in
+            memcache it retrieves the data from Livestatus by making a socket connection and reading
+            plugin output of 'rad5k_topology_discover' through the details of its corresponded Base
+            Station whose details are fetched from memcache or MySQL DB(if not present in memcache)
+
+            Args:
+                    ss_host_serial_number(str) Sub Station Serial Number
+
+            Returns:
+
+                    commanded_rx_power(string): SS Commanded RX Power
+
+            Raises:
+                    Exception
+
+        """
+        exit_value = 3
+        commanded_rx_power = None
+        bs_params = None
+        if memc:
+                key = serial_number + "_param"
+                value_list = memc.get(key)
+                if value_list:
+                        try:
+                                commanded_rx_power = value_list[13]
+                        except:
+                                commanded_rx_power = None
+
+        return commanded_rx_power
+
+def check_rad5k_ss_cmd_rx_pwr_invent(item, _no_params, info):
+	"""
+           check_rad5k_ss_cmd_rx_pwr_invent function calculates the SS Commanded RX Power
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter results
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                                    3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - commanded_rx_power=-56
+
+                    Raises:
+                            ValueError ,Exception
+	"""
+	state = 3
+	infotext = "unknown_value"
+	commanded_rx_power= None
+	if info :
+		try:
+        		ss_serial_number = info[0][0]
+        		if ss_serial_number:
+                		commanded_rx_power =live_query_for_rad5k_ss_cmd_rx_pwr(ss_serial_number)
+	                	if commanded_rx_power is not None:
+        	                	infotext = "cmd_rx_pwr=%s" % commanded_rx_power
+                	        	state = 0
+		except ValueError:
+        		infotext = "type_mismatch_value"
+		except:
+			infotext = "unknown_value"
+
+	return (state, infotext,[("cmd_rx_pwr",commanded_rx_power)])
+
+check_info["rad5k_ss_cmd_rx_pwr_invent"] = {
+    'check_function': check_rad5k_ss_cmd_rx_pwr_invent,
+    'service_description': 'rad5k_ss_cmd_rx_pwr_invent',
+    'has_perfdata': True,
+}
+
+#########################################################################
+#       SNMP OID for the Commanded RX Power
+#########################################################################
+snmp_info["rad5k_ss_cmd_rx_pwr_invent"] = (  ".1.3.6.1.4.1.4458.1000.1.1", ["29.0"] )
+
+

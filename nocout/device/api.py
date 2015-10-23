@@ -1038,11 +1038,12 @@ class FetchLPDataApi(View):
                 service = Service.objects.get(name=svc)
                 data_source = ServiceDataSource.objects.get(name=ds)
 
-                url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(device.site_instance.username,
-                                                                             device.site_instance.password,
-                                                                             device.machine.machine_ip,
-                                                                             device.site_instance.web_service_port,
-                                                                             device.site_instance.name)
+                #url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(device.site_instance.username,
+                #                                                             device.site_instance.password,
+                #                                                             device.machine.machine_ip,
+                #                                                             device.site_instance.web_service_port,
+                #                                                             device.site_instance.name)
+		url = "http://10.133.19.165:5009/live_poll"
 
                 # Encoding 'lp_data'.
                 encoded_data = urllib.urlencode(lp_data)
@@ -1052,6 +1053,7 @@ class FetchLPDataApi(View):
 
                 # Converting post response data into python dict expression.
                 response_dict = ast.literal_eval(r.text)
+		logger.warning('Live Poll Response: {0}'.format(response_dict))
 
                 # If response(r) is given by post request than process it further to get success/failure messages.
                 if r:
@@ -1796,7 +1798,10 @@ class BulkFetchLPDataApi(View):
                             lp_data['ds'] = [str(lp_template.data_source.name)]
                     else:
                         lp_data['service_list'] = [str(service)]
-                        lp_data['ds'] = [str(data_source)]
+			if str(data_source) == 'all':
+				lp_data['ds'] = ['']
+			else:
+				lp_data['ds'] = [str(data_source)]
 
                     site = SiteInstance.objects.get(pk=int(site_id))
                     site_list.append({
@@ -2126,23 +2131,34 @@ class BulkFetchLPDataApi(View):
 
 def nocout_live_polling(q, site):
     # URL for nocout.py.
-    url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(site.get('username'),
-                                                                 site.get('password'),
-                                                                 site.get('machine'),
-                                                                 site.get('port'),
-                                                                 site.get('site_name'))
+    #url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(site.get('username'),
+    #                                                             site.get('password'),
+    #                                                             site.get('machine'),
+    #                                                             site.get('port'),
+    #                                                             site.get('site_name'))
+    url = "http://{}:{}/live_poll".format(
+		    site.get('machine'),
+		    site.get('port'),
+		    site.get('site_name'))
+    url = 'http://10.133.19.165:5019/live_poll'
     # Encoding 'lp_data'.
-    encoded_data = urllib.urlencode(site.get('lp_data'))
+    #encoded_data = urllib.urlencode(site.get('lp_data'))
+    data = site.get('lp_data')
+    headers = {'content-type': 'application/json'}
 
     # Sending post request to nocout device app to fetch service live polling value.
     try:
-        r = requests.post(url, data=encoded_data)
-        response_dict = ast.literal_eval(r.text)
-        if len(response_dict):
-            temp_dict = deepcopy(response_dict)
+	logger.warning('data sent: {0}'.format(site.get('lp_data')))
+        r = requests.post(url, data=json.dumps(data), headers=headers)
+	jsn_rsp = r.json()
+	logger.warning('Live poll api response: {0}'.format(jsn_rsp))
+        #response_dict = ast.literal_eval(r.text)
+        if len(jsn_rsp):
+            temp_dict = deepcopy(jsn_rsp)
             q.put(temp_dict)
     except Exception as e:
-        pass
+	logger.error('Exc in response'.format(e))
+        #pass
 
 
 class GetVendorsForTech(APIView):
