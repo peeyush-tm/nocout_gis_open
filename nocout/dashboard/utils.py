@@ -80,6 +80,7 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
     :return:
         service_status_data : List of dictionaries of required data from particular model & from particular given conditions
     """
+    service_status_data = []
     required_severity = ['warning','critical']
     required_values = ['id',
                         'device_name',

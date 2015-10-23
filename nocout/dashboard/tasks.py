@@ -64,7 +64,7 @@ def network_speedometer_dashboards():
             'model': NetworkStatus,
             'data_source': 'rta',
             'service_name': 'ping',
-            'severity': ['warning', 'critical'],
+            'severity': ['warning', 'critical', 'down'],
             'current_value': ' current_value > 0 '
         },
         'packetloss-network': {
@@ -96,10 +96,10 @@ def network_speedometer_dashboards():
         if not required_devices.exists():  # this evaluates the query set
             continue
 
-        sector_devices = required_devices.values('machine__name', 'device_name')
+        sector_devices = required_devices.filter(~Q(machine__name='default')).values('machine__name', 'device_name')
         # Function for distributing devices according to their corresponding machine
         machine_dict = prepare_machines(sector_devices)
-
+    
         for dashboard in network_dashboards:
             # Appending Jobs for dashboard configs per organization
             g_jobs.append(
@@ -219,10 +219,10 @@ def calculate_status_dashboards(technology):
         },
         "packetloss-{0}".format(technology): {
             'model': NetworkStatus,
-            'data_source': 'rta',
+            'data_source': 'pl',
             'service_name': 'ping',
             'severity': ['warning', 'critical', 'down'],
-            'current_value': ' current_value < 100 '
+            'current_value': ' current_value BETWEEN 0 AND 99 '
         },
         "down-{0}".format(technology): {
             'model': NetworkStatus,
@@ -638,7 +638,7 @@ def prepare_network_alert(organization,
         ).extra(
             where=[current_value]
         ).filter(
-            device_name__in=device_list,
+            device_name__in=list(set(device_list)),
             service_name=service_name,
             data_source=data_source,
             severity__in=severity
