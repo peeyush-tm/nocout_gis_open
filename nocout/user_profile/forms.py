@@ -13,14 +13,17 @@ Classes
 * UserForm
 * UserPasswordForm
 """
-import string
 
 from django import forms
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.models import Permission, Group
 from nocout.widgets import MultipleToSingleSelectionWidget
 from organization.models import Organization
 from user_profile.models import UserProfile, UserPasswordRecord
 from fields import PasswordField
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserForm(forms.ModelForm):
@@ -41,11 +44,11 @@ class UserForm(forms.ModelForm):
         self.base_fields['username'].help_text = ''
 
         # Removing help text for role 'select' field
-        self.base_fields['role'].help_text = ''
+        self.base_fields['groups'].help_text = ''
 
         # If request is for updating user then initialize role, parent, organization.
         if kwargs['instance']:
-            initial['role'] = kwargs['instance'].role.values_list('pk', flat=True)[0]
+            initial['groups'] = kwargs['instance'].groups.all()[0].pk
             initial['parent'] = kwargs['instance'].parent
             initial['organization'] = kwargs['instance'].organization
 
@@ -73,9 +76,9 @@ class UserForm(forms.ModelForm):
             if self.instance.pk == self.request.user.pk:
                 self.fields['username'].widget.attrs['readonly'] = True
                 self.fields['parent'].widget.attrs['disabled'] = 'disabled'
-                self.fields['role'].widget.attrs['disabled'] = 'disabled'
-                self.fields['role'].widget.is_required = False
-                self.fields['role'].required = False
+                self.fields['groups'].widget.attrs['disabled'] = 'disabled'
+                # self.fields['role'].widget.is_required = False
+                # self.fields['role'].required = False
                 self.fields['organization'].widget.attrs['readonly'] = True
                 self.fields['parent'].label = 'Manager'
                 # Don't show comment field.
@@ -101,11 +104,12 @@ class UserForm(forms.ModelForm):
         """
         model = UserProfile
         fields = (
-            'username', 'first_name', 'last_name', 'email', 'role', 'organization', 'parent', 'user_permissions',
+            'username', 'first_name', 'last_name', 'email', 'organization', 'parent', 'groups', 'user_permissions',
             'designation', 'company', 'address', 'phone_number', 'comment'
         )
         widgets = {
-            'role': MultipleToSingleSelectionWidget,
+            # 'role': MultipleToSingleSelectionWidget,
+            'groups': MultipleToSingleSelectionWidget
         }
         fieldsets = (
             ('Personal', {
@@ -164,19 +168,20 @@ class UserForm(forms.ModelForm):
                     raise forms.ValidationError("User's child cannot be a parent of user.")
                 return parent
 
-    def clean_role(self):
+    def clean_groups(self):
         """
         Restrict the user other than super user to create the admin.
         """
-        role = self.cleaned_data['role']
+        groups = self.cleaned_data['groups']
 
-        if not self.request.user.is_superuser and len(role) == 1:
-            if role[0].role_name == 'admin':
+        if not self.request.user.is_superuser and len(groups) == 1:
+            print "**************************** groups[0].name - ", groups[0].name.lower()
+            if groups[0].name.lower() == 'admin':
                 raise forms.ValidationError("Not permitted to create admin.")
             else:
-                return role
+                return groups
         else:
-            return role
+            return groups
 
     def clean_password1(self):
         """
@@ -194,18 +199,6 @@ class UserForm(forms.ModelForm):
                 raise forms.ValidationError("Username and password should not be identical.")
 
             if password1:
-                # # Special character validator.
-                # if not set(password1).intersection(set(string.punctuation)):
-                #     raise forms.ValidationError("Password must contain atleast one special character.")
-                #
-                # # Uppercase character validator.
-                # if not set(password1).intersection(set(string.uppercase)):
-                #     raise forms.ValidationError("Password must contain atleast one uppercase letter.")
-                #
-                # # Digit/number validator.
-                # if not set(password1).intersection(set(string.digits)):
-                #     raise forms.ValidationError("Password must contain atleast one digit.")
-
                 # Last five password match validator.
                 user = UserProfile.objects.filter(username=username)
                 if user.exists():
@@ -244,3 +237,73 @@ class UserPasswordForm(forms.Form):
                 for pwd in user_password_used:
                     if check_password(confirm_pwd, pwd):
                         raise forms.ValidationError("This password is recently used.")
+
+
+class PermissionForm(forms.ModelForm):
+    """
+    Form required to create and update permission.
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize function to change attributes before rending the model form.
+        """
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(PermissionForm, self).__init__(*args, **kwargs)
+
+        self.fields['content_type'].empty_label = 'Select'
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = Permission
+        fields = "__all__"
+
+
+class GroupForm(forms.ModelForm):
+    """
+    Form required to create and update group.
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize function to change attributes before rending the model form.
+        """
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(GroupForm, self).__init__(*args, **kwargs)
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = Group
+        fields = "__all__"

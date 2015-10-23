@@ -33,7 +33,7 @@ class UserProfile(MPTTModel, User):
     Model for creating user profile by extending django auth 'User' class.
     """
     parent = TreeForeignKey('self', null=True, blank=True, related_name='user_children')
-    role = models.ManyToManyField('Roles')
+    # role = models.ManyToManyField('Roles')
     organization = models.ForeignKey(Organization)
     phone_number = models.CharField('Phone No.', max_length=15, null=True, blank=True)
     company = models.CharField('Company', max_length=100, null=True, blank=True)
