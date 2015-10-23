@@ -9,6 +9,7 @@ import os
 import re
 import time
 import json
+from user_profile.utils.auth import in_group
 import xlrd
 import xlwt
 
@@ -110,8 +111,7 @@ class AntennaList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'azimuth_angle', 'sTitle': 'Azimuth Angle', 'sWidth': '10%', }, ]
 
         #if the user role is Admin or operator or superuser then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role or self.request.user.is_superuser:
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -244,8 +244,7 @@ class BaseStationList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -383,8 +382,8 @@ class BackhaulList(PermissionsRequiredMixin, TemplateView):
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -529,8 +528,7 @@ class SectorList(PermissionsRequiredMixin, TemplateView):
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -684,8 +682,8 @@ class CustomerList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'bSortable': False},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -820,8 +818,8 @@ class SubStationList(PermissionsRequiredMixin, TemplateView):
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -986,8 +984,8 @@ class CircuitList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto',  'sClass': 'hidden-xs'}
         ]
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1139,9 +1137,9 @@ class CircuitL2Report_Init(ListView):
 
 
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        
         if (
-            ('admin' in user_role or 'operator' in user_role)
+            (in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'))
             and
             ( 
              ('circuit_id' in self.kwargs and self.kwargs['circuit_id'] != 0)
@@ -3761,7 +3759,7 @@ class DownloadSelectedBSInventoryList(ListView):
             {'mData': 'modified_on', 'sTitle': 'Request Completion Timestamp', 'sWidth': 'auto', },
         ]
 
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context

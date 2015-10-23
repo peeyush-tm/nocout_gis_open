@@ -15,6 +15,7 @@ from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin
 from nocout.mixins.generics import FormRequestMixin
+from user_profile.utils.auth import in_group
 
 
 class OrganizationList(PermissionsRequiredMixin, ListView):
@@ -40,7 +41,7 @@ class OrganizationList(PermissionsRequiredMixin, ListView):
             {'mData':'country',             'sTitle' : 'Country',       'sWidth':'auto'},
             {'mData':'description',         'sTitle' : 'Description',   'sWidth':'auto','bSortable': False}]
 
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%','bSortable': False })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
