@@ -1,8 +1,12 @@
+from itertools import izip
+import operator
+from django.contrib.auth.models import User, Permission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from user_profile.models import UserProfile
 from nocout.settings import ISOLATED_NODE
-from django.db.models import Max
+from django.db.models import Max, Q
+from user_profile.permissions import admin_perms, operator_perms, viewer_perms
 
 
 class UserSoftDeleteDisplayData(APIView):
@@ -245,3 +249,90 @@ class DeleteUser(APIView):
         result['message'] = "User successfully deleted."
 
         return Response(result)
+
+
+class ResetUserPermissions(APIView):
+    """
+    Reset default permissions to each user corressponding to their group.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/reset_user_permissions/4/"
+    """
+    def get(self, request, value):
+        """
+        Processing API request.
+
+        Args:
+            value (int): Selected user ID.
+
+        Returns:
+            result (str): Result which needs to be returned.
+                           for e.g. {
+                                        "message": "Successfully assigned permissions.",
+                                        "data": {
+                                            "username": "gisviewer",
+                                            "group": "Viewer"
+                                        },
+                                        "success": 1
+                                    }
+        """
+        # Response data.
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to assign permissions."
+
+        # Get user.
+        user = None
+        try:
+            user = User.objects.get(id=value)
+        except Exception as e:
+            pass
+        
+        # Get user group.
+        group = None
+        try:
+            group = user.groups.all()[0].name
+        except Exception as e:
+            pass
+
+        if group:
+            # Get permissions list which needs to be assigned.
+            perms_list = eval(group.lower() + "_perms")
+            app_labels = list()
+            codenames = list()
+
+            for data in perms_list:
+                # Seperate 'app_label' and 'codename' from perm string ('data') for e.g. if perm string is
+                # 'device.view_device' then app_label is 'device' and code_name is 'view_device'
+                app_label, codename = data.split('.')
+                app_labels.append(app_label)
+                codenames.append(codename)
+
+            # Permissions which needs to be assigned.
+            new_perms = reduce(
+                operator.or_,
+                (Q(codename=code, content_type__app_label=app) for code, app in izip(codenames, app_labels))
+            )
+            new_perms = Permission.objects.filter(new_perms)
+
+            # Assign permissions to current user.
+            user.user_permissions.add(*new_perms)
+
+            # Remove old custom permissions.
+            diff_perms = set(user.user_permissions.all()).difference(set(new_perms))
+            user.user_permissions.remove(*diff_perms)
+
+            # Set success bit and message.
+            result['data'] = {
+                'username': user.username,
+                'group': group
+            }
+            result['success'] = 1
+            result['message'] = "Successfully assigned permissions."
+
+        return Response(result)
+
+
+

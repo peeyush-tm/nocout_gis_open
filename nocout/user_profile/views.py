@@ -594,6 +594,7 @@ class GroupDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     Delete a single instance from database.
     """
     model = Group
+    obj_alias = 'name'
     template_name = 'group/group_delete.html'
     success_url = reverse_lazy('groups_list')
 
@@ -685,5 +686,6 @@ class PermissionDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView)
     Delete a single instance from database.
     """
     model = Permission
+    obj_alias = 'name'
     template_name = 'permission/permission_delete.html'
     success_url = reverse_lazy('permissions_list')

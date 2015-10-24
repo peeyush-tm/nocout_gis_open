@@ -45,6 +45,7 @@ class UserForm(forms.ModelForm):
 
         # Removing help text for role 'select' field
         self.base_fields['groups'].help_text = ''
+        self.base_fields['user_permissions'].help_text = ''
 
         # If request is for updating user then initialize role, parent, organization.
         if kwargs['instance']:
@@ -175,7 +176,6 @@ class UserForm(forms.ModelForm):
         groups = self.cleaned_data['groups']
 
         if not self.request.user.is_superuser and len(groups) == 1:
-            print "**************************** groups[0].name - ", groups[0].name.lower()
             if groups[0].name.lower() == 'admin':
                 raise forms.ValidationError("Not permitted to create admin.")
             else:

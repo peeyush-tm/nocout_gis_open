@@ -1,7 +1,7 @@
 def in_group(user=None, group_name=None):
     """
     Check whether user exists in given group or not.
-    :param user:
+    :param user: User object
     :return: True/False
     """
     if user and group_name:

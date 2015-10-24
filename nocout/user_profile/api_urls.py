@@ -8,4 +8,5 @@ urlpatterns = [
         name='user_soft_delete'),
     url(r'^restore_user/(?P<value>\d+)/$', api.RestoreUser.as_view(), name='restore_user'),
     url(r'^delete_user/(?P<value>\d+)/$', api.DeleteUser.as_view(), name='delete_user'),
+    url(r'^reset_user_permissions/(?P<value>\d+)/$', api.ResetUserPermissions.as_view(), name='reset_user_permissions'),
 ]
