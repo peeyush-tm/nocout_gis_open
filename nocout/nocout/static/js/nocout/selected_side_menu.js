@@ -101,14 +101,29 @@ function applySelectedClasses(menuTag) {
         isTabCase2 = $('.nav li .hidden-inline-mobile');
 
     if (closest_has_sub.length > 0 && closest_has_sub_sub.length > 0 && closest_has_sub_sub_sub.length > 0) {
+        
         closest_has_sub.addClass("active");
+        closest_has_sub.addClass("open");
+        
         closest_has_sub_sub.addClass("active");
+        closest_has_sub_sub.addClass("open");
+
         closest_has_sub_sub_sub.addClass("active");
 
-        var main_child_length = closest_has_sub_sub_sub.children().first()[0].children.length,
-            top_arrow = closest_has_sub_sub_sub.children().first()[0].children[main_child_length - 1];
+        var top_level_child_length = closest_has_sub.children().first()[0].children.length,
+            top_level_arrow = closest_has_sub.children().first()[0].children[top_level_child_length - 1];
 
-        top_arrow.className = top_arrow.className+" open";
+        top_level_arrow.className = top_level_arrow.className+" open";
+
+        var second_level_child_length = closest_has_sub_sub.children().first()[0].children.length,
+            second_level_arrow = closest_has_sub_sub.children().first()[0].children[second_level_child_length - 1];
+
+        second_level_arrow.className = second_level_arrow.className+" open";
+
+        var first_level_child_length = closest_has_sub_sub_sub.children().first()[0].children.length,
+            first_level_arrow = closest_has_sub_sub_sub.children().first()[0].children[first_level_child_length - 1];
+
+        first_level_arrow.className = first_level_arrow.className+" open";
 
         /*Add current class to parent element*/
         closest_li.addClass("current");
