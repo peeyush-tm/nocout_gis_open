@@ -48,7 +48,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.template.loader import render_to_string
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway, project_group_role_dict_mapper
+from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin, \
@@ -77,7 +77,6 @@ class UserList(PermissionsRequiredMixin, ListView):
             {'mData': 'first_name', 'sTitle': 'Full Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'email', 'sTitle': 'Email', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            # {'mData': 'group', 'sTitle': 'Role', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'groups__name', 'sTitle': 'Group', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'parent__first_name', 'sTitle': 'Manager', 'sWidth': '10%', 'sClass': 'hidden-xs'},
             {'mData': 'phone_number', 'sTitle': 'Phone Number', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -86,9 +85,8 @@ class UserList(PermissionsRequiredMixin, ListView):
         ]
 
         # If the user role is 'admin' then the action column will appear on the datatable.
-        # if in_group(self.request.user, 'admin'):
         if in_group(self.request.user, 'admin'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '7%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -145,7 +143,6 @@ class UserListingTable(PermissionsRequiredMixin,
         if json_data:
             json_data, qs_headers = Datatable_Generation(json_data, sanity_dicts_list).main()
             # Show 'actions' column only if user role is 'admin'.
-            # if in_group(self.request.user, 'admin'):
             if in_group(self.request.user, 'admin'):
                 datatable_headers = self.request.GET.get('datatable_headers', '').replace('false', "\"False\"")
                 # Create instance of 'NocoutUtilsGateway' class
@@ -163,9 +160,12 @@ class UserListingTable(PermissionsRequiredMixin,
                     else:
                         actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                                    <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                                   <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                                        dct['id'], datatable_headers
-                                    )
+                                   <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o\
+                                    text-danger" title="Archive user."></i></a> \
+                                  <a href="javascript:;" class="reset_perm_btn" pk="{0}"><i class="fa fa-level-down \
+                                  text-danger" title="Reset permissions to default."></i></a>'.format(
+                            dct['id'], datatable_headers
+                        )
                     dct.update(actions=actions)
 
         return json_data
@@ -180,15 +180,15 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
     model = UserProfile
 
     # Columns that are going to be displayed.
-    columns = ['username', 'first_name', 'last_name', 'email', 'group', 'parent__first_name',
+    columns = ['username', 'first_name', 'last_name', 'email', 'groups__name', 'parent__first_name',
                'parent__last_name', 'organization__name', 'phone_number', 'last_login', 'comment']
 
     # Columns on which sorting/ordering is allowed.
-    order_columns = ['username', 'first_name', 'last_name', 'email', 'group', 'parent__first_name',
+    order_columns = ['username', 'first_name', 'last_name', 'email', 'groups__name', 'parent__first_name',
                      'parent__last_name', 'organization__name', 'phone_number', 'last_login', 'comment']
 
     # Columns based on which searching is done.
-    search_columns = ['username', 'first_name', 'last_name', 'email', 'group', 'parent__first_name',
+    search_columns = ['username', 'first_name', 'last_name', 'email', 'groups__name', 'parent__first_name',
                       'parent__last_name', 'organization__name', 'phone_number', 'comment']
 
     # Used in 'DatatableOrganizationFilterMixin' as extra parameters required to be passed during filtering queryset.
@@ -267,19 +267,9 @@ class UserCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
         # Set password for new user instance.
         self.object.set_password(form.cleaned_data["password2"])
 
-        # Get role from list i.e. [<Roles: Admin>].
-        # role = form.cleaned_data['role'][0]
-
-        # Get 'group' corresponding to user role for e.g if role is 'admin' then group is 'group_admin'.
-        # project_group_name = project_group_role_dict_mapper[role.role_name]
-        # project_group = Group.objects.get(name=project_group_name)
-
         # Saving instance and it's m2m relationship.
         self.object.save()
         form.save_m2m()
-
-        # # Assigning user a group corresponding to it's role.
-        # self.object.groups.add(project_group)
 
         return super(ModelFormMixin, self).form_valid(form)
 
@@ -322,13 +312,6 @@ class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
             self.object.set_password(form.cleaned_data["password2"])
             # Adding the user log for the password change.
             UserPasswordRecord.objects.create(user_id=self.object.id, password_used=self.object.password)
-
-        # # Get role from list i.e. [<Roles: Admin>].
-        # role = form.cleaned_data['role'][0]
-
-        # # Get 'group' corresponding to user role for e.g if role is 'admin' then group is 'group_admin'.
-        # project_group_name = project_group_role_dict_mapper[role.role_name]
-        # project_group = Group.objects.get(name=project_group_name)
 
         # Any user can have only one group, so first we need to remove user's previous group
         # before assigning new group.
