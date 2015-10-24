@@ -887,33 +887,33 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
         dashboards = {
             'ul_rssi':{
                 'model': ServiceStatus,
-                'data_source': 'ul_rssi',
-                'service_name': 'wimax_ul_rssi',
+                'data_source': ['ul_rssi'],
+                'service_name': ['wimax_ul_rssi']
             },
             'dl_rssi':{
                 'model': ServiceStatus,
-                'data_source': 'dl_rssi',
-                'service_name': 'wimax_dl_rssi',
+                'data_source': ['dl_rssi'],
+                'service_name': ['wimax_dl_rssi']
             },
             'ul_cinr':{
                 'model': ServiceStatus,
-                'data_source': 'ul_cinr',
-                'service_name': 'wimax_ul_cinr',
+                'data_source': ['ul_cinr'],
+                'service_name': ['wimax_ul_cinr']
             },
             'dl_cinr':{
                 'model': ServiceStatus,
-                'data_source': 'dl_cinr',
-                'service_name': 'wimax_dl_cinr',
+                'data_source': ['dl_cinr'],
+                'service_name': ['wimax_dl_cinr']
             },
             'modulation_ul_fec':{
                 'model': ServiceStatus,
-                'data_source': 'modulation_ul_fec',
-                'service_name': 'wimax_modulation_ul_fec',
+                'data_source': ['modulation_ul_fec'],
+                'service_name': ['wimax_modulation_ul_fec']
             },
             'modulation_dl_fec':{
                 'model': ServiceStatus,
-                'data_source': 'modulation_dl_fec',
-                'service_name': 'wimax_modulation_dl_fec',
+                'data_source': ['modulation_dl_fec'],
+                'service_name': ['wimax_modulation_dl_fec']
             }
         }
 
@@ -921,28 +921,28 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
         dashboards = {
             'ul_jitter':{
                 'model': ServiceStatus,
-                'data_source': 'ul_jitter',
-                'service_name': 'cambium_ul_jitter'
+                'data_source': ['ul_jitter'],
+                'service_name': ['cambium_ul_jitter']
             },
             'dl_jitter':{
                 'model': ServiceStatus,
-                'data_source': 'dl_jitter',
-                'service_name': 'cambium_dl_jitter',
+                'data_source': ['dl_jitter'],
+                'service_name': ['cambium_dl_jitter']
             },
             'rereg_count':{
                 'model': ServiceStatus,
-                'data_source': 'rereg_count',
-                'service_name': 'cambium_rereg_count',
+                'data_source': ['rereg_count'],
+                'service_name': ['cambium_rereg_count']
             },
             'ul_rssi':{
                 'model': ServiceStatus,
-                'data_source': 'ul_rssi',
-                'service_name': ('cambium_ul_rssi','rad5k_ul_rssi')
+                'data_source': ['ul_rssi'],
+                'service_name': ['cambium_ul_rssi','rad5k_ul_rssi']
             },
             'dl_rssi':{
                 'model': ServiceStatus,
-                'data_source': 'dl_rssi',
-                'service_name': ('cambium_dl_rssi','rad5k_dl_rssi'),
+                'data_source': ['dl_rssi'],
+                'service_name': ['cambium_dl_rssi','rad5k_dl_rssi']
             }
         }
 
@@ -950,13 +950,13 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
         dashboards = {
             'rssi':{
                 'model': ServiceStatus,
-                'data_source': 'rssi',
-                'service_name': 'radwin_rssi',
+                'data_source': ['rssi'],
+                'service_name': ['radwin_rssi']
             },
             'uas':{
                 'model': ServiceStatus,
-                'data_source': 'uas',
-                'service_name': 'radwin_uas',
+                'data_source': ['uas'],
+                'service_name': ['radwin_uas']
             }
         }
 
@@ -964,18 +964,18 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
         dashboards = {
             'rssi':{
                 'model': ServiceStatus,
-                'data_source': 'rssi',
-                'service_name': 'radwin_rssi',
+                'data_source': ['rssi'],
+                'service_name': ['radwin_rssi']
             },
             'uas':{
                 'model': ServiceStatus,
-                'data_source': 'uas',
-                'service_name': 'radwin_uas',
+                'data_source': ['uas'],
+                'service_name': ['radwin_uas']
             },
             'availability':{
                 'model': NetworkAvailabilityDaily,
-                'data_source': 'availability',
-                'service_name': 'availability',
+                'data_source': ['availability'],
+                'service_name': ['availability']
             }
         }
 
@@ -987,11 +987,9 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
             
             if dashboard == 'rssi' and technology == 'P2P' and is_bh == True:
                 devices_method_kwargs = dict(specify_ptp_bh_type='all')
-            # Appending jobs for different organizations and for all services per organization
-            # g_jobs.append(
+
             prepare_Rf_dashboard_devices(
                 organizations=organization,
-                # user_devices=user_devices,
                 dashboard_name=dashboard,
                 processed_for=processed_for,
                 dashboard_config=dashboards,
@@ -1000,18 +998,10 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
                 technology=tech,
                 is_bh=is_bh
             )
-            # )
-    # 
-    # if not len(g_jobs):
-    #     return ret
-
-    # job = group(g_jobs)
-    # result = job.apply_async()  # start the jobs
-    # for r in result.get():
-    #     ret |= r
+            
     return True
 
-# @task()
+
 def prepare_Rf_dashboard_devices(organizations,
                                 dashboard_name,
                                 processed_for,
@@ -1098,11 +1088,12 @@ def prepare_Rf_dashboard_devices(organizations,
             "unknown": 0,
         }
         # get the list of dictionary on the basis of parameters.
-        service_status_results = get_service_status_results(user_devices,
-                                                            model=model,
-                                                            service_name=service_name,
-                                                            data_source=data_source
-                                                        )
+        service_status_results = get_service_status_results(
+            user_devices,
+            model=model,
+            service_name=service_name,
+            data_source=data_source
+        )
 
         for result in service_status_results:
             # get the dictionary containing hits for all ranges according to range define in dashboard settings for particular dashboards.
