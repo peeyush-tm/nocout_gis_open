@@ -3724,9 +3724,11 @@ class GetServiceTypePerformanceData(View):
                         chart_color = SERVICE_DATA_SOURCE[sds_name]["chart_color"] \
                             if sds_name in SERVICE_DATA_SOURCE else '#70AFC4'
 
+                        sds_inverted = False
+                        self.result['data']['objects']['is_inverted'] = sds_inverted
+
                         if sds_name not in ["availability"]:
 
-                            sds_inverted = False
                             self.result['data']['objects']['is_inverted'] = sds_inverted
 
                             if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["is_inverted"]:
@@ -3899,51 +3901,6 @@ class GetServiceTypePerformanceData(View):
                                     "y": current_value,
                                     "x": js_time
                                 })
-
-                                # if len(min_data_list):
-                                #     chart_data.append({
-                                #         'name': str("min value").title(),
-                                #         'color': '#01CC14',
-                                #         'data': min_data_list,
-                                #         'type': 'line',
-                                #         'marker': {
-                                #             'enabled': False
-                                #         }
-                                #     })
-
-                                # if len(max_data_list):
-                                #     chart_data.append({
-                                #         'name': str("max value").title(),
-                                #         'color': '#FF8716',
-                                #         'data': max_data_list,
-                                #         'type': 'line',
-                                #         'marker': {
-                                #             'enabled': False
-                                #         }
-                                #     })
-
-                            # Condition of length of warning list  
-                            # if len(warn_data_list):
-                            #     chart_data.append({
-                            #         'name': str("warning threshold").title(),
-                            #         'color': WARN_COLOR,
-                            #         'data': warn_data_list,
-                            #         'type': WARN_TYPE,
-                            #         'marker': {
-                            #             'enabled': False
-                            #         }
-                            #     })
-                            # # Condition of length of warning list  
-                            # if len(crit_data_list):
-                            #     chart_data.append({
-                            #         'name': str("critical threshold").title(),
-                            #         'color': CRIT_COLOR,
-                            #         'data': crit_data_list,
-                            #         'type': CRIT_TYPE,
-                            #         'marker': {
-                            #             'enabled': False
-                            #         }
-                            #     })
                         else:
                             y_value = None
                             y_down_value = None
@@ -3997,7 +3954,7 @@ class GetServiceTypePerformanceData(View):
                                 }
                             ]
 
-                if data_list and len(data_list) > 0:
+                if data_list and len(data_list) > 0 and sds_name not in ["availability"]:
                     if is_dual_axis:
                         chart_data.append({
                             'name': self.result['data']['objects']['display_name'],
@@ -4111,8 +4068,8 @@ class GetServiceTypePerformanceData(View):
                                     'enabled': False
                                 }
                             })
+                            
             #this ensures a further good presentation of data w.r.t thresholds
-
             self.result['success'] = 1
             self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
             self.result['data']['objects']['chart_data'] = chart_data
