@@ -627,10 +627,18 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     }
 
     // Create yAxis data as per the given params
-    if (typeof chartConfig.valuetext == 'string') {
+    if (typeof chartConfig.valuetext == 'string' || chartConfig['is_single']) {
+        var title_txt = chartConfig.valuetext;
+        if (chartConfig['is_single']) {
+            try {
+                title_txt = chartConfig.valuetext.join(', ')
+            } catch(e) {
+                // console.error(e);
+            }
+        }
         yAxisObj = {
             title : {
-                text : chartConfig.valuetext
+                text : title_txt
             },
             reversed : is_y_inverted
         };
