@@ -3698,26 +3698,29 @@ class GetServiceTypePerformanceData(View):
                             if sds_name in SERVICE_DATA_SOURCE else "area"
                         
                         if is_dual_axis:
-                            
-                            if 'valuesuffix' not in self.result['data']['objects']:
-                                self.result['data']['objects']['valuesuffix'] = list()
-                            if 'valuetext' not in self.result['data']['objects']:
-                                self.result['data']['objects']['valuetext'] = list()
-
-                            ds_suffix = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] if sds_name in SERVICE_DATA_SOURCE else ""
-                            ds_txt = SERVICE_DATA_SOURCE[sds_name]["valuetext"] if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
-                            
-                            if ds_suffix not in self.result['data']['objects']['valuesuffix']:
-                                self.result['data']['objects']['valuesuffix'].append(ds_suffix)
-
-                            if ds_txt not in self.result['data']['objects']['valuetext']:
-                                self.result['data']['objects']['valuetext'].append(ds_txt)
+                            self.result['data']['objects']['is_single'] = 0
                         else:
-                            self.result['data']['objects']['valuesuffix'] = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] \
-                                if sds_name in SERVICE_DATA_SOURCE else ""
+                            self.result['data']['objects']['is_single'] = 1
+                            
+                        if 'valuesuffix' not in self.result['data']['objects']:
+                            self.result['data']['objects']['valuesuffix'] = list()
+                        if 'valuetext' not in self.result['data']['objects']:
+                            self.result['data']['objects']['valuetext'] = list()
 
-                            self.result['data']['objects']['valuetext'] = SERVICE_DATA_SOURCE[sds_name]["valuetext"] \
-                                if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
+                        ds_suffix = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] if sds_name in SERVICE_DATA_SOURCE else ""
+                        ds_txt = SERVICE_DATA_SOURCE[sds_name]["valuetext"] if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
+                        
+                        if ds_suffix not in self.result['data']['objects']['valuesuffix']:
+                            self.result['data']['objects']['valuesuffix'].append(ds_suffix)
+
+                        if ds_txt not in self.result['data']['objects']['valuetext']:
+                            self.result['data']['objects']['valuetext'].append(ds_txt)
+                        # else:
+                        #     self.result['data']['objects']['valuesuffix'] = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] \
+                        #         if sds_name in SERVICE_DATA_SOURCE else ""
+
+                        #     self.result['data']['objects']['valuetext'] = SERVICE_DATA_SOURCE[sds_name]["valuetext"] \
+                        #         if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
 
                         self.result['data']['objects']['plot_type'] = 'charts'
 
@@ -4068,7 +4071,7 @@ class GetServiceTypePerformanceData(View):
                                     'enabled': False
                                 }
                             })
-                            
+
             #this ensures a further good presentation of data w.r.t thresholds
             self.result['success'] = 1
             self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
