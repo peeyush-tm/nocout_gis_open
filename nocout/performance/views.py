@@ -2082,7 +2082,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
 
             for sds in SERVICE_DATA_SOURCE:
                 if not self.formula:
-                    if service.strip() in sds and SERVICE_DATA_SOURCE[sds]['type'] == 'table':
+                    if service.strip().lower() in sds and SERVICE_DATA_SOURCE[sds]['type'] == 'table':
                         self.formula = SERVICE_DATA_SOURCE[sds]['formula']
                 else:
                     break
