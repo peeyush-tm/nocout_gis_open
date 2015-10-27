@@ -111,3 +111,18 @@ def assign_default_thematics_to_user(sender, instance=None, created=False, **kwa
                         thematic_technology=thematic.technology,
                         thematic_type=thematic.type
                     )
+
+
+def reassign_permissions(sender, instance, action, **kwargs):
+    if action == 'post_add' or action == 'post_remove':
+        print instance.groups.all()
+    print "********************************* - "
+    print "**************************** - sender - ", sender
+    print "**************************** - instance - ", instance
+    print "**************************** - groups - ", instance.groups.all()
+    print "**************************** - kwargs - ", kwargs
+    print "**************************** - action - ", action
+
+    print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+    print instance.user_permissions.all()
+    print instance.username

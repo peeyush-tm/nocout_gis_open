@@ -49,7 +49,10 @@ class UserForm(forms.ModelForm):
 
         # If request is for updating user then initialize role, parent, organization.
         if kwargs['instance']:
-            initial['groups'] = kwargs['instance'].groups.all()[0].pk
+            try:
+                initial['groups'] = kwargs['instance'].groups.all()[0].pk
+            except Exception as e:
+                pass
             initial['parent'] = kwargs['instance'].parent
             initial['organization'] = kwargs['instance'].organization
 

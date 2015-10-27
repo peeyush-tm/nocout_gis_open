@@ -70,6 +70,7 @@ class Command(BaseCommand):
                     'group': group,
                     'obj': obj
                 }
+
                 if group:
                     # Get permissions list which needs to be assigned.
                     perms_list = eval(group.lower() + "_perms")
