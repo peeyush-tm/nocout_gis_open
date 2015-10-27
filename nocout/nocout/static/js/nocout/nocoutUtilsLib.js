@@ -1353,8 +1353,8 @@ function checkpollvalues(result, is_new_data, callback) {
             fetched_val = fetched_val[0];
         }
 
-        if (na_list.indexOf(fetched_val) > -1) {
-            fetched_val = '';
+        if (typeof(fetched_val) == 'undefined' || na_list.indexOf(fetched_val) > -1) {
+            fetched_val = null;
         }
 
         if(fetch_warning_threshold && fetch_warning_threshold instanceof Array) {
