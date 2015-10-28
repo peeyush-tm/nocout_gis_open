@@ -375,12 +375,12 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             data_sources_list = ['rta']
         elif data_source in ['packet_drop']:
             data_sources_list = ['pl']
-            extra_query_condition = ' AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) '
+            extra_query_condition = ' AND (`{0}`.`current_value` BETWEEN 0 AND 99 ) '
             extra_query_condition += severity_condition
         elif data_source in ['down']:
             data_sources_list = ['pl']
             extra_query_condition = ' AND (`{0}`.`current_value` >= 100 ) '
-            extra_query_condition += ' AND `{0}`.`severity` in ("down") '
+            extra_query_condition += ' AND `{0}`.`severity` in ("down", "critical") '
         elif data_source in ['service', 'customer']:
             is_customer_detail_page = True
             extra_query_condition = severity_condition
@@ -2549,4 +2549,3 @@ def prepare_snmp_gis_data(qs, tech_name):
             )
 
     return qs_list
-

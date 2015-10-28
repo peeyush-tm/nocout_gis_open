@@ -32,6 +32,9 @@ from inventory.tasks import bulk_update_create
 import logging
 logger = logging.getLogger(__name__)
 
+# Create instance of 'PerformanceUtilsGateway' class
+perf_utils = PerformanceUtilsGateway()
+
 ### SMS Sending
 import requests
 #### SMS GATEWAY SETTINGS
@@ -391,8 +394,25 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     message = render_to_string('alarm_message/bad_message.html', context_dict)
     msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails)
     msg.content_subtype = "html"  # Main content is now text/html
+    # If the mail is for temperature then attach the chart image as per current status
+    try:
+        # if 'temperature' in level.service.name:
+        device_name = alarm.device.device_name
+        service = level.service.name
+        data_source = level.service_data_source.name
+
+        chart_img_dict = perf_utils.create_perf_chart_img(device_name, service, data_source)
+        img_path = chart_img_dict.get('chart_url')
+        print ' -- img_path -- '
+        print img_path
+        print ' -- img_path -- '
+        if img_path:
+            msg.attach_file(img_path)
+
+    except Exception, e:
+        pass
     msg.send()
-    #send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
+
     return True
 
 
@@ -524,9 +544,6 @@ def check_device_status():
     ret = False
     service_list = []
     service_data_source_list = []
-
-    # Create instance of 'PerformanceUtilsGateway' class
-    perf_utils = PerformanceUtilsGateway()
 
     # Create instance of 'InventoryUtilsGateway' class
     inventory_utils = InventoryUtilsGateway()

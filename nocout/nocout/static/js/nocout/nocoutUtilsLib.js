@@ -627,10 +627,18 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     }
 
     // Create yAxis data as per the given params
-    if (typeof chartConfig.valuetext == 'string') {
+    if (typeof chartConfig.valuetext == 'string' || chartConfig['is_single']) {
+        var title_txt = chartConfig.valuetext;
+        if (chartConfig['is_single']) {
+            try {
+                title_txt = chartConfig.valuetext.join(', ')
+            } catch(e) {
+                // console.error(e);
+            }
+        }
         yAxisObj = {
             title : {
-                text : chartConfig.valuetext
+                text : title_txt
             },
             reversed : is_y_inverted
         };
@@ -1345,8 +1353,8 @@ function checkpollvalues(result, is_new_data, callback) {
             fetched_val = fetched_val[0];
         }
 
-        if (na_list.indexOf(fetched_val) > -1) {
-            fetched_val = '';
+        if (typeof(fetched_val) == 'undefined' || na_list.indexOf(fetched_val) > -1) {
+            fetched_val = null;
         }
 
         if(fetch_warning_threshold && fetch_warning_threshold instanceof Array) {
