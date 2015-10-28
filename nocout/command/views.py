@@ -28,6 +28,7 @@ from forms import CommandForm
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
+from user_profile.utils.auth import in_group
 
 
 class CommandList(PermissionsRequiredMixin, ListView):
@@ -49,7 +50,7 @@ class CommandList(PermissionsRequiredMixin, ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'command_line', 'sTitle': 'Command Line', 'sWidth': 'auto', },
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context

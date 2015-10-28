@@ -1,13 +1,13 @@
 """
 ===================================================================================
-Module contains custom command 'fix_group_permission' for fixing group permissions.
+Module contains custom command 'fix_user_permissions' for fixing group permissions.
 ===================================================================================
 
 Location:
-* /nocout_gis/nocout/user_profile/management/commands/fix_group_permission.py
+* /nocout_gis/nocout/user_profile/management/commands/fix_user_permissions.py
 
 Usage:
-* ./manage.py fix_group_permission
+* ./manage.py fix_user_permissions
 
 List of constructs:
 =======
@@ -15,20 +15,26 @@ Classes
 =======
 * Command
 """
-
+import operator
+from itertools import izip
 from django.core.management.base import BaseCommand
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.models import Permission, User
+from django.db.models import Q
+from django.db import connection
 from user_profile.permissions import admin_perms, operator_perms, viewer_perms
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
     """
-    Add permissions to associated groups.
+    Add group permissions to each user separately.
 
     Workflow:
     1. Create view permissions for all apps present in project using 'create_view_permissions()'.
-    2. Get group object by using group name like 'group_admin'.
+    2. Fetch all users.
     3. Get groups permissions from '/nocout_gis/nocout/user_profile/permissions.py' in list format
     for e.g. admin_perms = ['activity_stream.view_useraction',
                             'auth.add_user',
@@ -39,38 +45,60 @@ class Command(BaseCommand):
                             'device.view_device',
                             'device.view_devicefrequency',
                             'inventory.change_antenna']
-    4. Call 'fix_group_permissions()' with 'group object' and 'perms list for specific group'
-     for fixing permissions. This will assign permissions present in 'perm list' and remove
-     old permissions from database which are not present in 'perms list'.
+    4. Call 'fix_user_permissions()' for assigning permissions to each user corressponding to their group.
 
     Perms File: /nocout_gis/nocout/user_profile/permissions.py
     """
     args = '<directory ...>'
-    help = 'Adds Permissions to each group according to permissions list provided.'
+    help = 'Adds Permissions to each user according to permissions list provided.'
 
     def handle(self, *args, **options):
 
-        def fix_group_permissions(group, perms):
+        def fix_user_permissions():
             """
-            Add permissions to group from permission list and delete permissions from
-            group which is not in permission list.
+            Assign permissions to each user corressponding to their group.
             """
-            # List of permissions added to the group.
-            perm_list = []
+            print "- START -"
 
-            for data in perms:
-                # Seperate 'app_label' and 'codename' from perm string ('data') for e.g. if perm string is
-                # 'device.view_device' then app_label is 'device' and code_name is 'view_device'
-                app_label, codename = data.split('.')
-                perm = Permission.objects.get(codename=codename, content_type__app_label=app_label)
+            users = User.objects.prefetch_related('groups', 'user_permissions').order_by('username')
+            usernames = users.values_list('username', flat=True)
+            usergroups = users.values_list('groups__name', flat=True)
 
-                # Add permission to the group
-                group.permissions.add(perm)
-                perm_list.append(perm.id)
+            user_mapper = dict()
+            for name, group, obj in zip(usernames, usergroups, users):
+                user_mapper[name] = {
+                    'group': group,
+                    'obj': obj
+                }
 
-            # Delete permissions which are not in current permissions list.
-            for perm in group.permissions.exclude(id__in=perm_list):
-                group.permissions.remove(perm)
+                if group:
+                    # Get permissions list which needs to be assigned.
+                    perms_list = eval(group.lower() + "_perms")
+                    app_labels = list()
+                    codenames = list()
+
+                    for data in perms_list:
+                        # Seperate 'app_label' and 'codename' from perm string ('data') for e.g. if perm string is
+                        # 'device.view_device' then app_label is 'device' and code_name is 'view_device'
+                        app_label, codename = data.split('.')
+                        app_labels.append(app_label)
+                        codenames.append(codename)
+
+                    # Permissions which needs to be assigned.
+                    new_perms = reduce(
+                        operator.or_,
+                        (Q(codename=code, content_type__app_label=app) for code, app in izip(codenames, app_labels))
+                    )
+                    new_perms = Permission.objects.filter(new_perms)
+
+                    # Assign permissions to current user.
+                    obj.user_permissions.add(*new_perms)
+
+                    # Remove old custom permissions.
+                    diff_perms = set(obj.user_permissions.all()).difference(set(new_perms))
+                    obj.user_permissions.remove(*diff_perms)
+
+            print "- END -"
 
         def create_view_permissions():
             """
@@ -112,14 +140,5 @@ class Command(BaseCommand):
         # Create view permissions for all apps in project.
         create_view_permissions()
 
-        # Fixing permissions for admin group.
-        group_admin = Group.objects.get(name='Admin')
-        fix_group_permissions(group_admin, admin_perms)
-
-        # Fixing permissions for operator group.
-        group_operator = Group.objects.get(name='Operator')
-        fix_group_permissions(group_operator, operator_perms)
-
-        # Fixing permissions for viewer group.
-        group_viewer = Group.objects.get(name='Viewer')
-        fix_group_permissions(group_viewer, viewer_perms)
+        # Assigning default permissions to all users.
+        fix_user_permissions()

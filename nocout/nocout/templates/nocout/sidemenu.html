@@ -660,6 +660,16 @@
                             <span class="sub-menu-text">Organization</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="{% url 'groups_list' %}">
+                            <span class="sub-menu-text">Group</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'permissions_list' %}">
+                            <span class="sub-menu-text">Permission</span>
+                        </a>
+                    </li>
 
                     {% if perms.activity_stream.view_useraction %}
                         <li>

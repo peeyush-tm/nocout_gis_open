@@ -65,7 +65,8 @@
         var dataTableInstance = '',
             user_soft_delete_url = '',
             restore_user_url = '',
-            delete_user_url = '';
+            delete_user_url = '',
+            reset_perm_url = '';
 
         $(document).ready(function (e) {
 
@@ -82,6 +83,7 @@
             user_soft_delete_url = "{% url 'user_soft_delete' 123 1111111 %}";
             restore_user_url = "{% url 'restore_user' 123 %}";
             delete_user_url = "{% url 'delete_user' 123 %}";
+            reset_perm_url = "{% url 'reset_user_permissions' 123 %}";
 
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
@@ -131,6 +133,25 @@
             }
         });
 
+        function resetPermissions(user_id) {
+            var perm_url = reset_perm_url;
+            perm_url = perm_url.replace('123', user_id);
+            bootbox.confirm("Are you sure you want to reset current permissions to default once?", function(result) {
+                if (result) {
+                    $.ajax({
+                        'url': perm_url,
+                        'type': 'GET',
+                        'success': function(result) {
+                            bootbox.alert('Permissions reset successfully.')
+                        },
+                        error: function(err) {
+                            console.log(err.statusText);
+                        }
+                    })
+                }
+            });
+        }
+
         /**
          * This event triggers when delete icon on operational tab in action columns clicked
          * @event click
@@ -159,6 +180,14 @@
                         // console.log(err.statusText);
                     }
                 });
+            }
+        });
+
+
+        $('.user_tab_content').delegate('.reset_perm_btn', 'click', function(e) {
+            var user_id = $(this).attr('pk');
+            if (user_id) {
+                resetPermissions(user_id)
             }
         });
     </script>
