@@ -1,4 +1,7 @@
-import mysql.connector
+"""  Module to handle mysql connection for sync api"""
+
+#import mysql.connector
+from MySQLdb import connect
 
 from django.conf import settings
 
@@ -11,12 +14,12 @@ def mysql_conn():
 			'PORT': 3306
 			}
 	conf = settings.DATABASES['default']
-	db = mysql.connector.connect(
+	db = connect(
 						host=conf.get('HOST'),
+						port=conf.get('PORT'),
 						user=conf.get('USER'),
-						password=conf.get('PASSWORD'),
-						database=conf.get('NAME'),
-						port=conf.get('PORT')
+						passwd=conf.get('PASSWORD'),
+						db=conf.get('NAME'),
 						)
 	return db
 

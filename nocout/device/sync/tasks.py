@@ -3,7 +3,6 @@
 
 
 from datetime import datetime
-import json
 import os
 import requests
 import tarfile
@@ -13,6 +12,7 @@ from celery.utils.log import get_task_logger
 
 from django.conf import settings
 from device.models import DeviceSyncHistory
+
 import generate_deviceapp_config
 
 logger = get_task_logger(__name__)
