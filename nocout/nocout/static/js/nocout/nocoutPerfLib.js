@@ -21,7 +21,7 @@ var perf_that = "",
         {"id": "live", "title": "Live"}
     ],
     poll_now_tab = [
-        { "id" : "live_poll_now", "title" : "Live Polling", disabled_url : true }
+        { "id" : "live_poll_now", "title" : "On Demand Poll", disabled_url : true }
     ],
     tabs_with_historical = [
         {"id": "bihourly", "title": "Half-Hourly"},
@@ -165,9 +165,9 @@ function nocoutPerfLib() {
                 'This Month': [moment().startOf('month'), moment().endOf('month')],
                 'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
             },
-            buttonClasses: ['btn btn-default'],
-            applyClass: 'btn-small btn-primary',
-            cancelClass: 'btn-small',
+            buttonClasses: ['btn btn-sm'],
+            applyClass: 'btn-primary',
+            cancelClass: 'btn-default',
             format: "DD-MM-YYYY HH:mm:ss",
             separator: ' to ',
             startDate: oldStartDate,
@@ -439,6 +439,11 @@ function nocoutPerfLib() {
                                     data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
                                     <i class="fa fa-stop text-danger"> </i>\
                                 </button>\
+                                <div align="right" class="pull-right"> \
+                                    <button class="btn btn-default btn-sm play_pause_btns reset_live_polling" title="Clear all polled data"> \
+                                        <i class="fa fa-trash-o text-danger"></i> \
+                                    </button> \
+                                </div> \
                             </div>\
                             <div class="clearfix"></div></div>\
                             <div class="clearfix"></div><div class="divide-20"></div>';
@@ -561,14 +566,14 @@ function nocoutPerfLib() {
                                         var tab_info_obj = {
                                                 'active_class' : active_class,
                                                 'unique_key' : unique_item_key,
-                                                'icon_class' : 'fa fa-arrow-circle-o-right',
+                                                'icon_class' : 'fa ' + default_left_tab_icon,
                                                 'api_url' : value.url,
                                                 'title' : value.title
                                             },
                                             content_info_obj = {
                                                 'active_class' : active_class,
                                                 'unique_key' : unique_item_key,
-                                                'show_last_updated' : true
+                                                'show_last_updated' : true,
                                             };
 
 
@@ -640,7 +645,7 @@ function nocoutPerfLib() {
                                                         var inner_tab_info_obj = {
                                                                 'active_class' : inner_active_class,
                                                                 'unique_key' : id + "_" + unique_item_key,
-                                                                'icon_class' : 'fa fa-caret-right',
+                                                                'icon_class' : 'fa fa-clock-o',
                                                                 'api_url' : data_url,
                                                                 'title' : title
                                                             };
@@ -739,6 +744,15 @@ function nocoutPerfLib() {
 
                             if ($("#last_updated_" + tab_content_dom_id).length > 0) {
                                 perf_that.resetLivePolling(tab_content_dom_id);
+                                // add 'only_service' param to querystring if unified view
+                                var view_type = $.trim($('input[name="service_view_type"]:checked').val());
+                                if (view_type == 'unified') {
+                                    if (serviceDataUrl.indexOf('?') > -1) {
+                                        serviceDataUrl += '&only_service=1';
+                                    } else {
+                                        serviceDataUrl += '?only_service=1';
+                                    }
+                                }
                                 // get the service status for that service
                                 perfInstance.getServiceStatus(serviceDataUrl, is_exact_url, function(response_type,data_obj) {
                                     if (response_type == 'success') {
@@ -749,6 +763,7 @@ function nocoutPerfLib() {
                                     }
                                 });
                             }
+
                             if (
                                 (
                                     !show_historical_on_performance
@@ -791,6 +806,15 @@ function nocoutPerfLib() {
             },
             complete: function () {
                 if (active_tab_url && active_tab_id) {
+                    // remove the 'active_left_tab_icon' class from all link (if exists)
+                    $('.left_tabs_container li a i').removeClass(active_left_tab_icon);
+                    //  Add 'default_left_tab_icon' class to active link
+                    $('.left_tabs_container li a i').addClass(default_left_tab_icon);
+                    //  Add 'active_left_tab_icon' class to active link
+                    $('#' + active_tab_id + '_tab i').addClass(active_left_tab_icon);
+                    //  Remove 'default_left_tab_icon' class to active link
+                    $('#' + active_tab_id + '_tab i').removeClass(default_left_tab_icon);
+
                     /*Reset Variables & counters */
                     clearTimeout(timeInterval);
                     nocout_destroyDataTable('other_perf_table');
@@ -808,6 +832,15 @@ function nocoutPerfLib() {
                         // show loading spinner
                         // showSpinner();
                         if ($("#last_updated_" + active_tab_content_dom_id).length > 0) {
+                            // add 'only_service' param to querystring if unified view
+                            var view_type = $.trim($('input[name="service_view_type"]:checked').val());
+                            if (view_type == 'unified') {
+                                if (active_tab_url.indexOf('?') > -1) {
+                                    active_tab_url += '&only_service=1';
+                                } else {
+                                    active_tab_url += '?only_service=1';
+                                }
+                            }
                             perfInstance.getServiceStatus(active_tab_url, is_exact_url, function(response_type,data_obj) {
                                 if (response_type == 'success') {
                                     // Call function to populate latest status for this service
@@ -956,7 +989,7 @@ function nocoutPerfLib() {
         }
 
         // If birdeye view then show header with DS
-        if (is_birdeye_view) {
+        if (clicked_tab_id.indexOf('bird') > -1) {
             listing_headers = default_live_table_headers_with_ds;
         }
 
@@ -981,7 +1014,7 @@ function nocoutPerfLib() {
         start_date = "";
         end_date = "";
 
-        if (startDate && endDate && !is_birdeye_view) {
+        if (startDate && endDate && clicked_tab_id.indexOf('bird') == -1) {
             
             var myStartDate = startDate.toDate(),
                 myEndDate = endDate.toDate();
@@ -1103,7 +1136,7 @@ function nocoutPerfLib() {
             var urlDataStartDate = '', urlDataEndDate = '';
             if (ajax_start_date == '' && ajax_end_date == '') {
                 // Pass
-            } else if(is_birdeye_view) {
+            } else if(clicked_tab_id.indexOf('bird') > -1) {
                 // Pass
             } else {
                 var end_Date = "";
@@ -1699,7 +1732,48 @@ $(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
     nocout_stopPollNow();
 });
 
+$(".perfContainerBlock").delegate('.reset_live_polling', 'click', function(e) {
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        tab_id = active_tab_obj["active_dom_id"];
+
+    if (poll_now_data_dict[tab_id] && poll_now_data_dict[tab_id].length > 0) {
+        try {
+            if ($("#" + tab_id + "_chart").highcharts()) {
+                var chart = $("#" + tab_id + "_chart").highcharts(),
+                    chart_series = chart.series;
+
+                if (chart_series && chart_series.length > 0) {
+                    // Remove series from highchart
+                    while(chart_series.length > 0) {
+                        chart_series[0].remove(true);
+                    }
+                }
+                // Destroy highchart
+                $("#" + tab_id + "_chart").highcharts().destroy();
+            }
+
+            if ($("#" + tab_id + "_bottom_table").length) {
+                $("#" + tab_id + "_bottom_table").html("");
+            }
+
+            nocout_destroyDataTable('other_perf_table');
+        } catch(e) {
+            // console.log(e);
+        }
+
+        // Reset the global variable
+        poll_now_data_dict[tab_id] = [];
+        // Reset the min, max & avg legends DOM
+        if(!$('#' + tab_id + '_legends_block').hasClass('hide')) {
+            $('#' + tab_id + '_legends_block').addClass('hide');
+        }
+    } else {
+        bootbox.alert("You don't have any live polled data for this service/data source.");
+    }
+});
+
 $('input[name="service_view_type"]').change(function(e) {
+
     // selected value of 'service_view_type'
     var service_view_type = $(this).val();
 

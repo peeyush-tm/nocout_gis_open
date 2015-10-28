@@ -83,7 +83,7 @@ span.dept {
 }
 
 /*Side menu arrow*/
-.sidebar-menu ul li ul li a .arrow:before {
+.sidebar-menu ul li a .arrow:before {
   float: right;
   margin-top: 1px;
   margin-right: 5px;
@@ -95,7 +95,7 @@ span.dept {
   font-weight: 300;
   text-shadow: none;
 }
-.sidebar-menu ul li ul li a .arrow.open:before {
+.sidebar-menu ul li a .arrow.open:before {
   float: right;
   margin-top: 1px;
   margin-right: 5px;
@@ -246,7 +246,8 @@ span.dept {
 }
 
 /*Side menu items overflow issue*/
-.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li > a {
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li > a,
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub .has-sub-sub-sub .sub-sub-sub {
   padding-left: 20px !important;
 }
 
@@ -291,7 +292,7 @@ iframe {
 .global_search_container {
   position: absolute;
   top: -40px;
-  left: 33%;
+  left: 23%;
 }
 .global_search_container .select2-container .select2-choice {
   height: 30px !important;
@@ -359,15 +360,15 @@ th.vAlign_middle, .vAlign_middle b {
   margin-bottom: 0px !important;
 }
 #latestStatusContainer {
-  margin-bottom: 9px;
+  margin: 10px 0px;
 }
 .sidebar-menu > ul {
   margin-top: 0px;
   border-top: 0px none !important;
 }
-#status_container {
+/*#status_container {
   margin-bottom: 12px !important;
-}
+}*/
 .control_btn_countainer {
   margin-bottom: 0px;
 }
@@ -412,7 +413,8 @@ th.vAlign_middle, .vAlign_middle b {
   padding-top: 8px !important;
   padding-bottom: 10px !important;
 }
-#page_header_container .date-range, #content .breadcrumb {
+#page_header_container .date-range,
+#content .breadcrumb {
   padding-top: 5px;
   padding-bottom: 5px;
   margin: 0px;
@@ -422,7 +424,7 @@ th.vAlign_middle, .vAlign_middle b {
   top: 18px;
   right: 20px;
 }
-#reservationtime {
+#reservationtime, #bsoutage_daterange {
   cursor: text;
   background: #FFFFFF;
 }
@@ -587,7 +589,7 @@ th.vAlign_middle, .vAlign_middle b {
 }
 
 h5.bigger, .h5 {
-  font-size: 16px !important;
+  font-size: 15px !important;
   font-weight: normal !important;
   color:#333;
 }
@@ -633,18 +635,24 @@ table.dataTable thead th, table.dataTable tfoot th{
   cursor: pointer;
 }
 /*Full Screen Button*/
-.transitionbtn {
-  border-radius: 2px;
-  transition-property: background, border-radius;
-  transition-duration: 0.2s;
+.controls_container ul li a.btn-sm,
+.btn-default {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  /*border-bottom-width: 2px !important;*/
+  transition-property: border-bottom-color;
+  transition-duration: 0.1s;
   transition-timing-function: linear;
 }
-.transitionbtn:hover {
-  border-radius: 50% !important;
-  background: transparent;
+.controls_container ul.list-inline > li:first-child {
+  padding-left: 5px;
+}
+.controls_container ul li .btn-sm:hover,
+.btn-default:hover {
+  /*border-radius: 50% !important;*/
+  border-bottom-color: rgba(0, 0, 0, 0.40) !important;
 }
 .box .header-tabs .nav-tabs > li {
-  border-right: 1px inset #dddddd !important;
+  border-right: 1px solid #dddddd !important;
   border-left: 0px none!important;
   margin-bottom: 0px;
 }
@@ -666,12 +674,29 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
   border-bottom: 3px solid transparent;
 }
 #goFullScreen {
-  margin-left: -4px;
+  margin-left: -3px;
+  border:1px solid rgba(0, 0, 0, 0.1);
+  margin-left: -3px;
 }
+
 .box.border {
   border-color: #dddddd;
 }
 .box.border.lite .box-title {
   background-color: #FFFFFF;
   border-bottom: 1px solid #DDDDDD;
+}
+.severity_block {
+  cursor: pointer;
+}
+.datatable tbody tr td a {
+  padding: 0px;
+  margin: 0px;
+}
+.datatable tbody tr td a i {
+  padding-left: 2.5px;
+  padding-right: 2.5px;
+}
+.datatable tbody tr td a:hover {
+  text-decoration: none;
 }

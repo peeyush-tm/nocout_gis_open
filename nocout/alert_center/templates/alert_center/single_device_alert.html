@@ -53,14 +53,14 @@
     </style>
 
     <div class="" id="status_container" style="overflow:auto;">
-        <div id="latestStatusContainer">
-            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>  
-        </div>
         <div style="overflow:auto;">
             <table id="status_table" class="table table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
                 <thead></thead>
                 <tbody></tbody>
             </table>
+        </div>
+        <div id="latestStatusContainer">
+            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>  
         </div>
     </div>
 
@@ -79,13 +79,13 @@
                     </div>
                 </li>
                 <li>
-                    <button id="apply_filter" class="btn  btn-default btn-sm">
-                        <i class="fa fa-filter"></i> Apply Filter
+                    <button id="apply_filter" class="btn btn-default btn-sm">
+                        <i class="fa fa-filter"></i>
                     </button>
                 </li>
                 <li>
-                    <button id="reset_filter" class="btn  btn-warning btn-sm">
-                        <i class="fa fa-times"></i> Reset Filter
+                    <button id="reset_filter" class="btn btn-default btn-sm">
+                        <i class="fa fa-times text-danger"></i>
                     </button>
                 </li>
             </ul>
@@ -97,31 +97,26 @@
                 <ul id="" class="nav nav-tabs top_perf_tabs">
                     <li>
                         <a href="#network_alert_service_block" id="network_alert_service_tab" title="Polling Alerts" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Polling Alerts</span>
                         </a>
                     </li>
                     <li>
                         <a href="#network_alert_down_block" id="network_alert_down_tab" title="Down" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Down</span>
                         </a>
                     </li>
                     <li>
                         <a href="#network_alert_packet_block" id="network_alert_packet_tab" title="Packet Drop" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Packet Drop</span>
                         </a>
                     </li>
                     <li>
                         <a href="#network_alert_latency_block" id="network_alert_latency_tab" title="Latency" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Latency</span>
                         </a>
                     </li>
                     <li class="active">
                         <a href="#network_alert_ping_block" id="network_alert_ping_tab" title="Ping Details" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Ping Details</span>
                         </a>
                     </li>
@@ -205,12 +200,13 @@
             dateRangePicker_domId = "reservationtime",
             isDateFilterApplied = false,
             bold_class = "",
-            is_dr_device = false;
+            is_dr_device = false,
+            severity_wise_data_api = '',
+            current_device = '';
 
         $(document).ready(function (e) {
 
-            var current_device = "{{ current_device_name }}",
-                device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "",
+            var device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "",
                 service_status_url = "{{ service_status_url }}" ? $.trim("{{ service_status_url }}") : "",
                 statusUrl = "",
                 page_type = "{{ page_type }}",
@@ -224,6 +220,14 @@
                 oldENdData = new Date(),
                 location_array = window.location.href.split("#"),
                 data_source = "{{ data_source }}" ? $.trim("{{ data_source }}") : "down";
+
+            current_device = "{{ current_device_name }}";
+
+            severity_wise_data_api = "{% url 'get_severity_wise_status' %}";
+
+            if (severity_wise_data_api) {
+                severity_wise_data_api = getCompleteUrl(severity_wise_data_api);
+            }
 
             if(location_array.length > 1) {
                 window.location.href = location_array[0];

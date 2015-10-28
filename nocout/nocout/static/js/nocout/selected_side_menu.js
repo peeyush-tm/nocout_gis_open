@@ -56,7 +56,7 @@ if(currentRouter.indexOf('wizard/device-type') > -1) {
 }
 
 /*By default all the sub-sub menu panel will be collapsed*/
-$(".has-sub-sub > ul.sub-sub").hide();
+$(".has-sub-sub > ul.sub-sub, .has-sub-sub > ul.sub-sub > .has-sub-sub-sub > ul.sub-sub-sub").hide();
 
 for(var i = 0; i < sideMenu.length; i++) {
 
@@ -90,9 +90,9 @@ for(var i = 0; i < sideMenu.length; i++) {
 
 /*This function apply selected classes on current menu tag & its parents*/
 function applySelectedClasses(menuTag) {
-
     var closest_has_sub = $(menuTag).closest(".has-sub"),
         closest_has_sub_sub = $(menuTag).closest(".has-sub-sub"),
+        closest_has_sub_sub_sub = $(menuTag).closest(".has-sub-sub-sub"),
         closest_li = $(menuTag).closest("li"),
         closest_sub_sub = $(menuTag).closest(".sub-sub"),
         closest_arrow = $(menuTag).closest("span.arrow"),
@@ -100,9 +100,37 @@ function applySelectedClasses(menuTag) {
         isTab = $('.nav li.active .hidden-inline-mobile'),
         isTabCase2 = $('.nav li .hidden-inline-mobile');
 
-    if(closest_has_sub.length > 0 && closest_has_sub_sub.length > 0) {
+    if (closest_has_sub.length > 0 && closest_has_sub_sub.length > 0 && closest_has_sub_sub_sub.length > 0) {
+        
+        closest_has_sub.addClass("active");
+        closest_has_sub.addClass("open");
+        
+        closest_has_sub_sub.addClass("active");
+        closest_has_sub_sub.addClass("open");
 
-        closest_has_sub.addClass("active");            
+        closest_has_sub_sub_sub.addClass("active");
+
+        var top_level_child_length = closest_has_sub.children().first()[0].children.length,
+            top_level_arrow = closest_has_sub.children().first()[0].children[top_level_child_length - 1];
+
+        top_level_arrow.className = top_level_arrow.className+" open";
+
+        var second_level_child_length = closest_has_sub_sub.children().first()[0].children.length,
+            second_level_arrow = closest_has_sub_sub.children().first()[0].children[second_level_child_length - 1];
+
+        second_level_arrow.className = second_level_arrow.className+" open";
+
+        var first_level_child_length = closest_has_sub_sub_sub.children().first()[0].children.length,
+            first_level_arrow = closest_has_sub_sub_sub.children().first()[0].children[first_level_child_length - 1];
+
+        first_level_arrow.className = first_level_arrow.className+" open";
+
+        /*Add current class to parent element*/
+        closest_li.addClass("current");
+
+        $(".sidebar-menu ul li.active ul.sub .has-sub-sub.active ul.sub-sub li.has-sub-sub-sub.active ul.sub-sub-sub").show();
+    } else if(closest_has_sub.length > 0 && closest_has_sub_sub.length > 0 && closest_has_sub_sub_sub.length == 0) {
+        closest_has_sub.addClass("active");
         var main_child_length = closest_has_sub.children().first()[0].children.length,
             top_arrow = closest_has_sub.children().first()[0].children[main_child_length - 1];
 
@@ -116,39 +144,7 @@ function applySelectedClasses(menuTag) {
 
         /*Add current class to parent element*/
         closest_li.addClass("current");
-        breadcrumb_txt += "<li>"+closest_has_sub[0].children[0].outerHTML+"</li>";
-        breadcrumb_txt += "<li>"+closest_has_sub_sub[0].children[0].outerHTML+"</li>";
-        breadcrumb_txt += closest_li[0].outerHTML;
-
-        // $(".breadcrumb").html(breadcrumb_txt);
-
-        // If any tab Exists
-        if(isTab.length > 0 || isTabCase2.length > 0) {
-            var tab_breadcrumb = "";
-            setTimeout(function() {
-                if($(".lite > .box-title > h4").text().indexOf("(") > -1) {
-                    if(device_technology) {
-                        // Add Device Technology to breadcrumb
-                        tab_breadcrumb = '<li><a style="cursor:pointer;" url="'+currentRouter+'" class="perf_tech_breadcrumb">'+device_technology.toUpperCase()+'</a></li>';
-                    }
-                    // Add Device IP to breadcrumb
-                    tab_breadcrumb += '<li><a href="'+window.location.href.split("#")[0]+'"><b>'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</b></a></li>';
-                } else {
-                    tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
-                }
-                // $(".breadcrumb").append(tab_breadcrumb);
-            },150);
-        }
-
-        // If create/update form
-        if(isForm) {
-            setTimeout(function() {
-                var tab_breadcrumb = '<li><a href="'+window.location.href+'"><strong>'+$('.lite > .box-title > h4').text()+'</strong></a></li>';
-                // $(".breadcrumb").append(tab_breadcrumb);
-            },150);
-        }
-
-    } else if(closest_has_sub.length > 0 && closest_has_sub_sub.length == 0) {
+    } else if(closest_has_sub.length > 0 && closest_has_sub_sub.length == 0 && closest_has_sub_sub_sub.length == 0) {
         
         closest_has_sub.addClass("active");
         var main_child_length = closest_has_sub.children().first()[0].children.length;
@@ -187,9 +183,6 @@ function applySelectedClasses(menuTag) {
                 // $(".breadcrumb").append(tab_breadcrumb);
             },150);
         }
-
-
-
     } else {
         /*Add current class to parent element*/
         closest_li.addClass("active");

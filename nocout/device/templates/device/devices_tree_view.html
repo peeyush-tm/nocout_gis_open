@@ -17,14 +17,7 @@
 {% load staticfiles %}
 
 {% block content %}
-   {% if perms.inventory.add_antenna %}
-    <p>
-        <a href="/device/new"><i class="fa fa-plus"></i> Create Device</a>
-    </p>
-   {% endif %}
-    <p>
-        <a href="/device"><i class="fa fa-table"></i> Devices List View</a>
-    </p>
+
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-sitemap"></i>DEVICES TREE VIEW</h4>
@@ -48,6 +41,14 @@
     <script type="text/javascript">
 
         $(document).ready(function(e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% if perms.device.add_device %}
+                var create_link_html = '<a href="/device/new" title="Create Device" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
 
             var infoObject = {};
             infoObject["domElement"] = "devicesTree";

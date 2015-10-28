@@ -423,6 +423,8 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             regex_ip_address = '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
             regex_alnum_comma_hyphen_fslash_underscore_space = '^[a-zA-Z0-9\s,_/-]+$'
             regex_alnum_comma_fslash = '^[a-zA-Z0-9,/]+$'
+            regex_alnum_pipe_fslash = '^[a-zA-Z0-9|/]+$'
+            regex_alnum_pipe = '^[a-zA-Z0-9|]+$'
             regex_alnum_underscore = '^[a-zA-Z0-9_]+$'
             regex_alnum_comma_underscore_space = '^[a-zA-Z0-9,\s_]+$'
             regex_alpha_underscore = '^[a-zA-Z_]+$'
@@ -669,7 +671,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             try:
                 if aggregation_switch_port:
                     if str(aggregation_switch_port).strip().lower() not in [x.lower() for x in 'NA', 'N/A']:
-                        if not re.match(regex_alnum_comma_fslash, aggregation_switch_port.strip()):
+                        if not re.match(regex_alnum_pipe, aggregation_switch_port.strip()):
                             errors += 'Aggregation Switch Port can only contains alphanumeric, comma, forward slash.\n'
             except Exception as e:
                 pass
@@ -717,7 +719,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             # 'switch or converter port' validation (can only contains alphanumeric, comma, forward slash)
             try:
                 if switch_or_converter_port:
-                    if not re.match(regex_alnum_comma_fslash, switch_or_converter_port.strip()):
+                    if not re.match(regex_alnum_pipe, switch_or_converter_port.strip()):
                         errors += 'Switch/Converter Port {} can only contains alphanumeric, comma, forward slash.\n'.format(switch_or_converter_port)
                 else:
                     errors += 'Switch/Converter Port must not be empty.\n'
@@ -989,7 +991,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             try:
                 if hssu_port:
                     if str(hssu_port).strip().lower() not in [x.lower() for x in 'NA', 'N/A']:
-                        if not re.match(regex_alnum_comma_fslash, hssu_port.strip()):
+                        if not re.match(regex_alnum_pipe, hssu_port.strip()):
                             errors += 'HSSU Port can only contains alphanumeric, comma, forward slash.\n'
             except Exception as e:
                 pass
@@ -11677,6 +11679,13 @@ def get_selected_pmp_inventory(base_station, sector):
     except Exception as e:
         logger.info("PMP BS Device not exist. Exception: ", e.message)
 
+    # bs device type
+    bs_device_type = None
+    try:
+        bs_device_type = DeviceType.objects.get(id=sector.sector_configured_on.device_type).name
+    except Exception as e:
+        logger.info(e.message)
+
     # base station machine
     bs_machine_name = ""
     try:
@@ -11705,6 +11714,13 @@ def get_selected_pmp_inventory(base_station, sector):
                 ss_device_name = sub_station.device.device_name
             except Exception as e:
                 logger.info("PMP SS device not found. Exception: ", e.message)
+
+            # ss device type
+            ss_device_type = None
+            try:
+                ss_device_type = DeviceType.objects.get(id=sub_station.device.device_type).name
+            except Exception as e:
+                logger.info(e.message)
 
             # sub station machine
             ss_machine_name = ""
@@ -12009,19 +12025,35 @@ def get_selected_pmp_inventory(base_station, sector):
 
                 # dl utilization
                 try:
-                    pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                            service_name='cambium_dl_utilization',
-                                                                            data_source='dl_utilization').using(
-                                                                            alias=bs_machine_name)[0].current_value
+                    if bs_device_type == "Radwin5KBS":
+                        pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='rad5k_bs_dl_utilization',
+                            data_source='dl_utilization').using(
+                            alias=bs_machine_name)[0].current_value
+                    else:
+                        pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='cambium_dl_utilization',
+                            data_source='dl_utilization').using(
+                            alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization DL not exist for base station ({}).".format(base_station.name, e.message))
 
                 # ul utilization
                 try:
-                    pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                            service_name='cambium_ul_utilization',
-                                                                            data_source='ul_utilization').using(
-                                                                            alias=bs_machine_name)[0].current_value
+                    if bs_device_type == "Radwin5KBS":
+                        pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='rad5k_bs_ul_utilization',
+                            data_source='ul_utilization').using(
+                            alias=bs_machine_name)[0].current_value
+                    else:
+                        pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='cambium_ul_utilization',
+                            data_source='ul_utilization').using(
+                            alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization UL not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12207,7 +12239,7 @@ def get_selected_pmp_inventory(base_station, sector):
                 logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
 
             if pl != "100":
-            # frequency
+                # frequency
                 try:
                     pmp_sm_row['Frequency'] = InventoryStatus.objects.filter(device_name=ss_device_name,
                                                                              data_source='frequency').using(
@@ -12281,37 +12313,70 @@ def get_selected_pmp_inventory(base_station, sector):
 
                 # polles bs mac
                 try:
-                    pmp_sm_row['Polled BS MAC'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                             data_source='ss_connected_bs_mac').using(
-                                                                             alias=ss_machine_name)[0].current_value
+                    if ss_device_name == "Radwin5KSS":
+                        pmp_sm_row['Polled BS MAC'] = InventoryStatus.objects.filter(
+                            device_name=ss_device_name,
+                            service_name="rad5k_ss_conn_bs_ip_invent",
+                            data_source='bs_ip').using(
+                            alias=ss_machine_name)[0].current_value
+                    else:
+                        pmp_sm_row['Polled BS MAC'] = InventoryStatus.objects.filter(
+                            device_name=ss_device_name,
+                            data_source='ss_connected_bs_mac').using(
+                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Polled BS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # uptime
                 try:
-                    session_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                  service_name='cambium_session_uptime_system',
-                                                                  data_source='uptime').using(
-                                                                  alias=ss_machine_name)[0].current_value
-                    pmp_sm_row['Session Uptime'] = display_time(session_uptime)
+                    if ss_device_name == "Radwin5KSS":
+                        session_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                      service_name='rad5k_ss_session_uptime_invent',
+                                                                      data_source='session_uptime').using(
+                                                                      alias=ss_machine_name)[0].current_value
+                        pmp_sm_row['Session Uptime'] = display_time(session_uptime)
+                    else:
+                        session_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                      service_name='cambium_session_uptime_system',
+                                                                      data_source='uptime').using(
+                                                                      alias=ss_machine_name)[0].current_value
+                        pmp_sm_row['Session Uptime'] = display_time(session_uptime)
+
                 except Exception as e:
                     logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # dl utilization
                 try:
-                    pmp_sm_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                            service_name='cambium_ss_dl_utilization',
-                                                                            data_source='dl_utilization').using(
-                                                                            alias=ss_machine_name)[0].current_value
+                    if ss_device_name == "Radwin5KSS":
+                        pmp_sm_row['Utilization DL'] = ServiceStatus.objects.filter(
+                            device_name=ss_device_name,
+                            service_name='rad5k_ss_dl_utilization',
+                            data_source='dl_utilization').using(
+                            alias=ss_machine_name)[0].current_value
+                    else:
+                        pmp_sm_row['Utilization DL'] = ServiceStatus.objects.filter(
+                            device_name=ss_device_name,
+                            service_name='cambium_ss_dl_utilization',
+                            data_source='dl_utilization').using(
+                            alias=ss_machine_name)[0].current_value
+
                 except Exception as e:
                     logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # ul utilization
                 try:
-                    pmp_sm_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                            service_name='cambium_ss_ul_utilization',
-                                                                            data_source='ul_utilization').using(
-                                                                            alias=ss_machine_name)[0].current_value
+                    if ss_device_name == "Radwin5KSS":
+                        pmp_sm_row['Utilization UL'] = ServiceStatus.objects.filter(
+                            device_name=ss_device_name,
+                            service_name='rad5k_ss_ul_utilization',
+                            data_source='ul_utilization').using(
+                            alias=ss_machine_name)[0].current_value
+                    else:
+                        pmp_sm_row['Utilization UL'] = ServiceStatus.objects.filter(
+                            device_name=ss_device_name,
+                            service_name='cambium_ss_ul_utilization',
+                            data_source='ul_utilization').using(
+                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
 
