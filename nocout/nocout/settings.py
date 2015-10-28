@@ -60,7 +60,7 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/home/'
 LOGIN_EXEMPT_URLS = (
     r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/',
-    'sm/dialog_action/', 'user/change_password/')
+    'sm/dialog_action/', 'user/change_password/', 'escalation/email/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -226,6 +226,17 @@ AUTHENTICATION_BACKENDS = (
 # Celery settings.
 import djcelery
 djcelery.setup_loader()
+CELERY_ACCEPT_CONTENT = ['pickle']
+CELERY_TASK_SERIALIZER = 'pickle'
+CELERY_RESULT_SERIALIZER = 'pickle'
+#Email Setting
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'chanish.agarwal1@gmail.com'
+EMAIL_HOST_PASSWORD = 'lferhilrmyecqpob'
+# DEFAULT_FROM_EMAIL = 'chanish.agarwal1@gmail.com'
+DEFAULT_TO_EMAIL = 'chanishagarwal0@gmail.com'
 
 # Redis settings.
 REDIS_HOST = "localhost"
@@ -697,8 +708,8 @@ REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 
 # Email settings.
 DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
-EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
+# EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+# EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
 
 # Special Calculation Mechanism for capacity management.
 CAPACITY_SPECIFIC_TIME = 0

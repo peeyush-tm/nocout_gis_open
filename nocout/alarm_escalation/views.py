@@ -9,6 +9,14 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 
+#############################################################
+from alarm_escalation.tasks import mail_send
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import logging
+logger = logging.getLogger(__name__)
+#############################################################
+
 class LevelList(TemplateView):
     """
     Class Based View for the Escalation data table rendering.
@@ -121,3 +129,105 @@ class LevelDelete(PermissionsRequiredMixin, DeleteView):
     template_name = "level/level_delete.html"
     success_url = reverse_lazy('level_list')
     required_permissions = ('alarm_escalation.delete_escalationlevel',)
+
+
+class EmailSender(View):
+    """
+    Send email to multiple mail id's with multiple attachment.
+
+    URL: http://127.0.0.1:8000/escalation/email/
+
+    Args:
+        subject (unicode): Mail subject.
+        message (unicode): Email Message will be here.
+        from_email (unicode): Sender's email.
+        to_email (list): List of email id where to send mail.
+        attachments (list): Mail attachments if any(file object).
+        success (int) : Success bit either 0/1.
+        error_message (string): String containing error messages.
+
+    Return (dict): Response to be returnes in json format.
+                   For e.g.,
+                        {
+                            'message': 'Successfully send the email.',
+                            'attachments': [
+                                <InMemoryUploadedFile: A.pdf(application/octet-stream)>,
+                                <InMemoryUploadedFile: IMG-2020-WA0000.jpg(image/jpeg)>
+                            ],
+                            'success': 1
+                            'data': {
+                                'message': u'PFA attachments',
+                                'from_email': u'chanish.agarwal1@gmail.com',
+                                'to_email': [
+                                    u'chanish.agarwal@teramatrix.in'
+                                ],
+                                'subject': u'day 1 task'
+                            },
+
+                        }
+
+    """
+
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(EmailSender, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        # From email id.
+        from_email = self.request.POST.get('from_email', None)
+        # To email id.
+        to_email = self.request.POST.get('to_email')
+        # If multiple values then by using eval converting into list.
+        if to_email:
+            if "," in to_email:
+                to_email = eval(to_email)
+            else:
+                to_email = to_email.split(",")
+        # Subject.
+        subject = self.request.POST.get('subject', None)
+        # Message.
+        message = self.request.POST.get('message', None)
+        # File attachments.
+        attachments = None
+        try:
+            attachments = request.FILES.values()
+        except Exception as e:
+            logger.exception(e.message)
+
+        # Result: Response to be returned.
+        result = {
+            "success": 0,
+            "message": "Failed to send email.",
+            'attachments': attachments,
+            "data": {
+                "subject": subject,
+                "message": message,
+                "from_email": from_email,
+                "to_email": to_email,
+            }
+        }
+
+        # Expected errors has been stored here.
+        error_messages = ""
+
+        # Field validations.
+        if not to_email:
+            # 'error_message' generation when 'to_email' value not provided.
+            error_messages += "Please specify email id of sender. \n"
+
+        if not from_email:
+            # 'error_message' generation when 'from_email' value not provided.
+            error_messages += "Mail sender's id is not given \n"
+
+        if error_messages:
+            result['message'] = error_messages
+            # return HttpResponse(json.dumps(result))
+        else:
+            result['success'] = 1
+            result['message'] = "Successfully send the email."
+            # Sending email as a backend task.
+            mail_send.delay(result)
+
+        attachments_name = [x.name for x in result['attachments']]
+        result['attachments'] = attachments_name
+        return HttpResponse(json.dumps(result))

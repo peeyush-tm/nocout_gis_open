@@ -656,3 +656,49 @@ def prepare_service_data_sources(service_name_list):
     return list(DeviceTypeServiceDataSource.objects.filter(
         device_type_service__service__name__in=service_name_list).values_list('service_data_sources__name', flat=True)
     )
+
+
+@task
+def mail_send(result):
+    """
+    This is a Celery function which send mail for given parameters(valid and checked)
+    used If Else for case of attachments availability
+
+    Args:
+        result (dict): Dictionary containing email data.
+                       For e.g.,
+                            {
+                                'message': 'Successfully send the email.',
+                                'data': {
+                                    'message': u'PFA attachments',
+                                    'from_email': u'chanish.agarwal1@gmail.com',
+                                    'to_email': [
+                                        u'chanish.agarwal@teramatrix.in'
+                                    ],
+                                    'subject': u'day 1 task'
+                                },
+                                'attachments': [
+                                    <InMemoryUploadedFile: Resume-PraveenKumarAgarwal.pdf
+                                                          (application/octet-stream)>,
+                                    <InMemoryUploadedFile: IMG-20151020-.jpg(image/jpeg)>
+                                ],
+                                'success': 1
+                            }
+
+    :return: True/False
+    """
+    mail = EmailMessage(result['data']['subject'], result['data']['message'],
+                        result['data']['from_email'],
+                        result['data']['to_email'])
+    # Handling mail without an attachment.
+    if not result['attachments']:
+        mail.send()
+
+    # Mail with attachments.
+    else:
+        for attachment in result['attachments']:
+            mail.attach(attachment.name, attachment.read(),
+                        attachment.content_type)
+        mail.send()
+
+    return True
