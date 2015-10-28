@@ -25,8 +25,7 @@ def in_group(user=None, group_names=None):
 
 def get_user_organizations(user):
     """
-    If the user role is admin then append its descendants organization as well, otherwise not
-
+    If the user role is admin then append its descendants organization as well, otherwise not.
     :params self_object:
     :return organization_list:
     """
@@ -43,6 +42,12 @@ def get_user_organizations(user):
     return organizations
 
 def get_child_users(user=None, limit='org'):
+    """
+    Fetch all child users of a given user.
+    :param user:
+    :param limit:
+    :return:
+    """
     if user:
         # Get organizations user associated or linked with.
         link_org = get_user_organizations(user)
