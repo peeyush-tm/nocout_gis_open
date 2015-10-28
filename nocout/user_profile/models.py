@@ -20,8 +20,8 @@ Signals
 """
 
 from django.db import models
-from django.db.models.signals import post_save, m2m_changed, pre_save
-from django.contrib.auth.models import User, Group
+from django.db.models.signals import post_save, m2m_changed
+from django.contrib.auth.models import User
 from mptt.models import MPTTModel, TreeForeignKey
 from organization.models import Organization
 import signals as user_signals
@@ -58,6 +58,3 @@ class UserPasswordRecord(models.Model):
 
 # Set site instance 'is_device_change' bit on device type 'service' field modification or creation.
 post_save.connect(user_signals.assign_default_thematics_to_user, sender=UserProfile)
-
-# Assign permissions as per user group.
-m2m_changed.connect(user_signals.reassign_permissions, sender=User.groups.through)
