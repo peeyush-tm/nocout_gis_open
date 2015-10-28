@@ -347,10 +347,28 @@
                                     <span class="sub-menu-text">MFR</span>
                                 </a>
                             </li>
-                            <li>
-                                <a href="{% url 'InventoryDownloadCenter' 'bs_outage_daily' %}">
-                                    <span class="sub-menu-text">BS Outage</span>
+                            <li class="has-sub-sub-sub">
+                                <a href="javascript:;">
+                                    <span class="sub-menu-text">Fault Reports</span>
+                                    <span class="arrow"></span>
                                 </a>
+                                <ul class="sub-sub-sub">
+                                    <li>
+                                        <a href="{% url 'InventoryDownloadCenter' 'bs_outage_daily' %}">
+                                            <span class="sub-menu-text">Raw BS Outage</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'InventoryDownloadCenter' 'bs_daily_fault_report' %}">
+                                            <span class="sub-menu-text">Daily Fault Reports</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'InventoryDownloadCenter' 'bs_monthly_uptime_report' %}">
+                                            <span class="sub-menu-text">Monthly Uptime Reports</span>
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
                         </ul>
                     </li>

@@ -2525,12 +2525,12 @@ class GISPerfData(View):
                 continue
             processed[perf['data_source'], perf['service_name']] = []
 
-            service_name = perf['service_name']
+            service_name = perf['service_name'].strip()
 
             sds_name = perf['data_source'].strip()
 
             if sds_name not in ['pl', 'rta']:
-                sds_name = service_name + "_" + sds_name
+                sds_name = service_name.lower() + "_" + sds_name.lower()
 
             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                 if sds_name in SERVICE_DATA_SOURCE \
@@ -2590,11 +2590,11 @@ class GISPerfData(View):
         if data_source:
             title = " ".join(data_source.split("_")).title()
 
-            key_name = service_name.strip() + "_" +data_source.strip()
+            key_name = service_name.strip().lower() + "_" +data_source.strip().lower()
 
             if data_source.strip().lower() in ['pl', 'rta']:
                 name = data_source.strip()
-                key_name = data_source.strip()
+                key_name = data_source.strip().lower()
             else:
                 name = key_name
 
@@ -5009,12 +5009,12 @@ class GISPerfInfo(View):
                 continue
             processed[perf['data_source'], perf['service_name']] = []
 
-            service_name = perf['service_name']
+            service_name = perf['service_name'].strip()
 
             sds_name = perf['data_source'].strip()
 
             if sds_name not in ['pl', 'rta']:
-                sds_name = service_name + "_" + sds_name
+                sds_name = service_name.lower() + "_" + sds_name.lower()
 
             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                 if sds_name in SERVICE_DATA_SOURCE \
@@ -5078,11 +5078,11 @@ class GISPerfInfo(View):
         if data_source:
             title = " ".join(data_source.split("_")).title()
 
-            key_name = service_name.strip() + "_" +data_source.strip()
+            key_name = service_name.strip().lower() + "_" +data_source.strip().lower()
 
             if data_source.strip().lower() in ['pl', 'rta']:
                 name = data_source.strip()
-                key_name = data_source.strip()
+                key_name = data_source.strip().lower()
             else:
                 name = key_name
 

@@ -1,0 +1,230 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-file-excel-o'></i> Download Center" "javascript:;" %}
+    {% breadcrumb_safe 'Fault Reports' "javascript:;" %}
+    {% breadcrumb_safe 'Monthly Uptime Reports' "javascript:;" %}
+    {% breadcrumb_safe report_title "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}{{ report_title }}{% endblock %}
+{% block content_description %}List of reports{% endblock %}
+{% block content %}
+	<style type="text/css">
+		.outage_content {
+			/*margin-top: -30px;*/
+			overflow-y:auto;
+		}
+		.box .header-tabs .monthly_report_ul > li,
+        .box .header-tabs .monthly_report_ul > li > a {
+            margin: 0px;
+        }
+        .box .header-tabs .monthly_report_ul > li > a {
+            border-bottom: 3px solid transparent;
+        }
+        .box .header-tabs .monthly_report_ul > li {
+            padding: 0px 5px;
+            /*border-bottom: 0px solid #c6c6ce;*/
+        }
+        .perfContainerBlock .box-title .pull-right .list-inline > li {
+            max-width: 200px !important;
+        }
+        .perfContainerBlock .header-tabs {
+            overflow: hidden;
+            margin: 0px;
+        }
+        .box .header-tabs .monthly_report_ul {
+            top: 0px;
+        }
+        .monthly_report_ul {
+            width: 2000px;
+        }
+        .monthly_report_ul li {
+            float: left !important;
+        }
+        .header-tabs {
+            overflow: hidden;
+        }
+        .paging_arrow {
+            position: absolute;
+            left: 12px;
+            top: 10px;
+            font-size: 25px;
+            cursor: pointer;
+        }
+        .right_arrow {
+            right: 5px;
+            left: auto;
+        }
+        #table_container_div {
+        	position: relative;
+        	padding-bottom: 0px;
+        }
+        #table_container_div .header-tabs {
+        	width: 95%;
+        	margin:0px auto;
+        }
+	</style>
+    <div class="box border lite">
+        <div id="table_container_div" class="box-title">
+            <i class="fa fa-arrow-circle-o-left text-ttpl paging_arrow hide">&nbsp;</i>
+        	<div class="tabbable header-tabs">
+	            <ul class="nav nav-tabs monthly_report_ul">
+	                <li class="active">
+	                    <a href="#monthly_outage_block" id="monthly_outage_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">Monthly Outage Graph</span>
+	                    </a>
+	                </li>
+	                <li>
+	                    <a href="#mttr_summary_block" id="mttr_summary_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">MTTR Summary</span>
+	                    </a>
+	                </li>
+	                <li>
+	                    <a href="#bs_uptime_block" id="bs_uptime_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">All India BS Uptime</span>
+	                    </a>
+	                </li>
+	                <li>
+	                    <a href="#nw_uptime_block" id="nw_uptime_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">Network Uptime Trend</span>
+	                    </a>
+	                </li>
+	            	<li>
+	                    <a href="#mttr_block" id="mttr_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">MTTR</span>
+	                    </a>
+	                </li>
+	            	<li>
+	                    <a href="#failure_block" id="failure_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">Device Failure Report</span>
+	                    </a>
+	                </li>
+	            	<li>
+	                    <a href="#bs_per_city_block" id="bs_per_city_tab" data-toggle="tab">
+	                        <span class="hidden-inline-mobile">No. of BS Per City report</span>
+	                    </a>
+	                </li>
+	            </ul>
+	        </div>
+	        <i class="fa fa-arrow-circle-o-right text-ttpl right_arrow paging_arrow hide">&nbsp;</i>
+        </div>
+        <div id="tableContainer" class="box-body">
+            <div class="tab-content outage_content">
+                <div class="tab-pane active" id="monthly_outage_block">
+                	<table class="datatable table table-striped table-bordered table-hover" id="monthly_outage_listing">
+		                <thead></thead>
+		                <tbody></tbody>
+		            </table>
+                </div>
+                <div class="tab-pane" id="mttr_summary_block">
+                	<table class="datatable table table-striped table-bordered table-hover" id="sa_2_listing">
+		                <thead></thead>
+		                <tbody></tbody>
+		            </table>
+                </div>
+                <div class="tab-pane" id="bs_uptime_block">
+                	<table class="datatable table table-striped table-bordered table-hover" id="bs_uptime_listing">
+		                <thead></thead>
+		                <tbody></tbody>
+		            </table>
+                </div>
+                <div class="tab-pane" id="nw_uptime_block">
+                	<table class="datatable table table-striped table-bordered table-hover" id="nw_uptime_listing">
+		                <thead></thead>
+		                <tbody></tbody>
+		            </table>
+                </div>
+                <div class="tab-pane" id="mttr_block">
+                	<table class="datatable table table-striped table-bordered table-hover" id="mttr_listing">
+		                <thead></thead>
+		                <tbody></tbody>
+		            </table>
+                </div>
+                <div class="tab-pane" id="failure_block">
+                	<table class="datatable table table-striped table-bordered table-hover" id="failure_listing">
+		                <thead></thead>
+		                <tbody></tbody>
+		            </table>
+                </div>
+                <div class="tab-pane" id="bs_per_city_block">
+                	<table class="datatable table table-striped table-bordered table-hover" id="bs_per_city_listing">
+		                <thead></thead>
+		                <tbody></tbody>
+		            </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+    <script type="text/javascript">
+        var dataTableInstance = '',
+        	custom_startdate = '',
+			custom_enddate = '';
+
+        $(document).ready(function (e) {
+
+        	// Create Paging feature due to more no. of tabs
+        	createTabsPaging('ul.monthly_report_ul', 'li');
+
+        	var destroy=false,
+            	location_array = window.location.href.split("#");
+
+            // Disable advance filtering
+            create_advance_filters = false;
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+
+            /*Grid headers object*/
+            var gridHeadersObj = '{{ datatable_headers|safe }}';
+
+            /*Ajax url to get grid data*/
+            var monthly_outage_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=monthly_outage_graph',
+            	mttr_summary_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=mttr_summary',
+            	bs_uptime_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=bs_outage_uptime',
+            	nw_uptime_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=bs_outage_uptime_trend',
+            	mttr_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=bs_outage_mttr', 
+				failure_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=bs_outage_device_failure_report',
+				bs_per_city_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type=bs_outage_bs_per_city' ;
+
+            $("#monthly_outage_tab").attr("data_url", monthly_outage_ajax_url);
+            $("#monthly_outage_tab").attr("data_header", gridHeadersObj);
+
+            $("#mttr_summary_tab").attr("data_url", mttr_summary_ajax_url);
+            $("#mttr_summary_tab").attr("data_header", gridHeadersObj);
+
+            $("#bs_uptime_tab").attr("data_url", bs_uptime_ajax_url);
+            $("#bs_uptime_tab").attr("data_header", gridHeadersObj);
+
+            $("#nw_uptime_tab").attr("data_url", nw_uptime_ajax_url);
+            $("#nw_uptime_tab").attr("data_header", gridHeadersObj);
+
+            $("#mttr_tab").attr("data_url", mttr_ajax_url);
+            $("#mttr_tab").attr("data_header", gridHeadersObj);
+
+            $("#failure_tab").attr("data_url", failure_ajax_url);
+            $("#failure_tab").attr("data_header", gridHeadersObj);
+
+            $("#bs_per_city_tab").attr("data_url", bs_per_city_ajax_url);
+            $("#bs_per_city_tab").attr("data_header", gridHeadersObj);
+
+            if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+                /*Trigger click event on active tab to load its data*/
+                $("#monthly_outage_tab").trigger('click', true);
+            }
+        });
+    </script>
+{% endblock %}

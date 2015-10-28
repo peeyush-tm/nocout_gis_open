@@ -40,8 +40,6 @@ class DownloadCenter(ListView):
         # get page type
         page_type = self.kwargs['page_type']
 
-        custom_columns = []
-
         # get report name & title
         report_name = ''
         report_title = ''
@@ -58,14 +56,9 @@ class DownloadCenter(ListView):
         except Exception as e:
             pass
 
-        if 'bs_outage' in page_type:
+        if 'bs_outage_daily' in page_type:
+            report_title = 'Raw BS Outage Report'
             self.template_name = 'download_center/bs_outage_list.html'
-            custom_columns = [
-                {'mData': 'report_name', 'sTitle': 'Name', 'sWidth': 'auto'},
-                {'mData': 'created_on', 'sTitle': 'Created On', 'sWidth': 'auto'},
-                {'mData': 'report_date', 'sTitle': 'Report Date', 'sWidth': 'auto'},
-                {'mData': 'path', 'sTitle': 'Report', 'sWidth': 'auto', 'bSortable': False}    
-            ]
 
         context = super(DownloadCenter, self).get_context_data(**kwargs)
         datatable_headers = [
@@ -85,7 +78,7 @@ class DownloadCenter(ListView):
         return context
 
 
-class DownloadCenterListing(BaseDatatableView, AdvanceFilteringMixin):
+class DownloadCenterListing(BaseDatatableView):
     """
     A generic class based view for the reports data table rendering.
     """
@@ -129,7 +122,7 @@ class DownloadCenterListing(BaseDatatableView, AdvanceFilteringMixin):
             exec_query += ").filter(report_name='"+str(report_name)+"').values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return self.advance_filter_queryset(qs)
+        return qs
 
     def get_initial_queryset(self):
         """

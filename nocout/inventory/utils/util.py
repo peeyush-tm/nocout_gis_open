@@ -380,7 +380,7 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
     :return list of network devices
     """
 
-    if not technology:
+    if not technology and specify_ptp_bh_type:
         devices = Device.objects.filter(
             Q(id__in=ptp_device_circuit_backhaul())
             |
@@ -412,9 +412,16 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
             )
             |
             Q(
-                device_technology=int(WiMAX.ID),
+                Q(device_technology=int(WiMAX.ID))
+        &
+        Q(
+            Q(
                 sector_configured_on__isnull=False,
                 sector_configured_on__sector_id__isnull=False
+            )
+            |
+            Q(dr_configured_on__isnull=False)
+        )
             ),
             is_added_to_nms__gt=0,
             # is_added_to_nms=1,
