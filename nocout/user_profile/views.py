@@ -30,10 +30,11 @@ Methods
 import json
 from collections import OrderedDict
 from django.utils import timezone
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission, User
+from django.contrib.contenttypes.models import ContentType
 from session_management.models import Visitor
 from user_profile.models import UserProfile, UserPasswordRecord
-from forms import UserForm, UserPasswordForm
+from forms import UserForm, UserPasswordForm, GroupForm, PermissionForm
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin
 from django.views.decorators.csrf import csrf_exempt
@@ -47,11 +48,13 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.template.loader import render_to_string
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway, project_group_role_dict_mapper
+from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin, \
+    ValuesQuerySetMixin
 from nocout.mixins.generics import FormRequestMixin
+from user_profile.utils.auth import in_group, can_edit_permissions
 
 
 class UserList(PermissionsRequiredMixin, ListView):
@@ -74,7 +77,7 @@ class UserList(PermissionsRequiredMixin, ListView):
             {'mData': 'first_name', 'sTitle': 'Full Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'email', 'sTitle': 'Email', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'groups__name', 'sTitle': 'Group', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'parent__first_name', 'sTitle': 'Manager', 'sWidth': '10%', 'sClass': 'hidden-xs'},
             {'mData': 'phone_number', 'sTitle': 'Phone Number', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'last_login', 'sTitle': 'Last Login', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -82,8 +85,8 @@ class UserList(PermissionsRequiredMixin, ListView):
         ]
 
         # If the user role is 'admin' then the action column will appear on the datatable.
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+        if in_group(self.request.user, 'admin'):
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '7%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -103,15 +106,21 @@ class UserListingTable(PermissionsRequiredMixin,
     required_permissions = ('user_profile.view_userprofile',)
 
     # Columns that are going to be displayed.
-    columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+    # columns = ['username', 'first_name', 'last_name', 'email', 'group', 'parent__first_name',
+    #            'parent__last_name', 'organization__name', 'phone_number', 'last_login', 'comment']
+    columns = ['username', 'first_name', 'last_name', 'email', 'groups__name', 'parent__first_name',
                'parent__last_name', 'organization__name', 'phone_number', 'last_login', 'comment']
 
     # Columns on which sorting/ordering is allowed.
-    order_columns = ['username', 'first_name', 'email', 'organization__name', 'role__role_name', 'parent__first_name',
+    # order_columns = ['username', 'first_name', 'email', 'organization__name', 'group', 'parent__first_name',
+    #                  'phone_number', 'last_login', 'comment']
+    order_columns = ['username', 'first_name', 'email', 'organization__name', 'groups__name', 'parent__first_name',
                      'phone_number', 'last_login', 'comment']
 
     # Columns based on which searching is done.
-    search_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+    # search_columns = ['username', 'first_name', 'last_name', 'email', 'group', 'parent__first_name',
+    #                   'parent__last_name', 'organization__name', 'phone_number', 'comment']
+    search_columns = ['username', 'first_name', 'last_name', 'email', 'groups__name', 'parent__first_name',
                       'parent__last_name', 'organization__name', 'phone_number', 'comment']
 
     # Used in 'DatatableOrganizationFilterMixin' as extra parameters required to be passed during filtering queryset.
@@ -126,6 +135,13 @@ class UserListingTable(PermissionsRequiredMixin,
         # Get 'json_data' from qs which is returned from 'get_initial_queryset'.
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
+        users = UserProfile.objects.all().order_by('username')
+        user_ids = users.values_list('id', flat=True)
+
+        user_mapper = dict()
+        for uid, obj in zip(user_ids, users):
+            user_mapper[uid] = obj
+
         sanity_dicts_list = [
             OrderedDict({'dict_final_key': 'first_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'}),
             OrderedDict({'dict_final_key': 'parent__first_name', 'dict_key1': 'parent__first_name',
@@ -134,7 +150,7 @@ class UserListingTable(PermissionsRequiredMixin,
         if json_data:
             json_data, qs_headers = Datatable_Generation(json_data, sanity_dicts_list).main()
             # Show 'actions' column only if user role is 'admin'.
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            if in_group(self.request.user, 'admin'):
                 datatable_headers = self.request.GET.get('datatable_headers', '').replace('false', "\"False\"")
                 # Create instance of 'NocoutUtilsGateway' class
                 nocout_utils = NocoutUtilsGateway()
@@ -144,17 +160,27 @@ class UserListingTable(PermissionsRequiredMixin,
                         dct['last_login'] = nocout_utils.convert_utc_to_local_timezone(dct['last_login'])
                     except Exception as e:
                         pass
-
                     if dct['id'] == self.request.user.id:
                         actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                                    <a href="/user/myprofile/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                             dct['id'])
                     else:
-                        actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-                                   <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                                   <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                                        dct['id'], datatable_headers
-                                    )
+                        if can_edit_permissions(self.request.user, user_mapper[dct['id']]):
+                            actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+                                       <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+                                       <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o\
+                                        text-danger" title="Archive user."></i></a> \
+                                      <a href="javascript:;" class="reset_perm_btn" pk="{0}"><i class="fa fa-level-down \
+                                      text-danger" title="Reset permissions to default."></i></a>'.format(
+                                dct['id'], datatable_headers
+                            )
+                        else:
+                            actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+                                       <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+                                       <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o\
+                                        text-danger" title="Archive user."></i></a>'.format(
+                                dct['id'], datatable_headers
+                            )
                     dct.update(actions=actions)
 
         return json_data
@@ -169,15 +195,15 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
     model = UserProfile
 
     # Columns that are going to be displayed.
-    columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+    columns = ['username', 'first_name', 'last_name', 'email', 'groups__name', 'parent__first_name',
                'parent__last_name', 'organization__name', 'phone_number', 'last_login', 'comment']
 
     # Columns on which sorting/ordering is allowed.
-    order_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+    order_columns = ['username', 'first_name', 'last_name', 'email', 'groups__name', 'parent__first_name',
                      'parent__last_name', 'organization__name', 'phone_number', 'last_login', 'comment']
 
     # Columns based on which searching is done.
-    search_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+    search_columns = ['username', 'first_name', 'last_name', 'email', 'groups__name', 'parent__first_name',
                       'parent__last_name', 'organization__name', 'phone_number', 'comment']
 
     # Used in 'DatatableOrganizationFilterMixin' as extra parameters required to be passed during filtering queryset.
@@ -199,7 +225,7 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
             json_data, qs_headers = Datatable_Generation(json_data, sanity_dicts_list).main()
 
             # Show 'actions' column only if user role is 'admin'.
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            if in_group(self.request.user, 'admin'):
                 # Create instance of 'NocoutUtilsGateway' class
                 nocout_utils = NocoutUtilsGateway()
                 for dct in json_data:
@@ -256,19 +282,9 @@ class UserCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
         # Set password for new user instance.
         self.object.set_password(form.cleaned_data["password2"])
 
-        # Get role from list i.e. [<Roles: Admin>].
-        role = form.cleaned_data['role'][0]
-
-        # Get 'group' corresponding to user role for e.g if role is 'admin' then group is 'group_admin'.
-        project_group_name = project_group_role_dict_mapper[role.role_name]
-        project_group = Group.objects.get(name=project_group_name)
-
         # Saving instance and it's m2m relationship.
         self.object.save()
         form.save_m2m()
-
-        # Assigning user a group corresponding to it's role.
-        self.object.groups.add(project_group)
 
         return super(ModelFormMixin, self).form_valid(form)
 
@@ -312,19 +328,12 @@ class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
             # Adding the user log for the password change.
             UserPasswordRecord.objects.create(user_id=self.object.id, password_used=self.object.password)
 
-        # Get role from list i.e. [<Roles: Admin>].
-        role = form.cleaned_data['role'][0]
-
-        # Get 'group' corresponding to user role for e.g if role is 'admin' then group is 'group_admin'.
-        project_group_name = project_group_role_dict_mapper[role.role_name]
-        project_group = Group.objects.get(name=project_group_name)
-
         # Any user can have only one group, so first we need to remove user's previous group
         # before assigning new group.
         UserProfile.groups.through.objects.filter(user_id=self.object.id).delete()
 
-        # Assign new group to user.
-        self.object.groups.add(project_group)
+        # # Assign new group to user.
+        # self.object.groups.add(project_group)
 
         # Saving instance and it's m2m relationship.
         self.object.save()
@@ -502,3 +511,179 @@ def change_password(request):
     }
 
     return HttpResponse(json.dumps(result), content_type='application/json')
+
+
+class GroupList(PermissionsRequiredMixin, ListView):
+    """
+    View to show headers of groups datatable.
+        URL - 'http://127.0.0.1:8000/group'
+    """
+    model = Group
+    template_name = 'group/groups_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(GroupList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+        ]
+        if in_group(self.request.user, 'admin'):
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class GroupListingTable(ValuesQuerySetMixin,
+                        DatatableSearchMixin,
+                        BaseDatatableView,
+                        AdvanceFilteringMixin):
+    """
+    View to show list of groups in datatable.
+        URL - 'http://127.0.0.1:8000/group'
+    """
+    model = Group
+    columns = ['name']
+    order_columns = ['name']
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+        """
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            dct.update(actions='<a href="/group/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/group/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return json_data
+
+
+class GroupDetail(PermissionsRequiredMixin, DetailView):
+    """
+    Show details of the single group instance.
+    """
+    model = Group
+    template_name = 'group/group_detail.html'
+
+
+class GroupCreate(PermissionsRequiredMixin, CreateView):
+    """
+    Create a new group, with a response rendered by template.
+    """
+    template_name = 'group/group_new.html'
+    model = Group
+    form_class = GroupForm
+    success_url = reverse_lazy('groups_list')
+
+
+class GroupUpdate(PermissionsRequiredMixin, UpdateView):
+    """
+    Update a new group instance, with a response rendered by template.
+    """
+    template_name = 'group/group_update.html'
+    model = Group
+    form_class = GroupForm
+    success_url = reverse_lazy('groups_list')
+
+
+class GroupDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
+    """
+    Delete a single instance from database.
+    """
+    model = Group
+    obj_alias = 'name'
+    template_name = 'group/group_delete.html'
+    success_url = reverse_lazy('groups_list')
+
+
+class PermissionList(PermissionsRequiredMixin, ListView):
+    """
+    View to show headers of permissions datatable.
+        URL - 'http://127.0.0.1:8000/permission'
+    """
+    model = Permission
+    template_name = 'permission/permissions_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(PermissionList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'content_type', 'sTitle': 'Content Type', 'sWidth': 'auto', },
+            {'mData': 'codename', 'sTitle': 'Codename', 'sWidth': 'auto', },
+        ]
+        if in_group(self.request.user, 'admin'):
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class PermissionListingTable(ValuesQuerySetMixin,
+                             DatatableSearchMixin,
+                             BaseDatatableView,
+                             AdvanceFilteringMixin):
+    """
+    View to show list of permissions in datatable.
+        URL - 'http://127.0.0.1:8000/permission'
+    """
+    model = Permission
+    columns = ['name', 'content_type', 'codename']
+    order_columns = ['name', 'content_type', 'codename']
+    search_columns = ['name', 'codename']
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+        """
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            try:
+                content_type = ContentType.objects.get(id=dct['content_type'])
+                dct['content_type'] = content_type.app_label + " | " + content_type.model
+            except Exception as e:
+                pass
+            dct.update(actions='<a href="/permission/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/permission/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return json_data
+
+
+class PermissionDetail(PermissionsRequiredMixin, DetailView):
+    """
+    Show details of the single permission instance.
+    """
+    model = Permission
+    template_name = 'permission/permission_detail.html'
+
+
+class PermissionCreate(PermissionsRequiredMixin, CreateView):
+    """
+    Create a new permission, with a response rendered by template.
+    """
+    template_name = 'permission/permission_new.html'
+    model = Permission
+    form_class = PermissionForm
+    success_url = reverse_lazy('permissions_list')
+
+
+class PermissionUpdate(PermissionsRequiredMixin, UpdateView):
+    """
+    Update a new permission instance, with a response rendered by template.
+    """
+    template_name = 'permission/permission_update.html'
+    model = Permission
+    form_class = PermissionForm
+    success_url = reverse_lazy('permissions_list')
+
+
+class PermissionDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
+    """
+    Delete a single instance from database.
+    """
+    model = Permission
+    obj_alias = 'name'
+    template_name = 'permission/permission_delete.html'
+    success_url = reverse_lazy('permissions_list')
