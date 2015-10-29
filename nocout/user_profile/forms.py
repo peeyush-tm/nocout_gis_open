@@ -89,15 +89,18 @@ class UserForm(forms.ModelForm):
                 self.fields.pop('comment')
 
         for name, field in self.fields.items():
+            select2class = ' select2select'
+            if name == 'user_permissions':
+                select2class = ''
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs['class'] += ' col-md-12'
-                    field.widget.attrs['class'] += ' select2select'
+                    field.widget.attrs['class'] += select2class
                 else:
                     field.widget.attrs['class'] += ' form-control'
             else:
                 if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                    field.widget.attrs.update({'class': 'col-md-12 %s' % select2class})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
 

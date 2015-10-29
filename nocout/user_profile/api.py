@@ -345,12 +345,11 @@ class PermissonsOnGroupChange(APIView):
 
     URL: "http://127.0.0.1:8000/api/permissions_on_group_change/44/1/"
     """
-    def get(self, request, uid, gid):
+    def get(self, request, gid):
         """
         Processing API request.
 
         Args:
-            uid (unicode): Selected user ID.
             gid (unicode): Selected group ID.
         Returns:
             result (str): Result which needs to be returned.
@@ -386,7 +385,7 @@ class PermissonsOnGroupChange(APIView):
         # Get user object.
         user = None
         try:
-            user = UserProfile.objects.get(id=uid)
+            user = request.user.userprofile
         except Exception as e:
             pass
 
@@ -402,7 +401,7 @@ class PermissonsOnGroupChange(APIView):
             user_perms = user.user_permissions.all()
             result = [{'id': perm.id,
                        'name': "%s | %s | %s" % (perm.content_type.app_label, perm.content_type, perm.name),
-                       'alias': "%s | %s | %s" % (perm.content_type.app_label, perm.content_type, perm.name)}
+                       'alias': "%s" % (perm.content_type.name.title() + ' - ' + self.format_permission_txt(perm.name) )}
                       for perm in user_perms]
         else:
             group_name = Group.objects.get(id=gid).name
@@ -427,10 +426,28 @@ class PermissonsOnGroupChange(APIView):
                 user_perms = Permission.objects.filter(user_perms)
                 result = [{'id': perm.id,
                            'name': "%s | %s | %s" % (perm.content_type.app_label, perm.content_type, perm.name),
-                           'alias': "%s | %s | %s" % (perm.content_type.app_label, perm.content_type, perm.name)}
+                           'alias': "%s" % (perm.content_type.name.title() + ' - ' + self.format_permission_txt(perm.name) )}
                           for perm in user_perms]
 
         return Response(result)
+
+    def format_permission_txt(self, perm_txt):
+        """
+
+        """
+        formatted_word = perm_txt
+        if any(word in perm_txt for word in ['view', 'display']):
+            formatted_word = 'View'
+        elif any(word in perm_txt for word in ['change', 'update', 'update']):
+            formatted_word = 'Edit'
+        elif any(word in perm_txt for word in ['delete', 'remove']):
+            formatted_word = 'Delete'
+        elif any(word in perm_txt for word in ['create', 'add', 'new']):
+            formatted_word = 'Add'
+        elif any(word in perm_txt for word in ['sync']):
+            formatted_word = 'Sync'
+
+        return formatted_word
 
 
 class ResetAdminUsersPermissions(APIView):
