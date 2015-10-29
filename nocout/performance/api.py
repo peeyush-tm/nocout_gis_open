@@ -164,12 +164,20 @@ class CustomDashboardDelete(APIView):
         dashboard_id = self.request.POST.getlist('selected_db[]','')
 
         if dashboard_id:                        
-            custom_dashboards_del = UsersCustomDashboard.objects.filter(
+            user_custom_dashboards_del = UsersCustomDashboard.objects.filter(
                 user_profile = user_profile_id,
+                custom_dashboard__in=dashboard_id
+            )
+            custom_dashboards_del = CustomDashboard.objects.filter(               
+                id__in=dashboard_id
+            )
+            ds_custom_dashboards_del = DSCustomDashboard.objects.filter(                
                 custom_dashboard__in=dashboard_id
             )
             if custom_dashboards_del.exists():
                 custom_dashboards_del.delete()
+                ds_custom_dashboards_del.delete()
+                user_custom_dashboards_del.delete()
                 result['success'] = 1
                 result['message'] = "Successfully deleted."
             else:

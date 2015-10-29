@@ -149,6 +149,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 	'cambium_ss_dl_utilization','cambium_ss_ul_utilization','mrotek_dl_utilization','mrotek_ul_utilization','rici_dl_utilization',
 	'rici_ul_utilization','cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization','juniper_switch_ul_utilization']
      wimax_ss_util_services = ['wimax_ss_ul_utilization','wimax_ss_dl_utilization']
+     wimax_ss_params_services=['wimax_qos_invent','wimax_ss_session_uptime']
      switch_utilization = ['cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization',
      'juniper_switch_ul_utilization']
      ss_device, ss_mac, bs_device = None, None, None
@@ -179,7 +180,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 	     if service in rad5k_services:
 		     old_service = service
 		     service = 'rad5k_topology_discover'
-	     if service in wimax_ss_util_services:
+	     if service in wimax_ss_util_services or service in wimax_ss_params_services:
 		     old_service = service
 		     service = 'wimax_bs_ss_params'
 	     # Getting result from compiled checks output
@@ -257,7 +258,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					data_dict = {host_name:[]}
 			 		q.put(data_dict)
 			 	return
-		elif str(old_service) in wimax_ss_util_services:
+		elif str(old_service) in wimax_ss_util_services or str(old_service) in wimax_ss_params_services:
 			filtered_ss_data =[]
 			try:
 				data_value = []	
@@ -267,12 +268,25 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
 					filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t,check_output)
 					filtered_ss_data.extend(filtered_ss_output)
-				index = wimax_ss_util_services.index(old_service)
-				#logger.debug('filterred_ss_data: ' + pformat(filtered_ss_data))
+				if str(old_service) in wimax_ss_util_services:
+					index = wimax_ss_util_services.index(old_service)
+				elif str(old_service) in wimax_ss_params_services:
+				    try:
+				        index = wimax_ss_params_services.index(old_service)	
+					if str(old_service) == 'wimax_qos_invent':
+						ds = data_source_list[0]
+						if 'dl' in ds:
+							index = index + 3
+					if str(old_service) == 'wimax_ss_session_uptime':
+						index = index + 3
+				    except:
+					logger.error('ss_params: ' + pformat(index))
+				#logger.error('ss_params: ' + pformat(index))
 				for entry in filtered_ss_data:
 					value = entry.split('=')[1].split(',')[index]
-					value = float(value)/1024.0
-					value = "%.2f" % value
+					if str(old_service) not in wimax_ss_params_services:
+						value = float(value)/1024.0
+						value = "%.2f" % value
 					data_value.append(value)
 					cal_ss_mac = entry.split('=')[0]
 					# MARK
@@ -298,6 +312,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				check_output = check_output[0].split('- ')[1].split(',')
 				index =  wimax_ss_port_service.index(old_service)
 				value = check_output[index].split('=')[1]
+				value = value.strip('() ')
 				data_value.append(value)
 				data_dict = {old_device:data_value}
 				data_value = []
