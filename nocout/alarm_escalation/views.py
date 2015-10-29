@@ -14,7 +14,9 @@ from alarm_escalation.tasks import mail_send
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import logging
+import os.path
 logger = logging.getLogger(__name__)
+import re
 #############################################################
 
 class LevelList(TemplateView):
@@ -135,7 +137,7 @@ class EmailSender(View):
     """
     Send email to multiple mail id's with multiple attachment.
 
-    URL: http://127.0.0.1:8000/escalation/email/
+    URL: http://127.0.0.1:8000/articles/email/
 
     Args:
         subject (unicode): Mail subject.
@@ -145,27 +147,29 @@ class EmailSender(View):
         attachments (list): Mail attachments if any(file object).
         success (int) : Success bit either 0/1.
         error_message (string): String containing error messages.
+        attachment_path (list) : List of File path.
 
     Return (dict): Response to be returnes in json format.
                    For e.g.,
-                        {
-                            'message': 'Successfully send the email.',
-                            'attachments': [
-                                <InMemoryUploadedFile: A.pdf(application/octet-stream)>,
-                                <InMemoryUploadedFile: IMG-2020-WA0000.jpg(image/jpeg)>
-                            ],
-                            'success': 1
-                            'data': {
-                                'message': u'PFA attachments',
-                                'from_email': u'chanish.agarwal1@gmail.com',
-                                'to_email': [
-                                    u'chanish.agarwal@teramatrix.in'
-                                ],
-                                'subject': u'day 1 task'
-                            },
-
-                        }
-
+                            {
+                                "message": "Successfully send the email.",
+                                "data": {
+                                    "to_email": [
+                                        "chanishagarwal0@gmail.com"
+                                    ],
+                                    "attachments": [
+                                        "EmailAPI.docx",
+                                        "IMG-20151020-WA0000.jpg"
+                                    ],
+                                    "from_email": "chanish.agarwal1@gmail.com",
+                                    "attachment_path": [
+                                        "/home/chanish/Desktop/chart-35-02.png"
+                                    ],
+                                    "message": "Please find attachmetn Below",
+                                    "subject": "Warning system is getting slow"
+                                },
+                                "success": 1
+                            }
     """
 
     @csrf_exempt
@@ -187,7 +191,14 @@ class EmailSender(View):
         subject = self.request.POST.get('subject', None)
         # Message.
         message = self.request.POST.get('message', None)
-        # File attachments.
+        # Path of File attachments.
+        attachment_path = self.request.POST.get('attachment_path')
+        if attachment_path:
+            if "," in attachment_path:
+                attachment_path = eval(attachment_path)
+            else:
+                attachment_path = attachment_path.split(",")
+
         attachments = None
         try:
             attachments = request.FILES.values()
@@ -198,12 +209,14 @@ class EmailSender(View):
         result = {
             "success": 0,
             "message": "Failed to send email.",
-            'attachments': attachments,
+
             "data": {
                 "subject": subject,
                 "message": message,
                 "from_email": from_email,
                 "to_email": to_email,
+                "attachments": attachments,
+                "attachment_path" : attachment_path,
             }
         }
 
@@ -219,6 +232,18 @@ class EmailSender(View):
             # 'error_message' generation when 'from_email' value not provided.
             error_messages += "Mail sender's id is not given \n"
 
+        if attachment_path:
+            for x in attachment_path:
+                # Avoiding if it is URL Path.
+                if re.search('^http.*',x):
+                    pass
+                else:
+                    # If file exist in system
+                    if not os.path.isfile(x):
+                        error_messages = "file: '%s' doesn't exist \n" %(x)
+        else:
+            result['data']['attachment_path'] = []
+
         if error_messages:
             result['message'] = error_messages
             # return HttpResponse(json.dumps(result))
@@ -228,6 +253,7 @@ class EmailSender(View):
             # Sending email as a backend task.
             mail_send.delay(result)
 
-        attachments_name = [x.name for x in result['attachments']]
-        result['attachments'] = attachments_name
+        attachments_name = [x.name for x in result['data']['attachments']]
+        result['data']['attachments'] = attachments_name
         return HttpResponse(json.dumps(result))
+

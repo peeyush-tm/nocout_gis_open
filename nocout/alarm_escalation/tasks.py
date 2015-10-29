@@ -29,6 +29,7 @@ from inventory.utils.util import InventoryUtilsGateway
 # Import inventory utils gateway class
 from scheduling_management.views import SchedulingViewsGateway
 from inventory.tasks import bulk_update_create
+import re
 import logging
 logger = logging.getLogger(__name__)
 
@@ -658,6 +659,7 @@ def prepare_service_data_sources(service_name_list):
     )
 
 
+
 @task
 def mail_send(result):
     """
@@ -668,37 +670,37 @@ def mail_send(result):
         result (dict): Dictionary containing email data.
                        For e.g.,
                             {
-                                'message': 'Successfully send the email.',
-                                'data': {
-                                    'message': u'PFA attachments',
-                                    'from_email': u'chanish.agarwal1@gmail.com',
-                                    'to_email': [
-                                        u'chanish.agarwal@teramatrix.in'
+                                "message": "Successfully send the email.",
+                                "data": {
+                                    "to_email": [
+                                        "chanishagarwal0@gmail.com"
                                     ],
-                                    'subject': u'day 1 task'
+                                    "attachments": [
+                                        "EmailAPI.docx",
+                                        "IMG-20151020-WA0000.jpg"
+                                    ],
+                                    "from_email": "chanish.agarwal1@gmail.com",
+                                    "attachment_path": [
+                                        "/home/chanish/Desktop/chart-35-02.png"
+                                    ],
+                                    "message": "Please find attachmetn Below",
+                                    "subject": "Warning system is getting slow"
                                 },
-                                'attachments': [
-                                    <InMemoryUploadedFile: Resume-PraveenKumarAgarwal.pdf
-                                                          (application/octet-stream)>,
-                                    <InMemoryUploadedFile: IMG-20151020-.jpg(image/jpeg)>
-                                ],
-                                'success': 1
+                                "success": 1
                             }
-
-    :return: True/False
     """
     mail = EmailMessage(result['data']['subject'], result['data']['message'],
                         result['data']['from_email'],
                         result['data']['to_email'])
     # Handling mail without an attachment.
-    if not result['attachments']:
-        mail.send()
 
-    # Mail with attachments.
-    else:
-        for attachment in result['attachments']:
-            mail.attach(attachment.name, attachment.read(),
-                        attachment.content_type)
-        mail.send()
 
-    return True
+    for attachment in result['data']['attachments']:
+        mail.attach(attachment.name, attachment.read(), attachment.content_type)
+    for files in result['data']['attachment_path']:
+        if re.search('^http.*', files):
+            pass
+        else:
+            mail.attach_file(files)
+
+    mail.send()
