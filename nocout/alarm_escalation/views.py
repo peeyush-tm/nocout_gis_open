@@ -8,8 +8,6 @@ from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableS
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
-
-#############################################################
 from alarm_escalation.tasks import mail_send
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -17,7 +15,7 @@ import logging
 import os.path
 logger = logging.getLogger(__name__)
 import re
-#############################################################
+from django.conf import settings
 
 class LevelList(TemplateView):
     """
@@ -229,8 +227,7 @@ class EmailSender(View):
             error_messages += "Please specify email id of sender. \n"
 
         if not from_email:
-            # 'error_message' generation when 'from_email' value not provided.
-            error_messages += "Mail sender's id is not given \n"
+            result['from_email'] = settings.DEFAULT_FROM_EMAIL
 
         if attachment_path:
             for x in attachment_path:
