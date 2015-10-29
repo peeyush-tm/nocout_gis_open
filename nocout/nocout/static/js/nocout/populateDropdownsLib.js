@@ -234,7 +234,7 @@ function format_permissions_widget(result) {
         icon_class = 'fa-refresh';
     }
 
-    return_txt = '<span class="' + txt_class + '"><i class="fa ' + icon_class + '"><i/> ' + result.text + '</span>';
+    return_txt = '<i class="fa ' + icon_class +  ' ' + txt_class + '"></i> ' + result.text;
 
     return return_txt;
 }
