@@ -209,9 +209,9 @@ function updateThematicSelection(tab_id, current_checkbox, device_type) {
  */
 function format_permissions_widget(result) {
 
-    // if (!result && !result['text']) {
-    //     return '';
-    // }
+    if (!result || !result['text']) {
+        return '';
+    }
 
     var txt_class = '',
         icon_class = '',
