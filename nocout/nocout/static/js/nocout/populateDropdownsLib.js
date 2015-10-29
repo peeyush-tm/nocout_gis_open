@@ -199,3 +199,42 @@ function updateThematicSelection(tab_id, current_checkbox, device_type) {
         $(current_checkbox).prop('checked', true);
     }
 }
+
+
+/**
+ * This function formats the permissions select2 diplay/selected contents
+ * @method format_permissions_widget
+ * @param result {Object}, It contains the single select2 value object
+ * @return return_txt {String}, It contains the HTML formatted string
+ */
+function format_permissions_widget(result) {
+
+    // if (!result && !result['text']) {
+    //     return '';
+    // }
+
+    var txt_class = '',
+        icon_class = '',
+        return_txt = result.text;
+
+    if (result.text.indexOf('- View') > -1) {
+        txt_class = 'text-primary';
+        icon_class = 'fa-eye';
+    } else if (result.text.indexOf('- Edit') > -1) {
+        txt_class = 'text-warning';
+        icon_class = 'fa-edit';
+    } else if (result.text.indexOf('- Delete') > -1) {
+        txt_class = 'text-danger';
+        icon_class = 'fa-times';
+    } else if (result.text.indexOf('- Add') > -1) {
+        txt_class = 'text-success';
+        icon_class = 'fa-plus';
+    } else if (result.text.indexOf('- Sync') > -1) {
+        txt_class = 'text-success';
+        icon_class = 'fa-refresh';
+    }
+
+    return_txt = '<span class="' + txt_class + '"><i class="fa ' + icon_class + '"><i/> ' + result.text + '</span>';
+
+    return return_txt;
+}

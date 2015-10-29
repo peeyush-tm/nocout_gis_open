@@ -66,17 +66,24 @@
             user_soft_delete_url = '',
             restore_user_url = '',
             delete_user_url = '',
-            reset_perm_url = '';
+            reset_perm_url = '',
+            reset_child_perm_url = '';
 
         $(document).ready(function (e) {
 
             // Add 'Create Item' link on top header bar.
             {% for group in user.groups.all %}
-                {% if group.name == 'group_admin' %}
+                {% if group.name == 'Admin' %}
                     var create_link_html = '<a href="/user/new" title="Create User" \
                                             class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
 
                     $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+
+                    var reset_child_perm_html = '<a href="javascript:;" title="Assign Default Permissions To All Child Users" \
+                                            class="btn btn-default btn-sm reset_child_perms"><i class="fa fa-retweet"></i></a>';
+
+                    $('.controls_container ul').prepend('<li>' + reset_child_perm_html + '</li>');
+
                 {% endif %}
             {% endfor %}
 
@@ -84,6 +91,7 @@
             restore_user_url = "{% url 'restore_user' 123 %}";
             delete_user_url = "{% url 'delete_user' 123 %}";
             reset_perm_url = "{% url 'reset_user_permissions' 123 %}";
+            reset_child_perm_url = "{% url 'reset_admin_users_permissions' %}";
 
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
@@ -154,7 +162,7 @@
 
         /**
          * This event triggers when delete icon on operational tab in action columns clicked
-         * @event click
+         * @event click(with delegate)
          */        
         $('.user_tab_content').delegate('.user_soft_delete_btn', 'click', function(e) {
             var device_id = $(this).attr('pk'),
@@ -183,12 +191,55 @@
             }
         });
 
-
+        /**
+         * This event triggers when reset perms icon clicked(for individual user)
+         * @event click(with delegate)
+         */
         $('.user_tab_content').delegate('.reset_perm_btn', 'click', function(e) {
             var user_id = $(this).attr('pk');
             if (user_id) {
                 resetPermissions(user_id)
             }
         });
+
+        /**
+         * This event triggers when reset child user permissions button clicked
+         * @event click(with delegate)
+         */
+        $('.controls_container').delegate('.reset_child_perms', 'click', function(e) {
+            bootbox.confirm("Are you sure you want to assign default permissions to all child users?", function(result) {
+                if (result) {
+                    // Show loading spinner
+                    showSpinner();
+                    $.ajax({
+                        'url': reset_child_perm_url,
+                        'type': 'GET',
+                        'success': function(response) {
+                            var result = response;
+
+                            if (typeof(response) == 'string') {
+                                result = JSON.parse(response);
+                            }
+
+                            if (result['success']) {
+                                bootbox.dialog({
+                                    message: 'fresnelTemplate',
+                                    title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Assign Default Permissions'
+                                });
+                                // bootbox.alert(result['message'])
+                            }
+                        },
+                        error: function(err) {
+                            console.log(err.statusText);
+                        },
+                        complete: function() {
+                            // Hide loading spinner
+                            hideSpinner();
+                        }
+                    })
+                }
+            });
+        });
+
     </script>
 {% endblock %}
