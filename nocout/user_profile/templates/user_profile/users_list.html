@@ -211,9 +211,9 @@
                     // Show loading spinner
                     showSpinner();
                     $.ajax({
-                        'url': reset_child_perm_url,
-                        'type': 'GET',
-                        'success': function(response) {
+                        url: reset_child_perm_url,
+                        type: 'GET',
+                        success: function(response) {
                             var result = response;
 
                             if (typeof(response) == 'string') {
@@ -221,11 +221,25 @@
                             }
 
                             if (result['success']) {
-                                bootbox.dialog({
-                                    message: 'fresnelTemplate',
-                                    title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Assign Default Permissions'
-                                });
-                                // bootbox.alert(result['message'])
+                                var users_list = result['data']['users'] ? result['data']['users'].split(',') : [],
+                                    msg_html = false;
+
+                                if (users_list.length > 0) {
+                                    msg_html = '<p><strong>Default permissions assigned to following users:</strong></p>';
+                                }
+                                for (var i=0;i<users_list.length;i++) {
+                                    msg_html += '<div class="col-md-3">' + users_list[i] + '</div>';
+                                }
+
+                                if (msg_html) {
+                                    msg_html = '<div style="height: 400px;overflow: auto;">' + msg_html + '<div class="clearfix"></div></div>';
+                                    bootbox.dialog({
+                                        message: msg_html,
+                                        title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Assign Default Permissions'
+                                    });
+                                } else {
+                                    bootbox.alert(result['message'])
+                                }
                             }
                         },
                         error: function(err) {
