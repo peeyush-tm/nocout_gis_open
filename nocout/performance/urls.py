@@ -32,7 +32,7 @@ urlpatterns = patterns('',
                        url(r'^get_inventory_service_data_sources/device/(?P<device_id>\d+)/$',
                            views.InventoryDeviceServiceDataSource.as_view(), name='get_service_data_source_url'),
                        url(
-                           r'^service/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>\w+)/device/(?P<device_id>\d+)$',
+                           r'^service/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>[-\w]+)/device/(?P<device_id>\d+)$',
                            views.GetServiceTypePerformanceData.as_view(),
                            name='GetServiceTypePerformanceData'
                        ),
@@ -42,12 +42,12 @@ urlpatterns = patterns('',
                            name='ServiceDataSourceHeaders'
                        ),
                        url(
-                           r'^listing/service/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>\w+)/device/(?P<device_id>\d+)$',
+                           r'^listing/service/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>[-\w]+)/device/(?P<device_id>\d+)$',
                            views.ServiceDataSourceListing.as_view(),
                            name='ServiceDataSourceListing'
                        ),
                        url(
-                           r'^servicestatus/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>\w+)/device/(?P<device_id>\d+)/$',
+                           r'^servicestatus/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>[-\w]+)/device/(?P<device_id>\d+)/$',
                            cache_page(60 * 2)(views.GetServiceStatus.as_view()),
                            name='GetServiceStatus'
                        ),

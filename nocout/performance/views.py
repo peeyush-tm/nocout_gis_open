@@ -54,6 +54,8 @@ from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
 from performance.formulae import display_time, rta_null
 
 # Create instance of 'ServiceUtilsGateway' class
+from user_profile.utils.auth import in_group
+
 service_utils = ServiceUtilsGateway()
 
 ##execute this globally
@@ -232,7 +234,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] == 'admin':
+            if in_group(self.request.user, 'admin'):
                 organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
             else:
                 organizations = [self.request.user.userprofile.organization]
@@ -2082,7 +2084,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
 
             for sds in SERVICE_DATA_SOURCE:
                 if not self.formula:
-                    if service.strip() in sds and SERVICE_DATA_SOURCE[sds]['type'] == 'table':
+                    if service.strip().lower() in sds and SERVICE_DATA_SOURCE[sds]['type'] == 'table':
                         self.formula = SERVICE_DATA_SOURCE[sds]['formula']
                 else:
                     break
@@ -3698,35 +3700,40 @@ class GetServiceTypePerformanceData(View):
                             if sds_name in SERVICE_DATA_SOURCE else "area"
                         
                         if is_dual_axis:
-                            
-                            if 'valuesuffix' not in self.result['data']['objects']:
-                                self.result['data']['objects']['valuesuffix'] = list()
-                            if 'valuetext' not in self.result['data']['objects']:
-                                self.result['data']['objects']['valuetext'] = list()
-
-                            ds_suffix = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] if sds_name in SERVICE_DATA_SOURCE else ""
-                            ds_txt = SERVICE_DATA_SOURCE[sds_name]["valuetext"] if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
-                            
-                            if ds_suffix not in self.result['data']['objects']['valuesuffix']:
-                                self.result['data']['objects']['valuesuffix'].append(ds_suffix)
-
-                            if ds_txt not in self.result['data']['objects']['valuetext']:
-                                self.result['data']['objects']['valuetext'].append(ds_txt)
+                            self.result['data']['objects']['is_single'] = 0
                         else:
-                            self.result['data']['objects']['valuesuffix'] = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] \
-                                if sds_name in SERVICE_DATA_SOURCE else ""
+                            self.result['data']['objects']['is_single'] = 1
+                            
+                        if 'valuesuffix' not in self.result['data']['objects']:
+                            self.result['data']['objects']['valuesuffix'] = list()
+                        if 'valuetext' not in self.result['data']['objects']:
+                            self.result['data']['objects']['valuetext'] = list()
 
-                            self.result['data']['objects']['valuetext'] = SERVICE_DATA_SOURCE[sds_name]["valuetext"] \
-                                if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
+                        ds_suffix = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] if sds_name in SERVICE_DATA_SOURCE else ""
+                        ds_txt = SERVICE_DATA_SOURCE[sds_name]["valuetext"] if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
+                        
+                        if ds_suffix not in self.result['data']['objects']['valuesuffix']:
+                            self.result['data']['objects']['valuesuffix'].append(ds_suffix)
+
+                        if ds_txt not in self.result['data']['objects']['valuetext']:
+                            self.result['data']['objects']['valuetext'].append(ds_txt)
+                        # else:
+                        #     self.result['data']['objects']['valuesuffix'] = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] \
+                        #         if sds_name in SERVICE_DATA_SOURCE else ""
+
+                        #     self.result['data']['objects']['valuetext'] = SERVICE_DATA_SOURCE[sds_name]["valuetext"] \
+                        #         if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
 
                         self.result['data']['objects']['plot_type'] = 'charts'
 
                         chart_color = SERVICE_DATA_SOURCE[sds_name]["chart_color"] \
                             if sds_name in SERVICE_DATA_SOURCE else '#70AFC4'
 
+                        sds_inverted = False
+                        self.result['data']['objects']['is_inverted'] = sds_inverted
+
                         if sds_name not in ["availability"]:
 
-                            sds_inverted = False
                             self.result['data']['objects']['is_inverted'] = sds_inverted
 
                             if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["is_inverted"]:
@@ -3899,51 +3906,6 @@ class GetServiceTypePerformanceData(View):
                                     "y": current_value,
                                     "x": js_time
                                 })
-
-                                # if len(min_data_list):
-                                #     chart_data.append({
-                                #         'name': str("min value").title(),
-                                #         'color': '#01CC14',
-                                #         'data': min_data_list,
-                                #         'type': 'line',
-                                #         'marker': {
-                                #             'enabled': False
-                                #         }
-                                #     })
-
-                                # if len(max_data_list):
-                                #     chart_data.append({
-                                #         'name': str("max value").title(),
-                                #         'color': '#FF8716',
-                                #         'data': max_data_list,
-                                #         'type': 'line',
-                                #         'marker': {
-                                #             'enabled': False
-                                #         }
-                                #     })
-
-                            # Condition of length of warning list  
-                            # if len(warn_data_list):
-                            #     chart_data.append({
-                            #         'name': str("warning threshold").title(),
-                            #         'color': WARN_COLOR,
-                            #         'data': warn_data_list,
-                            #         'type': WARN_TYPE,
-                            #         'marker': {
-                            #             'enabled': False
-                            #         }
-                            #     })
-                            # # Condition of length of warning list  
-                            # if len(crit_data_list):
-                            #     chart_data.append({
-                            #         'name': str("critical threshold").title(),
-                            #         'color': CRIT_COLOR,
-                            #         'data': crit_data_list,
-                            #         'type': CRIT_TYPE,
-                            #         'marker': {
-                            #             'enabled': False
-                            #         }
-                            #     })
                         else:
                             y_value = None
                             y_down_value = None
@@ -3997,7 +3959,7 @@ class GetServiceTypePerformanceData(View):
                                 }
                             ]
 
-                if data_list and len(data_list) > 0:
+                if data_list and len(data_list) > 0 and sds_name not in ["availability"]:
                     if is_dual_axis:
                         chart_data.append({
                             'name': self.result['data']['objects']['display_name'],
@@ -4111,8 +4073,8 @@ class GetServiceTypePerformanceData(View):
                                     'enabled': False
                                 }
                             })
-            #this ensures a further good presentation of data w.r.t thresholds
 
+            #this ensures a further good presentation of data w.r.t thresholds
             self.result['success'] = 1
             self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
             self.result['data']['objects']['chart_data'] = chart_data

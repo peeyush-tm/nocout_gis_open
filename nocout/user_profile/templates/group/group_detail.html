@@ -1,0 +1,34 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-sitemap'></i> User Management" "javascript:;" %}
+    {% breadcrumb_safe "Groups" "groups_list" %}
+    {% breadcrumb_safe "Detail" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/command.css" %}>
+{% endblock %}
+{% block content_title %}Commands Management{% endblock %}
+{% block content_description %}Detail of command ....{% endblock %}
+{% block content %}
+    <h1>{{ object.command_name }}</h1><br/>
+    <div id="command">
+        <table>
+            <tr>
+                <td><strong>Command Name:</strong></td>
+                <td>{{ object.command_name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Command Line:</strong></td>
+                <td>{{ object.command_line }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}

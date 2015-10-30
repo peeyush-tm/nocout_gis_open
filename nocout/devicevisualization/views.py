@@ -39,6 +39,7 @@ from nocout.utils.util import NocoutUtilsGateway, getBSInventoryInfo, getSSInven
 from inventory.utils.util import InventoryUtilsGateway
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
+from user_profile.utils.auth import in_group
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,6 @@ def init_network_maps(request, device_name="default_device_name", page_type="gma
     This function initializes gmap or gearth or wmap as per page type
     """
     is_admin = 'other'
-    user_roles_list = []
     template_path = 'devicevisualization/locate_devices.html'
 
     # Update template_path as per the page type
@@ -85,13 +85,7 @@ def init_network_maps(request, device_name="default_device_name", page_type="gma
     elif page_type == "wmap":
         template_path = 'devicevisualization/locate_devices_white_map.html'
 
-    try:
-        user_roles_list = request.user.userprofile.role.values_list('role_name', flat=True)
-    except Exception, e:
-        logger.info(e.message)
-        pass
-
-    if(request.user.is_superuser or 'admin' in user_roles_list):
+    if in_group(request.user, 'admin'):
         is_admin = 'admin'
 
     context_data = {
@@ -626,8 +620,7 @@ class KmzListing(ListView):
             {'mData': 'user', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
         ]
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             table_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['table_headers'] = json.dumps(table_headers)
@@ -2555,12 +2548,12 @@ class GISPerfData(View):
                 continue
             processed[perf['data_source'], perf['service_name']] = []
 
-            service_name = perf['service_name']
+            service_name = perf['service_name'].strip()
 
             sds_name = perf['data_source'].strip()
 
             if sds_name not in ['pl', 'rta']:
-                sds_name = service_name + "_" + sds_name
+                sds_name = service_name.lower() + "_" + sds_name.lower()
 
             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                 if sds_name in SERVICE_DATA_SOURCE \
@@ -2620,11 +2613,11 @@ class GISPerfData(View):
         if data_source:
             title = " ".join(data_source.split("_")).title()
 
-            key_name = service_name.strip() + "_" +data_source.strip()
+            key_name = service_name.strip().lower() + "_" +data_source.strip().lower()
 
             if data_source.strip().lower() in ['pl', 'rta']:
                 name = data_source.strip()
-                key_name = data_source.strip()
+                key_name = data_source.strip().lower()
             else:
                 name = key_name
 
@@ -5038,12 +5031,12 @@ class GISPerfInfo(View):
                 continue
             processed[perf['data_source'], perf['service_name']] = []
 
-            service_name = perf['service_name']
+            service_name = perf['service_name'].strip()
 
             sds_name = perf['data_source'].strip()
 
             if sds_name not in ['pl', 'rta']:
-                sds_name = service_name + "_" + sds_name
+                sds_name = service_name.lower() + "_" + sds_name.lower()
 
             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                 if sds_name in SERVICE_DATA_SOURCE \
@@ -5107,11 +5100,11 @@ class GISPerfInfo(View):
         if data_source:
             title = " ".join(data_source.split("_")).title()
 
-            key_name = service_name.strip() + "_" +data_source.strip()
+            key_name = service_name.strip().lower() + "_" +data_source.strip().lower()
 
             if data_source.strip().lower() in ['pl', 'rta']:
                 name = data_source.strip()
-                key_name = data_source.strip()
+                key_name = data_source.strip().lower()
             else:
                 name = key_name
 

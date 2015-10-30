@@ -1723,6 +1723,12 @@ class BulkFetchLPDataApi(View):
                                                                                                      ds_name] else "Numeric"
             result['data']['meta']['is_inverted'] = ds_dict[ds_name]['is_inverted'] if 'is_inverted' in ds_dict[
                 ds_name] else ""
+
+            result['data']['meta']['valuesuffix'] = ds_dict[ds_name]['valuesuffix'] if 'valuesuffix' in ds_dict[
+                ds_name] else ""
+
+            result['data']['meta']['valuetext'] = ds_dict[ds_name]['valuetext'] if 'valuetext' in ds_dict[
+                ds_name] else ""
             # Device Type Parameter of Device Name.
             device_type = Device.objects.filter(device_name__in=devices).values_list('device_type', flat=True)
             # Device Type warn crit params corresponding to Device.
@@ -1732,6 +1738,8 @@ class BulkFetchLPDataApi(View):
             if ds_name in ['pl']:
                 result['data']['meta']['warning'] = ds_warn_crit_param[0]['pl_warning']
                 result['data']['meta']['critical'] = ds_warn_crit_param[0]['pl_critical']
+                result['data']['meta']['valuesuffix'] = ds_dict['pl']['valuesuffix'] if 'valuesuffix' in ds_dict['pl'] else ""
+                result['data']['meta']['valuetext'] = ds_dict['pl']['valuetext'] if 'valuetext' in ds_dict['pl'] else ""
             elif ds_name in ['pl'] and not (
                         ds_warn_crit_param[0]['pl_warning'] and ds_warn_crit_param[0]['pl_critical']):
                 result['data']['meta']['warning'] = PING_PL_WARNING
@@ -1739,6 +1747,8 @@ class BulkFetchLPDataApi(View):
             elif ds_name in ['rta']:
                 result['data']['meta']['warning'] = ds_warn_crit_param[0]['rta_warning']
                 result['data']['meta']['critical'] = ds_warn_crit_param[0]['rta_critical']
+                result['data']['meta']['valuesuffix'] = ds_dict['rta']['valuesuffix'] if 'valuesuffix' in ds_dict['rta'] else ""
+                result['data']['meta']['valuetext'] = ds_dict['rta']['valuetext'] if 'valuetext' in ds_dict['rta'] else ""
             elif ds_name in ['rta'] and not (
                         ds_warn_crit_param[0]['rta_warning'] and ds_warn_crit_param[0]['rta_critical']):
                 result['data']['meta']['warning'] = PING_RTA_WARNING
