@@ -40,7 +40,6 @@ class LevelList(TemplateView):
         ]
 
         #if the user role is Admin or operator or superuser then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
