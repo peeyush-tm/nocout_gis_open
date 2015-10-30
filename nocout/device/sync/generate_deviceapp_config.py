@@ -9,14 +9,12 @@ from pprint import pformat
 
 from celery.utils.log import get_task_logger
 
+from mysql_connection import mysql_conn
+
 logger = get_task_logger(__name__)
 info, warning, error = (
 		logger.info, logger.warning, logger.error
 		)
-
-
-from mysql_connection import mysql_conn
-
 
 pmp_ss_bs_checks = ['cambium_ul_jitter', 'cambium_reg_count', 'cambium_rereg_count', 'cambium_ul_rssi']
 
