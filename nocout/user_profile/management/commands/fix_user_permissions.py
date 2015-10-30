@@ -17,6 +17,7 @@ Classes
 """
 import operator
 from itertools import izip
+import sys
 from django.core.management.base import BaseCommand
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, User
@@ -58,14 +59,35 @@ class Command(BaseCommand):
             """
             Assign permissions to each user corressponding to their group.
             """
-            print "- START -"
+            # Remove group and permissions mapping.
+            try:
+                cursor = connection.cursor()
+                cursor.execute("TRUNCATE TABLE `auth_group_permissions`")
+            except Exception as e:
+                pass
 
             users = User.objects.prefetch_related('groups', 'user_permissions').order_by('username')
             usernames = users.values_list('username', flat=True)
             usergroups = users.values_list('groups__name', flat=True)
 
+            # Total no. of users.
+            total_users = users.count()
+            total = total_users
+            point = total / 100
+            increment = total / 100
+
+            # Counter for progress bar.
+            i = 0
+
             user_mapper = dict()
             for name, group, obj in zip(usernames, usergroups, users):
+                i += 1
+                # Progress bar start.
+                if i % (5 * point) == 0:
+                    sys.stdout.write("\r[" + "=" * (i / increment) + " " * ((total - i) / increment) + "] " + str(i / point) + "%")
+                    sys.stdout.flush()
+                # Progress bar end.
+
                 user_mapper[name] = {
                     'group': group,
                     'obj': obj
@@ -97,8 +119,7 @@ class Command(BaseCommand):
                     # Remove old custom permissions.
                     diff_perms = set(obj.user_permissions.all()).difference(set(new_perms))
                     obj.user_permissions.remove(*diff_perms)
-
-            print "- END -"
+            sys.stdout.write("\n")
 
         def create_view_permissions():
             """
