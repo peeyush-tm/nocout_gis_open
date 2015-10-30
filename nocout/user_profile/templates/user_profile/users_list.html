@@ -73,7 +73,7 @@
 
             // Add 'Create Item' link on top header bar.
             {% for group in user.groups.all %}
-                {% if group.name == 'Admin' %}
+                {% if perms.auth.add_user %}
                     var create_link_html = '<a href="/user/new" title="Create User" \
                                             class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
 
@@ -83,8 +83,7 @@
                                             class="btn btn-default btn-sm reset_child_perms"><i class="fa fa-retweet"></i></a>';
 
                     $('.controls_container ul').prepend('<li>' + reset_child_perm_html + '</li>');
-
-                {% endif %}
+                    {% endif %}
             {% endfor %}
 
             user_soft_delete_url = "{% url 'user_soft_delete' 123 1111111 %}";

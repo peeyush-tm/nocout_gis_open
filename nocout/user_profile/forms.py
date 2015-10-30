@@ -22,6 +22,7 @@ from organization.models import Organization
 from user_profile.models import UserProfile, UserPasswordRecord
 from fields import PasswordField
 import logging
+from user_profile.utils.auth import can_edit_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ class UserForm(forms.ModelForm):
 
         super(UserForm, self).__init__(*args, **kwargs)
 
-        if self.request.user.username != "gisadmin":
+        if not can_edit_permissions(self.request.user, kwargs['instance']):
             del self.fields['user_permissions']
 
         self.fields['parent'].empty_label = 'Select'
@@ -81,8 +82,6 @@ class UserForm(forms.ModelForm):
                 self.fields['username'].widget.attrs['readonly'] = True
                 self.fields['parent'].widget.attrs['disabled'] = 'disabled'
                 self.fields['groups'].widget.attrs['disabled'] = 'disabled'
-                # self.fields['role'].widget.is_required = False
-                # self.fields['role'].required = False
                 self.fields['organization'].widget.attrs['readonly'] = True
                 self.fields['parent'].label = 'Manager'
                 # Don't show comment field.
@@ -115,7 +114,6 @@ class UserForm(forms.ModelForm):
             'designation', 'company', 'address', 'phone_number', 'comment'
         )
         widgets = {
-            # 'role': MultipleToSingleSelectionWidget,
             'groups': MultipleToSingleSelectionWidget
         }
         fieldsets = (

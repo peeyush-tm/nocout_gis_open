@@ -636,7 +636,7 @@
                     </li>
                 </ul>
             </li>
-            
+
             {% if perms.user_profile %}
             <li class="has-sub">
                 <a href="javascript:;">
@@ -645,32 +645,32 @@
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
+                    {% if perms.user_profile.view_userprofile %}
                     <li>
                         <a href="{% url 'user_list' %}">
                             <span class="sub-menu-text">Users</span>
                         </a>
                     </li>
+                    {% endif %}
                     <li>
                         <a href="{% url 'sm_list' %}">
                             <span class="sub-menu-text">User Session</span>
                         </a>
                     </li>
+                    {% if perms.organization.view_organization %}
                     <li>
                         <a href="{% url 'organization_list' %}">
                             <span class="sub-menu-text">Organization</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="{% url 'groups_list' %}">
-                            <span class="sub-menu-text">Group</span>
-                        </a>
-                    </li>
+                    {% endif %}
+                    {% if perms.user_profile.view_userprofile %}
                     <li>
                         <a href="{% url 'permissions_list' %}">
                             <span class="sub-menu-text">Permission</span>
                         </a>
                     </li>
-
+                    {% endif %}
                     {% if perms.activity_stream.view_useraction %}
                         <li>
                             <a href="{% url 'actionlist' %}">

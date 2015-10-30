@@ -30,7 +30,7 @@ Methods
 import json
 from collections import OrderedDict
 from django.utils import timezone
-from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from session_management.models import Visitor
 from user_profile.models import UserProfile, UserPasswordRecord
@@ -54,7 +54,7 @@ from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin, \
     ValuesQuerySetMixin
 from nocout.mixins.generics import FormRequestMixin
-from user_profile.utils.auth import in_group
+from user_profile.utils.auth import in_group, can_edit_permissions
 
 
 class UserList(PermissionsRequiredMixin, ListView):
@@ -135,6 +135,18 @@ class UserListingTable(PermissionsRequiredMixin,
         # Get 'json_data' from qs which is returned from 'get_initial_queryset'.
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
+        users = UserProfile.objects.all().order_by('username')
+        print "***************************** users - ", users
+        user_ids = users.values_list('id', flat=True)
+
+        print "**************************** user_ids - ", user_ids
+
+        user_mapper = dict()
+        for uid, obj in zip(user_ids, users):
+            user_mapper[uid] = obj
+
+        print "******************************** user_mapper - ", user_mapper
+
         sanity_dicts_list = [
             OrderedDict({'dict_final_key': 'first_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'}),
             OrderedDict({'dict_final_key': 'parent__first_name', 'dict_key1': 'parent__first_name',
@@ -158,14 +170,22 @@ class UserListingTable(PermissionsRequiredMixin,
                                    <a href="/user/myprofile/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                             dct['id'])
                     else:
-                        actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-                                   <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                                   <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o\
-                                    text-danger" title="Archive user."></i></a> \
-                                  <a href="javascript:;" class="reset_perm_btn" pk="{0}"><i class="fa fa-level-down \
-                                  text-danger" title="Reset permissions to default."></i></a>'.format(
-                            dct['id'], datatable_headers
-                        )
+                        if can_edit_permissions(self.request.user, user_mapper[dct['id']]):
+                            actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+                                       <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+                                       <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o\
+                                        text-danger" title="Archive user."></i></a> \
+                                      <a href="javascript:;" class="reset_perm_btn" pk="{0}"><i class="fa fa-level-down \
+                                      text-danger" title="Reset permissions to default."></i></a>'.format(
+                                dct['id'], datatable_headers
+                            )
+                        else:
+                            actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+                                       <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+                                       <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o\
+                                        text-danger" title="Archive user."></i></a>'.format(
+                                dct['id'], datatable_headers
+                            )
                     dct.update(actions=actions)
 
         return json_data
