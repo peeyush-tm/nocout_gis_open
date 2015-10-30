@@ -136,16 +136,11 @@ class UserListingTable(PermissionsRequiredMixin,
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
         users = UserProfile.objects.all().order_by('username')
-        print "***************************** users - ", users
         user_ids = users.values_list('id', flat=True)
-
-        print "**************************** user_ids - ", user_ids
 
         user_mapper = dict()
         for uid, obj in zip(user_ids, users):
             user_mapper[uid] = obj
-
-        print "******************************** user_mapper - ", user_mapper
 
         sanity_dicts_list = [
             OrderedDict({'dict_final_key': 'first_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'}),

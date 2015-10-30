@@ -21,8 +21,8 @@ from nocout.widgets import MultipleToSingleSelectionWidget
 from organization.models import Organization
 from user_profile.models import UserProfile, UserPasswordRecord
 from fields import PasswordField
-import logging
 from user_profile.utils.auth import can_edit_permissions
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +59,7 @@ class UserForm(forms.ModelForm):
 
         super(UserForm, self).__init__(*args, **kwargs)
 
+        # Show permission field to only those who are allowed to edit permissions.
         if not can_edit_permissions(self.request.user, kwargs['instance']):
             del self.fields['user_permissions']
 

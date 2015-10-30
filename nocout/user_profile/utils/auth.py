@@ -69,13 +69,11 @@ def can_edit_permissions(login_user=None, check_user=None):
     if login_user and check_user:
         # Get organizations user associated or linked with.
         link_org = get_user_organizations(login_user)
-        print "************************** link_org - ", link_org
+
         user_descendants = login_user.userprofile.get_descendants().filter(organization__in=link_org)
-        print "************************** user_descendants - ", user_descendants
         if check_user.userprofile in user_descendants:
             return True
         else:
             return False
     else:
         return False
-

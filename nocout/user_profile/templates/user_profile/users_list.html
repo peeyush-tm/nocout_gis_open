@@ -238,12 +238,14 @@
                                         title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Assign Default Permissions'
                                     });
                                 } else {
-                                    bootbox.alert(result['message'])
+                                    bootbox.alert(result['message']);
                                 }
+                            } else {
+                                bootbox.alert(result['message']);
                             }
                         },
                         error: function(err) {
-                            console.log(err.statusText);
+                            bootbox.alert('Please try again later.');
                         },
                         complete: function() {
                             // Hide loading spinner
