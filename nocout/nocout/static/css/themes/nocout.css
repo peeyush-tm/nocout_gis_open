@@ -388,3 +388,6 @@ i.trends_icon:hover {
 .tab-rf-perf .box-container:hover i.rf_trends {
   color:#ca1e25 !important;
 }
+.daterangepicker .ranges li.active, .daterangepicker .ranges li:hover {
+   color: #ca1e25 !important;
+}
