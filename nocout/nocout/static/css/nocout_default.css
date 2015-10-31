@@ -83,7 +83,7 @@ span.dept {
 }
 
 /*Side menu arrow*/
-.sidebar-menu ul li ul li a .arrow:before {
+.sidebar-menu ul li a .arrow:before {
   float: right;
   margin-top: 1px;
   margin-right: 5px;
@@ -95,7 +95,7 @@ span.dept {
   font-weight: 300;
   text-shadow: none;
 }
-.sidebar-menu ul li ul li a .arrow.open:before {
+.sidebar-menu ul li a .arrow.open:before {
   float: right;
   margin-top: 1px;
   margin-right: 5px;
@@ -246,7 +246,8 @@ span.dept {
 }
 
 /*Side menu items overflow issue*/
-.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li > a {
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li > a,
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub .has-sub-sub-sub .sub-sub-sub {
   padding-left: 20px !important;
 }
 
@@ -425,7 +426,7 @@ th.vAlign_middle, .vAlign_middle b {
   top: 18px;
   right: 20px;
 }
-#reservationtime {
+#reservationtime, #bsoutage_daterange {
   cursor: text;
   background: #FFFFFF;
 }
@@ -650,7 +651,7 @@ table.dataTable thead th, table.dataTable tfoot th{
 .controls_container ul li .btn-sm:hover,
 .btn-default:hover {
   /*border-radius: 50% !important;*/
-  border-bottom-color: rgba(0, 0, 0, 0.25) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.40) !important;
 }
 
 .btn-primary {

@@ -629,10 +629,18 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     }
 
     // Create yAxis data as per the given params
-    if (typeof chartConfig.valuetext == 'string') {
+    if (typeof chartConfig.valuetext == 'string' || chartConfig['is_single']) {
+        var title_txt = chartConfig.valuetext;
+        if (chartConfig['is_single']) {
+            try {
+                title_txt = chartConfig.valuetext.join(', ')
+            } catch(e) {
+                // console.error(e);
+            }
+        }
         yAxisObj = {
             title : {
-                text : chartConfig.valuetext
+                text : title_txt
             },
             reversed : is_y_inverted
         };
@@ -986,6 +994,8 @@ function nocout_livePollCurrentDevice(
                     data_type = meta_info && meta_info["data_source_type"] ? meta_info["data_source_type"] : "numeric",
                     chart_type = meta_info && meta_info["chart_type"] ? meta_info["chart_type"] : "column",
                     chart_color = meta_info && meta_info["chart_color"] ? meta_info["chart_color"] : "#70AFC4",
+                    valuesuffix = meta_info && meta_info["valuesuffix"] ? meta_info["valuesuffix"] : "",
+                    valuetext = meta_info && meta_info["valuetext"] ? meta_info["valuetext"] : "",
                     is_inverted = meta_info && meta_info["is_inverted"] ? meta_info["is_inverted"] : false,
                     warning_threshold = meta_info && meta_info["warning"] ? meta_info["warning"] : "",
                     critical_threshold = meta_info && meta_info["critical"] ? meta_info["critical"] : "",
@@ -1002,6 +1012,8 @@ function nocout_livePollCurrentDevice(
                     if (typeof fetched_val == 'object') {
                         fetched_val = fetched_val[0];
                     }
+
+                    fetched_val = Number(fetched_val);
 
                     // If call is from single device page then proceed else return data
                     if (container_dom_id && show_sparkline_chart) {
@@ -1048,14 +1060,16 @@ function nocout_livePollCurrentDevice(
                             "type" : data_type ? data_type : "numeric",
                             "chart_type" : chart_type ? chart_type : "column",
                             "chart_color" : chart_color ? chart_color : "#70AFC4",
+                            "valuetext" : valuetext ? valuetext : "",
+                            "valuesuffix" : valuesuffix ? valuesuffix : "",
                             "warning_threshold" : warning_threshold,
                             "critical_threshold" : critical_threshold,
                             "is_inverted" : is_inverted
                         };
                     }
                 } else {
-                    if (!fetched_val) {
-                        fetched_val = "N/A";
+                    if (!fetched_val || fetched_val == 'NA') {
+                        fetched_val = null;
                     }
 
                     fetched_data = {
@@ -1065,6 +1079,8 @@ function nocout_livePollCurrentDevice(
                         "type" : data_type ? data_type : "numeric",
                         "chart_type" : chart_type ? chart_type : "column",
                         "chart_color" : chart_color ? chart_color : "#70AFC4",
+                        "valuetext" : valuetext ? valuetext : "",
+                        "valuesuffix" : valuesuffix ? valuesuffix : "",
                         "warning_threshold" : warning_threshold,
                         "critical_threshold" : critical_threshold,
                         "is_inverted" : is_inverted
@@ -1339,8 +1355,8 @@ function checkpollvalues(result, is_new_data, callback) {
             fetched_val = fetched_val[0];
         }
 
-        if (na_list.indexOf(fetched_val) > -1) {
-            fetched_val = '';
+        if (typeof(fetched_val) == 'undefined' || na_list.indexOf(fetched_val) > -1) {
+            fetched_val = null;
         }
 
         if(fetch_warning_threshold && fetch_warning_threshold instanceof Array) {
@@ -1361,6 +1377,8 @@ function checkpollvalues(result, is_new_data, callback) {
             // Update the chart type & data key as per the given params
             chart_config["type"] = result[i]["chart_type"];
             chart_config["is_inverted"] = result[i]["is_inverted"];
+            chart_config["valuesuffix"] = result[i]["valuesuffix"] ? result[i]["valuesuffix"] : '';
+            chart_config["valuetext"] = result[i]["valuetext"] ? result[i]["valuetext"] : '';
             
             if (fetch_warning_threshold) {
                 if(!chart_data_list["warning"]["color"]) {
@@ -1394,7 +1412,7 @@ function checkpollvalues(result, is_new_data, callback) {
 
             chart_data_list["normal"]["data"].push({
                 "color": result[i]['chart_color'],
-                "y": Number(fetched_val),
+                "y": fetched_val,
                 "name": block_title,
                 "x": result[i]['epoch_time']
             });

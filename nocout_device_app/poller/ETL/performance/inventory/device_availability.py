@@ -60,8 +60,8 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 	start_time =start_time.replace(second=0,microsecond=0)
 	end_time =end_time.replace(second=0,microsecond=0)
 
-        start_time =int(time.mktime(start_time.timetuple())
-        end_time =int(time.mktime(end_time.timetuple())
+        start_time =int(time.mktime(start_time.timetuple()))
+        end_time =int(time.mktime(end_time.timetuple()))
 	"""
         pipe =  [
                 {"$match": {
@@ -89,8 +89,14 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 		print e
 	host_down_result = {}
 	down_devices = filter(lambda x: x.get('data')[0].get('value') == "100" ,result)
-        for entry in down_devices:
-		host_down_result[(entry['host'],entry['ip_address'])] =  host_down_result.get((entry['host'],entry['ip_address']),0) + 1
+        for entry in result:
+		if (entry['host'],entry['ip_address']) in host_down_result:
+			if entry.get('data')[0].get('value') == "100":
+				host_down_result[(entry['host'],entry['ip_address'])] =  host_down_result.get((entry['host'],entry['ip_address'])) + 1
+		else:
+			host_down_result[(entry['host'],entry['ip_address'])] = 0
+			if entry.get('data')[0].get('value') == "100":
+				host_down_result[(entry['host'],entry['ip_address'])] =  host_down_result.get((entry['host'],entry['ip_address'])) + 1
  	for key in host_down_result:
 		try:
 			down_count = host_down_result[key]
@@ -114,6 +120,7 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 	doc_len_key = key + "_len" 
 	memc_obj=db_ops_module.MemcacheInterface()
 	exp_time =1440 # 1 day
+	print len(availability_list)
 	memc_obj.store(key,availability_list,doc_len_key,exp_time,chunksize=1000)
 		#mongo_module.mongo_db_insert(db,availability_dict,"availability")
 
