@@ -795,7 +795,7 @@ SPEEDOMETER_DASHBAORDS = ['down-network', 'packetloss-network', 'latency-network
 # 5 May 2015
 # Variables for phantom js host location
 PHANTOM_PROTOCOL = "http"
-PHANTOM_HOST = "163.133.12.163"
+PHANTOM_HOST = "10.133.12.163"
 PHANTOM_PORT = "5004"
 
 # Exported Chart Image Type, Width & Height

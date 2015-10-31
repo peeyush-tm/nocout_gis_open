@@ -34,7 +34,7 @@ from performance.models import PerformanceService, PerformanceNetwork, \
 
 from dashboard.utils import MultiQuerySet
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway
+from nocout.utils.util import NocoutUtilsGateway, getBSInventoryInfo, getSSInventoryInfo, getSectorInventoryInfo, getBHInventoryInfo
 
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
@@ -7053,3 +7053,260 @@ class GetSeverityWiseStatus(View):
         )
         
         return HttpResponse(json.dumps(result), content_type="application/json")
+
+
+class GetTopology(View):
+    """
+    The Class based View to get topology for the single device.
+
+    """
+    def get(self, request):
+        result = {
+            'success': 0,
+            'message': 'Device Topology Details Not Fetched Successfully.',
+            'data': list()
+        }
+
+        bs_id = self.request.GET.get('bs_id')
+
+        if not bs_id:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+         
+        # Query for getting topology info of selected device 
+        topology_query = ''' 
+                SELECT
+                    IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
+                    IF(isnull(bs.name), 'NA', bs.name) AS bs_name,
+                    IF(isnull(bs.alias), 'NA', bs.alias) AS bs_alias,
+                    IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
+                    IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
+                    IF(isnull(bh_device_type.name), 'NA', bh_device_type.name) AS bh_device_type,
+                    IF(isnull(bh_device_tech.name), 'NA', bh_device_tech.name) AS bh_device_tech,   
+                    IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS bh_ip,
+                    IF(isnull(sect.id), 'NA', sect.id) AS sect_id,
+                    IF(isnull(sect.sector_id), 'NA', sect.sector_id) AS sect_sector_id,
+                    IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
+                    IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
+                    IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
+                    IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
+                    IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
+                    IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
+                    IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS ss_circuit_id,
+                    IF(isnull(ckt.sub_station_id), 'NA', ckt.sub_station_id) AS ss_id,
+                    IF(isnull(ss.device_id), 'NA', ss.device_id) AS ss_device_id,
+                    IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name) AS ss_device_tech,
+                    IF(isnull(ss_device_type.name), 'NA', ss_device_type.name) AS ss_device_type,
+                    IF(isnull(ss_device.device_name), 'NA', ss_device.device_name) AS ss_device_name,
+                    IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address) AS ss_device_ip,
+                    ss_device_type.device_icon as ss_icon,
+                    sect_device_type.device_icon as sect_icon,
+                    bh_device_type.device_icon as bh_icon,
+                    sect_freq.color_hex_value as sect_color
+
+                FROM
+                    inventory_basestation AS bs
+                LEFT JOIN
+                    inventory_backhaul AS backhaul
+                ON
+                    bs.backhaul_id = backhaul.id
+                LEFT JOIN
+                    device_device AS bh_device
+                ON
+                    backhaul.bh_configured_on_id = bh_device.id
+                LEFT JOIN 
+                    device_devicetechnology AS bh_device_tech
+                ON
+                    bh_device.device_technology = bh_device_tech.id
+                LEFT JOIN
+                    inventory_sector AS sect
+                ON
+                    bs.id = sect.base_station_id
+                LEFT JOIN
+                    device_device AS device
+                ON
+                    sect.sector_configured_on_id = device.id
+                LEFT JOIN 
+                    device_devicetechnology AS sect_device_tech
+                ON
+                    device.device_technology = sect_device_tech.id
+                LEFT JOIN
+                    inventory_circuit AS ckt
+                ON
+                    sect.id = ckt.sector_id
+                LEFT join
+                    inventory_substation as ss
+                ON
+                    ckt.sub_station_id = ss.id
+                LEFT JOIN
+                    device_device AS ss_device
+                ON
+                    ss.device_id = ss_device.id
+                LEFT JOIN 
+                    device_devicetechnology AS ss_device_tech
+                ON
+                    ss_device.device_technology = ss_device_tech.id
+                LEFT JOIN
+                    device_devicetype as sect_device_type
+                ON
+                    sect_device_type.id = device.device_type
+                LEFT JOIN
+                    device_devicetype as ss_device_type
+                ON
+                    ss_device_type.id = ss_device.device_type
+                LEFT JOIN
+                    device_devicetype as bh_device_type
+                ON
+                    bh_device_type.id = bh_device.device_type
+                LEFT JOIN
+                    device_devicefrequency as sect_freq
+                ON
+                    sect_freq.id = sect.frequency_id
+                where
+                    device.is_added_to_nms > 0
+                    AND
+                    bs.id = {0}
+            '''.format(bs_id)
+
+        # calling global method for executing query
+        result_of_query = nocout_utils.fetch_raw_result(topology_query)
+
+        resultant_dict = dict()
+        bs_ids = list()
+        sector_ids = list()
+        ss_ids = list()
+        sector_dict = dict()
+        
+        # converting query result in required format 
+        for bs in result_of_query:
+            if bs.get('bs_id') not in bs_ids:
+                bs_ids.append(bs.get('bs_id'))
+                if bs.get('bh_device_id'):
+                    try:
+                        severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
+                        bh_pl_info = {
+                            "severity" : severity if severity else 'NA',
+                            "value": "NA"
+                        }
+                    except Exception, e:
+                        bh_pl_info = {
+                            "severity" : "",
+                            "value": ""
+                        }
+
+                resultant_dict = {
+                    "bh_id": bs.get('bh_id'),
+                    "bh_icon": "/static/img/icons/mobile_blackhaul_icon_small.png" if not bs.get('bh_icon') else "/media/" + bs.get('bh_icon'),
+                    "bh_device_id": bs.get('bh_device_id'),
+                    "bh_device_tech": bs.get('bh_device_tech'),
+                    "bh_device_type": bs.get('bh_device_type'),
+                    "bh_ip": bs.get('bh_ip'),
+                    "bs_alias": bs.get('bs_alias'),
+                    "bs_icon": "/static/img/icons/bs-big.png",
+                    "pl_info": bh_pl_info,
+                    "sectors": list()
+                }
+
+            if bs.get('sect_id') not in sector_dict:
+                if bs.get('sect_device_id'):
+                    try:
+                        severity, other_detail = device_current_status(Device.objects.get(id=bs.get('sect_device_id')))
+                        sect_pl_info = {
+                            "severity" : severity if severity else 'NA',
+                            "value": "NA"
+                        }
+                    except Exception, e:
+                        sect_pl_info = {
+                            "severity" : "NA",
+                            "value": "NA"
+                        }
+                sector_dict[bs.get('sect_id')] = {
+                    "id": bs.get('sect_id'),
+                    "device_name": bs.get('sect_device_name'),
+                    "device_id": bs.get('sect_device_id'),
+                    "device_tech": bs.get('sect_device_tech'),
+                    "device_type": bs.get('sect_device_type'),
+                    "ip_address": bs.get('sect_device_ip'),
+                    "sect_ip_id_title": bs.get('sect_ip_id_title'),
+                    "icon": "/media/" + bs.get('sect_icon'),
+                    "pl_info": sect_pl_info,
+                    "sub_station": list()
+                }
+
+            try:
+                if bs.get('ss_device_id'):
+                    try:
+                        severity, other_detail = device_current_status(Device.objects.get(id=bs.get('ss_device_id')))
+                        ss_pl_info = {
+                            "severity" : severity if severity else 'NA',
+                            "value": "NA"
+                        }
+                    except Exception, e:
+                        ss_pl_info = {
+                            "severity" : "NA",
+                            "value": "NA"
+                        }
+                sector_dict[bs.get('sect_id')]['sub_station'].append({
+                    "id": bs.get('ss_id'),
+                    "device_name": bs.get('ss_device_name'),
+                    "device_id": bs.get('ss_device_id'),
+                    "device_tech": bs.get('ss_device_tech'),
+                    "device_type": bs.get('ss_device_type'),
+                    "ip_address": bs.get('ss_device_ip'),
+                    "ckt_id": bs.get('ss_circuit_id'),
+                    "link_color": bs.get('sect_color'),
+                    "icon": "/media/" + bs.get('ss_icon'),
+                    "pl_info": ss_pl_info
+                })
+            except Exception, e:
+                pass
+
+        resultant_dict['sectors'] = sector_dict.values()
+
+        result['data'].append(resultant_dict)
+        result['message'] = 'Device Topology Details Fetched Successfully.'
+        result['success'] = 1
+
+        return HttpResponse(json.dumps(result), content_type="application/json")
+
+class GetTopologyToolTip(View):
+    """
+    The Class based View to get tooltip for each device on topo-view page.
+
+    """
+
+    def get(self, request):
+        station_type = self.request.GET.get('type')
+        required_id = self.request.GET.get('id')
+        
+        if (station_type == 'BS'):
+            result = getBSInventoryInfo(required_id)
+        elif (station_type == 'BH'):
+            result = getBHInventoryInfo(required_id)
+        elif (station_type == 'SECT'):
+            result = getSectorInventoryInfo(required_id)
+        elif (station_type == 'SS'):
+            result = getSSInventoryInfo(required_id)       
+
+        
+        formatted_result = self.format_result(result[0])
+        
+        return HttpResponse(json.dumps(formatted_result), content_type="application/json")
+
+
+    def format_result(self, dataset):
+        """
+        This function format tooltip data as per required format
+        """
+        formatted_result = list()
+        for key in dataset:
+            temp_dict = {
+                'name': key,
+                'title': key,
+                'show'  : 1,
+                'value': dataset.get(key, 'NA')
+            }
+
+            formatted_result.append(temp_dict)
+
+        return formatted_result
+>>>>>>> 0dd8db929a49bc4b984eedd97e2e46107ad700e2

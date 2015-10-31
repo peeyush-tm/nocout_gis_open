@@ -28,8 +28,6 @@
 
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
-    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
-    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
 {% endblock %}
 
 {% block content %}
@@ -385,7 +383,10 @@
                 <div class="tab-pane" id="topo_view_tab">
                     <div class="panel panel-default inner_tab_container">
                         <div class="panel-body">
-                            Topo View - Work In Progress...
+                            <div id="topo_network"></div>
+                            <!--Info Window Content Container START-->
+                            <div id="infoWindowContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:200;"></div>
+                            <!--Info Window Content Container END-->
                         </div>
                     </div>
                 </div>
@@ -437,6 +438,17 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <!-- Bootstrap switch lib for BS maintenance infowindow -->
     <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
+    <!-- Bootstrap switch lib for BS maintenance infowindow -->
+    <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
+    <!-- Device toottip lib -->
+    <script type="text/javascript" src={% static "js/tooltipLib.js" %} ></script>
+    <!-- Network Topology Lib -->
+    <script type="text/javascript" src={% static "js/vis/vis/dist/vis.js" %}></script>
+    <!-- Populate network topology custom lib -->
+    <script type="text/javascript" src={% static "js/nocout/networkTopologyLib.js" %}></script>
+    <!-- Datetime range picker lib -->
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
     <script type="text/javascript">
         /*Global Variables*/
         var perfInstance = "",
@@ -471,7 +483,8 @@
             clicked_tab_id = '',
             severity_wise_data_api = '',
             default_left_tab_icon = 'fa-circle-o',
-            active_left_tab_icon = 'fa-dot-circle-o';
+            active_left_tab_icon = 'fa-dot-circle-o',
+            topo_dom_id = 'topo_network';
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -489,6 +502,12 @@
             serviceUrl = "";
             inventory_url = "";
             alert_url = "";
+
+            // Hide topo view tab if no bs id exists in context
+            if ((typeof(bs_id) == 'string' && bs_id == '[]') || typeof(bs_id) != 'str' && bs_id.length == 0) {
+                $('#topo_view').addClass('hide');
+                $('#topo_view_tab').addClass('hide');
+            }
 
             severity_wise_data_api = "{% url 'get_severity_wise_status' %}";
 
@@ -807,7 +826,7 @@
             initBirdEyeView('birdeye_container');
         });
 
-        $("#custom_dashboard").click(function (e) {
+$("#custom_dashboard").click(function (e) {
             if(!$('#service_view_type_btn').hasClass('hide')) {
                 $('#service_view_type_btn').addClass('hide');
             }
@@ -1179,6 +1198,56 @@
                 
             //      });
          });
+        // Fetch & Draw Topology view on tab click
+        $("#topo_view").click(function(e) {
+            // Show loading Spinner
+            showSpinner();
+
+            var single_bs_id = bs_id;
+
+            try {
+                single_bs_id = JSON.parse(bs_id)[0];
+            } catch(e) {
+            // console.error(e);
+            }
+
+            $.ajax({
+                url: base_url +  "/performance/get_topology/?bs_id=" + single_bs_id,
+                type: 'GET',
+                success: function(response) {
+                    var result = response;
+
+                    if (typeof result == 'string') {
+                        result = JSON.parse(result);
+                    }
+
+                    if (result.success == 1) {
+                        topo_api_data = result['data'];
+                        // Calling function to convert JSON response to VIS lib format
+                        convertToVis(result, topo_dom_id);
+                    }
+
+                },
+                error : function(err) {
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Topology View',
+                        // (string | mandatory) the text inside the notification
+                        text: err.statusText,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false,
+                        // Time in ms after which the gritter will dissappear.
+                        time : 1000
+                    });
+                },
+                complete: function() {
+                    // Hide loading Spinner
+                    hideSpinner();
+                }
+            });
+        });
+
+>>>>>>> 0dd8db929a49bc4b984eedd97e2e46107ad700e2
         /**
          * This function load the first inner tab content when any parent tab is clicked.
          * @method fetchFirstTabContent
