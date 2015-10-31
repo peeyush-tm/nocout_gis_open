@@ -40,6 +40,7 @@ from inventory.utils.util import InventoryUtilsGateway
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
 from user_profile.utils.auth import in_group
+import device.api as device_api
 
 logger = logging.getLogger(__name__)
 
@@ -3910,7 +3911,7 @@ class GISStaticInfo(View):
                 bs_counter += 1
 
                 # get raw bs inventory
-                bs_result = nocout_utils.non_cached_all_gis_inventory(bs_id=bs_id)
+                # bs_result = nocout_utils.non_cached_all_gis_inventory(bs_id=bs_id)
 
                 # we need to prepare bs wise list # this would cache static data for 300 seconds
                 # bs_id_wise_result = prepare_raw_result(bs_result)
@@ -3918,32 +3919,38 @@ class GISStaticInfo(View):
                 # inventory = prepare_raw_bs_result(bs_id_wise_result[bs_id])
 
                 # get formatted bs inventory
-                inventory = prepare_raw_bs_result(bs_result,True)
+                # inventory = prepare_raw_bs_result(bs_result,True)
+                inventory = device_api.prepare_raw_result_v2(nocout_utils.getMapsInitialData(bs_id=[str(bs_id)]))[0]
 
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
                 bh_device = None
                 bh_device_ip = ""
-                for d in inventory['data']['param']['backhual']:
-                    if 'bh_configured_on' in d['name']:
-                        bh_device_ip = d['value'].rstrip('|')
-                        bh_device = Device.objects.get(ip_address=bh_device_ip)
+                # for d in inventory['data']['param']['backhual']:
+                #     if 'bh_configured_on' in d['name']:
+                #         bh_device_ip = d['value'].rstrip('|')
+                #         bh_device = Device.objects.get(ip_address=bh_device_ip)
 
                 devices_ip_address_list = list()
-                for sector in inventory['data']['param']['sector']:
-                    devices_ip_address_list.append(sector['sector_configured_on'])
+                for sector in inventory['sectors']:
+                    if sector['ip_address']:
+                        devices_ip_address_list.append(sector['ip_address'])
                     # append backhaul device ip address
                     if bh_device_ip:
                         devices_ip_address_list.append(bh_device_ip)
-                    for sub_station in sector['sub_station']:
-                        devices_ip_address_list.append(sub_station['data']['substation_device_ip_address'])
+                    for sub_station in sector['sub_stations']:
+                        if sub_station['ip_address']:
+                            devices_ip_address_list.append(sub_station['ip_address'])
 
-                bs_devices = Device.objects.filter(ip_address__in=devices_ip_address_list).values('device_name',
-                                                                                                  'machine__name',
-                                                                                                  'device_technology',
-                                                                                                  'device_type',
-                                                                                                  'ip_address')
+                bs_devices = Device.objects.filter(ip_address__in=devices_ip_address_list).values(
+                    'device_name',
+                    'machine__name',
+                    'device_technology',
+                    'device_type',
+                    'ip_address'
+                )
 
                 machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
+
 
                 complete_performance = get_complete_performance(machine_dict)
 
@@ -3958,14 +3965,14 @@ class GISStaticInfo(View):
 
                 # ******************************** GET DEVICE MACHINE MAPPING (END) ******************************
 
-                for sector in inventory['data']['param']['sector']:
+                for sector in inventory['sectors']:
                     # get sector
                     try:
                         sector_obj = Sector.objects.get(id=sector['sector_id'])
                     except Exception as e:
                         sector_obj = None
 
-                    sector_device = [d for d in bs_devices if d['ip_address'] == sector['sector_configured_on']][0]
+                    sector_device = [d for d in bs_devices if d['ip_address'] == sector['ip_address']][0]
 
                     try:
                         sector_configured_on_type = DeviceType.objects.get(id=sector_device['device_type'])
@@ -4021,9 +4028,9 @@ class GISStaticInfo(View):
                         sector['color'] = sector_extra_info['color']
                         sector['polled_frequency'] = sector_extra_info['polled_frequency']
 
-                        for sub_station in sector['sub_station']:
+                        for sub_station in sector['sub_stations']:
                             substation_device = [d for d in bs_devices if
-                                                 d['ip_address'] == sub_station['data']['substation_device_ip_address']][0]
+                                                 d['ip_address'] == sub_station['ip_address']][0]
 
                             try:
                                 substation_device_type = DeviceType.objects.get(id=substation_device['device_type'])
@@ -4070,15 +4077,15 @@ class GISStaticInfo(View):
                                                                             substation_device_type,
                                                                             user_thematics,
                                                                             complete_performance)
-                                sub_station['data']['markerUrl'] = substation_extra_info['markerUrl']
+                                sub_station['markerUrl'] = substation_extra_info['markerUrl']
                                 if substation_extra_info['color']:
-                                    sub_station['data']['link_color'] = substation_extra_info['color']
+                                    sub_station['link_color'] = substation_extra_info['color']
                                 else:
-                                    sub_station['data']['link_color'] = sector_extra_info['color']
-                                sub_station['data']['perf_value'] = substation_extra_info['perf_value']
-                                sub_station['data']['pl'] = substation_extra_info['pl']
-                                sub_station['data']['pl_timestamp'] = substation_extra_info['pl_timestamp']
-                                sub_station['data']['rta'] = substation_extra_info['rta']
+                                    sub_station['link_color'] = sector_extra_info['color']
+                                sub_station['perf_value'] = substation_extra_info['perf_value']
+                                sub_station['pl'] = substation_extra_info['pl']
+                                sub_station['pl_timestamp'] = substation_extra_info['pl_timestamp']
+                                sub_station['rta'] = substation_extra_info['rta']
         except Exception as e:
             pass
 
@@ -4669,15 +4676,19 @@ class GISStaticInfo(View):
             if device_technology:
                 if device_type:
                     try:
-                        user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                              thematic_technology=device_technology,
-                                                                              thematic_type=device_type)
+                        user_thematics = UserPingThematicSettings.objects.get(
+                            user_profile=current_user,
+                            thematic_technology=device_technology,
+                            thematic_type=device_type
+                        )
                     except Exception as e:
                         return user_thematics
                 else:
                     try:
-                        user_thematics = UserPingThematicSettings.objects.filter(user_profile=current_user,
-                                                                                 thematic_technology=device_technology)[0]
+                        user_thematics = UserPingThematicSettings.objects.filter(
+                            user_profile=current_user,
+                            thematic_technology=device_technology
+                        )[0]
                     except Exception as e:
                         return user_thematics
 

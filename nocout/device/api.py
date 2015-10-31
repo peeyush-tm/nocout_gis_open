@@ -116,6 +116,111 @@ logger = logging.getLogger(__name__)
 nocout_utils = NocoutUtilsGateway()
 
 
+def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
+    """
+
+    """
+    ss_dict = {}
+
+    if not ss_dataset:
+        return ss_dict
+
+    for data in ss_dataset:
+        data_list = data.split('|')
+        if data_list:
+            if data_list[0] not in ss_dict:
+                ss_dict[data_list[0]] = {
+                    'ss_list': list(),
+                    'ip_list': list(),
+                    'circuit_list': list()
+                }
+
+            ss_id = ''
+
+            try:
+                ss_id = int(data_list[1])
+            except Exception, e:
+                pass
+
+            if ss_id:
+                try:
+                    device_id = int(data_list[2])
+                except Exception, e:
+                    device_id = ''
+
+                try:
+                    device_name = data_list[3]
+                except Exception, e:
+                    device_name = ''
+
+                try:
+                    ip_address = data_list[4]
+                except Exception, e:
+                    ip_address = ''
+
+                try:
+                    device_type = data_list[5]
+                except Exception, e:
+                    device_type = ''
+
+                try:
+                    latitude = float(data_list[6])
+                except Exception, e:
+                    latitude = ''
+
+                try:
+                    longitude = float(data_list[7])
+                except Exception, e:
+                    longitude = ''
+
+                try:
+                    circuit_id = data_list[8]
+                except Exception, e:
+                    circuit_id = ''
+
+                try:
+                    antenna_height = int(data_list[9])
+                except Exception, e:
+                    antenna_height = ''
+
+                try:
+                    technology = data_list[10]
+                except Exception, e:
+                    technology = ''
+
+                try:
+                    ss_name = data_list[11]
+                except Exception, e:
+                    ss_name = ''
+
+                icon_url = device_type_dict.get(device_type, '')
+
+                if icon_url:
+                    icon_url = icon_url.get('gmap_icon')
+
+                ss_info = {
+                    'id': ss_id,
+                    'name': ss_name,
+                    'device_id': device_id,
+                    'device_name': device_name,
+                    'ip_address': ip_address,
+                    'device_type': device_type,
+                    'device_tech': technology,
+                    'lat': latitude,
+                    'lon': longitude,
+                    'circuit_id': circuit_id,
+                    'markerUrl': icon_url,
+                    'antenna_height': antenna_height,
+                    'show_link': 1,
+                    'link_color': ''
+                }
+
+                ss_dict[data_list[0]]['ss_list'].append(ss_info)
+                ss_dict[data_list[0]]['ip_list'].append(ip_address)
+                ss_dict[data_list[0]]['circuit_list'].append(circuit_id)
+
+    return ss_dict
+
 def prepare_raw_result_v2(resultset=None):
 
     result = list()
@@ -158,12 +263,19 @@ def prepare_raw_result_v2(resultset=None):
             'vendor_str': '',
             'freq_str': '',
             'polarization_str': '',
+            'sector_configured_on_devices': '',
+            'circuit_ids': '',
             'sectors': []
         }
 
         sector_list = list()
         if sector_info_str:
+            ss_info_str = bs.get('SS_STR', '')
             sector_info = sector_info_str.split(',')
+            ss_info_dict = {}
+            if ss_info_str:
+                ss_info_dict = prepare_ss_info_dict(ss_info_str.split(','), device_type_dict, freq_dict)
+
             for info in sector_info:
                 splitted_str = info.split('|')
                 try:
@@ -209,19 +321,29 @@ def prepare_raw_result_v2(resultset=None):
                         polarization = 'NA'
 
                     try:
-                        azimuth_angle = splitted_str[7]
+                        azimuth_angle = int(splitted_str[7])
                     except Exception, e:
                         azimuth_angle = 'NA'
 
                     try:
-                        beamwidth = splitted_str[8]
+                        beamwidth = int(splitted_str[8])
                     except Exception, e:
                         beamwidth = 'NA'
 
                     try:
-                        antenna_height = splitted_str[9]
+                        antenna_height = int(splitted_str[9])
                     except Exception, e:
                         antenna_height = 'NA'
+
+                    try:
+                        sector_ip = splitted_str[10]
+                    except Exception, e:
+                        sector_ip = ''
+
+                    try:
+                        device_name = splitted_str[11]
+                    except Exception, e:
+                        device_name = ''
 
                     gmap_icon = ''
                     freq_val = ''
@@ -237,28 +359,45 @@ def prepare_raw_result_v2(resultset=None):
                         freq_obj = freq_dict.get(freq_id)
                         color = freq_obj.get('color')
                         freq_val = freq_obj.get('value')
-                        radius = freq_obj.get('frequency_radius')
+                        radius = freq_obj.get('radius', 0.5)
 
+                    ss_data_obj = ss_info_dict.get(str(sector_pk), {})
+                    ss_list = ss_data_obj.get('ss_list', [])
+                    ip_list = ss_data_obj.get('ip_list', [])
+                    circuit_list = ss_data_obj.get('circuit_list', [])
+
+                    # Concat sectors technology
                     temp_dict['tech_str'] += technology + '|'
+                    # Concat sectors vendor
                     temp_dict['vendor_str'] += vendor + '|'
+                    # Concat sectors freq.
                     temp_dict['freq_str'] += freq_val + '|'
+                    # Concat sectors antenna polarization
                     temp_dict['polarization_str'] += polarization + '|'
+                    # Concat Sectors IP
+                    temp_dict['sector_configured_on_devices'] += sector_ip + '|'
+                    # Concat SS IPs
+                    temp_dict['sector_configured_on_devices'] += '|'.join(ip_list) + '|'
+                    # Concat Circuit ID's
+                    temp_dict['circuit_ids'] += '|'.join(circuit_list) + '|'
 
                     sector = {
                         'id': sector_pk,
+                        'device_name': device_name,
                         'sector_id': sector_id,
                         'technology': technology,
                         'vendor': vendor,
                         'device_type': device_type,
                         'azimuth_angle': azimuth_angle,
-                        'beamwidth': beamwidth,
+                        'beam_width': beamwidth,
                         'markerUrl': gmap_icon,
                         'color': color,
                         'radius': radius,
                         'freq': freq_val,
+                        'ip_address': sector_ip,
                         'polarization': polarization,
                         'antenna_height': antenna_height,
-                        'sub_stations': []
+                        'sub_stations': ss_list
                     }
                     sector_list.append(sector)
                 except Exception, e:
@@ -662,7 +801,7 @@ class DeviceStatsApi(View):
                 "objects": None
             }
         }
-        self.raw_result = prepare_raw_result_v2(nocout_utils.getMapsInitialData())
+        self.raw_result = prepare_raw_result_v2(nocout_utils.getMapsInitialData(bs_id=[]))
         super(DeviceStatsApi, self).__init__()
 
     def get(self, request):

@@ -99,12 +99,12 @@ class NocoutUtilsGateway:
         
         return param1
 
-    def getMapsInitialData(self):
+    def getMapsInitialData(self, bs_id=[]):
         """
 
         """
         
-        response = getMapsInitialData(self)
+        response = getMapsInitialData(bs_id=bs_id)
         return response
 
     def non_cached_all_gis_inventory(
@@ -2487,7 +2487,11 @@ def getAdvanceFiltersSuggestions(request):
 
 
 
-def getMapsInitialData(request):
+def getMapsInitialData(bs_id=[]):
+
+    bs_where_condition = ''
+    if bs_id:
+        bs_where_condition = ' AND bs.id in ({}) '.format(','.join(bs_id))
 
     query = '''
         SELECT
@@ -2505,6 +2509,20 @@ def getMapsInitialData(request):
             IF(isnull(bh_tech.name), 'NA', bh_tech.name) AS BHDEVICETECH,
             GROUP_CONCAT(CONCAT(
                 sect.id, '|',
+                ss.id, '|',
+                ss_device.id, '|',
+                ss_device.device_name, '|',
+                ss_device.ip_address, '|',
+                ss_device_type.name, '|',
+                ss_device.latitude, '|',
+                ss_device.longitude, '|',
+                ckt.circuit_id, '|',
+                ss_antenna.height, '|',
+                ss_device_tech.name, '|',
+                ss.name
+            )) AS SS_STR,
+            GROUP_CONCAT(CONCAT(
+                sect.id, '|',
                 IF(isnull(sect.sector_id), 'NA', sect.sector_id), '|',
                 IF(isnull(tech.name), 'NA', tech.name), '|',
                 IF(isnull(vendor.name), 'NA', vendor.name), '|',
@@ -2513,7 +2531,9 @@ def getMapsInitialData(request):
                 IF(isnull(antenna.polarization), 'NA', antenna.polarization), '|',
                 IF(isnull(antenna.azimuth_angle), 'NA', antenna.azimuth_angle), '|',
                 IF(isnull(antenna.beam_width), 'NA', antenna.beam_width), '|',
-                IF(isnull(antenna.height), 'NA', antenna.height)
+                IF(isnull(antenna.height), 'NA', antenna.height), '|',
+                IF(isnull(device.ip_address), 'NA', device.ip_address), '|',
+                IF(isnull(device.device_name), 'NA', device.device_name)
             )) AS SECT_STR,
             count(ckt.id) AS TOTALSS
         FROM
@@ -2570,11 +2590,32 @@ def getMapsInitialData(request):
             inventory_circuit AS ckt
         ON
             sect.id = ckt.sector_id
+        LEFT JOIN
+            inventory_substation AS ss
+        ON
+            ss.id = ckt.sub_station_id
+        LEFT JOIN
+            device_device AS ss_device
+        ON
+            ss_device.id = ss.device_id
+        LEFT JOIN
+            device_devicetechnology AS ss_device_tech
+        ON
+            ss_device.device_technology = ss_device_tech.id
+        LEFT JOIN
+            device_devicetype AS ss_device_type
+        ON
+            ss_device.device_type = ss_device_type.id
+        LEFT JOIN
+            inventory_antenna AS ss_antenna
+        ON
+            ss_antenna.id = ss.antenna_id
         where
             device.is_added_to_nms > 0
+            {0}
         GROUP BY
             bs.id
-        '''
+        '''.format(bs_where_condition)
 
     return fetch_raw_result(query)
 

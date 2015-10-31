@@ -76,7 +76,7 @@ urlpatterns = patterns('',
     ),
     url(
         r'^static_info/$',
-        cache_page(60 * 3)(views.GISStaticInfo.as_view()),
+        views.GISStaticInfo.as_view(),
         name='gis_static_info'
     ),
     url(
