@@ -13,6 +13,14 @@ urlpatterns = patterns('',
                            views.LivePerformanceListing.as_view(),
                            name='LivePerformanceListing'
                        ),
+                       url(r'^get_topology/$',
+                           views.GetTopology.as_view(),
+                           name='DeviceTopology'
+                       ),
+                       url(r'^get_topology/tool_tip/$',
+                           views.GetTopologyToolTip.as_view(),
+                           name='DeviceTopologyToolTip'
+                       ),
                        url(r'^(?P<page_type>\w+)_live/(?P<device_id>\w+)/$',
                            views.GetPerfomance.as_view(),
                            name='SingleDevicePerf'
