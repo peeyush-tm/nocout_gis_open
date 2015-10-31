@@ -840,13 +840,13 @@ ENABLE_WHITE_THEME = True
 SHOW_RF_COLUMN = 6
 
 # Flag to enable/disable topology view on single performance page.
-ENABLE_TOPO_VIEW = False
+ENABLE_TOPO_VIEW = True
 
 # Flag to enable/disable birdeye view on single performance page.
-ENABLE_BIRDEYE_VIEW = False
+ENABLE_BIRDEYE_VIEW = True
 
 # Flag to enable/disable custom dashboards on single performance page.
-ENABLE_CUSTOM_DASHBOARD_VIEW = False
+ENABLE_CUSTOM_DASHBOARD_VIEW = True
 
 # Password complexity settings.
 # ===============================

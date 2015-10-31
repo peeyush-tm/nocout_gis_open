@@ -1381,7 +1381,7 @@ def get_time(start_date, end_date, date_format, data_for):
     """
     isSet = False
 
-    if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
+    if len(str(start_date)) and len(str(end_date)) and 'undefined' not in [start_date, end_date]:
         isSet = True
         try:
             start_date = float(start_date)

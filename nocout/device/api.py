@@ -78,7 +78,7 @@ import logging
 from copy import deepcopy
 from pprint import pformat
 from multiprocessing import Process, Queue
-from django.db.models import Count
+from django.db.models import Count,Q
 from django.views.generic.base import View
 from django.http import HttpResponse
 from device.models import Device, DeviceType, DeviceVendor, DeviceTechnology, State, City, DeviceModel, \
@@ -5825,6 +5825,52 @@ class ResetServiceConfiguration(APIView):
 
         except Exception as e:
             logger.info(e.message)
+
+        return Response(result)
+
+
+class GetDataSourceforDisplayType(APIView):
+    """
+    Fetch type corresponding to the selected technology.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_tech_types/4/"
+    """
+
+    def get(self, request):
+        search = self.request.GET.get('search', None)
+        plot_type = self.request.GET.get('display_type', None)
+
+        # Response of api.
+        result = list()
+
+        # Fetch data_sources associated with the selected type and search text.
+        if search:
+            if plot_type == "table":
+                data_sources = ServiceDataSource.objects.filter(
+                    Q(alias__icontains=search)
+                    &
+                    Q(chart_type="table")).order_by('alias')
+            else:
+                data_sources = ServiceDataSource.objects.filter(
+                    Q(alias__icontains=search)
+                    &
+                    (~Q(chart_type="table")&Q(data_source_type=1))).order_by('alias')
+        else:
+             data_sources = ServiceDataSource.objects.filter( Q(chart_type = "table")if plot_type == "table" else
+                                                              (~Q(chart_type="table")&Q(data_source_type=1))).order_by('alias')
+
+        for value in data_sources:
+            services= value.service_set.all()
+            for service in services:
+                if '_invent' not in service.name and '_status' not in service.name:
+                    result.append({
+                        'id': str(value.id) + '_' + str(service.id),
+                        'text': value.alias + " - "+ str(service.alias),
+                        'name' : value.name
+                    })
+
 
         return Response(result)
 

@@ -3,7 +3,7 @@ from django.db import models
 from inventory.models import Sector
 from device.models import Device, DeviceTechnology
 from user_profile.models import UserProfile
-from service.models import ServiceDataSource
+from service.models import ServiceDataSource,Service
 
 
 ##################################################################
@@ -2089,6 +2089,7 @@ class DSCustomDashboard(models.Model):
     """
     CustomDashboard-ServiceDataSource mapper Model Columns Declaration.
     """
+    service = models.ForeignKey(Service, null=True, blank=True)
     data_source = models.ForeignKey(ServiceDataSource)
     custom_dashboard = models.ForeignKey(CustomDashboard)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
