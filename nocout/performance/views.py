@@ -7309,4 +7309,3 @@ class GetTopologyToolTip(View):
             formatted_result.append(temp_dict)
 
         return formatted_result
->>>>>>> 0dd8db929a49bc4b984eedd97e2e46107ad700e2
