@@ -280,7 +280,7 @@ def store_threshold_for_kpi_services(self):
 	cur = store_threshold_for_kpi_services.mysql_cnx('historical').cursor()
 	cur.execute(query)
 	out = cur.fetchall()
-	info('out: {0}'.format(out))
+	#info('out: {0}'.format(out))
 	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
 	rds_cnx = rds_cli.redis_cnx
 	processed_service = []
@@ -410,11 +410,22 @@ def load_inventory(self):
     	"and "
     	"device_devicetype.name in ('Switch', 'RiCi', 'PINE') "
     	"group by device_device.ip_address;" )
-	
+
+
+	ping_threshold_query = ("select name,rta_warning,rta_critical,pl_warning,pl_critical from device_devicetype; ")
+
 	cur.execute(backhaul_query)
 	backhaul_out = cur.fetchall()
+	
+	ping_threshold_dict = {}
+	# Calculate warning and critical for device type to be used in Event 
+	cur.execute(ping_threshold_query)
+	ping_threshold_out = cur.fetchall()
+	for d1 in ping_threshold_out:
+		ping_threshold_dict[d1[0]] = []
+		ping_threshold_dict[d1[0]].extend([d1[1],d1[2],d1[3],d1[4]])
 
-	#info('out: {0}'.format(backhaul_out))
+	#warning('out: {0},{1}'.format(ping_threshold_dict,ping_threshold_out))
 	
 	# e.g. keeping invent data in database number 3
 	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
@@ -448,12 +459,15 @@ def load_inventory(self):
 			dr_info = cur.fetchall()
 			cur.close()
 			#warning('dr hosts: {0}'.format(dr_info))
-			load_devicetechno_wise(wimax_bs_list, rds_pipe, extra=dr_info)
+			load_devicetechno_wise(wimax_bs_list, rds_pipe,extra=dr_info)
+			store_ping_threshold(wimax_bs_list,rds_pipe,ping_threshold_dict)
 		else:
-			load_devicetechno_wise(grouped_devices, rds_pipe)
+			load_devicetechno_wise(grouped_devices,rds_pipe)
+			store_ping_threshold(grouped_devices,rds_pipe,ping_threshold_dict)
 	for bk_grp, bk_grp_vals in groupby(backhaul_out, key=itemgetter(3)):
 		bk_grouped_devices = list(bk_grp_vals)
 		load_backhaul_data(bk_grouped_devices, rds_pipe)
+
 	try:
 		rds_pipe.execute()
 		store_threshold_for_kpi_services()
@@ -461,13 +475,23 @@ def load_inventory(self):
 		error('Error in redis inventory loading... {0}'.format(exc))
 	else:
 		warning('Inventory loading into redis, done.')
-
+	
 	try:
 		memc.set_multi(device_name_ip_map)
 	except Exception as exc:
 		error('Error in memc inventory loading... {0}'.format(exc))
 	else:
 		warning('Inventory loading into memc, done.')
+	
+
+@app.task(name='store-ping-threshold')
+def store_ping_threshold(data_values,p,ping_threshold_dict):
+	host_key = '%s:ping' 	
+	t1 = data_values[0]
+	threshold_value = ping_threshold_dict.get(t1[3])
+	for data in data_values:
+		#p.delete(host_key % data[0])
+		p.rpush(host_key % data[0],threshold_value)
 
 @app.task(name='load-backhaul-data')
 def load_backhaul_data(data_values, p, extra=None):
@@ -512,6 +536,9 @@ def load_devicetechno_wise(data_values, p, extra=None):
 	Loads specific device technology data into redis
 	"""
 	t = data_values[0]
+
+	# key for storing rta/pl warning/critial values
+
 	# key:: <device-tech>:<device-type>:<site-name>:<ip>
 	key = '%s:%s:%s:%s' % (str(t[4]).lower(),
 					'ss' if t[3].endswith('SS') else 'bs',
@@ -544,7 +571,6 @@ def load_devicetechno_wise(data_values, p, extra=None):
 	for data in data_values:
 		p.set(invent_key % data[0], data[2])
 		p.rpush(key % (data[1], data[2]), data[:last_index])
-
 
 @app.task(base=DatabaseTask, name='nw-mongo-update', bind=True)
 def mongo_update(self, data_values, indexes, col, site):

@@ -6,7 +6,7 @@ This module manages log events for both hosts and services
 """
 
 import re
-
+from ConfigParser import ConfigParser
 from celery import chord, Task
 
 from handlers.db_ops import (mysql_insert_handler, 
@@ -44,8 +44,9 @@ class EventTaskBase(Task):
 		info('Queue: {0} len: {1}'.format(self.name, len(data)))
 		if data:
 			name_ip_mapping = self.map_name_ip()
+			ping_threshold = self.load_ping_threshold()
 			batches = self.get_batches(data)
-			do_work(None, self.event_type, name_ip_mapping, 
+			do_work(None, self.event_type, name_ip_mapping,ping_threshold, 
 					batches, self.site_name)
 
 	def get_batches(self, data):
@@ -66,23 +67,32 @@ class EventTaskBase(Task):
 		[p.get(k) for k in keys]
 
 		return dict([t for t in zip(keys, p.execute())])
+	def load_ping_threshold(self):
+		""" Loads device inventory info from Redis with name --> ip mapping, 
+		makes a new redis connection"""
+		conn = RedisInterface(custom_conf={'db': INVENTORY_DB}).redis_cnx
+		p = conn.pipeline()
+		keys = conn.keys(pattern='*:ping')
+		[p.lrange(k,0 ,-1) for k in keys]
+
+		return dict([t for t in zip(keys, p.execute())])
 
 
 
 @app.task(name='events_export_caller', ignore_result=True)
-def do_work(results, event_type, name_ip_mapping, batches, site_name):
+def do_work(results, event_type, name_ip_mapping,ping_threshold,batches, site_name):
 	batch = batches.pop(0)
-	batch_task = build_export_events.s(event_type, name_ip_mapping, 
+	batch_task = build_export_events.s(event_type, name_ip_mapping,ping_threshold, 
 			batch, site_name) 
 	if batches:
-		callback = do_work.s(name_ip_mapping, batches)
+		callback = do_work.s(event_type,name_ip_mapping,ping_threshold, batches,site_name)
 		return chord(batch_task)(callback)
 	else:
 		batch_task.apply_async()
 
 
 @app.task(name='events_export', ignore_result=True)
-def build_export_events(event_type, name_ip_mapping, events, site_name):
+def build_export_events(event_type, name_ip_mapping, ping_threshold,events, site_name):
 	table_names = {
 			'host': {
 				'live': 'performance_eventnetwork',
@@ -103,10 +113,12 @@ def build_export_events(event_type, name_ip_mapping, events, site_name):
 	for event in events:
 		for_host = False
 		# ignore events related to counter reset
-		if 'wrapped' in event:
+		if not event or 'wrapped' in event:
 			continue
-		event['ip_address'] = name_ip_mapping.get(event['hostname'])
-		patch_event_keys(event)
+		host_name = event['hostname']
+		key = "device_inventory:%s" % host_name
+		event['ip_address'] = name_ip_mapping.get(key)
+		patch_event_keys(event,site_name)
 		if event['alert_type'] == 'HOST':
 			for_host = True
 		event.pop('alert_type', '')
@@ -118,7 +130,18 @@ def build_export_events(event_type, name_ip_mapping, events, site_name):
 				tmp.update(event)
 				tmp['data_source'] = ds
 				tmp['current_value'] = val
+				try:
+					if ds == 'pl':
+						host = event['device_name']	
+						ping_threshold_list= ping_threshold.get("%s:ping" % host)[0]
+						pl_warning = eval(ping_threshold_list)[2]	
+						pl_critical = eval(ping_threshold_list)[3]
+						if event['severity'] != 'up' and float(val) < float(pl_critical):
+							tmp['severity'] ='up'
+				except:
+					pass	
 				final_events.append(tmp)
+
 		else:
 			final_events.append(event)
 
@@ -128,7 +151,7 @@ def build_export_events(event_type, name_ip_mapping, events, site_name):
 			table_names[event_type]['live'],
 			table_names[event_type]['status'],
 			table_names[event_type]['live'], 
-			'pub_slave_1', 
+			site_name, 
 			columns=columns
 			).apply_async()
 
@@ -146,7 +169,7 @@ def parse_event_output(output):
 	return ds_states
 
 
-def patch_event_keys(event):
+def patch_event_keys(event,site_name):
 	""" function to rename/add/remove keys from a event dict 
 	to match mysql table structure"""
 	# these event properties not needed for mysql insertion
@@ -166,18 +189,21 @@ def patch_event_keys(event):
  	event['check_timestamp'] = event['sys_timestamp'] = event.pop('time', '')
  	for old, new in old_to_new_keys.iteritems():
  		event[new] = event.pop(old, '')
- 	event['site_name']  = event['machine_name'] = None
+ 	event['site_name']  = event['machine_name'] = site_name
  	for x in default_vals:
  		event[x] = None
 
 
-@app.task(name='service-main')
-def main(**opts):
-	opts = {'site_name': 'pub_slave_1',
-			'queue': 'q:event:host'}
+@app.task(name='event-main')
+def event_main(**opts):
+	DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
+	conf = ConfigParser()
+	conf.read(DB_CONF)
+	opts = {'site_name': conf.get('machine','machine_name'),'queue': 'q:event:host'}
+	event_task = EventTaskBase()
+	event_task(**opts)
+	opts = {'site_name': conf.get('machine','machine_name'),'queue': 'q:event:service'}
 	event_task = EventTaskBase()
 	event_task(**opts)
 
 
-if __name__ == '__main__':
-	main()

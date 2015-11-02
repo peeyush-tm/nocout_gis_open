@@ -34,8 +34,7 @@ class Config:
 
     SENTINELS = [
 		    ('10.133.19.165', 26379), 
-		    ('10.133.19.165', 26380), 
-		    ('10.133.12.163', 26379)
+		    ('10.133.19.165', 26380) 
 		    ]
     MEMCACHE_CONFIG = ['10.133.19.165:11211','10.133.12.163:11211']
 
@@ -58,7 +57,8 @@ class Config:
             'handlers.db_ops',
             'network.network_etl',
             'service.service_etl',
-	    'service.kpi_etl', 
+	    'service.kpi_etl',
+	    'events.events_etl',
 	    'add_dummy'
 	)
     d_route = {'queue': 'service', 'routing_key': 'service'}
@@ -90,6 +90,10 @@ class Config:
                 },
             'service-main': {
                 'task': 'service-main',
+                'schedule': crontab(),
+                },
+            'event-main': {
+                'task': 'event-main',
                 'schedule': crontab(),
                 },
 	     'get-ul-issue-service-checks':{

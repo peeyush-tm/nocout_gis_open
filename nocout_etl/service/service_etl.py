@@ -151,7 +151,8 @@ def update_topology(li, data_values, name_ip_mapping, delete_old_topology, site)
 				ss_ips = splitter(ss_wise_values, ('=', ','), (1, 9))
 				ss_ports = splitter(ss_wise_values, ('=', ','), (1, -1))
 		except Exception as exc:
-			error('Error in topology output: {0}, {1}'.format(exc,ss_wise_values))
+			#error('Error in topology output: {0}, {1}'.format(exc,ss_wise_values))
+			pass
 		else:
 			machine_name = site[:-8]
 			for i, ss_ip in enumerate(ss_ips):
@@ -168,7 +169,7 @@ def update_topology(li, data_values, name_ip_mapping, delete_old_topology, site)
 					'connected_device_mac': ss_macs[i],
 					'refer': ss_ports[i],
 					'site_name': site,
-					'machine_name': machine_name,
+					'machine_name': site,
 					'mac_address': None,
 				})
 				li.append(d)
@@ -382,7 +383,7 @@ def send_db_tasks(**kw):
 	topology_data_fields = ('device_name', 'service_name', 'machine_name',
 	                        'site_name', 'sys_timestamp', 'check_timestamp', 
 	                        'ip_address', 'sector_id', 'connected_device_ip', 
-	                        'connected_device_mac', 'mac_address')
+	                        'connected_device_mac', 'mac_address','data_source')
 	#warning('send-db-send**********')
 	site = kw.get('site')
 	warning('site name: {0}'.format(site))
