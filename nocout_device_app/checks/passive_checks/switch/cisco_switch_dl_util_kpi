@@ -1,0 +1,31 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+
+def check_cisco_switch_dl_util_kpi_arguments(params):
+    description,settings = params
+    args =''
+    qos_string= ''
+    if "host" in settings:
+        args += '%s ' % quote_shell_string(settings['host'])
+    if "site" in settings:
+        args += '%s ' % quote_shell_string(settings['site'])
+
+    if "war" in settings:
+        args += '%f ' % int(settings['war'])
+
+    if "crit" in settings:
+        args += '%f ' % int(settings['crit'])
+    if "qos" in settings:
+        for a in settings['qos']:
+                qos_string += '%s|' % a
+        if qos_string:
+                args += '%s ' % quote_shell_string(qos_string)
+    return args
+
+active_check_info['cisco_switch_dl_util_kpi'] = {
+    "command_line"        : '$USER1$/check_cisco_switch_dl_util_kpi $ARG1$',
+    "argument_function"   : check_cisco_switch_dl_util_kpi_arguments,
+    "service_description" : lambda params: "%s" % params[0],
+    "has_perfdata"        :True,
+}
+

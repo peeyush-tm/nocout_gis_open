@@ -87,7 +87,7 @@ def service_data_sources():
         if sds['service_data_sources__formula'] and len(sds['service_data_sources__formula'].strip()):
             formula = sds['service_data_sources__formula']
 
-        sds_name = sds['service__name'].strip() + "_" +sds['service_data_sources__name'].strip()
+        sds_name = sds['service__name'].strip().lower() + "_" +sds['service_data_sources__name'].strip().lower()
         sds_alias = sds['service_data_sources__alias'].strip()
 
         ds_to_append = {

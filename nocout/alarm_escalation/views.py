@@ -8,6 +8,14 @@ from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableS
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
+from alarm_escalation.tasks import mail_send
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import logging
+import os.path
+logger = logging.getLogger(__name__)
+import re
+from django.conf import settings
 
 class LevelList(TemplateView):
     """
@@ -121,3 +129,128 @@ class LevelDelete(PermissionsRequiredMixin, DeleteView):
     template_name = "level/level_delete.html"
     success_url = reverse_lazy('level_list')
     required_permissions = ('alarm_escalation.delete_escalationlevel',)
+
+
+class EmailSender(View):
+    """
+    Send email to multiple mail id's with multiple attachment.
+
+    URL: http://127.0.0.1:8000/articles/email/
+
+    Args:
+        subject (unicode): Mail subject.
+        message (unicode): Email Message will be here.
+        from_email (unicode): Sender's email.
+        to_email (list): List of email id where to send mail.
+        attachments (list): Mail attachments if any(file object).
+        success (int) : Success bit either 0/1.
+        error_message (string): String containing error messages.
+        attachment_path (list) : List of File path.
+
+    Return (dict): Response to be returnes in json format.
+                   For e.g.,
+                            {
+                                "message": "Successfully send the email.",
+                                "data": {
+                                    "to_email": [
+                                        "chanishagarwal0@gmail.com"
+                                    ],
+                                    "attachments": [
+                                        "EmailAPI.docx",
+                                        "IMG-20151020-WA0000.jpg"
+                                    ],
+                                    "from_email": "chanish.agarwal1@gmail.com",
+                                    "attachment_path": [
+                                        "/home/chanish/Desktop/chart-35-02.png"
+                                    ],
+                                    "message": "Please find attachmetn Below",
+                                    "subject": "Warning system is getting slow"
+                                },
+                                "success": 1
+                            }
+    """
+
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(EmailSender, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        # From email id.
+        from_email = self.request.POST.get('from_email', None)
+        # To email id.
+        to_email = self.request.POST.get('to_email')
+        # If multiple values then by using eval converting into list.
+        if to_email:
+            if "," in to_email:
+                to_email = eval(to_email)
+            else:
+                to_email = to_email.split(",")
+        # Subject.
+        subject = self.request.POST.get('subject', None)
+        # Message.
+        message = self.request.POST.get('message', None)
+        # Path of File attachments.
+        attachment_path = self.request.POST.get('attachment_path')
+        if attachment_path:
+            if "," in attachment_path:
+                attachment_path = eval(attachment_path)
+            else:
+                attachment_path = attachment_path.split(",")
+
+        attachments = None
+        try:
+            attachments = request.FILES.values()
+        except Exception as e:
+            logger.exception(e.message)
+
+        # Result: Response to be returned.
+        result = {
+            "success": 0,
+            "message": "Failed to send email.",
+
+            "data": {
+                "subject": subject,
+                "message": message,
+                "from_email": from_email,
+                "to_email": to_email,
+                "attachments": attachments,
+                "attachment_path" : attachment_path,
+            }
+        }
+
+        # Expected errors has been stored here.
+        error_messages = ""
+
+        # Field validations.
+        if not to_email:
+            # 'error_message' generation when 'to_email' value not provided.
+            error_messages += "Please specify email id of sender. \n"
+
+        if not from_email:
+            result['from_email'] = settings.DEFAULT_FROM_EMAIL
+
+        if attachment_path:
+            for x in attachment_path:
+                # Avoiding if it is URL Path.
+                if re.search('^http.*',x):
+                    pass
+                else:
+                    # If file exist in system
+                    if not os.path.isfile(x):
+                        error_messages = "file: '%s' doesn't exist \n" %(x)
+        else:
+            result['data']['attachment_path'] = []
+
+        if error_messages:
+            result['message'] = error_messages
+            # return HttpResponse(json.dumps(result))
+        else:
+            result['success'] = 1
+            result['message'] = "Successfully send the email."
+            # Sending email as a backend task.
+            mail_send.delay(result)
+
+        attachments_name = [x.name for x in result['data']['attachments']]
+        result['data']['attachments'] = attachments_name
+        return HttpResponse(json.dumps(result))
+

@@ -2476,3 +2476,300 @@ def getAdvanceFiltersSuggestions(request):
             result['message'] = 'Data fetched successfully'
 
     return HttpResponse(json.dumps(result), content_type="application/json")
+
+
+def getBSInventoryInfo(base_station_id=None):
+    """
+    This function returns BS inventory info which are shown on BS tooltip on gmap & other places
+    """
+    bs_info = list()
+
+    if not base_station_id:
+        return bs_info
+
+    where_condition = ' bs.id = {}'.format(base_station_id)
+
+    query = '''
+        SELECT
+            bs.id AS id,
+            IF(isnull(bs.alias), 'NA', bs.alias) AS base_station_alias,
+            IF(isnull(bs.bs_site_id), 'NA', bs.bs_site_id) AS bs_site_id,
+            IF(isnull(bs.building_height), 'NA', bs.building_height) AS building_height,
+            IF(isnull(bs.tower_height), 'NA', bs.tower_height) AS tower_height,
+            IF(isnull(bs.bs_site_type), 'NA', bs.bs_site_type) AS bs_type,
+            IF(isnull(bs.gps_type), 'NA', bs.gps_type) AS bs_gps_type,
+            IF(isnull(bs.address), 'NA', bs.address) AS bs_address,
+            IF(isnull(bs.infra_provider), 'NA', bs.infra_provider) AS bs_infra_provider,
+            IF(isnull(bs.state_id), 'NA', state.state_name) AS bs_state,
+            IF(isnull(bs.city_id), 'NA', city.city_name) AS bs_city,
+            IF(isnull(bs.tag1), 'NA', bs.tag1) AS tag1,
+            IF(isnull(bs.tag2), 'NA', bs.tag2) AS tag2,
+            CONCAT(bs.latitude, ', ', bs.longitude) AS lat_lon
+        FROM
+            inventory_basestation AS bs
+        LEFT JOIN
+            device_device AS bs_switch_device
+        ON
+            bs.bs_switch_id = bs_switch_device.id
+        LEFT JOIN
+            device_state as state
+        ON
+            bs.state_id = state.id
+        LEFT JOIN
+            device_city as city
+        ON
+            bs.city_id = city.id
+        LEFT JOIN
+            inventory_backhaul AS bh
+        ON
+            bs.backhaul_id = bh.id
+        LEFT JOIN
+            device_device AS bh_conf_on
+        ON
+            bh.bh_configured_on_id = bh_conf_on.id
+        LEFT JOIN
+            device_devicetype AS bh_dtype
+        ON
+            bh_conf_on.device_type = bh_dtype.id
+        LEFT JOIN
+            device_device AS aggr_switch
+        ON
+            bh.aggregator_id = aggr_switch.id
+        LEFT JOIN
+            device_device AS bh_switch
+        ON
+            bh.bh_switch_id = bh_switch.id
+        LEFT JOIN
+            device_device AS pop_device
+        ON
+            bh.pop_id = pop_device.id
+        WHERE
+            {0}
+        '''.format(where_condition)
+    
+    # Execute query
+    bs_info = fetch_raw_result(query)
+
+    return bs_info
+
+def getBHInventoryInfo(backhaul_id=None):
+    """
+    This function returns BS inventory info which are shown on BS tooltip on gmap & other places
+    """
+    bh_info = list()
+
+    if not backhaul_id:
+        return bh_info
+
+    where_condition = ' bh.id = {}'.format(backhaul_id)
+
+    query = '''
+        SELECT
+            
+            IF(isnull(bs.bh_capacity), 'NA', bs.bh_capacity) AS bh_capacity,
+            IF(isnull(bh.bh_connectivity), 'NA', bh.bh_connectivity) AS bh_connectivity,
+            IF(isnull(bh.bh_type), 'NA', bh.bh_type) AS bh_type,
+            IF(isnull(bh.bh_circuit_id), 'NA', bh.bh_circuit_id) AS bh_circuit_id,
+            IF(isnull(bh.ttsl_circuit_id), 'NA', bh.ttsl_circuit_id) AS bh_ttsl_circuit_id,
+            IF(isnull(bh.pe_hostname), 'NA', bh.pe_hostname) AS bh_pe_hostname,
+            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bs.bs_switch_id), 'NA', bs_switch_device.ip_address) AS bs_switch_ip,
+            IF(isnull(bh.aggregator_id), 'NA', aggr_switch.ip_address) AS aggregation_switch,
+            IF(isnull(bh.aggregator_port_name), 'NA', bh.aggregator_port_name) AS aggregation_switch_port,
+            IF(isnull(bh.bh_switch_id), 'NA', bh_switch.ip_address) AS bs_converter_ip, 
+            IF(isnull(bh.pop_id), 'NA', pop_device.ip_address) AS pop,
+            IF(isnull(bh.bh_configured_on_id), 'NA', bh_conf_on.ip_address) AS bh_configured_on,
+            IF(isnull(bh_conf_on.device_type), 'NA', bh_dtype.name) AS bh_device_type,
+            IF(isnull(bh.switch_port), 'NA', bh.switch_port) AS bh_device_port
+        FROM
+            inventory_basestation AS bs
+        LEFT JOIN
+            device_device AS bs_switch_device
+        ON
+            bs.bs_switch_id = bs_switch_device.id
+        LEFT JOIN
+            device_state as state
+        ON
+            bs.state_id = state.id
+        LEFT JOIN
+            device_city as city
+        ON
+            bs.city_id = city.id
+        LEFT JOIN
+            inventory_backhaul AS bh
+        ON
+            bs.backhaul_id = bh.id
+        LEFT JOIN
+            device_device AS bh_conf_on
+        ON
+            bh.bh_configured_on_id = bh_conf_on.id
+        LEFT JOIN
+            device_devicetype AS bh_dtype
+        ON
+            bh_conf_on.device_type = bh_dtype.id
+        LEFT JOIN
+            device_device AS aggr_switch
+        ON
+            bh.aggregator_id = aggr_switch.id
+        LEFT JOIN
+            device_device AS bh_switch
+        ON
+            bh.bh_switch_id = bh_switch.id
+        LEFT JOIN
+            device_device AS pop_device
+        ON
+            bh.pop_id = pop_device.id
+        WHERE
+            {0}
+        '''.format(where_condition)
+    
+    # Execute query
+    bh_info = fetch_raw_result(query)
+
+    return bh_info
+
+def getSSInventoryInfo(sub_station_id=None):
+    """
+    This function returns SS inventory info which are shown on SS tooltip on gmap & other places
+    """
+    ss_info = list()
+
+    if not sub_station_id:
+        return ss_info
+
+    where_condition = ' ss.id = {}'.format(sub_station_id)
+
+    query = '''
+        SELECT
+            IF(isnull(ss.device_id), 'NA', ss_device.ip_address) AS ss_ip,
+            IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS cktid,
+            IF(isnull(customer.alias), 'NA', customer.alias) AS customer_alias,
+            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth) AS qos_bandwidth,
+            IF(isnull(antenna.height), 'NA', antenna.height) AS antenna_height,
+            IF(isnull(antenna.polarization), 'NA', antenna.polarization) AS polarisation,
+            IF(isnull(antenna.mount_type), 'NA', antenna.mount_type) AS mount_type,
+            IF(isnull(antenna.antenna_type), 'NA', antenna.antenna_type) AS antenna_type,
+            IF(isnull(ss.cable_length), 'NA', ss.cable_length) AS cable_length,
+            IF(isnull(ss.ethernet_extender), 'NA', ss.ethernet_extender) AS ethernet_extender,
+            IF(isnull(ss.building_height), 'NA', ss.building_height) AS building_height,
+            IF(isnull(ss.tower_height), 'NA', ss.tower_height) AS tower_height,
+            IF(isnull(ss_tech.name), 'NA', ss_tech.name) AS ss_technology,
+            CONCAT(ss.latitude, ', ', ss.longitude) AS lat_lon,
+            IF(isnull(customer.address), 'NA', customer.address) AS customer_address,
+            IF(isnull(ss.alias), 'NA', ss.alias) AS alias,
+            IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance) AS dl_rssi_during_acceptance,
+            IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance
+        FROM
+            inventory_substation AS ss
+        LEFT JOIN
+            device_device AS ss_device
+        ON
+            ss.device_id = ss_device.id
+        LEFT JOIN
+            device_devicetechnology AS ss_tech
+        ON
+            ss_device.device_technology = ss_tech.id
+        LEFT JOIN
+            inventory_antenna AS antenna
+        ON
+            ss.antenna_id = antenna.id
+        LEFT JOIN
+            inventory_circuit AS ckt
+        ON
+            ss.id = ckt.sub_station_id
+        LEFT JOIN
+            inventory_sector AS sector
+        ON
+            ckt.sector_id = sector.id
+        LEFT JOIN
+            inventory_basestation AS bs
+        ON
+            sector.base_station_id = bs.id
+        LEFT JOIN
+            inventory_backhaul AS bh
+        ON
+            bs.backhaul_id = bh.id
+        LEFT JOIN
+            inventory_customer AS customer
+        ON
+            ckt.customer_id = customer.id
+        WHERE
+            {0}
+        '''.format(where_condition)
+
+    # Execute query
+    ss_info = fetch_raw_result(query)
+
+    return ss_info
+
+def getSectorInventoryInfo(sector_id=None):
+    """
+    This function returns Sector inventory info which are shown on Sector tooltip on gmap & other places
+    """
+    sector_info = list()
+
+    if not sector_id:
+        return sector_info
+
+    where_condition = ' sector.id = {}'.format(sector_id)
+
+    query = '''
+        SELECT
+            IF(isnull(sector.sector_id), 'NA', sector.sector_id) AS sector_id,
+            IF(isnull(sector_device.ip_address), 'NA', sector_device.ip_address) AS idu_ip,
+            IF(isnull(sector_tech.name), 'NA', sector_tech.name) AS technology,
+            IF(isnull(sector.planned_frequency), 'NA', sector.planned_frequency) AS frequency,
+            IF(isnull(sector_antenna.height), 'NA', sector_antenna.height) AS antenna_height,
+            IF(isnull(sector_antenna.polarization), 'NA', sector_antenna.polarization) AS antenna_polarization,
+            IF(isnull(sector.tx_power), 'NA', sector.tx_power) AS tx_power_planned,
+            IF(isnull(sector.rx_power), 'NA', sector.rx_power) AS rx_power_planned,
+            IF(isnull(bs.gps_type), 'NA', bs.gps_type) AS ugps_installed,
+            IF(isnull(sector_antenna.azimuth_angle), 'NA', sector_antenna.azimuth_angle) AS antenna_azimuth,
+            IF(isnull(sector_antenna.sync_splitter_used), 'NA', sector_antenna.sync_splitter_used) AS sync_splitter,
+            IF(isnull(sector_antenna.sync_splitter_used), 'NA', sector_antenna.sync_splitter_used) AS antenna_splitter_installed,
+            IF(isnull(sector_antenna.make_of_antenna), 'NA', sector_antenna.make_of_antenna) AS antenna_make,
+            IF(isnull(sector_port.name), 'NA', sector_port.name) AS pmp_port,
+            IF(isnull(sector.mrc), 'NA', sector.mrc) AS mrc_status,
+            IF(isnull(sector.dr_site), 'NA', sector.dr_site) AS dr_status,
+            IF(isnull(sector_antenna.tilt), 'NA', sector_antenna.tilt) AS antenna_tilt,
+            IF(isnull(sector.frame_length), 'NA', sector.frame_length) AS frame_length,
+            IF(isnull(bs.hssu_used), 'NA', bs.hssu_used) AS hssu_used,
+            IF(isnull(bs.hssu_port), 'NA', bs.hssu_port) AS hssu_port,
+            IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS cktid
+        FROM
+            inventory_sector AS sector
+        LEFT JOIN
+            device_device as sector_device
+        ON
+            sector.sector_configured_on_id = sector_device.id
+        LEFT JOIN
+            device_devicetechnology as sector_tech
+        ON
+            sector_device.device_technology = sector_tech.id
+        LEFT JOIN
+            inventory_antenna as sector_antenna
+        ON
+            sector.antenna_id = sector_antenna.id
+        LEFT JOIN
+            inventory_basestation AS bs
+        ON
+            sector.base_station_id = bs.id
+        LEFT JOIN
+            device_deviceport AS sector_port
+        ON
+            sector.sector_configured_on_port_id = sector_port.id
+        LEFT JOIN
+            inventory_circuit AS ckt
+        ON
+            sector.id = ckt.sector_id
+        WHERE
+            {0}
+        GROUP BY
+            sector.id
+        '''.format(where_condition)
+
+    # Execute query
+    sector_info = fetch_raw_result(query)
+
+    return sector_info

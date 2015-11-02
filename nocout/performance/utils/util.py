@@ -1381,7 +1381,7 @@ def get_time(start_date, end_date, date_format, data_for):
     """
     isSet = False
 
-    if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
+    if len(str(start_date)) and len(str(end_date)) and 'undefined' not in [start_date, end_date]:
         isSet = True
         try:
             start_date = float(start_date)
@@ -1476,9 +1476,11 @@ def create_perf_chart_img(device_name, service, data_source):
     perf_data = json.loads(fetched_result.content)
 
     chart_dataset = []
+    valuetext = ''
     if perf_data['success'] and 'chart_data' in perf_data['data']['objects']:
         # Get chart data from fetched content
         chart_dataset = perf_data['data']['objects']['chart_data']
+        valuetext = perf_data['data']['objects']['valuetext']
 
     # JSON data required for phantomJS request inline variable
     data_json = {
@@ -1486,6 +1488,28 @@ def create_perf_chart_img(device_name, service, data_source):
         'chart': {
             'width': CHART_WIDTH,
             'height': CHART_HEIGHT
+        },
+        'credits': {
+            'enabled': False
+        },
+        'legend':{
+            'itemDistance' : 15,
+            'itemMarginBottom' : 5,
+            'borderColor' : '#FFFFFF',
+            'borderWidth' : "1",
+            'borderRadius' : "8",
+            'itemStyle': {
+                'color': '#FFFFFF',
+                'fontSize' : '12px'
+            }
+        },
+        'title': {
+            'text': ''
+        },
+        'yAxis': {
+            'title' : {
+                'text' : valuetext
+            }
         },
         'xAxis': {
             'title': {

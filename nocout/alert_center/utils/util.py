@@ -368,7 +368,7 @@ def prepare_raw_alert_results(performance_data=None):
             sds_name = data_source.strip().lower()
 
             if sds_name not in ['pl', 'rta']:
-                sds_name = service_name.strip() + "_" + data_source.strip()
+                sds_name = service_name.strip().lower() + "_" + data_source.strip().lower()
 
             try:
                 sds_name = SERVICE_DATA_SOURCE[sds_name]['display_name']
