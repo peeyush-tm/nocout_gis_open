@@ -3920,7 +3920,7 @@ class GISStaticInfo(View):
 
                 # get formatted bs inventory
                 # inventory = prepare_raw_bs_result(bs_result,True)
-                inventory = device_api.prepare_raw_result_v2(nocout_utils.getMapsInitialData(bs_id=[str(bs_id)]))[0]
+                inventory = device_api.prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
 
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
                 bh_device = None
@@ -5233,6 +5233,7 @@ class GetInfoWindowContent(View):
         elem_type = request.GET.get('elem_type')
         elem_id = request.GET.get('elem_id')
         child_id = request.GET.get('child_id', 0)
+        technology = request.GET.get('technology')
 
         if elem_type and elem_id:
             info_list = list()
@@ -5241,9 +5242,9 @@ class GetInfoWindowContent(View):
                 info_list = getBSInventoryInfo(base_station_id=elem_id)
             elif elem_type == 'sub_station':
                 info_list = getSSInventoryInfo(sub_station_id=elem_id)
-            elif elem_type == 'sector':
+            elif 'sector' in elem_type:
                 info_list = getSectorInventoryInfo(sector_id=elem_id)
-            elif elem_type == 'circuit':
+            elif elem_type == 'path':
                 info_list = getBSInventoryInfo(base_station_id=elem_id)
                 child_info_list = getSSInventoryInfo(sub_station_id=child_id)
             else:
@@ -5251,12 +5252,13 @@ class GetInfoWindowContent(View):
 
             if len(info_list) > 0:
                 info_list = info_list[0]
-                if elem_type == 'base_station' or elem_type == 'circuit':
+                if elem_type == 'base_station' or elem_type == 'path':
                     bs_info = list()
                     bh_info = list()
 
                     for key in info_list:
                         temp_dict = {
+                            'show': 1,
                             'name': key,
                             'title': key,
                             'value': info_list.get(key, 'NA')
@@ -5275,11 +5277,12 @@ class GetInfoWindowContent(View):
                         }
                     )
 
-                    if elem_type == 'circuit' and len(child_info_list) > 0:
+                    if elem_type == 'path' and len(child_info_list) > 0:
                         ss_info = list()
                         child_info_list = child_info_list[0]
                         for key in child_info_list:
                             temp_dict = {
+                                'show': 1,
                                 'name': key,
                                 'title': key,
                                 'value': child_info_list.get(key, 'NA')
@@ -5300,6 +5303,7 @@ class GetInfoWindowContent(View):
                     dataset = list()
                     for key in info_list:
                         temp_dict = {
+                            'show': 1,
                             'name': key,
                             'title': key,
                             'value': info_list.get(key, 'NA')

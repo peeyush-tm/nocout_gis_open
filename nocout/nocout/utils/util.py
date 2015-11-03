@@ -99,13 +99,21 @@ class NocoutUtilsGateway:
         
         return param1
 
-    def getMapsInitialData(self, bs_id=[]):
+    def get_maps_initial_data_cached(self, bs_id=[]):
         """
 
         """
-        
-        response = getMapsInitialData(bs_id=bs_id)
+        response = get_maps_initial_data_cached(bs_id=bs_id)
         return response
+
+
+    def get_maps_initial_data_noncached(self, bs_id=[]):
+        """
+
+        """
+        response = get_maps_initial_data_noncached(bs_id=bs_id)
+        return response
+
 
     def non_cached_all_gis_inventory(
         self, 
@@ -2479,6 +2487,7 @@ def getAdvanceFiltersSuggestions(request):
                     })
 
         result['data'] = formatted_data
+
         if len(distinct_values) > 0:
             result['success'] = 1
             result['message'] = 'Data fetched successfully'
@@ -2486,12 +2495,76 @@ def getAdvanceFiltersSuggestions(request):
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
+@cache_for(CACHE_TIME.get('INVENTORY', 300))  # caching GIS inventory
+def get_maps_initial_data_cached(bs_id=[]):
+    """
 
-def getMapsInitialData(bs_id=[]):
+    """
+    query = get_maps_initial_data_query(bs_id=bs_id)
+    return fetch_raw_result(query)
 
+
+def get_maps_initial_data_noncached(bs_id=[]):
+    """
+
+    """
+    query = get_maps_initial_data_query(bs_id=bs_id)
+    return fetch_raw_result(query)
+
+
+def get_maps_initial_data_query(bs_id=[]):
+    """
+
+    """
     bs_where_condition = ''
+    ss_group_concat_str = '''
+        GROUP_CONCAT(CONCAT(
+            sect.id, '|',
+            ss.id, '|',
+            ss_device.id, '|',
+            ss_device.device_name, '|',
+            ss_device.ip_address, '|',
+            ss_device_type.name, '|',
+            ss_device.latitude, '|',
+            ss_device.longitude, '|',
+            ckt.circuit_id, '|',
+            ss_antenna.height, '|',
+            ss_device_tech.name, '|',
+            ss.name
+        ) SEPARATOR '-|-|-') AS SS_STR
+    '''
+
     if bs_id:
         bs_where_condition = ' AND bs.id in ({}) '.format(','.join(bs_id))
+        ss_group_concat_str = '''
+            GROUP_CONCAT(CONCAT(
+                IF(isnull(sect.id), 'NA', sect.id), '|',
+                ss.id, '|',
+                IF(isnull(ss_device.id), 'NA', ss_device.id), '|',
+                IF(isnull(ss_device.device_name), 'NA', ss_device.device_name), '|',
+                IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address), '|',
+                IF(isnull(ss_device_type.name), 'NA', ss_device_type.name), '|',
+                IF(isnull(ss_device.latitude), 'NA', ss_device.latitude), '|',
+                IF(isnull(ss_device.longitude), 'NA', ss_device.longitude), '|',
+                IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id), '|',
+                IF(isnull(ss_antenna.height), 'NA', ss_antenna.height), '|',
+                IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name), '|',
+                IF(isnull(ss.name), 'NA', ss.name), '|',
+                IF(isnull(customer.alias), 'NA', customer.alias), '|',
+                IF(isnull(backhaul.pe_ip), 'NA', backhaul.pe_ip), '|',
+                IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth), '|',
+                IF(isnull(ss_antenna.polarization), 'NA', ss_antenna.polarization), '|',
+                IF(isnull(ss_antenna.mount_type), 'NA', ss_antenna.mount_type), '|',
+                IF(isnull(ss_antenna.antenna_type), 'NA', ss_antenna.antenna_type), '|',
+                IF(isnull(ss.cable_length), 'NA', ss.cable_length), '|',
+                IF(isnull(ss.ethernet_extender), 'NA', ss.ethernet_extender), '|',
+                IF(isnull(ss.building_height), 'NA', ss.building_height), '|',
+                IF(isnull(ss.tower_height), 'NA', ss.tower_height), '|',
+                IF(isnull(customer.address), 'NA', customer.address), '|',
+                IF(isnull(ss.alias), 'NA', ss.alias), '|',
+                IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance)
+            ) SEPARATOR '-|-|-') AS SS_STR
+        '''
 
     query = '''
         SELECT
@@ -2507,20 +2580,7 @@ def getMapsInitialData(bs_id=[]):
             IF(isnull(bh_device.id), 'NA', bh_device.id) AS BHDEVICEID,
             IF(isnull(bh_type.name), 'NA', bh_type.name) AS BHDEVICETYPE,
             IF(isnull(bh_tech.name), 'NA', bh_tech.name) AS BHDEVICETECH,
-            GROUP_CONCAT(CONCAT(
-                sect.id, '|',
-                ss.id, '|',
-                ss_device.id, '|',
-                ss_device.device_name, '|',
-                ss_device.ip_address, '|',
-                ss_device_type.name, '|',
-                ss_device.latitude, '|',
-                ss_device.longitude, '|',
-                ckt.circuit_id, '|',
-                ss_antenna.height, '|',
-                ss_device_tech.name, '|',
-                ss.name
-            )) AS SS_STR,
+            {0},
             GROUP_CONCAT(CONCAT(
                 sect.id, '|',
                 IF(isnull(sect.sector_id), 'NA', sect.sector_id), '|',
@@ -2533,8 +2593,9 @@ def getMapsInitialData(bs_id=[]):
                 IF(isnull(antenna.beam_width), 'NA', antenna.beam_width), '|',
                 IF(isnull(antenna.height), 'NA', antenna.height), '|',
                 IF(isnull(device.ip_address), 'NA', device.ip_address), '|',
-                IF(isnull(device.device_name), 'NA', device.device_name)
-            )) AS SECT_STR,
+                IF(isnull(device.device_name), 'NA', device.device_name), '|',
+                IF(isnull(device.id), 'NA', device.id)
+            ) SEPARATOR '-|-|-') AS SECT_STR,
             count(ckt.id) AS TOTALSS
         FROM
             inventory_basestation AS bs
@@ -2595,6 +2656,10 @@ def getMapsInitialData(bs_id=[]):
         ON
             ss.id = ckt.sub_station_id
         LEFT JOIN
+            inventory_customer AS customer
+        ON
+            customer.id = ckt.customer_id
+        LEFT JOIN
             device_device AS ss_device
         ON
             ss_device.id = ss.device_id
@@ -2612,12 +2677,12 @@ def getMapsInitialData(bs_id=[]):
             ss_antenna.id = ss.antenna_id
         where
             device.is_added_to_nms > 0
-            {0}
+            {1}
         GROUP BY
             bs.id
-        '''.format(bs_where_condition)
+        '''.format(ss_group_concat_str, bs_where_condition)
 
-    return fetch_raw_result(query)
+    return query
 
 
 def getBSInventoryInfo(base_station_id=None):
@@ -2634,8 +2699,7 @@ def getBSInventoryInfo(base_station_id=None):
     query = '''
         SELECT
             bs.id AS id,
-            IF(isnull(bs.name), 'NA', bs.name) AS name,
-            IF(isnull(bs.alias), 'NA', bs.alias) AS alias,
+            IF(isnull(bs.alias), 'NA', bs.alias) AS base_station_alias,
             IF(isnull(bs.bs_site_id), 'NA', bs.bs_site_id) AS bs_site_id,
             IF(isnull(bs.building_height), 'NA', bs.building_height) AS building_height,
             IF(isnull(bs.tower_height), 'NA', bs.tower_height) AS tower_height,
@@ -2800,6 +2864,7 @@ def getSectorInventoryInfo(sector_id=None):
     query = '''
         SELECT
             IF(isnull(sector.sector_id), 'NA', sector.sector_id) AS sector_id,
+            IF(isnull(sector.alias), 'NA', sector.alias) AS sector_alias,
             IF(isnull(sector_device.ip_address), 'NA', sector_device.ip_address) AS idu_ip,
             IF(isnull(sector_tech.name), 'NA', sector_tech.name) AS technology,
             IF(isnull(sector.planned_frequency), 'NA', sector.planned_frequency) AS frequency,
@@ -2819,7 +2884,19 @@ def getSectorInventoryInfo(sector_id=None):
             IF(isnull(sector.frame_length), 'NA', sector.frame_length) AS frame_length,
             IF(isnull(bs.hssu_used), 'NA', bs.hssu_used) AS hssu_used,
             IF(isnull(bs.hssu_port), 'NA', bs.hssu_port) AS hssu_port,
-            IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS cktid
+            IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS cktid,
+            IF(isnull(customer.alias), 'NA', customer.alias) AS customer_alias,
+            IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth) AS qos_bandwidth,
+            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(ss_antenna.mount_type), 'NA', ss_antenna.mount_type) AS mount_type,
+            IF(isnull(ss.cable_length), 'NA', ss.cable_length) AS cable_length,
+            IF(isnull(ss.ethernet_extender), 'NA', ss.ethernet_extender) AS ethernet_extender,
+            IF(isnull(ss.building_height), 'NA', ss.building_height) AS building_height,
+            IF(isnull(ss.tower_height), 'NA', ss.tower_height) AS tower_height,
+            CONCAT(sector_device.latitude, ', ', sector_device.longitude) AS lat_lon,
+            IF(isnull(customer.address), 'NA', customer.address) AS customer_address,
+            IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance) AS dl_rssi_during_acceptance,
+            IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance
         FROM
             inventory_sector AS sector
         LEFT JOIN
@@ -2839,6 +2916,10 @@ def getSectorInventoryInfo(sector_id=None):
         ON
             sector.base_station_id = bs.id
         LEFT JOIN
+            inventory_backhaul AS bh
+        ON
+            bs.backhaul_id = bh.id
+        LEFT JOIN
             device_deviceport AS sector_port
         ON
             sector.sector_configured_on_port_id = sector_port.id
@@ -2846,6 +2927,18 @@ def getSectorInventoryInfo(sector_id=None):
             inventory_circuit AS ckt
         ON
             sector.id = ckt.sector_id
+        LEFT JOIN
+            inventory_customer AS customer
+        ON
+            customer.id = ckt.customer_id
+        LEFT JOIN
+            inventory_substation AS ss
+        ON
+            ss.id = ckt.sub_station_id
+        LEFT JOIN
+            inventory_antenna AS ss_antenna
+        ON
+            ss_antenna.id = ss.antenna_id
         WHERE
             {0}
         GROUP BY

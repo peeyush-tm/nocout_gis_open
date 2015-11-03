@@ -664,12 +664,14 @@ function GisPerformance() {
                                     inventory_url    :  ss_inventory_url,
                                     bs_name          :  apiResponse.name,
                                     bs_sector_device :  sector_device,
+                                    label_str        :  ss_marker_data.label_str ? ss_marker_data.label_str : '',
                                     filter_data      :  {
                                         "bs_name" : apiResponse.name,
                                         "sector_name" : sector_ip,
                                         "ss_name" : ss_marker_data.name,
                                         "bs_id" : apiResponse.id,
-                                        "sector_id" : sector_id
+                                        "sector_id" : sector_id,
+                                        "id": ss_marker_data.id
                                     },
                                     device_name      :  ss_marker_data.device_name,
                                     ss_device_id     :  ss_marker_data.device_id,
@@ -802,12 +804,11 @@ function GisPerformance() {
 
                                     if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) == -1) {
 
-                                        var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-                                            labelInfoObject = perf_self.getKeyValue(ss_marker.dataset,last_selected_label,false,item_index),
+                                        var labelInfoObject = ss_marker['label_str'] ? ss_marker['label_str'].split('|') : [],
                                             labelHtml = "";
 
-                                        if(labelInfoObject) {
-                                            var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                                        if(labelInfoObject && labelInfoObject.length) {
+                                            var shownVal = labelInfoObject[$('#static_label option:selected').index() - 2] ? $.trim(labelInfoObject[$('#static_label option:selected').index() - 2]) : "NA";
                                             labelHtml += shownVal;
                                         }
 
@@ -885,18 +886,12 @@ function GisPerformance() {
                                     var hide_flag = !$("#show_hide_label")[0].checked;
 
                                     if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) == -1) {
-                                        // var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
-                                        var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-                                            labelInfoObject = perf_self.getKeyValue(
-                                                ss_marker.dataset,
-                                                last_selected_label,
-                                                false,
-                                                item_index
-                                            ),
+                                        
+                                        var labelInfoObject = ss_marker['label_str'] ? ss_marker['label_str'].split('|') : [],
                                             labelHtml = "";
 
-                                        if(labelInfoObject) {
-                                            var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                                        if(labelInfoObject && labelInfoObject.length) {
+                                            var shownVal = labelInfoObject[$('#static_label option:selected').index() - 2] ? $.trim(labelInfoObject[$('#static_label option:selected').index() - 2]) : "NA";
                                             labelHtml += shownVal;
                                         }
 
@@ -951,12 +946,14 @@ function GisPerformance() {
                                 var ss_info = {
                                         "info" : ss_infoWindow_content,
                                         "antenna_height" : ss_antenna_height,
-                                        "ss_item_index" : ss_item_info_index
+                                        "ss_item_index" : ss_item_info_index,
+                                        "ss_id": ss_marker_data.id
                                     },
                                     base_info = {
                                         "info" : apiResponse.base_station ? apiResponse.base_station : [],
                                         // "antenna_height" : apiResponse.antenna_height,
-                                        "bs_item_index" : 0
+                                        "bs_item_index" : 0,
+                                        "bs_id": apiResponse.bs_id
                                     },
                                     sect_height = sector_marker ? sector_marker.antenna_height : sector_polygon.antenna_height;
 

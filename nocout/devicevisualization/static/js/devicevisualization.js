@@ -1277,8 +1277,8 @@ $("#download_inventory").click(function(e) {
 $("#static_label").change(function(e) {
 
     if(($(this).val()) && ($(this).val() != last_selected_label)) {
-        if(!$("#apply_label").hasClass("btn-success")) {
-            $("#apply_label").addClass("btn-success");
+        if(!$("#apply_label").hasClass("btn-default")) {
+            $("#apply_label").addClass("btn-default");
             $("#apply_label").html("Apply Label")
         }
 
@@ -1308,8 +1308,8 @@ $("#apply_label").click(function(e) {
     } else {
         if((selected_val) && (selected_val != last_selected_label)) {
 
-            if($("#apply_label").hasClass("btn-success")) {
-                $("#apply_label").removeClass("btn-success");
+            if($("#apply_label").hasClass("btn-default")) {
+                $("#apply_label").removeClass("btn-default");
             }
 
             if(!$("#apply_label").hasClass("btn-danger")) {
@@ -1732,6 +1732,58 @@ $('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) 
             });
 
         }
+    }
+});
+
+/**
+ * This event triggers when technology(on live polling panel) changed.
+ * @event change
+ */
+$('select[name="polling_tech"]').change(function(e) {
+    var selected_tech = $.trim($(this).val());
+    var selected_tech_name = $('select[name="polling_tech"] option:selected').text().toLowerCase();
+   
+    if (selected_tech && typeof tech_type_api != 'undefined') {
+        var api_url = tech_type_api;
+
+        // Update the tech PK in api url
+        api_url = api_url.replace('123', selected_tech);
+
+        $.ajax({
+            url : api_url,
+            type : 'GET',
+            success : function(response) {
+                var result = response;
+
+                if (typeof response == 'string') {
+                    result = JSON.parse(response);
+                }
+
+                var dType_html = '<option value="">Select Type</option>';
+
+                for (var i=0;i<result.length;i++) {
+                    if(ptp_tech_list.indexOf(selected_tech_name) == 1){
+                        var title = result[i]['alias'],
+                        id = result[i]['id'];
+                        dType_html += '<option value="' + id + '">' + title + '</option>'                                              
+                }
+                    else{
+                        var title = result[i]['alias'],
+                        id = result[i]['id'];                       
+                       if(title.indexOf('SS') !== -1)
+                        {
+                            dType_html += '<option value="' + id + '">' + title + '</option>'
+                        }
+
+                    }
+            }
+
+                $('select[name="polling_type"]').html(dType_html);
+            },
+            error : function(err) {
+                // console.log(err.statusText);
+            }
+        })
     }
 });
 
@@ -2363,8 +2415,8 @@ function removeSSParamLabel() {
     // Reset Variables
     tooltipInfoLabel = {};
 
-    if(!$("#apply_label").hasClass("btn-success")) {
-        $("#apply_label").addClass("btn-success");
+    if(!$("#apply_label").hasClass("btn-default")) {
+        $("#apply_label").addClass("btn-default");
         $("#apply_label").html("Apply Label")
     }
 
@@ -2557,10 +2609,11 @@ function prepare_oms_object(oms_instance) {
         }
 
         /*Call the function to create info window content*/
-        var content = gmap_self.makeWindowContent(marker);
-        /*Set the content for infowindow*/
-        $("#infoWindowContainer").html(content);
-        $("#infoWindowContainer").removeClass('hide');
+        gmap_self.makeWindowContent(marker, function(content) {
+            /*Set the content for infowindow*/
+            $("#infoWindowContainer").html(content);
+            $("#infoWindowContainer").removeClass('hide');
+        });
     });
 
     /*Event when the markers cluster expands or spiderify*/
@@ -2724,6 +2777,121 @@ function FullScreenCustomControl(controlDiv, map) {
     });
 }
 
+/**
+ * This function fetch the static info for any element(bs or ss or sector)
+ * @method getStaticInfo
+ */
+function getStaticInfo(clicked_obj, callback) {
+
+    if (!clicked_obj) {
+        callback(clicked_obj);
+    }
+
+    var point_type = clicked_obj.pointType ? $.trim(clicked_obj.pointType).toLowerCase() : '';
+
+    // If static info already fetched then callback from here
+    if (['sector', 'sector_marker', 'sub_station', 'base_station'].indexOf(point_type) > -1) {
+        if (clicked_obj.dataset && clicked_obj.dataset.length > 0) {
+            callback(clicked_obj);
+        }
+    } else {
+        if (
+            clicked_obj.bs_dataset
+            &&
+            clicked_obj.bs_dataset.length > 0
+            &&
+            clicked_obj.ss_dataset
+            &&
+            clicked_obj.ss_dataset.length > 0
+        ) {
+            callback(clicked_obj);
+        }
+    }
+
+    var elem_id = '',
+        child_id = '',
+        elem_tech = '',
+        elem_type = '',
+        technology = '';
+
+    if (point_type == 'base_station') {
+        try {
+            elem_id = clicked_obj.filter_data.bs_id;
+            elem_tech = clicked_obj.bh_device_tech;
+            elem_type = clicked_obj.bh_device_type;
+        } catch(e) {
+
+        }
+    } else if (point_type == 'sub_station') {
+        try {
+            elem_id = clicked_obj.filter_data.id;
+            elem_tech = clicked_obj.technology;
+            elem_type = clicked_obj.device_type;
+        } catch(e) {
+
+        }
+
+    } else if (point_type == 'sector_marker' || point_type == 'sector') {
+        try {
+            elem_id = clicked_obj.filter_data.id;
+            elem_tech = clicked_obj.technology;
+            elem_type = clicked_obj.device_type;
+        } catch(e) {
+
+        }
+
+    } else if (point_type == 'path') {
+        try {
+            elem_id = clicked_obj.filter_data.bs_id;
+            child_id = clicked_obj.filter_data.ss_id;
+        } catch(e) {
+
+        }
+
+    } else {
+        callback(clicked_obj);
+    }
+
+    if (point_type && elem_id) {
+
+        var get_params = 'elem_type='+point_type+'&elem_id='+elem_id+'&child_id='+child_id;
+
+        // Make Ajax Call
+        $.ajax({
+            url: base_url + '/network_maps/get_infowindow_content/?'+ get_params,
+            type: 'GET',
+            success: function(response) {
+                var result = response;
+
+                if (typeof(response) == 'string') {
+                    result = JSON.parse(response);
+                }
+
+                if (result.success) {
+
+                    if (['sector', 'sector_marker', 'sub_station'].indexOf(point_type) > -1) {
+                        clicked_obj['dataset'] = result.data;
+                    } else if (['base_station'].indexOf(point_type) > -1) {
+                        clicked_obj['dataset'] = result.data.base_station;
+                        clicked_obj['bh_dataset'] = result.data.backhaul;
+                    } else {
+                        clicked_obj['bs_dataset'] = result.data.base_station;
+                        clicked_obj['ss_dataset'] = result.data.sub_station;
+                    }
+                    callback(clicked_obj);
+                } else {
+                    callback(clicked_obj);
+                }
+            },
+            error: function() {
+                callback(clicked_obj);
+            }
+        });
+    } else {
+        callback(clicked_obj);
+    }
+}
+
 // "Object.key" prototyping for IE
 if (!Object.keys) {
     Object.keys = (function () {
@@ -2832,51 +3000,3 @@ if (!Array.prototype.indexOf) {
     return -1;
   };
 }
-
-$('select[name="polling_tech"]').change(function(e) {
-    var selected_tech = $.trim($(this).val());
-    var selected_tech_name = $('select[name="polling_tech"] option:selected').text().toLowerCase();
-   
-    if (selected_tech && typeof tech_type_api != 'undefined') {
-    	var api_url = tech_type_api;
-
-    	// Update the tech PK in api url
-    	api_url = api_url.replace('123', selected_tech);
-
-    	$.ajax({
-    		url : api_url,
-    		type : 'GET',
-    		success : function(response) {
-    			var result = response;
-
-    			if (typeof response == 'string') {
-    				result = JSON.parse(response);
-    			}
-
-    			var dType_html = '<option value="">Select Type</option>';
-
-    			for (var i=0;i<result.length;i++) {
-                    if(ptp_tech_list.indexOf(selected_tech_name) == 1){
-                        var title = result[i]['alias'],
-    					id = result[i]['id'];
-                        dType_html += '<option value="' + id + '">' + title + '</option>'                        					   
-    			}
-                    else{
-                        var title = result[i]['alias'],
-                        id = result[i]['id'];                       
-                       if(title.indexOf('SS') !== -1)
-                        {
-                            dType_html += '<option value="' + id + '">' + title + '</option>'
-                        }
-
-                    }
-            }
-
-    			$('select[name="polling_type"]').html(dType_html);
-    		},
-    		error : function(err) {
-    			// console.log(err.statusText);
-    		}
-    	})
-    }
-});

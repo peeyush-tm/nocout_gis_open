@@ -451,56 +451,54 @@ def prepare_raw_sector(sectors=None,with_data=False):
                     all_sector_antenna_splitter_installed += unicode(nocout_utils.format_value(format_this=sector['SECTOR_ANTENNA_SPLITTER']))+"|"
                     all_sector_frame_length += unicode(nocout_utils.format_value(format_this=sector['SECTOR_FRAME_LENGTH']))+"|"
 
-                sector_info.append(
-                    {
-                        "color": nocout_utils.format_value(format_this=sector['SECTOR_FREQUENCY_COLOR'],type_of='frequency_color'),
-                        'radius': nocout_utils.format_value(format_this=sector['SECTOR_FREQUENCY_RADIUS'],type_of='frequency_radius'),
-                        #sector.cell_radius if sector.cell_radius else 0,
-                        'azimuth_angle': nocout_utils.format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE'],type_of='integer'),
-                        'beam_width': nocout_utils.format_value(format_this=sector['SECTOR_BEAM_WIDTH'],type_of='integer'),
-                        'planned_frequency': nocout_utils.format_value(format_this=sector['SECTOR_FREQUENCY']),
-                        'frequency': nocout_utils.format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']),
-                        # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
-                        'orientation': nocout_utils.format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'],type_of='antenna'),
-                        'technology': techno_to_append,
-                        'device_type': type_to_append,
-                        'vendor': nocout_utils.format_value(format_this=sector['SECTOR_VENDOR']),
-                        'sector_configured_on': nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_IP']),
-                        'sector_configured_on_device': nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON']),
-                        # 'sector_device_id' : nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_ID']),
-                        'perf_page_url' : near_end_perf_url,
-                        "inventory_url" : near_end_inventory_url,
-                        'circuit_id':None,
-                        'sector_id' : nocout_utils.format_value(format_this=sector['SECTOR_ID']),
-                        'antenna_height': nocout_utils.format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'], type_of='random'),
-                        "markerUrl": nocout_utils.format_value(format_this=sector['SECTOR_GMAP_ICON'], type_of='icon'),
-                        'device_info':[
-                         {
-                             "name": "device_name",
-                             "title": "Device Name",
-                             "show": 0,
-                             "value": nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_ALIAS'])
-                         },
-                         {
-                             "name": "device_id",
-                             "title": "Device ID",
-                             "show": 0,
-                             "value": nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_ID'])
-                         },
-                         {
-                             "name": "device_mac",
-                             "title": "Device MAC",
-                             "show": 0,
-                             "value": nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_MAC'])
-                         }
+                sector_info.append({
+                    "color": nocout_utils.format_value(format_this=sector['SECTOR_FREQUENCY_COLOR'],type_of='frequency_color'),
+                    'radius': nocout_utils.format_value(format_this=sector['SECTOR_FREQUENCY_RADIUS'],type_of='frequency_radius'),
+                    #sector.cell_radius if sector.cell_radius else 0,
+                    'azimuth_angle': nocout_utils.format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE'],type_of='integer'),
+                    'beam_width': nocout_utils.format_value(format_this=sector['SECTOR_BEAM_WIDTH'],type_of='integer'),
+                    'planned_frequency': nocout_utils.format_value(format_this=sector['SECTOR_FREQUENCY']),
+                    'frequency': nocout_utils.format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']),
+                    # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
+                    'orientation': nocout_utils.format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'],type_of='antenna'),
+                    'technology': techno_to_append,
+                    'device_type': type_to_append,
+                    'vendor': nocout_utils.format_value(format_this=sector['SECTOR_VENDOR']),
+                    'sector_configured_on': nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_IP']),
+                    'sector_configured_on_device': nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON']),
+                    # 'sector_device_id' : nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_ID']),
+                    'perf_page_url' : near_end_perf_url,
+                    "inventory_url" : near_end_inventory_url,
+                    'circuit_id':None,
+                    'sector_id' : nocout_utils.format_value(format_this=sector['SECTOR_ID']),
+                    'antenna_height': nocout_utils.format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'], type_of='random'),
+                    "markerUrl": nocout_utils.format_value(format_this=sector['SECTOR_GMAP_ICON'], type_of='icon'),
+                    'device_info':[
+                        {
+                            "name": "device_name",
+                            "title": "Device Name",
+                            "show": 0,
+                            "value": nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_ALIAS'])
+                        },
+                        {
+                            "name": "device_id",
+                            "title": "Device ID",
+                            "show": 0,
+                            "value": nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_ID'])
+                        },
+                        {
+                            "name": "device_mac",
+                            "title": "Device MAC",
+                            "show": 0,
+                            "value": nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_MAC'])
+                        }
 
-                        ],
-                        'info': [],
-                        "item_index" : counter,
-                        'ss_info_list' : subStationsInfo,
-                        'sub_station': substation
-                    }
-                )
+                    ],
+                    'info': [],
+                    "item_index" : counter,
+                    'ss_info_list' : subStationsInfo,
+                    'sub_station': substation
+                })
 
                 # Increment counter as per the loop
                 counter += 1

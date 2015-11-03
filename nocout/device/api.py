@@ -127,7 +127,7 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
 
     for data in ss_dataset:
         data_list = data.split('|')
-        if data_list:
+        if len(data_list) > 1:
             if data_list[0] not in ss_dict:
                 ss_dict[data_list[0]] = {
                     'ss_list': list(),
@@ -135,12 +135,10 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
                     'circuit_list': list()
                 }
 
-            ss_id = ''
-
             try:
                 ss_id = int(data_list[1])
             except Exception, e:
-                pass
+                ss_id = ''
 
             if ss_id:
                 try:
@@ -176,27 +174,120 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
                 try:
                     circuit_id = data_list[8]
                 except Exception, e:
-                    circuit_id = ''
+                    circuit_id = 'NA'
 
                 try:
                     antenna_height = int(data_list[9])
                 except Exception, e:
-                    antenna_height = ''
+                    antenna_height = 'NA'
 
                 try:
                     technology = data_list[10]
                 except Exception, e:
-                    technology = ''
+                    technology = 'NA'
 
                 try:
                     ss_name = data_list[11]
                 except Exception, e:
-                    ss_name = ''
+                    ss_name = 'NA'
 
                 icon_url = device_type_dict.get(device_type, '')
 
                 if icon_url:
                     icon_url = icon_url.get('gmap_icon')
+
+                label_str = ''
+
+                # Only in case if we have extra info then
+                if len(data_list) > 12:
+
+                    try:
+                        customer_alias = data_list[12]
+                    except Exception, e:
+                        customer_alias = 'NA'
+
+                    try:
+                        pe_ip = data_list[13]
+                    except Exception, e:
+                        pe_ip = 'NA'
+
+                    try:
+                        qos_bandwidth = data_list[14]
+                    except Exception, e:
+                        qos_bandwidth = 'NA'
+
+                    try:
+                        polarization = data_list[15]
+                    except Exception, e:
+                        polarization = 'NA'
+
+                    try:
+                        mount_type = data_list[16]
+                    except Exception, e:
+                        mount_type = 'NA'
+
+                    try:
+                        mount_type = data_list[16]
+                    except Exception, e:
+                        mount_type = 'NA'
+
+                    try:
+                        antenna_type = data_list[17]
+                    except Exception, e:
+                        antenna_type = 'NA'
+
+                    try:
+                        cable_length = data_list[18]
+                    except Exception, e:
+                        cable_length = 'NA'
+
+                    try:
+                        ethernet_extender = data_list[19]
+                    except Exception, e:
+                        ethernet_extender = 'NA'
+
+                    try:
+                        building_height = data_list[20]
+                    except Exception, e:
+                        building_height = 'NA'
+
+                    try:
+                        tower_height = data_list[21]
+                    except Exception, e:
+                        tower_height = 'NA'
+
+                    try:
+                        customer_address = data_list[22]
+                    except Exception, e:
+                        customer_address = 'NA'
+
+                    try:
+                        ss_alias = data_list[23]
+                    except Exception, e:
+                        ss_alias = 'NA'
+
+                    try:
+                        rssi_during_acceptance = data_list[24]
+                    except Exception, e:
+                        rssi_during_acceptance = 'NA'
+
+                    label_str += unicode(circuit_id) + '|'
+                    label_str += unicode(customer_alias) + '|'
+                    label_str += unicode(ip_address) + '|'
+                    label_str += unicode(pe_ip) + '|'
+                    label_str += unicode(qos_bandwidth) + '|'
+                    label_str += unicode(antenna_height) + '|'
+                    label_str += unicode(polarization) + '|'
+                    label_str += unicode(mount_type) + '|'
+                    label_str += unicode(antenna_type) + '|'
+                    label_str += unicode(cable_length) + '|'
+                    label_str += unicode(ethernet_extender) + '|'
+                    label_str += unicode(building_height) + '|'
+                    label_str += unicode(tower_height) + '|'
+                    label_str += unicode(latitude) + ', ' + unicode(longitude) + '|'
+                    label_str += unicode(customer_address) + '|'
+                    label_str += unicode(ss_alias) + '|'
+                    label_str += unicode(rssi_during_acceptance) + '|'
 
                 ss_info = {
                     'id': ss_id,
@@ -212,7 +303,8 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
                     'markerUrl': icon_url,
                     'antenna_height': antenna_height,
                     'show_link': 1,
-                    'link_color': ''
+                    'link_color': '',
+                    'label_str': label_str
                 }
 
                 ss_dict[data_list[0]]['ss_list'].append(ss_info)
@@ -220,6 +312,7 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
                 ss_dict[data_list[0]]['circuit_list'].append(circuit_id)
 
     return ss_dict
+
 
 def prepare_raw_result_v2(resultset=None):
 
@@ -271,10 +364,10 @@ def prepare_raw_result_v2(resultset=None):
         sector_list = list()
         if sector_info_str:
             ss_info_str = bs.get('SS_STR', '')
-            sector_info = sector_info_str.split(',')
+            sector_info = sector_info_str.split('-|-|-')
             ss_info_dict = {}
             if ss_info_str:
-                ss_info_dict = prepare_ss_info_dict(ss_info_str.split(','), device_type_dict, freq_dict)
+                ss_info_dict = prepare_ss_info_dict(ss_info_str.split('-|-|-'), device_type_dict, freq_dict)
 
             for info in sector_info:
                 splitted_str = info.split('|')
@@ -291,7 +384,9 @@ def prepare_raw_result_v2(resultset=None):
                 if sector_pk in traced_sector_pk and sector_id in traced_sector_id:
                     continue
 
-                traced_sector_pk.append(sector_pk)
+                if sector_pk not in traced_sector_pk:
+                    traced_sector_pk.append(sector_pk)
+
                 traced_sector_id.append(sector_id)
 
                 try:
@@ -345,6 +440,11 @@ def prepare_raw_result_v2(resultset=None):
                     except Exception, e:
                         device_name = ''
 
+                    try:
+                        device_id = splitted_str[12]
+                    except Exception, e:
+                        device_id = ''
+
                     gmap_icon = ''
                     freq_val = ''
                     color = ''
@@ -397,7 +497,8 @@ def prepare_raw_result_v2(resultset=None):
                         'ip_address': sector_ip,
                         'polarization': polarization,
                         'antenna_height': antenna_height,
-                        'sub_stations': ss_list
+                        'sub_stations': ss_list,
+                        'device_id': device_id
                     }
                     sector_list.append(sector)
                 except Exception, e:
@@ -801,7 +902,7 @@ class DeviceStatsApi(View):
                 "objects": None
             }
         }
-        self.raw_result = prepare_raw_result_v2(nocout_utils.getMapsInitialData(bs_id=[]))
+        self.raw_result = nocout_utils.get_maps_initial_data_cached(bs_id=[])
         super(DeviceStatsApi, self).__init__()
 
     def get(self, request):
@@ -841,17 +942,15 @@ class DeviceStatsApi(View):
 
             self.result['data']['meta']['limit'] = GIS_MAP_MAX_DEVICE_LIMIT
             self.result['data']['meta']['offset'] = offset
+            # self.result['data']['objects'] = {
+            #     "id": "mainNode",
+            #     "name": "mainNodeName",
+            #     "data": {"unspiderfy_icon": "static/img/icons/bs.png"}
+            # }
             self.result['data']['objects'] = {
-                "id": "mainNode",
-                "name": "mainNodeName",
-                "data": {"unspiderfy_icon": "static/img/icons/bs.png"}
+                'children' : []
             }
-
-            self.result['data']['objects']['children'] = self.raw_result
-            # for bs in bs_id:
-            #     if bs in self.raw_result:
-            #         base_station_info = prepare_raw_bs_result(self.raw_result[bs])
-            #         self.result['data']['objects']['children'].append(base_station_info)
+            self.result['data']['objects']['children'] = prepare_raw_result_v2(self.raw_result)
 
             self.result['data']['meta']['device_count'] = len(self.result['data']['objects']['children'])
             self.result['message'] = 'Data Fetched Successfully.'
