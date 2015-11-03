@@ -8798,7 +8798,7 @@ function devicePlottingClass_gmap() {
 				if(elements_type == 'base_station') {
 					labelHtml = marker[dataset_key];
 				} else {
-					var labelInfoObject = marker[dataset_key]['label_str'] ? marker[dataset_key]['label_str'].split('|') : [],
+					var labelInfoObject = marker['label_str'] ? marker['label_str'].split('|') : [],
 						labelHtml = "";
 
 	            	if(labelInfoObject && labelInfoObject.length) {
@@ -8860,7 +8860,7 @@ function devicePlottingClass_gmap() {
 				if(elements_type == 'base_station') {
 					labelHtml = marker[dataset_key];
 				} else {
-					var labelInfoObject = marker[dataset_key]['label_str'] ? marker[dataset_key]['label_str'].split('|') : [];
+					var labelInfoObject = marker['label_str'] ? marker['label_str'].split('|') : [];
 
 	            	if(labelInfoObject && labelInfoObject.length) {
 	            		var shownVal = labelInfoObject[$('#static_label option:selected').index() - 2] ? $.trim(labelInfoObject[$('#static_label option:selected').index() - 2]) : "NA";
