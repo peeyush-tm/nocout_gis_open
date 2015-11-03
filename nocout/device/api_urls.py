@@ -2,6 +2,7 @@ from django.conf.urls import url
 import api
 
 urlpatterns = [
+    url(r'^get_data_source/$', api.GetDataSourceforDisplayType.as_view(),name='get_vendors_for_tech'),
     url(r'^get_tech_vendors/(?P<pk>\d+)/$', api.GetVendorsForTech.as_view(), name='get_vendors_for_tech'),
     url(r'^get_vendor_models/(?P<pk>\d+)/$', api.GetModelsForVendor.as_view(), name='get_models_for_vendor'),
     url(r'^get_model_types/(?P<pk>\d+)/$', api.GetTypesForModel.as_view(), name='get_types_for_model'),

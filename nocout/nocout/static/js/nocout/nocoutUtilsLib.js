@@ -286,6 +286,8 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
         table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+        console.log("tablestringis");
+        console.log(table_string);
         excel_columns.push(i);
     }
     table_string += '</thead></table>';
@@ -424,8 +426,8 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         });
     }
 
-    var service_name = updated_url.split("/service/")[1].split("/")[0],
-        ds_name = updated_url.split("/service/")[1].split("/")[2],
+    var service_name = updated_url.indexOf("/service/") && updated_url.split("/service/").length > 1 ? updated_url.split("/service/")[1].split("/")[0] : '[]';
+        ds_name = updated_url.split("/service/").length > 1 ? updated_url.split("/service/")[1].split("/")[2] : '',
         get_param_string = updated_url.split("?")[1].split("&"),
         data_for = 'live',
         get_param_data = "",
@@ -458,8 +460,8 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
             }
         }
     }
-    
-    if ($(".top_perf_tabs").length > 0 && !is_birdeye_view) {
+    console.log(clicked_tab_id.indexOf('custom_dashboard'));
+    if ($(".top_perf_tabs").length > 0 && !is_birdeye_view && clicked_tab_id.indexOf('custom_dashboard') == -1) {
         var report_title = "";
         try {
             var top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
@@ -627,10 +629,18 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     }
 
     // Create yAxis data as per the given params
-    if (typeof chartConfig.valuetext == 'string') {
+    if (typeof chartConfig.valuetext == 'string' || chartConfig['is_single']) {
+        var title_txt = chartConfig.valuetext;
+        if (chartConfig['is_single']) {
+            try {
+                title_txt = chartConfig.valuetext.join(', ')
+            } catch(e) {
+                // console.error(e);
+            }
+        }
         yAxisObj = {
             title : {
-                text : chartConfig.valuetext
+                text : title_txt
             },
             reversed : is_y_inverted
         };
@@ -1345,8 +1355,8 @@ function checkpollvalues(result, is_new_data, callback) {
             fetched_val = fetched_val[0];
         }
 
-        if (na_list.indexOf(fetched_val) > -1) {
-            fetched_val = '';
+        if (typeof(fetched_val) == 'undefined' || na_list.indexOf(fetched_val) > -1) {
+            fetched_val = null;
         }
 
         if(fetch_warning_threshold && fetch_warning_threshold instanceof Array) {
@@ -1635,7 +1645,8 @@ function nocout_pausePollNow() {
  * @method nocout_destroyDataTable
  */
 function nocout_destroyDataTable(domId) {
-
+    // console.log(domId);
+    // console.log($('table[id*="' + domId + '"]').length);
     if (!domId) {
         return true;
     }
