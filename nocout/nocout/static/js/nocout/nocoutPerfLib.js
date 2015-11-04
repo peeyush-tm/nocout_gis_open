@@ -724,7 +724,7 @@ function nocoutPerfLib() {
                         }
 
                         /*Bind click event on tabs*/
-                        $('.inner_tab_container > .panel-body > .tabs-left > ul.nav-tabs > li > a').click(function (e) {
+                        $('.inner_tab_container .panel-body .tabs-left').delegate('ul.nav-tabs > li > a', 'click', function (e) {
                             // show loading spinner
                             // showSpinner();
                             var current_target = e.currentTarget,

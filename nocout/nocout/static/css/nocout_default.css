@@ -371,7 +371,7 @@ th.vAlign_middle, .vAlign_middle b {
 }*/
 .control_btn_countainer {
   margin-bottom: 0px;
-  position: absolute;
+  /*position: absolute;*/
   right: 15px;
 }
 /*Reduce padding for .btn class used in page control of maps*/
