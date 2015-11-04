@@ -626,7 +626,7 @@ class GetPerfomance(View):
         bs_id = list()
         is_radwin5 = 0
         is_viewer_flag = 0
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        user_role = self.request.user
 
         try:
             if 'radwin5' in device_type.lower():
@@ -635,7 +635,7 @@ class GetPerfomance(View):
             is_radwin5 = 0
 
         try:
-            if 'viewer' in user_role:
+            if in_group(self.request.user, 'viewer'):
                 is_viewer_flag = 1
         except Exception, e:
             is_viewer_flag = 0       
