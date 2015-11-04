@@ -29,6 +29,7 @@ from inventory.utils.util import InventoryUtilsGateway
 # Import inventory utils gateway class
 from scheduling_management.views import SchedulingViewsGateway
 from inventory.tasks import bulk_update_create
+import re
 import logging
 logger = logging.getLogger(__name__)
 
@@ -656,3 +657,50 @@ def prepare_service_data_sources(service_name_list):
     return list(DeviceTypeServiceDataSource.objects.filter(
         device_type_service__service__name__in=service_name_list).values_list('service_data_sources__name', flat=True)
     )
+
+
+
+@task
+def mail_send(result):
+    """
+    This is a Celery function which send mail for given parameters(valid and checked)
+    used If Else for case of attachments availability
+
+    Args:
+        result (dict): Dictionary containing email data.
+                       For e.g.,
+                            {
+                                "message": "Successfully send the email.",
+                                "data": {
+                                    "to_email": [
+                                        "chanishagarwal0@gmail.com"
+                                    ],
+                                    "attachments": [
+                                        "EmailAPI.docx",
+                                        "IMG-20151020-WA0000.jpg"
+                                    ],
+                                    "from_email": "chanish.agarwal1@gmail.com",
+                                    "attachment_path": [
+                                        "/home/chanish/Desktop/chart-35-02.png"
+                                    ],
+                                    "message": "Please find attachmetn Below",
+                                    "subject": "Warning system is getting slow"
+                                },
+                                "success": 1
+                            }
+    """
+    mail = EmailMessage(result['data']['subject'], result['data']['message'],
+                        result['data']['from_email'],
+                        result['data']['to_email'])
+    # Handling mail without an attachment.
+
+
+    for attachment in result['data']['attachments']:
+        mail.attach(attachment.name, attachment.read(), attachment.content_type)
+    for files in result['data']['attachment_path']:
+        if re.search('^http.*', files):
+            pass
+        else:
+            mail.attach_file(files)
+
+    mail.send()

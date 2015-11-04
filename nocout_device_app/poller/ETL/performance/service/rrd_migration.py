@@ -8,7 +8,7 @@ This script collects and stores data for all services running on all configured 
 
 from nocout_site_name import *
 import os
-import demjson,json
+import json
 from pprint import pformat
 import re
 from datetime import datetime, timedelta
@@ -125,7 +125,6 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	severity = 'unknown'
 	first_down_crit = {}
 	host_severity = 'unknown'
-	present_time = datetime.now()
 	host_state = "unknown"
 	device_first_down ={}
 	# Process network perf data
@@ -166,9 +165,6 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		for ds, ds_values in threshold_values.items():
 			check_time = datetime.fromtimestamp(entry[3]) 
 			local_timestamp = pivot_timestamp_fwd(check_time)
-			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
-				local_timestamp = present_time
-				check_time = local_timestamp - timedelta(minutes=2)
 			check_time =int(time.mktime(check_time.timetuple()))
 			# Pivot the time stamp to next 5 mins time frame
 			local_timestamp =int(time.mktime(local_timestamp.timetuple()))
@@ -296,8 +292,14 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			continue
 		if not len(entry[-1]) and not dr_flag:
 			continue
-			   	
-		threshold_values = get_threshold(entry[-1])
+		if str(entry[2]) in switch_checks_list:
+			threshold_values1 = get_threshold_switch(entry[-1], (entry[0]))
+			if threshold_values1:   #for - test case 
+				 threshold_values=  threshold_values1
+			#print "entry", entry[0]
+		else :
+			threshold_values = get_threshold(entry[-1])
+
 		severity = calculate_severity(entry[3])
 		# Age of last service state change
 		last_state_change = entry[-3]
@@ -319,8 +321,14 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			#		#print str(entry[0]), str(entry[2]),value
 			#	else:
 			#		value = ds_values.get('cur')
-			#except:
-			value =  ds_values.get('cur')
+			#print "ds value", ds_values
+			try:
+				value =  ds_values.get('cur')
+				#print str(entry[2]),threshold_values,str(entry[0])
+
+			except:
+				#print str(entry[2]),threshold_values,str(entry[0])
+				continue	
 			# Code has been Added to figure out if check is executed or not..if check not executed then take current value
 			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
 				local_timestamp = present_time
@@ -942,6 +950,34 @@ def get_threshold(perf_data):
 
     return threshold_values
 
+def get_threshold_switch(perf_data,host_name ):
+    threshold_values = get_threshold(perf_data) #threshold value dict from checks
+    threshold_values = dict((k.lower(), v) for k, v in threshold_values.iteritems())
+    #print type(host_name)
+    #host_name = int(host_name)
+    switch_ports = memcache_switch.get(host_name)
+    #if switch_ports:
+    #switch_ports = switch_ports.lower()
+    #print "host", host_name  
+    try :
+       switch_ports = switch_ports.lower()
+       if "," in switch_ports:  #string like 'Gi0/1,Gi0/2'
+            switch_ports = switch_ports.split(",")
+            #print "ring case", switch_ports
+            dict1 = {}
+            for each in switch_ports :
+                t =threshold_values.get(each)
+                dict1[each]= t
+            #print dict1
+            return dict1
+       else:
+            t =threshold_values.get(switch_ports)
+            dict1 = {}
+            dict1[switch_ports]= t
+            #print "non ring", dict1
+            return  dict1
+    except:
+    	pass       
 
 def pivot_timestamp(timestamp):
     """
@@ -1200,18 +1236,26 @@ if __name__ == '__main__':
     and extracts data
 
     """
+    try:
+        memc_obj1=db_ops_module.MemcacheInterface()
+        memc_obj =memc_obj1.memc_conn
+    except:
+        print "Memcache Error",
+    key = "master_ua" + "_switch"
+    memcache_switch= memc_obj.get(key)
+    #print memcache_switch
     configs = config_module.parse_config_obj()
     desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
     desired_config = configs.get(desired_site)
     site = desired_config.get('site')
+    #print "site is ", site
+    switch_checks_list = ['juniper_switch_ul_utilization','juniper_switch_dl_utilization','cisco_switch_ul_utilization','cisco_switch_dl_utilization']
     db= None
     #db = mongo_module.mongo_conn(
     #	    host=desired_config.get('host'),
     #	    port = int(desired_config.get('port')),
     #	    db_name= desired_config.get('nosql_db')
     #)
-    get_host_services_name(
-    site_name=site
-    )
+    get_host_services_name(site_name=site )
     insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,device_first_down_map,db)
 

@@ -798,7 +798,7 @@ SPEEDOMETER_DASHBAORDS = ['down-network', 'packetloss-network', 'latency-network
 # 5 May 2015
 # Variables for phantom js host location
 PHANTOM_PROTOCOL = "http"
-PHANTOM_HOST = "163.133.12.163"
+PHANTOM_HOST = "10.133.12.163"
 PHANTOM_PORT = "5004"
 
 # Exported Chart Image Type, Width & Height
@@ -845,13 +845,13 @@ ENABLE_WHITE_THEME = True
 SHOW_RF_COLUMN = 6
 
 # Flag to enable/disable topology view on single performance page.
-ENABLE_TOPO_VIEW = False
+ENABLE_TOPO_VIEW = True
 
 # Flag to enable/disable birdeye view on single performance page.
-ENABLE_BIRDEYE_VIEW = False
+ENABLE_BIRDEYE_VIEW = True
 
 # Flag to enable/disable custom dashboards on single performance page.
-ENABLE_CUSTOM_DASHBOARD_VIEW = False
+ENABLE_CUSTOM_DASHBOARD_VIEW = True
 
 # Password complexity settings.
 # ===============================
