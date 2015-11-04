@@ -56,6 +56,8 @@ from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
 from performance.formulae import display_time, rta_null
 
 # Create instance of 'ServiceUtilsGateway' class
+from user_profile.utils.auth import in_group
+
 service_utils = ServiceUtilsGateway()
 
 ##execute this globally
@@ -234,7 +236,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] == 'admin':
+            if in_group(self.request.user, 'admin'):
                 organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
             else:
                 organizations = [self.request.user.userprofile.organization]

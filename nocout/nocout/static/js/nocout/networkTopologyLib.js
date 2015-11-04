@@ -17,11 +17,11 @@ var options = {
     },
 
     nodes : {
-        shape : 'circularImage',
-        size : 40,
-        borderWidth : 22, 
-        borderWidthSelected : 24,
-        color : {border : '#80CCFF', background : '#ffffff', highlight: {background : '#ffffff'}}
+        shape : 'image',
+        size : 30,
+        // borderWidth : 22, 
+        // borderWidthSelected : 24,
+        // color : {border : '#80CCFF', background : '#ffffff', highlight: {background : '#ffffff'}}
     },
     edges: {
         width : 3,
@@ -113,7 +113,7 @@ var data = {
 };
 
 // Highlighting selected device
-nodes.update({id: highlight_id, color : {border : '#333'}, shadow : {size : 2 } });
+nodes.update({id: highlight_id, color : {border : '#333', highlight : {border : '#333'}}, shadow : {size : 2}, shapeProperties : {useBorderWithImage : true}, borderWidth : 5, borderWidthSelected : 7});
 
 // initialize your network
 network = new vis.Network(container, data, options);
