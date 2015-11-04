@@ -196,15 +196,6 @@ function GisPerformance() {
 
         counter++;
 
-        // if(gis_perf_call_instance) {
-        //     try {
-        //         gis_perf_call_instance.abort()
-        //         gis_perf_call_instance = "";
-        //     } catch(e) {
-        //         // pass
-        //     }
-        // }
-
         var current_chunk = JSON.parse(JSON.stringify(bs_id));
 
         while(current_chunk && current_chunk.length > 0) {
@@ -634,6 +625,20 @@ function GisPerformance() {
                                 var ss_marker_data = sub_station[j],
                                     ss_item_info_index = ss_marker_data.item_index > -1 ? ss_marker_data.item_index : 0,
                                     ss_polled_info = [],
+                                    parent_info = {
+                                        'filter_info' : {
+                                            'bs_name'          : apiResponse.name,
+                                            'sector_name'      : sectorArray[i].ip_address,
+                                            "ss_name"          : ss_marker_data.name,
+                                            'bs_id'            : apiResponse.bs_id,
+                                            'sector_id'        : sectorArray[i].sector_id,
+                                            'sector_device_id' : sectorArray[i].device_id,
+                                            "id"               : ss_marker_data.id
+                                        },
+                                        'technology' : sectorArray[i].technology,
+                                        'bs_lon'      : bs_lon,
+                                        'sector_device_name' : sectorArray[i].device_name
+                                    },
                                     ss_pl = typeof(ss_marker_data.pl) != 'undefined' ? ss_marker_data.pl : '',
                                     ss_rta = typeof(ss_marker_data.rta) != 'undefined' ? ss_marker_data.rta : '',
                                     ss_pl_rta_timestamp = ss_marker_data.pl_timestamp ? ss_marker_data.pl_timestamp : '',
@@ -644,45 +649,7 @@ function GisPerformance() {
                                     ss_antenna_height = ss_marker_data.antenna_height ? ss_marker_data.antenna_height : 'NA',
                                     ss_device_type = ss_marker_data.device_type ? ss_marker_data.device_type : '';
 
-                                // var ss_marker_object = {};
-                                var ss_marker_object = {
-                                    ptLat            :  ss_marker_data.lat,
-                                    ptLon            :  ss_marker_data.lon,
-                                    pointType        :  "sub_station",
-                                    dataset          :  ss_infoWindow_content,
-                                    bhInfo           :  [],
-                                    poll_info        :  ss_polled_info,
-                                    pl               :  ss_pl,
-                                    rta              :  ss_rta,
-                                    pl_timestamp     :  ss_pl_rta_timestamp,
-                                    item_index       :  ss_item_info_index,
-                                    antenna_height   :  ss_marker_data.antenna_height,
-                                    name             :  ss_marker_data.name,
-                                    technology       :  sector_tech,
-                                    device_type      :  ss_device_type,
-                                    perf_url         :  ss_perf_url,
-                                    inventory_url    :  ss_inventory_url,
-                                    bs_name          :  apiResponse.name,
-                                    bs_sector_device :  sector_device,
-                                    label_str        :  ss_marker_data.label_str ? ss_marker_data.label_str : '',
-                                    filter_data      :  {
-                                        "bs_name" : apiResponse.name,
-                                        "sector_name" : sector_ip,
-                                        "ss_name" : ss_marker_data.name,
-                                        "bs_id" : apiResponse.id,
-                                        "sector_id" : sector_id,
-                                        "id": ss_marker_data.id
-                                    },
-                                    device_name      :  ss_marker_data.device_name,
-                                    ss_device_id     :  ss_marker_data.device_id,
-                                    ss_ip            :  ss_ip_address,
-                                    sector_ip        :  sector_ip,
-                                    cktId            :  ckt_id_val,
-                                    zIndex           :  200,
-                                    optimized        :  false,
-                                    isActive         :  1,
-                                    windowTitle      : "Sub Station"
-                                };
+                                var ss_marker_object = getMarkerInfoJson(ss_marker_data, 'sub_station', parent_info);
 
                                 if(window.location.pathname.indexOf("gearth") > -1) {
                                     
@@ -843,11 +810,13 @@ function GisPerformance() {
                                         "other"
                                     );
 
+                                    // Update map specific info
                                     ss_marker_object['position'] = new google.maps.LatLng(ss_marker_data.lat,ss_marker_data.lon);
-                                    ss_marker_object['map'] = null;
                                     ss_marker_object['icon'] = ss_icon_obj;
                                     ss_marker_object['oldIcon'] = ss_icon_obj;
                                     ss_marker_object['clusterIcon'] = ss_icon_obj;
+                                    ss_marker_object['zIndex'] = 200;
+                                    ss_marker_object['optimized'] = false;
                                     
                                     if(show_ss_len > 0 && mapInstance.getZoom() > 12) {
                                         ss_marker_object['map'] = mapInstance;

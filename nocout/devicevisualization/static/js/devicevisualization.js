@@ -2892,6 +2892,154 @@ function getStaticInfo(clicked_obj, callback) {
     }
 }
 
+
+/**
+ * This function returns device marker JSON info object for creating device marker
+ * @method getMarkerInfoJson
+ * @param info_obj {Object}, It contains the complete info for the marker required to create marker specific info object
+ * @param elem_type {String}, It contains the type of element/marker it is(base_station, sector, sector_polygon or sub_station)
+ * @param extra_info {Object}, It contains the extra details required for given marker
+ * @return required_info {Object}, It contains the marker info json object
+ */
+function getMarkerInfoJson(info_obj, elem_type, extra_info) {
+    var required_info = {};
+
+    if (!info_obj || !elem_type) {
+        return required_info;
+    }
+
+    if (elem_type == 'base_station') {
+        var fetched_status = info_obj.maintenance_status,
+            bs_maintenance_status = fetched_status ? $.trim(fetched_status) : "No",
+            bs_lat = info_obj.lat,
+            bs_lon = info_obj.lon;
+
+        required_info = {
+            ptLat              : bs_lat,
+            ptLon              : bs_lon,
+            bh_id              : info_obj.bh_id,
+            bh_device_id       : info_obj.bh_device_id,
+            bh_device_type     : info_obj.bh_device_type,
+            bh_device_tech     : info_obj.bh_device_tech,
+            pl                 : "",
+            pointType          : 'base_station',
+            maintenance_status : bs_maintenance_status,
+            device_name        : info_obj.device_name,
+            dataset            : info_obj.dataset ? info_obj.dataset : [],
+            bh_dataset         : info_obj.bh_dataset ? info_obj.bh_dataset : [],
+            bhInfo_polled      : [],
+            bhSeverity         : "",
+            bs_name            : info_obj.name,
+            alias              : info_obj.alias,
+            bs_alias           : info_obj.alias,
+            name               : info_obj.name,
+            filter_data        : extra_info,
+            markerType         : 'BS',
+            isMarkerSpiderfied : false,
+            isActive           : false,
+            windowTitle        : "Base Station"
+        };
+
+    } else if (elem_type == 'sector' || elem_type == 'sector_polygon') {
+
+        var sector_perf_url = info_obj.perf_page_url ? info_obj.perf_page_url : "",
+            sector_inventory_url = info_obj.inventory_url ? info_obj.inventory_url : "",
+            fetched_azimuth = info_obj.azimuth_angle,
+            fetched_beamWidth = info_obj.beam_width,
+            rad = info_obj.radius && Number(info_obj.radius) > 0 ? info_obj.radius : 0.5,
+            azimuth = fetched_azimuth && fetched_azimuth != 'NA' ? fetched_azimuth : 10,
+            beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
+            bg_color = info_obj.color && info_obj.color != 'NA' ? info_obj.color : 'rgba(74,72,94,0.58)'
+            pointType = '',
+            polarisation = '';
+
+        if(elem_type == 'sector') {
+            pointType = 'sector_Marker';
+        } else {
+            pointType = 'sector';
+        }
+
+        required_info = {
+            ptLat              : extra_info.bs_lat,
+            ptLon              : extra_info.bs_lon,
+            alias              : info_obj.ip_address,
+            pointType          : pointType,
+            technology         : info_obj.technology,
+            device_type        : info_obj.device_type,
+            vendor             : info_obj.vendor,
+            dataset            : info_obj.dataset ? info_obj.dataset : [],
+            poll_info          : [],
+            pl                 : "",
+            rta                : "",
+            radius             : rad,
+            azimuth            : azimuth,
+            beam_width         : beam_width,
+            polarisation       : polarisation,
+            bg_color           : bg_color,
+            perf_url           : sector_perf_url,
+            inventory_url      : sector_inventory_url,
+            sectorName         : info_obj.ip_address,
+            sector_child       : info_obj.sub_stations,
+            sector_id          : info_obj.sector_id,
+            device_name        : info_obj.device_name,
+            name               : info_obj.device_name,
+            filter_data        : extra_info.filter_info,
+            sector_lat         : extra_info.startLat,
+            sector_lon         : extra_info.startLon,
+            cktId              : "",
+            antenna_height     : info_obj.antenna_height,
+            isActive           : 1,
+            windowTitle        : "Base Station Device"
+        };
+
+    } else if (elem_type == 'sub_station') {
+        var ss_perf_url = info_obj.perf_page_url ? info_obj.perf_page_url : "",
+            ss_inventory_url = info_obj.inventory_url ? info_obj.inventory_url : "",
+            ss_info_dict = info_obj.dataset ? info_obj.dataset : [],
+            ss_pl_rta_timestamp = info_obj.pl_timestamp ? info_obj.pl_timestamp : "",
+            ss_pl = info_obj.pl ? info_obj.pl : "",
+            ss_rta = info_obj.rta ? info_obj.rta : "";
+
+        required_info = {
+            ptLat            :  info_obj.lat,
+            ptLon            :  info_obj.lon,
+            technology       :  extra_info.technology,
+            device_type      :  info_obj.device_type,
+            pointType        :  "sub_station",
+            alias            :  info_obj.circuit_id,
+            dataset          :  ss_info_dict,
+            bhInfo           :  [],
+            poll_info        :  [],
+            pl               :  ss_pl,
+            rta              :  ss_rta,
+            pl_timestamp     :  ss_pl_rta_timestamp,
+            perf_url         :  ss_perf_url,
+            inventory_url    :  ss_inventory_url,
+            antenna_height   :  info_obj.antenna_height,
+            name             :  info_obj.name,
+            bs_name          :  extra_info.filter_info.bs_name,
+            bs_sector_device :  extra_info.sector_device_name,
+            label_str        :  info_obj.label_str ? info_obj.label_str : '',
+            filter_data      :  extra_info.filter_info,
+            device_name      :  info_obj.device_name,
+            ss_device_id     :  info_obj.device_id,
+            ss_ip            :  info_obj.substation_device_ip_address,
+            sector_ip        :  extra_info.filter_info.sector_name,
+            cktId            :  info_obj.circuit_id,
+            zIndex           :  200,
+            optimized        :  false,
+            isActive         :  1,
+            windowTitle      : "Sub Station"
+        };
+    
+    } else {
+        required_info = info_obj;
+    }
+
+    return required_info;
+}
+
+
 // "Object.key" prototyping for IE
 if (!Object.keys) {
     Object.keys = (function () {
