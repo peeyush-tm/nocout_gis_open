@@ -798,16 +798,18 @@ SPEEDOMETER_DASHBAORDS = ['down-network', 'packetloss-network', 'latency-network
 # 5 May 2015
 # Variables for phantom js host location
 PHANTOM_PROTOCOL = "http"
-PHANTOM_HOST = "127.0.0.1"
-PHANTOM_PORT = "3003"
+PHANTOM_HOST = "10.133.12.163"
+PHANTOM_PORT = "5004"
 
 # Exported Chart Image Type, Width & Height
-CHART_WIDTH = 600
+CHART_WIDTH = 900
 CHART_HEIGHT = 400
 CHART_IMG_TYPE = "png"
+# Variable for env name i.e. either it is localhost, uat or prod
+ENV_NAME = 'uat'
 
 # URL for 'highcharts-convert.js'.
-HIGHCHARTS_CONVERT_JS = "~/Downloads/highcharts-convert.js"
+HIGHCHARTS_CONVERT_JS = STATIC_ROOT + "js/highcharts-convert-" + ENV_NAME + "/highcharts-convert.js"
 
 # For cache time properties, static data caching period and polling data caching period
 # 2nd June 2016
@@ -843,13 +845,13 @@ ENABLE_WHITE_THEME = True
 SHOW_RF_COLUMN = 6
 
 # Flag to enable/disable topology view on single performance page.
-ENABLE_TOPO_VIEW = False
+ENABLE_TOPO_VIEW = True
 
 # Flag to enable/disable birdeye view on single performance page.
-ENABLE_BIRDEYE_VIEW = False
+ENABLE_BIRDEYE_VIEW = True
 
 # Flag to enable/disable custom dashboards on single performance page.
-ENABLE_CUSTOM_DASHBOARD_VIEW = False
+ENABLE_CUSTOM_DASHBOARD_VIEW = True
 
 # Password complexity settings.
 # ===============================
