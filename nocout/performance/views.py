@@ -1551,8 +1551,7 @@ class InventoryDeviceServiceDataSource(View):
             'url': 'performance/servicedetail/util/device/'+str(device_id),
             'active': 0,
         })
-        print self.request.user
-        print dir(self.request.user)
+
         custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))
 
         
@@ -4196,6 +4195,9 @@ class DeviceServiceDetail(View):
                 is_bh = False
                 bh_data_sources = None
 
+        valuesuffix_list = list()
+        valuetext_list = list()
+
         for s in services:
             service_names.append(s['name'])
             temp_sds_name = s['servicespecificdatasource__service_data_sources__name']
@@ -4211,9 +4213,20 @@ class DeviceServiceDetail(View):
             else:
                 sds_names.append(temp_sds_name)
 
-            service_data_sources[temp_s_name, temp_sds_name] = \
-                s['servicespecificdatasource__service_data_sources__alias']
-            # if technology and technology.name.lower() in ['ptp', 'p2p']:
+            srv_alias = s['servicespecificdatasource__service_data_sources__alias']
+            try:
+                sds_key = s['name'].strip().lower() + '_' + temp_sds_name.strip().lower()
+                if sds_key in SERVICE_DATA_SOURCE:
+                    if SERVICE_DATA_SOURCE[sds_key]['valuetext'] not in valuetext_list:
+                        valuetext_list.append(SERVICE_DATA_SOURCE[sds_key]['valuetext'])
+
+                    if SERVICE_DATA_SOURCE[sds_key]['valuesuffix'] not in valuesuffix_list:
+                        valuesuffix_list.append(SERVICE_DATA_SOURCE[sds_key]['valuesuffix'])
+            except Exception, e:
+                pass
+            
+            service_data_sources[temp_s_name, temp_sds_name] = srv_alias
+
             if 'ul' in temp_s_name.lower():
                 appnd = 'UL : '
             elif 'dl' in temp_s_name.lower():
@@ -4221,8 +4234,6 @@ class DeviceServiceDetail(View):
             else:
                 appnd = ''
             service_data_sources[temp_s_name, temp_sds_name] = appnd + service_data_sources[temp_s_name, temp_sds_name]
-
-
 
         performance = PerformanceService.objects.filter(
             device_name=device.device_name,
@@ -4274,10 +4285,11 @@ class DeviceServiceDetail(View):
                 'objects': {
                     'plot_type': 'charts',
                     'display_name': service_name.strip().title(),
-                    'valuesuffix': '  ',
+                    'valuesuffix': valuesuffix_list[0] if valuesuffix_list else ' ',
                     'type': 'spline',
+                    'is_single': 1,
                     'chart_data': chart_data,
-                    'valuetext': '  '
+                    'valuetext': valuetext_list[0] if valuetext_list else ' '
                 }
             }
         }

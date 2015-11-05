@@ -1031,7 +1031,6 @@ $("#custom_dashboard").click(function (e) {
                     
                     $("#custom_dashboard_container .tab-content").append(custom_tabs_data);
 
-                    console.log(tab_info_obj);
                     bootbox.hideAll();                    
                 } else {
                     if (result['message'].indexOf(' title ') > -1) {
@@ -1085,7 +1084,6 @@ $("#custom_dashboard").click(function (e) {
                                     selected_txt.push($(this).text())
                                 });
                                 //Validation
-                                console.log(selected_ids)
                                 if (!selected_ids || selected_ids.length === 0) {                                    
                                     $("#delete_customdb_error").html('Please enter custom dashboard to be deleted');
                                     $("#delete_customdb_error").removeClass('hide');
@@ -1145,9 +1143,7 @@ $("#custom_dashboard").click(function (e) {
                     }
                 }    
             });
-            delete_db_box.on("shown.bs.modal", function() {   
-                // console.log("here")                
-                // console.log(search_txt)
+            delete_db_box.on("shown.bs.modal", function() {
                 // <AJAX_CALL>
                 $("#delete_customdb").select2();
                 $.ajax({                    
@@ -1268,7 +1264,6 @@ $("#custom_dashboard").click(function (e) {
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
                 if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length > 0) {
-                    console.log($('#' + activeTabId).parent('li'));
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).trigger('click');
                 } else {
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li:first-child a").trigger('click');
