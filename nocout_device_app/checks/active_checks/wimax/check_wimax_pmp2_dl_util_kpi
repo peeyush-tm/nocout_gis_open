@@ -46,7 +46,7 @@ def extract_pmp2_bw_from_live(hostname,site):
         	if query_output:
 			query_output = query_output[0][0] 
 			output = [entry for entry in query_output.split(' - ')[1].split()]
-                	pmp_bw=output[0].split('=')[1]
+                	pmp_bw=output[1].split('=')[1]
 	except Exception,e:
 		pmp_bw=None
 
@@ -120,7 +120,9 @@ def live_query_pmp2_dl_util_kpi(hostname,site,war,crit,dr_slave):
 			pmp2_dl_kpi = ''
 	
 
-	if pmp2_dl_kpi != None:
+	if pmp2_dl_kpi != None and pmp2_dl_kpi != '':
+		if pmp2_dl_kpi > 100:
+                        pmp2_dl_kpi = 100.0
                 if pmp2_dl_kpi < war:
                         state = 0
                         state_string = "ok"
