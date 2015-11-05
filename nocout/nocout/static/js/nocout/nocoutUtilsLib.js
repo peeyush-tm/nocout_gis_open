@@ -460,7 +460,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
             }
         }
     }
-    console.log(clicked_tab_id.indexOf('custom_dashboard'));
+    // console.log(clicked_tab_id.indexOf('custom_dashboard'));
     if ($(".top_perf_tabs").length > 0 && !is_birdeye_view && clicked_tab_id.indexOf('custom_dashboard') == -1) {
         var report_title = "";
         try {

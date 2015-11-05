@@ -625,12 +625,20 @@ class GetPerfomance(View):
         bs_alias = None
         bs_id = list()
         is_radwin5 = 0
+        is_viewer_flag = 0
+        user_role = self.request.user
 
         try:
             if 'radwin5' in device_type.lower():
                 is_radwin5 = 1
         except Exception, e:
             is_radwin5 = 0
+
+        try:
+            if in_group(self.request.user, 'viewer'):
+                is_viewer_flag = 1
+        except Exception, e:
+            is_viewer_flag = 0       
 
         try:
             if device.sector_configured_on.exists():
@@ -750,6 +758,7 @@ class GetPerfomance(View):
             'is_util_tab': int(is_util_tab),
             'is_dr_device' : is_dr_device,
             'is_radwin5' : is_radwin5,
+            'is_viewer_flag': is_viewer_flag,
             'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id)
         }
 
@@ -1551,15 +1560,12 @@ class InventoryDeviceServiceDataSource(View):
             'url': 'performance/servicedetail/util/device/'+str(device_id),
             'active': 0,
         })
-        print self.request.user
-        print dir(self.request.user)
-        custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))
-
         
+        custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))       
+
         for dashboard in custom_dashboard:
             cdb_info = {
-                    'name': dashboard.name,
-                    # 'user_id': self.request.user,
+                    'name': dashboard.name,                    
                     'title': dashboard.title.strip(),
                     'url': 'performance/custom_dashboard/' + str(dashboard.id) +
                             '/device/' + str(device_id),
