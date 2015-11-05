@@ -4271,7 +4271,7 @@ class DeviceServiceDetail(View):
                         else:
                             pass
                     temp_chart_data[data.service_name, data.data_source] = {
-                        'name': service_data_sources[data.service_name, data.data_source],
+                        'name': srv_alias,
                         'data': [],
                         'color': c,
                         'type': SERVICE_DATA_SOURCE[data.service_name.strip() + "_" +data.data_source.strip()]['type']
