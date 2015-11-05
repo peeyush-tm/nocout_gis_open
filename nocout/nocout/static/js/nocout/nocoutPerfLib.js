@@ -1304,9 +1304,7 @@ function nocoutPerfLib() {
                                         ||
                                         listing_ajax_url.indexOf('availability') > -1
                                     ) {
-                                        if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
-                                            addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table');
-                                        } else {
+                                        if ($("#perf_data_table").length == 0 || !$("#perf_data_table").html()) {
                                             var contentHtml = createChartDataTableHtml_nocout(
                                                 "perf_data_table",
                                                 chart_config.chart_data
@@ -1345,6 +1343,8 @@ function nocoutPerfLib() {
                                                 sPaginationType: "full_numbers"
                                             });
                                         }
+                                        // Add data to table
+                                        addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table');
                                     }
 
                                 } else {
@@ -1378,7 +1378,9 @@ function nocoutPerfLib() {
                             } else {
                                 if (draw_type == 'chart') {
                                     if (!is_birdeye_view && !is_custom_view) {
-                                        nocout_destroyDataTable('perf_data_table');
+                                        if (!$('#' + service_id+ '_chart').highcharts()) {
+                                            nocout_destroyDataTable('perf_data_table');
+                                        }
                                     }
 
                                     if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
@@ -1463,7 +1465,9 @@ function nocoutPerfLib() {
                                 listing_ajax_url.indexOf('availability') > -1
                             )) {
                                 if (!is_birdeye_view && !is_custom_view) {
-                                    nocout_destroyDataTable('perf_data_table');
+                                    if (!$('#' + service_id+ '_chart').highcharts()) {
+                                        nocout_destroyDataTable('perf_data_table');
+                                    }
                                 }
                             }
                             if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {

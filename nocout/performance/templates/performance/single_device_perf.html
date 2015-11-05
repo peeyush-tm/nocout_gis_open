@@ -1054,7 +1054,6 @@
                     custom_tabs_data += '<div class="tab-pane ' + content_info_obj["active_class"]+ '" id="' + unique_item_key+ '_block">';
                     custom_tabs_data += '<div class="tabbable"><ul class="nav nav-tabs inner_inner_tab">';
                     
-
                     if(show_historical_on_performance) {
                         // inner_inner_tabs = tabs_with_historical;
                         inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);                        
@@ -1178,7 +1177,8 @@
                                     selected_ids.push($(this).val());
                                     selected_txt.push($(this).text())
                                 });
-                                //Validation                                
+
+                                //Validation
                                 if (!selected_ids || selected_ids.length === 0) {                                    
                                     $("#delete_customdb_error").html('Please enter custom dashboard to be deleted');
                                     $("#delete_customdb_error").removeClass('hide');
@@ -1243,7 +1243,8 @@
                     }
                 }    
             });
-            delete_db_box.on("shown.bs.modal", function() {               
+
+            delete_db_box.on("shown.bs.modal", function() {
                 // <AJAX_CALL>
                 $("#delete_customdb").select2();
                 $.ajax({                    
@@ -1357,7 +1358,6 @@
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
                 if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length > 0) {
-                    // console.log($('#' + activeTabId).parent('li'));
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).trigger('click');
                 } else {
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li:first-child a").trigger('click');
