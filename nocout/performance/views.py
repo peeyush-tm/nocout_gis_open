@@ -644,11 +644,11 @@ class GetPerfomance(View):
             if device.sector_configured_on.exists():
                 bs_obj = device.sector_configured_on.filter()[0].base_station
                 bs_alias = bs_obj.alias
-                bs_id = [bs_obj.id]
+                bs_id = [str(bs_obj.id)]
             elif device.dr_configured_on.exists():
                 bs_obj = device.dr_configured_on.filter()[0].base_station
                 bs_alias = bs_obj.alias
-                bs_id = [bs_obj.id]
+                bs_id = [str(bs_obj.id)]
             elif device.substation_set.exists():
                 bs_obj = Sector.objects.get(
                     id=Circuit.objects.get(
@@ -656,7 +656,7 @@ class GetPerfomance(View):
                     ).sector_id
                 ).base_station
                 bs_alias = bs_obj.alias
-                bs_id = [bs_obj.id]
+                bs_id = [str(bs_obj.id)]
             elif device.backhaul.exists() or device.backhaul_switch.exists() or device.backhaul_pop.exists() \
                 or device.backhaul_aggregator.exists():
                 bh_id = None
@@ -674,11 +674,11 @@ class GetPerfomance(View):
                         backhaul= bh_id
                     ).values_list('alias', flat=True)
                 )
-                bs_id = ','.join(
-                    BaseStation.objects.filter(
-                        backhaul= bh_id
-                    ).values_list('id', flat=True)
-                )
+
+                bh_bs_ids = BaseStation.objects.filter(
+                    backhaul= bh_id
+                ).values_list('id', flat=True)
+                bs_id = [str(bs_id) for bs_id in bh_bs_ids]
             else:
                 pass
         except Exception, e:
@@ -7094,8 +7094,18 @@ class GetTopology(View):
 
         bs_id = self.request.GET.get('bs_id')
 
+        try:
+            bs_id = json.loads(str(bs_id))
+        except Exception, e:
+            bs_id = []
+
         if not bs_id:
             return HttpResponse(json.dumps(result), content_type="application/json")
+
+        multiple_bs = False
+
+        if len(bs_id) > 1:
+            multiple_bs = True
          
         # Query for getting topology info of selected device 
         topology_query = ''' 
@@ -7189,8 +7199,8 @@ class GetTopology(View):
                 where
                     device.is_added_to_nms > 0
                     AND
-                    bs.id = {0}
-            '''.format(bs_id)
+                    bs.id in ({0})
+            '''.format(', '.join(bs_id))
 
         # calling global method for executing query
         result_of_query = nocout_utils.fetch_raw_result(topology_query)
@@ -7200,7 +7210,12 @@ class GetTopology(View):
         sector_ids = list()
         ss_ids = list()
         sector_dict = dict()
-        
+        bs_ids_dict = dict()
+        bs_id = ''
+        bs_alias = ''
+        bs_icon = ''
+
+        is_init = False
         # converting query result in required format 
         for bs in result_of_query:
             if bs.get('bs_id') not in bs_ids:
@@ -7217,75 +7232,104 @@ class GetTopology(View):
                             "severity" : "",
                             "value": ""
                         }
+                if not is_init:
+                    resultant_dict = {
+                        "bh_id": bs.get('bh_id'),
+                        "bh_icon": "/static/img/icons/mobile_blackhaul_icon_small.png" if not bs.get('bh_icon') else "/media/" + bs.get('bh_icon'),
+                        "bh_device_id": bs.get('bh_device_id'),
+                        "bh_device_tech": bs.get('bh_device_tech'),
+                        "bh_device_type": bs.get('bh_device_type'),
+                        "bh_ip": bs.get('bh_ip'),
+                        "pl_info": bh_pl_info,
+                        "base_station" : list()
+                    }
 
-                resultant_dict = {
-                    "bh_id": bs.get('bh_id'),
-                    "bh_icon": "/static/img/icons/mobile_blackhaul_icon_small.png" if not bs.get('bh_icon') else "/media/" + bs.get('bh_icon'),
-                    "bh_device_id": bs.get('bh_device_id'),
-                    "bh_device_tech": bs.get('bh_device_tech'),
-                    "bh_device_type": bs.get('bh_device_type'),
-                    "bh_ip": bs.get('bh_ip'),
+                bs_ids_dict[bs.get('bs_id')] = {
+                    "sectors": list(),
+                    "bs_id": bs.get('bs_id'),
                     "bs_alias": bs.get('bs_alias'),
                     "bs_icon": "/static/img/icons/bs-big.png",
-                    "pl_info": bh_pl_info,
-                    "sectors": list()
+
                 }
+                bs_id = bs.get('bs_id')
+                bs_alias = bs.get('bs_alias')
+                bs_icon = "/static/img/icons/bs-big.png"
 
-            if bs.get('sect_id') not in sector_dict:
-                if bs.get('sect_device_id'):
-                    try:
-                        severity, other_detail = device_current_status(Device.objects.get(id=bs.get('sect_device_id')))
-                        sect_pl_info = {
-                            "severity" : severity if severity else 'NA',
-                            "value": "NA"
-                        }
-                    except Exception, e:
-                        sect_pl_info = {
-                            "severity" : "NA",
-                            "value": "NA"
-                        }
-                sector_dict[bs.get('sect_id')] = {
-                    "id": bs.get('sect_id'),
-                    "device_name": bs.get('sect_device_name'),
-                    "device_id": bs.get('sect_device_id'),
-                    "device_tech": bs.get('sect_device_tech'),
-                    "device_type": bs.get('sect_device_type'),
-                    "ip_address": bs.get('sect_device_ip'),
-                    "sect_ip_id_title": bs.get('sect_ip_id_title'),
-                    "icon": "/media/" + bs.get('sect_icon'),
-                    "pl_info": sect_pl_info,
-                    "sub_station": list()
-                }
+                is_init = True
 
-            try:
-                if bs.get('ss_device_id'):
-                    try:
-                        severity, other_detail = device_current_status(Device.objects.get(id=bs.get('ss_device_id')))
-                        ss_pl_info = {
-                            "severity" : severity if severity else 'NA',
-                            "value": "NA"
-                        }
-                    except Exception, e:
-                        ss_pl_info = {
-                            "severity" : "NA",
-                            "value": "NA"
-                        }
-                sector_dict[bs.get('sect_id')]['sub_station'].append({
-                    "id": bs.get('ss_id'),
-                    "device_name": bs.get('ss_device_name'),
-                    "device_id": bs.get('ss_device_id'),
-                    "device_tech": bs.get('ss_device_tech'),
-                    "device_type": bs.get('ss_device_type'),
-                    "ip_address": bs.get('ss_device_ip'),
-                    "ckt_id": bs.get('ss_circuit_id'),
-                    "link_color": bs.get('sect_color'),
-                    "icon": "/media/" + bs.get('ss_icon'),
-                    "pl_info": ss_pl_info
-                })
-            except Exception, e:
-                pass
+            if not multiple_bs:
+                if str(bs.get('sect_id')) not in sector_dict:
+                    if bs.get('sect_device_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('sect_device_id')))
+                            sect_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": "NA"
+                            }
+                        except Exception, e:
+                            sect_pl_info = {
+                                "severity" : "NA",
+                                "value": "NA"
+                            }
+                    print 'before'
+                    print sector_dict
+                    sector_dict[str(bs.get('sect_id'))] = {
+                        "id": str(bs.get('sect_id')),
+                        "device_name": bs.get('sect_device_name'),
+                        "device_id": bs.get('sect_device_id'),
+                        "device_tech": bs.get('sect_device_tech'),
+                        "device_type": bs.get('sect_device_type'),
+                        "ip_address": bs.get('sect_device_ip'),
+                        "sect_ip_id_title": bs.get('sect_ip_id_title'),
+                        "icon": "/media/" + bs.get('sect_icon'),
+                        "pl_info": sect_pl_info,
+                        "sub_station": list()
+                    }
+                    print 'after'
+                    print sector_dict
 
-        resultant_dict['sectors'] = sector_dict.values()
+                try:
+                    if bs.get('ss_device_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('ss_device_id')))
+                            ss_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": "NA"
+                            }
+                        except Exception, e:
+                            ss_pl_info = {
+                                "severity" : "NA",
+                                "value": "NA"
+                            }
+                    sector_dict[str(bs.get('sect_id'))]['sub_station'].append({
+                        "id": bs.get('ss_id'),
+                        "device_name": bs.get('ss_device_name'),
+                        "device_id": bs.get('ss_device_id'),
+                        "device_tech": bs.get('ss_device_tech'),
+                        "device_type": bs.get('ss_device_type'),
+                        "ip_address": bs.get('ss_device_ip'),
+                        "ckt_id": bs.get('ss_circuit_id'),
+                        "link_color": bs.get('sect_color'),
+                        "icon": "/media/" + bs.get('ss_icon'),
+                        "pl_info": ss_pl_info
+                    })
+                except Exception, e:
+                    pass
+            
+                bs_ids_dict[str(bs.get('bs_id'))]['sectors'].append(sector_dict[str(bs.get('sect_id'))])
+
+        if multiple_bs:
+            resultant_dict['base_station'] = bs_ids_dict.values()
+        else:
+            if not resultant_dict['base_station']:
+                resultant_dict['base_station'] = list()
+
+            resultant_dict['base_station'].append({
+                "sectors": sector_dict.values(),
+                'bs_id': bs_id,
+                'bs_alias': bs_alias,
+                'bs_icon': bs_icon
+            })
 
         result['data'].append(resultant_dict)
         result['message'] = 'Device Topology Details Fetched Successfully.'
@@ -7293,30 +7337,43 @@ class GetTopology(View):
 
         return HttpResponse(json.dumps(result), content_type="application/json")
 
+
 class GetTopologyToolTip(View):
     """
     The Class based View to get tooltip for each device on topo-view page.
-
     """
 
     def get(self, request):
         station_type = self.request.GET.get('type')
         required_id = self.request.GET.get('id')
+
+        result = {
+            'success': 0,
+            'message': 'Device info not fetched',
+            'data': list()
+        }
+
+        if not required_id:
+            return HttpResponse(json.dumps(result), content_type="application/json")    
         
         if (station_type == 'BS'):
-            result = getBSInventoryInfo(required_id)
+            resultset = getBSInventoryInfo(required_id)
         elif (station_type == 'BH'):
-            result = getBHInventoryInfo(required_id)
+            resultset = getBHInventoryInfo(required_id)
         elif (station_type == 'SECT'):
-            result = getSectorInventoryInfo(required_id)
+            resultset = getSectorInventoryInfo(required_id)
         elif (station_type == 'SS'):
-            result = getSSInventoryInfo(required_id)       
+            resultset = getSSInventoryInfo(required_id)       
 
         
-        formatted_result = self.format_result(result[0])
+        formatted_result = self.format_result(resultset[0])
+        result = {
+            'success': 1,
+            'message': 'Device info fetched successfully.',
+            'data': formatted_result
+        }
         
-        return HttpResponse(json.dumps(formatted_result), content_type="application/json")
-
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
     def format_result(self, dataset):
         """
