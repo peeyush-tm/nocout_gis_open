@@ -396,8 +396,8 @@
                 <div class="tab-pane" id="custom_dashboard_tab">
                     <div class="panel panel-default inner_tab_container">
                         <div class="panel-body">
-                            <div id="custom_dashboard_container">                                
-                                <ul class="list-unstyled list-inline control_btn_countainer">
+                            <div id="custom_dashboard_container">                                      
+                                <ul class="list-unstyled list-inline control_btn_countainer" style="position:absolute;">
                                     <li class="pull-right">                                            
                                         <button id="add_custom_dashboard" class="btn btn-sm btn-default normal_screen " type="button" title="Add_Custom_Dashboard">
                                             <i class="fa fa-plus"></i>
@@ -406,7 +406,7 @@
                                             <i class="fa fa-trash-o" title="Soft Delete"></i>
                                         </button>
                                      </li>  
-                                </ul>
+                                </ul>                                
                                 <div class="tabbable tabs-left">
                                     <i class="fa fa-spinner fa-spin" title="Fetching Utilization Services"></i>
                                 </div>
@@ -477,6 +477,7 @@
             default_live_table_headers = [],
             default_hist_table_headers = [],
             is_radwin5 = 0,
+            is_viewer = 0,
             bs_id = "",
             all_services_list = [],
             perf_base_url = '',
@@ -484,7 +485,8 @@
             severity_wise_data_api = '',
             default_left_tab_icon = 'fa-circle-o',
             active_left_tab_icon = 'fa-dot-circle-o',
-            topo_dom_id = 'topo_network';
+            topo_dom_id = 'topo_network',
+            non_poll_sds = [];
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -495,8 +497,10 @@
             page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer";
             is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
             is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
+            is_viewer = "{{is_viewer_flag }}" ? Number($.trim("{{ is_viewer_flag }}")) : 0;
             bs_id = "{{ bs_id }}" ? "{{ bs_id }}" : [];
             perf_base_url = "{{ perf_base_url }}" ? $.trim("{{ perf_base_url }}") : "";
+            non_poll_sds = '{{ settings.NO_ONDEMAND_POLL_SDS|safe }}' ? JSON.parse('{{ settings.NO_ONDEMAND_POLL_SDS|safe }}') : [];
             current_device_technology = "";
             statusUrl = "";
             serviceUrl = "";
@@ -826,13 +830,22 @@
             initBirdEyeView('birdeye_container');
         });
 
-$("#custom_dashboard").click(function (e) {
+        $("#custom_dashboard").click(function (e) {
+            var count = $("#custom_dashboard_container .left_tabs_container li").length
             if(!$('#service_view_type_btn').hasClass('hide')) {
                 $('#service_view_type_btn').addClass('hide');
             }
             if(!$('#item_type_btn').hasClass('hide')) {
                 $('#item_type_btn').addClass('hide');
             }
+            if(is_viewer){
+                $("#custom_dashboard_container .control_btn_countainer").addClass("hide")
+            }                       
+            if(count == 0){
+                if(!$("#custom_dashboard_container div").hasClass("no_custom")){
+                     $("#custom_dashboard_container").append('<div class="no_custom">No Custom Dashboards added.</div>')
+                 }              
+            }    
         });
 
 
@@ -1000,16 +1013,19 @@ $("#custom_dashboard").click(function (e) {
             data: post_data,
             success : function(response) {
                 var result = response;
-
+                var poll_now_data_dict = {};
                 if (typeof(response) == 'string') {
                     result = JSON.parse(result);
                 }
 
                 if (result['success']) {
-                    var count = $("#custom_dashboard_container .left_tabs_container li").length,
-                        unique_item_key = "custom_dashboard_tab"+ '_' + String(count)+ '_' + "10_block",
-                        fields = typeof(result['data']) == 'string' ? JSON.parse(result['data'])[0] : result['data'][0];
-                    // var custom_id = {{custom_ds_instance.id}}
+                    var count = $("#custom_dashboard_container .left_tabs_container li").length?$("#custom_dashboard_container .left_tabs_container li").length:0,
+                        unique_item_key = "custom_dashboard_tab"+ '_' + String(count)+ '_' + "10",
+                        fields = typeof(result['data']) == 'string' ? JSON.parse(result['data'])[0] : result['data'][0],
+                        active_tab_id = unique_item_key,
+                        inner_inner_tabs=[],
+                        inner_tab_ids = [];
+
                     var tab_info_obj = {
                             'active_class' : "",
                             'unique_key' : unique_item_key,
@@ -1020,18 +1036,97 @@ $("#custom_dashboard").click(function (e) {
                         content_info_obj = {
                             'active_class' : "",
                             'unique_key' : "custom_dashboard_tab"+ '_' + String(count)+ '_' + "10",
-                            'show_last_updated' : true,
+                            'show_last_updated' : false,
                         };
 
                     var custom_tabs = perfInstance.make_tab_li_html(tab_info_obj);
+                   
+                    if($("#custom_dashboard_container div").hasClass("no_custom")){                        
+                        $(".no_custom").remove();
+                        $('#custom_dashboard_container .left_tabs_container li:first-child').trigger('click');
+                    }
+                    if (tab_info_obj){
+                        count++;                        
+                    }                                                
                     
                     $("#custom_dashboard_container .left_tabs_container").append(custom_tabs);
                     
-                    var custom_tabs_data = perfInstance.make_tab_content_html(content_info_obj);
-                    
-                    $("#custom_dashboard_container .tab-content").append(custom_tabs_data);
+                    var custom_tabs_data  = '';
 
-                    console.log(tab_info_obj);
+                    custom_tabs_data += '<div class="tab-pane ' + content_info_obj["active_class"]+ '" id="' + unique_item_key+ '_block">';
+                    custom_tabs_data += '<div class="tabbable"><ul class="nav nav-tabs inner_inner_tab">';
+                    
+                    if(show_historical_on_performance) {
+                        // inner_inner_tabs = tabs_with_historical;
+                        inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);                        
+                        inner_inner_tabs = inner_inner_tabs.concat(tabs_with_historical);                        
+                    }
+                       
+                    if (inner_inner_tabs && inner_inner_tabs.length > 0) {
+                        for(var x=0;x<inner_inner_tabs.length;x++) {
+                            var inner_active_class = '';
+                            // if (x == 0) {
+                            //     inner_active_class = 'active';
+                            // }
+                            var current_item = inner_inner_tabs[x],
+                                id = current_item.id,
+                                title = current_item.title,
+                                data_url = "";
+                            if (!current_item["disabled_url"]) {
+                                if (tab_info_obj["api_url"].indexOf('?') == -1) {
+                                    data_url = tab_info_obj["api_url"] + "?data_for=" + id        
+                                } else {
+                                    data_url = tab_info_obj["api_url"] + "&data_for=" + id
+                                }
+                            }
+                            var inner_tab_info_obj = {
+                                'active_class' : inner_active_class,
+                                'unique_key' : id + "_" + unique_item_key,
+                                'icon_class' : 'fa fa-clock-o',
+                                'api_url' : data_url,
+                                'title' : title
+                            };
+
+                            if(!poll_now_data_dict[inner_tab_info_obj["unique_key"]]) {
+                                poll_now_data_dict[inner_tab_info_obj["unique_key"]] = [];
+                            }
+
+                            custom_tabs_data += perfInstance.make_tab_li_html(inner_tab_info_obj);
+                            if (inner_tab_ids.indexOf(id) == -1) {
+                                inner_tab_ids.push(id);
+                            }
+                        }
+
+                    } else {
+                        var inner_tab_info_obj = {
+                            'active_class' : '',
+                            'unique_key' : "live_" + unique_item_key,
+                            'icon_class' : 'fa fa-caret-right',
+                            'api_url' : tab_info_obj["api_url"] + "?data_for=live",
+                            'title' : "Live"
+                        };
+
+                        custom_tabs_data += perfInstance.make_tab_li_html(inner_tab_info_obj);
+                        inner_tab_ids.push('live');
+                    }
+                    
+                    custom_tabs_data += '</ul><div class="divide-20"></div><div class="tab-content">';
+                    // CREATE SUB INNER TAB CONTENT HTML
+                    for(var y=0;y<inner_tab_ids.length;y++) {
+                        var current_key = inner_tab_ids[y],
+                            inner_content_info_obj = {
+                                'tab_id' : current_key,
+                                'active_class' : '',
+                                'unique_key' : current_key + "_" + unique_item_key,
+                                'show_last_updated' : false
+                            };
+                        
+                        custom_tabs_data += perfInstance.make_tab_content_html(inner_content_info_obj);
+                    }
+                        custom_tabs_data += '</div></div><div class="clearfix"></div></div>';                     
+                       
+                    $("#custom_dashboard_container > .tabbable > .tab-content").append(custom_tabs_data);                    
+                   
                     bootbox.hideAll();                    
                 } else {
                     if (result['message'].indexOf(' title ') > -1) {
@@ -1054,7 +1149,7 @@ $("#custom_dashboard").click(function (e) {
     }
 
        $("#delete_custom_dashboard").on('click', function () {
-
+           var count = $("#custom_dashboard_container .left_tabs_container li").length?$("#custom_dashboard_container .left_tabs_container li").length:0;
            var popup_html = "";                            
 
             popup_html += "<div class='delete_custom_container' style='position:relative;overflow:auto;'> \
@@ -1084,8 +1179,8 @@ $("#custom_dashboard").click(function (e) {
                                     selected_ids.push($(this).val());
                                     selected_txt.push($(this).text())
                                 });
+
                                 //Validation
-                                console.log(selected_ids)
                                 if (!selected_ids || selected_ids.length === 0) {                                    
                                     $("#delete_customdb_error").html('Please enter custom dashboard to be deleted');
                                     $("#delete_customdb_error").removeClass('hide');
@@ -1128,6 +1223,11 @@ $("#custom_dashboard").click(function (e) {
                                             if ($('#custom_dashboard_container .left_tabs_container li').length > 0) {
                                                 $('#custom_dashboard_container .left_tabs_container li:first-child').trigger('click');
                                             }
+                                            else{
+                                                if(!$("#custom_dashboard_container div").hasClass("no_custom")){
+                                                    $("#custom_dashboard_container").append('<div class="no_custom">No Custom Dashboards added.</div>')
+                                                }
+                                            }
                                         });
                                     }                         
                                 }                        
@@ -1145,59 +1245,51 @@ $("#custom_dashboard").click(function (e) {
                     }
                 }    
             });
-            delete_db_box.on("shown.bs.modal", function() {   
-                // console.log("here")                
-                // console.log(search_txt)
+
+            delete_db_box.on("shown.bs.modal", function() {
                 // <AJAX_CALL>
                 $("#delete_customdb").select2();
                 $.ajax({                    
                         url : base_url+"/"+"api/get_data_source_list/",
                         type: "GET",                            
                         success : function(response) {                                
-                            var result =""
+                            var result ="";                            
                             
                             if (typeof response == 'string') {
                                 result = JSON.parse(response);
                                 } else {
                                 result = response;
                                 }
-                            var option_html = '';
-                            var objects = result['data']['objects']
-                            $("#delete_customdb").select2('enable');
-                            for (var x=0;x<objects.length;x++) {
-                                var existing_keys = Object.keys(objects[x]).filter(function(items) {return items != 'id'}),
-                                alias_key = existing_keys.indexOf('title') > -1 ? 'title' : existing_keys[0];                        
-                                option_html += '<option value="' + objects[x].id + '" ' +  '>' + objects[x][alias_key] + '</option>';
-                                $("#delete_customdb").html(option_html);                                
-                        }                                           
-                       
-                        
+                            if (result['success']){
+                                var option_html = '';
+                                var objects = result['data']['objects'];                           
+                                                      
+                                $("#delete_customdb").select2('enable');
+                                for (var x=0;x<objects.length;x++) {
+                                    var existing_keys = Object.keys(objects[x]).filter(function(items) {return items != 'id'}),
+                                    alias_key = existing_keys.indexOf('title') > -1 ? 'title' : existing_keys[0];                        
+                                    option_html += '<option value="' + objects[x].id + '" ' +  '>' + objects[x][alias_key] + '</option>';
+                                    $("#delete_customdb").html(option_html);                                
+                                }
+                            }                                           
+                            else{
+                                $("#delete_customdb_error").html('No Custom Dashboards to be deleted.');
+                                $("#delete_customdb_error").removeClass('hide');
+                                return false;
+                            }                          
                         try {
                             // Enable the selector                            
                             $("#delete_customdb").select2('val', selected_id);
                         } catch(e) {
                             // console.error(e);
                         }
-                    },
-               
-                    
-                               
-                              
+                    },           
                 });                  
-                        
-                       
             });
         
-            $(".modal-dialog").css("width","60%");
-                   
-            // $("#delete_customdb").select2({
+            $(".modal-dialog").css("width","60%");          
                 
-            //     multiple:true,
-                
-
-                
-            //      });
-         });
+        });
         // Fetch & Draw Topology view on tab click
         $("#topo_view").click(function(e) {
             // Show loading Spinner
@@ -1268,7 +1360,6 @@ $("#custom_dashboard").click(function (e) {
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
                 if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length > 0) {
-                    console.log($('#' + activeTabId).parent('li'));
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).trigger('click');
                 } else {
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li:first-child a").trigger('click');
@@ -1283,6 +1374,7 @@ $("#custom_dashboard").click(function (e) {
          */
         $("body").delegate('.left_tabs_container li','click',function(e) {
             var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
+
             if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
                 // remove the 'active_left_tab_icon' class from all link (if exists)
                 $('.left_tabs_container li a i').removeClass(active_left_tab_icon);                

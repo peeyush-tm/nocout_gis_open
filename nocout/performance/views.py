@@ -625,12 +625,20 @@ class GetPerfomance(View):
         bs_alias = None
         bs_id = list()
         is_radwin5 = 0
+        is_viewer_flag = 0
+        user_role = self.request.user
 
         try:
             if 'radwin5' in device_type.lower():
                 is_radwin5 = 1
         except Exception, e:
             is_radwin5 = 0
+
+        try:
+            if in_group(self.request.user, 'viewer'):
+                is_viewer_flag = 1
+        except Exception, e:
+            is_viewer_flag = 0       
 
         try:
             if device.sector_configured_on.exists():
@@ -750,6 +758,7 @@ class GetPerfomance(View):
             'is_util_tab': int(is_util_tab),
             'is_dr_device' : is_dr_device,
             'is_radwin5' : is_radwin5,
+            'is_viewer_flag': is_viewer_flag,
             'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id)
         }
 
@@ -1406,6 +1415,7 @@ class InventoryDeviceServiceDataSource(View):
                 'title': "Packet Drop",
                 'url': 'performance/service/ping/service_data_source/pl/device/' + str(device_id),
                 'active': 0,
+                'sds_key': 'pl',
                 'service_type_tab': 'network_perf_tab'
             })
 
@@ -1414,6 +1424,7 @@ class InventoryDeviceServiceDataSource(View):
                 'title': "Latency",
                 'url': 'performance/service/ping/service_data_source/rta/device/' + str(device_id),
                 'active': 0,
+                'sds_key': 'rta',
                 'service_type_tab': 'network_perf_tab'
             })
 
@@ -1423,6 +1434,7 @@ class InventoryDeviceServiceDataSource(View):
                     'title': "RF Latency",
                     'url': 'performance/service/rf/service_data_source/rf/device/' + str(device_id),
                     'active': 0,
+                    'sds_key': 'rf',
                     'service_type_tab': 'network_perf_tab'
                 })
 
@@ -1478,6 +1490,7 @@ class InventoryDeviceServiceDataSource(View):
                                            '/service_data_source/' + sds_name +
                                            '/device/' + str(device_id),
                                     'active': 0,
+                                    'sds_key': service_name + '_' + sds_name
                                 }
                     else:
                         continue
@@ -1534,7 +1547,7 @@ class InventoryDeviceServiceDataSource(View):
                 'title': 'Availability',
                 'url': 'performance/service/availability/service_data_source/availability/device/' +
                        str(device_id),
-                'active': 0,
+                'active': 0
             })
 
         result['data']['objects']['topology_tab']["info"].append({
@@ -1542,24 +1555,21 @@ class InventoryDeviceServiceDataSource(View):
             'title': 'Topology',
             'url': 'performance/service/topology/service_data_source/topology/device/' +
                    str(device_id),
-            'active': 0,
+            'active': 0
         })
 
         result['data']['objects']['utilization_top_tab']["info"].append({
             'name': 'utilization_top',
             'title': 'Utilization',
             'url': 'performance/servicedetail/util/device/'+str(device_id),
-            'active': 0,
+            'active': 0
         })
-        print self.request.user
-        print dir(self.request.user)
-        custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))
-
         
+        custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))       
+
         for dashboard in custom_dashboard:
             cdb_info = {
-                    'name': dashboard.name,
-                    # 'user_id': self.request.user,
+                    'name': dashboard.name,                    
                     'title': dashboard.title.strip(),
                     'url': 'performance/custom_dashboard/' + str(dashboard.id) +
                             '/device/' + str(device_id),
@@ -4196,6 +4206,9 @@ class DeviceServiceDetail(View):
                 is_bh = False
                 bh_data_sources = None
 
+        valuesuffix_list = list()
+        valuetext_list = list()
+
         for s in services:
             service_names.append(s['name'])
             temp_sds_name = s['servicespecificdatasource__service_data_sources__name']
@@ -4211,9 +4224,20 @@ class DeviceServiceDetail(View):
             else:
                 sds_names.append(temp_sds_name)
 
-            service_data_sources[temp_s_name, temp_sds_name] = \
-                s['servicespecificdatasource__service_data_sources__alias']
-            # if technology and technology.name.lower() in ['ptp', 'p2p']:
+            srv_alias = s['servicespecificdatasource__service_data_sources__alias']
+            try:
+                sds_key = s['name'].strip().lower() + '_' + temp_sds_name.strip().lower()
+                if sds_key in SERVICE_DATA_SOURCE:
+                    if SERVICE_DATA_SOURCE[sds_key]['valuetext'] not in valuetext_list:
+                        valuetext_list.append(SERVICE_DATA_SOURCE[sds_key]['valuetext'])
+
+                    if SERVICE_DATA_SOURCE[sds_key]['valuesuffix'] not in valuesuffix_list:
+                        valuesuffix_list.append(SERVICE_DATA_SOURCE[sds_key]['valuesuffix'])
+            except Exception, e:
+                pass
+            
+            service_data_sources[temp_s_name, temp_sds_name] = srv_alias
+
             if 'ul' in temp_s_name.lower():
                 appnd = 'UL : '
             elif 'dl' in temp_s_name.lower():
@@ -4221,8 +4245,6 @@ class DeviceServiceDetail(View):
             else:
                 appnd = ''
             service_data_sources[temp_s_name, temp_sds_name] = appnd + service_data_sources[temp_s_name, temp_sds_name]
-
-
 
         performance = PerformanceService.objects.filter(
             device_name=device.device_name,
@@ -4274,10 +4296,11 @@ class DeviceServiceDetail(View):
                 'objects': {
                     'plot_type': 'charts',
                     'display_name': service_name.strip().title(),
-                    'valuesuffix': '  ',
+                    'valuesuffix': valuesuffix_list[0] if valuesuffix_list else ' ',
                     'type': 'spline',
+                    'is_single': 1,
                     'chart_data': chart_data,
-                    'valuetext': '  '
+                    'valuetext': valuetext_list[0] if valuetext_list else ' '
                 }
             }
         }
