@@ -161,7 +161,7 @@ function populateServiceStatus_nocout(domElement,info) {
                                   <strong>Current Status:</strong> ' + status + '</td>\
                                   <td><strong>Updated At:</strong> ' + last_updated + '</td>\
                                   </tr>\
-                                  </table><div class="clearfix"></div><div class="divide-20"></div>';
+                                  </table><div class="clearfix"></div>';
         } else {
             inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
                                   <tr style="color:'+txt_color+';"><td>\
@@ -170,7 +170,7 @@ function populateServiceStatus_nocout(domElement,info) {
                                   <strong>Performance Output: </strong> ' + perf + '</td>\
                                   <td><strong>Updated At: </strong> ' + last_updated + '</td>\
                                   </tr>\
-                                  </table><div class="clearfix"></div><div class="divide-20"></div>';
+                                  </table><div class="clearfix"></div>';
         }
 
         $("#" + domElement).html(inner_status_html);

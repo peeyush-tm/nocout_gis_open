@@ -485,9 +485,10 @@
             severity_wise_data_api = '',
             default_left_tab_icon = 'fa-circle-o',
             active_left_tab_icon = 'fa-dot-circle-o',
-            topo_dom_id = 'topo_network';
+            topo_dom_id = 'topo_network',
+            non_poll_sds = [];
 
-        $(document).ready(function (e) {            
+        $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
             device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "";
             get_services_url = "{{ get_services_url }}" ? $.trim("{{ get_services_url }}") : "";
@@ -499,6 +500,7 @@
             is_viewer = "{{is_viewer_flag }}" ? Number($.trim("{{ is_viewer_flag }}")) : 0;
             bs_id = "{{ bs_id }}" ? "{{ bs_id }}" : [];
             perf_base_url = "{{ perf_base_url }}" ? $.trim("{{ perf_base_url }}") : "";
+            non_poll_sds = '{{ settings.NO_ONDEMAND_POLL_SDS|safe }}' ? JSON.parse('{{ settings.NO_ONDEMAND_POLL_SDS|safe }}') : [];
             current_device_technology = "";
             statusUrl = "";
             serviceUrl = "";

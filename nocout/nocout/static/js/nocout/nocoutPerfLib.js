@@ -394,6 +394,7 @@ function nocoutPerfLib() {
                             <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
                             </div>';
         }
+        
         if (tab_content_config.tab_id == 'live_poll_now') {
             content_html += '<div class="col-md-1">\
                                 <button class="btn btn-default btn-sm single_perf_poll_now " title="Poll Now" \
@@ -550,8 +551,8 @@ function nocoutPerfLib() {
                                     }
                                     
                                     $.each(device_services, function (key, value) {
-
-                                        var unique_item_key = service_key+ '_' + String(count)+ '_' + String(i),
+                                        var sds_key = value.sds_key ? value.sds_key : '',
+                                            unique_item_key = service_key+ '_' + String(count)+ '_' + String(i),
                                             active_class = '';
 
                                         if (is_first_tab == 1 && count == 0) {
@@ -583,7 +584,6 @@ function nocoutPerfLib() {
                                                 'show_last_updated' : show_last_updated,
                                             };
 
-
                                         // Create Tab HTML
                                         service_tabs += perf_that.make_tab_li_html(tab_info_obj);
 
@@ -608,7 +608,6 @@ function nocoutPerfLib() {
                                                 service_tabs_data += '<div class="tabbable"><ul class="nav nav-tabs inner_inner_tab">';
 
                                                 if(show_historical_on_performance) {
-                                                    // inner_inner_tabs = tabs_with_historical;
                                                     inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
                                                     if(unique_item_key.indexOf('_status') == -1) {
                                                         inner_inner_tabs = inner_inner_tabs.concat(tabs_with_historical);
@@ -622,12 +621,14 @@ function nocoutPerfLib() {
 
                                                 // If poll now flag enabled
                                                 if(is_perf_polling_enabled) {
-                                                    // Append poll now  & live tab
-                                                    if(!inner_inner_tabs.length) {
-                                                        inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
-                                                    }
-                                                    if(non_polled_ids.indexOf(value["name"]) == -1) {
-                                                        inner_inner_tabs = inner_inner_tabs.concat(poll_now_tab);
+                                                    if (non_poll_sds.indexOf(sds_key) == -1) {
+                                                        // Append poll now  & live tab
+                                                        if(!inner_inner_tabs.length) {
+                                                            inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
+                                                        }
+                                                        if(non_polled_ids.indexOf(value["name"]) == -1) {
+                                                            inner_inner_tabs = inner_inner_tabs.concat(poll_now_tab);
+                                                        }
                                                     }
                                                 }
                                                 
