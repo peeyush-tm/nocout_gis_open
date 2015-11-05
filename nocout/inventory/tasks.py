@@ -3407,8 +3407,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
             # BS device type
             bs_device_type = 6
 
-            if 'Device Type' in row.keys():
-                if row['Device Type'] == 'Radwin5KBS':
+            if 'Device Vendor' in row.keys():
+                if row['Device Vendor'] == 'Radwin5K':
                     bs_device_vendor = 11
                     bs_device_model = 14
                     bs_device_type = 16
@@ -3886,7 +3886,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'state': row['State'] if 'State' in row.keys() else "",
                     'city': row['City'] if 'City' in row.keys() else "",
                     'address': row['Address'] if 'Address' in row.keys() else "",
-                    'site_ams': row['SITE AMS'] if 'SITE AMS' in row.keys() else "",
+                    'site_ams': row['Site AMS'] if 'Site AMS' in row.keys() else "",
                     'site_infra_type': row['Site Infra Type'] if 'Site Infra Type' in row.keys() else "",
                     'site_sap_id': row['Site SAP ID'] if 'Site SAP ID' in row.keys() else "",
                     'mgmt_vlan': row['MGMT VLAN'] if 'MGMT VLAN' in row.keys() else "",
@@ -4088,8 +4088,8 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
             # SS device type
             ss_device_type = 5
 
-            if 'Device Type' in row.keys():
-                if row['Device Type'] == 'Radwin5KSS':
+            if 'Device Vendor' in row.keys():
+                if row['Device Vendor'] == 'Radwin5K':
                     ss_device_vendor = 11
                     ss_device_model = 14
                     ss_device_type = 17
@@ -4348,7 +4348,6 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                                        'PMP SM',
                                        file_path,
                                        sheettype)
-
 
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
