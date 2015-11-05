@@ -25,9 +25,9 @@
 {% block css %}
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
-
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
+    <link rel="stylesheet" type="text/css" href={% static "js/vis/vis/dist/vis.css" %} >
 {% endblock %}
 
 {% block content %}
@@ -498,7 +498,7 @@
             is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
             is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
             is_viewer = "{{is_viewer_flag }}" ? Number($.trim("{{ is_viewer_flag }}")) : 0;
-            bs_id = "{{ bs_id }}" ? "{{ bs_id }}" : [];
+            bs_id = '{{ bs_id|safe }}' ? '{{ bs_id|safe }}' : [];
             perf_base_url = "{{ perf_base_url }}" ? $.trim("{{ perf_base_url }}") : "";
             non_poll_sds = '{{ settings.NO_ONDEMAND_POLL_SDS|safe }}' ? JSON.parse('{{ settings.NO_ONDEMAND_POLL_SDS|safe }}') : [];
             current_device_technology = "";
@@ -1297,14 +1297,8 @@
 
             var single_bs_id = bs_id;
 
-            try {
-                single_bs_id = JSON.parse(bs_id)[0];
-            } catch(e) {
-            // console.error(e);
-            }
-
             $.ajax({
-                url: base_url +  "/performance/get_topology/?bs_id=" + single_bs_id,
+                url: base_url +  "/performance/get_topology/?bs_id=" + bs_id,
                 type: 'GET',
                 success: function(response) {
                     var result = response;
@@ -1313,10 +1307,21 @@
                         result = JSON.parse(result);
                     }
 
-                    if (result.success == 1) {
+                    if (result.success) {
                         topo_api_data = result['data'];
                         // Calling function to convert JSON response to VIS lib format
                         convertToVis(result, topo_dom_id);
+                    } else {
+                        $.gritter.add({
+                            // (string | mandatory) the heading of the notification
+                            title: 'Topology View',
+                            // (string | mandatory) the text inside the notification
+                            text: result.message,
+                            // (bool | optional) if you want it to fade out on its own or just sit there
+                            sticky: false,
+                            // Time in ms after which the gritter will dissappear.
+                            time : 1000
+                        });
                     }
 
                 },
