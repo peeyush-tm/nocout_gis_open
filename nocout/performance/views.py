@@ -1415,6 +1415,7 @@ class InventoryDeviceServiceDataSource(View):
                 'title': "Packet Drop",
                 'url': 'performance/service/ping/service_data_source/pl/device/' + str(device_id),
                 'active': 0,
+                'sds_key': 'pl',
                 'service_type_tab': 'network_perf_tab'
             })
 
@@ -1423,6 +1424,7 @@ class InventoryDeviceServiceDataSource(View):
                 'title': "Latency",
                 'url': 'performance/service/ping/service_data_source/rta/device/' + str(device_id),
                 'active': 0,
+                'sds_key': 'rta',
                 'service_type_tab': 'network_perf_tab'
             })
 
@@ -1432,6 +1434,7 @@ class InventoryDeviceServiceDataSource(View):
                     'title': "RF Latency",
                     'url': 'performance/service/rf/service_data_source/rf/device/' + str(device_id),
                     'active': 0,
+                    'sds_key': 'rf',
                     'service_type_tab': 'network_perf_tab'
                 })
 
@@ -1487,6 +1490,7 @@ class InventoryDeviceServiceDataSource(View):
                                            '/service_data_source/' + sds_name +
                                            '/device/' + str(device_id),
                                     'active': 0,
+                                    'sds_key': service_name + '_' + sds_name
                                 }
                     else:
                         continue
@@ -1543,7 +1547,7 @@ class InventoryDeviceServiceDataSource(View):
                 'title': 'Availability',
                 'url': 'performance/service/availability/service_data_source/availability/device/' +
                        str(device_id),
-                'active': 0,
+                'active': 0
             })
 
         result['data']['objects']['topology_tab']["info"].append({
@@ -1551,14 +1555,14 @@ class InventoryDeviceServiceDataSource(View):
             'title': 'Topology',
             'url': 'performance/service/topology/service_data_source/topology/device/' +
                    str(device_id),
-            'active': 0,
+            'active': 0
         })
 
         result['data']['objects']['utilization_top_tab']["info"].append({
             'name': 'utilization_top',
             'title': 'Utilization',
             'url': 'performance/servicedetail/util/device/'+str(device_id),
-            'active': 0,
+            'active': 0
         })
         
         custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))       
