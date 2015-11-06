@@ -50,16 +50,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				// Set Perf calling Flag
     			isPerfCallStopped = 1;
     			isPerfCallStarted = 0;
-
-    			// If any periodic polling ajax call is in process then abort it
-	            try {
-    				if(gis_perf_call_instance) {
-		                gis_perf_call_instance.abort()
-		                gis_perf_call_instance = "";
-		        	}
-	            } catch(e) {
-	                // pass
-	            }
 			}
 
 			var states_with_bounds = state_lat_lon_db.where(function(obj) {
@@ -246,6 +236,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
 				if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
 					var bs_id_list = getMarkerInCurrentBound();
+					console.log(bs_id_list);
 	            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
 	            		gisPerformanceClass.start(bs_id_list);
 	            	}

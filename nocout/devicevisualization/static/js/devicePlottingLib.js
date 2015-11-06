@@ -1277,7 +1277,6 @@ function devicePlottingClass_gmap() {
 			var bs_city = obj.city ? $.trim(obj.city.toLowerCase()) : "",
 				bs_state = obj.state ? $.trim(obj.state.toLowerCase()) : "",
 				sectors = obj.sectors,
-				// backhaul = obj.param.backhual,
 				basic_filter_condition1 = filterObj['state'] != 'Select State' ? bs_state == $.trim(filterObj['state'].toLowerCase()) : true,
 				basic_filter_condition2 = filterObj['city'] != 'Select City' ? bs_city == $.trim(filterObj['city'].toLowerCase()) : true,
 				advance_filter_condition1 = state_filter.length > 0 ? state_filter.indexOf(bs_state) > -1 : true,
@@ -4456,7 +4455,7 @@ function devicePlottingClass_gmap() {
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
 		        for (i = 0; i < filtered_data.length; i++) {
-		        	var sectors = filtered_data[i].data.param.sector;
+		        	var sectors = filtered_data[i].sectors;
         			for(var j=0;j<sectors.length;j++) {
         				var condition = selected_technology.length > 0 ? selected_technology.indexOf(sectors[j].technology) > -1 : true;
         				if(condition) {
@@ -5080,11 +5079,11 @@ function devicePlottingClass_gmap() {
 				    			if(sector_ip_condition) {
 				    				searched_flag = true;
 				    				if(window.location.pathname.indexOf("gearth") > -1) {
-				    					folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
+				    					folderBoundArray.push({lat: data_to_plot[i].lat, lon: data_to_plot[i].lon});
 				    				} else if (window.location.pathname.indexOf("wmap") > -1) {
-				    					bounds_lat_lon.extend(new OpenLayers.LonLat(data_to_plot[i].data.lon, data_to_plot[i].data.lat));
+				    					bounds_lat_lon.extend(new OpenLayers.LonLat(data_to_plot[i].lon, data_to_plot[i].lat));
 				    				} else {
-				    					bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].data.lat,data_to_plot[i].data.lon));
+				    					bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].lat,data_to_plot[i].lon));
 				    				}
 				    				// Hide State Counter Label(If Visible)
 				    				if(state_wise_device_labels[data_to_plot[i].state] && !state_wise_device_labels[data_to_plot[i].state].isHidden_) {
@@ -5096,7 +5095,7 @@ function devicePlottingClass_gmap() {
 				    						state_wise_device_labels[data_to_plot[i].state].hide();	
 				    					}
 				    				}
-				    				advJustSearch.applyIconToSearchedResult(data_to_plot[i].data.lat, data_to_plot[i].data.lon);
+				    				advJustSearch.applyIconToSearchedResult(data_to_plot[i].lat, data_to_plot[i].lon);
 				    				if(search_element_bs_id.indexOf(data_to_plot[i].originalId) < 0) {
 					    				search_element_bs_id.push(data_to_plot[i].originalId);
 					    			}
@@ -6255,8 +6254,6 @@ function devicePlottingClass_gmap() {
 							}
 
 							var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon;
-							// var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
-							// var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png";
 
 							var allMarkerObject = {};
 							if(window.location.pathname.indexOf("gearth") > -1) {
@@ -8147,12 +8144,12 @@ function devicePlottingClass_gmap() {
 
 		for(var i=0;i<dataArray.length;i++) {
 			
-			var sectorsArray = dataArray[i].data.param.sector;
+			var sectorsArray = dataArray[i].sectors;
 
 			for(var j=0;j<sectorsArray.length;j++) {
 
 				/*Check that the current sector name is present in filtered data or not*/
-				var subStationsArray = sectorsArray[j].sub_station,
+				var subStationsArray = sectorsArray[j].sub_stations,
 					sectorName = sectorsArray[j].ip_address ? $.trim(sectorsArray[j].ip_address) : "",
 					radius = sectorsArray[j].radius,
 					sector_id = sectorsArray[j].sector_id,
@@ -8394,7 +8391,7 @@ function devicePlottingClass_gmap() {
 					            }
             			} else if(isBasicFilterApplied) {
 
-            				var sectors = obj.data.param.sector,
+            				var sectors = obj.sectors,
 								basic_filter_condition1 = filterObj['state'] != 'Select State' ? obj.state == filterObj['state'] : true,
 								basic_filter_condition2 = filterObj['city'] != 'Select City' ? obj.city == filterObj['city'] : true;;
 							for(var i=sectors.length;i--;) {
@@ -8417,7 +8414,7 @@ function devicePlottingClass_gmap() {
 					
 					// Remove unmatched sectors
 					for(var x=0;x<current_bound_devices.length;x++) {
-						var sectors = current_bound_devices[x].data.param.sector,
+						var sectors = current_bound_devices[x].sectors,
 							delete_index = [];
 						for(var y=0;y<sectors.length;y++) {
 							var sector_technology = $.trim(sectors[y].technology.toLowerCase()),
@@ -8446,7 +8443,7 @@ function devicePlottingClass_gmap() {
 						}
 						// Delete Unmatched Values
 						for(var z=0;z<delete_index.length;z++) {
-							current_bound_devices[x].data.param.sector.splice(delete_index[z],1);
+							current_bound_devices[x].sectors.splice(delete_index[z],1);
 						}
 					}
 
@@ -9047,12 +9044,12 @@ function devicePlottingClass_gmap() {
             /*Deep Copy of the filteredDataArray*/
             var bs_data= $.extend( true, {}, filteredDataArray[i]);
 
-            bs_data.data.param.sector=[];            
+            bs_data.sectors=[];            
             /*Sectors Array*/
-            for(var j=0;j<filteredDataArray[i].data.param.sector.length;j++) {
-                var sector = filteredDataArray[i].data.param.sector[j];
+            for(var j=0;j<filteredDataArray[i].sectors.length;j++) {
+                var sector = filteredDataArray[i].sectors[j];
 
-                var ss_data = filteredDataArray[i].data.param.sector[j].sub_station;
+                var ss_data = filteredDataArray[i].sectors[j].sub_stations;
             
                 for(var k=0;k<ss_data.length;k++) {
                 	var ssName = $.trim(ss_data[k].name),

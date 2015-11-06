@@ -2106,7 +2106,6 @@ function WhiteMapClass() {
 							sectors_Markers_Obj['layerReference'] = ccpl_map.getLayersByName("Devices")[0];
 		                }
 
-		                // var sect_height = sector_array[j].antenna_height;
 		                var sect_height = gisPerformanceClass.getKeyValue(
 		                	sector_infoWindow_content,
 		                	"antenna_height",

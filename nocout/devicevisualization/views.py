@@ -40,7 +40,7 @@ from inventory.utils.util import InventoryUtilsGateway
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
 from user_profile.utils.auth import in_group
-import device.api as device_api
+from device.api import prepare_raw_result_v2
 
 logger = logging.getLogger(__name__)
 
@@ -3920,7 +3920,7 @@ class GISStaticInfo(View):
 
                 # get formatted bs inventory
                 # inventory = prepare_raw_bs_result(bs_result,True)
-                inventory = device_api.prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
+                inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
 
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
                 bh_device = None

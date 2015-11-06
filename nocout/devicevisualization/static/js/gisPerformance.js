@@ -256,7 +256,7 @@ function GisPerformance() {
 
                 var result = "";
                 // Type check of response
-                if(typeof response == 'string') {
+                if(response && typeof response == 'string') {
                     result = JSON.parse(response);
                 } else {
                     result = response;
