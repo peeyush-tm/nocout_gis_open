@@ -2773,6 +2773,83 @@ def getBSInventoryInfo(base_station_id=None):
     return bs_info
 
 
+def getBHInventoryInfo(backhaul_id=None):
+    """
+    This function returns BS inventory info which are shown on BS tooltip on gmap & other places
+    """
+    bh_info = list()
+
+    if not backhaul_id:
+        return bh_info
+
+    where_condition = ' bh.id = {}'.format(backhaul_id)
+
+    query = '''
+        SELECT
+            
+            IF(isnull(bs.bh_capacity), 'NA', bs.bh_capacity) AS bh_capacity,
+            IF(isnull(bh.bh_connectivity), 'NA', bh.bh_connectivity) AS bh_connectivity,
+            IF(isnull(bh.bh_type), 'NA', bh.bh_type) AS bh_type,
+            IF(isnull(bh.bh_circuit_id), 'NA', bh.bh_circuit_id) AS bh_circuit_id,
+            IF(isnull(bh.ttsl_circuit_id), 'NA', bh.ttsl_circuit_id) AS bh_ttsl_circuit_id,
+            IF(isnull(bh.pe_hostname), 'NA', bh.pe_hostname) AS bh_pe_hostname,
+            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bs.bs_switch_id), 'NA', bs_switch_device.ip_address) AS bs_switch_ip,
+            IF(isnull(bh.aggregator_id), 'NA', aggr_switch.ip_address) AS aggregation_switch,
+            IF(isnull(bh.aggregator_port_name), 'NA', bh.aggregator_port_name) AS aggregation_switch_port,
+            IF(isnull(bh.bh_switch_id), 'NA', bh_switch.ip_address) AS bs_converter_ip, 
+            IF(isnull(bh.pop_id), 'NA', pop_device.ip_address) AS pop,
+            IF(isnull(bh.bh_configured_on_id), 'NA', bh_conf_on.ip_address) AS bh_configured_on,
+            IF(isnull(bh_conf_on.device_type), 'NA', bh_dtype.name) AS bh_device_type,
+            IF(isnull(bh.switch_port), 'NA', bh.switch_port) AS bh_device_port
+        FROM
+            inventory_basestation AS bs
+        LEFT JOIN
+            device_device AS bs_switch_device
+        ON
+            bs.bs_switch_id = bs_switch_device.id
+        LEFT JOIN
+            device_state as state
+        ON
+            bs.state_id = state.id
+        LEFT JOIN
+            device_city as city
+        ON
+            bs.city_id = city.id
+        LEFT JOIN
+            inventory_backhaul AS bh
+        ON
+            bs.backhaul_id = bh.id
+        LEFT JOIN
+            device_device AS bh_conf_on
+        ON
+            bh.bh_configured_on_id = bh_conf_on.id
+        LEFT JOIN
+            device_devicetype AS bh_dtype
+        ON
+            bh_conf_on.device_type = bh_dtype.id
+        LEFT JOIN
+            device_device AS aggr_switch
+        ON
+            bh.aggregator_id = aggr_switch.id
+        LEFT JOIN
+            device_device AS bh_switch
+        ON
+            bh.bh_switch_id = bh_switch.id
+        LEFT JOIN
+            device_device AS pop_device
+        ON
+            bh.pop_id = pop_device.id
+        WHERE
+            {0}
+        '''.format(where_condition)
+    
+    # Execute query
+    bh_info = fetch_raw_result(query)
+
+    return bh_info
+
+
 def getSSInventoryInfo(sub_station_id=None):
     """
     This function returns SS inventory info which are shown on SS tooltip on gmap & other places
