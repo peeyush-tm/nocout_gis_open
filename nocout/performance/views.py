@@ -4225,7 +4225,7 @@ class DeviceServiceDetail(View):
                 sds_names.append(temp_sds_name)
 
             service_data_sources[temp_s_name, temp_sds_name] = s['servicespecificdatasource__service_data_sources__alias']
-            srv_alias = s['servicespecificdatasource__service_data_sources__alias']
+
             try:
                 sds_key = s['name'].strip().lower() + '_' + temp_sds_name.strip().lower()
                 if sds_key in SERVICE_DATA_SOURCE:
