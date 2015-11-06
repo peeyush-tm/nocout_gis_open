@@ -4224,6 +4224,7 @@ class DeviceServiceDetail(View):
             else:
                 sds_names.append(temp_sds_name)
 
+            service_data_sources[temp_s_name, temp_sds_name] = s['servicespecificdatasource__service_data_sources__alias']
             srv_alias = s['servicespecificdatasource__service_data_sources__alias']
             try:
                 sds_key = s['name'].strip().lower() + '_' + temp_sds_name.strip().lower()
@@ -4235,8 +4236,6 @@ class DeviceServiceDetail(View):
                         valuesuffix_list.append(SERVICE_DATA_SOURCE[sds_key]['valuesuffix'])
             except Exception, e:
                 pass
-            
-            service_data_sources[temp_s_name, temp_sds_name] = srv_alias
 
             if 'ul' in temp_s_name.lower():
                 appnd = 'UL : '
@@ -4244,6 +4243,7 @@ class DeviceServiceDetail(View):
                 appnd = 'DL : '
             else:
                 appnd = ''
+
             service_data_sources[temp_s_name, temp_sds_name] = appnd + service_data_sources[temp_s_name, temp_sds_name]
 
         performance = PerformanceService.objects.filter(
@@ -4270,8 +4270,19 @@ class DeviceServiceDetail(View):
                             c = colors[1]
                         else:
                             pass
+                    try:
+                        alias = service_data_sources[data.service_name.strip().lower(), data.data_source.strip().lower()]
+                    except Exception, e:
+                        alias = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['service_alias']
+                        name = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['service_name']
+                        if 'ul' in name.lower():
+                            alias = 'UL : ' + alias
+                        elif 'dl' in name.lower():
+                            alias = 'DL : ' + alias
+                        else:
+                            alias = alias
                     temp_chart_data[data.service_name, data.data_source] = {
-                        'name': srv_alias,
+                        'name': alias,
                         'data': [],
                         'color': c,
                         'type': SERVICE_DATA_SOURCE[data.service_name.strip() + "_" +data.data_source.strip()]['type']
