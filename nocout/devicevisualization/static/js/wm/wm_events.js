@@ -236,7 +236,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
 				if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
 					var bs_id_list = getMarkerInCurrentBound();
-					console.log(bs_id_list);
 	            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
 	            		gisPerformanceClass.start(bs_id_list);
 	            	}

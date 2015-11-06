@@ -108,6 +108,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from inventory.utils.util import getDeviceTypeNamedDict, getFrequencyDict
+from django.core.urlresolvers import reverse
 
 logger = logging.getLogger(__name__)
 
@@ -116,11 +117,37 @@ logger = logging.getLogger(__name__)
 nocout_utils = NocoutUtilsGateway()
 
 
-def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
+def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}, base_urls={}):
     """
 
     """
     ss_dict = {}
+
+    if not base_urls:
+        # Create performance page base url
+        try:
+            perf_page_base_url = reverse(
+                'SingleDevicePerf',
+                kwargs={
+                    'page_type': 'page_type', 
+                    'device_id': 0
+                },
+                current_app='performance'
+            )
+        except Exception, e:
+            perf_page_base_url = ''
+
+        # Create device inventory page base url
+        try:
+            inventory_base_url = reverse(
+                'device_edit',
+                kwargs={
+                    'pk': 0
+                },
+                current_app='device'
+            )
+        except Exception, e:
+            inventory_base_url = ''
 
     if not ss_dataset:
         return ss_dict
@@ -198,6 +225,20 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
 
                 label_str = ''
 
+                page_type = 'customer'
+                performance_url = ''
+                inventory_url = ''
+
+                if base_urls.get('performance'):
+                    performance_url = base_urls.get('performance')
+                    performance_url = performance_url.replace('page_type', page_type)
+                    performance_url = performance_url.replace('0', str(device_id))
+
+                if base_urls.get('inventory'):
+                    inventory_url = base_urls.get('inventory')
+                    inventory_url = inventory_url.replace('page_type', page_type)
+                    inventory_url = inventory_url.replace('0', str(device_id))
+
                 # Only in case if we have extra info then
                 if len(data_list) > 12:
 
@@ -271,6 +312,11 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
                     except Exception, e:
                         rssi_during_acceptance = 'NA'
 
+                    try:
+                        date_of_acceptance = data_list[25]
+                    except Exception, e:
+                        date_of_acceptance = 'NA'
+
                     label_str += unicode(circuit_id) + '|'
                     label_str += unicode(customer_alias) + '|'
                     label_str += unicode(ip_address) + '|'
@@ -284,10 +330,12 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
                     label_str += unicode(ethernet_extender) + '|'
                     label_str += unicode(building_height) + '|'
                     label_str += unicode(tower_height) + '|'
+                    label_str += unicode(technology) + '|'
                     label_str += unicode(latitude) + ', ' + unicode(longitude) + '|'
                     label_str += unicode(customer_address) + '|'
                     label_str += unicode(ss_alias) + '|'
                     label_str += unicode(rssi_during_acceptance) + '|'
+                    label_str += unicode(date_of_acceptance)
 
                 ss_info = {
                     'id': ss_id,
@@ -299,6 +347,8 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}):
                     'device_tech': technology,
                     'lat': latitude,
                     'lon': longitude,
+                    'inventory_url': inventory_url,
+                    'perf_page_url': performance_url,
                     'circuit_id': circuit_id,
                     'markerUrl': icon_url,
                     'antenna_height': antenna_height,
@@ -320,6 +370,36 @@ def prepare_raw_result_v2(resultset=None):
 
     if not resultset:
         return result
+
+    # Create performance page base url
+    try:
+        perf_page_base_url = reverse(
+            'SingleDevicePerf',
+            kwargs={
+                'page_type': 'page_type', 
+                'device_id': 0
+            },
+            current_app='performance'
+        )
+    except Exception, e:
+        perf_page_base_url = ''
+
+    # Create device inventory page base url
+    try:
+        inventory_base_url = reverse(
+            'device_edit',
+            kwargs={
+                'pk': 0
+            },
+            current_app='device'
+        )
+    except Exception, e:
+        inventory_base_url = ''
+
+    base_urls_dict = {
+        'inventory': inventory_base_url,
+        'performance': perf_page_base_url
+    }
 
     # Get the device type dict to get the device type gmap icon
     device_type_dict = getDeviceTypeNamedDict()
@@ -349,6 +429,7 @@ def prepare_raw_result_v2(resultset=None):
             'icon_url': 'static/img/icons/bs.png',
             'bh_id': bs.get('BHID'),
             'bh_device_id': bs.get('BHDEVICEID'),
+            'bh_device_ip': bs.get('BHDEVICEIP'),
             'bh_device_type': bs.get('BHDEVICETYPE'),
             'bh_device_tech': bs.get('BHDEVICETECH'),
             'maintenance_status': bs.get('BSMAINTENANCESTATUS'),
@@ -367,7 +448,12 @@ def prepare_raw_result_v2(resultset=None):
             sector_info = sector_info_str.split('-|-|-')
             ss_info_dict = {}
             if ss_info_str:
-                ss_info_dict = prepare_ss_info_dict(ss_info_str.split('-|-|-'), device_type_dict, freq_dict)
+                ss_info_dict = prepare_ss_info_dict(
+                    ss_info_str.split('-|-|-'),
+                    device_type_dict,
+                    freq_dict,
+                    base_urls_dict
+                )
 
             for info in sector_info:
                 splitted_str = info.split('|')
@@ -481,6 +567,47 @@ def prepare_raw_result_v2(resultset=None):
                     # Concat Circuit ID's
                     temp_dict['circuit_ids'] += '|'.join(circuit_list) + '|'
 
+                    perf_page_url = ''
+                    inventory_url = ''
+                    page_type = 'customer'
+                    # Check for technology to make perf page url
+                    if technology.lower() in ['pmp', 'wimax', 'ptp bh']:
+                        page_type = 'network'
+
+                    if perf_page_base_url:
+                        perf_page_url = perf_page_base_url
+                        perf_page_url = perf_page_url.replace('page_type', page_type)
+                        perf_page_url = perf_page_url.replace('0', device_id)
+                    else:
+                        # Create Perf page url
+                        try:
+                            perf_page_url = reverse(
+                                'SingleDevicePerf',
+                                kwargs={
+                                    'page_type': page_type, 
+                                    'device_id': device_id
+                                },
+                                current_app='performance'
+                            )
+                        except Exception, e:
+                            pass
+
+                    # Sector Device Inventory URL
+                    if inventory_base_url:
+                        inventory_url = inventory_base_url
+                        inventory_url = inventory_url.replace('0', device_id)
+                    else:
+                        try:
+                            inventory_url = reverse(
+                                'device_edit',
+                                kwargs={
+                                    'pk': device_id
+                                },
+                                current_app='device'
+                            )
+                        except Exception, e:
+                            pass
+
                     sector = {
                         'id': sector_pk,
                         'device_name': device_name,
@@ -493,6 +620,8 @@ def prepare_raw_result_v2(resultset=None):
                         'markerUrl': gmap_icon,
                         'color': color,
                         'radius': radius,
+                        'inventory_url': inventory_url,
+                        'perf_page_url': perf_page_url,
                         'freq': freq_val,
                         'ip_address': sector_ip,
                         'polarization': polarization,

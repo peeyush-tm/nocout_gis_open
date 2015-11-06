@@ -4290,6 +4290,9 @@ function devicePlottingClass_gmap() {
 			//Loop ss info to populate 'Select Label' selectbox
 			for(var i=0;i<SSToolTipInfo.length;i++) {
 				var isSelected = "";
+				if (SSToolTipInfo[i]['name'].indexOf('pos_link') > -1) {
+					continue;
+				}
 				if($.trim(last_selected_label) === $.trim(SSToolTipInfo[i]['name'])) {
 					isSelected = 'selected="selected"';
 				}

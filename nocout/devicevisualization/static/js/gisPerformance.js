@@ -376,9 +376,7 @@ function GisPerformance() {
                 try {
                     // Update BH polled info & severity value
                     bs_marker['bhInfo_polled'] = perf_bh_info;
-                    bs_marker['bsInfo'] = bsInfo;
                     bs_marker['bhSeverity'] = perf_bh_severity;
-                    bs_marker['bhInfo'] = bhInfo;
                     bs_marker['pl'] = bh_pl;
 
                     // If we have BS maintenance status then update it in Bs marker
@@ -732,6 +730,7 @@ function GisPerformance() {
                                     ss_marker_object['icon'] = ss_marker_icon;
                                     ss_marker_object['oldIcon'] = ss_marker_icon;
                                     ss_marker_object['clusterIcon'] = ss_marker_icon;
+                                    ss_marker_object['isActive'] = 1;
                                     ss_marker_object['layerReference'] = ccpl_map.getLayersByName("Markers")[0];
 
                                     var other_size_obj = whiteMapClass.getMarkerSize_wmap(false),
@@ -1348,7 +1347,7 @@ function GisPerformance() {
                     condition3 = "";
                 new_sector_loop:
                 for(var j=0;j<sectorArray.length;j++) {
-                    if(sectorArray[j].sub_station && sectorArray[j].sub_station.length > 0) {
+                    if(sectorArray[j].sub_stations && sectorArray[j].sub_stations.length > 0) {
 
                         condition1 = connected_sectors[i].device_name == sectorArray[j].device_name;
                         condition2 = connected_sectors[i].ip_address == sectorArray[j].ip_address;

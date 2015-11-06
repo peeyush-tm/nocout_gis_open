@@ -3907,41 +3907,36 @@ class GISStaticInfo(View):
         # loop through all base stations having id's in bs_ids list
         try:
             for bs_id in bs_ids:
+                
+                devices_ip_address_list = list()
                 # increment base station counter
                 bs_counter += 1
 
-                # get raw bs inventory
-                # bs_result = nocout_utils.non_cached_all_gis_inventory(bs_id=bs_id)
-
-                # we need to prepare bs wise list # this would cache static data for 300 seconds
-                # bs_id_wise_result = prepare_raw_result(bs_result)
-                # this would prepare the results for the bs id we are interested in cached for 300 seconds
-                # inventory = prepare_raw_bs_result(bs_id_wise_result[bs_id])
-
                 # get formatted bs inventory
-                # inventory = prepare_raw_bs_result(bs_result,True)
                 inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
 
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
-                bh_device = None
-                bh_device_ip = ""
-                # for d in inventory['data']['param']['backhual']:
-                #     if 'bh_configured_on' in d['name']:
-                #         bh_device_ip = d['value'].rstrip('|')
-                #         bh_device = Device.objects.get(ip_address=bh_device_ip)
+                bh_device_ip = inventory.get('bh_device_ip')
+                
+                try:
+                    bh_device = Device.objects.get(ip_address=bh_device_ip)
+                except Exception, e:
+                    bh_device = None
 
-                devices_ip_address_list = list()
+                # append backhaul device ip address
+                if bh_device_ip and bh_device:
+                    devices_ip_address_list.append(bh_device_ip)
+
                 for sector in inventory['sectors']:
                     if sector['ip_address']:
                         devices_ip_address_list.append(sector['ip_address'])
-                    # append backhaul device ip address
-                    if bh_device_ip:
-                        devices_ip_address_list.append(bh_device_ip)
                     for sub_station in sector['sub_stations']:
                         if sub_station['ip_address']:
                             devices_ip_address_list.append(sub_station['ip_address'])
 
-                bs_devices = Device.objects.filter(ip_address__in=devices_ip_address_list).values(
+                bs_devices = Device.objects.filter(
+                    ip_address__in=devices_ip_address_list
+                ).values(
                     'device_name',
                     'machine__name',
                     'device_technology',
@@ -3951,15 +3946,14 @@ class GISStaticInfo(View):
 
                 machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
 
-
                 complete_performance = get_complete_performance(machine_dict)
 
                 # ********************************* BACKHAUL PERF INFO (START) ***********************************
-                if bh_device:
+                if bh_device_ip and bh_device:
                     backhaul_data = self.get_backhaul_info(bh_device, complete_performance['network_perf_data'])
-                    inventory['data']['param']['bh_polled_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
-                    inventory['data']['param']['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
-                    inventory['data']['param']['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
+                    inventory['bh_polled_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
+                    inventory['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
+                    inventory['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
 
                 # ********************************** BACKHAUL PERF INFO (END) ************************************
 
@@ -4011,13 +4005,16 @@ class GISStaticInfo(View):
                             'device_service_name': service,
                             'device_service_data_source': data_source
                         }
-                        sector_extra_info = self.get_extra_info(perf_payload,
-                                                                freeze_time,
-                                                                ts_type,
-                                                                sector_configured_on_type,
-                                                                user_thematics,
-                                                                complete_performance,
-                                                                sector_obj)
+
+                        sector_extra_info = self.get_extra_info(
+                            perf_payload,
+                            freeze_time,
+                            ts_type,
+                            sector_configured_on_type,
+                            user_thematics,
+                            complete_performance,
+                            sector_obj
+                        )
 
                         sector['markerUrl'] = sector_extra_info['markerUrl']
                         sector['radius'] = sector_extra_info['radius']
@@ -4071,17 +4068,22 @@ class GISStaticInfo(View):
                                     'device_service_data_source': data_source
                                 }
 
-                                substation_extra_info = self.get_extra_info(perf_payload,
-                                                                            freeze_time,
-                                                                            ts_type,
-                                                                            substation_device_type,
-                                                                            user_thematics,
-                                                                            complete_performance)
+                                substation_extra_info = self.get_extra_info(
+                                    perf_payload,
+                                    freeze_time,
+                                    ts_type,
+                                    substation_device_type,
+                                    user_thematics,
+                                    complete_performance
+                                )
+
                                 sub_station['markerUrl'] = substation_extra_info['markerUrl']
+
                                 if substation_extra_info['color']:
                                     sub_station['link_color'] = substation_extra_info['color']
                                 else:
                                     sub_station['link_color'] = sector_extra_info['color']
+
                                 sub_station['perf_value'] = substation_extra_info['perf_value']
                                 sub_station['pl'] = substation_extra_info['pl']
                                 sub_station['pl_timestamp'] = substation_extra_info['pl_timestamp']
@@ -5157,48 +5159,68 @@ def get_complete_performance(machine_dict):
     inventory_perf_data = list()
     status_perf_data = list()
     utilization_perf_data = list()
+    polled_columns = [
+        'device_name',
+        'service_name',
+        'data_source',
+        'current_value',
+        'sys_timestamp',
+        'severity'
+    ]
 
     for machine_name in machine_dict:
         devices_list = machine_dict[machine_name]
 
         # device network info
-        device_network_info = NetworkStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        device_network_info = NetworkStatus.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         network_perf_data.extend(list(device_network_info))
 
         # device performance info
-        performance_network_info = PerformanceStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        performance_network_info = PerformanceStatus.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         performance_perf_data.extend(list(performance_network_info))
 
         # device service info
-        device_service_info = ServiceStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        device_service_info = ServiceStatus.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         service_perf_data.extend(list(device_service_info))
 
         # device inventory info
-        device_inventory_info = InventoryStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        device_inventory_info = InventoryStatus.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         inventory_perf_data.extend(list(device_inventory_info))
 
         # device status info
-        device_status_info = Status.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        device_status_info = Status.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         status_perf_data.extend(list(device_status_info))
 
         # device utilization info
-        device_utilization_info = UtilizationStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        device_utilization_info = UtilizationStatus.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         utilization_perf_data.extend(list(device_utilization_info))

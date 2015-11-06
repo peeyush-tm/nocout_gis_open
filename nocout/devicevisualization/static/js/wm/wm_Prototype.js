@@ -579,6 +579,7 @@ WhiteMapClass.prototype.createOpenLayerVectorMarker= function(size, iconUrl, lon
 
 	var feature= "",
 		point = new OpenLayers.Geometry.Point(lon, lat);
+
 	//If size and iconUrl is present, create Vector feature using those
 	if(size && iconUrl) {
 		feature = new OpenLayers.Feature.Vector(
@@ -784,7 +785,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(pointsArray, sectorInfo) {
     	}
     }
 
-    allMarkersObject_wmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+sectorInfo.sector_id] = poly;
+    allMarkersObject_wmap['sector_polygon']['poly_'+sectorInfo.sectorName+"_"+sectorInfo.sector_id] = poly;
 
 	if(polyInfo.sector_child) {
 		for(var i=polyInfo.sector_child.length;i--;) {

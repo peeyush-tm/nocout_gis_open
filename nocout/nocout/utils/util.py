@@ -2562,7 +2562,8 @@ def get_maps_initial_data_query(bs_id=[]):
                 IF(isnull(ss.tower_height), 'NA', ss.tower_height), '|',
                 IF(isnull(customer.address), 'NA', customer.address), '|',
                 IF(isnull(ss.alias), 'NA', ss.alias), '|',
-                IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance)
+                IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance), '|',
+                IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance)
             ) SEPARATOR '-|-|-') AS SS_STR
         '''
 
@@ -2578,6 +2579,7 @@ def get_maps_initial_data_query(bs_id=[]):
             IF(isnull(bs.longitude), 'NA', bs.longitude) AS BSLON,
             IF(isnull(backhaul.id), 'NA', backhaul.id) AS BHID,
             IF(isnull(bh_device.id), 'NA', bh_device.id) AS BHDEVICEID,
+            IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS BHDEVICEIP,
             IF(isnull(bh_type.name), 'NA', bh_type.name) AS BHDEVICETYPE,
             IF(isnull(bh_tech.name), 'NA', bh_tech.name) AS BHDEVICETECH,
             {0},
