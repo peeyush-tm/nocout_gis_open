@@ -57,3 +57,23 @@ def get_child_users(user=None, limit='org'):
             child_users = child_users.filter(organization__in=link_org)
 
         return child_users
+
+
+def can_edit_permissions(login_user=None, check_user=None):
+    """
+    Check whether user is allowed to edit permissions of other user or not.
+    :param login_user:
+    :param check_user:
+    :return:
+    """
+    if login_user and check_user:
+        # Get organizations user associated or linked with.
+        link_org = get_user_organizations(login_user)
+
+        user_descendants = login_user.userprofile.get_descendants().filter(organization__in=link_org)
+        if check_user.userprofile in user_descendants:
+            return True
+        else:
+            return False
+    else:
+        return False

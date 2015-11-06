@@ -2438,9 +2438,6 @@ def time_delta_calculator(timestamp, hours=0, minutes=0, seconds=0):
         return False
 
 
-
-
-
 def getAdvanceFiltersSuggestions(request):
     '''
     This function returns the autosuggestions for advance filters as per the GET params
@@ -2493,7 +2490,6 @@ def getAdvanceFiltersSuggestions(request):
             result['message'] = 'Data fetched successfully'
 
     return HttpResponse(json.dumps(result), content_type="application/json")
-
 
 @cache_for(CACHE_TIME.get('INVENTORY', 300))  # caching GIS inventory
 def get_maps_initial_data_cached(bs_id=[]):

@@ -78,7 +78,7 @@ import logging
 from copy import deepcopy
 from pprint import pformat
 from multiprocessing import Process, Queue
-from django.db.models import Count
+from django.db.models import Count,Q
 from django.views.generic.base import View
 from django.http import HttpResponse
 from device.models import Device, DeviceType, DeviceVendor, DeviceTechnology, State, City, DeviceModel, \
@@ -112,6 +112,11 @@ from django.core.urlresolvers import reverse
 
 logger = logging.getLogger(__name__)
 
+# Create service utils instance
+service_utils = ServiceUtilsGateway()
+
+# Create SDS data dict
+SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
@@ -1981,11 +1986,26 @@ class BulkFetchLPDataApi(View):
         except Exception as e:
             ds_name = ""
 
+        # Create SDS key
+        try:
+            sds_key = service_name + '_' + ds_name
+        except Exception, e:
+            sds_key = ''
+
+
         # Thematic settings.
         try:
             ts_type = self.request.GET.get('ts_type', None)
         except Exception as e:
             ts_type = ""
+
+        try:
+            if sds_key in SERVICE_DATA_SOURCE:
+                sds_data = SERVICE_DATA_SOURCE.get(sds_key)
+                ds_name = sds_data.get('ds_name') if sds_data.get('ds_name') else ds_name
+                service_name = sds_data.get('service_name') if sds_data.get('service_name') else service_name
+        except Exception, e:
+            pass
 
         # Exceptional services, i.e. 'ss' services which get service data from 'bs' instead from 'ss'.
         exceptional_services = [
@@ -1996,7 +2016,7 @@ class BulkFetchLPDataApi(View):
             'rad5k_dl_time_slot_alloted_invent','rad5k_ul_time_slot_alloted_invent',  'rad5k_dl_estmd_throughput_invent', 
             'rad5k_ul_estmd_throughput_invent', 'rad5k_ul_uas_invent', 'rad5k_dl_es_invent', 'rad5k_ul_ses_invent', 
             'rad5k_ul_bbe_invent','rad5k_ss_cell_radius_invent', 'rad5k_ss_cmd_rx_pwr_invent', 'rad5k_ss_dl_utilization', 
-            'rad5k_ss_ul_utilization'
+            'rad5k_ss_ul_utilization', 'wimax_qos_invent', 'wimax_ss_session_uptime'
         ]
 
         # Service for which live polling runs.
@@ -2094,8 +2114,7 @@ class BulkFetchLPDataApi(View):
             result['data']['meta']['valuesuffix'] = ds_dict[ds_name]['valuesuffix'] if 'valuesuffix' in ds_dict[
                 ds_name] else ""
 
-            result['data']['meta']['valuetext'] = ds_dict[ds_name]['valuetext'] if 'valuetext' in ds_dict[
-                ds_name] else ""
+            result['data']['meta']['valuetext'] = ds_dict[ds_name]['valuetext'] if 'valuetext' in ds_dict[ds_name] else ""
             # Device Type Parameter of Device Name.
             device_type = Device.objects.filter(device_name__in=devices).values_list('device_type', flat=True)
             # Device Type warn crit params corresponding to Device.
@@ -2138,6 +2157,16 @@ class BulkFetchLPDataApi(View):
                 result['data']['meta']['chart_color'] = ds_obj.chart_color
                 result['data']['meta']['is_inverted'] = ds_obj.is_inverted
                 result['data']['meta']['data_source_type'] = ds_obj.ds_type_name()
+                result['data']['meta']['valuetext'] = ''
+                result['data']['meta']['valuesuffix'] = ''
+
+                try:
+                    result['data']['meta']['valuetext'] = ds_obj.valuetext
+                    result['data']['meta']['valuesuffix'] = ds_obj.valuesuffix
+                except Exception, e:
+                    result['data']['meta']['valuetext'] = ''
+                    result['data']['meta']['valuesuffix'] = ''
+
                 try:
                     result['data']['meta']['warning'] = ds_obj.warning
                     result['data']['meta']['critical'] = ds_obj.critical
@@ -6358,6 +6387,52 @@ class ResetServiceConfiguration(APIView):
 
         except Exception as e:
             logger.info(e.message)
+
+        return Response(result)
+
+
+class GetDataSourceforDisplayType(APIView):
+    """
+    Fetch type corresponding to the selected technology.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_tech_types/4/"
+    """
+
+    def get(self, request):
+        search = self.request.GET.get('search', None)
+        plot_type = self.request.GET.get('display_type', None)
+
+        # Response of api.
+        result = list()
+
+        # Fetch data_sources associated with the selected type and search text.
+        if search:
+            if plot_type == "table":
+                data_sources = ServiceDataSource.objects.filter(
+                    Q(alias__icontains=search)
+                    &
+                    Q(chart_type="table")).order_by('alias')
+            else:
+                data_sources = ServiceDataSource.objects.filter(
+                    Q(alias__icontains=search)
+                    &
+                    (~Q(chart_type="table")&Q(data_source_type=1))).order_by('alias')
+        else:
+             data_sources = ServiceDataSource.objects.filter( Q(chart_type = "table")if plot_type == "table" else
+                                                              (~Q(chart_type="table")&Q(data_source_type=1))).order_by('alias')
+
+        for value in data_sources:
+            services= value.service_set.all()
+            for service in services:
+                if '_invent' not in service.name and '_status' not in service.name:
+                    result.append({
+                        'id': str(value.id) + '_' + str(service.id),
+                        'text': value.alias + " - "+ str(service.alias),
+                        'name' : value.name
+                    })
+
 
         return Response(result)
 

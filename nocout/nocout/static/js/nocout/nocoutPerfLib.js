@@ -380,11 +380,12 @@ function nocoutPerfLib() {
         var active_class = tab_content_config.active_class ? tab_content_config.active_class : "",
             unique_key = tab_content_config.unique_key ? tab_content_config.unique_key : "",
             id = unique_key ? unique_key + "_block" : "",
-            show_last_updated = tab_content_config.show_last_updated != undefined ? tab_content_config.show_last_updated : true,
+            show_last_updated = tab_content_config.show_last_updated != 'undefined' ? tab_content_config.show_last_updated : true,
             last_updated_id = unique_key ? "last_updated_" + unique_key + "_block" : "",
             chart_id = unique_key ? unique_key + "_chart" : "",
             bottom_table_id = unique_key ? unique_key + "_bottom_table" : "",
             legends_block_id = unique_key ? unique_key + "_legends_block" : "";
+
 
         content_html += '<div class="tab-pane ' + active_class+ '" id="' + id+ '">';
 
@@ -393,6 +394,7 @@ function nocoutPerfLib() {
                             <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
                             </div>';
         }
+        
         if (tab_content_config.tab_id == 'live_poll_now') {
             content_html += '<div class="col-md-1">\
                                 <button class="btn btn-default btn-sm single_perf_poll_now " title="Poll Now" \
@@ -532,7 +534,7 @@ function nocoutPerfLib() {
                                 if (device_services && device_services.length > 0) {
                                     var tabs_hidden_class = "";
                                     
-                                    if (device_services.length == 1) {
+                                    if (device_services.length == 1 && tab_id.indexOf('custom_dashboard') == -1) {
                                         tabs_hidden_class = "hide";
                                     }
 
@@ -547,10 +549,10 @@ function nocoutPerfLib() {
                                         $("#" + tab_id).parent("li").addClass("active");
                                         $("#" + service_key).addClass("active");
                                     }
-
+                                    
                                     $.each(device_services, function (key, value) {
-
-                                        var unique_item_key = service_key+ '_' + String(count)+ '_' + String(i),
+                                        var sds_key = value.sds_key ? value.sds_key : '',
+                                            unique_item_key = service_key+ '_' + String(count)+ '_' + String(i),
                                             active_class = '';
 
                                         if (is_first_tab == 1 && count == 0) {
@@ -563,6 +565,12 @@ function nocoutPerfLib() {
                                             active_class = 'active';
                                         }
 
+                                        var show_last_updated = true;
+
+                                        if (unique_item_key.indexOf('custom_dashboard') > -1) {
+                                            show_last_updated = false;
+                                        }
+
                                         var tab_info_obj = {
                                                 'active_class' : active_class,
                                                 'unique_key' : unique_item_key,
@@ -573,9 +581,8 @@ function nocoutPerfLib() {
                                             content_info_obj = {
                                                 'active_class' : active_class,
                                                 'unique_key' : unique_item_key,
-                                                'show_last_updated' : true,
+                                                'show_last_updated' : show_last_updated,
                                             };
-
 
                                         // Create Tab HTML
                                         service_tabs += perf_that.make_tab_li_html(tab_info_obj);
@@ -590,13 +597,17 @@ function nocoutPerfLib() {
                                         if ((show_historical_on_performance && all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) || is_perf_polling_enabled) {
 
                                             if(all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) {
-                                                service_tabs_data += '<div class="tab-pane ' + active_class+ '" id="' + unique_item_key+ '_block">\
-                                                                      <div align="center" class="last_updated_container" id="last_updated_' + unique_item_key+ '_block">\
+                                                
+                                                service_tabs_data += '<div class="tab-pane ' + active_class+ '" id="' + unique_item_key+ '_block">';
+                                                if (show_last_updated) {
+                                                    service_tabs_data += '<div align="center" class="last_updated_container" id="last_updated_' + unique_item_key+ '_block">\
                                                                       <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
-                                                                      </div><div class="tabbable"><ul class="nav nav-tabs inner_inner_tab">';
+                                                                      </div>';
+                                                }
+
+                                                service_tabs_data += '<div class="tabbable"><ul class="nav nav-tabs inner_inner_tab">';
 
                                                 if(show_historical_on_performance) {
-                                                    // inner_inner_tabs = tabs_with_historical;
                                                     inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
                                                     if(unique_item_key.indexOf('_status') == -1) {
                                                         inner_inner_tabs = inner_inner_tabs.concat(tabs_with_historical);
@@ -610,12 +621,14 @@ function nocoutPerfLib() {
 
                                                 // If poll now flag enabled
                                                 if(is_perf_polling_enabled) {
-                                                    // Append poll now  & live tab
-                                                    if(!inner_inner_tabs.length) {
-                                                        inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
-                                                    }
-                                                    if(non_polled_ids.indexOf(value["name"]) == -1) {
-                                                        inner_inner_tabs = inner_inner_tabs.concat(poll_now_tab);
+                                                    if (non_poll_sds.indexOf(sds_key) == -1) {
+                                                        // Append poll now  & live tab
+                                                        if(!inner_inner_tabs.length) {
+                                                            inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
+                                                        }
+                                                        if(non_polled_ids.indexOf(value["name"]) == -1) {
+                                                            inner_inner_tabs = inner_inner_tabs.concat(poll_now_tab);
+                                                        }
                                                     }
                                                 }
                                                 
@@ -702,7 +715,7 @@ function nocoutPerfLib() {
                                     // service_tabs_data += '</div>';
                                     tabs_with_data = service_tabs + " " + service_tabs_data;
                                 } else {
-                                    if (!$("#" + tab_id).hasClass("hide")) {
+                                    if (!$("#" + tab_id).hasClass("hide") && tab_id.indexOf('custom_dashboard') == -1) {
                                         $("#" + tab_id).addClass("hide");
                                     }
                                 }
@@ -712,7 +725,7 @@ function nocoutPerfLib() {
                         }
 
                         /*Bind click event on tabs*/
-                        $('.inner_tab_container > .panel-body > .tabs-left > ul.nav-tabs > li > a').click(function (e) {
+                        $('.inner_tab_container .panel-body .tabs-left').delegate('ul.nav-tabs > li > a', 'click', function (e) {
                             // show loading spinner
                             // showSpinner();
                             var current_target = e.currentTarget,
@@ -982,9 +995,10 @@ function nocoutPerfLib() {
         var draw_type = $("input[name='item_type']:checked").val(),
             listing_ajax_url = "",
             listing_headers = default_live_table_headers,
-            is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
+            is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1,
+            is_custom_view = clicked_tab_id.indexOf('custom') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('custom') > -1;
 
-        if (!draw_type || clicked_tab_id.indexOf('bird') > -1) {
+        if (!draw_type || clicked_tab_id.indexOf('bird') > -1 || clicked_tab_id.indexOf('custom_dashboard') > -1) {
             draw_type = "chart";
         }
 
@@ -1070,7 +1084,7 @@ function nocoutPerfLib() {
         }
 
         if(listing_ajax_url.indexOf("_invent") > -1 || listing_ajax_url.indexOf("_status") > -1) {
-            if (clicked_tab_id.indexOf('bird') == -1) {
+            if (clicked_tab_id.indexOf('bird') == -1 || clicked_tab_id.indexOf('custom') == -1) {
                 // Hide display type option from only table tabs
                 if (!$("#display_type_container").hasClass("hide")) {
                     $("#display_type_container").addClass("hide")
@@ -1136,6 +1150,9 @@ function nocoutPerfLib() {
             var urlDataStartDate = '', urlDataEndDate = '';
             if (ajax_start_date == '' && ajax_end_date == '') {
                 // Pass
+            } else if(clicked_tab_id.indexOf('custom') > -1) {
+                urlDataStartDate = getDateInEpochFormat(ajax_start_date);
+                urlDataEndDate = getDateInEpochFormat(ajax_end_date);
             } else if(clicked_tab_id.indexOf('bird') > -1) {
                 // Pass
             } else {
@@ -1230,7 +1247,7 @@ function nocoutPerfLib() {
                                 ||
                                 listing_ajax_url.indexOf('availability') > -1) {
                                 
-                                if (!is_birdeye_view) {
+                                if (!is_birdeye_view && !is_custom_view) {
                                     // Show display type option from only table tabs
                                     if (!$("#display_type_container").hasClass("hide")) {
                                         $("#display_type_container").addClass("hide")
@@ -1244,7 +1261,7 @@ function nocoutPerfLib() {
                                     updateDropdownHtml();
                                 }
                             } else {
-                                if (!is_birdeye_view) {
+                                if (!is_birdeye_view && !is_custom_view) {
                                     // Show display type option from only table tabs
                                     if ($("#display_type_container").hasClass("hide")) {
                                         $("#display_type_container").removeClass("hide")
@@ -1255,7 +1272,7 @@ function nocoutPerfLib() {
                             // If any data available then plot chart & table
                             if (chart_config.chart_data.length > 0) {
                                 if (draw_type == 'chart') {
-                                    if (!is_birdeye_view) {
+                                    if (!is_birdeye_view && !is_custom_view) {
                                         // Destroy 'perf_data_table'
                                         nocout_destroyDataTable('other_perf_table');
                                     }
@@ -1267,7 +1284,7 @@ function nocoutPerfLib() {
                                         ||
                                         listing_ajax_url.indexOf('availability') > -1
                                     )) {
-                                        if (!is_birdeye_view) {
+                                        if (!is_birdeye_view && !is_custom_view) {
                                             nocout_destroyDataTable('perf_data_table');
                                         }
                                     }
@@ -1288,9 +1305,7 @@ function nocoutPerfLib() {
                                         ||
                                         listing_ajax_url.indexOf('availability') > -1
                                     ) {
-                                        if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
-                                            addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table');
-                                        } else {
+                                        if ($("#perf_data_table").length == 0 || !$("#perf_data_table").html()) {
                                             var contentHtml = createChartDataTableHtml_nocout(
                                                 "perf_data_table",
                                                 chart_config.chart_data
@@ -1329,16 +1344,18 @@ function nocoutPerfLib() {
                                                 sPaginationType: "full_numbers"
                                             });
                                         }
+                                        // Add data to table
+                                        addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table');
                                     }
 
                                 } else {
                                     // Destroy Highcharts
-                                    if (!is_birdeye_view) {
+                                    if (!is_birdeye_view && !is_custom_view) {
                                         nocout_destroyHighcharts(service_id);
                                     }
 
                                     if (listing_ajax_url.indexOf('servicedetail') == -1) {
-                                        if (!is_birdeye_view) {
+                                        if (!is_birdeye_view && !is_custom_view) {
                                             draw_type = 'table';
                                             // Update radio button selection
                                             $('#display_table').attr('checked', 'checked');
@@ -1361,8 +1378,10 @@ function nocoutPerfLib() {
                                 }
                             } else {
                                 if (draw_type == 'chart') {
-                                    if (!is_birdeye_view) {
-                                        nocout_destroyDataTable('perf_data_table');
+                                    if (!is_birdeye_view && !is_custom_view) {
+                                        if (!$('#' + service_id+ '_chart').highcharts()) {
+                                            nocout_destroyDataTable('perf_data_table');
+                                        }
                                     }
 
                                     if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
@@ -1384,7 +1403,7 @@ function nocoutPerfLib() {
                                         if (show_historical_on_performance && not_availability_page && not_live_tab) {
                                             table_headers = default_hist_table_headers;
                                         }
-                                        if (!is_birdeye_view) {
+                                        if (!is_birdeye_view && !is_custom_view) {
                                             draw_type = 'table';
                                             // Update radio button selection
                                             $('#display_table').attr('checked', 'checked');
@@ -1415,7 +1434,7 @@ function nocoutPerfLib() {
                             ||
                             listing_ajax_url.indexOf('availability') > -1
                         ) {
-                            if (!is_birdeye_view) {
+                            if (!is_birdeye_view && !is_custom_view) {
                                 // Show display type option from only table tabs
                                 if (!$("#display_type_container").hasClass("hide")) {
                                     $("#display_type_container").addClass("hide")
@@ -1430,7 +1449,7 @@ function nocoutPerfLib() {
                                 updateDropdownHtml();
                             }
                         } else {
-                            if (!is_birdeye_view) {
+                            if (!is_birdeye_view && !is_custom_view) {
                                 // Show display type option from only table tabs
                                 if ($("#display_type_container").hasClass("hide")) {
                                     $("#display_type_container").removeClass("hide")
@@ -1446,8 +1465,10 @@ function nocoutPerfLib() {
                                 ||
                                 listing_ajax_url.indexOf('availability') > -1
                             )) {
-                                if (!is_birdeye_view) {
-                                    nocout_destroyDataTable('perf_data_table');
+                                if (!is_birdeye_view && !is_custom_view) {
+                                    if (!$('#' + service_id+ '_chart').highcharts()) {
+                                        nocout_destroyDataTable('perf_data_table');
+                                    }
                                 }
                             }
                             if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
@@ -1465,7 +1486,7 @@ function nocoutPerfLib() {
                                 table_headers = default_hist_table_headers;
                             }
                             
-                            if (!is_birdeye_view) {
+                            if (!is_birdeye_view && !is_custom_view) {
                                 draw_type = 'table';
                                 // Update radio button selection
                                 $('#display_table').attr('checked', 'checked');

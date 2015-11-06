@@ -120,7 +120,9 @@ def live_query_pmp1_ul_util_kpi(hostname,site,war,crit,dr_slave):
 			pmp1_ul_kpi = ''
 	
 
-	if pmp1_ul_kpi != None:
+	if pmp1_ul_kpi != None and pmp1_ul_kpi != '':
+		if pmp1_ul_kpi > 100:
+                        pmp1_ul_kpi = 100.0
                 if pmp1_ul_kpi < war:
                         state = 0
                         state_string = "ok"

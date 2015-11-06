@@ -13,6 +13,14 @@ urlpatterns = patterns('',
                            views.LivePerformanceListing.as_view(),
                            name='LivePerformanceListing'
                        ),
+                       url(r'^get_topology/$',
+                           views.GetTopology.as_view(),
+                           name='DeviceTopology'
+                       ),
+                       url(r'^get_topology/tool_tip/$',
+                           views.GetTopologyToolTip.as_view(),
+                           name='DeviceTopologyToolTip'
+                       ),
                        url(r'^(?P<page_type>\w+)_live/(?P<device_id>\w+)/$',
                            views.GetPerfomance.as_view(),
                            name='SingleDevicePerf'
@@ -35,7 +43,17 @@ urlpatterns = patterns('',
                            r'^service/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>[-\w]+)/device/(?P<device_id>\d+)$',
                            views.GetServiceTypePerformanceData.as_view(),
                            name='GetServiceTypePerformanceData'
-                       ),
+                       ),                       
+                       url(
+                          r'^custom_dashboard/(?P<custom_dashboard_id>\d+)/device/(?P<device_id>\d+)$',
+                          views.CustomDashboardPerformanceData.as_view(),
+                          name='CustomDashboardPerformanceData'
+                          ),
+                        url(
+                          r'^listing/custom_dashboard/(?P<custom_dashboard_id>\d+)/device/(?P<device_id>\d+)$',
+                          views.CustomDashboardPerformanceListing.as_view(),
+                          name='CustomDashboardPerformanceListing'
+                          ),
                        url(
                            r'^headers/single_perf_page/$', 
                            views.ServiceDataSourceHeaders.as_view(), 
@@ -60,5 +78,6 @@ urlpatterns = patterns('',
                            r'get_severity_wise_status/',
                            views.GetSeverityWiseStatus.as_view(),
                            name='get_severity_wise_status'
-                       )
+                       ),
+                        
 )

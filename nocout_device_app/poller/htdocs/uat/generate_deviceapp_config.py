@@ -5,6 +5,12 @@ from nocout_logger import nocout_log
 from collections import namedtuple
 from itertools import izip_longest
 from datetime import datetime
+import memcache
+import imp
+
+nocout_site_name= 'master_UA'
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
+
 
 logger = nocout_log()
 
@@ -73,7 +79,7 @@ def prepare_hosts_file():
                 'radwin_bs_devices', 'wimax_ss_devices', 
                 'cambium_ss_devices', 'radwin_ss_devices', 
                 'total_radwin_devices', 'mrotek_devices',
-                'rici_devices', 'switch_devices'
+                'rici_devices', 'cisco_switch_devices', 'juniper_switch_devices'
                 ])
     all_hosts, ipaddresses, host_attributes = [], {}, {}
     wimax_bs_devices, cambium_bs_devices = [], []
@@ -101,8 +107,8 @@ def prepare_hosts_file():
     T.cambium_ss_devices = ss_devices.cambium_ss_devices
     T.mrotek_devices = devices_plus_backhaul.mrotek_devices
     T.rici_devices = devices_plus_backhaul.rici_devices
-    T.switch_devices = devices_plus_backhaul.switch_devices
-
+    T.cisco_switch_devices = devices_plus_backhaul.cisco_switch_devices
+    T.juniper_switch_devices = devices_plus_backhaul.juniper_switch_devices
     write_hosts_file(devices_plus_backhaul.all_hosts, 
             devices_plus_backhaul.ipaddresses, 
             devices_plus_backhaul.host_attributes)
@@ -154,7 +160,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     device_device.is_deleted=0 and
     device_device.host_state <> 'Disable'
     and 
-    device_devicetype.name in ('Switch', 'RiCi', 'PINE')
+    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE')
     group by device_device.ip_address
     ;
     """
@@ -174,33 +180,67 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     finally:
         cur.close() 
         db.close()
-
     # Processing backhaul configured on devices
-    mrotek_devices, rici_devices, switch_devices = [], [], []
+    mrotek_devices, rici_devices, cisco_switch_devices, juniper_switch_devices = [], [], [],[]
     processed = []
+    cisco_juniper = ['cisco','juniper']
     hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
-        if str(device[2].lower()) == 'switch':
+        if str(device[2].lower()) == 'cisco':
         	port_wise_capacities = [0]*26
+	elif str(device[2].lower()) == 'juniper':
+		port_wise_capacities = [0]*52
         else:
         	port_wise_capacities = [0]*8
         if  str(device[1]) in processed:
             continue
-        if '_' in str(device[8]):
+        if '_' in str(device[8]) and str(device[2].lower()) not in cisco_juniper :
             try:
                 int_ports = map(lambda x: x.split('_')[-1], device[8].split('$$'))
                 capacities = device[10].split('$$') if device[10] else device[10]
                 for p_n, p_cap in zip(int_ports, capacities):
                     port_wise_capacities[int(p_n)-1] = p_cap
+                    #port_wise_capacities[(p_n)-1] = p_cap
             except (IndexError, TypeError, AttributeError) as err:
                 port_wise_capacities = [0]*8
-                print err
+                #print err
+
+        if str(device[2].lower()) == 'cisco':
+            try :
+                int_ports = map(lambda x: x.split('/')[-1], device[9].split(','))
+                int_ports = map(lambda x: int(x), int_ports)   #convert int type
+                int_string = map(lambda x: x.split('/')[0], device[9].split(','))
+                for i in xrange(len(int_string)):
+                    if int_string[i]== 'Gi0':
+                        int_ports[i]= int_ports[i]+24
+                capacities = device[10].split(',') if device[10] else device[10]
+                for p_n, p_cap in zip(int_ports, capacities):
+                    port_wise_capacities[int(p_n)-1] = p_cap
+            except Exception as e:
+                port_wise_capacities = [0]*8
+        if str(device[2].lower()) == 'juniper':
+           try:
+               int_ports = map(lambda x: x.split('/')[-1], device[9].split(','))
+               int_ports = map(lambda x: int(x), int_ports)   #convert int type
+               int_ports_s = map(lambda x: x.split('/')[-2], device[9].split(','))
+               int_ports_s = map(lambda x: int(x), int_ports_s)
+               for i in xrange(len(int_ports_s)):
+                   if int_ports_s[i]== 1:
+                       int_ports[i]=int_ports[i]+48
+               capacities = device[10].split(',') if device[10] else device[10]
+               for p_n, p_cap in zip(int_ports, capacities):
+                   port_wise_capacities[int(p_n)] = p_cap
+           except Exception as e:
+               port_wise_capacities = [0]*8
+
         if str(device[2].lower()) == 'pine':
             mrotek_devices.append((device[1], device[5], port_wise_capacities))
         elif str(device[2].lower()) == 'rici':
             rici_devices.append((device[1], device[5], port_wise_capacities))
-        elif str(device[2].lower()) == 'switch':
-            switch_devices.append((device[1], device[5], port_wise_capacities))
+        elif str(device[2].lower()) == 'cisco':
+            cisco_switch_devices.append((device[1], device[5], port_wise_capacities))
+        elif str(device[2].lower()) == 'juniper':
+	    juniper_switch_devices.append((device[1], device[5], port_wise_capacities))
         hosts_only.write(str(device[1]) + '\n')
         processed.append(str(device[1]))
         # get all disabled services on this host, if any
@@ -224,8 +264,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     T.all_hosts, T.ipaddresses = all_hosts, ipaddresses
     T.host_attributes = host_attributes
     T.mrotek_devices, T.rici_devices = mrotek_devices, rici_devices
-    T.switch_devices = switch_devices
-
+    T.cisco_switch_devices, T.juniper_switch_devices  = cisco_switch_devices, juniper_switch_devices
     return T
 
 
@@ -490,7 +529,8 @@ def get_disabled_services():
     return data
 
 
-def eval_qos(vals, out=[]):
+def eval_qos(vals, out=None):
+    out = []
     for v in vals:
         if v and int(v) > 10:
             v = float(v) / float(1024)
@@ -692,8 +732,13 @@ def prepare_rules(devices):
 
     write_rules_file(settings_out, ac_chks1)
 
+def dict_to_redis_hset(r, hkey, dict_to_store):
+    return all([r.hset(hkey, k, v) for k, v in dict_to_store.items()])
 
 def get_settings():
+    query1 = """
+     select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as device left join (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  )  where device.device_type IN (12,18) and backhaul.bh_port_name <> 'NULL';
+    """ 
     global snmp_check_interval
     snmp_communities_db, snmp_ports_db = [], []
     data = []
@@ -711,6 +756,9 @@ def get_settings():
         cur = db.cursor()
         cur.execute(query)
         data = dict_rows(cur)
+        cur.execute(query1)
+        data1 = cur.fetchall()
+        # print "data1 is ", data1
         cur.close()
         #logger.error('data in get_settings: ' + pformat(data))
     except Exception, exp:
@@ -718,7 +766,26 @@ def get_settings():
         db.close()
     finally:
         db.close()
-
+    memc_obj1=db_ops_module.MemcacheInterface()
+    memc_obj =memc_obj1.memc_conn
+    #memc_obj= MemcacheInterface()
+    #redis_obj=db_ops_module.RedisInterface()
+    #rds_cnx=redis_obj.redis_cnx
+    dict2 = [(key,value.replace("/", "_")) for key, value in data1] # conversion of "/" into "_"
+    dict_switch = dict(dict2)
+    #print dict_switch
+    key = "master_ua" + "_switch"
+    #print  [rds_cnx.hset(key, k, v) for k, v in dict_switch.items()]
+    #print rds_cnx.hgetall(key)
+    #dict_to_redis_hset(rds_cnx, key, dict_switch)
+    memc_obj.set(key, dict_switch)
+    #list1 = []
+    #for each in data1:
+    #   list1.append(each[0])
+    #list2 = []
+    #[list2.append(dict_switch_cisco.get(each, " ")) for each in list1]
+    #list2 =  [x for x in list2 if x != " "]
+    #list2 = tuple(set(list2))
     processed = []
     active_check_services = []
     # Following utilization active checks should not be included in list of passive checks
@@ -730,7 +797,7 @@ def get_settings():
             'radwin_ss_provis_kpi',
             'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
             'rici_dl_util_kpi', 'rici_ul_util_kpi',
-            'switch_dl_util_kpi', 'switch_ul_util_kpi']
+            'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi']
     # Following dependent SS checks should not be included in list of passive checks
     # As they are treated as active checks (Dependent in sense they get data from their BS)
     exclude_ss_active_services = ['cambium_ss_ul_issue_kpi', 'cambium_ss_provis_kpi', 'wimax_ss_ul_issue_kpi',
@@ -797,7 +864,8 @@ def get_settings():
             if str(service['service']) in exclude_ss_active_services:
                 continue
             service_config = [service['devicetype'], '!' + str(service['service'])], \
-                    ['@all'], service['service'], None, threshold
+	            ['@all'], service['service'], None, threshold
+
         if service_config and (service_config not in default_checks):
                 default_checks.append(service_config)
         if service['port'] and service['community']:
@@ -993,7 +1061,7 @@ def make_active_check_rows(container, devices, services, active_checks_threshold
 
     qos_based_services = ['radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'mrotek_dl_util_kpi', 
 		'mrotek_ul_util_kpi', 'rici_dl_util_kpi', 'rici_ul_util_kpi',
-		'switch_dl_util_kpi', 'switch_ul_util_kpi']
+		'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi']
     for service in services:
 
 	######### Code has been Added to facilate addtion/deletion of service from device_typeon UI ,only active checks which 
@@ -1034,7 +1102,8 @@ def util_active_checks(devices, active_checks_thresholds, active_checks_threshol
     radwin_util_services = ['radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'radwin_ss_provis_kpi']
     mrotek_util_services = ['mrotek_dl_util_kpi', 'mrotek_ul_util_kpi']
     rici_util_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi']
-    switch_util_services = ['switch_dl_util_kpi', 'switch_ul_util_kpi']
+    cisco_switch_util_services = ['cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi']
+    juniper_switch_util_services= ['juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi']
     check_dict = {}
     check_dict = make_active_check_rows(check_dict, devices.wimax_bs_devices,
             wimax_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
@@ -1054,8 +1123,11 @@ def util_active_checks(devices, active_checks_thresholds, active_checks_threshol
             rici_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     # switch utilization active checks
-    check_dict = make_active_check_rows(check_dict, devices.switch_devices,
-            switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
+    check_dict = make_active_check_rows(check_dict, devices.cisco_switch_devices,
+            cisco_switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
+            def_war=80, def_crit=90)
+    check_dict = make_active_check_rows(check_dict, devices.juniper_switch_devices,
+            juniper_switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     ########################################################################################
     # These values would be used if we dont find device specific entry
@@ -1226,12 +1298,13 @@ def main():
     hosts_out = prepare_hosts_file()
     
     print "wimax_bs_devices, wimax_ss_devices, cambium_bs_devices", "cambium_ss_devices", \
-            "radwin_bs_devices", "radwin_ss_devices", "mrotek_devices", "rici_devices", "switch_devices"
+            "radwin_bs_devices", "radwin_ss_devices", "mrotek_devices", "rici_devices", "cisco_devices","juniper_devices"
     print len(hosts_out.wimax_bs_devices), len(hosts_out.wimax_ss_devices), len(hosts_out.cambium_bs_devices), \
             len(hosts_out.cambium_ss_devices), len(hosts_out.radwin_bs_devices), len(hosts_out.radwin_ss_devices), \
-            len(hosts_out.mrotek_devices), len(hosts_out.rici_devices), len(hosts_out.switch_devices)
+            len(hosts_out.mrotek_devices), len(hosts_out.rici_devices), len(hosts_out.cisco_switch_devices), len(hosts_out.juniper_switch_devices)
     prepare_rules(hosts_out)
 
 
 if __name__ == '__main__':
+   
     main()

@@ -45,6 +45,7 @@ def check_cambium_sync_state_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    sync_state  = ''
     try:
         if info:
             if info[0][0]:
@@ -57,12 +58,13 @@ def check_cambium_sync_state_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext)
+    return (state, infotext,[("sync_state",sync_state)])
 
 
 check_info["cambium_sync_state_invent"] = {
     'check_function': check_cambium_sync_state_invent,
     'service_description': 'cambium_sync_state_invent',
+    'has_perfdata':True
 }
 
 ####################################################################

@@ -15,5 +15,6 @@ urlpatterns = patterns('',
                        url(r'^level/(?P<pk>\d+)/delete/$', views.LevelDelete.as_view(), name='level_delete'),
                        url(r'^levellistingtable/', views.LevelListingTable.as_view(),
                            name='LevelListingTable'),
+                       url(r'^email/$', views.EmailSender.as_view(), name='send_email')
 
 )

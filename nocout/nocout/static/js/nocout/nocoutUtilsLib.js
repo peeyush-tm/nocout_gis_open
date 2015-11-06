@@ -141,102 +141,42 @@ function nocout_getSeverityColorIcon(status) {
  */
 function populateServiceStatus_nocout(domElement,info) {
 
-    // if (!is_perf_polling_enabled) {
-        /********** Service Status Without Live Polling  - START     ********************/
-        if ($.trim(info.last_updated) !== "" || $.trim(info.perf) !== "" || $.trim(info.status) !== "") {
-            var last_updated = info.last_updated ? info.last_updated : "N/A",
-                perf = info.perf ? info.perf : "N/A",
-                status = info.status ? info.status.toUpperCase() : "",
-                severity_style_obj = nocout_getSeverityColorIcon(status)
-                txt_color = severity_style_obj.color ? severity_style_obj.color : "",
-                fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle",
-                inner_status_html = '';
+    /********** Service Status Without Live Polling  - START     ********************/
+    if ($.trim(info.last_updated) !== "" || $.trim(info.perf) !== "" || $.trim(info.status) !== "") {
+        var last_updated = info.last_updated ? info.last_updated : "N/A",
+            perf = info.perf ? info.perf : "N/A",
+            status = info.status ? info.status.toUpperCase() : "",
+            severity_style_obj = nocout_getSeverityColorIcon(status)
+            txt_color = severity_style_obj.color ? severity_style_obj.color : "",
+            fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle",
+            inner_status_html = '';
 
-            var view_type = $.trim($('input[name="service_view_type"]:checked').val());
+        var view_type = $.trim($('input[name="service_view_type"]:checked').val());
 
-            if (view_type == 'unified') {
-                inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
-                                      <tr style="color:'+txt_color+';"><td>\
-                                      <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
-                                      style="vertical-align: middle;"> </i> \
-                                      <strong>Current Status:</strong> ' + status + '</td>\
-                                      <td><strong>Updated At:</strong> ' + last_updated + '</td>\
-                                      </tr>\
-                                      </table><div class="clearfix"></div><div class="divide-20"></div>';
-            } else {
-                inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
-                                      <tr style="color:'+txt_color+';"><td>\
-                                      <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
-                                      style="vertical-align: middle;"> </i> \
-                                      <strong>Performance Output: </strong> ' + perf + '</td>\
-                                      <td><strong>Updated At: </strong> ' + last_updated + '</td>\
-                                      </tr>\
-                                      </table><div class="clearfix"></div><div class="divide-20"></div>';
-            }
-
-            $("#" + domElement).html(inner_status_html);
+        if (view_type == 'unified') {
+            inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+                                  <tr style="color:'+txt_color+';"><td>\
+                                  <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
+                                  style="vertical-align: middle;"> </i> \
+                                  <strong>Current Status:</strong> ' + status + '</td>\
+                                  <td><strong>Updated At:</strong> ' + last_updated + '</td>\
+                                  </tr>\
+                                  </table><div class="clearfix"></div>';
         } else {
-            $("#" + domElement).html("");
+            inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+                                  <tr style="color:'+txt_color+';"><td>\
+                                  <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
+                                  style="vertical-align: middle;"> </i> \
+                                  <strong>Performance Output: </strong> ' + perf + '</td>\
+                                  <td><strong>Updated At: </strong> ' + last_updated + '</td>\
+                                  </tr>\
+                                  </table><div class="clearfix"></div>';
         }
 
-        /********** Service Status Without Live Polling  - END     ********************/
-    // } else {
-    //     /********** LIVE POLLING CODE  - START     ********************/
-    //     var left_tab_txt = '';
-
-    //     try {
-    //         left_tab_txt = $.trim($("#" + domElement.split("_block")[0].split("last_updated_")[1]+"_tab").text());
-    //     } catch(e) {
-    //         // console.log(e);
-    //     }
-    //     var dom_condition_1 = domElement.indexOf('availability') > -1,
-    //         dom_condition_2 = domElement.indexOf('utilization_top') > -1,
-    //         dom_condition_3 = domElement.indexOf('topology') > -1;
-    //     // Clear status block when we are on utilization or availablility tabs
-    //     if (dom_condition_1 || dom_condition_2 || dom_condition_3 || left_tab_txt == 'RF Latency') {
-
-    //         $("#" + domElement).html("");
-
-    //     } else {
-
-    //         var last_updated = info.last_updated ? info.last_updated : "N/A",
-    //             perf = info.perf ? info.perf : "N/A",
-    //             inner_status_html = '';
-
-    //         // Create Table for service polled value & live polling --- START
-    //         inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-    //         inner_status_html += '<tr>';
-            
-    //         inner_status_html += '<td style="width:47.5%;"><b>Service Output :</b> <br/>\
-    //                             ' + val_icon + ' ' + perf + '<br/>\
-    //                             ' + time_icon + ' ' + last_updated + '</td>';
-    //         inner_status_html += '<td style="width:5%;vertical-align: middle;text-align:center;">\
-    //                              <button class="btn btn-primary btn-xs single_perf_poll_now"\
-    //                              title="Poll Now" data-complete-text="<i class=\'fa fa-flash\'></i>" \
-    //                              data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
-    //                              <i class="fa fa-flash"></i></button>\
-    //                              </td>';
-    //         inner_status_html += '<td style="width:47.5%;">\
-    //                              <b>Poll Output :</b> \
-    //                              <span id="perf_live_poll_chart"></span><br/>\
-    //                              <ul id="perf_live_poll_vals" class="list-unstyled"></ul>\
-    //                              </td>';
-            
-
-    //         inner_status_html += '</tr>';
-    //         inner_status_html += '</table>';
-    //         // Create Table for service polled value & live polling --- END
-
-    //         // Create hidden input field to store polling values --- START
-    //         inner_status_html += '<input type="hidden" name="perf_live_poll_input" id="perf_live_poll_input" value="">';
-    //         // Create hidden input field to store polling values --- END
-
-    //         inner_status_html += '<div class="clearfix"></div><div class="divide-20"></div>';
-
-    //         $("#"+domElement).html(inner_status_html);
-    //     }
-    //     /********** LIVE POLLING CODE  - END     ********************/
-    // }
+        $("#" + domElement).html(inner_status_html);
+    } else {
+        $("#" + domElement).html("");
+    }
 }
 
 
@@ -252,7 +192,7 @@ function addDataToNormalTable_nocout(table_data, table_headers, table_id, servic
     for (var j = 0; j < table_data.length; j++) {
         var row_val = [];
         for (var i = 0; i < table_headers.length; i++) {
-            var insert_val = table_data[j][table_headers[i]] ? table_data[j][table_headers[i]] : "";
+            var insert_val = typeof(table_data[j][table_headers[i]]) != 'undefined' ? table_data[j][table_headers[i]] : "";
             row_val.push(insert_val);
         }
         $('#'+ service_id +  '_' + table_id).dataTable().fnAddData(row_val);
@@ -424,8 +364,8 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         });
     }
 
-    var service_name = updated_url.split("/service/")[1].split("/")[0],
-        ds_name = updated_url.split("/service/")[1].split("/")[2],
+    var service_name = updated_url.indexOf("/service/") && updated_url.split("/service/").length > 1 ? updated_url.split("/service/")[1].split("/")[0] : '[]';
+        ds_name = updated_url.split("/service/").length > 1 ? updated_url.split("/service/")[1].split("/")[2] : '',
         get_param_string = updated_url.split("?")[1].split("&"),
         data_for = 'live',
         get_param_data = "",
@@ -458,8 +398,8 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
             }
         }
     }
-    
-    if ($(".top_perf_tabs").length > 0 && !is_birdeye_view) {
+
+    if ($(".top_perf_tabs").length > 0 && !is_birdeye_view && clicked_tab_id.indexOf('custom_dashboard') == -1) {
         var report_title = "";
         try {
             var top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
@@ -817,7 +757,6 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         }
     } catch(e) {
         // pass
-        // console.error(e);
     }
 
     if ($('#'+dom_id+'_chart').hasClass('charts_block')) {
@@ -1011,7 +950,11 @@ function nocout_livePollCurrentDevice(
                         fetched_val = fetched_val[0];
                     }
 
-                    fetched_val = Number(fetched_val);
+                    if (isNaN(Number(fetched_val))) {
+                        fetched_val = fetched_val;
+                    } else {
+                        fetched_val = Number(fetched_val);
+                    }
 
                     // If call is from single device page then proceed else return data
                     if (container_dom_id && show_sparkline_chart) {
@@ -1644,7 +1587,7 @@ function nocout_pausePollNow() {
  */
 function nocout_destroyDataTable(domId) {
 
-    if (!domId) {
+    if (!domId || $('#' + domId).length == 0) {
         return true;
     }
 
