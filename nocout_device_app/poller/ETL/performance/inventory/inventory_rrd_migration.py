@@ -119,7 +119,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 			plugin_output = str(entry[5].split('- ')[1])
 			plugin_output=plugin_output.strip()
 		except Exception as e:
-			print e
+			#print e
 			continue
 
 		if interface_oriented_service[0] in service:
@@ -180,6 +180,12 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 				critical_t=0
 			else :
 				critical_t= perf_data2.get('cric',0)
+			if  service=='rad5k_dl_mod_invent':
+				try:
+					value = rad5k_dl_mod_invent_convert_dict.get(int(value),'')
+					#print value
+				except :
+					pass
 			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=host,
                                         service_name=service,current_value=value,min_value=0,max_value=0,avg_value=0,
                                         data_source=ds,severity=service_state,site_name=site,warning_threshold=warning_t,
@@ -362,6 +368,8 @@ def inventory_perf_data_main():
 	except socket.error, msg:
 		raise MKGeneralException(("Failed to create socket. Error code %s Error Message %s:") % (str(msg[0]), msg[1]))
 if __name__ == '__main__':
+	rad5k_dl_mod_invent_convert_dict = {007:'64QAM FEC 5/6', 107:'64QAM FEC 5/6', 207:'64QAM FEC 5/6', 006: '64QAM FEC 3/4', 106: '64QAM FEC 3/4', 206: '64QAM FEC 3/4', 005: '64QAM FEC 2/3', 105:'64QAM FEC 2/3', 205:'64QAM FEC 2/3', 004:'16QAM FEC 3/4', 104: '16QAM FEC 3/4', 204: '16QAM FEC 3/4', 003:'16QAM FEC 1/2', 103:'16QAM FEC 1/2', 203:'16QAM FEC 1/2',002:'QPSK FEC 3/4', 102:'QPSK FEC 3/4', 202:'QPSK FEC 3/4', 001:'QPSK FEC 1/2', 101:'QPSK FEC 1/2', 201:'QPSK FEC 1/2', 000:'BPSK FEC 1/2', 100:'BPSK FEC 1/2', 200:'BPSK FEC 1/2' }
+
 	inventory_perf_data_main()	
-		
+
 				

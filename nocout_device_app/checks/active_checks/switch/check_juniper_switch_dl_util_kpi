@@ -23,7 +23,7 @@ uplink utilization information is sent to device application
 
 
 
-def extract_switch_dl_util_from_live(hostname,site):
+def extract_switch_dl_util_from_live(hostname,site,memc):
 	try:
 		key1 = str(hostname)+"juniper_switch_dl_utilization"
 		dict2 = memc.get(key1)
@@ -34,8 +34,9 @@ def extract_switch_dl_util_from_live(hostname,site):
         return mro_dl_dict
 
 
-def live_query_switch_dl_util_kpi(hostname,site,war,crit,qos):
+def live_query_switch_dl_util_kpi(hostname,site,war,crit,qos,memc):
     state = 3
+    kpi_list_index = []
     dl_kpi = ''
     perf = ''
     plugin_message = ''
@@ -44,8 +45,10 @@ def live_query_switch_dl_util_kpi(hostname,site,war,crit,qos):
     warn_flag = 0
     normal_flag = 0
     qos_value = qos.split('|')[:-1]
+    dict1_kpi = []
+    kpi_list_index = [i for i,x in enumerate(qos_value) if int(x) >0]
     try:
-	dl_util_dict= extract_switch_dl_util_from_live(hostname,site)
+	dl_util_dict= extract_switch_dl_util_from_live(hostname,site,memc)
 
 
 	for entry in dl_util_dict.keys():
@@ -53,19 +56,25 @@ def live_query_switch_dl_util_kpi(hostname,site,war,crit,qos):
 		index =int(index)	
 		if inc == '1':
 			index = index+47
-		dl_kpi =  dl_util_dict[entry]
-		try:
-			dl_kpi = (float(dl_kpi)/float(qos_value[index])) *100
-		except Exception,e:
-			continue
-		if dl_kpi or dl_kpi == 0:
-			perf += str(entry) + "=%s;%s;%s;%s " % (dl_kpi,war,crit,qos)
-			if dl_kpi >= crit:
-				crit_flag = 1
-			elif dl_kpi >= war and dl_kpi < crit:
-				warn_flag = 1
-			else:
-				normal_flag = 1
+		if index in kpi_list_index:
+			dl_kpi =  dl_util_dict[entry]
+			try:
+				dl_kpi = (float(dl_kpi)/float(qos_value[index])) *100
+				tup1 = (entry,dl_kpi, index )
+				dict1_kpi.append(tup1)
+			except Exception,e:
+				continue
+				print e
+	max_tuple = max(dict1_kpi, key = lambda x:x[1])
+	dl_kpi = max_tuple[1]
+	if dl_kpi or dl_kpi == 0:
+		perf += str(max_tuple[0]) + "=%s;%s;%s;%s " % (dl_kpi,war,crit,qos_value[max_tuple[2]])
+		if dl_kpi >= crit:
+			crit_flag = 1
+		elif dl_kpi >= war and dl_kpi < crit:
+			warn_flag = 1
+		else:
+			normal_flag = 1
 	if crit_flag:
 		state =2
 		state_string = "critical"
@@ -77,7 +86,7 @@ def live_query_switch_dl_util_kpi(hostname,site,war,crit,qos):
 		state_string = "ok"
 		
     except Exception ,e:
-	perf = '' 
+	 perf = ''	 
     plugin_message += "switch_dl_util_kpi %s - %s|%s" % (state_string,dl_kpi,perf)
     sys.stdout.write(plugin_message)
     sys.exit((state))
@@ -97,12 +106,13 @@ def  main():
         perf =';;;%s ' % qos
         plugin_message += "switch_dl_util_kpi %s - %s|%s" % (state_string,dl_util,perf)
         sys.exit((3))
-
-    live_query_switch_dl_util_kpi(host_name,site,float(war),float(crit),qos)
+    memc_module = imp.load_source('dbs', '/omd/sites/%s/lib/python/mysql_connection.py' % site )
+    memc =memc_module.memc
+    live_query_switch_dl_util_kpi(host_name,site,float(war),float(crit),qos,memc)
 	
 
 if __name__ == '__main__':
-	mysite = sys.argv[2]
-	memc_module = imp.load_source('dbs', '/omd/sites/%s/lib/python/mysql_connection.py' % mysite )
-	memc =memc_module.memc
+	#mysite = sys.argv[2]
+	#memc_module = imp.load_source('dbs', '/omd/sites/%s/lib/python/mysql_connection.py' % mysite )
+	#memc =memc_module.memc
 	main() 
