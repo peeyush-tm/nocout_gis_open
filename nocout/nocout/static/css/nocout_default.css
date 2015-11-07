@@ -306,7 +306,7 @@ iframe {
 }
 .date_range_filter_container {
   float:left;
-  max-width: 250px !important;
+  max-width: 355px !important;
   margin-bottom:5px;
 }
 .date_range_filter_container .form-control {
