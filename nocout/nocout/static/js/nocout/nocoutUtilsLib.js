@@ -225,7 +225,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
     table_string += '<table id="' + service_id + '_'+ table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
-        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+        table_string += '<th><b>' + grid_headers[i].toUpperCase() + '</b></th>';
         excel_columns.push(i);
     }
     table_string += '</thead></table>';
@@ -793,7 +793,7 @@ function createTableHtml_nocout(dom_id, table_headers, table_data) {
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
-        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+        table_string += '<th><b>' + grid_headers[i].toUpperCase() + '</b></th>';
     }
 
     table_string += '</thead><tbody>';
@@ -834,12 +834,12 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
 
     /*Make table headers*/
     for (var i = 0; i < chartObj.length; i++) {
-        data_in_table += '<td colspan="2" align="center"><b>' + chartObj[i].name + '</b></td>';
+        data_in_table += '<th colspan="2" align="center"><b>' + chartObj[i].name + '</b></th>';
     }
     data_in_table += '</tr><tr>';
 
     for (var i = 0; i < chartObj.length; i++) {
-        data_in_table += '<td><em>Time</em></td><td><em>Value</em></td>';
+        data_in_table += '<th><em>Time</em></th><th><em>Value</em></th>';
     }
 
     data_in_table += '</tr></thead><tbody>';
