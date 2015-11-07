@@ -525,7 +525,7 @@ th.vAlign_middle, .vAlign_middle b {
   color: #FFF;
   font-size: 12px;
   font-weight: bold;
-  cursor: pointer;
+  /*cursor: pointer;*/
   text-align: center;
 }
 .custom_legends_block ul {
