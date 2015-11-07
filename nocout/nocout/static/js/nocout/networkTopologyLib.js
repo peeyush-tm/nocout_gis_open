@@ -6,7 +6,7 @@
 function convertToVis(response, required_dom_id) {
 	// checking size of BS_ID_LIST
 	bs_list_len = typeof bs_id != 'undefined' ? (JSON.parse(bs_id)).length : 0;
-	updatedSize = 150
+	updatedSize = 80
 
 	// In case of Multiple BaseStation updating size to avoid overlapping of images.
 	if (bs_list_len > 1) {
@@ -35,7 +35,12 @@ function convertToVis(response, required_dom_id) {
 	        selectionWidth : 5,
 	        arrows : {
 	            middle : true,
-	        }
+	        },
+	        smooth: {
+				type: 'cubicBezier',
+				forceDirection: 'vertical',
+				roundness : 0.3
+				},
 	    },
 
 	    interaction : {
@@ -135,9 +140,10 @@ function convertToVis(response, required_dom_id) {
 	nodes.update({
 		id: highlight_id,
 		color : {
-			border : '#333',
+			border : '#444',
+			background : '#ffffff',
 			highlight : {
-				border : '#333'
+				border : '#444'
 			}
 		},
 		shadow : {
@@ -146,8 +152,8 @@ function convertToVis(response, required_dom_id) {
 		shapeProperties : {
 			useBorderWithImage : true
 		},
-		borderWidth: 3,
-		borderWidthSelected: 3
+		borderWidth: 2,
+		borderWidthSelected: 2
 	});
 
 	// initialize your network
