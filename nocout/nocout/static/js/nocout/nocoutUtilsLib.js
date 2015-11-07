@@ -258,7 +258,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         },
         bPaginate: true,
         bDestroy: true,
-        aaSorting : [[0, 'desc']],
+        aaSorting : [[2, 'desc']],
         sPaginationType: "full_numbers"
     });
 }
@@ -938,9 +938,13 @@ function nocout_livePollCurrentDevice(
                     critical_threshold = meta_info && meta_info["critical"] ? meta_info["critical"] : "",
                     dateObj = new Date(),
                     epoch_time = dateObj.getTime(),
-                    month = Number(dateObj.getMonth()) + 1,
-                    date_str = dateObj.getDate() + "-" + month + "-" + dateObj.getFullYear(),
-                    time_str = dateObj.getHours() + ":" + dateObj.getMinutes() + ":" + dateObj.getSeconds(),
+                    current_date = dateObj.getDate() > 9 ? dateObj.getDate() : '0' + String(dateObj.getDate()),
+                    month = Number(dateObj.getMonth()) + 1 > 9 ? Number(dateObj.getMonth()) + 1 : '0' + String(Number(dateObj.getMonth()) + 1),
+                    date_str = current_date + "-" + month + "-" + dateObj.getFullYear(),
+                    current_hour = dateObj.getHours() > 9 ? dateObj.getHours() : '0' + String(dateObj.getHours()),
+                    current_minutes = dateObj.getMinutes() > 9 ? dateObj.getMinutes() : '0' + String(dateObj.getMinutes()),
+                    current_second = dateObj.getSeconds() > 9 ? dateObj.getSeconds() : '0' + String(dateObj.getSeconds()),
+                    time_str = current_hour + ":" + current_minutes + ":" + current_second,
                     current_time = date_str + " " + time_str,
                     fetched_data = true;
 
