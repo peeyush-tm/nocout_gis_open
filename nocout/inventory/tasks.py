@@ -3407,8 +3407,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
             # BS device type
             bs_device_type = 6
 
-            if 'Device Vendor' in row.keys():
-                if row['Device Vendor'] == 'Radwin5K':
+            if 'Vendor' in row.keys():
+                if row['Vendor'] == 'Radwin5K':
                     bs_device_vendor = 11
                     bs_device_model = 14
                     bs_device_type = 16
@@ -4088,8 +4088,8 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
             # SS device type
             ss_device_type = 5
 
-            if 'Device Vendor' in row.keys():
-                if row['Device Vendor'] == 'Radwin5K':
+            if 'Vendor' in row.keys():
+                if row['Vendor'] == 'Radwin5K':
                     ss_device_vendor = 11
                     ss_device_model = 14
                     ss_device_type = 17
