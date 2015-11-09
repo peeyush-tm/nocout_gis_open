@@ -11,7 +11,6 @@ List of constructs:
 Classes
 =======
 * UserProfile
-* Roles
 * UserPasswordRecord
 
 =======
@@ -21,7 +20,7 @@ Signals
 """
 
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, m2m_changed
 from django.contrib.auth.models import User
 from mptt.models import MPTTModel, TreeForeignKey
 from organization.models import Organization
@@ -33,7 +32,7 @@ class UserProfile(MPTTModel, User):
     Model for creating user profile by extending django auth 'User' class.
     """
     parent = TreeForeignKey('self', null=True, blank=True, related_name='user_children')
-    role = models.ManyToManyField('Roles')
+    # role = models.ManyToManyField('Roles')
     organization = models.ForeignKey(Organization)
     phone_number = models.CharField('Phone No.', max_length=15, null=True, blank=True)
     company = models.CharField('Company', max_length=100, null=True, blank=True)
@@ -44,17 +43,6 @@ class UserProfile(MPTTModel, User):
     password_changed_at = models.DateTimeField('Password changed at', null=True, blank=True)
     user_invalid_attempt = models.IntegerField('Invalid attempt', null=True, blank=True, default=0)
     user_invalid_attempt_at = models.DateTimeField('Invalid attemp at', null=True, blank=False)
-
-
-class Roles(models.Model):
-    """
-    Model for defining user roles.
-    """
-    role_name = models.CharField('Role Name', max_length=100, null=True, blank=True)
-    role_description = models.CharField('Role Description', max_length=250, null=True, blank=True)
-
-    def __unicode__(self):
-        return self.role_description
 
 
 class UserPasswordRecord(models.Model):

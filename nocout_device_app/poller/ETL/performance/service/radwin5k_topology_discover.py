@@ -14,7 +14,7 @@ import imp
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 
 class MKGeneralException(Exception):
@@ -46,7 +46,7 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 	matching_criteria = {}
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 	service = "rad5k_topology_discover"
-
+	topology_list = []
 
 	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output\n" + \
                 "Filter: service_description = rad5k_topology_discover\nOutputFormat: json\n"
@@ -98,8 +98,18 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 				connected_device_mac=ss_mac,data_source=ds,site_name=site,ip_address=host_ip)
 		matching_criteria.update({'device_name':str(host),'service_name':service,'site_name':site})
 		mongo_module.mongo_db_update(db,matching_criteria,topology_dict,"topology")
+		topology_list.append(topology_dict)
 		#mongo_module.mongo_db_insert(db,topology_dict,"inventory_services")
 		matching_criteria ={}
+	store_in_memcache(topology_list)
+
+def store_in_memcache(topology_list):
+	key = nocout_site_name + "_rad5k_topology"
+        doc_len_key = key + "_len"
+        memc_obj=db_ops_module.MemcacheInterface()
+        exp_time =240 # 4 min
+        memc_obj.store(key,topology_list,doc_len_key,exp_time,chunksize=1000)
+
 
 def topology_discovery_data_main():
 	"""

@@ -36,6 +36,7 @@ from django.db.models import Q
 from inventory.utils.util import InventoryUtilsGateway
 from scheduling_management.models import Event
 import logging
+from user_profile.utils.auth import in_group
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         # if the user role is Admin or superadmin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '9%', 'bSortable': False})
             datatable_headers.append(
@@ -102,7 +103,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         # if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers_no_nms_actions.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '15%', 'bSortable': False})
 
@@ -123,7 +124,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
         context['datatable_headers_no_nms_actions'] = json.dumps(datatable_headers_no_nms_actions)
 
         # show sync only if user is admin
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             context['deadlock_status'] = deadlock_status
             context['last_sync_time'] = last_sync_time
 
@@ -331,7 +332,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 logger.exception("Device is not a substation. %s" % e.message)
 
             # show sync button only if user is superuser or admin
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            if in_group(self.request.user, 'admin'):
                 try:
                     dct['nms_actions'] += '<a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh {1}" title="Sync Device"></i></a>'.format(
                         dct['id'], text_color)
@@ -481,7 +482,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            if in_group(self.request.user, 'admin'):
                 delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
@@ -657,7 +658,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            if in_group(self.request.user, 'admin'):
                 delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
@@ -812,7 +813,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             # update status icon
             dct.update(status_icon='<i class="fa fa-circle red-dot"></i>')
 
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            if in_group(self.request.user, 'admin'):
                 add_action = '<a href="javascript:;" pk="{0}" class="nms_action restore"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
             else:
                 add_action = ''
@@ -828,7 +829,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True)\
+            if in_group(self.request.user, 'admin')\
                     and device.device_name != 'default':
                 delete_action = '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i></a>'.format(dct['id'])
             else:
@@ -1351,7 +1352,7 @@ class DeviceTypeFieldsList(PermissionsRequiredMixin, ListView):
             {'mData': 'field_display_name', 'sTitle': 'Field Display Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'device_type__name', 'sTitle': 'Device Type', 'sWidth': 'auto'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -1517,7 +1518,7 @@ class DeviceTechnologyList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_vendor__model__name', 'sTitle': 'Device Model', 'sWidth': '10%', },
             {'mData': 'device_vendor__model_type__name', 'sTitle': 'Device Type', 'sWidth': '10%', }
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -1757,7 +1758,7 @@ class DeviceVendorList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_models', 'sTitle': 'Device Models', 'sWidth': 'auto', },
             {'mData': 'device_types', 'sTitle': 'Device Types', 'sWidth': 'auto', },
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -1998,7 +1999,7 @@ class DeviceModelList(PermissionsRequiredMixin, ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'device_types', 'sTitle': 'Device Types', 'sWidth': 'auto', }
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -2220,7 +2221,7 @@ class DeviceTypeList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_icon', 'sTitle': 'Device Icon', 'sWidth': 'auto'},
             {'mData': 'device_gmap_icon', 'sTitle': 'Device GMap Icon', 'sWidth': 'auto'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2462,7 +2463,7 @@ class DevicePortList(PermissionsRequiredMixin, ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'value', 'sTitle': 'Value', 'sWidth': 'auto', },
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -3281,7 +3282,7 @@ class GisWizardServiceListView(PermissionsRequiredMixin, ListView):
             {'mData': 'parameter__parameter_description', 'sTitle': 'Parameter', 'sWidth': 'auto', },
             {'mData': 'service_data_sources__alias', 'sTitle': 'Service Data Sources', 'sWidth': 'auto', },
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -3632,7 +3633,7 @@ class DeviceSyncHistoryList(ListView):
             {'mData': 'completed_on', 'sTitle': 'Sync Completion Timestamp', 'sWidth': 'auto', },
         ]
 
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
             context['deadlock_status'] = deadlock_status
             context['last_sync_time'] = last_sync_time

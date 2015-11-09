@@ -22,6 +22,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.datatable import AdvanceFilteringMixin
 import logging
 from operator import itemgetter
+from user_profile.utils.auth import in_group
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +268,7 @@ class DownloaderHeaders(ListView):
             {'mData': 'requested_on', 'sTitle': 'Requested On', 'sWidth': 'auto'},
             {'mData': 'request_completion_on', 'sTitle': 'Request Completion Date', 'sWidth': 'auto'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
