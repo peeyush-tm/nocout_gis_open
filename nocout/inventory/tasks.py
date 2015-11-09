@@ -1,3 +1,4 @@
+import types
 from celery import task, group
 from dateutil.parser import *
 from models import GISInventoryBulkImport
@@ -7433,7 +7434,6 @@ def create_device(device_payload):
 
     # dictionary containing device data
     device_payload = device_payload
-
     # initializing variables
     device_name, device_alias, machine, device_technology, device_vendor, device_model, device_type = [''] * 7
     site_instance, ip_address, mac_address, state, city, latitude, longitude, address, description = [''] * 9
@@ -10256,6 +10256,10 @@ def sanitize_mac_address(mac=None):
         mac (unicode): u'0a:00:3e:66:fd:94'
 
     """
+    number_types = (types.IntType, types.LongType, types.FloatType, types.ComplexType)
+    if isinstance(mac, number_types):
+        mac = str(mac)
+
     mac = ''.join(e for e in mac if e.isalnum()).lower()
     if len(mac) == 12:
         mac = ':'.join(mac[i:i+2] for i in range(0, len(mac), 2))
