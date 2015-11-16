@@ -1643,11 +1643,15 @@ class BulkFetchLPDataApi(View):
                     result['data']['meta']['valuesuffix'] = ''
 
                 try:
+                    ds_dtype_obj = DeviceTypeServiceDataSource.objects.get(
+                        device_type_service__service__name=service,
+                        service_data_sources__name=data_source
+                    )
+                    result['data']['meta']['warning'] = ds_dtype_obj.warning
+                    result['data']['meta']['critical'] = ds_dtype_obj.critical
+                except Exception as e:
                     result['data']['meta']['warning'] = ds_obj.warning
                     result['data']['meta']['critical'] = ds_obj.critical
-                except Exception as e:
-                    result['data']['meta']['warning'] = ''
-                    result['data']['meta']['critical'] = ''
 
         # BS device to with 'ss' is connected (applied only if 'service' is from 'exceptional_services').
         bs_device, site_name = None, None
