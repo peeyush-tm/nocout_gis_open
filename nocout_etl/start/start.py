@@ -84,6 +84,11 @@ class Config:
             #    'schedule': crontab(minute='*/5'),
             #    'args': (2, 3),
             #    },
+
+	    'manage-check-result':{
+	        'task': 'manage-check-result',
+		'schedule': crontab()
+	        },
             'network-main': {
                 'task': 'network-main',
                 'schedule': crontab()

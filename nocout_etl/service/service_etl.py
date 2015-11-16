@@ -349,6 +349,74 @@ def make_dicts_from_perf(outs, ins, name_ip_mapping,site, multi=False):
 
 	return retval
 
+@app.task(name='manage-check-result', ignore_result=True)
+def manage_check_result():
+	queue = RedisInterface(perf_q='q:brok:data')
+	rds_cli = RedisInterface()
+	check_results = queue.get(0, -1)
+	warning('brok Queue len, size of obj: {0}, {1}'.format(
+		len(check_results), sys.getsizeof(check_results)))
+	host_valid_attrs = ['address', 'state', 'last_chk', 
+				'last_state_change', 'host_name', 'perf_data']
+	service_valid_attrs = host_valid_attrs + ['service_description']
+	need_plugin_out = ['wimax_topology', 'cambium_topology']
+	host_valid_broks = ['host_check_result']
+	service_valid_broks = ['service_check_result']
+	#info('[%s] Start manage_service_check_result_brok' % self.name)
+	for brok in check_results:
+		#warning('manage service check {0}'.format(brok) )
+		#brok = eval(brok)
+		if brok.get('type') in service_valid_broks:
+			#info('[%s] brok: %s' % (self.name, brok.data))
+			service = str(brok.get('data').get('service_description'))
+			if service == 'Check_MK':
+				continue
+			if service in need_plugin_out:
+				service_valid_attrs += ['output']
+			try:
+				msg = dict([(k, v) for  k, v in brok.get('data').iteritems() if 
+					k in service_valid_attrs])
+				# for load testing purposes
+				li = []
+				[li.append(msg.copy()) for _ in range(1)]
+				rds_cli.redis_cnx.rpush('q:perf:service', *li)
+			except Exception as exc:
+				error('Problem with service brok: '
+						     '%s' % (exc))
+		if brok.get('type') in host_valid_broks:
+			try:
+				# don't process the host data more than once in 5 mins window
+				host_name = brok.get('data').get('host_name')
+				host_key = ':'.join(['volatile', host_name])
+				if rds_cli.redis_cnx.get(host_key):
+					continue
+				else:
+					rds_cli.redis_cnx.setex(host_key, 300, 1)
+
+				msg = dict([(k, v) for  k, v in brok.get('data').iteritems() if 
+					k in host_valid_attrs])
+				rds_cli.redis_cnx.rpush('q:perf:host', msg)
+				#info('[%s] brok: %s' % (self.name, msg))
+
+			except Exception as exc:
+				error('Problem with host brok: '
+						'%s' % (exc))
+		if brok.get('event_type') == 'ALERT':
+			#valid_event_type = ['ALERT']
+			#log = brok.data['log']
+			#event = LogEvent(log)
+			#data = event.data
+			#if data and data['event_type'] in valid_event_type:
+				#info('[%s] Data: %s' % (self.name, data))
+			#alrt_type = brok['alert_type']
+			try:
+				if brok.get('alert_type') == 'HOST':
+					rds_cli.redis_cnx.rpush('q:event:host', brok)
+				elif brok.get('alert_type') == 'SERVICE':
+					rds_cli.redis_cnx.rpush('q:event:service',brok)
+			except:
+				error('Exception in log ')
+
 
 @app.task(name='get-service-checks', ignore_result=True)
 def get_service_checks_output(site_name=None):

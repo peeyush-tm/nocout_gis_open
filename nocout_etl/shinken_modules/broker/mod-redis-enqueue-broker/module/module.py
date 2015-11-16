@@ -9,19 +9,20 @@ services/hosts and events into redis backed queue
 from ast import literal_eval
 from redis import StrictRedis
 from redis.sentinel import Sentinel
-
+from threading import Thread
 from shinken.basemodule import BaseModule
 from shinken.log import logger
-
+import Queue
 from logevent import LogEvent
-
+from multiprocessing import Process,Queue
 info, warning, error = logger.info, logger.warning, logger.error
 
 
 properties = {
               'daemons': ['broker'],
               'type': 'redis-enqueue-broker',
-              'external': False
+              'external': True,
+	      'phases': ['running'],
               }
 
 
@@ -41,10 +42,11 @@ class RedisEnqueueBroker(BaseModule):
 		# create shared queues
 		#manager = Manager()
 		#self.create_queues(manager=manager)
-		
+		self.queue=Queue(200000)	
 		# store only host and service check results
 		self.host_valid_broks = ['host_check_result']
 		self.service_valid_broks = ['service_check_result']
+		self.valid_broks = ['host_check_result','service_check_result','log']
 		# need only these keys out of complete check result
 		self.host_valid_attrs = ['address', 'state', 'last_chk', 
 				'last_state_change', 'host_name', 'perf_data']
@@ -77,21 +79,60 @@ class RedisEnqueueBroker(BaseModule):
 
 
 	def main(self):
+		self.set_proctitle(self.name)
+		self.set_exit_handler()
 		info('[%s] Start main function.' % self.name)
+		#worker=Process(target=self.process_brok,args=(self.queue,))
+		#worker = Thread(target=self.process_brok)
+		#worker.daemon=True
+		#worker.start()
+		#info('[%s] Process id.' % worker.pid)
+		self.start_loop()
+
+	def start_loop(self):
+		valid_event_type = ['ALERT']
 		while not self.interrupted:
 			broks = self.to_q.get()
+			brok_list = []
+			error('Queue size %s' % self.to_q.qsize() )
 			for brok in broks:
-				brok = brok.prepare()
 				#info('brok: %s' % brok)
-				if brok and brok.type in self.valid_broks:
-					try:
-						msg = dict([(k, v) for  k, v in brok.data.iteritems() if 
-							k in self.valid_attrs])
-						self.rds_cnx.put(msg)
-					except Exception as exc:
-						error('[%s] Problem with brok: '
-						     	 	 '%s' % (self.name, exc))
+				try:
+					#msg = dict([(k, v) for  k, v in brok.data.iteritems() if 
+					#	k in self.valid_attrs])
+					#self.rds_cnx.put(msg)
+					if brok and brok.type in self.valid_broks:
+						brok.prepare()
+						if brok.type == 'log':
+							log = brok.data['log']
+							event = LogEvent(log)
+							data = event.data
+							if data and data['event_type'] in valid_event_type:
+								alrt_type = data['alert_type']
+								if alrt_type in ['HOST','SERVICE']:
+									if alrt_type == 'HOST':
+										data.update({'service_desc': 'ping'})
+									brok_list.append(data)
+									#error('log %s' % data)
+									
+						else:
+							brok_list.append(brok)
+					#self.manage_brok(brok)
+				except Exception as exc:
+					error('[%s] Problem with brok: '
+				     	 	 '%s' % (self.name, exc))
+			self.manage_brok(brok_list)
+			#self.process_brok(brok_list)
 
+	def manage_brok(self,brok_list):
+		try:
+			#if brok and brok.type in self.valid_broks:
+			self.rds_cnx.put('brok:data', *brok_list)
+			#self.queue.put_nowait(brok_list)
+			#error('Q:len:M %s' % self.queue.qsize())
+		except Exception,e:
+			error('Error in inserting redis queue %s' % e)
+		
 
 	# called by base module
 	def manage_log_brok(self, brok):
@@ -103,12 +144,15 @@ class RedisEnqueueBroker(BaseModule):
 		if data and data['event_type'] in valid_event_type:
 			#info('[%s] Data: %s' % (self.name, data))
 			alrt_type = data['alert_type']
-			if alrt_type == 'HOST':
-				data.update({'service_desc': 'ping'})
-				self.rds_cnx.put('event:host', data)
-			elif alrt_type == 'SERVICE':
-				self.rds_cnx.put('event:service', data)
-
+			try:
+				if alrt_type == 'HOST':
+					data.update({'service_desc': 'ping'})
+					self.rds_cnx.put('event:host', data)
+				elif alrt_type == 'SERVICE':
+					self.rds_cnx.put('event:service', data)
+			except:
+				error('Exception in log ')
+			
 
 	# called by base module
 	def manage_host_check_result_brok(self, brok):
@@ -124,10 +168,11 @@ class RedisEnqueueBroker(BaseModule):
 				else:
 					self.rds_cnx.setex(host_key, 300, 1)
 
-				#info('[%s] brok: %s' % (self.name, brok.data.items()))
 				msg = dict([(k, v) for  k, v in brok.data.iteritems() if 
 					k in self.host_valid_attrs])
 				self.rds_cnx.put('perf:host', msg)
+				#info('[%s] brok: %s' % (self.name, msg))
+
 			except Exception as exc:
 				error('[%s] Problem with brok: '
 						     '%s' % (self.name, exc))
@@ -155,6 +200,28 @@ class RedisEnqueueBroker(BaseModule):
 						     '%s' % (self.name, exc))
 
 
+	def process_brok(self,q):
+		while True:
+			error('Process brok %s',q.qsize())
+			result_list= []
+			try:
+				for items in range(0,q.qsize()):
+					#error('item: %s',items)
+					result_list.append(q.get_nowait())
+			except Exception,e:
+				error('Error %s', e)
+				continue	
+			#except:
+			#	error('error in process brok'  )
+			#error('Q:len:B %s' % q.qsize())
+			for brok_entry in result_list:
+				for brok in brok_entry:
+					if brok.type == 'host_check_result':
+						self.manage_host_check_result_brok(brok)
+					elif brok.type =='service_check_result':
+						self.manage_service_check_result_brok(brok)
+					elif brok.type =='log':
+						self.manage_log_brok(brok)
 class RedisQueue:
 	""" Queue with redis backend"""
 
