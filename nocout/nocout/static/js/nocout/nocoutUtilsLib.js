@@ -225,7 +225,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
     table_string += '<table id="' + service_id + '_'+ table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
-        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+        table_string += '<th><b>' + grid_headers[i].toUpperCase() + '</b></th>';
         excel_columns.push(i);
     }
     table_string += '</thead></table>';
@@ -258,7 +258,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         },
         bPaginate: true,
         bDestroy: true,
-        aaSorting : [[0, 'desc']],
+        aaSorting : [[2, 'desc']],
         sPaginationType: "full_numbers"
     });
 }
@@ -793,7 +793,7 @@ function createTableHtml_nocout(dom_id, table_headers, table_data) {
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
-        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+        table_string += '<th><b>' + grid_headers[i].toUpperCase() + '</b></th>';
     }
 
     table_string += '</thead><tbody>';
@@ -834,12 +834,19 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
 
     /*Make table headers*/
     for (var i = 0; i < chartObj.length; i++) {
-        data_in_table += '<td colspan="2" align="center"><b>' + chartObj[i].name + '</b></td>';
+        data_in_table += '<th colspan="2" style="text-align: center;"><b>' + chartObj[i].name + '</b></th>';
     }
     data_in_table += '</tr><tr>';
 
     for (var i = 0; i < chartObj.length; i++) {
-        data_in_table += '<td><em>Time</em></td><td><em>Value</em></td>';
+        var name = '';
+        try {
+            splitted_chart_name = chartObj[i].name.split(':')
+            name = $.trim(splitted_chart_name[0]);
+        } catch(e) {
+            name = $.trim(chartObj[i].name);
+        }
+        data_in_table += '<th><em>Time ('+ name +')</em></th><th><em>Value ('+ name +')</em></th>';
     }
 
     data_in_table += '</tr></thead><tbody>';
@@ -938,9 +945,13 @@ function nocout_livePollCurrentDevice(
                     critical_threshold = meta_info && meta_info["critical"] ? meta_info["critical"] : "",
                     dateObj = new Date(),
                     epoch_time = dateObj.getTime(),
-                    month = Number(dateObj.getMonth()) + 1,
-                    date_str = dateObj.getDate() + "-" + month + "-" + dateObj.getFullYear(),
-                    time_str = dateObj.getHours() + ":" + dateObj.getMinutes() + ":" + dateObj.getSeconds(),
+                    current_date = dateObj.getDate() > 9 ? dateObj.getDate() : '0' + String(dateObj.getDate()),
+                    month = Number(dateObj.getMonth()) + 1 > 9 ? Number(dateObj.getMonth()) + 1 : '0' + String(Number(dateObj.getMonth()) + 1),
+                    date_str = current_date + "-" + month + "-" + dateObj.getFullYear(),
+                    current_hour = dateObj.getHours() > 9 ? dateObj.getHours() : '0' + String(dateObj.getHours()),
+                    current_minutes = dateObj.getMinutes() > 9 ? dateObj.getMinutes() : '0' + String(dateObj.getMinutes()),
+                    current_second = dateObj.getSeconds() > 9 ? dateObj.getSeconds() : '0' + String(dateObj.getSeconds()),
+                    time_str = current_hour + ":" + current_minutes + ":" + current_second,
                     current_time = date_str + " " + time_str,
                     fetched_data = true;
 
