@@ -306,7 +306,7 @@ iframe {
 }
 .date_range_filter_container {
   float:left;
-  max-width: 250px !important;
+  max-width: 355px !important;
   margin-bottom:5px;
 }
 .date_range_filter_container .form-control {
@@ -525,7 +525,7 @@ th.vAlign_middle, .vAlign_middle b {
   color: #FFF;
   font-size: 12px;
   font-weight: bold;
-  cursor: pointer;
+  /*cursor: pointer;*/
   text-align: center;
 }
 .custom_legends_block ul {
