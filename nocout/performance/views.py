@@ -6507,39 +6507,41 @@ class CustomDashboardPerformanceListing(BaseDatatableView,AdvanceFilteringMixin)
         """ Filter datatable as per requested value
         :param qs:
         """
-
-        # sSearch = self.request.GET.get('sSearch', None)
+       
         sSearch = self.request.GET.get('search[value]', None)
+        updated_resultset = list()
 
         if sSearch:
-
             try:
-                main_resultset = self.custom_data_instance.get_performance_data(
-                    **self.parameters
-                ).using(alias=self.inventory_device_machine_name)
+                for params in self.parameters:
+                    main_resultset = self.custom_data_instance.get_performance_data(
+                    **params
+                    ).using(alias=self.inventory_device_machine_name)                  
 
-                qs = main_resultset.filter(
-                    Q(data_source__icontains=sSearch)
-                    |
-                    Q(max_value__icontains=sSearch)
-                    |
-                    Q(min_value__icontains=sSearch)
-                    |
-                    Q(current_value__icontains=sSearch)
-                    |
-                    Q(ip_address__icontains=sSearch)
-                    |
-                    Q(severity__icontains=sSearch)
-                    |
-                    Q(warning_threshold__icontains=sSearch)
-                    |
-                    Q(critical_threshold__icontains=sSearch)
-                ).values(*self.columns).order_by('-sys_timestamp')
+                    qs = main_resultset.filter(
+                        Q(data_source__icontains=sSearch)
+                        |
+                        Q(max_value__icontains=sSearch)
+                        |
+                        Q(min_value__icontains=sSearch)
+                        |
+                        Q(current_value__icontains=sSearch)
+                        |
+                        Q(ip_address__icontains=sSearch)
+                        |
+                        Q(severity__icontains=sSearch)
+                        |
+                        Q(warning_threshold__icontains=sSearch)
+                        |
+                        Q(critical_threshold__icontains=sSearch)
+                    ).values(*self.columns).order_by('-sys_timestamp')
 
+                    updated_resultset.append(qs)
+                # Merge all querysets present in 'updated_resultset' list
+                qs = MultiQuerySet(*updated_resultset)
             except Exception, e:
                 pass
-
-        return self.advance_filter_queryset(qs)
+        return qs
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
