@@ -16,16 +16,16 @@
 {% block content_title %}Edit User{% endblock %}
 {% block content_description %}Edit user{% endblock %}
 {% block content %}
-    <div class="row formContainer">
-        <div class="col-md-12">
-            <div class="row">
-                <div class="col-md-12">
+    <div class="formContainer">
+        <div class="">
+            <div class="">
+                <div class="">
                     <div class="box border lite">
                         <div class="box-title">
                             <h4><i class="fa fa-bars"></i> EDIT USER : {{ object.username }}</h4>
                         </div>
                             <div class="box-body">
-                                <div class="col-md-8"><br />
+                                <div class="col-md-12">
                                     <form action="" method="post" class="form-horizontal" role="form" autocomplete="off">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
@@ -35,7 +35,7 @@
                                                         <div class="col-md-8">
                                                             {{ field }} {{ field.errors }}
                                                         </div>
-                                                        <div class="col-md-4 help_text">
+                                                        <div class="col-md-3 help_text">
                                                             {{ field.help_text }}
                                                         </div>
                                                     </div>
@@ -61,10 +61,50 @@
     {% block content_js %}
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
-    <script>
+    <script type="text/javascript" src= {% static "js/nocout/nocoutUtilsLib.js" %} ></script>
+    <script type="text/javascript">
+
+        var parent_class = 'formContainer',
+            change_event_dom_ids = [
+                '#id_groups'
+            ],
+            element_relation_dict = {
+                '#id_groups' : {
+                    "old_value" : $('#id_groups').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_user_permissions',
+                            "url_name" : "{% url 'permissions_on_group_change' 123 %}",
+                            "existing_value" : $('#id_user_permissions').val()
+                        }
+                    ],
+                    "reset" : [
+                        '#id_user_permissions'
+                    ]
+                }
+            };
+
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            // Init permissions select2
+            $("#id_user_permissions").select2({
+                formatResult: function(result) {
+                    return format_permissions_widget(result);
+                },
+                formatSelection: function(result) {
+                    return format_permissions_widget(result);
+                }
+            });
+
+            // Loop to trigger change event on select boxes if value exists
+            for (var i=0;i<change_event_dom_ids.length;i++) {
+                if (element_relation_dict[change_event_dom_ids[i]]['old_value']) {
+                    // trigger change event
+                    $(change_event_dom_ids[i]).trigger('change', true);
+                }
+            }
 
             //Check weather the organization and parent is selected or not
             if ($("#id_organization").val() == "") {
@@ -72,6 +112,7 @@
             }
             else if ($("#id_parent").val() == ""){
                 $("#id_parent").empty();
+
                 list_parent_according_to_organisation()
             }
             else{

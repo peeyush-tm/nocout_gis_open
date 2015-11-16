@@ -25,9 +25,9 @@
 {% block css %}
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
-
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
+    <link rel="stylesheet" type="text/css" href={% static "js/vis/vis/dist/vis.css" %} >
 {% endblock %}
 
 {% block content %}
@@ -396,8 +396,8 @@
                 <div class="tab-pane" id="custom_dashboard_tab">
                     <div class="panel panel-default inner_tab_container">
                         <div class="panel-body">
-                            <div id="custom_dashboard_container">                                
-                                <ul class="list-unstyled list-inline control_btn_countainer">
+                            <div id="custom_dashboard_container">                                      
+                                <ul class="list-unstyled list-inline control_btn_countainer" style="position:absolute;">
                                     <li class="pull-right">                                            
                                         <button id="add_custom_dashboard" class="btn btn-sm btn-default normal_screen " type="button" title="Add_Custom_Dashboard">
                                             <i class="fa fa-plus"></i>
@@ -406,7 +406,7 @@
                                             <i class="fa fa-trash-o" title="Soft Delete"></i>
                                         </button>
                                      </li>  
-                                </ul>
+                                </ul>                                
                                 <div class="tabbable tabs-left">
                                     <i class="fa fa-spinner fa-spin" title="Fetching Utilization Services"></i>
                                 </div>
@@ -446,6 +446,8 @@
     <script type="text/javascript" src={% static "js/vis/vis/dist/vis.js" %}></script>
     <!-- Populate network topology custom lib -->
     <script type="text/javascript" src={% static "js/nocout/networkTopologyLib.js" %}></script>
+    <!-- Populate custom dashboard script -->
+    <script type="text/javascript" src={% static "js/nocout/custom_dashboard.js" %}></script>
     <!-- Datetime range picker lib -->
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
@@ -477,6 +479,7 @@
             default_live_table_headers = [],
             default_hist_table_headers = [],
             is_radwin5 = 0,
+            is_viewer = 0,
             bs_id = "",
             all_services_list = [],
             perf_base_url = '',
@@ -484,7 +487,8 @@
             severity_wise_data_api = '',
             default_left_tab_icon = 'fa-circle-o',
             active_left_tab_icon = 'fa-dot-circle-o',
-            topo_dom_id = 'topo_network';
+            topo_dom_id = 'topo_network',
+            non_poll_sds = [];
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -495,8 +499,10 @@
             page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer";
             is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
             is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
-            bs_id = "{{ bs_id }}" ? "{{ bs_id }}" : [];
+            is_viewer = "{{is_viewer_flag }}" ? Number($.trim("{{ is_viewer_flag }}")) : 0;
+            bs_id = '{{ bs_id|safe }}' ? '{{ bs_id|safe }}' : [];
             perf_base_url = "{{ perf_base_url }}" ? $.trim("{{ perf_base_url }}") : "";
+            non_poll_sds = '{{ settings.NO_ONDEMAND_POLL_SDS|safe }}' ? JSON.parse('{{ settings.NO_ONDEMAND_POLL_SDS|safe }}') : [];
             current_device_technology = "";
             statusUrl = "";
             serviceUrl = "";
@@ -826,378 +832,7 @@
             initBirdEyeView('birdeye_container');
         });
 
-$("#custom_dashboard").click(function (e) {
-            if(!$('#service_view_type_btn').hasClass('hide')) {
-                $('#service_view_type_btn').addClass('hide');
-            }
-            if(!$('#item_type_btn').hasClass('hide')) {
-                $('#item_type_btn').addClass('hide');
-            }
-        });
 
-
-        $("#add_custom_dashboard").on('click', function () {
-            /*Call the bootbox to show the popup */            
-            var popup_html = "";
-           
-            popup_html += " <div class='add_custom_container' style='position:relative;overflow:auto;'>\
-                                <div class='form-horizontal col-md-8 col-md-offset-2' id='custom_dashboard_form'> \
-                                    <div class='form-group'>\
-                                        <label for='custom_name'>Name <span class='mandatory'>* </span> </label>\
-                                        <input type='text' class='multiSelectBox form-control' id='custom_name' style='width:100%;'> \
-                                        <div class='error_msg hide text-danger' id='custom_name_error'></div> \
-                                    </div>\
-                                    <div class='form-group'> \
-                                        <label for='custom_alias'>Alias <span class='mandatory'>* </span> </label>\
-                                        <input type='text' class='multiSelectBox form-control' id='custom_alias' style='width:100%;'>\
-                                        <div class='error_msg hide text-danger' id='custom_alias_error'></div> \
-                                    </div>\
-                                    <div class='form-group'> \
-                                        <label for='display_type'>\
-                                            Display Type <span class='mandatory'>*</span>\
-                                        </label>\
-                                        <div> \
-                                            <input type='radio' name='display_type' value='table' > Table &nbsp; \
-                                            <input type='radio' name='display_type' value='Chart' checked='checked'> Chart \
-                                        </div> \
-                                    </div>\
-                                    <div class='form-group'> \
-                                        <label for='datasource'>\
-                                            Datasources <span class='mandatory'>*</span>\
-                                        </label>\
-                                        <input type='hidden' class='multiSelectBox' id='select_datasource' style='width:100%;'> \
-                                        <div class='error_msg hide text-danger' id='custom_datasource_error'></div> \
-                                    </div>\
-                                    <div class='form-group'> \
-                                        <label for='is_public' >Is Public:</label>\
-                                        <input type='checkbox' class='' id='select_is_public'> \
-                                    </div>\
-                                </div> \
-                            </div>";
-
-
-
-            var add_db_box =bootbox.dialog({
-                message: popup_html,
-                title: 'Create New Dashboard',
-                buttons: {
-                    success: {
-                    label: "Save",
-                    className: "btn-default ",
-                        callback: function() {
-                            var custom_dashboard_name = $("#custom_name").val() ? $.trim($("#custom_name").val()) : '',
-                                custom_dashboard_alias = $("#custom_alias").val() ? $.trim($("#custom_alias").val()) : '',
-                                selected_datasource = $("#select_datasource").select2('val'),
-                                selected_type = $('input[name=display_type]:checked').val() ? $('input[name=display_type]:checked').val().toLowerCase():"";
-                                is_public_dashboard = $('#select_is_public').is(':checked')? 1: 0,
-                                data = {results: []};
-                                //Validation
-                            if (!custom_dashboard_name || custom_dashboard_name.indexOf(' ') > -1) {
-                                $("#custom_name_error").html('Please enter valid name. Name only contains alphanumeric character, underscore & hyphen.');
-                                $("#custom_name_error").removeClass('hide');
-                                return false;
-                            } else {
-                                $("#custom_name_error").html('');
-                                $("#custom_name_error").addClass('hide');
-                            }
-
-                             if (!custom_dashboard_alias) {
-                                $("#custom_alias_error").html('Please enter alias of Custom Dashboard. ');
-                                $("#custom_alias_error").removeClass('hide');
-                                return false;
-                            } else {
-                                $("#custom_alias_error").html('');
-                                $("#custom_alias_error").addClass('hide');
-                            }                            
-                            if ((selected_datasource.length!=2 && selected_type == "chart")) {
-                                $("#custom_datasource_error").html('Please select 2 datasources. Only 2 datasources can be selected for Chart Display.');
-                                $("#custom_datasource_error").removeClass('hide');
-                                return false;                       
-                                } else {
-                                $("#custom_datasource_error").html('');
-                                $("#custom_datasource_error").addClass('hide');
-                            }
-                            if ((selected_datasource.length<2 && selected_type == "table")) {
-                                $("#custom_datasource_error").html('Please select atleast 2 datasources.');
-                                $("#custom_datasource_error").removeClass('hide');
-                                return false;                       
-                                } else {
-                                $("#custom_datasource_error").html('');
-                                $("#custom_datasource_error").addClass('hide');
-                            }
-                            if (!selected_datasource || selected_datasource.length < 1 ) {
-                                $("#custom_datasource_error").html('Please select datasource');
-                                $("#custom_datasource_error").removeClass('hide');
-                                return false;
-                            } else {
-                                $("#custom_datasource_error").html('');
-                                $("#custom_datasource_error").addClass('hide');
-                            }
-                            // Show loading spinner
-                            showSpinner();
-
-                            var post_data = {
-                                "custom_name":  custom_dashboard_name ,
-                                "custom_alias":  custom_dashboard_alias,
-                                "ds_name": selected_datasource,
-                                "selected_type": selected_type,
-                                "is_public_dashboard": JSON.stringify(is_public_dashboard)
-                            };
-
-                            create_custom_dashboard(post_data);
-
-                            return false;
-                        }
-                },
-                danger: {
-                  label: "Cancel",
-                  className: "btn-default",
-                    callback: function() {
-                    }
-                }
-            }
-
-            
-
-        });        
-
-            $(".modal-dialog").css("width","60%");      
-
-            $("#select_datasource").select2({
-                multiple: true,
-                minimumInputLength: 3,
-                query: function (query) {
-                    var search_txt = query.term,
-                        selected_type = $('input[name=display_type]:checked').val().toLowerCase(),
-                        name=$('input[id=select_custom_name]').val(),
-                        selected_datasource =$("input[id='select_datasource']").val().split(',').length;
-
-                    
-                    var data = {results: []};   
-                    
-                            // <AJAX_CALL>
-                            $.ajax({                        
-                                url : base_url+"/"+"api/get_data_source/?display_type="+selected_type+"&search="+search_txt,
-                                success : function(response) {                                
-                                    data.results = response;
-                                    query.callback(data);
-                                },
-                                error: function (err) {
-                                    query.callback(data);
-                                    }                        
-                                });
-                        // }   
-                     
-                }
-            });
-        });          
-       
-    function create_custom_dashboard(post_data) {
-
-        $.ajax({
-            url : base_url+"/"+"api/get_data_source_save/",
-            type: "POST",                                
-            data: post_data,
-            success : function(response) {
-                var result = response;
-
-                if (typeof(response) == 'string') {
-                    result = JSON.parse(result);
-                }
-
-                if (result['success']) {
-                    var count = $("#custom_dashboard_container .left_tabs_container li").length,
-                        unique_item_key = "custom_dashboard_tab"+ '_' + String(count)+ '_' + "10_block",
-                        fields = typeof(result['data']) == 'string' ? JSON.parse(result['data'])[0] : result['data'][0];
-                    // var custom_id = {{custom_ds_instance.id}}
-                    var tab_info_obj = {
-                            'active_class' : "",
-                            'unique_key' : unique_item_key,
-                            'icon_class' : 'fa fa-dot-circle-o ',
-                            'api_url' : 'performance/custom_dashboard/'+fields['pk']+'/device/'+current_device,
-                            'title' : post_data['custom_alias']
-                        },
-                        content_info_obj = {
-                            'active_class' : "",
-                            'unique_key' : "custom_dashboard_tab"+ '_' + String(count)+ '_' + "10",
-                            'show_last_updated' : true,
-                        };
-
-                    var custom_tabs = perfInstance.make_tab_li_html(tab_info_obj);
-                    
-                    $("#custom_dashboard_container .left_tabs_container").append(custom_tabs);
-                    
-                    var custom_tabs_data = perfInstance.make_tab_content_html(content_info_obj);
-                    
-                    $("#custom_dashboard_container .tab-content").append(custom_tabs_data);
-
-                    console.log(tab_info_obj);
-                    bootbox.hideAll();                    
-                } else {
-                    if (result['message'].indexOf(' title ') > -1) {
-                        $("#custom_alias_error").html(result['message']);
-                        $("#custom_alias_error").removeClass('hide');
-                    } else if (result['message'].indexOf(' name ') > -1) {
-                        $("#custom_name_error").html(result['message']);
-                        $("#custom_name_error").removeClass('hide');
-                    }
-                }                                                                 
-            },
-            error: function (err) {
-              
-            },
-            complete: function () {
-                // Hide loading spinner
-                hideSpinner();                                
-            }                        
-        });
-    }
-
-       $("#delete_custom_dashboard").on('click', function () {
-
-           var popup_html = "";                            
-
-            popup_html += "<div class='delete_custom_container' style='position:relative;overflow:auto;'> \
-                                <div class='form-group'> \
-                                    <label for='datasource'> \
-                                        Custom Dashboard<span class='mandatory'>*</span> \
-                                    </label> \
-                                    <select multiple='multiple' class='select2select' id='delete_customdb' style='width:100%;'> \
-                                    </select> \
-                                    <div class='error_msg hide text-danger' id='delete_customdb_error'>\
-                                </div> \
-                            </div>"
-
-                    /*Call the bootbox to show the popup with datatable*/
-            var delete_db_box = bootbox.dialog({
-                message: popup_html,
-                title: 'Delete Custom Dashboards',
-                buttons: {
-                    success: {
-                        label: "Delete",
-                        className: "btn-default ",
-                        callback: function() {                            
-                            var select_box= $("#delete_customdb option:selected")?$("#delete_customdb option:selected"):"";
-                                selected_ids = [],
-                                selected_txt = [];    
-                                select_box.each(function(){
-                                    selected_ids.push($(this).val());
-                                    selected_txt.push($(this).text())
-                                });
-                                //Validation
-                                console.log(selected_ids)
-                                if (!selected_ids || selected_ids.length === 0) {                                    
-                                    $("#delete_customdb_error").html('Please enter custom dashboard to be deleted');
-                                    $("#delete_customdb_error").removeClass('hide');
-                                    return false;
-                                } else {
-                                    $("#delete_customdb_error").html('');
-                                    $("#delete_customdb_error").addClass('hide');
-                                }
-                                // Show loading spinner
-                                showSpinner()
-                                $.ajax({                                
-                                url : base_url+"/"+"api/get_data_source_delete/",
-                                type: "POST",                                
-                                data: {
-                                    selected_db : selected_ids
-                                },
-                                success : function(data) {                                 
-                                var result = "";
-                               
-                                
-                                },
-                                error: function (err) {
-                                  
-                                    },
-                                complete: function () {
-                                    // Hide loading spinner
-                                    hideSpinner();                                
-                                    bootbox.alert("Custom Dashboard "+selected_txt+" deleted");
-                                    if(!selected_txt.length== 0) {
-                                        $.each(selected_txt, function(index, value){                                    
-                                            // $("#custom_dashboard_container .left_tabs_container li:contains("+value+")").remove();
-                                            var left_tab_dom = $('#custom_dashboard_container .left_tabs_container li').filter(function() {
-                                                    return $.trim($.text([this])) === value;
-                                                }),
-                                                content_dom_id = left_tab_dom.children('a').attr('href');
-                                            
-                                            left_tab_dom.remove();
-                                            $(content_dom_id).remove();
-
-                                            if ($('#custom_dashboard_container .left_tabs_container li').length > 0) {
-                                                $('#custom_dashboard_container .left_tabs_container li:first-child').trigger('click');
-                                            }
-                                        });
-                                    }                         
-                                }                        
-                                });    
-
-                            
-                        }
-                    },
-                    danger: {
-                      label: "Cancel",
-                      className: "btn-default",
-                      callback: function() {
-                        
-                      }
-                    }
-                }    
-            });
-            delete_db_box.on("shown.bs.modal", function() {   
-                // console.log("here")                
-                // console.log(search_txt)
-                // <AJAX_CALL>
-                $("#delete_customdb").select2();
-                $.ajax({                    
-                        url : base_url+"/"+"api/get_data_source_list/",
-                        type: "GET",                            
-                        success : function(response) {                                
-                            var result =""
-                            
-                            if (typeof response == 'string') {
-                                result = JSON.parse(response);
-                                } else {
-                                result = response;
-                                }
-                            var option_html = '';
-                            var objects = result['data']['objects']
-                            $("#delete_customdb").select2('enable');
-                            for (var x=0;x<objects.length;x++) {
-                                var existing_keys = Object.keys(objects[x]).filter(function(items) {return items != 'id'}),
-                                alias_key = existing_keys.indexOf('title') > -1 ? 'title' : existing_keys[0];                        
-                                option_html += '<option value="' + objects[x].id + '" ' +  '>' + objects[x][alias_key] + '</option>';
-                                $("#delete_customdb").html(option_html);                                
-                        }                                           
-                       
-                        
-                        try {
-                            // Enable the selector                            
-                            $("#delete_customdb").select2('val', selected_id);
-                        } catch(e) {
-                            // console.error(e);
-                        }
-                    },
-               
-                    
-                               
-                              
-                });                  
-                        
-                       
-            });
-        
-            $(".modal-dialog").css("width","60%");
-                   
-            // $("#delete_customdb").select2({
-                
-            //     multiple:true,
-                
-
-                
-            //      });
-         });
         // Fetch & Draw Topology view on tab click
         $("#topo_view").click(function(e) {
             // Show loading Spinner
@@ -1205,14 +840,8 @@ $("#custom_dashboard").click(function (e) {
 
             var single_bs_id = bs_id;
 
-            try {
-                single_bs_id = JSON.parse(bs_id)[0];
-            } catch(e) {
-            // console.error(e);
-            }
-
             $.ajax({
-                url: base_url +  "/performance/get_topology/?bs_id=" + single_bs_id,
+                url: base_url +  "/performance/get_topology/?bs_id=" + bs_id,
                 type: 'GET',
                 success: function(response) {
                     var result = response;
@@ -1221,10 +850,21 @@ $("#custom_dashboard").click(function (e) {
                         result = JSON.parse(result);
                     }
 
-                    if (result.success == 1) {
+                    if (result.success) {
                         topo_api_data = result['data'];
                         // Calling function to convert JSON response to VIS lib format
                         convertToVis(result, topo_dom_id);
+                    } else {
+                        $.gritter.add({
+                            // (string | mandatory) the heading of the notification
+                            title: 'Topology View',
+                            // (string | mandatory) the text inside the notification
+                            text: result.message,
+                            // (bool | optional) if you want it to fade out on its own or just sit there
+                            sticky: false,
+                            // Time in ms after which the gritter will dissappear.
+                            time : 1000
+                        });
                     }
 
                 },
@@ -1268,7 +908,6 @@ $("#custom_dashboard").click(function (e) {
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
                 if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length > 0) {
-                    console.log($('#' + activeTabId).parent('li'));
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).trigger('click');
                 } else {
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li:first-child a").trigger('click');
@@ -1283,6 +922,7 @@ $("#custom_dashboard").click(function (e) {
          */
         $("body").delegate('.left_tabs_container li','click',function(e) {
             var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
+
             if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
                 // remove the 'active_left_tab_icon' class from all link (if exists)
                 $('.left_tabs_container li a i').removeClass(active_left_tab_icon);                
