@@ -775,7 +775,7 @@ function GisPerformance() {
                                     );
                                     
                                     // If show SS checkbox is unchecked then hide SS
-                                    if(show_ss_len <= 0 && ccpl_map.getZoom() < 11) {
+                                    if(show_ss_len <= 0 || ccpl_map.getZoom() < 11) {
                                         hideOpenLayerFeature(ss_marker);
                                     }
                                     if(ss_marker.layerReference && ccpl_map.getZoom() < 11) {
@@ -1016,7 +1016,7 @@ function GisPerformance() {
                                     ccpl_map.getLayersByName("Lines")[0].addFeatures([ss_link_line]);
 
                                     // If show Connection Line checkbox is unchecked then hide connection Line
-                                    if(!isLineChecked > 0 && ccpl_map.getZoom() < 11) {
+                                    if(isLineChecked == 0 || ccpl_map.getZoom() < 11) {
                                         hideOpenLayerFeature(ss_link_line);
                                     }
 
