@@ -1,0 +1,1 @@
+5 * * * * /usr/bin/python /omd/trap_handler/read_raw_traps.py > /dev/null 2>&1

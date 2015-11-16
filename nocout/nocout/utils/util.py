@@ -1388,7 +1388,7 @@ def indexed_query_set(query_set, indexes, values, is_raw=False):
             if query_set.exists():
                 if query_set.values(*indexes).exists():  # check if the desired indexes exists
                     for qs in query_set.values(*values):  # check if the desired values exists
-                        index = tuple(qs[x] for x in indexes)
+                        index = tuple(qs[x].lower() for x in indexes)
                         if index not in indexed_result:
                             indexed_result[index] = list()
                         indexed_result[index].append(qs)
@@ -1400,7 +1400,7 @@ def indexed_query_set(query_set, indexes, values, is_raw=False):
             # list of dictionatry
             if len(query_set):
                 for qs in query_set:
-                    index = tuple(qs[x] for x in indexes)
+                    index = tuple(qs[x].lower() for x in indexes)
                     if index not in indexed_result:
                         indexed_result[index] = list()
                     indexed_result[index].append(qs)
@@ -1508,7 +1508,7 @@ def logged_in_user_organizations(self_object):
 
     logged_in_user = self_object.request.user.userprofile
 
-    if logged_in_user.role.values_list('role_name', flat=True)[0] in ['admin', 'operator', 'viewer']:
+    if logged_in_user.groups.all()[0].name.lower() in ['admin', 'operator', 'viewer']:
         organizations = logged_in_user.organization.get_descendants(include_self=True)
     else:
         organizations = Organization.objects.filter(id=logged_in_user.organization.id)
