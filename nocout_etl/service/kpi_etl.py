@@ -53,20 +53,25 @@ def extract_wimax_connected_ss(hostname,dr_slave,memc_conn):
 		ss_connected_list = memc_conn.get("%s_conn_ss" % str(hostname))
 		#pmp1_ss_connected = args['memc'].get("pmp1_%s" % hostname)
 		#pmp2_ss_connected = args['memc'].get("pmp2_%s" % hostname)
-		pmp1_conn_ss_ip=ss_connected_list[0].get(1)
-		pmp2_conn_ss_ip=ss_connected_list[0].get(2)
+		#warning('wimax connected ss: {0} {1}'.format(ss_connected_list,memc_conn))
+		try:
+			if ss_connected_list[0]: 
+				pmp1_conn_ss_ip=ss_connected_list[0].get(1)
+				pmp2_conn_ss_ip=ss_connected_list[0].get(2)
+		except:
+			pass
 		if dr_slave:
 			dr_ss_connected_list = memc_conn.get("%s_conn_ss" % str(hostname))
 			#dr_pmp1_ss_connected = args['memc'].get("pmp1_%s" % dr_slave)
 			#dr_pmp2_ss_connected = args['memc'].get("pmp2_%s" % dr_slave)
-			dr_pmp1_conn_ss_ip=dr_ss_connected_list[0].get(1)
-			dr_pmp2_conn_ss_ip=dr_ss_connected_list[0].get(2)
+			if dr_ss_connected_list[0]:
+				dr_pmp1_conn_ss_ip=dr_ss_connected_list[0].get(1)
+				dr_pmp2_conn_ss_ip=dr_ss_connected_list[0].get(2)
 	except Exception,e:
 		warning('wimax connected ss: {0}'.format(e))
 		pass
 	if len(dr_pmp1_conn_ss_ip) > 0 or len(dr_pmp2_conn_ss_ip) > 0:
 		return dr_pmp1_conn_ss_ip,dr_pmp2_conn_ss_ip
-	#warning('wimax connected ss: {0} {1}'.format(pmp1_conn_ss_ip,pmp2_conn_ss_ip))
 	return pmp1_conn_ss_ip,pmp2_conn_ss_ip
 
 def collect_wimax_ss_ul_issue_data(pmp1_conn_ss_ip,pmp2_conn_ss_ip,**args):
@@ -142,7 +147,8 @@ def extract_wimax_bs_ul_data(ul_issue_list,host_name,site,ip,sect_id,sec_type,**
 				state_string = "warning"
 		
 		perf = ''.join('%s_ul_issue' % sec_type + "=%s;%s;%s;%s" %(sec_ul_issue,args['war'],args['crit'],sect_id))
-	except:
+	except Exception,e:
+		warning('wimax bs entry: {0}'.format(e))
 		perf = ';%s;%s;%s' % (args['war'],args['crit'],sect_id)
 	args['service'] = 'wimax_bs_ul_issue_kpi'
 	age_of_state = age_since_last_state(host_name, args['service'], state_string)
@@ -168,23 +174,13 @@ def extract_cambium_util_data(host_params,**args):
         	if args['memc']:
         		sec_id = args['memc'].get(str(hostname) + "_sec_id")
 			cam_util = args['memc'].get(str(hostname) + "_" + util_type)
-			if cam_util:
+			if cam_util and isinstance(cam_util,basestring):
 				cam_util = literal_eval(cam_util)
     	except Exception,e:
-		warning('memc: {0}'.format(e))
+		warning('memc: {0} {1}'.format(e,"extract_cambium_util_data"))
+		#warning('args: {0}'.format(args))
         	sec_id = ''
-    	try:
-		if not cam_util:
-			service_name = 'cambium_%s_utilization' % util_type	
-			query_string = "GET services\nColumns: service_perf_data\nFilter: host_name =%s\n" % (hostname) +\
-	       		"Filter: service_description = %s\n" % service_name +\
-	       		"OutputFormat: python\n"
-			output = extract_data_from_live(hostname,site,query_string)
-			try:
-				if output[0][0]:
-					cam_util = output[0][0].split('=')[1].split(';')[0]
-			except:
-				cam_util = None
+	try:
 		if cam_util:
 			cam_util = (float(cam_util)/float(args['provis_bw'] )) * 100
 			cam_util = round(cam_util,2)
@@ -197,7 +193,7 @@ def extract_cambium_util_data(host_params,**args):
 			else:
 				state = 1
 				state_string = "warning"
-			perf = 'cam_%s_util_kpi' % util_type + "=%s;%s;%s;%s" %(cam_util,args['war'],args['crit'],sec_id)
+		perf = 'cam_%s_util_kpi' % util_type + "=%s;%s;%s;%s" %(cam_util,args['war'],args['crit'],sec_id)
 	except Exception,e:
 		warning('cam ss util: {0}'.format(e))
 		perf = 'cam_%s_util_kpi' % util_type + "=;%s;%s;%s" %(args['war'],args['crit'],sec_id)
@@ -235,10 +231,11 @@ def extract_radwin_util_data(host_params,**args):
         		#sec_id = args['memc'].get(str(hostname) + "_sec_id")
 			rad_util = args['memc'].get(str(hostname) + "_" + util_type)
 			#warning('radwin util: {0}'.format(rad_util))
-			if rad_util:
+			if rad_util and isinstance(rad_util,basestring):
 				rad_util = literal_eval(rad_util)
     	except Exception,e:
-		warning('memc: {0}'.format(e))
+		warning('memc: {0} {1} {2} {3}'.format(e,rad_util,hostname,args['service']))
+		#warning('args: {0}'.format(args))
         	sec_id = ''
     	try:
 		if rad_util and bw:
@@ -291,10 +288,11 @@ def extract_mrotek_util_data(host_params,**args):
         		#sec_id = args['memc'].get(str(hostname) + "_sec_id")
 			mrotek_util = args['memc'].get(str(hostname) + "_" + util_type)
 			#warning('radwin util: {0}'.format(rad_util))
-			if mrotek_util:
+			if mrotek_util and isinstance(mrotek_util,basestring):
 				mrotek_util = literal_eval(mrotek_util)
     	except Exception,e:
 		warning('memc: {0}'.format(e))
+		#warning('args: {0}'.format(args))
         	sec_id = ''
     	try:
 		if mrotek_util and capacity[0]:
@@ -309,10 +307,10 @@ def extract_mrotek_util_data(host_params,**args):
 			else:
 				state = 1
 				state_string = "warning"
-			perf = 'fe_1' % util_type + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
+			perf = "fe_1" + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
 	except Exception,e:
 		#warning('cam ss util: {0}'.format(e))
-		perf = 'fe_1' % util_type + "=;%s;%s" %(args['war'],args['crit'])
+		perf = "fe_1" + "=;%s;%s" %(args['war'],args['crit'])
 
 	# calculate age since last state change
 	age_of_state = age_since_last_state(hostname, args['service'], state_string)
@@ -330,61 +328,6 @@ def extract_mrotek_util_data(host_params,**args):
     	build_export.s(args['site_name'], service_list).apply_async()
     return None
 
-def extract_mrotek_util_data(host_params,**args):
-    perf = mrotek_util = sec_id = plugin_message = ''
-    state = 3
-    state_string = "unknown"
-    service_list = []
-    #warning('host_params: {0}'.format(host_params))
-    util_type = args['service'].split('_')[1]
-    for entry in host_params:
-	if entry and len(eval(entry[0])) == 4 :
-		hostname,site,ip_address,capacity = eval(entry[0])
-	else:
-		break
-    	try:
-        	if args['memc']:
-        		#sec_id = args['memc'].get(str(hostname) + "_sec_id")
-			mrotek_util = args['memc'].get(str(hostname) + "_" + util_type)
-			#warning('radwin util: {0}'.format(rad_util))
-			if mrotek_util:
-				mrotek_util = literal_eval(mrotek_util)
-    	except Exception,e:
-		warning('memc: {0}'.format(e))
-        	sec_id = ''
-    	try:
-		if mrotek_util and capacity[0]:
-			mrotek_util = (float(mrotek_util)/float(capacity[0])) * 100
-			mrotek_util = round(mrotek_util,2)
-			if mrotek_util < args['war']:
-				state = 0
-				state_string = "ok"
-			elif mrotek_util >= args['crit']:
-				state = 2
-				state_string = "critical"
-			else:
-				state = 1
-				state_string = "warning"
-			perf = 'fe_1' % util_type + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
-	except Exception,e:
-		#warning('cam ss util: {0}'.format(e))
-		perf = 'fe_1' % util_type + "=;%s;%s" %(args['war'],args['crit'])
-
-	# calculate age since last state change
-	age_of_state = age_since_last_state(hostname, args['service'], state_string)
-
-	service_dict = service_dict_for_kpi_services(
-			perf, state_string, hostname, site, ip_address, age_of_state, **args)
-	service_dict['refer'] = sec_id
-	service_list.append(service_dict)
-
-	mrotek_util = ''
-	sec_id = ''
-	perf = ''
-    	state_string = "unknown"
-    if len(service_list) > 0: 	
-    	build_export.s(args['site_name'], service_list).apply_async()
-    return None
 
 def extract_rici_util_data(host_params,**args):
     perf = rici_util = sec_id = plugin_message = ''
@@ -403,10 +346,11 @@ def extract_rici_util_data(host_params,**args):
         		#sec_id = args['memc'].get(str(hostname) + "_sec_id")
 			rici_util = args['memc'].get(str(hostname) + "_" + util_type)
 			#warning('radwin util: {0}'.format(rad_util))
-			if rici_util:
+			if rici_util and isinstance(rici_util,basestring):
 				rici_util = literal_eval(rici_util)
     	except Exception,e:
 		warning('memc: {0}'.format(e))
+		#warning('args: {0}'.format(args))
         	sec_id = ''
     	try:
 		for index,entry in enumerate(rici_util):
@@ -491,15 +435,15 @@ def extract_wimax_util_data(host_params,**args):
 			sec_id = args['memc'].get(str(hostname) + sec_id_suffix)
 			util = args['memc'].get(str(hostname) + util_suffix)
 			sec_bw = args['memc'].get(str(hostname) + bw_suffix)
-			if sec_bw:
+			if sec_bw and isinstance(sec_bw,basestring):
 				sec_bw = literal_eval(sec_bw)
-			if util:
+			if util and isinstance(util,basestring):
 				util = literal_eval(util)
 			#warning('util: {0} ,{1},{2}'.format(util,hostname,service_name))
 			#warning('sec_id: {0}'.format(sec_bw))
 			if dr_slave:
-				dr_util = args['memc'].get(dr_slave + util_suffix)
-				if dr_util:
+				dr_util = args['memc'].get(str(dr_slave) + util_suffix)
+				if dr_util and isinstance(dr_util,basestring):
 					dr_util = literal_eval(dr_util)
 	except Exception,e:
 		warning('Error in memc: {0}'.format(e))
@@ -507,34 +451,6 @@ def extract_wimax_util_data(host_params,**args):
 
 
     	try:
-		if not sec_bw:
-			bw_output = extract_data_from_live(hostname,site,bw_query_string)
-			if sec_type == 'pmp1':
-				pmp_bw_string = 0
-			elif sec_type == 'pmp2':	
-				pmp_bw_string = 1
-			if bw_output:
-				try:
-					bw_output = bw_output[0][0] 
-					output = [entry for entry in bw_output.split(' - ')[1].split()]
-					sec_bw=eval(output[pmp_bw_string].split('=')[1])
-				except Exception,e:
-					#warning('Error in wimax util: {0}'.format(e))
-					sec_bw = None
-
-		if util is None and dr_util is None:
-			util_output = extract_data_from_live(hostname,site,sec_util_query_string)
-			try:
-				if util_output[0][0]:
-					util = eval(util_output[0][0].split('=')[1].split(';',1)[0])
-			except:
-				util = None
-			try:
-				if dr_slave and util_output[1][0]:
-					dr_util = eval(util_output[1][0].split('=')[1].split(';',1)[0])
-			except:
-				dr_util = None
-
 		if util != None and dr_util != None:
 			total = util + dr_util
 		elif util != None :
@@ -575,13 +491,14 @@ def extract_wimax_util_data(host_params,**args):
     	service_dict = service_dict_for_kpi_services(
 			perf, state_string, hostname, site, ip_address, age_of_state, **args
 			)
-	#warning('dl_util: {0}'.format(service_dict))
 
     	service_dict['refer'] = sec_id
 
     	service_list.append(service_dict)
     if len(service_list) > 0: 	
     	build_export.s(args['site_name'], service_list).apply_async()
+
+    #warning('dl_util: {0}'.format(service_list))
     #return None
 
 
@@ -708,7 +625,7 @@ def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,bs_ip_address,sec
 			state_string = "ok"
 			state = 0
 			for entry in service_state_out:
-				if str(entry) in service_state_type:
+				if str(entry).lower() in service_state_type:
 					ul_issue=1
 					continue
 				else:

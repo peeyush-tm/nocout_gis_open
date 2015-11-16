@@ -280,7 +280,7 @@ def store_threshold_for_kpi_services(self):
 	cur = store_threshold_for_kpi_services.mysql_cnx('historical').cursor()
 	cur.execute(query)
 	out = cur.fetchall()
-	info('out: {0}'.format(out))
+	#info('out: {0}'.format(out))
 	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
 	rds_cnx = rds_cli.redis_cnx
 	processed_service = []
@@ -408,13 +408,35 @@ def load_inventory(self):
     	"device_device.is_deleted=0 and "
     	"device_device.host_state <> 'Disable' "
     	"and "
-    	"device_devicetype.name in ('Switch', 'RiCi', 'PINE') "
+    	"device_devicetype.name in ('Cisco','Juniper', 'RiCi', 'PINE') "
     	"group by device_device.ip_address;" )
-	
+
+
+	ping_threshold_query = ("select name,rta_warning,rta_critical,pl_warning,pl_critical from device_devicetype; ")
+
+	switch_query  = ( "select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as 
+			device left join (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  ) 
+			 where device.device_type IN (12,18) and backhaul.bh_port_name <> 'NULL';")
+
 	cur.execute(backhaul_query)
 	backhaul_out = cur.fetchall()
+	
+	cur.execute(switch_query)
+	switch_out = cur.fetchall()
+	switch_port_mapping = [(key,value.replace("/", "_")) for key, value in switch_out] # conversion of "/" into "_"
+	#switch_port_mapping = dict(switch_port_mapping)	
 
-	#info('out: {0}'.format(backhaul_out))
+
+
+	ping_threshold_dict = {}
+	# Calculate warning and critical for device type to be used in Event 
+	cur.execute(ping_threshold_query)
+	ping_threshold_out = cur.fetchall()
+	for d1 in ping_threshold_out:
+		ping_threshold_dict[d1[0]] = []
+		ping_threshold_dict[d1[0]].extend([d1[1],d1[2],d1[3],d1[4]])
+
+	#warning('out: {0},{1}'.format(ping_threshold_dict,ping_threshold_out))
 	
 	# e.g. keeping invent data in database number 3
 	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
@@ -448,12 +470,18 @@ def load_inventory(self):
 			dr_info = cur.fetchall()
 			cur.close()
 			#warning('dr hosts: {0}'.format(dr_info))
-			load_devicetechno_wise(wimax_bs_list, rds_pipe, extra=dr_info)
+			load_devicetechno_wise(wimax_bs_list, rds_pipe,extra=dr_info)
+			store_ping_threshold(wimax_bs_list,rds_pipe,ping_threshold_dict)
 		else:
-			load_devicetechno_wise(grouped_devices, rds_pipe)
+			load_devicetechno_wise(grouped_devices,rds_pipe)
+			store_ping_threshold(grouped_devices,rds_pipe,ping_threshold_dict)
 	for bk_grp, bk_grp_vals in groupby(backhaul_out, key=itemgetter(3)):
 		bk_grouped_devices = list(bk_grp_vals)
 		load_backhaul_data(bk_grouped_devices, rds_pipe)
+
+	# Storing the configured port-name of switches devices in redis which is used by ETL for later processing
+	store_switch_port_mapping(switch_port_mapping,rds_pipe)
+
 	try:
 		rds_pipe.execute()
 		store_threshold_for_kpi_services()
@@ -461,18 +489,36 @@ def load_inventory(self):
 		error('Error in redis inventory loading... {0}'.format(exc))
 	else:
 		warning('Inventory loading into redis, done.')
-
+	
 	try:
 		memc.set_multi(device_name_ip_map)
 	except Exception as exc:
 		error('Error in memc inventory loading... {0}'.format(exc))
 	else:
 		warning('Inventory loading into memc, done.')
+	
+
+@app.task(name='store-switch-port-mapping'):
+def store_switch_port_mapping(switch_port_mapping,p):
+	switch_key = 'master_UA:switch' 
+	p.rpush(switch_key , switch_port_mapping)
+
+
+
+@app.task(name='store-ping-threshold')
+def store_ping_threshold(data_values,p,ping_threshold_dict):
+	host_key = '%s:ping' 	
+	t1 = data_values[0]
+	threshold_value = ping_threshold_dict.get(t1[3])
+	for data in data_values:
+		#p.delete(host_key % data[0])
+		p.rpush(host_key % data[0],threshold_value)
 
 @app.task(name='load-backhaul-data')
 def load_backhaul_data(data_values, p, extra=None):
 	t = data_values[0]
 	processed = []
+        cisco_juniper = ['cisco','juniper']
 	#info('PORT-Data: {0}'.format(data_values))
 	# key:: <device-tech>:<device-type>:<site-name>:<ip>
 	key = '%s:%s:%s:%s' % (str(t[3]).lower(),
@@ -482,13 +528,15 @@ def load_backhaul_data(data_values, p, extra=None):
 	invent_key = 'device_inventory:%s'
 	for device in data_values:
 		device_attr = []
-		if str(device[3].lower()) == 'Cisco' or str(device[3].lower()) == 'Juniper':
+		if str(device[3].lower()) == 'Cisco' 
 			port_wise_capacities = [0]*26
+		elif str(device[3].lower()) == 'Juniper':
+			port_wise_capacities = [0]*52
 		else:
 			port_wise_capacities = [0]*8
 		if  str(device[0]) in processed:
 		    continue
-		if '_' in str(device[5]):
+		if '_' in str(device[5]) and str(device[3].lower()) not in cisco_juniper:
 		    try:
 			int_ports = map(lambda x: x.split('_')[-1], device[5].split('$$'))
 			capacities = device[7].split('$$') if device[7] else device[7]
@@ -499,6 +547,38 @@ def load_backhaul_data(data_values, p, extra=None):
 		    except (IndexError, TypeError, AttributeError) as err:
 			#info('ERR-Data: {0}'.format(err))
 			port_wise_capacities = [0]*8
+
+		
+		if str(device[3].lower()) == 'cisco':
+		    try :
+			int_ports = map(lambda x: x.split('/')[-1], device[6].split(','))
+			int_ports = map(lambda x: int(x), int_ports)   #convert int type
+			int_string = map(lambda x: x.split('/')[0], device[6].split(','))
+			for i in xrange(len(int_string)):
+			    if int_string[i]== 'Gi0':
+				int_ports[i]= int_ports[i]+24
+			capacities = device[7].split(',') if device[7] else device[7]
+			for p_n, p_cap in zip(int_ports, capacities):
+			    port_wise_capacities[int(p_n)-1] = p_cap
+		    except Exception as e:
+			port_wise_capacities = [0]*8
+		if str(device[3].lower()) == 'juniper':
+		   try:
+		       int_ports = map(lambda x: x.split('/')[-1], device[6].split(','))
+		       int_ports = map(lambda x: int(x), int_ports)   #convert int type
+		       int_ports_s = map(lambda x: x.split('/')[-2], device[6].split(','))
+		       int_ports_s = map(lambda x: int(x), int_ports_s)
+		       for i in xrange(len(int_ports_s)):
+			   if int_ports_s[i]== 1:
+			       int_ports[i]=int_ports[i]+48
+		       capacities = device[7].split(',') if device[7] else device[7]
+		       for p_n, p_cap in zip(int_ports, capacities):
+			   port_wise_capacities[int(p_n)] = p_cap
+           	   except Exception as e:
+			port_wise_capacities = [0]*8
+			
+
+
 		p.set(invent_key % device[0], device[2])
 		device_attr.extend([device[0],device[1],device[2]])
 		device_attr.append(port_wise_capacities)
@@ -512,6 +592,9 @@ def load_devicetechno_wise(data_values, p, extra=None):
 	Loads specific device technology data into redis
 	"""
 	t = data_values[0]
+
+	# key for storing rta/pl warning/critial values
+
 	# key:: <device-tech>:<device-type>:<site-name>:<ip>
 	key = '%s:%s:%s:%s' % (str(t[4]).lower(),
 					'ss' if t[3].endswith('SS') else 'bs',
@@ -544,7 +627,6 @@ def load_devicetechno_wise(data_values, p, extra=None):
 	for data in data_values:
 		p.set(invent_key % data[0], data[2])
 		p.rpush(key % (data[1], data[2]), data[:last_index])
-
 
 @app.task(base=DatabaseTask, name='nw-mongo-update', bind=True)
 def mongo_update(self, data_values, indexes, col, site):
