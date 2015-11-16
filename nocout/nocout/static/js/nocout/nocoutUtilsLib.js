@@ -834,12 +834,19 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
 
     /*Make table headers*/
     for (var i = 0; i < chartObj.length; i++) {
-        data_in_table += '<th colspan="2" align="center"><b>' + chartObj[i].name + '</b></th>';
+        data_in_table += '<th colspan="2" style="text-align: center;"><b>' + chartObj[i].name + '</b></th>';
     }
     data_in_table += '</tr><tr>';
 
     for (var i = 0; i < chartObj.length; i++) {
-        data_in_table += '<th><em>Time</em></th><th><em>Value</em></th>';
+        var name = '';
+        try {
+            splitted_chart_name = chartObj[i].name.split(':')
+            name = $.trim(splitted_chart_name[0]);
+        } catch(e) {
+            name = $.trim(chartObj[i].name);
+        }
+        data_in_table += '<th><em>Time ('+ name +')</em></th><th><em>Value ('+ name +')</em></th>';
     }
 
     data_in_table += '</tr></thead><tbody>';
