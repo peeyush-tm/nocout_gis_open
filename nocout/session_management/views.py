@@ -42,6 +42,7 @@ from user_profile.models import UserProfile
 from nocout.utils.util import NocoutUtilsGateway
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
+from user_profile.utils.auth import in_group
 
 
 class UserStatusList(PermissionsRequiredMixin, ListView):
@@ -61,12 +62,12 @@ class UserStatusList(PermissionsRequiredMixin, ListView):
         datatable_headers = [
             {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'auto', },
             {'mData': 'full_name', 'sTitle': 'Full Name', 'sWidth': 'auto'},
-            {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'auto'},
+            {'mData': 'groups__name', 'sTitle': 'Role', 'sWidth': 'auto'},
             {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'auto', 'bSortable': False}
         ]
 
         # If the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({
                 'mData': 'actions',
                 'sTitle': 'Actions',
@@ -85,8 +86,8 @@ class UserStatusTable(BaseDatatableView, AdvanceFilteringMixin):
         URL - 'http://127.0.0.1:8000/sm/'
     """
     model = UserProfile
-    columns = ['username', 'first_name', 'last_name', 'role__role_name']
-    order_columns = ['username', 'first_name', 'role__role_name']
+    columns = ['username', 'first_name', 'last_name', 'groups__name']
+    order_columns = ['username', 'first_name', 'groups__name']
 
     def filter_queryset(self, qs):
         """
@@ -120,7 +121,7 @@ class UserStatusTable(BaseDatatableView, AdvanceFilteringMixin):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] == 'admin':
+        if in_group(self.request.user, 'admin'):
             organization_descendants_ids = list(
                 self.request.user.userprofile.organization.get_descendants(include_self=True)
                 .values_list('id', flat=True))

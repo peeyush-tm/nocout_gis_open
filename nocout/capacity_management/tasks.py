@@ -136,8 +136,11 @@ tech_model_service = {
 
 
 backhaul_tech_model_services = {
-    'switch': {
+    'juniper': {
         'device_type': 12
+    },
+    'cisco': {
+        'device_type': 18
     },
     'mrotek': {
         'device_type': 13
@@ -149,22 +152,22 @@ backhaul_tech_model_services = {
         'val': {
             'model': None,
             'dl': {
-                'service_name': 'switch_dl_utilization',
+                'service_name': 'juniper_switch_dl_utilization',
                 'data_source': None
             },
             'ul': {
-                'service_name': 'switch_ul_utilization',
+                'service_name': 'juniper_switch_ul_utilization',
                 'data_source': None
             },
         },
         'kpi': {
             'model': None,
             'dl': {
-                'service_name': 'switch_dl_util_kpi',
+                'service_name': 'juniper_switch_dl_util_kpi',
                 'data_source': None
             },
             'ul': {
-                'service_name': 'switch_ul_util_kpi',
+                'service_name': 'juniper_switch_ul_util_kpi',
                 'data_source': None
             },
         },
@@ -216,7 +219,31 @@ backhaul_tech_model_services = {
                 'data_source': None
             },
         },
-    }
+    },
+    18: {
+        'val': {
+            'model': None,
+            'dl': {
+                'service_name': 'cisco_switch_dl_utilization',
+                'data_source': None
+            },
+            'ul': {
+                'service_name': 'cisco_switch_ul_utilization',
+                'data_source': None
+            },
+        },
+        'kpi': {
+            'model': None,
+            'dl': {
+                'service_name': 'cisco_switch_dl_util_kpi',
+                'data_source': None
+            },
+            'ul': {
+                'service_name': 'cisco_switch_ul_util_kpi',
+                'data_source': None
+            },
+        },
+    },
 }
 
 
@@ -265,9 +292,11 @@ def gather_backhaul_status():
     ).values_list('name', flat=True))
 
     kpi_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi', 'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
-                    'switch_dl_util_kpi', 'switch_ul_util_kpi']
+                    'cisco_switch_dl_util_kpi', 'cisco_switch_ul_util_kpi', 'juniper_switch_dl_util_kpi',
+                    'juniper_switch_ul_util_kpi']
     val_services = ['rici_dl_utilization', 'rici_ul_utilization', 'mrotek_dl_utilization', 'mrotek_ul_utilization',
-                    'switch_dl_utilization', 'switch_ul_utilization']
+                    'cisco_switch_dl_utilization', 'cisco_switch_ul_utilization', 'juniper_switch_dl_utilization',
+                    'juniper_switch_ul_utilization']
 
     g_jobs = list()
     ret = False
@@ -949,22 +978,27 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
         # device type : service : service data source mapping
         # if device type is 'switch'
         if bs_device_type == 12:
-            val_ul_service = 'switch_ul_utilization'
-            val_dl_service = 'switch_dl_utilization'
-            kpi_ul_service = 'switch_ul_util_kpi'
-            kpi_dl_service = 'switch_dl_util_kpi'
+            val_ul_service = 'juniper_switch_ul_utilization'
+            val_dl_service = 'juniper_switch_dl_utilization'
+            kpi_ul_service = 'juniper_switch_ul_util_kpi'
+            kpi_dl_service = 'juniper_switch_dl_util_kpi'
         # if device type is 'pine converter'
         elif bs_device_type == 13:
             val_ul_service = 'mrotek_ul_utilization'
             val_dl_service = 'mrotek_dl_utilization'
             kpi_ul_service = 'mrotek_ul_util_kpi'
             kpi_dl_service = 'mrotek_dl_util_kpi'
-        # if device type is 'rici converter'
+        # # if device type is 'rici converter'
         elif bs_device_type == 14:
             val_ul_service = 'rici_ul_utilization'
             val_dl_service = 'rici_dl_utilization'
             kpi_ul_service = 'rici_ul_util_kpi'
             kpi_dl_service = 'rici_dl_util_kpi'
+        elif bs_device_type == 18:
+            val_ul_service = 'cisco_switch_ul_utilization'
+            val_dl_service = 'cisco_switch_dl_utilization'
+            kpi_ul_service = 'cisco_switch_ul_util_kpi'
+            kpi_dl_service = 'cisco_switch_dl_util_kpi'
         else:
             # proceed only if there is proper device type mapping
             continue
@@ -972,8 +1006,9 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
         # get data source name
         data_source = None
         try:
-            #we dont care about port, till it actually is mapped to a data source
-            data_source = ServiceDataSource.objects.get(name=DevicePort.objects.get(alias=bs.bh_port_name).name).name
+            # we don't care about port, till it actually is mapped to a data source
+            data_source = ServiceDataSource.objects.get(
+                name=DevicePort.objects.get(alias=bs.bh_port_name).name).name.lower()
         except Exception as e:
             # logger.debug('Back-hual Port {0}'.format(bs.bh_port_name))
             # logger.debug('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
@@ -1002,6 +1037,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             out_val_index = (bs.backhaul.bh_configured_on.device_name,
                              backhaul_tech_model_services[bs_device_type]['val']['ul']['service_name'],
                              data_source)
+
             bhs = None
             try:
                 bhs = BackhaulCapacityStatus.objects.get(
@@ -1020,7 +1056,6 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 continue
 
             severity_s = dict()
-
             try:
                 # time of update
                 sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
@@ -1039,6 +1074,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     current_out_per = 0
                     current_in_val = 0
                     current_out_val = 0
+                # if bs.backhaul.bh_configured_on.device_name in [15491, 15492]:
 
                 # current in/out values # formula driven
                 # current_out_val = current_out_per * backhaul_capacity / 100.00

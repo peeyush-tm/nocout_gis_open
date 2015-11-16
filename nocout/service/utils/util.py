@@ -107,6 +107,7 @@ def service_data_sources():
             'chart_color': sds['service_data_sources__chart_color'],
             'service_name': sds['service__name'],
             'service_alias': sds['service__alias'],
+            'ds_name': sds['service_data_sources__name']
         }
         SDS.update({sds_name: ds_to_append})
     return SDS

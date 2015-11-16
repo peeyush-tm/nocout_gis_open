@@ -23,18 +23,20 @@ uplink utilization information is sent to device application
 
 
 
-def extract_switch_ul_util_from_live(hostname,site):
+def extract_switch_ul_util_from_live(hostname,site,memc):
 	try:
 		key1 = str(hostname)+"switch_ul_utilization"
 		dict2 = memc.get(key1)
 		mro_ul_dict=dict(dict2)
 	except Exception ,e:
 		mro_ul_dict = {}
+	#print mro_ul_dict
         return mro_ul_dict
 
 
-def live_query_switch_ul_util_kpi(hostname,site,war,crit,qos):
+def live_query_switch_ul_util_kpi(hostname,site,war,crit,qos,memc):
     state = 3
+    kpi_list_index = []
     ul_kpi = ''
     perf = ''
     plugin_message = ''
@@ -43,28 +45,40 @@ def live_query_switch_ul_util_kpi(hostname,site,war,crit,qos):
     warn_flag = 0
     normal_flag = 0
     qos_value = qos.split('|')[:-1]
+    dict1_kpi = []
+    #for each in qos_value:
+    #    if int(each):
+    #        print int(each)
+    #        kpi_list_index.append(qos_value.index(each))
+    #        print kpi_list_index
+    kpi_list_index = [i+1 for i,x in enumerate(qos_value) if int(x) >0]
     try:
-	ul_util_dict= extract_switch_ul_util_from_live(hostname,site)
-	ul_util_dict = dict([(k,v.split(";")[0]) for k ,v in ul_util_dict.items()])
-	for entry in ul_util_dict.keys():	
-		each, index = entry.split("_")
+	ul_util_dict= extract_switch_ul_util_from_live(hostname,site,memc)
+	for entry in ul_util_dict.keys():
+		each, index = entry.split("_")	
 		index = int(index)
 		if each == "gi0":
 			index = index+24
-		ul_kpi =  ul_util_dict[entry]
-		try:
-			ul_kpi = (float(ul_kpi)/float(qos_value[index-1]))*100
-		except Exception,e:
-			#print e
-			continue 	
-		if ul_kpi or ul_kpi == 0:
-			perf += str(entry) + "=%s;%s;%s;%s " % (ul_kpi,war,crit,qos_value[index])
-			if ul_kpi >= crit:
-				crit_flag = 1
-			elif ul_kpi >= war and ul_kpi < crit:
-				warn_flag = 1
-			else:
-				normal_flag = 1
+		if index in kpi_list_index:
+			ul_kpi =  ul_util_dict[entry]
+			try:
+				ul_kpi = (float(ul_kpi)/float(qos_value[index-1])) *100
+				tup1 = (entry,ul_kpi, index )
+				dict1_kpi.append(tup1)
+				#max_tuple = max(dict1_kpi, key = lambda x:x[1])
+				#print "max ", max_tuple
+			except Exception,e:
+				continue
+	max_tuple = max(dict1_kpi, key = lambda x:x[1])
+	ul_kpi = max_tuple[1]
+	if ul_kpi or ul_kpi ==0:
+		perf += str(max_tuple[0]) + "=%s;%s;%s;%s " % (max_tuple[1],war,crit,qos_value[max_tuple[2]-1])
+		if ul_kpi >= crit:
+			crit_flag = 1
+		elif ul_kpi >= war and ul_kpi < crit:
+			warn_flag = 1
+		else:
+			normal_flag = 1
 	if crit_flag:
 		state =2
 		state_string = "critical"
@@ -76,6 +90,7 @@ def live_query_switch_ul_util_kpi(hostname,site,war,crit,qos):
 		state_string = "ok"
 		
     except Exception ,e:
+        print e
 	perf = '' 
     plugin_message += "switch_ul_util_kpi %s - %s|%s" % (state_string,ul_kpi,perf)
     sys.stdout.write(plugin_message)
@@ -98,12 +113,11 @@ def  main():
         sys.exit((3))
     memc_module = imp.load_source('dbs', '/omd/sites/%s/lib/python/mysql_connection.py' % site )
     memc =memc_module.memc
-    live_query_switch_ul_util_kpi(host_name,site,float(war),float(crit),qos)
+    live_query_switch_ul_util_kpi(host_name,site,float(war),float(crit),qos,memc)
 	
 
 if __name__ == '__main__':
-	mysite = sys.argv[2]
-	memc_module = imp.load_source('dbs', '/omd/sites/%s/lib/python/mysql_connection.py' % mysite )
-	memc =memc_module.memc
+	#mysite = sys.argv[2]
+	#memc_module = imp.load_source('dbs', '/omd/sites/%s/lib/python/mysql_connection.py' % mysite )
+	#memc =memc_module.memc
 	main() 
-
