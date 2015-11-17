@@ -1277,8 +1277,8 @@ $("#download_inventory").click(function(e) {
 $("#static_label").change(function(e) {
 
     if(($(this).val()) && ($(this).val() != last_selected_label)) {
-        if(!$("#apply_label").hasClass("btn-success")) {
-            $("#apply_label").addClass("btn-success");
+        if(!$("#apply_label").hasClass("btn-default")) {
+            $("#apply_label").addClass("btn-default");
             $("#apply_label").html("Apply Label")
         }
 
@@ -1308,8 +1308,8 @@ $("#apply_label").click(function(e) {
     } else {
         if((selected_val) && (selected_val != last_selected_label)) {
 
-            if($("#apply_label").hasClass("btn-success")) {
-                $("#apply_label").removeClass("btn-success");
+            if($("#apply_label").hasClass("btn-default")) {
+                $("#apply_label").removeClass("btn-default");
             }
 
             if(!$("#apply_label").hasClass("btn-danger")) {
@@ -1732,6 +1732,58 @@ $('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) 
             });
 
         }
+    }
+});
+
+/**
+ * This event triggers when technology(on live polling panel) changed.
+ * @event change
+ */
+$('select[name="polling_tech"]').change(function(e) {
+    var selected_tech = $.trim($(this).val());
+    var selected_tech_name = $('select[name="polling_tech"] option:selected').text().toLowerCase();
+   
+    if (selected_tech && typeof tech_type_api != 'undefined') {
+        var api_url = tech_type_api;
+
+        // Update the tech PK in api url
+        api_url = api_url.replace('123', selected_tech);
+
+        $.ajax({
+            url : api_url,
+            type : 'GET',
+            success : function(response) {
+                var result = response;
+
+                if (typeof response == 'string') {
+                    result = JSON.parse(response);
+                }
+
+                var dType_html = '<option value="">Select Type</option>';
+
+                for (var i=0;i<result.length;i++) {
+                    if(ptp_tech_list.indexOf(selected_tech_name) == 1){
+                        var title = result[i]['alias'],
+                        id = result[i]['id'];
+                        dType_html += '<option value="' + id + '">' + title + '</option>'                                              
+                }
+                    else{
+                        var title = result[i]['alias'],
+                        id = result[i]['id'];                       
+                       if(title.indexOf('SS') !== -1)
+                        {
+                            dType_html += '<option value="' + id + '">' + title + '</option>'
+                        }
+
+                    }
+            }
+
+                $('select[name="polling_type"]').html(dType_html);
+            },
+            error : function(err) {
+                // console.log(err.statusText);
+            }
+        })
     }
 });
 
@@ -2363,8 +2415,8 @@ function removeSSParamLabel() {
     // Reset Variables
     tooltipInfoLabel = {};
 
-    if(!$("#apply_label").hasClass("btn-success")) {
-        $("#apply_label").addClass("btn-success");
+    if(!$("#apply_label").hasClass("btn-default")) {
+        $("#apply_label").addClass("btn-default");
         $("#apply_label").html("Apply Label")
     }
 
@@ -2557,10 +2609,11 @@ function prepare_oms_object(oms_instance) {
         }
 
         /*Call the function to create info window content*/
-        var content = gmap_self.makeWindowContent(marker);
-        /*Set the content for infowindow*/
-        $("#infoWindowContainer").html(content);
-        $("#infoWindowContainer").removeClass('hide');
+        gmap_self.makeWindowContent(marker, function(content) {
+            /*Set the content for infowindow*/
+            $("#infoWindowContainer").html(content);
+            $("#infoWindowContainer").removeClass('hide');
+        });
     });
 
     /*Event when the markers cluster expands or spiderify*/
@@ -2724,6 +2777,269 @@ function FullScreenCustomControl(controlDiv, map) {
     });
 }
 
+/**
+ * This function fetch the static info for any element(bs or ss or sector)
+ * @method getStaticInfo
+ */
+function getStaticInfo(clicked_obj, callback) {
+
+    if (!clicked_obj) {
+        callback(clicked_obj);
+    }
+
+    var point_type = clicked_obj.pointType ? $.trim(clicked_obj.pointType).toLowerCase() : '';
+
+    // If static info already fetched then callback from here
+    if (['sector', 'sector_marker', 'sub_station', 'base_station'].indexOf(point_type) > -1) {
+        if (clicked_obj.dataset && clicked_obj.dataset.length > 0) {
+            callback(clicked_obj);
+        }
+    } else {
+        if (
+            clicked_obj.bs_dataset
+            &&
+            clicked_obj.bs_dataset.length > 0
+            &&
+            clicked_obj.ss_dataset
+            &&
+            clicked_obj.ss_dataset.length > 0
+        ) {
+            callback(clicked_obj);
+        }
+    }
+
+    var elem_id = '',
+        child_id = '',
+        elem_tech = '',
+        elem_type = '',
+        technology = '';
+
+    if (point_type == 'base_station') {
+        try {
+            elem_id = clicked_obj.filter_data.bs_id;
+            elem_tech = clicked_obj.bh_device_tech;
+            elem_type = clicked_obj.bh_device_type;
+        } catch(e) {
+
+        }
+    } else if (point_type == 'sub_station') {
+        try {
+            elem_id = clicked_obj.filter_data.id;
+            elem_tech = clicked_obj.technology;
+            elem_type = clicked_obj.device_type;
+        } catch(e) {
+
+        }
+
+    } else if (point_type == 'sector_marker' || point_type == 'sector') {
+        try {
+            elem_id = clicked_obj.filter_data.id;
+            elem_tech = clicked_obj.technology;
+            elem_type = clicked_obj.device_type;
+        } catch(e) {
+
+        }
+
+    } else if (point_type == 'path') {
+        try {
+            elem_id = clicked_obj.filter_data.bs_id;
+            child_id = clicked_obj.filter_data.ss_id;
+        } catch(e) {
+
+        }
+
+    } else {
+        callback(clicked_obj);
+    }
+
+    if (point_type && elem_id) {
+
+        var get_params = 'elem_type='+point_type+'&elem_id='+elem_id+'&child_id='+child_id;
+
+        // Make Ajax Call
+        $.ajax({
+            url: base_url + '/network_maps/get_infowindow_content/?'+ get_params,
+            type: 'GET',
+            success: function(response) {
+                var result = response;
+
+                if (typeof(response) == 'string') {
+                    result = JSON.parse(response);
+                }
+
+                if (result.success) {
+
+                    if (['sector', 'sector_marker', 'sub_station'].indexOf(point_type) > -1) {
+                        clicked_obj['dataset'] = result.data;
+                    } else if (['base_station'].indexOf(point_type) > -1) {
+                        clicked_obj['dataset'] = result.data.base_station;
+                        clicked_obj['bh_dataset'] = result.data.backhaul;
+                    } else {
+                        clicked_obj['bs_dataset'] = result.data.base_station;
+                        clicked_obj['ss_dataset'] = result.data.sub_station;
+                    }
+                    callback(clicked_obj);
+                } else {
+                    callback(clicked_obj);
+                }
+            },
+            error: function() {
+                callback(clicked_obj);
+            }
+        });
+    } else {
+        callback(clicked_obj);
+    }
+}
+
+
+/**
+ * This function returns device marker JSON info object for creating device marker
+ * @method getMarkerInfoJson
+ * @param info_obj {Object}, It contains the complete info for the marker required to create marker specific info object
+ * @param elem_type {String}, It contains the type of element/marker it is(base_station, sector, sector_polygon or sub_station)
+ * @param extra_info {Object}, It contains the extra details required for given marker
+ * @return required_info {Object}, It contains the marker info json object
+ */
+function getMarkerInfoJson(info_obj, elem_type, extra_info) {
+    var required_info = {};
+
+    if (!info_obj || !elem_type) {
+        return required_info;
+    }
+
+    if (elem_type == 'base_station') {
+        var fetched_status = info_obj.maintenance_status,
+            bs_maintenance_status = fetched_status ? $.trim(fetched_status) : "No",
+            bs_lat = info_obj.lat,
+            bs_lon = info_obj.lon;
+
+        required_info = {
+            ptLat              : bs_lat,
+            ptLon              : bs_lon,
+            bh_id              : info_obj.bh_id,
+            bh_device_id       : info_obj.bh_device_id,
+            bh_device_type     : info_obj.bh_device_type,
+            bh_device_tech     : info_obj.bh_device_tech,
+            pl                 : "",
+            pointType          : 'base_station',
+            maintenance_status : bs_maintenance_status,
+            device_name        : info_obj.device_name,
+            dataset            : info_obj.dataset ? info_obj.dataset : [],
+            bh_dataset         : info_obj.bh_dataset ? info_obj.bh_dataset : [],
+            bhInfo_polled      : [],
+            bhSeverity         : "",
+            bs_name            : info_obj.name,
+            alias              : info_obj.alias,
+            bs_alias           : info_obj.alias,
+            name               : info_obj.name,
+            filter_data        : extra_info,
+            markerType         : 'BS',
+            isMarkerSpiderfied : false,
+            isActive           : false,
+            windowTitle        : "Base Station"
+        };
+
+    } else if (elem_type == 'sector' || elem_type == 'sector_polygon') {
+
+        var sector_perf_url = info_obj.perf_page_url ? info_obj.perf_page_url : "",
+            sector_inventory_url = info_obj.inventory_url ? info_obj.inventory_url : "",
+            fetched_azimuth = info_obj.azimuth_angle,
+            fetched_beamWidth = info_obj.beam_width,
+            rad = info_obj.radius && Number(info_obj.radius) > 0 ? info_obj.radius : 0.5,
+            azimuth = fetched_azimuth && fetched_azimuth != 'NA' ? fetched_azimuth : 10,
+            beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
+            bg_color = info_obj.color && info_obj.color != 'NA' ? info_obj.color : 'rgba(74,72,94,0.58)'
+            pointType = '',
+            polarisation = '';
+
+        if(elem_type == 'sector') {
+            pointType = 'sector_Marker';
+        } else {
+            pointType = 'sector';
+        }
+
+        required_info = {
+            ptLat              : extra_info.bs_lat,
+            ptLon              : extra_info.bs_lon,
+            alias              : info_obj.ip_address,
+            pointType          : pointType,
+            technology         : info_obj.technology,
+            device_type        : info_obj.device_type,
+            vendor             : info_obj.vendor,
+            dataset            : info_obj.dataset ? info_obj.dataset : [],
+            poll_info          : [],
+            pl                 : "",
+            rta                : "",
+            radius             : rad,
+            azimuth            : azimuth,
+            beam_width         : beam_width,
+            polarisation       : polarisation,
+            bg_color           : bg_color,
+            perf_url           : sector_perf_url,
+            inventory_url      : sector_inventory_url,
+            sectorName         : info_obj.ip_address,
+            sector_child       : info_obj.sub_stations,
+            sector_id          : info_obj.sector_id,
+            device_name        : info_obj.device_name,
+            name               : info_obj.device_name,
+            filter_data        : extra_info.filter_info,
+            sector_lat         : extra_info.startLat,
+            sector_lon         : extra_info.startLon,
+            cktId              : "",
+            antenna_height     : info_obj.antenna_height,
+            isActive           : 1,
+            windowTitle        : "Base Station Device"
+        };
+
+    } else if (elem_type == 'sub_station') {
+        var ss_perf_url = info_obj.perf_page_url ? info_obj.perf_page_url : "",
+            ss_inventory_url = info_obj.inventory_url ? info_obj.inventory_url : "",
+            ss_info_dict = info_obj.dataset ? info_obj.dataset : [],
+            ss_pl_rta_timestamp = info_obj.pl_timestamp ? info_obj.pl_timestamp : "",
+            ss_pl = info_obj.pl ? info_obj.pl : "",
+            ss_rta = info_obj.rta ? info_obj.rta : "";
+
+        required_info = {
+            ptLat            :  info_obj.lat,
+            ptLon            :  info_obj.lon,
+            technology       :  extra_info.technology,
+            device_type      :  info_obj.device_type,
+            pointType        :  "sub_station",
+            alias            :  info_obj.circuit_id,
+            dataset          :  ss_info_dict,
+            bhInfo           :  [],
+            poll_info        :  [],
+            pl               :  ss_pl,
+            rta              :  ss_rta,
+            pl_timestamp     :  ss_pl_rta_timestamp,
+            perf_url         :  ss_perf_url,
+            inventory_url    :  ss_inventory_url,
+            antenna_height   :  info_obj.antenna_height,
+            name             :  info_obj.name,
+            bs_name          :  extra_info.filter_info.bs_name,
+            bs_sector_device :  extra_info.sector_device_name,
+            label_str        :  info_obj.label_str ? info_obj.label_str : '',
+            filter_data      :  extra_info.filter_info,
+            device_name      :  info_obj.device_name,
+            ss_device_id     :  info_obj.device_id,
+            ss_ip            :  info_obj.substation_device_ip_address,
+            sector_ip        :  extra_info.filter_info.sector_name,
+            cktId            :  info_obj.circuit_id,
+            zIndex           :  200,
+            optimized        :  false,
+            isActive         :  1,
+            windowTitle      : "Sub Station"
+        };
+    
+    } else {
+        required_info = info_obj;
+    }
+
+    return required_info;
+}
+
+
 // "Object.key" prototyping for IE
 if (!Object.keys) {
     Object.keys = (function () {
@@ -2832,51 +3148,3 @@ if (!Array.prototype.indexOf) {
     return -1;
   };
 }
-
-$('select[name="polling_tech"]').change(function(e) {
-    var selected_tech = $.trim($(this).val());
-    var selected_tech_name = $('select[name="polling_tech"] option:selected').text().toLowerCase();
-   
-    if (selected_tech && typeof tech_type_api != 'undefined') {
-    	var api_url = tech_type_api;
-
-    	// Update the tech PK in api url
-    	api_url = api_url.replace('123', selected_tech);
-
-    	$.ajax({
-    		url : api_url,
-    		type : 'GET',
-    		success : function(response) {
-    			var result = response;
-
-    			if (typeof response == 'string') {
-    				result = JSON.parse(response);
-    			}
-
-    			var dType_html = '<option value="">Select Type</option>';
-
-    			for (var i=0;i<result.length;i++) {
-                    if(ptp_tech_list.indexOf(selected_tech_name) == 1){
-                        var title = result[i]['alias'],
-    					id = result[i]['id'];
-                        dType_html += '<option value="' + id + '">' + title + '</option>'                        					   
-    			}
-                    else{
-                        var title = result[i]['alias'],
-                        id = result[i]['id'];                       
-                       if(title.indexOf('SS') !== -1)
-                        {
-                            dType_html += '<option value="' + id + '">' + title + '</option>'
-                        }
-
-                    }
-            }
-
-    			$('select[name="polling_type"]').html(dType_html);
-    		},
-    		error : function(err) {
-    			// console.log(err.statusText);
-    		}
-    	})
-    }
-});

@@ -480,7 +480,7 @@ th.vAlign_middle, .vAlign_middle b {
   margin-bottom: 0px;
 }
 .remove_advance_filters_btn {
-  margin-left: 15px !important;
+  margin-left: 10px !important;
 }
 .reset_filter_li {
   /*margin-right: 5.5%;*/
@@ -742,6 +742,22 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
 }
 .datatable tbody tr td a:hover {
   text-decoration: none;
+}
+.settings_content_container {
+  background-color: #ffffff;
+  padding: 10px;
+  border: 1px solid #d4d4d4;
+  margin-bottom: 10px;
+}
+#toolsContainerBlock ul {
+  margin-bottom: 0px;
+}
+#toolsContainerBlock ul li {
+  padding-right: 5px;
+  padding-left: 0px;
+}
+#toolsContainerBlock ul li:nth-child(5) {
+  padding-right: 15px;
 }
 .add_custom_container {
   height: 320px;

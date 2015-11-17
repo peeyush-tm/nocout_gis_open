@@ -196,15 +196,6 @@ function GisPerformance() {
 
         counter++;
 
-        // if(gis_perf_call_instance) {
-        //     try {
-        //         gis_perf_call_instance.abort()
-        //         gis_perf_call_instance = "";
-        //     } catch(e) {
-        //         // pass
-        //     }
-        // }
-
         var current_chunk = JSON.parse(JSON.stringify(bs_id));
 
         while(current_chunk && current_chunk.length > 0) {
@@ -225,14 +216,14 @@ function GisPerformance() {
 
         var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal",
             bs_data_object = all_devices_loki_db.where(function(bs) {
-                return bs.originalId == bs_id
+                return bs.bs_id == bs_id
             })[0];
 
         // Show Loader on Current BS
         if(bs_data_object && bs_data_object.name) {
             var base_station_name = bs_data_object.name;
-                bs_marker_lat = bs_data_object.data.lat,
-                bs_marker_lon = bs_data_object.data.lon,
+                bs_marker_lat = bs_data_object.lat,
+                bs_marker_lon = bs_data_object.lon,
                 loader_label = "",
                 allMarkersObject = "";
             
@@ -265,7 +256,7 @@ function GisPerformance() {
 
                 var result = "";
                 // Type check of response
-                if(typeof response == 'string') {
+                if(response && typeof response == 'string') {
                     result = JSON.parse(response);
                 } else {
                     result = response;
@@ -275,7 +266,7 @@ function GisPerformance() {
                 //If data is there
                 if(data) {
                     //Store data in gisData
-                    if(data.id) {
+                    if(data.bs_id) {
                         if(window.location.pathname.indexOf("wmap") > -1) {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
@@ -347,7 +338,7 @@ function GisPerformance() {
      Then we loop through each SS for the Base Station
      Then we fetch various google map elements like lineColor or sectorColor and update those components using values from GisPerformanceData.
      */
-    this.updateMap = function (data,callback) {
+    this.updateMap = function (data, callback) {
 
         if(data) {
             var apiResponse = data;
@@ -356,19 +347,19 @@ function GisPerformance() {
             }
 
             //Step no. 1 => Find BS Station First
-            var sectorArray = apiResponse.data.param.sector ? apiResponse.data.param.sector : [],
+            var sectorArray = apiResponse.sectors ? apiResponse.sectors : [],
                 bs_name = apiResponse.name ? apiResponse.name : "",
-                bs_maintenance_status = apiResponse.data.maintenance_status ? apiResponse.data.maintenance_status : false,
-                maintenance_icon = apiResponse.data.markerUrl ? apiResponse.data.markerUrl : false,
-                perf_bh_info = apiResponse.data.param.bh_polled_info ? apiResponse.data.param.bh_polled_info : [],
-                perf_bh_severity = apiResponse.data.param.bhSeverity ? apiResponse.data.param.bhSeverity : "",
-                bh_pl = apiResponse.data.param.bh_pl ? apiResponse.data.param.bh_pl : "",
+                bs_maintenance_status = apiResponse.maintenance_status ? apiResponse.maintenance_status : false,
+                maintenance_icon = apiResponse.markerUrl ? apiResponse.markerUrl : false,
+                perf_bh_info = apiResponse.bh_polled_info ? apiResponse.bh_polled_info : [],
+                perf_bh_severity = apiResponse.bhSeverity ? apiResponse.bhSeverity : "",
+                bh_pl = apiResponse.bh_pl ? apiResponse.bh_pl : "",
                 show_ss_len = $("#showAllSS").length > 0 ? $("#showAllSS:checked").length : 1,
-                bs_lat = apiResponse.data.lat,
-                bs_lon = apiResponse.data.lon,
-                bsInfo = apiResponse.data.param.base_station,
-                bhInfo = apiResponse.data.param.backhual,
-                sector_info_list = apiResponse.data.param.sectors_info_list,
+                bs_lat = apiResponse.lat,
+                bs_lon = apiResponse.lon,
+                bsInfo = apiResponse.base_station,
+                bhInfo = apiResponse.backhual,
+                sector_info_list = apiResponse.sectors_info_list,
                 sector_infoWindow_content = sector_info_list ? sector_info_list : [],
                 bs_marker = "";
 
@@ -385,9 +376,7 @@ function GisPerformance() {
                 try {
                     // Update BH polled info & severity value
                     bs_marker['bhInfo_polled'] = perf_bh_info;
-                    bs_marker['bsInfo'] = bsInfo;
                     bs_marker['bhSeverity'] = perf_bh_severity;
-                    bs_marker['bhInfo'] = bhInfo;
                     bs_marker['pl'] = bh_pl;
 
                     // If we have BS maintenance status then update it in Bs marker
@@ -407,24 +396,24 @@ function GisPerformance() {
             // BH info addition ended.
 
             var bs_loki_obj = all_devices_loki_db.where(function(obj) {
-                    return obj.originalId == apiResponse.id
+                    return obj.bs_id == apiResponse.bs_id
                 }),
                 bs_object = bs_loki_obj.length > 0 ? JSON.parse(JSON.stringify(bs_loki_obj[0])) : [],
-                connected_sectors = bs_object.data.param.sector,
+                connected_sectors = bs_object.sectors,
                 new_plotted_ss = [];
                 
 
             // Loop for Sectors
             for(var i=0;i<sectorArray.length;i++) {
                 var current_sector = sectorArray[i],
-                    sector_ip = current_sector.sector_configured_on,
+                    sector_ip = current_sector.ip_address,
                     sector_id = current_sector.sector_id,
                     sector_item_index = current_sector.item_index > -1 ? current_sector.item_index : 0,
                     sector_perf_info = current_sector.perf_info ? current_sector.perf_info : [],
-                    sector_device = current_sector.sector_configured_on_device,
+                    sector_device = current_sector.device_name,
                     sector_icon = current_sector.markerUrl ? current_sector.markerUrl : "",
                     sector_perf_val = current_sector.perf_value ? current_sector.perf_value : 0,
-                    sub_station = current_sector.sub_station ? current_sector.sub_station : [],
+                    sub_station = current_sector.sub_stations ? current_sector.sub_stations : [],
                     sector_tech = current_sector.technology ?current_sector.technology : "",
                     ss_infoWindow_content = current_sector.ss_info_list ? current_sector.ss_info_list : [],
                     sector_marker = "",
@@ -603,91 +592,74 @@ function GisPerformance() {
                 } else {
                     // pass
                 }
-                
+
                 // If any sector marker or polygon exist then continue
                 if(sector_marker || sector_polygon) {
                     // If any ss exist in response then clear old ss & their connection lines from map
                     if(sub_station.length > 0) {
                         // Loop to remove ss,line & label for current sector from map.
                         for(var a=0;a<connected_sectors.length;a++) {
-                            if(sub_station && sub_station.length > 0) {
-                                var condition1 = connected_sectors[a].sector_configured_on_device == sector_device;
-                                    condition2 = connected_sectors[a].sector_configured_on == sector_ip;
-                                    condition3 = connected_sectors[a].sector_id == sector_id;
+                            var condition1 = connected_sectors[a].device_name == sector_device;
+                                condition2 = connected_sectors[a].ip_address == sector_ip;
+                                condition3 = connected_sectors[a].sector_id == sector_id;
 
-                                if(condition1 && condition2 && condition3) {
-                                    for(var b=0; b< sub_station.length; b++) {
-                                        var ss_name = sub_station[b]['name'] ? sub_station[b]['name'] : "";
-                                        if(sub_station[b] && ss_name) {
-                                            perf_self.removeOldSS(ss_name);
-                                        }
+                            if(condition1 && condition2 && condition3) {
+                                for(var b=0; b< sub_station.length; b++) {
+                                    var ss_name = sub_station[b]['name'] ? sub_station[b]['name'] : "";
+                                    if(sub_station[b] && ss_name) {
+                                        perf_self.removeOldSS(ss_name);
                                     }
                                 }
                             }
                         }
 
-                        var plotSS = perf_self.isSectorDevicesPlottable(current_sector,connected_sectors);
+                        var plotSS = perf_self.isSectorDevicesPlottable(current_sector, connected_sectors);
+
                         // If sectors satisfied filters condition only then plot SS
                         if(plotSS) {
                             // Loop to plot new sub-stations
                             for(var j=0;j<sub_station.length;j++) {
 
                                 var ss_marker_data = sub_station[j],
-                                    ss_item_info_index = ss_marker_data.data.item_index > -1 ? ss_marker_data.data.item_index : 0,
+                                    ss_item_info_index = ss_marker_data.item_index > -1 ? ss_marker_data.item_index : 0,
                                     ss_polled_info = [],
-                                    ss_pl = ss_marker_data.data.pl ? ss_marker_data.data.pl : "",
-                                    ss_rta = ss_marker_data.data.rta ? ss_marker_data.data.rta : "",
-                                    ss_pl_rta_timestamp = ss_marker_data.data.pl_timestamp ? ss_marker_data.data.pl_timestamp : "",
+                                    parent_info = {
+                                        'filter_info' : {
+                                            'bs_name'          : apiResponse.name,
+                                            'sector_name'      : sectorArray[i].ip_address,
+                                            "ss_name"          : ss_marker_data.name,
+                                            'bs_id'            : apiResponse.bs_id,
+                                            'sector_id'        : sectorArray[i].sector_id,
+                                            'sector_device_id' : sectorArray[i].device_id,
+                                            "id"               : ss_marker_data.id
+                                        },
+                                        'technology' : sectorArray[i].technology,
+                                        'bs_lon'      : bs_lon,
+                                        'sector_device_name' : sectorArray[i].device_name
+                                    },
+                                    ss_pl = typeof(ss_marker_data.pl) != 'undefined' ? ss_marker_data.pl : '',
+                                    ss_rta = typeof(ss_marker_data.rta) != 'undefined' ? ss_marker_data.rta : '',
+                                    ss_pl_rta_timestamp = ss_marker_data.pl_timestamp ? ss_marker_data.pl_timestamp : '',
                                     ckt_id_val = perf_self.getKeyValue(ss_infoWindow_content, "cktid", true, ss_item_info_index),
                                     ss_ip_address = perf_self.getKeyValue(ss_infoWindow_content, "ss_ip", true, ss_item_info_index),
-                                    ss_perf_url = ss_marker_data.data.perf_page_url ? ss_marker_data.data.perf_page_url : "",
-                                    ss_inventory_url = ss_marker_data.data.inventory_url ? ss_marker_data.data.inventory_url : "",
-                                    ss_antenna_height = perf_self.getKeyValue(ss_infoWindow_content, "antenna_height", true, ss_item_info_index);
-                                    ss_device_type = ss_marker_data.data.device_type?ss_marker_data.data.device_type: "";
+                                    ss_perf_url = ss_marker_data.perf_page_url ? ss_marker_data.perf_page_url : '',
+                                    ss_inventory_url = ss_marker_data.inventory_url ? ss_marker_data.inventory_url : '',
+                                    ss_antenna_height = ss_marker_data.antenna_height ? ss_marker_data.antenna_height : 'NA',
+                                    ss_device_type = ss_marker_data.device_type ? ss_marker_data.device_type : '';
 
-                                // var ss_marker_object = {};
-                                var ss_marker_object = {
-                                    ptLat            :  ss_marker_data.data.lat,
-                                    ptLon            :  ss_marker_data.data.lon,
-                                    pointType        :  "sub_station",
-                                    dataset          :  ss_infoWindow_content,
-                                    bhInfo           :  [],
-                                    poll_info        :  ss_polled_info,
-                                    pl               :  ss_pl,
-                                    rta              :  ss_rta,
-                                    pl_timestamp     :  ss_pl_rta_timestamp,
-                                    item_index       :  ss_item_info_index,
-                                    antenna_height   :  ss_marker_data.data.antenna_height,
-                                    name             :  ss_marker_data.name,
-                                    technology       :  sector_tech,
-                                    device_type      :  ss_device_type,
-                                    perf_url         :  ss_perf_url,
-                                    inventory_url    :  ss_inventory_url,
-                                    bs_name          :  apiResponse.name,
-                                    bs_sector_device :  sector_device,
-                                    filter_data      :  {"bs_name" : apiResponse.name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.id, "sector_id" : sector_id},
-                                    device_name      :  ss_marker_data.device_name,
-                                    ss_device_id     :  ss_marker_data.device_id,
-                                    ss_ip            :  ss_ip_address,
-                                    sector_ip        :  sector_ip,
-                                    cktId            :  ckt_id_val,
-                                    zIndex           :  200,
-                                    optimized        :  false,
-                                    isActive         :  1,
-                                    windowTitle      : "Sub Station"
-                                };
+                                var ss_marker_object = getMarkerInfoJson(ss_marker_data, 'sub_station', parent_info);
 
                                 if(window.location.pathname.indexOf("gearth") > -1) {
                                     
                                     ss_marker_object['map'] = 'current';
-                                    ss_marker_object['icon'] = base_url+"/"+ss_marker_data.data.markerUrl;
-                                    ss_marker_object['oldIcon'] = base_url+"/"+ss_marker_data.data.markerUrl;
-                                    ss_marker_object['clusterIcon'] = base_url+"/"+ss_marker_data.data.markerUrl;
+                                    ss_marker_object['icon'] = base_url+"/"+ss_marker_data.markerUrl;
+                                    ss_marker_object['oldIcon'] = base_url+"/"+ss_marker_data.markerUrl;
+                                    ss_marker_object['clusterIcon'] = base_url+"/"+ss_marker_data.markerUrl;
 
                                     var ss_marker = earth_self.makePlacemark(
-                                        base_url+"/"+ss_marker_data.data.markerUrl,
-                                        ss_marker_data.data.lat,
-                                        ss_marker_data.data.lon,
+                                        base_url+"/"+ss_marker_data.markerUrl,
+                                        ss_marker_data.lat,
+                                        ss_marker_data.lon,
                                         'ss_'+ss_marker_data.id,
                                         ss_marker_object
                                     );
@@ -720,12 +692,12 @@ function GisPerformance() {
                                                 $("#infoWindowContainer").html(content);
                                                 $("#infoWindowContainer").removeClass('hide');
                                             } else {
-                                                var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-                                                    condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+                                                var condition1 = (typeof(this.pl) != 'undefined' && $.trim(this.pl) != 'N/A'),
+                                                    condition2 = (typeof(this.rta) != 'undefined' && $.trim(this.rta) != 'N/A');
 
                                                 if(condition1 || condition2) {
-                                                    var pl = $.trim(this.pl) ? this.pl : "N/A",
-                                                        rta = $.trim(this.rta) ? this.rta : "N/A",
+                                                    var pl = typeof(this.pl) != 'undefined' ? this.pl : "N/A",
+                                                        rta = typeof(this.rta) != 'undefined' ? this.rta : "N/A",
                                                         info_html = '';
 
                                                     // Create hover infowindow html content
@@ -749,15 +721,16 @@ function GisPerformance() {
 
                                 } else if (window.location.pathname.indexOf("wmap") > -1) {
 
-                                    var iconImageObj = base_url+"/"+ss_marker_data.data.markerUrl,
-                                        ss_marker_icon = ss_marker_data.data.markerUrl ? iconImageObj : "";
+                                    var iconImageObj = base_url+"/"+ss_marker_data.markerUrl,
+                                        ss_marker_icon = ss_marker_data.markerUrl ? iconImageObj : "";
 
                                     /*Create SS Marker Object*/
-                                    ss_marker_object['position'] = new OpenLayers.LonLat(ss_marker_data.data.lon, ss_marker_data.data.lat);
+                                    ss_marker_object['position'] = new OpenLayers.LonLat(ss_marker_data.lon, ss_marker_data.lat);
                                     ss_marker_object['map'] = 'current';
                                     ss_marker_object['icon'] = ss_marker_icon;
                                     ss_marker_object['oldIcon'] = ss_marker_icon;
                                     ss_marker_object['clusterIcon'] = ss_marker_icon;
+                                    ss_marker_object['isActive'] = 1;
                                     ss_marker_object['layerReference'] = ccpl_map.getLayersByName("Markers")[0];
 
                                     var other_size_obj = whiteMapClass.getMarkerSize_wmap(false),
@@ -769,8 +742,8 @@ function GisPerformance() {
                                     var ss_marker = whiteMapClass.createOpenLayerVectorMarker(
                                         size,
                                         ss_marker_icon,
-                                        ss_marker_data.data.lon,
-                                        ss_marker_data.data.lat,
+                                        ss_marker_data.lon,
+                                        ss_marker_data.lat,
                                         ss_marker_object
                                     );
                                     
@@ -785,7 +758,7 @@ function GisPerformance() {
                                     new_plotted_ss.push(ss_marker);
 
                                     bs_ss_markers.push(ss_marker);
-                                    markersMasterObj['SS'][String(ss_marker_data.data.lat)+ ss_marker_data.data.lon]= ss_marker;
+                                    markersMasterObj['SS'][String(ss_marker_data.lat)+ ss_marker_data.lon]= ss_marker;
                                     markersMasterObj['SSNamae'][String(ss_marker_data.device_name)]= ss_marker;
                                     allMarkersObject_wmap['sub_station']['ss_'+ss_marker_data.name] = ss_marker;
                                     /*Push SS marker to pollableDevices array*/
@@ -797,12 +770,11 @@ function GisPerformance() {
 
                                     if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) == -1) {
 
-                                        var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-                                            labelInfoObject = perf_self.getKeyValue(ss_marker.dataset,last_selected_label,false,item_index),
+                                        var labelInfoObject = ss_marker['label_str'] ? ss_marker['label_str'].split('|') : [],
                                             labelHtml = "";
 
-                                        if(labelInfoObject) {
-                                            var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                                        if(labelInfoObject && labelInfoObject.length) {
+                                            var shownVal = labelInfoObject[$('#static_label option:selected').index() - 2] ? $.trim(labelInfoObject[$('#static_label option:selected').index() - 2]) : "NA";
                                             labelHtml += shownVal;
                                         }
 
@@ -833,15 +805,17 @@ function GisPerformance() {
                                 } else {
 
                                     var ss_icon_obj = gmap_self.getMarkerImageBySize(
-                                        base_url+"/"+ss_marker_data.data.markerUrl,
+                                        base_url+"/"+ss_marker_data.markerUrl,
                                         "other"
                                     );
 
-                                    ss_marker_object['position'] = new google.maps.LatLng(ss_marker_data.data.lat,ss_marker_data.data.lon);
-                                    ss_marker_object['map'] = null;
+                                    // Update map specific info
+                                    ss_marker_object['position'] = new google.maps.LatLng(ss_marker_data.lat,ss_marker_data.lon);
                                     ss_marker_object['icon'] = ss_icon_obj;
                                     ss_marker_object['oldIcon'] = ss_icon_obj;
                                     ss_marker_object['clusterIcon'] = ss_icon_obj;
+                                    ss_marker_object['zIndex'] = 200;
+                                    ss_marker_object['optimized'] = false;
                                     
                                     if(show_ss_len > 0 && mapInstance.getZoom() > 12) {
                                         ss_marker_object['map'] = mapInstance;
@@ -853,7 +827,7 @@ function GisPerformance() {
                                     /*Add SS Marker To Cluster*/
                                     masterClusterInstance.addMarkers([ss_marker],true);
 
-                                    markersMasterObj['SS'][String(ss_marker_data.data.lat)+ ss_marker_data.data.lon]= ss_marker;
+                                    markersMasterObj['SS'][String(ss_marker_data.lat)+ ss_marker_data.lon]= ss_marker;
                                     markersMasterObj['SSNamae'][String(ss_marker_data.device_name)]= ss_marker;
 
                                     /*Add the master marker to the global master markers array*/
@@ -880,13 +854,12 @@ function GisPerformance() {
                                     var hide_flag = !$("#show_hide_label")[0].checked;
 
                                     if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) == -1) {
-                                        // var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
-                                        var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-                                            labelInfoObject = perf_self.getKeyValue(ss_marker.dataset,last_selected_label,false,item_index),
+                                        
+                                        var labelInfoObject = ss_marker['label_str'] ? ss_marker['label_str'].split('|') : [],
                                             labelHtml = "";
 
-                                        if(labelInfoObject) {
-                                            var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                                        if(labelInfoObject && labelInfoObject.length) {
+                                            var shownVal = labelInfoObject[$('#static_label option:selected').index() - 2] ? $.trim(labelInfoObject[$('#static_label option:selected').index() - 2]) : "NA";
                                             labelHtml += shownVal;
                                         }
 
@@ -907,13 +880,13 @@ function GisPerformance() {
 
                                     // Right click event on sub-station marker
                                     google.maps.event.addListener(ss_marker, 'rightclick', function(e) {
-                                        var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-                                            condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A'),
-                                            condition3 = ($.trim(this.pl_timestamp) && $.trim(this.pl_timestamp) != 'N/A');;
+                                        var condition1 = (typeof(this.pl) != 'undefined' && $.trim(this.pl) != 'N/A'),
+                                            condition2 = (typeof(this.rta) != 'undefined' && $.trim(this.rta) != 'N/A'),
+                                            condition3 = ($.trim(this.pl_timestamp) && $.trim(this.pl_timestamp) != 'N/A');
 
                                         if(condition1 || condition2 || condition3) {
-                                            var pl = $.trim(this.pl) ? this.pl : "N/A",
-                                                rta = $.trim(this.rta) ? this.rta : "N/A",
+                                            var pl = typeof(this.pl) != 'undefined' ? this.pl : "N/A",
+                                                rta = typeof(this.rta) != 'undefined' ? this.rta : "N/A",
                                                 pl_timestamp = $.trim(this.pl_timestamp) ? this.pl_timestamp : "N/A",
                                                 info_html = '';
 
@@ -941,12 +914,14 @@ function GisPerformance() {
                                 var ss_info = {
                                         "info" : ss_infoWindow_content,
                                         "antenna_height" : ss_antenna_height,
-                                        "ss_item_index" : ss_item_info_index
+                                        "ss_item_index" : ss_item_info_index,
+                                        "ss_id": ss_marker_data.id
                                     },
                                     base_info = {
-                                        "info" : apiResponse.data.param.base_station ? apiResponse.data.param.base_station : [],
-                                        // "antenna_height" : apiResponse.data.antenna_height,
-                                        "bs_item_index" : 0
+                                        "info" : apiResponse.base_station ? apiResponse.base_station : [],
+                                        // "antenna_height" : apiResponse.antenna_height,
+                                        "bs_item_index" : 0,
+                                        "bs_id": apiResponse.bs_id
                                     },
                                     sect_height = sector_marker ? sector_marker.antenna_height : sector_polygon.antenna_height;
 
@@ -954,15 +929,15 @@ function GisPerformance() {
                                 startEndObj["nearEndLat"] = bs_lat;
                                 startEndObj["nearEndLon"] = bs_lon;
 
-                                startEndObj["endLat"] = ss_marker_data.data.lat;
-                                startEndObj["endLon"] = ss_marker_data.data.lon;
+                                startEndObj["endLat"] = ss_marker_data.lat;
+                                startEndObj["endLon"] = ss_marker_data.lon;
 
                                 startEndObj["windowTitle"] = "BS-SS";
                                 startEndObj["startTitle"] = "BS Info";
                                 startEndObj["endTitle"] = "SS Info";
 
                                 /*Link color object*/
-                                var line_color = ss_marker_data.data.link_color;
+                                var line_color = ss_marker_data.link_color;
                                 linkColor = line_color && line_color != 'NA' ? line_color : 'rgba(74,72,94,0.58)';
 
                                 var isLineChecked = $("#showConnLines").length > 0 ? $("#showConnLines:checked").length : 1;
@@ -978,7 +953,7 @@ function GisPerformance() {
                                         sector_ip,
                                         ss_marker_data.name,
                                         apiResponse.name,
-                                        bs_object.originalId,
+                                        bs_object.bs_id,
                                         sector_id
                                     );
                                     ssLinkArray.push(ss_link_line);
@@ -1009,7 +984,7 @@ function GisPerformance() {
                                         sector_ip,
                                         ss_marker_data.name,
                                         bs_object.name,
-                                        bs_object.originalId,
+                                        bs_object.bs_id,
                                         sector_id
                                     );
 
@@ -1177,7 +1152,7 @@ function GisPerformance() {
                                     }
                                 }
 
-                                // if(ss_marker_data.data.perf_value || sector_perf_val) {
+                                // if(ss_marker_data.perf_value || sector_perf_val) {
                                 // Create Label for Perf Value
                                 var existing_index = -1;
                                 for (var x = 0; x < labelsArray.length; x++) {
@@ -1210,7 +1185,7 @@ function GisPerformance() {
                                     labelsArray.splice(existing_index, 1);
                                 }
                                 
-                                var fetched_ss_val = ss_marker_data.data.perf_value;
+                                var fetched_ss_val = ss_marker_data.perf_value;
                                 if(fetched_ss_val && typeof fetched_ss_val == 'object') {
                                     fetched_ss_val = fetched_ss_val[0];
                                 }
@@ -1372,14 +1347,15 @@ function GisPerformance() {
                     condition3 = "";
                 new_sector_loop:
                 for(var j=0;j<sectorArray.length;j++) {
-                    if(sectorArray[j].sub_station && sectorArray[j].sub_station.length > 0) {
+                    if(sectorArray[j].sub_stations && sectorArray[j].sub_stations.length > 0) {
 
-                        condition1 = connected_sectors[i].sector_configured_on_device == sectorArray[j].sector_configured_on_device;
-                        condition2 = connected_sectors[i].sector_configured_on == sectorArray[j].sector_configured_on;
+                        condition1 = connected_sectors[i].device_name == sectorArray[j].device_name;
+                        condition2 = connected_sectors[i].ip_address == sectorArray[j].ip_address;
                         condition3 = connected_sectors[i].sector_id == sectorArray[j].sector_id;
+
                         if(condition1 && condition2 && condition3) {
-                            // bs_object.data.param.sector[i].sub_station = sectorArray[j].sub_station;
-                            connected_sectors[i].sub_station =  sectorArray[j].sub_station;
+                            // bs_object.sectors[i].sub_station = sectorArray[j].sub_station;
+                            connected_sectors[i].sub_stations =  sectorArray[j].sub_stations;
                             break new_sector_loop;
                         }
                     }
@@ -1389,16 +1365,16 @@ function GisPerformance() {
             // Update the maintenance status of BS
             try {
                 
-                bs_object.data.param.backhual = bhInfo;
-                bs_object.data.param.base_station = bsInfo;
-                bs_object.data.param.sector = connected_sectors;
+                bs_object.backhual = bhInfo;
+                bs_object.base_station = bsInfo;
+                bs_object.sectors = connected_sectors;
 
                 if(bs_maintenance_status) {
-                    bs_object.data.maintenance_status = bs_maintenance_status;
+                    bs_object.maintenance_status = bs_maintenance_status;
                 }
 
                 if(maintenance_icon) {
-                    bs_object.data.markerUrl = maintenance_icon;
+                    bs_object.markerUrl = maintenance_icon;
                 }
             } catch(e) {
                 // pass
