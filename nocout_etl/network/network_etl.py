@@ -196,7 +196,7 @@ def build_export(site, network_perf_data):
 
 @app.task(name='device_availibility', ignore_result=True)
 def device_availibility(site_name=None):
-	service = 'availibilty'
+	service = "availability"
 	DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
 	conf = ConfigParser()
 	conf.read(DB_CONF)
@@ -210,10 +210,14 @@ def device_availibility(site_name=None):
 	host_state = "ok"
 	availability_list = []
 	for key,value in zip(host_keys,host_availibility_info):
+		#warning('key: {0}{1}'.format(key,value))
 		key_names = key.split(':')
-		ip_address = key_names[3]
-		host_name = key_names[4]
-		value = eval(value)
+		try:
+			ip_address = key_names[3]
+		except:
+			ip_address = ""
+		host_name = key_names[2]
+		#value = eval(value)
 		down_count = value.count('100')
 		total_down = ((down_count * 5)/(24*60.0) *100)
 		if total_down >=100:
@@ -228,7 +232,7 @@ def device_availibility(site_name=None):
 		availability_list.append(availability_dict)	
 		availability_dict = {}
 	availibility_mysql_insert.s( 'performance_networkavailabilitydaily',availability_list,site).apply_async()
-	warning('host availibility: {0}'.format(availability_list))
+	#warning('host availibility: {0}'.format(availability_list))
 
 
 @app.task(name='get-host-checks', ignore_result=True)
