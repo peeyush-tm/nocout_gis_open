@@ -26,6 +26,7 @@ from django.db import connection
 from user_profile.permissions import admin_perms, operator_perms, viewer_perms
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -82,9 +83,17 @@ class Command(BaseCommand):
             user_mapper = dict()
             for name, group, obj in zip(usernames, usergroups, users):
                 i += 1
+
                 # Progress bar start.
-                if i % (5 * point) == 0:
-                    sys.stdout.write("\r[" + "=" * (i / increment) + " " * ((total - i) / increment) + "] " + str(i / point) + "%")
+                try:
+                    if i % (5 * point) == 0:
+                        sys.stdout.write("\r[" + "=" * (i / increment) + " " * ((total - i) / increment) + "] " + str(
+                            i / point) + "%")
+                        sys.stdout.flush()
+                except Exception as e:
+                    sys.stdout.write(
+                        "\r[=============================================================] {}|{}".format(i,
+                                                                                                         total_users))
                     sys.stdout.flush()
                 # Progress bar end.
 
