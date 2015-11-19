@@ -491,13 +491,16 @@ function addDataToChartTable_nocout(table_obj, table_id) {
                 if (inner_data) {
                     if (inner_data.constructor === Array) {
                         if (inner_data[0]) {
-                            row_val.push(new Date(inner_data[0]).toLocaleString());
+                            var formatted_datetime = getFormattedDate(inner_data[0]);
+                            
+                            row_val.push(formatted_datetime);
                             var chart_val = inner_data[1];
                             row_val.push(chart_val);
                         }
                     } else if (inner_data.constructor === Object) {
                         if (inner_data.x) {
-                            row_val.push(new Date(inner_data.x).toLocaleString());
+                            var formatted_datetime = getFormattedDate(inner_data.x);
+                            row_val.push(formatted_datetime);
                             var chart_val = inner_data.y;
                             row_val.push(chart_val);
                         }
@@ -685,7 +688,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                         day : 'numeric',
                         hour : 'numeric',
                         minute : 'numeric',
-                        hour12 : true
+                        hour24 : true
                     };
 
                     try {
@@ -863,10 +866,12 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
                 val = "";
             if (inner_data) {
                 if (inner_data instanceof Array) {
-                    time_val = new Date(inner_data[0]).toLocaleString();
+                    var time_val = getFormattedDate(inner_data[0]);
+                    // time_val = new Date(inner_data[0]).toLocaleString();
                     val = inner_data[1];
                 } else {
-                    time_val = new Date(inner_data.x).toLocaleString();
+                    var time_val = getFormattedDate(inner_data.x);
+                    // time_val = new Date(inner_data.x).toLocaleString();
                     val = inner_data.y;
                 }
             }
@@ -1987,3 +1992,28 @@ $('#status_container').delegate('#final_status_table .severity_block', 'click', 
         }
     }
 });
+
+/**
+ * This function formats given date object in DD/MM/YY HH:MM(24 Hrs)
+ * @method getFormattedDate
+ * @param input_date {Object}, It contains date object
+ * @return formatted_date {String}, It contains the formatted date string
+ */
+function getFormattedDate(input_date) {
+    var formatted_date = '';
+
+    try {
+        var fetched_datetime = new Date(input_date),
+            fetched_day = fetched_datetime.getDate() > 9 ? fetched_datetime.getDate() : '0' + String(fetched_datetime.getDate()),
+            fetched_month = fetched_datetime.getMonth() + 1 > 9 ? fetched_datetime.getMonth() + 1 : '0' + String(fetched_datetime.getMonth() + 1),
+            fetched_year = String(fetched_datetime.getYear()).substr(-2),
+            fetched_hours = fetched_datetime.getHours() > 9 ? fetched_datetime.getHours() : '0' + String(fetched_datetime.getHours()),
+            fetched_minutes = fetched_datetime.getMinutes() > 9 ? fetched_datetime.getMinutes() : '0' + String(fetched_datetime.getMinutes());
+
+        formatted_date = fetched_day + '/' + fetched_month + '/' + fetched_year + ' ' + fetched_hours + ':' + fetched_minutes;
+    } catch(e) {
+        // console.error(e);
+    }
+
+    return formatted_date;
+}
