@@ -272,7 +272,7 @@ function convertToVis(response, required_dom_id) {
 		            }
 		            infoTable += '</ul>';
 
-		            infoTable += '<div class="tab-pane fade active in" id="static_block"><div class="divide-10"></div>';
+		            infoTable += '<div class="tab-content"><div class="tab-pane fade active in" id="static_block"><div class="divide-10"></div>';
 		            infoTable += "<table class='table table-bordered table-hover'><tbody>";
 		            infoTable += createTableDataHtml(actual_data);
 		            infoTable += "</tbody></table>";
@@ -281,7 +281,7 @@ function convertToVis(response, required_dom_id) {
 		            infoTable += "<table class='table table-bordered table-hover'><tbody>";
 		            infoTable += createTableDataHtml(mrotech_bh_toolTip_polled);
 		            infoTable += "</tbody></table>";
-		            infoTable += '</div>';
+		            infoTable += '</div></div>';
 
 		            /*Final infowindow content string*/
 		            windowContent = "<div class='windowContainer' style='z-index: 300; position:relative;'>\
@@ -333,7 +333,7 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
 	var current_device_id = evt.currentTarget.attributes.device_id ? evt.currentTarget.attributes.device_id.value : "",
 	    point_type = evt.currentTarget.attributes.point_type ? evt.currentTarget.attributes.point_type.value : "",
 	    dom_id = evt.currentTarget.attributes.id ? evt.currentTarget.attributes.id.value : "",
-	    device_tech = evt.currentTarget.attributes.device_tech ? evt.currentTarget.attributes.device_tech.value : "",
+	    device_tech = evt.currentTarget.attributes.device_tech ? $.trim(evt.currentTarget.attributes.device_tech.value.toLowerCase()) : "",
 	    device_type = evt.currentTarget.attributes.device_type ? evt.currentTarget.attributes.device_type.value : "",
 	    href_attr = evt.currentTarget.attributes.href ? evt.currentTarget.attributes.href.value.split("#") : "",
 	    block_id = href_attr.length > 1 ? href_attr[1] : "",
