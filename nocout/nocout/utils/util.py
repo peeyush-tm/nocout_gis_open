@@ -2517,25 +2517,25 @@ def get_maps_initial_data_query(bs_id=[]):
         GROUP_CONCAT(CONCAT(
             sect.id, '|',
             ss.id, '|',
-            ss_device.id, '|',
-            ss_device.device_name, '|',
-            ss_device.ip_address, '|',
-            ss_device_type.name, '|',
-            ss_device.latitude, '|',
-            ss_device.longitude, '|',
-            ckt.circuit_id, '|',
-            ss_antenna.height, '|',
-            ss_device_tech.name, '|',
-            ss.name
+            IF(isnull(ss_device.id), '', ss_device.id), '|',
+            IF(isnull(ss_device.device_name), '', ss_device.device_name), '|',
+            IF(isnull(ss_device.ip_address), '', ss_device.ip_address), '|',
+            IF(isnull(ss_device_type.name), '', ss_device_type.name), '|',
+            IF(isnull(ss_device.latitude), '', ss_device.latitude), '|',
+            IF(isnull(ss_device.longitude), '', ss_device.longitude), '|',
+            IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id), '|',
+            IF(isnull(ss_antenna.height), 'NA', ss_antenna.height), '|',
+            IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name), '|',
+            IF(isnull(ss.name), 'NA', ss.name)
         ) SEPARATOR '-|-|-') AS SS_STR
     '''
 
     if bs_id:
-        bs_where_condition = ' AND bs.id in ({}) '.format(','.join(bs_id))
+        bs_where_condition = ' WHERE bs.id in ({}) '.format(','.join(bs_id))
         ss_group_concat_str = '''
             GROUP_CONCAT(CONCAT(
                 IF(isnull(sect.id), 'NA', sect.id), '|',
-                ss.id, '|',
+                IF(isnull(ss.id), '', ss.id), '|',
                 IF(isnull(ss_device.id), 'NA', ss_device.id), '|',
                 IF(isnull(ss_device.device_name), 'NA', ss_device.device_name), '|',
                 IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address), '|',
@@ -2633,6 +2633,8 @@ def get_maps_initial_data_query(bs_id=[]):
             device_device AS device
         ON
             sect.sector_configured_on_id = device.id
+            AND
+            device.is_added_to_nms > 0
         LEFT JOIN
             device_devicetechnology AS tech
         ON
@@ -2661,6 +2663,8 @@ def get_maps_initial_data_query(bs_id=[]):
             device_device AS ss_device
         ON
             ss_device.id = ss.device_id
+            AND
+            ss_device.is_added_to_nms > 0
         LEFT JOIN
             device_devicetechnology AS ss_device_tech
         ON
@@ -2673,9 +2677,7 @@ def get_maps_initial_data_query(bs_id=[]):
             inventory_antenna AS ss_antenna
         ON
             ss_antenna.id = ss.antenna_id
-        where
-            device.is_added_to_nms > 0
-            {1}
+        {1}
         GROUP BY
             bs.id
         '''.format(ss_group_concat_str, bs_where_condition)

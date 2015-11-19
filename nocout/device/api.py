@@ -416,6 +416,7 @@ def prepare_raw_result_v2(resultset=None):
     vendor_list = list(DeviceVendor.objects.all().values_list('name', flat=True))
     traced_sector_pk = list()
     traced_sector_id = list()
+    
     for bs in resultset:
         if not bs.get('BSID'):
             continue
@@ -639,10 +640,8 @@ def prepare_raw_result_v2(resultset=None):
                     continue
                 
                 temp_dict.update(sectors=sector_list)
-        else:
-            continue
-        if len(sector_list) > 0:
-            result.append(temp_dict)
+        
+        result.append(temp_dict)
 
     return result
 
