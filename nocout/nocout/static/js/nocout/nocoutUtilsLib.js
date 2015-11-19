@@ -688,7 +688,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                         day : 'numeric',
                         hour : 'numeric',
                         minute : 'numeric',
-                        hour24 : true
+                        hour12 : true
                     };
 
                     try {
