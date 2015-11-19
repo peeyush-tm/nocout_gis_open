@@ -866,11 +866,11 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
                 val = "";
             if (inner_data) {
                 if (inner_data instanceof Array) {
-                    var time_val = getFormattedDate(inner_data[0]);
+                    time_val = getFormattedDate(inner_data[0]);
                     // time_val = new Date(inner_data[0]).toLocaleString();
                     val = inner_data[1];
                 } else {
-                    var time_val = getFormattedDate(inner_data.x);
+                    time_val = getFormattedDate(inner_data.x);
                     // time_val = new Date(inner_data.x).toLocaleString();
                     val = inner_data.y;
                 }
