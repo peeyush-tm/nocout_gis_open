@@ -60,40 +60,24 @@ def main(**configs):
     duplicate data.
     """
 
-    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
-    start_time, end_time,db = None, None,None
-    #try:
-    #    db = mongo_module.mongo_conn(
-    #        host=site_spec_mongo_conf[1],
-    #        port=int(site_spec_mongo_conf[2]),
-    #        db_name=configs.get('nosql_db')
-    #    )
-    #except:
-     #   sys.stdout.write('Mongodb connection problem\n')
-      #  sys.exit(1)
-    #end_time = datetime.now()
-    # get most latest sys timstamp entry present in mysql
-    #time_doc = list(db.sys_timestamp_status.find({'_id': 'performance_networkstatus'}))
-    #for doc in time_doc:
-     #   start_time = doc.get('sys_timestamp')
-    #print start_time,end_time
     db=None
+    try:
+    	db = utility_module.mysql_conn(configs=configs)
+    except Exception,e:
+	print e
+	return
     # Get all the entries from mongodb having timestam0p greater than start_time
-    docs = read_data(start_time, end_time, db)
+    docs = read_data()
     print '...........'
     print len(docs)
-    #for doc in docs:
-    #    values_list = build_data(doc)
-    #    data_values.append(values_list)
     if docs:
-        #insert_data(configs.get('table_name'), data_values, configs=configs)
-        insert_data(configs.get('table_name'), docs, configs=configs)
+        insert_data(configs.get('table_name'), docs, db)
         print "Data inserted into mysql db"
     else:
         print "No data in the mongo db in this time frame"
     
 
-def read_data(start_time, end_time, db):
+def read_data():
     """
     Function to read data from mongodb
 
@@ -105,32 +89,7 @@ def read_data(start_time, end_time, db):
     kwargs (dict): Store mongodb connection variables 
     """
 
-    #db = None
     docs = []
-    #start_time = end_time - timedelta(minutes=10)
-    # Connection to mongodb database, `db` is a python dictionary object 
-    #db = mongo_module.mongo_conn(
-    #    host=kwargs.get('configs')[1],
-    #    port=int(kwargs.get('configs')[2]),
-    #    db_name=kwargs.get('db_name')
-    #)
-    table_list = ['performance_networkstatus', 'performance_servicestatus',
-            'performance_status']
-    """
-    if db:
-        if start_time is None:
-            # read data from status, initially
-            start_time = end_time - timedelta(minutes=10)
-            cur = db.device_network_status.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time}})
-        elif (start_time + timedelta(minutes=15)) < end_time:
-            # data in mysql is older than mongo data by more than half an hour
-            # so we need to read data from live mongo collection, rather than status
-            if (start_time + timedelta(days=1)) < end_time:
-                # max time range for data sync is 1 day
-                start_time = end_time - timedelta(days=1)
-            cur = db.network_perf.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time}})
-    """
-            # we should read data from status rather than live
     current_time = datetime.now()
     key = nocout_site_name + "_network"
     doc_len_key = key + "_len" 
@@ -155,7 +114,6 @@ def read_data(start_time, end_time, db):
 	cur=redis_obj.zrangebyscore_dcompress(key,start_time,current_time)
     else:		
     	cur = memc_obj.retrieve(key,doc_len_key)
-    #cur = db.device_network_status.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time}})
     configs = config_module.parse_config_obj()
     for config, options in configs.items():
         machine_name = options.get('machine')
@@ -246,7 +204,7 @@ def build_data(doc):
 
     return t
 
-def insert_data(table, data_values, **kwargs):
+def insert_data(table, data_values,db):
     """
     Function to insert data into mysql tables
 
@@ -257,7 +215,6 @@ def insert_data(table, data_values, **kwargs):
     Kwargs:
         kwargs (dict): Python dict to store connection variables
     """
-    db = utility_module.mysql_conn(configs=kwargs.get('configs'))
     query = "INSERT INTO `%s` " % table
     query += """
             (device_name, service_name, machine_name, 

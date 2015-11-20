@@ -2875,7 +2875,7 @@ def getSSInventoryInfo(sub_station_id=None):
             IF(isnull(antenna.mount_type), 'NA', antenna.mount_type) AS mount_type,
             IF(isnull(antenna.antenna_type), 'NA', antenna.antenna_type) AS antenna_type,
             IF(isnull(ss.cable_length), 'NA', ss.cable_length) AS cable_length,
-            IF(isnull(ss.ethernet_extender), 'NA', ss.ethernet_extender) AS ethernet_extender,
+            IF((isnull(ss.ethernet_extender) OR ss.ethernet_extender = ' '), 'NA', ss.ethernet_extender) AS ethernet_extender,
             IF(isnull(ss.building_height), 'NA', ss.building_height) AS building_height,
             IF(isnull(ss.tower_height), 'NA', ss.tower_height) AS tower_height,
             IF(isnull(ss_tech.name), 'NA', ss_tech.name) AS ss_technology,
@@ -2883,7 +2883,10 @@ def getSSInventoryInfo(sub_station_id=None):
             IF(isnull(customer.address), 'NA', customer.address) AS customer_address,
             IF(isnull(ss.alias), 'NA', ss.alias) AS alias,
             IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance) AS dl_rssi_during_acceptance,
-            IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance
+            IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance,
+            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 1</a>") AS pos_link1,
+            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 2</a>") AS pos_link2
+
         FROM
             inventory_substation AS ss
         LEFT JOIN
@@ -2967,13 +2970,15 @@ def getSectorInventoryInfo(sector_id=None):
             IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
             IF(isnull(ss_antenna.mount_type), 'NA', ss_antenna.mount_type) AS mount_type,
             IF(isnull(ss.cable_length), 'NA', ss.cable_length) AS cable_length,
-            IF(isnull(ss.ethernet_extender), 'NA', ss.ethernet_extender) AS ethernet_extender,
+            IF((isnull(ss.ethernet_extender) OR ss.ethernet_extender = ' '), 'NA', ss.ethernet_extender) AS ethernet_extender,
             IF(isnull(ss.building_height), 'NA', ss.building_height) AS building_height,
             IF(isnull(ss.tower_height), 'NA', ss.tower_height) AS tower_height,
             CONCAT(sector_device.latitude, ', ', sector_device.longitude) AS lat_lon,
             IF(isnull(customer.address), 'NA', customer.address) AS customer_address,
             IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance) AS dl_rssi_during_acceptance,
-            IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance
+            IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance,
+            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 1</a>") AS pos_link1,
+            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 2</a>") AS pos_link2
         FROM
             inventory_sector AS sector
         LEFT JOIN
