@@ -1408,6 +1408,11 @@ class InventoryDeviceServiceDataSource(View):
             'title' : 'Ping'
         }]
 
+        is_other_device = False
+
+        if (device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists()) and not device.backhaul.exists():
+            is_other_device = True
+
         if service_view_type == 'normal':
 
             result['data']['objects']['network_perf_tab']["info"].append({
@@ -1503,7 +1508,11 @@ class InventoryDeviceServiceDataSource(View):
                     elif 'topology' in service_name:
                         continue
                     else:
-                        result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                        if is_other_device:
+                            if 'util' not in service_name:
+                                result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                        else:
+                            result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
         else:
             result['data']['objects']['network_perf_tab']["info"].append({
@@ -1538,7 +1547,11 @@ class InventoryDeviceServiceDataSource(View):
                 elif 'topology' in service_name:
                     continue
                 else:
-                    result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                    if is_other_device:
+                        if 'util' not in service_name:
+                            result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                    else:
+                        result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
         
         result['data']['objects']['availability_tab']["info"].append(
@@ -2033,6 +2046,8 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
 
     parameters = {}
 
+    sds_type = 'Numeric'
+
     inventory_device_machine_name = ""
 
     def get_initial_queryset(self):
@@ -2081,7 +2096,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         # Create instance of "GetServiceTypePerformanceData" class
         self.perf_data_instance = GetServiceTypePerformanceData()
 
-
         if data_for != 'live':
             self.isHistorical = True
             # Device Machine Name required in Query to fetch data.
@@ -2124,9 +2138,18 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
                 else:
                     break
 
+            for sds in SERVICE_DATA_SOURCE:
+                if self.sds_type != 'String':
+                    if service.strip().lower() in sds:
+                        self.sds_type = SERVICE_DATA_SOURCE[sds]['data_source_type']
+                else:
+                    break
+
             self.columns.append('min_value')
             self.columns.append('max_value')
         else:
+            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['data_source_type']:
+                self.sds_type = SERVICE_DATA_SOURCE[self.data_source].get('data_source_type', 'Numeric')
             # check for the formula
             if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['formula']:
                 self.formula = SERVICE_DATA_SOURCE[self.data_source]['formula']
@@ -2138,7 +2161,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
                 if 'max_value' not in self.columns:
                     self.columns.append('max_value')
-
 
         if data_for == 'bihourly':
             self.model = PerformanceServiceBiHourly
@@ -2223,9 +2245,11 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             'start_time': start_date,
             'end_time': end_date,
             'devices': [inventory_device_name],
-            'services': [service],
-            'sds': [data_source]
+            'services': [str(service)],
+            'sds': [str(data_source)]
         }
+
+        self.order_columns = self.columns
 
         return True
 
@@ -2345,7 +2369,76 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         """ Get parameters from the request and prepare order by clause
         :param qs:
         """
-        return nocout_utils.nocout_datatable_ordering(self, qs, self.columns)
+        # Number of columns that are used in sorting
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
+            try:
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
+            except ValueError:
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
+
+        order = []
+        sort_using = ''
+        reverse = ''
+        order_columns = self.order_columns
+
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+            sort_using = order_columns[sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+            else:
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+        if order:
+            # Try catch is added because in some cases 
+            # we receive list instead of queryset
+            try:
+                try:
+                    if self.sds_type == 'Numeric':
+                        sorted_device_data = qs.extra(
+                            select={sort_using: 'CAST(' + sort_using + ' AS DECIMAL)'}
+                        ).order_by(*order)
+                    else:
+                        sorted_device_data = qs.order_by(*order)    
+                except Exception, e:
+                    sorted_device_data = qs.order_by(*order)
+            except Exception, e:
+                try:
+                    sorted_device_data = sorted(
+                        qs, 
+                        key=itemgetter(sort_using),
+                        reverse=True if '-' in order[0] else False
+                    )
+                except Exception, e:
+                    sorted_device_data = qs
+
+            return sorted_device_data
+        return qs 
+
+        # return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -2360,20 +2453,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         # If params not initialized the init them by calling initialize_params
         if not self.perf_data_instance or not self.parameters:
             self.initialize_params()
-
-        try:
-            # Create Ordering columns from GET request
-            total_columns_count = int(self.request.GET.get('iColumns', len(self.columns)))
-            new_ordering_columns = list()
-            
-            for i in range(total_columns_count):
-                if self.request.GET.get('mDataProp_%s' % i) not in new_ordering_columns:
-                    new_ordering_columns.append(self.request.GET.get('mDataProp_%s' % i))
-
-            # Update new ordering columns in global variable
-            self.order_columns = new_ordering_columns
-        except Exception, e:
-            pass
 
         qs = self.get_initial_queryset()
         
@@ -7284,8 +7363,8 @@ class GetTopology(View):
                                 "severity" : "NA",
                                 "value": "NA"
                             }
-                    print 'before'
-                    print sector_dict
+                    
+
                     sector_dict[str(bs.get('sect_id'))] = {
                         "id": str(bs.get('sect_id')),
                         "device_name": bs.get('sect_device_name'),
@@ -7298,8 +7377,6 @@ class GetTopology(View):
                         "pl_info": sect_pl_info,
                         "sub_station": list()
                     }
-                    print 'after'
-                    print sector_dict
 
                 try:
                     if bs.get('ss_device_id'):

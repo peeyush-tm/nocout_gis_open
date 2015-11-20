@@ -1029,7 +1029,7 @@ function WhiteMapClass() {
 				var current_bound_devices = all_devices_loki_db.where(function( obj ) {
 	    			if(!isAdvanceFilterApplied && !isBasicFilterApplied) {
 	    				if(states_array.indexOf(obj.state) > -1) {
-	        				bs_id_array.push(obj.originalId);
+	        				bs_id_array.push(obj.bs_id);
 	        				return true;
 	    				} else {
 	    					return false;
@@ -1049,7 +1049,7 @@ function WhiteMapClass() {
 				            // Condition to check for applied advance filters
 				            if(filter_condition1 && filter_condition2 && filter_condition3 && filter_condition4) {
 				            	if(states_array.indexOf(obj.state) > -1) {
-		            				bs_id_array.push(obj.originalId);
+		            				bs_id_array.push(obj.bs_id);
 		            				return true;
 	            				} else {
 	            					return false;
@@ -1123,7 +1123,7 @@ function WhiteMapClass() {
 					var devicesTemplate = "";
 					for(var i=0;i<current_bound_devices.length;i++) {
 						var current_bs = current_bound_devices[i];
-						devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.originalId+'"><h5>'+(i+1)+'.) '+current_bs.alias+'</h5></div>';
+						devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.bs_id+'"><h5>'+(i+1)+'.) '+current_bs.alias+'</h5></div>';
 					}
 
 					$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
@@ -1578,7 +1578,7 @@ function WhiteMapClass() {
 		    }
 		}
 
-		// var sector_to_plot = all_devices_loki_db.where(function(obj){return plotted_bs_ids.indexOf(obj.originalId) > -1;});
+		// var sector_to_plot = all_devices_loki_db.where(function(obj){return plotted_bs_ids.indexOf(obj.bs_id) > -1;});
 		if(isDebug) {
 			var time_diff = (new Date().getTime() - start_date_bs_bounds.getTime())/1000;
 			console.log("White Map - Show in bound BS End Time :- "+ time_diff + "Seconds");

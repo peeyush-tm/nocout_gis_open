@@ -2981,6 +2981,7 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
             sectorName         : info_obj.ip_address,
             sector_child       : info_obj.sub_stations,
             sector_id          : info_obj.sector_id,
+            device_id          : info_obj.device_id ? info_obj.device_id : '',
             device_name        : info_obj.device_name,
             name               : info_obj.device_name,
             filter_data        : extra_info.filter_info,
