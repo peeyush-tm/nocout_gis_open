@@ -101,7 +101,7 @@ def service_data_sources():
             'show_gis': sds['service_data_sources__show_gis'],
             'show_performance_center': sds['service_data_sources__show_performance_center'],
             'is_inverted': sds['service_data_sources__is_inverted'],
-            'data_source_type': 'String' if sds['service_data_sources__data_source_type'] else 'Numeric',
+            'data_source_type': 'String' if sds['service_data_sources__data_source_type'] == 2 else 'Numeric',
             'warning': sds['service_data_sources__warning'],
             'critical': sds['service_data_sources__critical'],
             'chart_color': sds['service_data_sources__chart_color'],
