@@ -569,6 +569,8 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         exported_filename = 'Performance Chart'
     }
 
+    var reset_zoom_position = {x: -35, y: 0};
+
     // Create yAxis data as per the given params
     if (typeof chartConfig.valuetext == 'string' || chartConfig['is_single']) {
         var title_txt = chartConfig.valuetext;
@@ -586,6 +588,9 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
             reversed : is_y_inverted
         };
     } else if(chartConfig['valuetext'] && chartConfig['valuetext'].length) {
+        if (chartConfig.valuetext.length > 1) {
+            reset_zoom_position = {x: 15, y: 0};
+        }
         yAxisObj = [];
         for(var i=0;i<chartConfig.valuetext.length;i++) {
             var opposite = false;
@@ -612,6 +617,9 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     var chart_options = {
         chart: {
             zoomType: 'x',
+            resetZoomButton: {
+                position: reset_zoom_position
+            },
             type: chartConfig.type,
             events : {
                 load : function(evt) {
