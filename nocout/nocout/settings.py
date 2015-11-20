@@ -758,7 +758,7 @@ DISPLAY_SEVERITY_PIE_CHART = False
 
 # #### Enable Disable Service Impacting Alarms from GUI.
 # Version 1 : 25th March 2015
-SIA_ENABLED = False
+SIA_ENABLED = True
 TRAPS_DATABASE = 'default'
 # #### Enable Disable Service Impacting Alarms from GUI.
 

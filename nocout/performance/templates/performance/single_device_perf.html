@@ -897,8 +897,10 @@
             var tab_id = $(this_pointer).attr("href") ? $(this_pointer).attr("href").split("#")[1] : "",
                 li_count = $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li").length;
 
-            // Save parent tab reference in cookie
-            $.cookie('parent_tab_id', tab_id.slice(0, -4), {path: '/', secure: true});
+            if ($(this_pointer).attr('id') != 'custom_dashboard') {
+                // Save parent tab reference in cookie
+                $.cookie('parent_tab_id', tab_id.slice(0, -4), {path: '/', secure: true});
+            }
 
             if (li_count > 0) {
 

@@ -80,7 +80,8 @@ var bs_ss_markers = [],
 	bs_obj= {},
 	isCallCompleted,
 	gisPerformanceClass = "",
-	spiderified_ss = [];
+	spiderified_ss = [],
+	na_items_list = ['n/a', 'na'];
 
 function WhiteMapClass() {
 
@@ -1029,7 +1030,7 @@ function WhiteMapClass() {
 				var current_bound_devices = all_devices_loki_db.where(function( obj ) {
 	    			if(!isAdvanceFilterApplied && !isBasicFilterApplied) {
 	    				if(states_array.indexOf(obj.state) > -1) {
-	        				bs_id_array.push(obj.originalId);
+	        				bs_id_array.push(obj.bs_id);
 	        				return true;
 	    				} else {
 	    					return false;
@@ -1049,7 +1050,7 @@ function WhiteMapClass() {
 				            // Condition to check for applied advance filters
 				            if(filter_condition1 && filter_condition2 && filter_condition3 && filter_condition4) {
 				            	if(states_array.indexOf(obj.state) > -1) {
-		            				bs_id_array.push(obj.originalId);
+		            				bs_id_array.push(obj.bs_id);
 		            				return true;
 	            				} else {
 	            					return false;
@@ -1123,7 +1124,7 @@ function WhiteMapClass() {
 					var devicesTemplate = "";
 					for(var i=0;i<current_bound_devices.length;i++) {
 						var current_bs = current_bound_devices[i];
-						devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.originalId+'"><h5>'+(i+1)+'.) '+current_bs.alias+'</h5></div>';
+						devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.bs_id+'"><h5>'+(i+1)+'.) '+current_bs.alias+'</h5></div>';
 					}
 
 					$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
@@ -1578,7 +1579,7 @@ function WhiteMapClass() {
 		    }
 		}
 
-		// var sector_to_plot = all_devices_loki_db.where(function(obj){return plotted_bs_ids.indexOf(obj.originalId) > -1;});
+		// var sector_to_plot = all_devices_loki_db.where(function(obj){return plotted_bs_ids.indexOf(obj.bs_id) > -1;});
 		if(isDebug) {
 			var time_diff = (new Date().getTime() - start_date_bs_bounds.getTime())/1000;
 			console.log("White Map - Show in bound BS End Time :- "+ time_diff + "Seconds");
@@ -1781,25 +1782,25 @@ function WhiteMapClass() {
 			}
 			//Loop For Base Station
 			for(var i=dataset.length;i--;) {
-
-				/*Create BS state,city object*/
-				if(dataset[i].state) {
-
-					state_city_obj[dataset[i].state] = state_city_obj[dataset[i].state] ? state_city_obj[dataset[i].state] : [];
-					if(state_city_obj[dataset[i].state].indexOf(dataset[i].city) == -1) {
-						state_city_obj[dataset[i].state].push(dataset[i].city);
-					}
-				}
-
-				if(dataset[i].city) {
-					if(all_cities_array.indexOf(dataset[i].city) == -1) {
-						all_cities_array.push(dataset[i].city); 
-					}
-				}
-
 				var current_bs = dataset[i],
-					state = current_bs.state,
-					sectors_data = current_bs.sectors ? current_bs.sectors : [],
+					state = current_bs['state'] && na_items_list.indexOf(current_bs['state'].toLowerCase()) == -1 ? $.trim(current_bs['state']) : '',
+					city = current_bs['city'] && na_items_list.indexOf(current_bs['city'].toLowerCase()) == -1  ? $.trim(current_bs['city']) : '';
+				/*Create BS state,city object*/
+				if(state) {
+
+					state_city_obj[state] = state_city_obj[state] ? state_city_obj[state] : [];
+					if(state_city_obj[state].indexOf(city) == -1) {
+						state_city_obj[state].push(city);
+					}
+				}
+
+				if(city) {
+					if(all_cities_array.indexOf(city) == -1) {
+						all_cities_array.push(city); 
+					}
+				}
+
+				var sectors_data = current_bs.sectors ? current_bs.sectors : [],
 					update_state_str = state ? state : "",
 					state_lat_lon_obj = state_lat_lon_db.find({"name" : update_state_str}).length > 0 ? state_lat_lon_db.find({"name" : update_state_str})[0] : false,
 					state_param = state_lat_lon_obj ? JSON.stringify(state_lat_lon_obj) : false,
@@ -1853,7 +1854,7 @@ function WhiteMapClass() {
 
 							if(isPointInPoly(latLonArray, {lat: lat, lon: lon})) {
 								//Update json with state name
-								dataset[i]['data']['state'] = current_state_name;
+								dataset[i]['state'] = current_state_name;
 								state = current_state_name;
 	                            state_lat_lon_obj = state_lat_lon_db.find({"name" : state}).length > 0 ? state_lat_lon_db.find({"name" : state})[0] : false;
 	                            state_param = state_lat_lon_obj ? JSON.stringify(state_lat_lon_obj) : false;
@@ -1900,13 +1901,17 @@ function WhiteMapClass() {
 				//Loop For Sector Devices
 				for(var j=sectors_data.length;j--;) {
 
-					tech_vendor_obj[sectors_data[j].technology] = tech_vendor_obj[sectors_data[j].technology] ? tech_vendor_obj[sectors_data[j].technology] : [];
-					if(tech_vendor_obj[sectors_data[j].technology].indexOf(sectors_data[j].vendor) == -1) {
-						tech_vendor_obj[sectors_data[j].technology].push(sectors_data[j].vendor);
-					}
+					var sector_tech = sectors_data[j]['technology'],
+						sector_vendor = sectors_data[j]['vendor'];
+					if (sector_tech != 'NA') {
+						tech_vendor_obj[sector_tech] = tech_vendor_obj[sector_tech] ? tech_vendor_obj[sector_tech] : [];
+						if(sector_vendor != 'NA' && tech_vendor_obj[sector_tech].indexOf(sector_vendor) == -1) {
+							tech_vendor_obj[sector_tech].push(sector_vendor);
+						}
 
-					if(all_vendor_array.indexOf(sectors_data[j].vendor) == -1) {
-						all_vendor_array.push(sectors_data[j].vendor); 
+						if(sector_vendor != 'NA' && all_vendor_array.indexOf(sector_vendor) == -1) {
+							all_vendor_array.push(sector_vendor); 
+						}
 					}
 
 					var total_ss = sectors_data[j].sub_stations ? sectors_data[j].sub_stations.length : 0;
@@ -2268,7 +2273,8 @@ function WhiteMapClass() {
 
 						var ss_info = {
 								"info" : ss_infoWindow_content,
-								"antenna_height" : ss_marker_obj.antenna_height
+								"antenna_height" : ss_marker_obj.antenna_height,
+								"ss_id": ss_marker_obj.id
 							},
 							base_info = {
 								"info" : bs_ss_devices[i].base_station,

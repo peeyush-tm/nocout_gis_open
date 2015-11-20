@@ -211,7 +211,8 @@ var isDialogOpen = true,
 	fresnel1Color = 'rgba(82, 172, 82, 0.99)',
 	fresnel2Color = 'rgb(148,64,237)',
 	sectorMarkersInMap = [],
-	sectorOmsMarkers = [];
+	sectorOmsMarkers = [],
+	na_items_list = ['n/a', 'na'];
 
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
@@ -873,8 +874,8 @@ function devicePlottingClass_gmap() {
 		for(var i=dataset.length;i--;) {
 
 			var current_bs = dataset[i],
-				state = current_bs['state'] ? $.trim(current_bs['state']) : '',
-				city = current_bs['city'] ? $.trim(current_bs['city']) : '';
+				state = current_bs['state'] && na_items_list.indexOf(current_bs['state'].toLowerCase()) == -1 ? $.trim(current_bs['state']) : '',
+				city = current_bs['city'] && na_items_list.indexOf(current_bs['city'].toLowerCase()) == -1  ? $.trim(current_bs['city']) : '';
 
 			/*Create BS state,city object*/
 			if(state) {
@@ -892,7 +893,6 @@ function devicePlottingClass_gmap() {
 			}
 
 			var sectors_data = current_bs.sectors ? current_bs.sectors : [],
-				total_ss = current_bs.total_ss ? current_bs.total_ss : 0,
 				lat = current_bs.lat ? current_bs.lat : '',
 				lon = current_bs.lon ? current_bs.lon : '',
 				update_state_str = state ? $.trim(state) : "",
@@ -1012,19 +1012,21 @@ function devicePlottingClass_gmap() {
 				all_devices_loki_db.insert(dataset[i]);
 			}
 
-			state_wise_device_counters[state] += total_ss;
-
-			if(state_lat_lon_obj) {
-				var state_cluster_html = "<div "+state_click_event+" style='"+counter_div_style+"'> \
-										 <p style='position:relative;padding-top:24px;font-weight:bold;' \
-										 title='Load "+state+" Data.'> \
-										 "+state_wise_device_counters[state]+"</p></div>";
-				// Update the content of state counter label as per devices count
-				state_wise_device_labels[state].setContent(state_cluster_html);
-			}
-
 			//Loop For Sector Devices
 			for(var j=sectors_data.length;j--;) {
+
+				var total_ss = sectors_data[j]['sub_stations'] ? sectors_data[j]['sub_stations'].length : 0;
+				state_wise_device_counters[state] += total_ss;
+
+				if(state_lat_lon_obj) {
+					var state_cluster_html = "<div "+state_click_event+" style='"+counter_div_style+"'> \
+											 <p style='position:relative;padding-top:24px;font-weight:bold;' \
+											 title='Load "+state+" Data.'> \
+											 "+state_wise_device_counters[state]+"</p></div>";
+					// Update the content of state counter label as per devices count
+					state_wise_device_labels[state].setContent(state_cluster_html);
+				}
+
 				var sector_tech = sectors_data[j]['technology'],
 					sector_vendor = sectors_data[j]['vendor'];
 				if (sector_tech != 'NA') {
@@ -1570,7 +1572,7 @@ function devicePlottingClass_gmap() {
 			}
 			if(isBsDeviceInBound) {
 				inBoundDevices.push(current_device_set);
-				plottedBsIds.push(current_device_set.originalId);
+				plottedBsIds.push(current_device_set.bs_id);
 			}
 		}
 
@@ -1607,25 +1609,25 @@ function devicePlottingClass_gmap() {
 		for(var i=main_devices_data.length;i--;) {
 			var current_device_set = main_devices_data[i];
 
-			if(plottedBsIds.indexOf(current_device_set.originalId) === -1) {
+			if(plottedBsIds.indexOf(current_device_set.bs_id) === -1) {
 				var isDeviceInBound = "";
 				if(window.location.pathname.indexOf("wmap") > -1) {
 					isDeviceInBound = whiteMapClass.checkIfPointLiesInside({
-						lon: current_device_set.data.lon,
-						lat: current_device_set.data.lat
+						lon: current_device_set.lon,
+						lat: current_device_set.lat
 					});
 				} else {
 					isDeviceInBound = mapInstance.getBounds().contains(
 						new google.maps.LatLng(
-							current_device_set.data.lat,
-							current_device_set.data.lon
+							current_device_set.lat,
+							current_device_set.lon
 						)
 					);
 				}
 				if(isDeviceInBound) {
 					newInBoundDevices.push(current_device_set);
 					// Push plotted base-station id to global array
-					plottedBsIds.push(current_device_set.originalId);
+					plottedBsIds.push(current_device_set.bs_id);
 				}
 			}
 		}
@@ -2014,7 +2016,7 @@ function devicePlottingClass_gmap() {
 				    		sector_array[j].ip_address,
 				    		ss_marker_obj.name,
 				    		bs_ss_devices[i].name,
-				    		bs_ss_devices[i].id,
+				    		bs_ss_devices[i].bs_id,
 				    		sector_array[j].sector_id
 			    		);
 
@@ -2822,7 +2824,7 @@ function devicePlottingClass_gmap() {
 					var bs_info = [];
 
 					if(lineWindowTitle == "Point A-Point B") {
-						bs_info = contentObject.bs_info;
+						bs_info = contentObject.bs_dataset;
 					} else {
 						bs_info = contentObject.bs_dataset ?  rearrangeTooltipArray(bs_toolTip_static,contentObject.bs_dataset) : [];
 					}
@@ -3055,7 +3057,7 @@ function devicePlottingClass_gmap() {
 						infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
 
 						if (maps_themetics_poll_flag) {
-							infoTable += "<button class='btn btn-primary btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
+							infoTable += "<button class='btn btn-default btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
 										  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
 										  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
 										  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'\
@@ -3094,7 +3096,7 @@ function devicePlottingClass_gmap() {
 								infoTable += "<tr>";
 								infoTable += "<td class='"+text_class+"' url='"+url+"'>"+poll_now_info[i]['title']+"</td>";
 								infoTable += "<td style='text-align:center'>\
-											 <button class='btn btn-primary btn-xs perf_poll_now'\
+											 <button class='btn btn-default btn-xs perf_poll_now'\
 											 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
 											 device_type='"+device_type+"' title='Poll Now' data-complete-text='<i class=\"fa fa-flash\"></i>' \
 				                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
@@ -3254,7 +3256,7 @@ function devicePlottingClass_gmap() {
 						infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
 
 						if (maps_themetics_poll_flag) {
-							infoTable += "<button class='btn btn-primary btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
+							infoTable += "<button class='btn btn-default btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
 										  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
 										  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
 										  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'\
@@ -3293,7 +3295,7 @@ function devicePlottingClass_gmap() {
 								infoTable += "<tr>";
 								infoTable += "<td class='"+text_class+"' url='"+url+"'>"+poll_now_info[i]['title']+"</td>";
 								infoTable += "<td style='text-align:center'>\
-											 <button class='btn btn-primary btn-xs perf_poll_now'\
+											 <button class='btn btn-default btn-xs perf_poll_now'\
 											 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
 				                             device_type='"+device_type+"' title='Poll Now' data-complete-text='<i class=\"fa fa-flash\"></i>' \
 				                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
@@ -5059,8 +5061,8 @@ function devicePlottingClass_gmap() {
 		    					}
 		    				}
 		    				advJustSearch.applyIconToSearchedResult(data_to_plot[i].lat, data_to_plot[i].lon);
-			    			if(search_element_bs_id.indexOf(data_to_plot[i].originalId) < 0) {
-			    				search_element_bs_id.push(data_to_plot[i].originalId);
+			    			if(search_element_bs_id.indexOf(data_to_plot[i].bs_id) < 0) {
+			    				search_element_bs_id.push(data_to_plot[i].bs_id);
 			    			}
 		    			} else {
 		    				// pass
@@ -5099,8 +5101,8 @@ function devicePlottingClass_gmap() {
 				    					}
 				    				}
 				    				advJustSearch.applyIconToSearchedResult(data_to_plot[i].lat, data_to_plot[i].lon);
-				    				if(search_element_bs_id.indexOf(data_to_plot[i].originalId) < 0) {
-					    				search_element_bs_id.push(data_to_plot[i].originalId);
+				    				if(search_element_bs_id.indexOf(data_to_plot[i].bs_id) < 0) {
+					    				search_element_bs_id.push(data_to_plot[i].bs_id);
 					    			}
 				    			} else {
 				    				// pass
@@ -5143,8 +5145,8 @@ function devicePlottingClass_gmap() {
 					    				if(ss_circuit_condition) {
 					    					advJustSearch.applyIconToSearchedResult(data_to_plot[i].lat, data_to_plot[i].lon);	
 					    				}
-					    				if(search_element_bs_id.indexOf(data_to_plot[i].originalId) < 0) {
-						    				search_element_bs_id.push(data_to_plot[i].originalId);
+					    				if(search_element_bs_id.indexOf(data_to_plot[i].bs_id) < 0) {
+						    				search_element_bs_id.push(data_to_plot[i].bs_id);
 						    			}
 					    			} else {
 					    				// pass
@@ -7226,12 +7228,12 @@ function devicePlottingClass_gmap() {
 		right_click_html += "<table class='table table-bordered'><tbody>";
 		right_click_html += "<tr><td>Name</td><td><input type='text' class='form-control' name='point_name' id='point_name' value='"+marker.point_name+"'/></td></tr>";
 		right_click_html += "<tr><td>Description</td><td><textarea name='point_desc' id='point_desc' class='form-control'>"+marker.point_desc+"</textarea></td></tr>";
-		right_click_html += "<tr><td align='center'><button type='button' class='btn btn-sm btn-primary' id='point_info_remove_btn' onClick='gmap_self.removePointInfo_gmap("+method_var+")'>Remove Point</button></td><td align='center'><button type='button' class='btn btn-sm btn-primary' id='point_info_save_btn' onClick='gmap_self.savePointInfo_gmap("+method_var+")'>Save Point</button></td></tr>";
+		right_click_html += "<tr><td align='center'><button type='button' class='btn btn-sm btn-default' id='point_info_remove_btn' onClick='gmap_self.removePointInfo_gmap("+method_var+")'>Remove Point</button></td><td align='center'><button type='button' class='btn btn-sm btn-default' id='point_info_save_btn' onClick='gmap_self.savePointInfo_gmap("+method_var+")'>Save Point</button></td></tr>";
 
 		/*If point saved then show add/remove line option*/
 		if(marker.point_id > 0) {
 			if(marker.connected_lat == "" && marker.connected_lon == "") {
-				right_click_html += "<tr><td colspan='2' align='center'><button type='button' class='btn btn-sm btn-primary' onClick='gmap_self.addLineToPoint_gmap("+method_var+")' id='add_line_from_pt_btn'>Add Line</button></td></tr>";
+				right_click_html += "<tr><td colspan='2' align='center'><button type='button' class='btn btn-sm btn-default' onClick='gmap_self.addLineToPoint_gmap("+method_var+")' id='add_line_from_pt_btn'>Add Line</button></td></tr>";
 			}
 		}
 
@@ -8364,7 +8366,7 @@ function devicePlottingClass_gmap() {
 					var current_bound_devices = all_devices_loki_db.where(function( obj ) {
             			if(!isAdvanceFilterApplied && !isBasicFilterApplied) {
             				if(states_array.indexOf(obj.state) > -1) {
-	            				bs_id_array.push(obj.originalId);
+	            				bs_id_array.push(obj.bs_id);
 	            				return true;
             				} else {
             					return false;
@@ -8384,7 +8386,7 @@ function devicePlottingClass_gmap() {
 					            // Condition to check for applied advance filters
 					            if(filter_condition1 && filter_condition2 && filter_condition3 && filter_condition4) {
 					            	if(states_array.indexOf(obj.state) > -1) {
-			            				bs_id_array.push(obj.originalId);
+			            				bs_id_array.push(obj.bs_id);
 			            				return true;
 		            				} else {
 		            					return false;
@@ -8403,7 +8405,7 @@ function devicePlottingClass_gmap() {
 
 								if(basic_filter_condition1 && basic_filter_condition2 && basic_filter_condition3 && basic_filter_condition4) {
 									if(states_array.indexOf(obj.state) > -1) {
-			            				bs_id_array.push(obj.originalId);
+			            				bs_id_array.push(obj.bs_id);
 			            				return true;
 		            				} else {
 		            					return false;
@@ -8459,7 +8461,7 @@ function devicePlottingClass_gmap() {
 						var devicesTemplate = "";
 						for(var i=0;i<current_bound_devices.length;i++) {
 							var current_bs = current_bound_devices[i];
-							devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.originalId+'"><h5>'+(i+1)+'.) '+current_bs.alias+'</h5></div>';
+							devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.bs_id+'"><h5>'+(i+1)+'.) '+current_bs.alias+'</h5></div>';
 						}
 
 						$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
@@ -9224,7 +9226,7 @@ function devicePlottingClass_gmap() {
 
 	                            // Fetch BS data object from loki object
 	                            var bs_loki_obj = all_devices_loki_db.where(function(obj) {
-	                                    return obj.originalId == bs_id
+	                                    return obj.bs_id == bs_id
 	                                }),
 	                                bs_data_object = bs_loki_obj.length > 0 ? JSON.parse(JSON.stringify(bs_loki_obj[0])) : false,
 	                                bs_name = bs_data_object ? bs_data_object.name : false,

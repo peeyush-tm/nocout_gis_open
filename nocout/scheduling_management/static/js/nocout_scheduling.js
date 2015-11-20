@@ -61,7 +61,7 @@ var calendarObj = $('#scheduling_calendar').fullCalendar({
               buttons: {
                 success: {
                   label: "Edit",
-                  className: "btn-success",
+                  className: "btn-default text-success",
                   callback: function() {
                     console.log("great success");
                     window.location.replace('/scheduling/'+event['id']+'/edit/')
@@ -69,7 +69,7 @@ var calendarObj = $('#scheduling_calendar').fullCalendar({
                 }, // end success
                 danger: {
                   label: "Delete",
-                  className: "btn-danger",
+                  className: "btn-default text-danger",
                   callback: function() {
                     console.log("uh oh, look out!");
                     window.location.replace('/scheduling/'+event['id']+'/delete/')
@@ -77,7 +77,7 @@ var calendarObj = $('#scheduling_calendar').fullCalendar({
                 }, // end danger
                 main: {
                   label: "Cancel",
-                  className: "btn-primary",
+                  className: "btn-default",
                   callback: function() {
                     console.log("Primary button");
                   }
