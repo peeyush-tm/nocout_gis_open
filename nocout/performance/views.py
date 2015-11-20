@@ -2150,7 +2150,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
 
             for sds in SERVICE_DATA_SOURCE:
                 if self.sds_type != 'String':
-                    if service.strip().lower() in sds:
+                    if service.strip().lower() in sds and 'data_source_type' in SERVICE_DATA_SOURCE[sds]:
                         self.sds_type = SERVICE_DATA_SOURCE[sds]['data_source_type']
                 else:
                     break
@@ -2158,7 +2158,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             self.columns.append('min_value')
             self.columns.append('max_value')
         else:
-            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['data_source_type']:
+            if self.data_source in SERVICE_DATA_SOURCE and 'data_source_type' in  SERVICE_DATA_SOURCE[self.data_source]:
                 self.sds_type = SERVICE_DATA_SOURCE[self.data_source].get('data_source_type', 'Numeric')
             # check for the formula
             if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['formula']:
