@@ -224,22 +224,42 @@ function convertToVis(response, required_dom_id) {
 	        	if (result.success) {
 	        		if(window_title.toLowerCase().indexOf('base station') > -1) {
 		                
-		                var actual_data = rearrangeTooltipArray(bs_toolTip_static,result.data)
+		                var actual_data = rearrangeTooltipArray(bs_toolTip_static,result.data);
 		                
 		            } else if(window_title.toLowerCase().indexOf('sub station') > -1) {
 		                var actual_data = rearrangeTooltipArray(ss_toolTip_static,result.data)
-
+		                if(device_tech.toLowerCase() == 'p2p') {
+		                    toolTip_polled_tab = ptp_ss_toolTip_polled;
+		                } else if(device_tech.toLowerCase() == 'wimax') {
+		                    toolTip_polled_tab = wimax_ss_toolTip_polled;
+		                } else if(device_tech.toLowerCase() == 'pmp') {
+		                    if(device_type.toLowerCase() == 'radwin5kss' ) {
+								toolTip_polled_tab = pmp_radwin5k_ss_toolTip_polled;
+							} else {
+								toolTip_polled_tab = pmp_ss_toolTip_polled;
+							}
+		                }
 		            } else if(window_title.toLowerCase().indexOf('backhaul') > -1) {
 		                var actual_data = rearrangeTooltipArray(bh_toolTip_static,result.data)
+	                	if(device_type.toLowerCase() == 'pine') {
+							toolTip_polled_tab = mrotech_bh_toolTip_polled;
+						} else if(device_type.toLowerCase() == 'switch') {
+							toolTip_polled_tab = switch_bh_toolTip_polled;
+						} else if(device_type.toLowerCase() == 'rici') {
+							toolTip_polled_tab = rici_bh_toolTip_polled;
+						}
 
 		            } else if(window_title.toLowerCase().indexOf('sector') > -1) {
 		                
 		                if(device_tech.toLowerCase() == 'p2p') {
 		                    actual_data = rearrangeTooltipArray(ptp_sector_toolTip_static,result.data);
+		                    toolTip_polled_tab = ptp_sector_toolTip_polled;
 		                } else if(device_tech.toLowerCase() == 'wimax') {
 		                    actual_data = rearrangeTooltipArray(wimax_sector_toolTip_static,result.data);
+		                    toolTip_polled_tab = wimax_sector_toolTip_polled;
 		                } else if(device_tech.toLowerCase() == 'pmp') {
 		                    actual_data = rearrangeTooltipArray(pmp_sector_toolTip_static,result.data);
+		                    toolTip_polled_tab = pmp_sector_toolTip_polled;
 		                } else {
 		                    actual_data = result.data;
 		                }
@@ -279,7 +299,7 @@ function convertToVis(response, required_dom_id) {
 		            infoTable += '</div>';
 		            infoTable += '<div class="tab-pane fade" id="polled_block"><div class="divide-10"></div>';
 		            infoTable += "<table class='table table-bordered table-hover'><tbody>";
-		            infoTable += createTableDataHtml(mrotech_bh_toolTip_polled);
+		            infoTable += createTableDataHtml(toolTip_polled_tab);
 		            infoTable += "</tbody></table>";
 		            infoTable += '</div></div>';
 
@@ -396,7 +416,7 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
 	                        } else {
 	                            // pass
 	                        }
-	                    } else if(point_type == 'BS') {
+	                    } else if(point_type == 'BH') {
 	                        if(device_type == 'pine') {
 	                            tooltip_info_dict = rearrangeTooltipArray(mrotech_bh_toolTip_polled,fetched_polled_info);
 	                        } else if(device_type == 'switch') {

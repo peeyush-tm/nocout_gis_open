@@ -507,6 +507,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         :param qs:
         :return qs
         """
+        
         page_type = self.request.GET['page_type']
         alert_page_type = page_type
 
@@ -551,13 +552,18 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                     current_app='device'
                 )
 
+                console_url = 'https://10.133.12.163/gate63/'
+
                 dct.update(
                     actions='<a href="' + performance_url + '" title="Device Performance">\
                             <i class="fa fa-bar-chart-o text-info"></i></a>\
                             <a href="' + alert_url + '" title="Device Alert">\
                             <i class="fa fa-warning text-warning"></i></a> \
                             <a href="' + inventory_url + '" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted" ></i></a>'
+                            <i class="fa fa-dropbox text-muted" ></i></a> \
+                            <a href="' + console_url + '" title="Console">\
+                            <i class="fa fa-terminal"></i>'
+
                 )
 
         return qs
@@ -6972,7 +6978,7 @@ def device_current_status(device_object):
 
     if device_nms_uptime:
         for data in device_nms_uptime:
-            severity[data['severity']] = {'age': data['age'], 'down': data['refer']}
+            severity[data['severity']] = {'age': data['age'], 'down': data['refer'], 'c_val' : data['current_value']}
             if data['data_source'].strip().lower() == 'pl':
                 pl_value = data['current_value']
                 pl_age['age'] = data['age']  # refer field holds the last down time
@@ -7238,7 +7244,7 @@ class GetTopology(View):
                         severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
                         bh_pl_info = {
                             "severity" : severity if severity else 'NA',
-                            "value": "NA"
+                            "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
                         }
                     except Exception, e:
                         bh_pl_info = {
@@ -7277,7 +7283,7 @@ class GetTopology(View):
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('sect_device_id')))
                             sect_pl_info = {
                                 "severity" : severity if severity else 'NA',
-                                "value": "NA"
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
                             }
                         except Exception, e:
                             sect_pl_info = {
@@ -7307,7 +7313,7 @@ class GetTopology(View):
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('ss_device_id')))
                             ss_pl_info = {
                                 "severity" : severity if severity else 'NA',
-                                "value": "NA"
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
                             }
                         except Exception, e:
                             ss_pl_info = {
