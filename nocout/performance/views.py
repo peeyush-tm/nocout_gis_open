@@ -2227,6 +2227,8 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             'sds': [data_source]
         }
 
+        self.order_columns = self.columns
+
         return True
 
     def prepare_results(self, qs):
@@ -2360,20 +2362,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         # If params not initialized the init them by calling initialize_params
         if not self.perf_data_instance or not self.parameters:
             self.initialize_params()
-
-        try:
-            # Create Ordering columns from GET request
-            total_columns_count = int(self.request.GET.get('iColumns', len(self.columns)))
-            new_ordering_columns = list()
-            
-            for i in range(total_columns_count):
-                if self.request.GET.get('mDataProp_%s' % i) not in new_ordering_columns:
-                    new_ordering_columns.append(self.request.GET.get('mDataProp_%s' % i))
-
-            # Update new ordering columns in global variable
-            self.order_columns = new_ordering_columns
-        except Exception, e:
-            pass
 
         qs = self.get_initial_queryset()
         
