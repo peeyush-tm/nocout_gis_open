@@ -671,6 +671,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         exporting:{
             // url:'http://localhost:8080/highcharts-export-web/',
             enabled : true,
+            allowHTML: true,
             sourceWidth: 950,
             sourceHeight: 375,
             filename: exported_filename
@@ -692,7 +693,12 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                     };
 
                     try {
-                        tooltip_string = '<b>' + this_date.toLocaleString(date_str_options).toUpperCase()+ '</b>';
+                        var formatted_time = getFormattedDate(this.x);
+                        if (formatted_time) {                            
+                            tooltip_string = '<b>' + formatted_time + '</b>';
+                        } else {
+                            tooltip_string = '<b>' + this_date.toLocaleString()+ '</b>';
+                        }
                     } catch(e) {
                         tooltip_string = '<b>' + this_date.toLocaleString()+ '</b>';
                     }
