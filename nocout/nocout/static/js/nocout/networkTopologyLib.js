@@ -334,7 +334,7 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
 	    point_type = evt.currentTarget.attributes.point_type ? evt.currentTarget.attributes.point_type.value : "",
 	    dom_id = evt.currentTarget.attributes.id ? evt.currentTarget.attributes.id.value : "",
 	    device_tech = evt.currentTarget.attributes.device_tech ? $.trim(evt.currentTarget.attributes.device_tech.value.toLowerCase()) : "",
-	    device_type = evt.currentTarget.attributes.device_type ? evt.currentTarget.attributes.device_type.value : "",
+	    device_type = evt.currentTarget.attributes.device_type ? $.trim(evt.currentTarget.attributes.device_type.value.toLowerCase()) : "",
 	    href_attr = evt.currentTarget.attributes.href ? evt.currentTarget.attributes.href.value.split("#") : "",
 	    block_id = href_attr.length > 1 ? href_attr[1] : "",
 	    pl_attr = evt.currentTarget.attributes.pl_value,
