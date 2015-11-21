@@ -3024,7 +3024,7 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
             filter_data      :  extra_info.filter_info,
             device_name      :  info_obj.device_name,
             ss_device_id     :  info_obj.device_id,
-            ss_ip            :  info_obj.substation_device_ip_address,
+            ss_ip            :  info_obj.ip_address,
             sector_ip        :  extra_info.filter_info.sector_name,
             cktId            :  info_obj.circuit_id,
             zIndex           :  200,

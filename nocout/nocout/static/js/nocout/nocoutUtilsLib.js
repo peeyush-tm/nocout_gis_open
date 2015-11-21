@@ -1700,9 +1700,16 @@ function getRequiredTabId(help_txt) {
 
     for (var i=0;i<inner_tabs.length;i++) {
         var tab_id = $(inner_tabs[i]).children('a')[0].id;
-        if (tab_id.indexOf(help_txt) > -1) {
-            required_tab_id = tab_id;
-            break;
+        if (help_txt == 'hourly') {
+            if (tab_id.indexOf(help_txt) > -1 && tab_id.indexOf('bihourly') == -1) {
+                required_tab_id = tab_id;
+                break;
+            }
+        } else {
+            if (tab_id.indexOf(help_txt) > -1) {
+                required_tab_id = tab_id;
+                break;
+            }
         }
     }
 

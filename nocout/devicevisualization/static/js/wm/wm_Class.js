@@ -2269,6 +2269,7 @@ function WhiteMapClass() {
 						var ss_info = {
 								"info" : ss_infoWindow_content,
 								"antenna_height" : ss_marker_obj.antenna_height
+								"ss_id": ss_marker_obj.id
 							},
 							base_info = {
 								"info" : bs_ss_devices[i].base_station,
