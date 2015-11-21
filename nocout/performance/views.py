@@ -552,17 +552,14 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                     current_app='device'
                 )
 
-                console_url = 'https://10.133.12.163/gate63/'
-
                 dct.update(
                     actions='<a href="' + performance_url + '" title="Device Performance">\
                             <i class="fa fa-bar-chart-o text-info"></i></a>\
                             <a href="' + alert_url + '" title="Device Alert">\
                             <i class="fa fa-warning text-warning"></i></a> \
                             <a href="' + inventory_url + '" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted" ></i></a> \
-                            <a href="' + console_url + '" title="Console">\
-                            <i class="fa fa-terminal"></i>'
+                            <i class="fa fa-dropbox text-muted" ></i></a>'
+                            
 
                 )
 
