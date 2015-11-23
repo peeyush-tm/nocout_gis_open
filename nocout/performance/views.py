@@ -1449,7 +1449,17 @@ class InventoryDeviceServiceDataSource(View):
                 # if the backhaul exists, that means we need to check for the PORT
                 # if there is a port
                 try:
-                    those_ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
+                    ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
+
+                    try:
+                        those_ports = list()
+                        for port in ports:
+                            if ',' in port:
+                                those_ports.extend(port.split(','))
+                            else:
+                                those_ports.append(port)
+                    except Exception, e:
+                        those_ports = ports
 
                     bh_data_sources = ServiceDataSource.objects.filter(
                         name__in=DevicePort.objects.filter(alias__in=those_ports).values_list('name', flat=True)
@@ -2140,7 +2150,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
 
             for sds in SERVICE_DATA_SOURCE:
                 if self.sds_type != 'String':
-                    if service.strip().lower() in sds:
+                    if service.strip().lower() in sds and 'data_source_type' in SERVICE_DATA_SOURCE[sds]:
                         self.sds_type = SERVICE_DATA_SOURCE[sds]['data_source_type']
                 else:
                     break
@@ -2148,7 +2158,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             self.columns.append('min_value')
             self.columns.append('max_value')
         else:
-            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['data_source_type']:
+            if self.data_source in SERVICE_DATA_SOURCE and 'data_source_type' in  SERVICE_DATA_SOURCE[self.data_source]:
                 self.sds_type = SERVICE_DATA_SOURCE[self.data_source].get('data_source_type', 'Numeric')
             # check for the formula
             if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['formula']:

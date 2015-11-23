@@ -271,7 +271,7 @@ function GisPerformance() {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
-                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
+                                if(typeof perf_self.bsNamesList[counter-1] != 'undefined' && calls_completed >= perf_self.bsNamesList[counter-1].length) {
                                     // Reset Calls Completed Counter
                                     calls_completed = 0;
 
@@ -283,7 +283,7 @@ function GisPerformance() {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
-                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
+                                if(typeof perf_self.bsNamesList[counter-1] != 'undefined' && calls_completed >= perf_self.bsNamesList[counter-1].length) {
                                     // Reset Calls Completed Counter
                                     calls_completed = 0;
 
@@ -295,7 +295,7 @@ function GisPerformance() {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
-                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
+                                if(typeof perf_self.bsNamesList[counter-1] != 'undefined' && calls_completed >= perf_self.bsNamesList[counter-1].length) {
                                     // Reset Calls Completed Counter
                                     calls_completed = 0;
 
@@ -474,7 +474,7 @@ function GisPerformance() {
                         beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
                         radius = fetched_radius && fetched_radius != 'NA' ? fetched_radius : 0.5,
                         sector_color = fetched_color && fetched_color != 'NA' ? fetched_color : 'rgba(74,72,94,0.58)',
-                        orientation = current_sector.orientation ? current_sector.orientation : sector_polygon.polarisation;
+                        orientation = current_sector.polarization ? current_sector.polarization : sector_polygon.polarisation;
 
                     gmap_self.createSectorData(bs_lat,bs_lon,radius,azimuth_angle,beam_width,orientation,function(pointsArray) {
 
@@ -1651,16 +1651,16 @@ function GisPerformance() {
             // Loop all bs sectors
             for(var i=0;i<connected_sectors.length;i++) {
                 if(!isPlottable) {    
-                    var condition1 = connected_sectors[i].sector_configured_on_device == current_sector.sector_configured_on_device,
-                        condition2 = connected_sectors[i].sector_configured_on == current_sector.sector_configured_on;
+                    var condition1 = connected_sectors[i].device_name == current_sector.device_name,
+                        condition2 = connected_sectors[i].ip_address == current_sector.ip_address;
                     // If both condition satisfied
                     if(condition1 && condition2) {
                         var sector_tech = connected_sectors[i].technology ? $.trim(connected_sectors[i].technology.toLowerCase()) : "",
                             sector_vendor = connected_sectors[i].vendor ? $.trim(connected_sectors[i].vendor.toLowerCase()) : "",
-                            sector_frequency_1 = connected_sectors[i].planned_frequency ? $.trim(connected_sectors[i].planned_frequency) : "",
+                            sector_frequency_1 = connected_sectors[i].freq ? $.trim(connected_sectors[i].freq) : "",
                             // sector_frequency_2 = connected_sectors[i].frequency ? $.trim(connected_sectors[i].frequency) : "",
                             sector_frequency_2 = "",
-                            sector_polarization = connected_sectors[i].orientation ? $.trim(connected_sectors[i].orientation.toLowerCase()) : "";
+                            sector_polarization = connected_sectors[i].polarization ? $.trim(connected_sectors[i].polarization.toLowerCase()) : "";
 
                         if(isBasicFilterApplied) {
                             var basic_filter_technology = $.trim($("#technology").val()).length > 0 ? $.trim($("#technology option:selected").text()).toLowerCase() == sector_tech : true,
@@ -1720,39 +1720,51 @@ function GisPerformance() {
         if(loader_icon_dict[bs_marker.bs_name]) {
             setTimeout(function() {
                 if(window.location.pathname.indexOf("wmap") > -1) {
-                    if(bs_marker.getVisibility()) {
+                    if (ccpl_map.getZoom() < 4) {
                         hideOpenLayerFeature(bs_marker);
                     } else {
-                        showOpenLayerFeature(bs_marker);
+                        if(bs_marker.getVisibility()) {
+                            hideOpenLayerFeature(bs_marker);
+                        } else {
+                            showOpenLayerFeature(bs_marker);
+                        }
                     }
                     // Redraw BS marker
                     bs_marker.layerReference.redraw();
                 } else if(window.location.pathname.indexOf("gearth") > -1) {
                     // pass
                 } else {
-                    if(bs_marker.map) {
+                    if (mapInstance.getZoom() <= 7) {
                         bs_marker.setMap(null);
                     } else {
-                        bs_marker.setMap(mapInstance);
+                        if(bs_marker.map) {
+                            bs_marker.setMap(null);
+                        } else {
+                            bs_marker.setMap(mapInstance);
+                        }
                     }
                 }
                 perf_self.animateBaseStationIcon(bs_marker);
             },350);
         } else {
             if(window.location.pathname.indexOf("wmap") > -1) {
-                if(!bs_marker.getVisibility()) {
-                    showOpenLayerFeature(bs_marker);
-                    // Redraw BS marker
-                    bs_marker.layerReference.redraw();
+                if (ccpl_map.getZoom() >= 4) {
+                    if(!bs_marker.getVisibility()) {
+                        showOpenLayerFeature(bs_marker);
+                        // Redraw BS marker
+                        bs_marker.layerReference.redraw();
+                    }
                 }
             } else if(window.location.pathname.indexOf("gearth") > -1) {
                 // pass
             } else {
-                if(tooltipInfoLabel["bs_"+bs_marker.bs_name] && !tooltipInfoLabel["bs_"+bs_marker.bs_name].map) {
-                    tooltipInfoLabel["bs_"+bs_marker.bs_name].setMap(mapInstance);
-                }
-                if(!bs_marker.map) {
-                    bs_marker.setMap(mapInstance);
+                if (mapInstance.getZoom() > 7) {
+                    if(tooltipInfoLabel["bs_"+bs_marker.bs_name] && !tooltipInfoLabel["bs_"+bs_marker.bs_name].map) {
+                        tooltipInfoLabel["bs_"+bs_marker.bs_name].setMap(mapInstance);
+                    }
+                    if(!bs_marker.map) {
+                        bs_marker.setMap(mapInstance);
+                    }
                 }
             }
         }

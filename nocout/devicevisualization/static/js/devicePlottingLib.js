@@ -211,7 +211,8 @@ var isDialogOpen = true,
 	fresnel1Color = 'rgba(82, 172, 82, 0.99)',
 	fresnel2Color = 'rgb(148,64,237)',
 	sectorMarkersInMap = [],
-	sectorOmsMarkers = [];
+	sectorOmsMarkers = [],
+	na_items_list = ['n/a', 'na'];
 
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
@@ -873,8 +874,8 @@ function devicePlottingClass_gmap() {
 		for(var i=dataset.length;i--;) {
 
 			var current_bs = dataset[i],
-				state = current_bs['state'] ? $.trim(current_bs['state']) : '',
-				city = current_bs['city'] ? $.trim(current_bs['city']) : '';
+				state = current_bs['state'] && na_items_list.indexOf(current_bs['state'].toLowerCase()) == -1 ? $.trim(current_bs['state']) : '',
+				city = current_bs['city'] && na_items_list.indexOf(current_bs['city'].toLowerCase()) == -1  ? $.trim(current_bs['city']) : '';
 
 			/*Create BS state,city object*/
 			if(state) {
@@ -892,7 +893,6 @@ function devicePlottingClass_gmap() {
 			}
 
 			var sectors_data = current_bs.sectors ? current_bs.sectors : [],
-				total_ss = current_bs.total_ss ? current_bs.total_ss : 0,
 				lat = current_bs.lat ? current_bs.lat : '',
 				lon = current_bs.lon ? current_bs.lon : '',
 				update_state_str = state ? $.trim(state) : "",
@@ -1012,19 +1012,21 @@ function devicePlottingClass_gmap() {
 				all_devices_loki_db.insert(dataset[i]);
 			}
 
-			state_wise_device_counters[state] += total_ss;
-
-			if(state_lat_lon_obj) {
-				var state_cluster_html = "<div "+state_click_event+" style='"+counter_div_style+"'> \
-										 <p style='position:relative;padding-top:24px;font-weight:bold;' \
-										 title='Load "+state+" Data.'> \
-										 "+state_wise_device_counters[state]+"</p></div>";
-				// Update the content of state counter label as per devices count
-				state_wise_device_labels[state].setContent(state_cluster_html);
-			}
-
 			//Loop For Sector Devices
 			for(var j=sectors_data.length;j--;) {
+
+				var total_ss = sectors_data[j]['sub_stations'] ? sectors_data[j]['sub_stations'].length : 0;
+				state_wise_device_counters[state] += total_ss;
+
+				if(state_lat_lon_obj) {
+					var state_cluster_html = "<div "+state_click_event+" style='"+counter_div_style+"'> \
+											 <p style='position:relative;padding-top:24px;font-weight:bold;' \
+											 title='Load "+state+" Data.'> \
+											 "+state_wise_device_counters[state]+"</p></div>";
+					// Update the content of state counter label as per devices count
+					state_wise_device_labels[state].setContent(state_cluster_html);
+				}
+
 				var sector_tech = sectors_data[j]['technology'],
 					sector_vendor = sectors_data[j]['vendor'];
 				if (sector_tech != 'NA') {
@@ -1611,14 +1613,14 @@ function devicePlottingClass_gmap() {
 				var isDeviceInBound = "";
 				if(window.location.pathname.indexOf("wmap") > -1) {
 					isDeviceInBound = whiteMapClass.checkIfPointLiesInside({
-						lon: current_device_set.data.lon,
-						lat: current_device_set.data.lat
+						lon: current_device_set.lon,
+						lat: current_device_set.lat
 					});
 				} else {
 					isDeviceInBound = mapInstance.getBounds().contains(
 						new google.maps.LatLng(
-							current_device_set.data.lat,
-							current_device_set.data.lon
+							current_device_set.lat,
+							current_device_set.lon
 						)
 					);
 				}
