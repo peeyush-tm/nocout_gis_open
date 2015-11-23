@@ -36,6 +36,14 @@ def get_and_insert_last_timestamp():
             }
     table_list = ['performance_networkstatus', 'performance_servicestatus',
             'performance_status','performance_utilizationstatus']
+
+
+    # updating timeout value of each table in case mysql goes down ,it shows old stored value in memcache all the time
+    memc_obj=db_ops_module.MemcacheInterface() 
+    memc=memc_obj.memc_conn
+    for table in table_list:
+	value = memc.get(table)
+	memc.set(table,value,300)		
     try:
         db = utility_module.mysql_conn(configs=mysql_configs)
         cursor = db.cursor()
@@ -66,8 +74,6 @@ def get_and_insert_last_timestamp():
                 }
 	try:
 		updated_time =int(time.mktime(latest_sys_timestamp.timetuple()))	
-		memc_obj=db_ops_module.MemcacheInterface()
-		memc=memc_obj.memc_conn
 		memc.set(table,updated_time,300)
 	except Exception,e:
             sys.stdout.write('Exception in DB query !!!\n{0}\n'.format(pformat(e)))

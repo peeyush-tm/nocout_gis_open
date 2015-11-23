@@ -465,7 +465,15 @@ iframe {
     margin-top: 25px;
 }
 #infoWindowContainer .nav > li > a {
-    padding: 8px 9px;
+    padding: 5px;
+}
+#infoWindowContainer .nav > li.active:hover a,
+#infoWindowContainer .nav > li.active a:hover,
+#infoWindowContainer .nav > li.active a:focus,
+#infoWindowContainer .nav > li.active a:focus {
+    border-top: 0px none;
+    border-right: 0px none;
+    border-left: 0px none;
 }
 .infoBox {
     word-break: break-word;

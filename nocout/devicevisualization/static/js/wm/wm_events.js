@@ -27,61 +27,6 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
         
     }
 });
-/**
- * This event triggers when map pan ends
- * @event mapDragEndCondition
- */
-// WhiteMapClass.prototype.mapDragEndCondition = function() {
-// 	setTimeout(function() {
-// 		if(ccpl_map.getZoom() > 10) {
-// 			if(isDebug) {
-// 				console.log("White Map Dragend Event");
-// 				var start_date_drag = new Date();
-// 			}
-
-// 			if(ccpl_map.getLayersByName("Markers") && ccpl_map.getLayersByName("Markers").length > 0) {
-// 				var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
-// 					current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
-// 				if(current_threshold > 1.5  && current_distance > 1) {
-// 					// Remove Clusters
-// 					ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 1.5;
-// 					ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 1;
-// 					ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
-// 					ccpl_map.getLayersByName("Markers")[0].redraw();
-// 				}
-// 			}
-
-// 			// Show/Hide White Map Features
-// 			whiteMapClass.showBaseStaionsInBounds();
-// 			whiteMapClass.showSectorDevicesInBounds();
-// 			whiteMapClass.showSectorPolygonInBounds();
-// 			whiteMapClass.showLinesInBounds();
-// 			whiteMapClass.showSubStaionsInBounds();
-			
-
-// 	    	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
-// 	    	if(new_bs.length > 0) {
-// 	    		if(!callsInProcess) {
-// 	    			// Clear performance calling timeout
-// 					if(recallPerf != "") {
-// 	        			clearTimeout(recallPerf);
-// 	        			recallPerf = "";
-// 	        		}
-// 	    			gisPerformanceClass.start(new_bs);
-// 	    		} else {
-// 	    			current_bs_list = current_bs_list.concat(new_bs);
-// 	    		}
-// 	    	}
-
-// 	    	if(isDebug) {
-// 	        	var time_diff = (new Date().getTime() - start_date_drag.getTime())/1000;
-// 				console.log("White Map Dragend End Time :- "+ time_diff + "Seconds");
-// 				console.log("*************************************");
-// 				start_date_drag = "";
-// 			}
-// 	    }
-// 	}, 300);
-// };
 
 /**
  * Event triggered for Map Idle Condition. [Whenever Map is Zoomed, Panned or something else]
@@ -105,16 +50,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				// Set Perf calling Flag
     			isPerfCallStopped = 1;
     			isPerfCallStarted = 0;
-
-    			// If any periodic polling ajax call is in process then abort it
-	            try {
-    				if(gis_perf_call_instance) {
-		                gis_perf_call_instance.abort()
-		                gis_perf_call_instance = "";
-		        	}
-	            } catch(e) {
-	                // pass
-	            }
 			}
 
 			var states_with_bounds = state_lat_lon_db.where(function(obj) {
@@ -142,7 +77,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				if(states_array.length > 0) {
     				for(var i=plottable_data.length;i--;) {
 						var current_bs = plottable_data[i];
-						if(states_array.indexOf(current_bs.data.state) > -1) {
+						if(states_array.indexOf(current_bs.state) > -1) {
 							current_bound_devices.push(current_bs);
 						}
     				}
@@ -452,9 +387,10 @@ WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 	 * @return {[type]}         ;
 	 */
 	function showInfoWindow(feature) {
-		var content = gmap_self.makeWindowContent(feature);
-		$("#infoWindowContainer").html(content);
-		$("#infoWindowContainer").removeClass('hide');
+		gmap_self.makeWindowContent(feature, function(content) {
+			$("#infoWindowContainer").html(content);
+			$("#infoWindowContainer").removeClass('hide');
+		});
 	}
 
 	//Check if feature clicked was a cluster

@@ -99,6 +99,22 @@ class NocoutUtilsGateway:
         
         return param1
 
+    def get_maps_initial_data_cached(self, bs_id=[]):
+        """
+
+        """
+        response = get_maps_initial_data_cached(bs_id=bs_id)
+        return response
+
+
+    def get_maps_initial_data_noncached(self, bs_id=[]):
+        """
+
+        """
+        response = get_maps_initial_data_noncached(bs_id=bs_id)
+        return response
+
+
     def non_cached_all_gis_inventory(
         self, 
         monitored_only=False, 
@@ -2422,9 +2438,6 @@ def time_delta_calculator(timestamp, hours=0, minutes=0, seconds=0):
         return False
 
 
-
-
-
 def getAdvanceFiltersSuggestions(request):
     '''
     This function returns the autosuggestions for advance filters as per the GET params
@@ -2471,11 +2484,205 @@ def getAdvanceFiltersSuggestions(request):
                     })
 
         result['data'] = formatted_data
+
         if len(distinct_values) > 0:
             result['success'] = 1
             result['message'] = 'Data fetched successfully'
 
     return HttpResponse(json.dumps(result), content_type="application/json")
+
+@cache_for(CACHE_TIME.get('INVENTORY', 300))  # caching GIS inventory
+def get_maps_initial_data_cached(bs_id=[]):
+    """
+
+    """
+    query = get_maps_initial_data_query(bs_id=bs_id)
+    return fetch_raw_result(query)
+
+
+def get_maps_initial_data_noncached(bs_id=[]):
+    """
+
+    """
+    query = get_maps_initial_data_query(bs_id=bs_id)
+    return fetch_raw_result(query)
+
+
+def get_maps_initial_data_query(bs_id=[]):
+    """
+
+    """
+    bs_where_condition = ''
+    ss_group_concat_str = '''
+        GROUP_CONCAT(CONCAT(
+            sect.id, '|',
+            ss.id, '|',
+            IF(isnull(ss_device.id), '', ss_device.id), '|',
+            IF(isnull(ss_device.device_name), '', ss_device.device_name), '|',
+            IF(isnull(ss_device.ip_address), '', ss_device.ip_address), '|',
+            IF(isnull(ss_device_type.name), '', ss_device_type.name), '|',
+            IF(isnull(ss_device.latitude), '', ss_device.latitude), '|',
+            IF(isnull(ss_device.longitude), '', ss_device.longitude), '|',
+            IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id), '|',
+            IF(isnull(ss_antenna.height), 'NA', ss_antenna.height), '|',
+            IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name), '|',
+            IF(isnull(ss.name), 'NA', ss.name)
+        ) SEPARATOR '-|-|-') AS SS_STR
+    '''
+
+    if bs_id:
+        bs_where_condition = ' WHERE bs.id in ({}) '.format(','.join(bs_id))
+        ss_group_concat_str = '''
+            GROUP_CONCAT(CONCAT(
+                IF(isnull(sect.id), 'NA', sect.id), '|',
+                IF(isnull(ss.id), '', ss.id), '|',
+                IF(isnull(ss_device.id), 'NA', ss_device.id), '|',
+                IF(isnull(ss_device.device_name), 'NA', ss_device.device_name), '|',
+                IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address), '|',
+                IF(isnull(ss_device_type.name), 'NA', ss_device_type.name), '|',
+                IF(isnull(ss_device.latitude), 'NA', ss_device.latitude), '|',
+                IF(isnull(ss_device.longitude), 'NA', ss_device.longitude), '|',
+                IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id), '|',
+                IF(isnull(ss_antenna.height), 'NA', ss_antenna.height), '|',
+                IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name), '|',
+                IF(isnull(ss.name), 'NA', ss.name), '|',
+                IF(isnull(customer.alias), 'NA', customer.alias), '|',
+                IF(isnull(backhaul.pe_ip), 'NA', backhaul.pe_ip), '|',
+                IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth), '|',
+                IF(isnull(ss_antenna.polarization), 'NA', ss_antenna.polarization), '|',
+                IF(isnull(ss_antenna.mount_type), 'NA', ss_antenna.mount_type), '|',
+                IF(isnull(ss_antenna.antenna_type), 'NA', ss_antenna.antenna_type), '|',
+                IF(isnull(ss.cable_length), 'NA', ss.cable_length), '|',
+                IF(isnull(ss.ethernet_extender), 'NA', ss.ethernet_extender), '|',
+                IF(isnull(ss.building_height), 'NA', ss.building_height), '|',
+                IF(isnull(ss.tower_height), 'NA', ss.tower_height), '|',
+                IF(isnull(customer.address), 'NA', customer.address), '|',
+                IF(isnull(ss.alias), 'NA', ss.alias), '|',
+                IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance), '|',
+                IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance)
+            ) SEPARATOR '-|-|-') AS SS_STR
+        '''
+
+    query = '''
+        SELECT
+            bs.id AS BSID,
+            IF(isnull(bs.name), 'NA', bs.name) AS BSNAME,
+            IF(isnull(bs.alias), 'NA', bs.alias) AS BSALIAS,
+            IF(isnull(bs.maintenance_status), 'NA', bs.maintenance_status) AS BSMAINTENANCESTATUS,
+            IF(isnull(city.city_name), 'NA', city.city_name) AS BSCITY, 
+            IF(isnull(state.state_name), 'NA', state.state_name) AS BSSTATE,
+            IF(isnull(bs.latitude), 'NA', bs.latitude) AS BSLAT,
+            IF(isnull(bs.longitude), 'NA', bs.longitude) AS BSLON,
+            IF(isnull(backhaul.id), 'NA', backhaul.id) AS BHID,
+            IF(isnull(bh_device.id), 'NA', bh_device.id) AS BHDEVICEID,
+            IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS BHDEVICEIP,
+            IF(isnull(bh_type.name), 'NA', bh_type.name) AS BHDEVICETYPE,
+            IF(isnull(bh_tech.name), 'NA', bh_tech.name) AS BHDEVICETECH,
+            {0},
+            GROUP_CONCAT(CONCAT(
+                sect.id, '|',
+                IF(isnull(sect.sector_id), 'NA', sect.sector_id), '|',
+                IF(isnull(tech.name), 'NA', tech.name), '|',
+                IF(isnull(vendor.name), 'NA', vendor.name), '|',
+                IF(isnull(device_type.name), 'NA', device_type.name), '|',
+                IF(isnull(sect.frequency_id), 'NA', sect.frequency_id), '|',
+                IF(isnull(antenna.polarization), 'NA', antenna.polarization), '|',
+                IF(isnull(antenna.azimuth_angle), 'NA', antenna.azimuth_angle), '|',
+                IF(isnull(antenna.beam_width), 'NA', antenna.beam_width), '|',
+                IF(isnull(antenna.height), 'NA', antenna.height), '|',
+                IF(isnull(device.ip_address), 'NA', device.ip_address), '|',
+                IF(isnull(device.device_name), 'NA', device.device_name), '|',
+                IF(isnull(device.id), 'NA', device.id)
+            ) SEPARATOR '-|-|-') AS SECT_STR,
+            count(ckt.id) AS TOTALSS
+        FROM
+            inventory_basestation AS bs
+        LEFT JOIN
+            inventory_backhaul AS backhaul
+        ON
+            bs.backhaul_id = backhaul.id
+        LEFT JOIN
+            device_device AS bh_device
+        ON
+            backhaul.bh_configured_on_id = bh_device.id
+        LEFT JOIN
+            device_devicetechnology AS bh_tech
+        ON
+            bh_device.device_technology = bh_tech.id
+        LEFT JOIN
+            device_devicetype AS bh_type
+        ON
+            bh_device.device_type = bh_type.id
+        LEFT JOIN 
+            device_state AS state
+        ON
+            state.id = bs.state_id
+        LEFT JOIN 
+            device_city AS city
+        ON
+            city.id = bs.city_id
+        LEFT JOIN
+            inventory_sector AS sect
+        ON
+            bs.id = sect.base_station_id
+        LEFT JOIN
+            inventory_antenna AS antenna
+        ON
+            antenna.id = sect.antenna_id
+        LEFT JOIN
+            device_device AS device
+        ON
+            sect.sector_configured_on_id = device.id
+            AND
+            device.is_added_to_nms > 0
+        LEFT JOIN
+            device_devicetechnology AS tech
+        ON
+            device.device_technology = tech.id
+        LEFT JOIN
+            device_devicevendor AS vendor
+        ON
+            device.device_vendor = vendor.id
+        LEFT JOIN
+            device_devicetype AS device_type
+        ON
+            device.device_type = device_type.id
+        LEFT JOIN
+            inventory_circuit AS ckt
+        ON
+            sect.id = ckt.sector_id
+        LEFT JOIN
+            inventory_substation AS ss
+        ON
+            ss.id = ckt.sub_station_id
+        LEFT JOIN
+            inventory_customer AS customer
+        ON
+            customer.id = ckt.customer_id
+        LEFT JOIN
+            device_device AS ss_device
+        ON
+            ss_device.id = ss.device_id
+            AND
+            ss_device.is_added_to_nms > 0
+        LEFT JOIN
+            device_devicetechnology AS ss_device_tech
+        ON
+            ss_device.device_technology = ss_device_tech.id
+        LEFT JOIN
+            device_devicetype AS ss_device_type
+        ON
+            ss_device.device_type = ss_device_type.id
+        LEFT JOIN
+            inventory_antenna AS ss_antenna
+        ON
+            ss_antenna.id = ss.antenna_id
+        {1}
+        GROUP BY
+            bs.id
+        '''.format(ss_group_concat_str, bs_where_condition)
+
+    return query
 
 
 def getBSInventoryInfo(base_station_id=None):
@@ -2504,7 +2711,22 @@ def getBSInventoryInfo(base_station_id=None):
             IF(isnull(bs.city_id), 'NA', city.city_name) AS bs_city,
             IF(isnull(bs.tag1), 'NA', bs.tag1) AS tag1,
             IF(isnull(bs.tag2), 'NA', bs.tag2) AS tag2,
-            CONCAT(bs.latitude, ', ', bs.longitude) AS lat_lon
+            CONCAT(bs.latitude, ', ', bs.longitude) AS lat_lon,
+            IF(isnull(bs.bh_capacity), 'NA', bs.bh_capacity) AS bh_capacity,
+            IF(isnull(bh.bh_connectivity), 'NA', bh.bh_connectivity) AS bh_connectivity,
+            IF(isnull(bh.bh_type), 'NA', bh.bh_type) AS bh_type,
+            IF(isnull(bh.bh_circuit_id), 'NA', bh.bh_circuit_id) AS bh_circuit_id,
+            IF(isnull(bh.ttsl_circuit_id), 'NA', bh.ttsl_circuit_id) AS bh_ttsl_circuit_id,
+            IF(isnull(bh.pe_hostname), 'NA', bh.pe_hostname) AS bh_pe_hostname,
+            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bs.bs_switch_id), 'NA', bs_switch_device.ip_address) AS bs_switch_ip,
+            IF(isnull(bh.aggregator_id), 'NA', aggr_switch.ip_address) AS aggregation_switch,
+            IF(isnull(bh.aggregator_port_name), 'NA', bh.aggregator_port_name) AS aggregation_switch_port,
+            IF(isnull(bh.bh_switch_id), 'NA', bh_switch.ip_address) AS bs_converter_ip, 
+            IF(isnull(bh.pop_id), 'NA', pop_device.ip_address) AS pop,
+            IF(isnull(bh.bh_configured_on_id), 'NA', bh_conf_on.ip_address) AS bh_configured_on,
+            IF(isnull(bh_conf_on.device_type), 'NA', bh_dtype.name) AS bh_device_type,
+            IF(isnull(bh.switch_port), 'NA', bh.switch_port) AS bh_device_port
         FROM
             inventory_basestation AS bs
         LEFT JOIN
@@ -2551,6 +2773,7 @@ def getBSInventoryInfo(base_station_id=None):
     bs_info = fetch_raw_result(query)
 
     return bs_info
+
 
 def getBHInventoryInfo(backhaul_id=None):
     """
@@ -2628,6 +2851,7 @@ def getBHInventoryInfo(backhaul_id=None):
 
     return bh_info
 
+
 def getSSInventoryInfo(sub_station_id=None):
     """
     This function returns SS inventory info which are shown on SS tooltip on gmap & other places
@@ -2651,7 +2875,7 @@ def getSSInventoryInfo(sub_station_id=None):
             IF(isnull(antenna.mount_type), 'NA', antenna.mount_type) AS mount_type,
             IF(isnull(antenna.antenna_type), 'NA', antenna.antenna_type) AS antenna_type,
             IF(isnull(ss.cable_length), 'NA', ss.cable_length) AS cable_length,
-            IF(isnull(ss.ethernet_extender), 'NA', ss.ethernet_extender) AS ethernet_extender,
+            IF((isnull(ss.ethernet_extender) OR ss.ethernet_extender = ' '), 'NA', ss.ethernet_extender) AS ethernet_extender,
             IF(isnull(ss.building_height), 'NA', ss.building_height) AS building_height,
             IF(isnull(ss.tower_height), 'NA', ss.tower_height) AS tower_height,
             IF(isnull(ss_tech.name), 'NA', ss_tech.name) AS ss_technology,
@@ -2659,7 +2883,10 @@ def getSSInventoryInfo(sub_station_id=None):
             IF(isnull(customer.address), 'NA', customer.address) AS customer_address,
             IF(isnull(ss.alias), 'NA', ss.alias) AS alias,
             IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance) AS dl_rssi_during_acceptance,
-            IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance
+            IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance,
+            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 1</a>") AS pos_link1,
+            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 2</a>") AS pos_link2
+
         FROM
             inventory_substation AS ss
         LEFT JOIN
@@ -2717,6 +2944,7 @@ def getSectorInventoryInfo(sector_id=None):
     query = '''
         SELECT
             IF(isnull(sector.sector_id), 'NA', sector.sector_id) AS sector_id,
+            IF(isnull(sector.alias), 'NA', sector.alias) AS sector_alias,
             IF(isnull(sector_device.ip_address), 'NA', sector_device.ip_address) AS idu_ip,
             IF(isnull(sector_tech.name), 'NA', sector_tech.name) AS technology,
             IF(isnull(sector.planned_frequency), 'NA', sector.planned_frequency) AS frequency,
@@ -2736,7 +2964,21 @@ def getSectorInventoryInfo(sector_id=None):
             IF(isnull(sector.frame_length), 'NA', sector.frame_length) AS frame_length,
             IF(isnull(bs.hssu_used), 'NA', bs.hssu_used) AS hssu_used,
             IF(isnull(bs.hssu_port), 'NA', bs.hssu_port) AS hssu_port,
-            IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS cktid
+            IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS cktid,
+            IF(isnull(customer.alias), 'NA', customer.alias) AS customer_alias,
+            IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth) AS qos_bandwidth,
+            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(ss_antenna.mount_type), 'NA', ss_antenna.mount_type) AS mount_type,
+            IF(isnull(ss.cable_length), 'NA', ss.cable_length) AS cable_length,
+            IF((isnull(ss.ethernet_extender) OR ss.ethernet_extender = ' '), 'NA', ss.ethernet_extender) AS ethernet_extender,
+            IF(isnull(ss.building_height), 'NA', ss.building_height) AS building_height,
+            IF(isnull(ss.tower_height), 'NA', ss.tower_height) AS tower_height,
+            CONCAT(sector_device.latitude, ', ', sector_device.longitude) AS lat_lon,
+            IF(isnull(customer.address), 'NA', customer.address) AS customer_address,
+            IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance) AS dl_rssi_during_acceptance,
+            IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance,
+            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 1</a>") AS pos_link1,
+            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 2</a>") AS pos_link2
         FROM
             inventory_sector AS sector
         LEFT JOIN
@@ -2756,6 +2998,10 @@ def getSectorInventoryInfo(sector_id=None):
         ON
             sector.base_station_id = bs.id
         LEFT JOIN
+            inventory_backhaul AS bh
+        ON
+            bs.backhaul_id = bh.id
+        LEFT JOIN
             device_deviceport AS sector_port
         ON
             sector.sector_configured_on_port_id = sector_port.id
@@ -2763,6 +3009,18 @@ def getSectorInventoryInfo(sector_id=None):
             inventory_circuit AS ckt
         ON
             sector.id = ckt.sector_id
+        LEFT JOIN
+            inventory_customer AS customer
+        ON
+            customer.id = ckt.customer_id
+        LEFT JOIN
+            inventory_substation AS ss
+        ON
+            ss.id = ckt.sub_station_id
+        LEFT JOIN
+            inventory_antenna AS ss_antenna
+        ON
+            ss_antenna.id = ss.antenna_id
         WHERE
             {0}
         GROUP BY

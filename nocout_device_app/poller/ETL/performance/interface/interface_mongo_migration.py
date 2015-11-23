@@ -50,34 +50,18 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-
-    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
-    """
-    start_time, end_time = None, None
+    db=None
     try:
-        db = mongo_module.mongo_conn(
-            host=site_spec_mongo_conf[1],
-            port=int(site_spec_mongo_conf[2]),
-            db_name=configs.get('nosql_db')
-        ) 
-    except:
-        sys.stdout.write('Mongodb connection problem\n')
-        sys.exit(1)
-    end_time = datetime.now()
-    end_epoch = int(end_time.strftime('%s'))
-    # get most latest sys timestamp entry present in mysql for interface services
-    time_doc = list(db.sys_timestamp_status.find({'_id': 'performance_status'}))
-    for doc in time_doc:
-        start_time = doc.get('sys_timestamp')
-        start_epoch = int(start_time.strftime('%s'))
-    print start_time,end_time
-    """  
+    	db = utility_module.mysql_conn(configs=configs)
+    except Exception,e:
+	print e
+	return
     docs = read_data()
     for doc in docs:
         values_list = build_data(doc)
         data_values.extend(values_list)
     if data_values:
-        insert_data(configs.get('table_name'), data_values, configs=configs)
+        insert_data(configs.get('table_name'), data_values, db)
         print "Data inserted into performance_performancestatus table"
     else:
         print "No data in the mongo db in this time frame"
@@ -97,29 +81,6 @@ def read_data():
 
     #db = None
     docs = []
-    #db = mongo_module.mongo_conn(
-    #    host=kwargs.get('configs')[1],
-    #    port=int(kwargs.get('configs')[2]),
-    #    db_name=kwargs.get('db_name')
-    #) 
-    ##if db:
-        #if start_time is None:
-        #    # read data from status, initially
-        #    start_time = end_time - 3600
-        #    cur = db.device_status_services_status.find({
-        #        "check_timestamp": {"$gt": start_time, "$lt": end_time}})
-        #elif (end_time - start_time) >= 7200:
-            # data in mysql is older than mongo data by more thn 2 hours
-            # so we need to read data from live mongo collection rather than status collection
-        #    if (end_time - start_time) > 86400:
-                # max time range for data sync is 1 day
-        #        start_time = end_time - 86400
-        #    cur = db.status_perf.find({
-        #        "check_timestamp": {"$gt": start_time, "$lt": end_time}})
-        #else:
-            # read data from status collection, normally
-            #cur = db.device_status_services_status.find({
-            #    "check_timestamp": {"$gt": start_time, "$lt": end_time}})
     current_time = datetime.now()
     memc_obj = db_ops_module.MemcacheInterface()
     key = nocout_site_name + "_interface"
@@ -183,7 +144,7 @@ def build_data(doc):
     t = ()
     return values_list
 
-def insert_data(table, data_values, **kwargs):
+def insert_data(table, data_values, db):
     """
     Function to bulk insert data into mysql db
 
@@ -194,7 +155,6 @@ def insert_data(table, data_values, **kwargs):
     Kwargs:
         kwargs: Mysqldb connection variables
     """
-    db = utility_module.mysql_conn(configs=kwargs.get('configs'))
     query = 'INSERT INTO `%s` ' % table
     query += """
                 (device_name,service_name,sys_timestamp,check_timestamp,

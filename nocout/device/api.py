@@ -107,6 +107,9 @@ from device.models import DeviceTechnology
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from inventory.utils.util import getDeviceTypeNamedDict, getFrequencyDict
+from django.core.urlresolvers import reverse
+
 logger = logging.getLogger(__name__)
 
 # Create service utils instance
@@ -118,6 +121,529 @@ SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
+
+def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}, base_urls={}):
+    """
+
+    """
+    ss_dict = {}
+
+    if not base_urls:
+        # Create performance page base url
+        try:
+            perf_page_base_url = reverse(
+                'SingleDevicePerf',
+                kwargs={
+                    'page_type': 'page_type', 
+                    'device_id': 0
+                },
+                current_app='performance'
+            )
+        except Exception, e:
+            perf_page_base_url = ''
+
+        # Create device inventory page base url
+        try:
+            inventory_base_url = reverse(
+                'device_edit',
+                kwargs={
+                    'pk': 0
+                },
+                current_app='device'
+            )
+        except Exception, e:
+            inventory_base_url = ''
+
+    if not ss_dataset:
+        return ss_dict
+
+    for data in ss_dataset:
+        data_list = data.split('|')
+        if len(data_list) > 1:
+            if data_list[0] not in ss_dict:
+                ss_dict[data_list[0]] = {
+                    'ss_list': list(),
+                    'ip_list': list(),
+                    'circuit_list': list()
+                }
+
+            try:
+                ss_id = int(data_list[1])
+            except Exception, e:
+                ss_id = ''
+
+            if ss_id:
+                try:
+                    device_id = int(data_list[2])
+                except Exception, e:
+                    device_id = ''
+
+                try:
+                    device_name = data_list[3]
+                except Exception, e:
+                    device_name = ''
+
+                try:
+                    ip_address = data_list[4]
+                except Exception, e:
+                    ip_address = ''
+
+                try:
+                    device_type = data_list[5]
+                except Exception, e:
+                    device_type = ''
+
+                try:
+                    latitude = float(data_list[6])
+                except Exception, e:
+                    latitude = ''
+
+                try:
+                    longitude = float(data_list[7])
+                except Exception, e:
+                    longitude = ''
+
+                try:
+                    circuit_id = data_list[8]
+                except Exception, e:
+                    circuit_id = 'NA'
+
+                try:
+                    antenna_height = int(data_list[9])
+                except Exception, e:
+                    antenna_height = 'NA'
+
+                try:
+                    technology = data_list[10]
+                except Exception, e:
+                    technology = 'NA'
+
+                try:
+                    ss_name = data_list[11]
+                except Exception, e:
+                    ss_name = 'NA'
+
+                icon_url = device_type_dict.get(device_type, '')
+
+                if icon_url:
+                    icon_url = icon_url.get('gmap_icon')
+
+                label_str = ''
+
+                page_type = 'customer'
+                performance_url = ''
+                inventory_url = ''
+
+                if base_urls.get('performance'):
+                    performance_url = base_urls.get('performance')
+                    performance_url = performance_url.replace('page_type', page_type)
+                    performance_url = performance_url.replace('0', str(device_id))
+
+                if base_urls.get('inventory'):
+                    inventory_url = base_urls.get('inventory')
+                    inventory_url = inventory_url.replace('page_type', page_type)
+                    inventory_url = inventory_url.replace('0', str(device_id))
+
+                # Only in case if we have extra info then
+                if len(data_list) > 12:
+
+                    try:
+                        customer_alias = data_list[12]
+                    except Exception, e:
+                        customer_alias = 'NA'
+
+                    try:
+                        pe_ip = data_list[13]
+                    except Exception, e:
+                        pe_ip = 'NA'
+
+                    try:
+                        qos_bandwidth = data_list[14]
+                    except Exception, e:
+                        qos_bandwidth = 'NA'
+
+                    try:
+                        polarization = data_list[15]
+                    except Exception, e:
+                        polarization = 'NA'
+
+                    try:
+                        mount_type = data_list[16]
+                    except Exception, e:
+                        mount_type = 'NA'
+
+                    try:
+                        mount_type = data_list[16]
+                    except Exception, e:
+                        mount_type = 'NA'
+
+                    try:
+                        antenna_type = data_list[17]
+                    except Exception, e:
+                        antenna_type = 'NA'
+
+                    try:
+                        cable_length = data_list[18]
+                    except Exception, e:
+                        cable_length = 'NA'
+
+                    try:
+                        ethernet_extender = data_list[19]
+                    except Exception, e:
+                        ethernet_extender = 'NA'
+
+                    try:
+                        building_height = data_list[20]
+                    except Exception, e:
+                        building_height = 'NA'
+
+                    try:
+                        tower_height = data_list[21]
+                    except Exception, e:
+                        tower_height = 'NA'
+
+                    try:
+                        customer_address = data_list[22]
+                    except Exception, e:
+                        customer_address = 'NA'
+
+                    try:
+                        ss_alias = data_list[23]
+                    except Exception, e:
+                        ss_alias = 'NA'
+
+                    try:
+                        rssi_during_acceptance = data_list[24]
+                    except Exception, e:
+                        rssi_during_acceptance = 'NA'
+
+                    try:
+                        date_of_acceptance = data_list[25]
+                    except Exception, e:
+                        date_of_acceptance = 'NA'
+
+                    label_str += unicode(circuit_id) + '|'
+                    label_str += unicode(customer_alias) + '|'
+                    label_str += unicode(ip_address) + '|'
+                    label_str += unicode(pe_ip) + '|'
+                    label_str += unicode(qos_bandwidth) + '|'
+                    label_str += unicode(antenna_height) + '|'
+                    label_str += unicode(polarization) + '|'
+                    label_str += unicode(mount_type) + '|'
+                    label_str += unicode(antenna_type) + '|'
+                    label_str += unicode(cable_length) + '|'
+                    label_str += unicode(ethernet_extender) + '|'
+                    label_str += unicode(building_height) + '|'
+                    label_str += unicode(tower_height) + '|'
+                    label_str += unicode(technology) + '|'
+                    label_str += unicode(latitude) + ', ' + unicode(longitude) + '|'
+                    label_str += unicode(customer_address) + '|'
+                    label_str += unicode(ss_alias) + '|'
+                    label_str += unicode(rssi_during_acceptance) + '|'
+                    label_str += unicode(date_of_acceptance)
+
+                ss_info = {
+                    'id': ss_id,
+                    'name': ss_name,
+                    'device_id': device_id,
+                    'device_name': device_name,
+                    'ip_address': ip_address,
+                    'device_type': device_type,
+                    'device_tech': technology,
+                    'lat': latitude,
+                    'lon': longitude,
+                    'inventory_url': inventory_url,
+                    'perf_page_url': performance_url,
+                    'circuit_id': circuit_id,
+                    'markerUrl': icon_url,
+                    'antenna_height': antenna_height,
+                    'show_link': 1,
+                    'link_color': '',
+                    'label_str': label_str
+                }
+
+                ss_dict[data_list[0]]['ss_list'].append(ss_info)
+                ss_dict[data_list[0]]['ip_list'].append(ip_address)
+                ss_dict[data_list[0]]['circuit_list'].append(circuit_id)
+
+    return ss_dict
+
+
+def prepare_raw_result_v2(resultset=None):
+
+    result = list()
+
+    if not resultset:
+        return result
+
+    # Create performance page base url
+    try:
+        perf_page_base_url = reverse(
+            'SingleDevicePerf',
+            kwargs={
+                'page_type': 'page_type', 
+                'device_id': 0
+            },
+            current_app='performance'
+        )
+    except Exception, e:
+        perf_page_base_url = ''
+
+    # Create device inventory page base url
+    try:
+        inventory_base_url = reverse(
+            'device_edit',
+            kwargs={
+                'pk': 0
+            },
+            current_app='device'
+        )
+    except Exception, e:
+        inventory_base_url = ''
+
+    base_urls_dict = {
+        'inventory': inventory_base_url,
+        'performance': perf_page_base_url
+    }
+
+    # Get the device type dict to get the device type gmap icon
+    device_type_dict = getDeviceTypeNamedDict()
+    # Fetch the device frequency to get the sector color as per freq id
+    freq_dict = getFrequencyDict()
+    # Device Technology List
+    tech_list = list(DeviceTechnology.objects.all().values_list('name', flat=True))
+    # Device Vendor List
+    vendor_list = list(DeviceVendor.objects.all().values_list('name', flat=True))
+    traced_sector_pk = list()
+    traced_sector_id = list()
+    
+    for bs in resultset:
+        if not bs.get('BSID'):
+            continue
+
+        sector_info_str = bs.get('SECT_STR', '')
+
+        temp_dict = {
+            'bs_id': bs.get('BSID'),
+            'name': bs.get('BSNAME'),
+            'alias': bs.get('BSALIAS'),
+            'city': bs.get('BSCITY'),
+            'state': bs.get('BSSTATE'),
+            'total_ss': bs.get('TOTALSS'),
+            'lat': bs.get('BSLAT'),
+            'lon': bs.get('BSLON'),
+            'icon_url': 'static/img/icons/bs.png',
+            'bh_id': bs.get('BHID'),
+            'bh_device_id': bs.get('BHDEVICEID'),
+            'bh_device_ip': bs.get('BHDEVICEIP'),
+            'bh_device_type': bs.get('BHDEVICETYPE'),
+            'bh_device_tech': bs.get('BHDEVICETECH'),
+            'maintenance_status': bs.get('BSMAINTENANCESTATUS'),
+            'tech_str': '',
+            'vendor_str': '',
+            'freq_str': '',
+            'polarization_str': '',
+            'sector_configured_on_devices': '',
+            'circuit_ids': '',
+            'sectors': []
+        }
+
+        sector_list = list()
+        if sector_info_str:
+            ss_info_str = bs.get('SS_STR', '')
+            sector_info = sector_info_str.split('-|-|-')
+            ss_info_dict = {}
+            if ss_info_str:
+                ss_info_dict = prepare_ss_info_dict(
+                    ss_info_str.split('-|-|-'),
+                    device_type_dict,
+                    freq_dict,
+                    base_urls_dict
+                )
+
+            for info in sector_info:
+                splitted_str = info.split('|')
+                try:
+                    sector_pk = int(splitted_str[0])
+                except Exception, e:
+                    continue
+
+                try:
+                    sector_id = splitted_str[1]
+                except Exception, e:
+                    sector_id = ''
+
+                if sector_pk in traced_sector_pk and sector_id in traced_sector_id:
+                    continue
+
+                if sector_pk not in traced_sector_pk:
+                    traced_sector_pk.append(sector_pk)
+
+                traced_sector_id.append(sector_id)
+
+                try:
+                    try:
+                        technology = splitted_str[2] if splitted_str[2] in tech_list else 'NA'
+                    except Exception, e:
+                        technology = 'NA'
+                    
+                    try:
+                        vendor = splitted_str[3] if splitted_str[3] in vendor_list else 'NA'
+                    except Exception, e:
+                        vendor = 'NA'
+                    
+                    try:
+                        device_type = splitted_str[4]
+                    except Exception, e:
+                        device_type = 'NA'
+
+                    try:
+                        freq_id = str(splitted_str[5])
+                    except Exception, e:
+                        freq_id = 'NA'
+
+                    try:
+                        polarization = splitted_str[6]
+                    except Exception, e:
+                        polarization = 'NA'
+
+                    try:
+                        azimuth_angle = int(splitted_str[7])
+                    except Exception, e:
+                        azimuth_angle = 'NA'
+
+                    try:
+                        beamwidth = int(splitted_str[8])
+                    except Exception, e:
+                        beamwidth = 'NA'
+
+                    try:
+                        antenna_height = int(splitted_str[9])
+                    except Exception, e:
+                        antenna_height = 'NA'
+
+                    try:
+                        sector_ip = splitted_str[10]
+                    except Exception, e:
+                        sector_ip = ''
+
+                    try:
+                        device_name = splitted_str[11]
+                    except Exception, e:
+                        device_name = ''
+
+                    try:
+                        device_id = splitted_str[12]
+                    except Exception, e:
+                        device_id = ''
+
+                    gmap_icon = ''
+                    freq_val = ''
+                    color = ''
+                    radius = ''
+                    # fetch marker icon from device_type dict
+                    if device_type in device_type_dict:
+                        device_type_obj = device_type_dict.get(device_type)
+                        gmap_icon = device_type_obj.get('gmap_icon')
+
+                    # Fetch freq color & value from freq dict
+                    if freq_id in freq_dict:
+                        freq_obj = freq_dict.get(freq_id)
+                        color = freq_obj.get('color')
+                        freq_val = freq_obj.get('value')
+                        radius = freq_obj.get('radius', 0.5)
+
+                    ss_data_obj = ss_info_dict.get(str(sector_pk), {})
+                    ss_list = ss_data_obj.get('ss_list', [])
+                    ip_list = ss_data_obj.get('ip_list', [])
+                    circuit_list = ss_data_obj.get('circuit_list', [])
+
+                    # Concat sectors technology
+                    temp_dict['tech_str'] += technology + '|'
+                    # Concat sectors vendor
+                    temp_dict['vendor_str'] += vendor + '|'
+                    # Concat sectors freq.
+                    temp_dict['freq_str'] += freq_val + '|'
+                    # Concat sectors antenna polarization
+                    temp_dict['polarization_str'] += polarization + '|'
+                    # Concat Sectors IP
+                    temp_dict['sector_configured_on_devices'] += sector_ip + '|'
+                    # Concat SS IPs
+                    temp_dict['sector_configured_on_devices'] += '|'.join(ip_list) + '|'
+                    # Concat Circuit ID's
+                    temp_dict['circuit_ids'] += '|'.join(circuit_list) + '|'
+
+                    perf_page_url = ''
+                    inventory_url = ''
+                    page_type = 'customer'
+                    # Check for technology to make perf page url
+                    if technology.lower() in ['pmp', 'wimax', 'ptp bh']:
+                        page_type = 'network'
+
+                    if perf_page_base_url:
+                        perf_page_url = perf_page_base_url
+                        perf_page_url = perf_page_url.replace('page_type', page_type)
+                        perf_page_url = perf_page_url.replace('0', device_id)
+                    else:
+                        # Create Perf page url
+                        try:
+                            perf_page_url = reverse(
+                                'SingleDevicePerf',
+                                kwargs={
+                                    'page_type': page_type, 
+                                    'device_id': device_id
+                                },
+                                current_app='performance'
+                            )
+                        except Exception, e:
+                            pass
+
+                    # Sector Device Inventory URL
+                    if inventory_base_url:
+                        inventory_url = inventory_base_url
+                        inventory_url = inventory_url.replace('0', device_id)
+                    else:
+                        try:
+                            inventory_url = reverse(
+                                'device_edit',
+                                kwargs={
+                                    'pk': device_id
+                                },
+                                current_app='device'
+                            )
+                        except Exception, e:
+                            pass
+
+                    sector = {
+                        'id': sector_pk,
+                        'device_name': device_name,
+                        'sector_id': sector_id,
+                        'technology': technology,
+                        'vendor': vendor,
+                        'device_type': device_type,
+                        'azimuth_angle': azimuth_angle,
+                        'beam_width': beamwidth,
+                        'markerUrl': gmap_icon,
+                        'color': color,
+                        'radius': radius,
+                        'inventory_url': inventory_url,
+                        'perf_page_url': perf_page_url,
+                        'freq': freq_val,
+                        'ip_address': sector_ip,
+                        'polarization': polarization,
+                        'antenna_height': antenna_height,
+                        'sub_stations': ss_list,
+                        'device_id': device_id
+                    }
+                    sector_list.append(sector)
+                except Exception, e:
+                    continue
+                
+                temp_dict.update(sectors=sector_list)
+        
+        result.append(temp_dict)
+
+    return result
 
 @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_raw_result(bs_dict=None):
@@ -509,7 +1035,7 @@ class DeviceStatsApi(View):
                 "objects": None
             }
         }
-        self.raw_result = prepare_raw_result(nocout_utils.cached_all_gis_inventory(monitored_only=True))
+        self.raw_result = nocout_utils.get_maps_initial_data_cached(bs_id=[])
         super(DeviceStatsApi, self).__init__()
 
     def get(self, request):
@@ -549,17 +1075,15 @@ class DeviceStatsApi(View):
 
             self.result['data']['meta']['limit'] = GIS_MAP_MAX_DEVICE_LIMIT
             self.result['data']['meta']['offset'] = offset
+            # self.result['data']['objects'] = {
+            #     "id": "mainNode",
+            #     "name": "mainNodeName",
+            #     "data": {"unspiderfy_icon": "static/img/icons/bs.png"}
+            # }
             self.result['data']['objects'] = {
-                "id": "mainNode",
-                "name": "mainNodeName",
-                "data": {"unspiderfy_icon": "static/img/icons/bs.png"}
+                'children' : []
             }
-            self.result['data']['objects']['children'] = list()
-
-            for bs in bs_id:
-                if bs in self.raw_result:
-                    base_station_info = prepare_raw_bs_result(self.raw_result[bs])
-                    self.result['data']['objects']['children'].append(base_station_info)
+            self.result['data']['objects']['children'] = prepare_raw_result_v2(self.raw_result)
 
             self.result['data']['meta']['device_count'] = len(self.result['data']['objects']['children'])
             self.result['message'] = 'Data Fetched Successfully.'
@@ -1643,11 +2167,15 @@ class BulkFetchLPDataApi(View):
                     result['data']['meta']['valuesuffix'] = ''
 
                 try:
+                    ds_dtype_obj = DeviceTypeServiceDataSource.objects.get(
+                        device_type_service__service__name=service,
+                        service_data_sources__name=data_source
+                    )
+                    result['data']['meta']['warning'] = ds_dtype_obj.warning
+                    result['data']['meta']['critical'] = ds_dtype_obj.critical
+                except Exception as e:
                     result['data']['meta']['warning'] = ds_obj.warning
                     result['data']['meta']['critical'] = ds_obj.critical
-                except Exception as e:
-                    result['data']['meta']['warning'] = ''
-                    result['data']['meta']['critical'] = ''
 
         # BS device to with 'ss' is connected (applied only if 'service' is from 'exceptional_services').
         bs_device, site_name = None, None
@@ -2325,8 +2853,6 @@ class GetTypesForModel(APIView):
         # Fetch types associated with the selected model.
         if model:
             types = model[0].device_types.all()
-            print "TYPE"
-            print type(types)
 
             result = [{'id': value.id,
                        'name': value.name,
