@@ -3896,6 +3896,9 @@ class GISStaticInfo(View):
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
 
+        if not freeze_time:
+            freeze_time = '0'
+
         # base station counter
         bs_counter = 0
 
@@ -3905,10 +3908,11 @@ class GISStaticInfo(View):
         inventory_utils = InventoryUtilsGateway()
 
         # loop through all base stations having id's in bs_ids list
-        try:
-            for bs_id in bs_ids:
+        for bs_id in bs_ids:
+            try:
                 
                 devices_ip_address_list = list()
+
                 # increment base station counter
                 bs_counter += 1
 
@@ -4058,6 +4062,11 @@ class GISStaticInfo(View):
                             except Exception as e:
                                 pass
 
+                            sub_station['perf_value'] = ''
+                            sub_station['pl'] = ''
+                            sub_station['pl_timestamp'] = ''
+                            sub_station['rta'] = ''
+
                             if service and data_source:
                                 # performance value
                                 perf_payload = {
@@ -4088,12 +4097,10 @@ class GISStaticInfo(View):
                                 sub_station['pl'] = substation_extra_info['pl']
                                 sub_station['pl_timestamp'] = substation_extra_info['pl_timestamp']
                                 sub_station['rta'] = substation_extra_info['rta']
-        except Exception as e:
-            pass
+            except Exception as e:
+                pass
 
-        result = inventory
-
-        return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(inventory))
 
     def get_backhaul_info(self, bh_device, network_perf_data):
         """ Get Sector performance info
@@ -4813,7 +4820,8 @@ class GISStaticInfo(View):
 
             if performance_value and len(performance_value):
                 performance_value = performance_value[0]['current_value']
-
+            else:
+                performance_value = ''
         except Exception as e:
             return performance_value
 
