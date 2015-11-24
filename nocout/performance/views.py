@@ -1453,15 +1453,15 @@ class InventoryDeviceServiceDataSource(View):
                 # if there is a port
                 try:
                     ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
-
+                    those_ports = list()
                     try:
-                        those_ports = list()
                         for port in ports:
                             if ',' in port:
                                 those_ports.extend(port.split(','))
                             else:
                                 those_ports.append(port)
                     except Exception, e:
+
                         those_ports = ports
 
                     bh_data_sources = ServiceDataSource.objects.filter(

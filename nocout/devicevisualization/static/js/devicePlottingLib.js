@@ -3057,7 +3057,7 @@ function devicePlottingClass_gmap() {
 						infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
 
 						if (maps_themetics_poll_flag) {
-							infoTable += "<button class='btn btn-primary btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
+							infoTable += "<button class='btn btn-default btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
 										  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
 										  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
 										  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'\
@@ -3096,7 +3096,7 @@ function devicePlottingClass_gmap() {
 								infoTable += "<tr>";
 								infoTable += "<td class='"+text_class+"' url='"+url+"'>"+poll_now_info[i]['title']+"</td>";
 								infoTable += "<td style='text-align:center'>\
-											 <button class='btn btn-primary btn-xs perf_poll_now'\
+											 <button class='btn btn-default btn-xs perf_poll_now'\
 											 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
 											 device_type='"+device_type+"' title='Poll Now' data-complete-text='<i class=\"fa fa-flash\"></i>' \
 				                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
@@ -3256,7 +3256,7 @@ function devicePlottingClass_gmap() {
 						infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
 
 						if (maps_themetics_poll_flag) {
-							infoTable += "<button class='btn btn-primary btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
+							infoTable += "<button class='btn btn-default btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
 										  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
 										  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
 										  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'\
@@ -3295,7 +3295,7 @@ function devicePlottingClass_gmap() {
 								infoTable += "<tr>";
 								infoTable += "<td class='"+text_class+"' url='"+url+"'>"+poll_now_info[i]['title']+"</td>";
 								infoTable += "<td style='text-align:center'>\
-											 <button class='btn btn-primary btn-xs perf_poll_now'\
+											 <button class='btn btn-default btn-xs perf_poll_now'\
 											 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
 				                             device_type='"+device_type+"' title='Poll Now' data-complete-text='<i class=\"fa fa-flash\"></i>' \
 				                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
@@ -7228,12 +7228,12 @@ function devicePlottingClass_gmap() {
 		right_click_html += "<table class='table table-bordered'><tbody>";
 		right_click_html += "<tr><td>Name</td><td><input type='text' class='form-control' name='point_name' id='point_name' value='"+marker.point_name+"'/></td></tr>";
 		right_click_html += "<tr><td>Description</td><td><textarea name='point_desc' id='point_desc' class='form-control'>"+marker.point_desc+"</textarea></td></tr>";
-		right_click_html += "<tr><td align='center'><button type='button' class='btn btn-sm btn-primary' id='point_info_remove_btn' onClick='gmap_self.removePointInfo_gmap("+method_var+")'>Remove Point</button></td><td align='center'><button type='button' class='btn btn-sm btn-primary' id='point_info_save_btn' onClick='gmap_self.savePointInfo_gmap("+method_var+")'>Save Point</button></td></tr>";
+		right_click_html += "<tr><td align='center'><button type='button' class='btn btn-sm btn-default' id='point_info_remove_btn' onClick='gmap_self.removePointInfo_gmap("+method_var+")'>Remove Point</button></td><td align='center'><button type='button' class='btn btn-sm btn-default' id='point_info_save_btn' onClick='gmap_self.savePointInfo_gmap("+method_var+")'>Save Point</button></td></tr>";
 
 		/*If point saved then show add/remove line option*/
 		if(marker.point_id > 0) {
 			if(marker.connected_lat == "" && marker.connected_lon == "") {
-				right_click_html += "<tr><td colspan='2' align='center'><button type='button' class='btn btn-sm btn-primary' onClick='gmap_self.addLineToPoint_gmap("+method_var+")' id='add_line_from_pt_btn'>Add Line</button></td></tr>";
+				right_click_html += "<tr><td colspan='2' align='center'><button type='button' class='btn btn-sm btn-default' onClick='gmap_self.addLineToPoint_gmap("+method_var+")' id='add_line_from_pt_btn'>Add Line</button></td></tr>";
 			}
 		}
 
