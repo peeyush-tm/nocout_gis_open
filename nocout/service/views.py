@@ -19,6 +19,7 @@ from device.models import DeviceTypeService, Device
 
 # ########################################################
 from django.conf import settings
+from user_profile.utils.auth import in_group
 
 if settings.DEBUG:
     import logging
@@ -48,7 +49,7 @@ class ServiceList(PermissionsRequiredMixin, ListView):
             {'mData': 'service_data_sources__alias', 'sTitle': 'Data Sources', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -268,7 +269,7 @@ class ServiceParametersList(PermissionsRequiredMixin, ListView):
             {'mData': 'retry_check_interval', 'sTitle': 'Retry Check Intervals', 'sWidth': 'auto', },
             {'mData': 'max_check_attempts', 'sTitle': 'Max Check Attempts', 'sWidth': 'auto', },
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -363,7 +364,7 @@ class ServiceDataSourceList(PermissionsRequiredMixin, ListView):
             {'mData': 'warning', 'sTitle': 'Warning', 'sWidth': 'auto', },
             {'mData': 'critical', 'sTitle': 'Critical', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -474,7 +475,7 @@ class ProtocolList(PermissionsRequiredMixin, ListView):
             {'mData': 'private_phase', 'sTitle': 'Private Phase', 'sWidth': 'auto', },
             {'mData': 'private_pass_phase', 'sTitle': 'Private Pass Phase', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -599,7 +600,7 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
             {'mData': 'modified_on', 'sTitle': 'Updated On', 'sWidth': 'null', },
         ]
 
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)

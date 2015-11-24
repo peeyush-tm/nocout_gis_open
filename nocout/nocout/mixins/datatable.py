@@ -90,7 +90,12 @@ class DatatableSearchMixin(object):
             for col in search_columns:
                 q |= Q(**{'{0}__icontains'.format(col): sSearch})
 
-            qs = qs.filter(q)
+            try:
+                qs = qs.filter(q)
+            except Exception, e:
+                print ' == e == '
+                print q
+                print ' == e == '
         
         return self.advance_filter_queryset(qs)
 

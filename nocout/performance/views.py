@@ -56,6 +56,8 @@ from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
 from performance.formulae import display_time, rta_null
 
 # Create instance of 'ServiceUtilsGateway' class
+from user_profile.utils.auth import in_group
+
 service_utils = ServiceUtilsGateway()
 
 ##execute this globally
@@ -234,7 +236,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] == 'admin':
+            if in_group(self.request.user, 'admin'):
                 organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
             else:
                 organizations = [self.request.user.userprofile.organization]
@@ -505,6 +507,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         :param qs:
         :return qs
         """
+        
         page_type = self.request.GET['page_type']
         alert_page_type = page_type
 
@@ -556,6 +559,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                             <i class="fa fa-warning text-warning"></i></a> \
                             <a href="' + inventory_url + '" title="Device Inventory">\
                             <i class="fa fa-dropbox text-muted" ></i></a>'
+                            
+
                 )
 
         return qs
@@ -623,6 +628,8 @@ class GetPerfomance(View):
         bs_alias = None
         bs_id = list()
         is_radwin5 = 0
+        is_viewer_flag = 0
+        user_role = self.request.user
 
         try:
             if 'radwin5' in device_type.lower():
@@ -631,14 +638,20 @@ class GetPerfomance(View):
             is_radwin5 = 0
 
         try:
+            if in_group(self.request.user, 'viewer'):
+                is_viewer_flag = 1
+        except Exception, e:
+            is_viewer_flag = 0       
+
+        try:
             if device.sector_configured_on.exists():
                 bs_obj = device.sector_configured_on.filter()[0].base_station
                 bs_alias = bs_obj.alias
-                bs_id = [bs_obj.id]
+                bs_id = [str(bs_obj.id)]
             elif device.dr_configured_on.exists():
                 bs_obj = device.dr_configured_on.filter()[0].base_station
                 bs_alias = bs_obj.alias
-                bs_id = [bs_obj.id]
+                bs_id = [str(bs_obj.id)]
             elif device.substation_set.exists():
                 bs_obj = Sector.objects.get(
                     id=Circuit.objects.get(
@@ -646,7 +659,7 @@ class GetPerfomance(View):
                     ).sector_id
                 ).base_station
                 bs_alias = bs_obj.alias
-                bs_id = [bs_obj.id]
+                bs_id = [str(bs_obj.id)]
             elif device.backhaul.exists() or device.backhaul_switch.exists() or device.backhaul_pop.exists() \
                 or device.backhaul_aggregator.exists():
                 bh_id = None
@@ -664,11 +677,11 @@ class GetPerfomance(View):
                         backhaul= bh_id
                     ).values_list('alias', flat=True)
                 )
-                bs_id = ','.join(
-                    BaseStation.objects.filter(
-                        backhaul= bh_id
-                    ).values_list('id', flat=True)
-                )
+
+                bh_bs_ids = BaseStation.objects.filter(
+                    backhaul= bh_id
+                ).values_list('id', flat=True)
+                bs_id = [str(bs_id) for bs_id in bh_bs_ids]
             else:
                 pass
         except Exception, e:
@@ -748,6 +761,7 @@ class GetPerfomance(View):
             'is_util_tab': int(is_util_tab),
             'is_dr_device' : is_dr_device,
             'is_radwin5' : is_radwin5,
+            'is_viewer_flag': is_viewer_flag,
             'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id)
         }
 
@@ -1397,6 +1411,11 @@ class InventoryDeviceServiceDataSource(View):
             'title' : 'Ping'
         }]
 
+        is_other_device = False
+
+        if (device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists()) and not device.backhaul.exists():
+            is_other_device = True
+
         if service_view_type == 'normal':
 
             result['data']['objects']['network_perf_tab']["info"].append({
@@ -1404,6 +1423,7 @@ class InventoryDeviceServiceDataSource(View):
                 'title': "Packet Drop",
                 'url': 'performance/service/ping/service_data_source/pl/device/' + str(device_id),
                 'active': 0,
+                'sds_key': 'pl',
                 'service_type_tab': 'network_perf_tab'
             })
 
@@ -1412,6 +1432,7 @@ class InventoryDeviceServiceDataSource(View):
                 'title': "Latency",
                 'url': 'performance/service/ping/service_data_source/rta/device/' + str(device_id),
                 'active': 0,
+                'sds_key': 'rta',
                 'service_type_tab': 'network_perf_tab'
             })
 
@@ -1421,6 +1442,7 @@ class InventoryDeviceServiceDataSource(View):
                     'title': "RF Latency",
                     'url': 'performance/service/rf/service_data_source/rf/device/' + str(device_id),
                     'active': 0,
+                    'sds_key': 'rf',
                     'service_type_tab': 'network_perf_tab'
                 })
 
@@ -1430,7 +1452,17 @@ class InventoryDeviceServiceDataSource(View):
                 # if the backhaul exists, that means we need to check for the PORT
                 # if there is a port
                 try:
-                    those_ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
+                    ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
+                    those_ports = list()
+                    try:
+                        for port in ports:
+                            if ',' in port:
+                                those_ports.extend(port.split(','))
+                            else:
+                                those_ports.append(port)
+                    except Exception, e:
+
+                        those_ports = ports
 
                     bh_data_sources = ServiceDataSource.objects.filter(
                         name__in=DevicePort.objects.filter(alias__in=those_ports).values_list('name', flat=True)
@@ -1476,6 +1508,7 @@ class InventoryDeviceServiceDataSource(View):
                                            '/service_data_source/' + sds_name +
                                            '/device/' + str(device_id),
                                     'active': 0,
+                                    'sds_key': service_name + '_' + sds_name
                                 }
                     else:
                         continue
@@ -1488,7 +1521,11 @@ class InventoryDeviceServiceDataSource(View):
                     elif 'topology' in service_name:
                         continue
                     else:
-                        result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                        if is_other_device:
+                            if 'util' not in service_name:
+                                result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                        else:
+                            result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
         else:
             result['data']['objects']['network_perf_tab']["info"].append({
@@ -1523,7 +1560,11 @@ class InventoryDeviceServiceDataSource(View):
                 elif 'topology' in service_name:
                     continue
                 else:
-                    result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                    if is_other_device:
+                        if 'util' not in service_name:
+                            result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                    else:
+                        result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
         
         result['data']['objects']['availability_tab']["info"].append(
@@ -1532,7 +1573,7 @@ class InventoryDeviceServiceDataSource(View):
                 'title': 'Availability',
                 'url': 'performance/service/availability/service_data_source/availability/device/' +
                        str(device_id),
-                'active': 0,
+                'active': 0
             })
 
         result['data']['objects']['topology_tab']["info"].append({
@@ -1540,24 +1581,21 @@ class InventoryDeviceServiceDataSource(View):
             'title': 'Topology',
             'url': 'performance/service/topology/service_data_source/topology/device/' +
                    str(device_id),
-            'active': 0,
+            'active': 0
         })
 
         result['data']['objects']['utilization_top_tab']["info"].append({
             'name': 'utilization_top',
             'title': 'Utilization',
             'url': 'performance/servicedetail/util/device/'+str(device_id),
-            'active': 0,
+            'active': 0
         })
-        print self.request.user
-        print dir(self.request.user)
-        custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))
-
         
+        custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))       
+
         for dashboard in custom_dashboard:
             cdb_info = {
-                    'name': dashboard.name,
-                    # 'user_id': self.request.user,
+                    'name': dashboard.name,                    
                     'title': dashboard.title.strip(),
                     'url': 'performance/custom_dashboard/' + str(dashboard.id) +
                             '/device/' + str(device_id),
@@ -2021,6 +2059,8 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
 
     parameters = {}
 
+    sds_type = 'Numeric'
+
     inventory_device_machine_name = ""
 
     def get_initial_queryset(self):
@@ -2069,7 +2109,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         # Create instance of "GetServiceTypePerformanceData" class
         self.perf_data_instance = GetServiceTypePerformanceData()
 
-
         if data_for != 'live':
             self.isHistorical = True
             # Device Machine Name required in Query to fetch data.
@@ -2112,9 +2151,18 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
                 else:
                     break
 
+            for sds in SERVICE_DATA_SOURCE:
+                if self.sds_type != 'String':
+                    if service.strip().lower() in sds and 'data_source_type' in SERVICE_DATA_SOURCE[sds]:
+                        self.sds_type = SERVICE_DATA_SOURCE[sds]['data_source_type']
+                else:
+                    break
+
             self.columns.append('min_value')
             self.columns.append('max_value')
         else:
+            if self.data_source in SERVICE_DATA_SOURCE and 'data_source_type' in  SERVICE_DATA_SOURCE[self.data_source]:
+                self.sds_type = SERVICE_DATA_SOURCE[self.data_source].get('data_source_type', 'Numeric')
             # check for the formula
             if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['formula']:
                 self.formula = SERVICE_DATA_SOURCE[self.data_source]['formula']
@@ -2126,7 +2174,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
                 if 'max_value' not in self.columns:
                     self.columns.append('max_value')
-
 
         if data_for == 'bihourly':
             self.model = PerformanceServiceBiHourly
@@ -2211,9 +2258,11 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             'start_time': start_date,
             'end_time': end_date,
             'devices': [inventory_device_name],
-            'services': [service],
-            'sds': [data_source]
+            'services': [str(service)],
+            'sds': [str(data_source)]
         }
+
+        self.order_columns = self.columns
 
         return True
 
@@ -2333,7 +2382,76 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         """ Get parameters from the request and prepare order by clause
         :param qs:
         """
-        return nocout_utils.nocout_datatable_ordering(self, qs, self.columns)
+        # Number of columns that are used in sorting
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
+            try:
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
+            except ValueError:
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
+
+        order = []
+        sort_using = ''
+        reverse = ''
+        order_columns = self.order_columns
+
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+            sort_using = order_columns[sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+            else:
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+        if order:
+            # Try catch is added because in some cases 
+            # we receive list instead of queryset
+            try:
+                try:
+                    if self.sds_type == 'Numeric':
+                        sorted_device_data = qs.extra(
+                            select={sort_using: 'CAST(' + sort_using + ' AS DECIMAL)'}
+                        ).order_by(*order)
+                    else:
+                        sorted_device_data = qs.order_by(*order)    
+                except Exception, e:
+                    sorted_device_data = qs.order_by(*order)
+            except Exception, e:
+                try:
+                    sorted_device_data = sorted(
+                        qs, 
+                        key=itemgetter(sort_using),
+                        reverse=True if '-' in order[0] else False
+                    )
+                except Exception, e:
+                    sorted_device_data = qs
+
+            return sorted_device_data
+        return qs 
+
+        # return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -2348,20 +2466,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         # If params not initialized the init them by calling initialize_params
         if not self.perf_data_instance or not self.parameters:
             self.initialize_params()
-
-        try:
-            # Create Ordering columns from GET request
-            total_columns_count = int(self.request.GET.get('iColumns', len(self.columns)))
-            new_ordering_columns = list()
-            
-            for i in range(total_columns_count):
-                if self.request.GET.get('mDataProp_%s' % i) not in new_ordering_columns:
-                    new_ordering_columns.append(self.request.GET.get('mDataProp_%s' % i))
-
-            # Update new ordering columns in global variable
-            self.order_columns = new_ordering_columns
-        except Exception, e:
-            pass
 
         qs = self.get_initial_queryset()
         
@@ -4194,6 +4298,9 @@ class DeviceServiceDetail(View):
                 is_bh = False
                 bh_data_sources = None
 
+        valuesuffix_list = list()
+        valuetext_list = list()
+
         for s in services:
             service_names.append(s['name'])
             temp_sds_name = s['servicespecificdatasource__service_data_sources__name']
@@ -4209,18 +4316,27 @@ class DeviceServiceDetail(View):
             else:
                 sds_names.append(temp_sds_name)
 
-            service_data_sources[temp_s_name, temp_sds_name] = \
-                s['servicespecificdatasource__service_data_sources__alias']
-            # if technology and technology.name.lower() in ['ptp', 'p2p']:
+            service_data_sources[temp_s_name, temp_sds_name] = s['servicespecificdatasource__service_data_sources__alias']
+
+            try:
+                sds_key = s['name'].strip().lower() + '_' + temp_sds_name.strip().lower()
+                if sds_key in SERVICE_DATA_SOURCE:
+                    if SERVICE_DATA_SOURCE[sds_key]['valuetext'] not in valuetext_list:
+                        valuetext_list.append(SERVICE_DATA_SOURCE[sds_key]['valuetext'])
+
+                    if SERVICE_DATA_SOURCE[sds_key]['valuesuffix'] not in valuesuffix_list:
+                        valuesuffix_list.append(SERVICE_DATA_SOURCE[sds_key]['valuesuffix'])
+            except Exception, e:
+                pass
+
             if 'ul' in temp_s_name.lower():
                 appnd = 'UL : '
             elif 'dl' in temp_s_name.lower():
                 appnd = 'DL : '
             else:
                 appnd = ''
+
             service_data_sources[temp_s_name, temp_sds_name] = appnd + service_data_sources[temp_s_name, temp_sds_name]
-
-
 
         performance = PerformanceService.objects.filter(
             device_name=device.device_name,
@@ -4239,15 +4355,26 @@ class DeviceServiceDetail(View):
                 if (data.service_name, data.data_source) not in temp_chart_data:
                     c = SERVICE_DATA_SOURCE[data.service_name.strip() + "_" +data.data_source.strip()]['chart_color']
 
-                    if technology and technology.name.lower() in ['ptp', 'p2p']:
+                    if technology and technology.name.lower() in ['ptp', 'p2p', 'switch']:
                         if 'ul' in data.service_name.strip().lower():
                             c = colors[0]
                         elif 'dl' in data.service_name.strip().lower():
                             c = colors[1]
                         else:
                             pass
+                    try:
+                        alias = service_data_sources[data.service_name.strip().lower(), data.data_source.strip().lower()]
+                    except Exception, e:
+                        alias = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['service_alias']
+                        name = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['service_name']
+                        if 'ul' in name.lower():
+                            alias = 'UL : ' + alias
+                        elif 'dl' in name.lower():
+                            alias = 'DL : ' + alias
+                        else:
+                            alias = alias
                     temp_chart_data[data.service_name, data.data_source] = {
-                        'name': service_data_sources[data.service_name, data.data_source],
+                        'name': alias,
                         'data': [],
                         'color': c,
                         'type': SERVICE_DATA_SOURCE[data.service_name.strip() + "_" +data.data_source.strip()]['type']
@@ -4272,10 +4399,11 @@ class DeviceServiceDetail(View):
                 'objects': {
                     'plot_type': 'charts',
                     'display_name': service_name.strip().title(),
-                    'valuesuffix': '  ',
+                    'valuesuffix': valuesuffix_list[0] if valuesuffix_list else ' ',
                     'type': 'spline',
+                    'is_single': 1,
                     'chart_data': chart_data,
-                    'valuetext': '  '
+                    'valuetext': valuetext_list[0] if valuetext_list else ' '
                 }
             }
         }
@@ -6471,39 +6599,41 @@ class CustomDashboardPerformanceListing(BaseDatatableView,AdvanceFilteringMixin)
         """ Filter datatable as per requested value
         :param qs:
         """
-
-        # sSearch = self.request.GET.get('sSearch', None)
+       
         sSearch = self.request.GET.get('search[value]', None)
+        updated_resultset = list()
 
         if sSearch:
-
             try:
-                main_resultset = self.custom_data_instance.get_performance_data(
-                    **self.parameters
-                ).using(alias=self.inventory_device_machine_name)
+                for params in self.parameters:
+                    main_resultset = self.custom_data_instance.get_performance_data(
+                    **params
+                    ).using(alias=self.inventory_device_machine_name)                  
 
-                qs = main_resultset.filter(
-                    Q(data_source__icontains=sSearch)
-                    |
-                    Q(max_value__icontains=sSearch)
-                    |
-                    Q(min_value__icontains=sSearch)
-                    |
-                    Q(current_value__icontains=sSearch)
-                    |
-                    Q(ip_address__icontains=sSearch)
-                    |
-                    Q(severity__icontains=sSearch)
-                    |
-                    Q(warning_threshold__icontains=sSearch)
-                    |
-                    Q(critical_threshold__icontains=sSearch)
-                ).values(*self.columns).order_by('-sys_timestamp')
+                    qs = main_resultset.filter(
+                        Q(data_source__icontains=sSearch)
+                        |
+                        Q(max_value__icontains=sSearch)
+                        |
+                        Q(min_value__icontains=sSearch)
+                        |
+                        Q(current_value__icontains=sSearch)
+                        |
+                        Q(ip_address__icontains=sSearch)
+                        |
+                        Q(severity__icontains=sSearch)
+                        |
+                        Q(warning_threshold__icontains=sSearch)
+                        |
+                        Q(critical_threshold__icontains=sSearch)
+                    ).values(*self.columns).order_by('-sys_timestamp')
 
+                    updated_resultset.append(qs)
+                # Merge all querysets present in 'updated_resultset' list
+                qs = MultiQuerySet(*updated_resultset)
             except Exception, e:
                 pass
-
-        return self.advance_filter_queryset(qs)
+        return qs
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
@@ -6934,7 +7064,7 @@ def device_current_status(device_object):
 
     if device_nms_uptime:
         for data in device_nms_uptime:
-            severity[data['severity']] = {'age': data['age'], 'down': data['refer']}
+            severity[data['severity']] = {'age': data['age'], 'down': data['refer'], 'c_val' : data['current_value']}
             if data['data_source'].strip().lower() == 'pl':
                 pl_value = data['current_value']
                 pl_age['age'] = data['age']  # refer field holds the last down time
@@ -7069,8 +7199,18 @@ class GetTopology(View):
 
         bs_id = self.request.GET.get('bs_id')
 
+        try:
+            bs_id = json.loads(str(bs_id))
+        except Exception, e:
+            bs_id = []
+
         if not bs_id:
             return HttpResponse(json.dumps(result), content_type="application/json")
+
+        multiple_bs = False
+
+        if len(bs_id) > 1:
+            multiple_bs = True
          
         # Query for getting topology info of selected device 
         topology_query = ''' 
@@ -7164,8 +7304,8 @@ class GetTopology(View):
                 where
                     device.is_added_to_nms > 0
                     AND
-                    bs.id = {0}
-            '''.format(bs_id)
+                    bs.id in ({0})
+            '''.format(', '.join(bs_id))
 
         # calling global method for executing query
         result_of_query = nocout_utils.fetch_raw_result(topology_query)
@@ -7175,7 +7315,12 @@ class GetTopology(View):
         sector_ids = list()
         ss_ids = list()
         sector_dict = dict()
-        
+        bs_ids_dict = dict()
+        bs_id = ''
+        bs_alias = ''
+        bs_icon = ''
+
+        is_init = False
         # converting query result in required format 
         for bs in result_of_query:
             if bs.get('bs_id') not in bs_ids:
@@ -7185,82 +7330,109 @@ class GetTopology(View):
                         severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
                         bh_pl_info = {
                             "severity" : severity if severity else 'NA',
-                            "value": "NA"
+                            "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
                         }
                     except Exception, e:
                         bh_pl_info = {
                             "severity" : "",
                             "value": ""
                         }
+                if not is_init:
+                    resultant_dict = {
+                        "bh_id": bs.get('bh_id'),
+                        "bh_icon": "/static/img/icons/mobile_blackhaul_icon_small.png" if not bs.get('bh_icon') else "/media/" + bs.get('bh_icon'),
+                        "bh_device_id": bs.get('bh_device_id'),
+                        "bh_device_tech": bs.get('bh_device_tech'),
+                        "bh_device_type": bs.get('bh_device_type'),
+                        "bh_ip": bs.get('bh_ip'),
+                        "pl_info": bh_pl_info,
+                        "base_station" : list()
+                    }
 
-                resultant_dict = {
-                    "bh_id": bs.get('bh_id'),
-                    "bh_icon": "/static/img/icons/mobile_blackhaul_icon_small.png" if not bs.get('bh_icon') else "/media/" + bs.get('bh_icon'),
-                    "bh_device_id": bs.get('bh_device_id'),
-                    "bh_device_tech": bs.get('bh_device_tech'),
-                    "bh_device_type": bs.get('bh_device_type'),
-                    "bh_ip": bs.get('bh_ip'),
+                bs_ids_dict[bs.get('bs_id')] = {
+                    "sectors": list(),
+                    "bs_id": bs.get('bs_id'),
                     "bs_alias": bs.get('bs_alias'),
                     "bs_icon": "/static/img/icons/bs-big.png",
-                    "pl_info": bh_pl_info,
-                    "sectors": list()
+
                 }
+                bs_id = bs.get('bs_id')
+                bs_alias = bs.get('bs_alias')
+                bs_icon = "/static/img/icons/bs-big.png"
 
-            if bs.get('sect_id') not in sector_dict:
-                if bs.get('sect_device_id'):
-                    try:
-                        severity, other_detail = device_current_status(Device.objects.get(id=bs.get('sect_device_id')))
-                        sect_pl_info = {
-                            "severity" : severity if severity else 'NA',
-                            "value": "NA"
-                        }
-                    except Exception, e:
-                        sect_pl_info = {
-                            "severity" : "NA",
-                            "value": "NA"
-                        }
-                sector_dict[bs.get('sect_id')] = {
-                    "id": bs.get('sect_id'),
-                    "device_name": bs.get('sect_device_name'),
-                    "device_id": bs.get('sect_device_id'),
-                    "device_tech": bs.get('sect_device_tech'),
-                    "device_type": bs.get('sect_device_type'),
-                    "ip_address": bs.get('sect_device_ip'),
-                    "sect_ip_id_title": bs.get('sect_ip_id_title'),
-                    "icon": "/media/" + bs.get('sect_icon'),
-                    "pl_info": sect_pl_info,
-                    "sub_station": list()
-                }
+                is_init = True
 
-            try:
-                if bs.get('ss_device_id'):
-                    try:
-                        severity, other_detail = device_current_status(Device.objects.get(id=bs.get('ss_device_id')))
-                        ss_pl_info = {
-                            "severity" : severity if severity else 'NA',
-                            "value": "NA"
-                        }
-                    except Exception, e:
-                        ss_pl_info = {
-                            "severity" : "NA",
-                            "value": "NA"
-                        }
-                sector_dict[bs.get('sect_id')]['sub_station'].append({
-                    "id": bs.get('ss_id'),
-                    "device_name": bs.get('ss_device_name'),
-                    "device_id": bs.get('ss_device_id'),
-                    "device_tech": bs.get('ss_device_tech'),
-                    "device_type": bs.get('ss_device_type'),
-                    "ip_address": bs.get('ss_device_ip'),
-                    "ckt_id": bs.get('ss_circuit_id'),
-                    "link_color": bs.get('sect_color'),
-                    "icon": "/media/" + bs.get('ss_icon'),
-                    "pl_info": ss_pl_info
-                })
-            except Exception, e:
-                pass
+            if not multiple_bs:
+                if str(bs.get('sect_id')) not in sector_dict:
+                    if bs.get('sect_device_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('sect_device_id')))
+                            sect_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
+                            }
+                        except Exception, e:
+                            sect_pl_info = {
+                                "severity" : "NA",
+                                "value": "NA"
+                            }
+                    
 
-        resultant_dict['sectors'] = sector_dict.values()
+                    sector_dict[str(bs.get('sect_id'))] = {
+                        "id": str(bs.get('sect_id')),
+                        "device_name": bs.get('sect_device_name'),
+                        "device_id": bs.get('sect_device_id'),
+                        "device_tech": bs.get('sect_device_tech'),
+                        "device_type": bs.get('sect_device_type'),
+                        "ip_address": bs.get('sect_device_ip'),
+                        "sect_ip_id_title": bs.get('sect_ip_id_title'),
+                        "icon": "/media/" + bs.get('sect_icon'),
+                        "pl_info": sect_pl_info,
+                        "sub_station": list()
+                    }
+
+                try:
+                    if bs.get('ss_device_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('ss_device_id')))
+                            ss_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
+                            }
+                        except Exception, e:
+                            ss_pl_info = {
+                                "severity" : "NA",
+                                "value": "NA"
+                            }
+                    sector_dict[str(bs.get('sect_id'))]['sub_station'].append({
+                        "id": bs.get('ss_id'),
+                        "device_name": bs.get('ss_device_name'),
+                        "device_id": bs.get('ss_device_id'),
+                        "device_tech": bs.get('ss_device_tech'),
+                        "device_type": bs.get('ss_device_type'),
+                        "ip_address": bs.get('ss_device_ip'),
+                        "ckt_id": bs.get('ss_circuit_id'),
+                        "link_color": bs.get('sect_color'),
+                        "icon": "/media/" + bs.get('ss_icon'),
+                        "pl_info": ss_pl_info
+                    })
+                except Exception, e:
+                    pass
+            
+                bs_ids_dict[str(bs.get('bs_id'))]['sectors'].append(sector_dict[str(bs.get('sect_id'))])
+
+        if multiple_bs:
+            resultant_dict['base_station'] = bs_ids_dict.values()
+        else:
+            if not resultant_dict['base_station']:
+                resultant_dict['base_station'] = list()
+
+            resultant_dict['base_station'].append({
+                "sectors": sector_dict.values(),
+                'bs_id': bs_id,
+                'bs_alias': bs_alias,
+                'bs_icon': bs_icon
+            })
 
         result['data'].append(resultant_dict)
         result['message'] = 'Device Topology Details Fetched Successfully.'
@@ -7268,30 +7440,43 @@ class GetTopology(View):
 
         return HttpResponse(json.dumps(result), content_type="application/json")
 
+
 class GetTopologyToolTip(View):
     """
     The Class based View to get tooltip for each device on topo-view page.
-
     """
 
     def get(self, request):
         station_type = self.request.GET.get('type')
         required_id = self.request.GET.get('id')
+
+        result = {
+            'success': 0,
+            'message': 'Device info not fetched',
+            'data': list()
+        }
+
+        if not required_id:
+            return HttpResponse(json.dumps(result), content_type="application/json")    
         
         if (station_type == 'BS'):
-            result = getBSInventoryInfo(required_id)
+            resultset = getBSInventoryInfo(required_id)
         elif (station_type == 'BH'):
-            result = getBHInventoryInfo(required_id)
+            resultset = getBHInventoryInfo(required_id)
         elif (station_type == 'SECT'):
-            result = getSectorInventoryInfo(required_id)
+            resultset = getSectorInventoryInfo(required_id)
         elif (station_type == 'SS'):
-            result = getSSInventoryInfo(required_id)       
+            resultset = getSSInventoryInfo(required_id)       
 
         
-        formatted_result = self.format_result(result[0])
+        formatted_result = self.format_result(resultset[0])
+        result = {
+            'success': 1,
+            'message': 'Device info fetched successfully.',
+            'data': formatted_result
+        }
         
-        return HttpResponse(json.dumps(formatted_result), content_type="application/json")
-
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
     def format_result(self, dataset):
         """

@@ -4,18 +4,23 @@ from django.core.urlresolvers import reverse_lazy, reverse
 import json
 from alarm_escalation.models import EscalationStatus, EscalationLevel, LEVEL_CHOICES
 from alarm_escalation.forms import EscalationLevelForm
-from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
+from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin, \
+    AdvanceFilteringMixin
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
+from user_profile.utils.auth import in_group
 from alarm_escalation.tasks import mail_send
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-import logging
-import os.path
-logger = logging.getLogger(__name__)
-import re
 from django.conf import settings
+import re
+import os.path
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class LevelList(TemplateView):
     """
@@ -45,29 +50,30 @@ class LevelList(TemplateView):
             {'mData': 'alarm_age', 'sTitle': 'Escalation Age', 'sWidth': '10%', },
         ]
 
-        #if the user role is Admin or operator or superuser then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or self.request.user.is_superuser:
+        # if the user role is Admin or operator or superuser then the action column will appear on the datatable
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
 class LevelListingTable(PermissionsRequiredMixin,
-        DatatableOrganizationFilterMixin,
-        DatatableSearchMixin,
-        BaseDatatableView,
-        AdvanceFilteringMixin
-    ):
+                        DatatableOrganizationFilterMixin,
+                        DatatableSearchMixin,
+                        BaseDatatableView,
+                        AdvanceFilteringMixin
+                        ):
     """
     Class based View to render Escalation Level Data table.
     """
 
     model = EscalationLevel
-    columns = [ 'name', 'region_name', 'organization__alias', 'emails', 'phones', 'service__alias', 'device_type__alias', 'service_data_source__alias',
-                'alarm_age']
-    order_columns = [ 'organization__alias', 'name', 'emails', 'phones', 'service__alias', 'device_type__alias', 'service_data_source__alias',
-                'alarm_age']
+    columns = ['name', 'region_name', 'organization__alias', 'emails', 'phones', 'service__alias', 'device_type__alias',
+               'service_data_source__alias',
+               'alarm_age']
+    order_columns = ['organization__alias', 'name', 'emails', 'phones', 'service__alias', 'device_type__alias',
+                     'service_data_source__alias',
+                     'alarm_age']
     required_permissions = ('alarm_escalation.view_escalationlevel',)
 
     def prepare_results(self, qs):
@@ -87,15 +93,17 @@ class LevelListingTable(PermissionsRequiredMixin,
             name = level_choices[dct['name']]
             dct.update(name=name)
             if self.request.user.has_perm('alarm_escalation.change_escalationlevel'):
-                edit_action = '<a href="/escalation/level/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/escalation/level/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(
+                    device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('alarm_escalation.delete_escalationlevel'):
-                delete_action = '<a href="/escalation/level/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/escalation/level/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
-                dct.update(actions= edit_action+delete_action)
+                dct.update(actions=edit_action + delete_action)
         return json_data
 
 
@@ -214,7 +222,7 @@ class EmailSender(View):
                 "from_email": from_email,
                 "to_email": to_email,
                 "attachments": attachments,
-                "attachment_path" : attachment_path,
+                "attachment_path": attachment_path,
             }
         }
 
@@ -232,12 +240,12 @@ class EmailSender(View):
         if attachment_path:
             for x in attachment_path:
                 # Avoiding if it is URL Path.
-                if re.search('^http.*',x):
+                if re.search('^http.*', x):
                     pass
                 else:
                     # If file exist in system
                     if not os.path.isfile(x):
-                        error_messages = "file: '%s' doesn't exist \n" %(x)
+                        error_messages = "file: '%s' doesn't exist \n" % (x)
         else:
             result['data']['attachment_path'] = []
 
@@ -252,5 +260,5 @@ class EmailSender(View):
 
         attachments_name = [x.name for x in result['data']['attachments']]
         result['data']['attachments'] = attachments_name
-        return HttpResponse(json.dumps(result))
 
+        return HttpResponse(json.dumps(result))

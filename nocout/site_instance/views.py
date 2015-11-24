@@ -28,6 +28,7 @@ from forms import SiteInstanceForm
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
+from user_profile.utils.auth import in_group
 
 
 class SiteInstanceList(PermissionsRequiredMixin, ListView):
@@ -54,7 +55,7 @@ class SiteInstanceList(PermissionsRequiredMixin, ListView):
             {'mData': 'web_service_port', 'sTitle': 'Web Service Port', 'sWidth': 'auto', },
             {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'auto', },
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
             datatable_headers.append({'mData': 'nms_actions', 'sTitle': 'NMS Actions', 'sWidth': '8%',
                                       'bSortable': False})
