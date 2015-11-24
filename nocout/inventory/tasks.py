@@ -13816,10 +13816,10 @@ def update_topology():
     topo_sector_ids = list(set(Topology.objects.values_list('sector_id', flat=True)))
 
     # Sector ID's from topology: Uppercase
-    topo_sector_ids_upper = map(lambda x:x.upper(), topo_sector_ids)
+    topo_sector_ids_upper = map(lambda x: x.upper(), topo_sector_ids)
 
     # Sector ID's from topology: Lowercase
-    topo_sector_ids_lower = map(lambda x:x.lower(), topo_sector_ids)
+    topo_sector_ids_lower = map(lambda x: x.lower(), topo_sector_ids)
 
     # Sector ID's common in topology and inventory.
     # common_sector_ids = sector_ids.intersection(topo_sector_ids)
