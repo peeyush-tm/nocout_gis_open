@@ -2016,7 +2016,7 @@ function devicePlottingClass_gmap() {
 				    		sector_array[j].ip_address,
 				    		ss_marker_obj.name,
 				    		bs_ss_devices[i].name,
-				    		bs_ss_devices[i].id,
+				    		bs_ss_devices[i].bs_id,
 				    		sector_array[j].sector_id
 			    		);
 
