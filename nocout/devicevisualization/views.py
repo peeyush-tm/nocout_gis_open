@@ -3899,9 +3899,6 @@ class GISStaticInfo(View):
         if not freeze_time:
             freeze_time = '0'
 
-        # base station counter
-        bs_counter = 0
-
         inventory = ""
 
         # Create instance of 'InventoryUtilsGateway' class
@@ -3912,9 +3909,6 @@ class GISStaticInfo(View):
             try:
                 
                 devices_ip_address_list = list()
-
-                # increment base station counter
-                bs_counter += 1
 
                 # get formatted bs inventory
                 inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
@@ -4029,7 +4023,7 @@ class GISStaticInfo(View):
                         sector['color'] = sector_extra_info['color']
                         sector['polled_frequency'] = sector_extra_info['polled_frequency']
 
-                        for sub_station in sector['sub_stations']:
+                    for sub_station in sector['sub_stations']:
                             substation_device = [d for d in bs_devices if
                                                  d['ip_address'] == sub_station['ip_address']][0]
 

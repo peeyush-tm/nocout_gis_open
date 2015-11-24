@@ -599,12 +599,12 @@ function GisPerformance() {
                     if(sub_station.length > 0) {
                         // Loop to remove ss,line & label for current sector from map.
                         for(var a=0;a<connected_sectors.length;a++) {
-                            var condition1 = connected_sectors[a].device_name == sector_device;
-                                condition2 = connected_sectors[a].ip_address == sector_ip;
+                            var condition1 = connected_sectors[a].device_name == sector_device,
+                                condition2 = connected_sectors[a].ip_address == sector_ip,
                                 condition3 = connected_sectors[a].sector_id == sector_id;
 
                             if(condition1 && condition2 && condition3) {
-                                for(var b=0; b< sub_station.length; b++) {
+                                for(var b=0;b<sub_station.length; b++) {
                                     var ss_name = sub_station[b]['name'] ? sub_station[b]['name'] : "";
                                     if(sub_station[b] && ss_name) {
                                         perf_self.removeOldSS(ss_name);
@@ -1083,7 +1083,7 @@ function GisPerformance() {
                                         sector_ip,
                                         ss_marker_data.name,
                                         apiResponse.name,
-                                        apiResponse.id,
+                                        apiResponse.bs_id,
                                         sector_id
                                     );
 
@@ -1273,14 +1273,16 @@ function GisPerformance() {
                             ss_name_array = [];
 
                         for(var a=0;a<connected_sectors.length;a++) {
-                            var connected_sub_stations = sectorArray[i].sub_station;
-                            if(connected_sub_stations && connected_sub_stations.length > 0) {
-                                var condition1 = connected_sectors[a].sector_configured_on_device == sector_device;
-                                    condition2 = connected_sectors[a].sector_configured_on == sector_ip;
-                                if(condition1 && condition2) {
-                                    for(var b=0; b< connected_sub_stations.length; b++) {
-                                        var ss = connected_sub_stations[b]['name'] ? connected_sub_stations[b]['name'] : "";
-                                        if(connected_sub_stations[b] && ss) {
+                            var existing_sub_stations = connected_sectors[a].sub_stations;
+                            if(existing_sub_stations && existing_sub_stations.length > 0) {
+                                var condition1 = connected_sectors[a].device_name == sector_device;
+                                    condition2 = connected_sectors[a].ip_address == sector_ip,
+                                    condition3 = connected_sectors[a].sector_id == sector_id;
+
+                                if(condition1 && condition2 && condition3) {
+                                    for(var b=0; b<existing_sub_stations.length; b++) {
+                                        var ss = existing_sub_stations[b]['name'] ? existing_sub_stations[b]['name'] : "";
+                                        if(existing_sub_stations[b] && ss) {
                                             if(window.location.pathname.indexOf("gearth") > -1) {
                                                 // Remove Line from map & array
                                                 if(allMarkersObject_earth['path']['line_'+ss]) {
