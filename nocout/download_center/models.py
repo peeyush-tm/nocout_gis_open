@@ -1124,3 +1124,7 @@ class BSOutageMasterMonthly(BSOutageMasterStructure):
 #     bs_uptime = models.CharField('BS Uptime', max_length=128)
 #     total_uptime_min = models.CharField('Total Uptime(Min.)', max_length=128)
 #     total_uptime_percent = models.CharField('Uptime in %', max_length=128)
+
+class EmailReport(models.Model):
+    report_name= models.ForeignKey(ReportSettings)
+    email_list = models.TextField()

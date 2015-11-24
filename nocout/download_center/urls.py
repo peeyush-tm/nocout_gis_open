@@ -36,5 +36,11 @@ urlpatterns = patterns('',
       r'^citycharter/listing/(?P<is_data_limited>\w+)/$',
       views.CityCharterReportListing.as_view(),
       name='CityCharterReportListing'
+    ),
+    url(
+      r'^emailreport)/$',
+      views.EmailReport.as_view(),
+      name='EmailReport'
     )
+
 )

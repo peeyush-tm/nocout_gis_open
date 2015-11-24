@@ -7,7 +7,7 @@ from django.views.generic import ListView, DetailView, FormView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
-from download_center.forms import CityCharterSettingsForm
+from download_center.forms import CityCharterSettingsForm, EmailReportForm
 from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon, \
     CityCharterSettings, BSOutageMasterDaily
 from django.db.models import Q
@@ -635,3 +635,8 @@ class BSOutageCustomReportListing(BaseDatatableView):
             'aaData': aaData
         }
         return ret
+
+class EmailReport(FormView):
+    template_name = ''
+    success_url = ''
+    form_class = EmailReportForm
