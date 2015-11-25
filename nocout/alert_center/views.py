@@ -2078,7 +2078,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             if type(qs) == type(list()):
                 result = qs
             else:
-                result = self.prepare_device_inventory(qs)
+                result = self.prepare_devices(qs)
 
             result_list = list()
             for search_data in result:
@@ -2095,7 +2095,15 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             # advance filtering the query set
             return self.advance_filter_queryset(result_list)
         else:
-            self.is_searched = False
+            if self.request.GET.get('advance_filter', None):
+                self.is_searched = True
+                if type(qs) == type(list()):
+                    qs = qs
+                else:
+                    qs = self.prepare_devices(qs)
+            else:
+                self.is_searched = False
+
         return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
@@ -2162,7 +2170,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 if self.is_searched or type(qs) == type(list()):
                     prepared_result = qs
                 else:
-                    prepared_result = self.prepare_device_inventory(qs)
+                    prepared_result = self.prepare_devices(qs)
 
                 try:
                     # Sort the prepared result list
@@ -2262,7 +2270,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             self.model = HistoryAlarms
         return True
 
-    def prepare_device_inventory(self, qs):
+    def prepare_devices(self, qs):
         """
         """
         return prepare_snmp_gis_data(qs, self.tech_name)
@@ -2345,7 +2353,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         qs = self.ordering(qs)
         qs = self.paging(qs)
         if not (self.is_ordered or self.is_searched):
-            qs = self.prepare_device_inventory(qs)
+            qs = self.prepare_devices(qs)
         
         aaData = self.prepare_results(qs)
 
