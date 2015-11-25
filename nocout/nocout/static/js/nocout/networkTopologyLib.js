@@ -6,7 +6,8 @@
 function convertToVis(response, required_dom_id) {
 	// checking size of BS_ID_LIST
 	bs_list_len = typeof bs_id != 'undefined' ? (JSON.parse(bs_id)).length : 0;
-	updatedSize = 80
+	updatedSize = 80;
+	backhaul_exist = true
 
 	// In case of Multiple BaseStation updating size to avoid overlapping of images.
 	if (bs_list_len > 1) {
@@ -64,18 +65,25 @@ function convertToVis(response, required_dom_id) {
 	var container = document.getElementById(required_dom_id);
 
 	var severity = response_data.pl_info.severity ? response_data.pl_info.severity.toUpperCase() : 'NA';
-	var bh_color_info_object = nocout_getSeverityColorIcon(severity);
+	var bh_color_info_object = nocout_getSeverityColorIcon(severity),
+		polled_val = response_data.pl_info.value;
+	
+	if (typeof polled_val == 'undefined' || polled_val == '') {
+		polled_val = 'NA';
+	}
 
-	nodes.add({
-	    id: 'BACKHAUL',
-	    label: response_data.bh_ip,
-	    image: response_data.bh_icon,
-	    shape: 'image',
-	    borderWidth : 0,
-	    borderWidthSelected : 0,
-	    title: '<span style="color:'+bh_color_info_object.color+'"><i class="fa '+bh_color_info_object.icon+'""></i> ' +severity + ' - ' + response_data.pl_info.value + '</span>'
-	});
-
+	if (response_data.bh_ip != 'NA'){
+		nodes.add({
+		    id: 'BACKHAUL',
+		    label: response_data.bh_ip,
+		    image: response_data.bh_icon,
+		    shape: 'image',
+		    borderWidth : 0,
+		    borderWidthSelected : 0,
+		    title: '<span style="color:'+bh_color_info_object.color+'"><i class="fa '+bh_color_info_object.icon+'""></i> ' +severity + ' - ' + polled_val + '</span>'
+		});
+		backhaul_exist = true
+	}
 	if(current_device_ip == response_data.bh_ip){
 	    highlight_id = 'BACKHAUL'
 	}
@@ -94,16 +102,25 @@ function convertToVis(response, required_dom_id) {
 		    borderWidthSelected : 0
 		});
 
-		edges.add({from: 'BACKHAUL', to: 'BASESTATION_'+i, color: 'black'})
+		if(backhaul_exist){
+			edges.add({from: 'BACKHAUL', to: 'BASESTATION_'+i, color: 'black'})
+		}
 
 		var sectors = base_station_list[i].sectors;
 		
 		for(j=0; j<sectors.length; j++){
-		    var severity = sectors[j].pl_info.severity ? sectors[j].pl_info.severity.toUpperCase() : 'NA';
-		    var sect_color_info_object = nocout_getSeverityColorIcon(severity);
+		    var sector_severity = sectors[j].pl_info.severity ? sectors[j].pl_info.severity.toUpperCase() : 'NA',
+		    sect_color_info_object = nocout_getSeverityColorIcon(sector_severity),
+		    sector_polled_val = sectors[j].pl_info.value
+
+
+			if (typeof sector_polled_val == 'undefined' || sector_polled_val == '') {
+				sector_polled_val = 'NA';
+			}
+
 		    nodes.add({id: 'SECTOR'+"_"+(i+1)+'_'+(j+1), label: sectors[j].sect_ip_id_title,
 				        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' +
-				        severity + ' - ' + sectors[j].pl_info.value + '</span>', image: sectors[j].icon})
+				        sector_severity + ' - ' + sector_polled_val + '</span>', image: sectors[j].icon})
 
 		    if(current_device_ip == sectors[j].ip_address){
 			    highlight_id = 'SECTOR'+"_"+(i+1)+'_'+(j+1)
@@ -112,11 +129,17 @@ function convertToVis(response, required_dom_id) {
 
 
 		    for(k=0; k<sectors[j].sub_station.length; k++) {
-		        var severity = sectors[j].sub_station[k].pl_info.severity ? sectors[j].pl_info.severity.toUpperCase() : 'NA';
-		        var ss_color_info_object = nocout_getSeverityColorIcon(severity);
+		        var ss_severity = sectors[j].sub_station[k].pl_info.severity ? sectors[j].sub_station[k].pl_info.severity.toUpperCase() : 'NA',
+		        ss_color_info_object = nocout_getSeverityColorIcon(ss_severity),
+		        ss_polled_val = sectors[j].sub_station[k].pl_info.value
+
+		        if (typeof ss_polled_val == 'undefined' || ss_polled_val == '') {
+					ss_polled_val = 'NA';
+				}
+
 		        nodes.add({id: 'SUBSTATION'+'_'+(i+1)+"_"+(j+1)+"_"+(k+1), label: sectors[j].sub_station[k].ip_address,
 				            title: '<span style="color:'+ss_color_info_object.color+'"><i class="fa '+ss_color_info_object.icon+'""></i> ' +
-				            severity + ' - ' + sectors[j].sub_station[k].pl_info.value + '</span>' , image: sectors[j].sub_station[k].icon})
+				            ss_severity + ' - ' + ss_polled_val + '</span>' , image: sectors[j].sub_station[k].icon})
 
 		        if(current_device_ip == sectors[j].sub_station[k].ip_address){
 		        	highlight_id = 'SUBSTATION'+'_'+(i+1)+"_"+(j+1)+"_"+(k+1)
