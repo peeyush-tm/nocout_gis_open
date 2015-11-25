@@ -1895,6 +1895,7 @@ class SIAListing(ListView):
             {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True}
@@ -2290,20 +2291,27 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             for dct in  qs:
                 severity = dct.get('severity')
                 severity_icon = alert_utils.common_get_severity_icon(severity)
-                # component_id = dct.get('component_id','NA')
                 uptime = dct.get('uptime')
                 formatted_uptime = uptime
+
+                try:
+                    first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                except Exception, e:
+                    first_occurred = dct.get('first_occurred')
+
+                try:
+                    last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                except Exception, e:
+                    last_occurred = dct.get('last_occurred')
 
                 if uptime:
                     formatted_uptime = self.format_uptime_value(uptime)
 
-                # if component_id == '':
-                #     component_id = 'NA'
-
                 dct.update(
                     severity=severity_icon,
-                    # component_id=component_id,
-                    uptime=formatted_uptime
+                    uptime=formatted_uptime,
+                    first_occurred=first_occurred,
+                    last_occurred=last_occurred
                 )
 
             return qs

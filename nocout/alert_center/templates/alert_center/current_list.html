@@ -29,6 +29,7 @@
             <li>
                 <input type="radio" name="alarm_type" style="vertical-align:sub;" value="history"> History
             </li>
+            {% if not settings.ENABLE_ADVANCE_FILTERS %}
             <li>
                 <button type="button" id="snmp_advFilterBtn" class="btn btn-sm btn-default">
                     <i class='fa fa-filter'></i> Advance Filter
@@ -37,16 +38,18 @@
                     <i class='fa fa-times'></i> Reset Filter
                 </button>
             </li>
+            {% endif %}
         </ul>
     </div>
 </div>
 {% endblock %}
 
 {% block content %}
-    
-    <!-- Include advance filter block HTML Start -->
-    {% include 'alert_center/advance_filter_block.html' %}
-    <!-- Include advance filter block HTML End -->
+    {% if not settings.ENABLE_ADVANCE_FILTERS %}
+        <!-- Include advance filter block HTML Start -->
+        {% include 'alert_center/advance_filter_block.html' %}
+        <!-- Include advance filter block HTML End -->
+    {% endif %}
     <div class="clearfix"></div>
 
     <div class="box border lite">
@@ -129,8 +132,10 @@
 
         $(document).ready(function (e) {
 
-            // Disable advance filtering
-            create_advance_filters = false;
+            {% if not settings.ENABLE_ADVANCE_FILTERS %}
+                // Disable advance filtering
+                create_advance_filters = false;
+            {% endif %}
 
             date_range_picker_html = '<input type="text" name="filter_date" id="filter_date" class="form-control" value=""/>';
 
