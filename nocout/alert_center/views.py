@@ -1939,11 +1939,11 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     
     order_columns = [
         'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state', 
-        'device_type', 'eventname','traptime', 'alarm_count',
+        'eventname','traptime','uptime', 'alarm_count',
         'first_occurred','last_occurred'
     ]
 
-    other_columns = ['bs_alias', 'bs_city', 'bs_state', 'sector_id']
+    other_columns = ['bs_alias', 'bs_city', 'bs_state', 'sector_id','device_type']
 
     is_ordered = False
     is_searched = False
@@ -2106,7 +2106,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             self.order_columns = [
                 'severity', 'ip_address', 'sector_id', 'bs_alias',
                 'bs_city', 'bs_state', 'device_type',
-                'eventname', 'traptime', 'uptime'
+                'eventname', 'traptime', 'uptime','alarm_count','first_occurred','last_occurred'
             ]
 
         # Number of columns that are used in sorting
