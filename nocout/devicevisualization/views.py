@@ -473,40 +473,40 @@ class PointToolClass(View):
         if point_data:
             point_data = json.loads(point_data)
             # point_data = json_loads(point_data)
-            if(int(point_data["is_delete_req"]) > 0) :
-                GISPointTool.objects.filter(pk=point_data['point_id']).delete()
+            if(int(point_data.get("is_delete_req", 0)) > 0) :
+                GISPointTool.objects.filter(pk=point_data.get('point_id')).delete()
                 result["data"]["point_id"] = 0
                 result["success"] = 1
                 result["message"] = "Point Removed Successfully"
 
-            elif(int(point_data["is_update_req"]) > 0) :
+            elif(int(point_data.get("is_update_req", 0)) > 0) :
 
-                current_row = GISPointTool.objects.get(pk=point_data['point_id'])
-                current_row.name = point_data['name']
-                current_row.description = point_data['desc']
-                current_row.connected_lat = point_data['connected_lat']
-                current_row.connected_lon = point_data['connected_lon']
-                current_row.connected_point_type=point_data['connected_point_type']
-                current_row.connected_point_info=point_data['connected_point_info']
+                current_row = GISPointTool.objects.get(pk=point_data.get('point_id'))
+                current_row.name = point_data.get('name')
+                current_row.description = point_data.get('desc')
+                current_row.connected_lat = point_data.get('connected_lat')
+                current_row.connected_lon = point_data.get('connected_lon')
+                current_row.connected_point_type=point_data.get('connected_point_type')
+                current_row.connected_point_info=point_data.get('connected_point_info')
                 # update row with new values
                 current_row.save()
 
-                result["data"]["point_id"] = point_data['point_id']
+                result["data"]["point_id"] = point_data.get('point_id')
                 result["success"] = 1
                 result["message"] = "Point Updated Successfully"
 
             else:
                 try:
                     # check that the name already exist in db or not
-                    existing_rows_count = len(GISPointTool.objects.filter(name=point_data['name']))
+                    existing_rows_count = len(GISPointTool.objects.filter(name=point_data.get('name')))
 
                     if(existing_rows_count == 0):
                         new_row_obj = GISPointTool(
-                            name=point_data['name'],
-                            description=point_data['desc'],
-                            latitude=float(point_data['lat']),
-                            longitude=float(point_data['lon']),
-                            icon_url=point_data['icon_url'],
+                            name=point_data.get('name'),
+                            description=point_data.get('desc'),
+                            latitude=float(point_data.get('lat')),
+                            longitude=float(point_data.get('lon')),
+                            icon_url=point_data.get('icon_url'),
                             connected_lat=0,
                             connected_lon=0,
                             connected_point_type='',
@@ -578,16 +578,16 @@ class GetToolsData(View):
                     "connected_point_type" : "",
                     "connected_point_info" : ""
                 }
-                data_object['point_id'] = point_data['id']
-                data_object['lat'] = point_data['latitude']
-                data_object['lon'] = point_data['longitude']
-                data_object['name'] = point_data['name']
-                data_object['icon_url'] = point_data['icon_url']
-                data_object['desc'] = point_data['description']
-                data_object['connected_lat'] = point_data['connected_lat']
-                data_object['connected_lon'] = point_data['connected_lon']
-                data_object['connected_point_type'] = point_data['connected_point_type']
-                data_object['connected_point_info'] = point_data['connected_point_info']
+                data_object['point_id'] = point_data.get('id')
+                data_object['lat'] = point_data.get('latitude')
+                data_object['lon'] = point_data.get('longitude')
+                data_object['name'] = point_data.get('name')
+                data_object['icon_url'] = point_data.get('icon_url')
+                data_object['desc'] = point_data.get('description')
+                data_object['connected_lat'] = point_data.get('connected_lat')
+                data_object['connected_lon'] = point_data.get('connected_lon')
+                data_object['connected_point_type'] = point_data.get('connected_point_type')
+                data_object['connected_point_info'] = point_data.get('connected_point_info')
 
                 # Append data to point list
                 result["data"]["points"].append(data_object)
