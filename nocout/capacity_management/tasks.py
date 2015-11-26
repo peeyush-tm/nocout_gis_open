@@ -1,6 +1,8 @@
 from celery import task, group
 
 from django.db.models import Count, Max, Min, Avg
+from django.db.models import Q
+import json
 
 #task for updating the sector capacity per 5 minutes
 #need to run for PMP, WiMAX technology
@@ -274,7 +276,8 @@ def gather_backhaul_status():
 
     bh_devices = Backhaul.objects.select_related(
         'bh_configured_on',
-        'bh_configured_on__machine'
+        'bh_configured_on__machine',
+        'bh_configured_on__device_name'
     ).filter(
         id__in=base_stations.values_list('backhaul__id', flat=True),
         bh_configured_on__isnull=False,
@@ -285,11 +288,23 @@ def gather_backhaul_status():
     machines = set([bs.backhaul.bh_configured_on.machine.name for bs in base_stations])
 
     # get data sources
-    ports = set([bs.bh_port_name for bs in base_stations])
+    tmp_ports = set([bs.bh_port_name for bs in base_stations])
 
-    data_sources = set(ServiceDataSource.objects.filter(
-        name__in=DevicePort.objects.filter(alias__in=ports).values_list('name', flat=True)
-    ).values_list('name', flat=True))
+    ports = list()
+
+    for port in tmp_ports:
+        if ',' in port:
+            for pt in port.split(','):
+                ports.append(pt.strip())
+        else:
+            ports.append(port)
+
+    device_ports = DevicePort.objects.filter(alias__in=ports).values_list('name', flat=True)
+    ports_upper = map(lambda x: x.upper(), device_ports)
+    ports_lower = map(lambda x: x.lower(), device_ports)
+
+    data_sources = set(ServiceDataSource.objects.filter(Q(name__in=ports_lower) | Q(name__in=ports_upper)
+                                                        ).values_list('name', flat=True))
 
     kpi_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi', 'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
                     'cisco_switch_dl_util_kpi', 'cisco_switch_ul_util_kpi', 'juniper_switch_dl_util_kpi',
@@ -964,6 +979,12 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
         # base station device
         bh_device = bs.backhaul.bh_configured_on
 
+        # BH device port.
+        device_port = bs.bh_port_name
+
+        # BH device machine.
+        device_machine = bh_device.machine.name
+
         # base station device type
         bs_device_type = bh_device.device_type
 
@@ -1003,19 +1024,38 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             # proceed only if there is proper device type mapping
             continue
 
-        # get data source name
+        # Ring Scenario: If device follows ring scenario then get
+        # data source corressponding to the port having max value.
         data_source = None
-        try:
-            # we don't care about port, till it actually is mapped to a data source
-            data_source = ServiceDataSource.objects.get(
-                name=DevicePort.objects.get(alias=bs.bh_port_name).name).name.lower()
-        except Exception as e:
-            # logger.debug('Back-hual Port {0}'.format(bs.bh_port_name))
-            # logger.debug('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
-            logger.exception(e)
-            # if we don't have a port mapping
-            # do not query database
-            continue
+        if ',' in device_port:
+            try:
+                data_sources = device_port.split(',')
+                ds_dict = dict()
+                for ds in data_sources:
+                    ds = ds.strip()
+                    tmp_port = DevicePort.objects.get(alias=ds).name
+                    ds_name = ServiceDataSource.objects.get(name__iexact=tmp_port).name.lower()
+                    ul = ServiceStatus.objects.filter(device_name=bh_device.device_name,
+                                                      service_name=val_dl_service,
+                                                      data_source__iexact=ds_name
+                                                      ).using(device_machine)[0].current_value
+                    ds_dict[ul] = ds_name
+
+                data_source = ds_dict[max(ds_dict.keys())]
+            except Exception as e:
+                continue
+        else:
+            try:
+                # we don't care about port, till it actually is mapped to a data source
+                data_source = ServiceDataSource.objects.get(
+                    name=DevicePort.objects.get(alias=bs.bh_port_name).name).name.lower()
+            except Exception as e:
+                # logger.debug('Back-hual Port {0}'.format(bs.bh_port_name))
+                # logger.debug('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
+                pass
+                # if we don't have a port mapping
+                # do not query database
+                continue
 
         if data_source:
             # in % values index
@@ -1088,7 +1128,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
 
                 severity, age = get_higher_severity(severity_s)
             except Exception as e:
-                logger.exception(e)
+                pass
                 current_in_per = 0
                 current_out_per = 0
                 current_in_val = 0
@@ -1111,7 +1151,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
 
                 except Exception as e:
-                    logger.exception(e)
+                    pass
                     avg_in_per = 0
                     peak_in_per = None
                     avg_out_per = 0
@@ -1128,7 +1168,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     peak_out_val = float(indexed_avg_max_val[out_val_index][0]['max_val'])
 
                 except Exception as e:
-                    logger.exception(e)
+                    pass
                     avg_out_val = 0
                     avg_in_val = 0
                     peak_in_val = 0
