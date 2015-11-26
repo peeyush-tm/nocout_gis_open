@@ -183,6 +183,8 @@ class EmailSender(View):
         return super(EmailSender, self).dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        print 'self.request.POST', self.request.POST
+        print 'request.POST', request.POST
         # From email id.
         from_email = self.request.POST.get('from_email', None)
         # To email id.
@@ -191,7 +193,7 @@ class EmailSender(View):
         if to_email:
             if "," in to_email:
                 to_email = eval(to_email)
-            else:
+            elif type(to_email) == type(str):
                 to_email = to_email.split(",")
         # Subject.
         subject = self.request.POST.get('subject', None)
@@ -199,6 +201,7 @@ class EmailSender(View):
         message = self.request.POST.get('message', None)
         # Path of File attachments.
         attachment_path = self.request.POST.get('attachment_path')
+
         if attachment_path:
             if "," in attachment_path:
                 attachment_path = eval(attachment_path)
@@ -257,8 +260,8 @@ class EmailSender(View):
             result['message'] = "Successfully send the email."
             # Sending email as a backend task.
             mail_send.delay(result)
-
-        attachments_name = [x.name for x in result['data']['attachments']]
-        result['data']['attachments'] = attachments_name
+        if result['data']['attachments']:
+            attachments_name = [x.name for x in result['data']['attachments']]
+            result['data']['attachments'] = attachments_name
 
         return HttpResponse(json.dumps(result))

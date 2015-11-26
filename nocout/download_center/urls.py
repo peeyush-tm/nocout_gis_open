@@ -38,9 +38,14 @@ urlpatterns = patterns('',
       name='CityCharterReportListing'
     ),
     url(
-      r'^emailreport)/$',
-      views.EmailReport.as_view(),
+      r'^emailreport/$',
+      views.EmailListUpdating.as_view(),
       name='EmailReport'
+    ),
+    url(
+      r'^getemails/(?P<page_type>\w+)/$',
+      views.GetEmails.as_view(),
+      name='InitEmail'
     )
 
 )

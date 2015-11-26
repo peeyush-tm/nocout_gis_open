@@ -2,14 +2,14 @@ import json
 from device.models import DeviceTechnology
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.db.models.query import ValuesQuerySet
-from django.http import HttpResponseRedirect
-from django.views.generic import ListView, DetailView, FormView
+from django.http import HttpResponseRedirect, JsonResponse
+from django.views.generic import ListView, DetailView, FormView, View
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
 from download_center.forms import CityCharterSettingsForm, EmailReportForm
-from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon, \
-    CityCharterSettings, BSOutageMasterDaily
+from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon,\
+    CityCharterSettings, BSOutageMasterDaily, EmailReport
 from django.db.models import Q
 from django.conf import settings
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -17,6 +17,9 @@ from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.utils.util import NocoutUtilsGateway
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
+from nocout.settings import SINGLE_REPORT_EMAIL
+
+from django.http import HttpRequest
 
 import os
 import logging
@@ -183,7 +186,21 @@ class DownloadCenterListing(BaseDatatableView):
                     report_path, excel_green))
             dct.update(
                 actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                    dct.pop('id')))
+                    dct.get('id'))
+            )
+
+            if SINGLE_REPORT_EMAIL:
+                dct.update(
+                    actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a> &nbsp; \
+                             <span style="cursor: pointer;" class="send_report_btn" title="Email Report" report_id="{0}"> \
+                             <i class="fa fa-envelope text-primary"></i></span>'.format(dct.pop('id'))
+                )
+            else:
+                dct.update(
+                    actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                        dct.pop('id'))
+                )
+
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -636,7 +653,84 @@ class BSOutageCustomReportListing(BaseDatatableView):
         }
         return ret
 
-class EmailReport(FormView):
-    template_name = ''
-    success_url = ''
-    form_class = EmailReportForm
+
+class EmailListUpdating(View):
+    def post(self, request, *args, **kwargs):
+
+        page_name = self.request.POST.get('page_name',None)
+        email_list =  self.request.POST.getlist('emails[]', None)
+        report_id = self.request.POST.get('report_id',None)
+        
+        if report_id:
+            report_name = ProcessedReportDetails.objects.get(id=report_id).report_name
+            file_path = ProcessedReportDetails.objects.get(id=report_id).path
+            request_object = HttpRequest()
+            from alarm_escalation.views import EmailSender
+            email_sender = EmailSender()
+            email_sender.request = request_object
+            try:
+                email_sender.request.POST = {
+                    'subject': report_name,
+                    'message': '',
+                    'to_email': email_list,
+                    'attachment_path': file_path
+                }
+            except Exception,e:
+                pass
+            email_sender.POST = {
+                'subject': report_name,
+                'message': '',
+                'to_email': email_list,
+                'attachment_path': file_path
+            }
+
+            fetched_result = email_sender.post(email_sender)
+
+            response = {
+                'success': 1,
+                'message': 'Report Mailed Successfully.'
+            }
+        else:
+            # Comma seperated string of emails.
+            email_list = ", ".join(email_list)
+
+            try:
+                report_name = ReportSettings.objects.get(page_name__iexact=page_name)
+            except ReportSettings.DoesNotExist:
+                report_name = ''
+
+            post_values = {
+                'email_list': email_list,
+            }
+            EmailReport.objects.update_or_create(report_name=report_name, defaults=post_values)
+            response = {
+                'success': 1,
+                'message': 'Successfully Updated'
+            }
+
+        return JsonResponse(response)
+
+
+class GetEmails(View):
+    def get(self, request, page_type, *args, **kwargs):
+        page_name = page_type
+        try:
+            emails = EmailReport.objects.get(report_name=ReportSettings.objects.get(page_name=page_name)).email_list
+        except EmailReport.DoesNotExist:
+            emails = ''
+
+        result = {
+            'success': 0,
+            'message': 'No existing Value',
+            'data': {
+                 'emails': emails
+            }
+        }
+
+        if emails:
+            result['success'] = 1
+            result['message'] = 'Sucessfullly loaded pre-existing values'
+        return JsonResponse(result)
+
+
+

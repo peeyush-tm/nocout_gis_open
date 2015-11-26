@@ -659,7 +659,6 @@ def prepare_service_data_sources(service_name_list):
     )
 
 
-
 @task
 def mail_send(result):
     """
@@ -689,18 +688,22 @@ def mail_send(result):
                                 "success": 1
                             }
     """
+    logger.info('Started')
+    logger.error('Started -- ')
+    logger.info(result)
     mail = EmailMessage(result['data']['subject'], result['data']['message'],
                         result['data']['from_email'],
                         result['data']['to_email'])
     # Handling mail without an attachment.
+    if result['data']['attachments']:
+        for attachment in result['data']['attachments']:
+            mail.attach(attachment.name, attachment.read(), attachment.content_type)
 
-
-    for attachment in result['data']['attachments']:
-        mail.attach(attachment.name, attachment.read(), attachment.content_type)
-    for files in result['data']['attachment_path']:
-        if re.search('^http.*', files):
-            pass
-        else:
-            mail.attach_file(files)
+    if result['data']['attachment_path']:
+        for files in result['data']['attachment_path']:
+            if re.search('^http.*', files):
+                pass
+            else:
+                mail.attach_file(files)
 
     mail.send()
