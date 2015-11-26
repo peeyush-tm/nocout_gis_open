@@ -13797,8 +13797,7 @@ def update_topology():
             ip_address__in=set(radwin5k_devices.values_list('ip_address', flat=True)),
             service_name__in=['rad5k_bs_mac_invent', 'rad5k_ss_mac_invent']).values('ip_address',
                                                                                     'current_value'
-                                                                                    ).using(
-            alias=machine)
+                                                                                    ).using(alias=machine)
         radwin5k_mac_info.extend(temp_macs)
 
     # Radwin5K: Device IP and MAC Mapper.
@@ -13814,10 +13813,16 @@ def update_topology():
     sector_ids = set(Sector.objects.values_list('sector_id', flat=True))
 
     # Sector ID's from topology.
-    topo_sector_ids = set(Topology.objects.values_list('sector_id', flat=True))
+    topo_sector_ids = list(set(Topology.objects.values_list('sector_id', flat=True)))
+
+    # Sector ID's from topology: Uppercase
+    topo_sector_ids_upper = map(lambda x: x.upper(), topo_sector_ids)
+
+    # Sector ID's from topology: Lowercase
+    topo_sector_ids_lower = map(lambda x: x.lower(), topo_sector_ids)
 
     # Sector ID's common in topology and inventory.
-    common_sector_ids = sector_ids.intersection(topo_sector_ids)
+    # common_sector_ids = sector_ids.intersection(topo_sector_ids)
 
     # Radwin5K: Special case where sector id cannot be considered.
     radwin5k_topology = Topology.objects.filter(service_name="rad5k_topology_discover").values('connected_device_ip',
@@ -13834,7 +13839,7 @@ def update_topology():
 
     # Sectors & sub stations mapping from Topology.
     topology = Topology.objects.filter(
-        Q(sector_id__in=common_sector_ids) | Q(connected_device_ip__in=radwin5k_ss_ips)).values(
+        Q(sector_id__in=topo_sector_ids) | Q(connected_device_ip__in=radwin5k_ss_ips)).values(
         'connected_device_ip',
         'sector_id',
         'connected_device_mac',
@@ -13844,7 +13849,7 @@ def update_topology():
     # ################################### MAPPERS START #####################################
 
     # Sectors from Inventory corressponding to sector_id's fetched from Topology.
-    sectors = Sector.objects.filter(sector_id__in=common_sector_ids)
+    sectors = Sector.objects.filter(Q(sector_id__in=topo_sector_ids_upper) | Q(sector_id__in=topo_sector_ids_lower))
 
     # Sector ID's list.
     sector_ids = sectors.values_list('sector_id', flat=True)
@@ -13858,10 +13863,10 @@ def update_topology():
     sectors_mapper = {}
     for s_id, s_ip, dr_ip, obj in zip(sector_ids, sector_ips, dr_ips, sectors):
         if s_id and s_ip:
-            key = s_id.strip().lower() + "_" + s_ip.strip()
+            key = s_id.strip().lower() + "|" + s_ip.strip()
             sectors_mapper[key] = obj
         if s_id and dr_ip:
-            key = s_id.strip().lower() + "_" + dr_ip.strip()
+            key = s_id.strip().lower() + "|" + dr_ip.strip()
             sectors_mapper[key] = obj
 
     # Radwin 5K sectors.
@@ -13890,10 +13895,10 @@ def update_topology():
         bs_devices_mapper[ip] = bs_device
 
     # Sectors & sub stations mapping from Circuit.
-    circuits = Circuit.objects.select_related('sub_station',
-                                              'sub_station__device__ip_address',
-                                              'sector__sector_id').filter(
-        Q(sector__sector_id__in=common_sector_ids) | Q(sub_station__device__ip_address__in=radwin5k_ss_ips))
+    circuits = Circuit.objects.filter(sub_station__device__ip_address__isnull=False).select_related(
+        'sub_station',
+        'sub_station__device__ip_address',
+        'sector__sector_id').order_by('name')
 
     # Sub Station devices IP's list corressponding to the connected_device_ip ip's.
     circuits_ss_ips = circuits.values_list('sub_station__device__ip_address', flat=True)
@@ -13941,7 +13946,7 @@ def update_topology():
         try:
             circuit = circuits_mapper[info['connected_device_ip']]
         except Exception as e:
-            logger.info(e.message)
+            pass
 
         if circuit:
             # Update sub station.
@@ -13954,8 +13959,7 @@ def update_topology():
                     ss.mac_address = radwin5k_mac_mapper[info['connected_device_ip']]['current_value']
                     update_ss_list.append(ss)
             except Exception as e:
-                logger.exception(e.message)
-
+                pass
             # Update sub station device.
             try:
                 ss_device = circuit.sub_station.device
@@ -13966,8 +13970,7 @@ def update_topology():
                     ss_device.mac_address = radwin5k_mac_mapper[info['connected_device_ip']]['current_value']
                     update_device_list.append(ss_device)
             except Exception as e:
-                logger.exception(e.message)
-
+                pass
             # Update sector device.
             try:
                 sector_device = bs_devices_mapper[info['ip_address']]
@@ -13978,17 +13981,17 @@ def update_topology():
                     sector_device.mac_address = radwin5k_mac_mapper[info['ip_address']]['current_value']
                     update_device_list.append(sector_device)
             except Exception as e:
-                logger.exception(e.message)
-
+                pass
             # Update circuit.
             try:
                 if info['connected_device_ip'] in radwin5k_ss_ips:
                     circuit.sector = radwin5k_sectors_mapper[info['ip_address'].strip()]
                 else:
-                    circuit.sector = sectors_mapper[info['sector_id'].strip().lower() + "_" + info['ip_address'].strip()]
+                    circuit.sector = sectors_mapper[
+                        info['sector_id'].strip().lower() + "|" + info['ip_address'].strip()]
                 update_circuit_list.append(circuit)
             except Exception as e:
-                logger.exception(e.message)
+                pass
 
     g_jobs = list()
 
