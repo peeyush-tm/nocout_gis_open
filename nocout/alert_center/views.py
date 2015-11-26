@@ -1895,6 +1895,7 @@ class SIAListing(ListView):
             {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True}
@@ -1938,11 +1939,11 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     
     order_columns = [
         'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state', 
-        'device_type', 'eventname','traptime', 'alarm_count',
+        'eventname','traptime','uptime', 'alarm_count',
         'first_occurred','last_occurred'
     ]
 
-    other_columns = ['bs_alias', 'bs_city', 'bs_state', 'sector_id']
+    other_columns = ['bs_alias', 'bs_city', 'bs_state', 'sector_id','device_type']
 
     is_ordered = False
     is_searched = False
@@ -2077,7 +2078,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             if type(qs) == type(list()):
                 result = qs
             else:
-                result = self.prepare_device_inventory(qs)
+                result = self.prepare_devices(qs)
 
             result_list = list()
             for search_data in result:
@@ -2094,7 +2095,15 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             # advance filtering the query set
             return self.advance_filter_queryset(result_list)
         else:
-            self.is_searched = False
+            if self.request.GET.get('advance_filter', None):
+                self.is_searched = True
+                if type(qs) == type(list()):
+                    qs = qs
+                else:
+                    qs = self.prepare_devices(qs)
+            else:
+                self.is_searched = False
+
         return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
@@ -2105,7 +2114,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             self.order_columns = [
                 'severity', 'ip_address', 'sector_id', 'bs_alias',
                 'bs_city', 'bs_state', 'device_type',
-                'eventname', 'traptime', 'uptime'
+                'eventname', 'traptime', 'uptime','alarm_count','first_occurred','last_occurred'
             ]
 
         # Number of columns that are used in sorting
@@ -2161,13 +2170,13 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 if self.is_searched or type(qs) == type(list()):
                     prepared_result = qs
                 else:
-                    prepared_result = self.prepare_device_inventory(qs)
+                    prepared_result = self.prepare_devices(qs)
 
                 try:
                     # Sort the prepared result list
                     sorted_qs = sorted(
                         prepared_result,
-                        key=itemgetter(sort_using),
+                        key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
                         reverse=reverse
                     )
                 except Exception, e:
@@ -2261,7 +2270,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             self.model = HistoryAlarms
         return True
 
-    def prepare_device_inventory(self, qs):
+    def prepare_devices(self, qs):
         """
         """
         return prepare_snmp_gis_data(qs, self.tech_name)
@@ -2290,20 +2299,27 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             for dct in  qs:
                 severity = dct.get('severity')
                 severity_icon = alert_utils.common_get_severity_icon(severity)
-                # component_id = dct.get('component_id','NA')
                 uptime = dct.get('uptime')
                 formatted_uptime = uptime
+
+                try:
+                    first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                except Exception, e:
+                    first_occurred = dct.get('first_occurred')
+
+                try:
+                    last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                except Exception, e:
+                    last_occurred = dct.get('last_occurred')
 
                 if uptime:
                     formatted_uptime = self.format_uptime_value(uptime)
 
-                # if component_id == '':
-                #     component_id = 'NA'
-
                 dct.update(
                     severity=severity_icon,
-                    # component_id=component_id,
-                    uptime=formatted_uptime
+                    uptime=formatted_uptime,
+                    first_occurred=first_occurred,
+                    last_occurred=last_occurred
                 )
 
             return qs
@@ -2337,7 +2353,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         qs = self.ordering(qs)
         qs = self.paging(qs)
         if not (self.is_ordered or self.is_searched):
-            qs = self.prepare_device_inventory(qs)
+            qs = self.prepare_devices(qs)
         
         aaData = self.prepare_results(qs)
 

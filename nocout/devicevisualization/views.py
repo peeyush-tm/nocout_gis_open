@@ -8,7 +8,7 @@ from django.template import RequestContext
 import logging
 from zipfile import ZipFile
 import glob
-from nocout.settings import MEDIA_ROOT, MEDIA_URL, LIVE_POLLING_CONFIGURATION, PERIODIC_POLL_PROCESS_COUNT
+from nocout.settings import MEDIA_ROOT, MEDIA_URL, LIVE_POLLING_CONFIGURATION, PERIODIC_POLL_PROCESS_COUNT, DATE_TIME_FORMAT
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView, View
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -3896,27 +3896,25 @@ class GISStaticInfo(View):
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
 
-        # base station counter
-        bs_counter = 0
+        if not freeze_time:
+            freeze_time = '0'
 
-        inventory = ""
+        bs_inventory = {}
 
         # Create instance of 'InventoryUtilsGateway' class
         inventory_utils = InventoryUtilsGateway()
 
         # loop through all base stations having id's in bs_ids list
-        try:
-            for bs_id in bs_ids:
+        for bs_id in bs_ids:
+            try:
                 
                 devices_ip_address_list = list()
-                # increment base station counter
-                bs_counter += 1
-
+                
                 # get formatted bs inventory
-                inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
+                bs_inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
 
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
-                bh_device_ip = inventory.get('bh_device_ip')
+                bh_device_ip = bs_inventory.get('bh_device_ip')
                 
                 try:
                     bh_device = Device.objects.get(ip_address=bh_device_ip)
@@ -3927,11 +3925,12 @@ class GISStaticInfo(View):
                 if bh_device_ip and bh_device:
                     devices_ip_address_list.append(bh_device_ip)
 
-                for sector in inventory['sectors']:
-                    if sector['ip_address']:
+                for sector in bs_inventory['sectors']:
+                    if sector['ip_address'] and sector['ip_address'] not in devices_ip_address_list:
                         devices_ip_address_list.append(sector['ip_address'])
+
                     for sub_station in sector['sub_stations']:
-                        if sub_station['ip_address']:
+                        if sub_station['ip_address'] and sub_station['ip_address'] not in devices_ip_address_list:
                             devices_ip_address_list.append(sub_station['ip_address'])
 
                 bs_devices = Device.objects.filter(
@@ -3951,15 +3950,15 @@ class GISStaticInfo(View):
                 # ********************************* BACKHAUL PERF INFO (START) ***********************************
                 if bh_device_ip and bh_device:
                     backhaul_data = self.get_backhaul_info(bh_device, complete_performance['network_perf_data'])
-                    inventory['bh_polled_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
-                    inventory['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
-                    inventory['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
+                    bs_inventory['bh_polled_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
+                    bs_inventory['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
+                    bs_inventory['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
 
                 # ********************************** BACKHAUL PERF INFO (END) ************************************
 
                 # ******************************** GET DEVICE MACHINE MAPPING (END) ******************************
 
-                for sector in inventory['sectors']:
+                for sector in bs_inventory['sectors']:
                     # get sector
                     try:
                         sector_obj = Sector.objects.get(id=sector['sector_id'])
@@ -3996,6 +3995,11 @@ class GISStaticInfo(View):
                     except Exception as e:
                         pass
 
+                    sector['perf_value'] = ''
+                    sector['pl'] = ''
+                    sector['rta'] = ''
+                    sector['pl_timestamp'] = ''
+
                     if service and data_source:
                         # performance value
                         perf_payload = {
@@ -4025,7 +4029,7 @@ class GISStaticInfo(View):
                         sector['color'] = sector_extra_info['color']
                         sector['polled_frequency'] = sector_extra_info['polled_frequency']
 
-                        for sub_station in sector['sub_stations']:
+                    for sub_station in sector['sub_stations']:
                             substation_device = [d for d in bs_devices if
                                                  d['ip_address'] == sub_station['ip_address']][0]
 
@@ -4058,6 +4062,11 @@ class GISStaticInfo(View):
                             except Exception as e:
                                 pass
 
+                            sub_station['perf_value'] = ''
+                            sub_station['pl'] = ''
+                            sub_station['pl_timestamp'] = ''
+                            sub_station['rta'] = ''
+
                             if service and data_source:
                                 # performance value
                                 perf_payload = {
@@ -4088,12 +4097,10 @@ class GISStaticInfo(View):
                                 sub_station['pl'] = substation_extra_info['pl']
                                 sub_station['pl_timestamp'] = substation_extra_info['pl_timestamp']
                                 sub_station['rta'] = substation_extra_info['rta']
-        except Exception as e:
-            pass
+            except Exception as e:
+                pass
 
-        result = inventory
-
-        return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(bs_inventory))
 
     def get_backhaul_info(self, bh_device, network_perf_data):
         """ Get Sector performance info
@@ -4187,29 +4194,35 @@ class GISStaticInfo(View):
         utilization_perf_data = complete_performance['utilization_perf_data']
 
         # device frequency
-        device_frequency = self.get_device_polled_frequency(perf_payload['device_name'],
-                                                            perf_payload['machine_name'],
-                                                            freeze_time,
-                                                            performance_perf_data,
-                                                            inventory_perf_data,
-                                                            sector)
+        device_frequency = self.get_device_polled_frequency(
+            perf_payload['device_name'],
+            perf_payload['machine_name'],
+            freeze_time,
+            performance_perf_data,
+            inventory_perf_data,
+            sector
+        )
 
         # update device frequency
         result['polled_frequency'] = device_frequency
 
         # pl result
-        pl_result = self.get_device_pl(perf_payload['device_name'],
-                                       perf_payload['machine_name'],
-                                       network_perf_data,
-                                       freeze_time)
+        pl_result = self.get_device_pl(
+            perf_payload['device_name'],
+            perf_payload['machine_name'],
+            network_perf_data,
+            freeze_time
+        )
         # device pl
         device_pl = pl_result[0]
 
         # device rta
-        device_rta = self.get_device_rta(perf_payload['device_name'],
-                                         perf_payload['machine_name'],
-                                         network_perf_data,
-                                         freeze_time)
+        device_rta = self.get_device_rta(
+            perf_payload['device_name'],
+            perf_payload['machine_name'],
+            network_perf_data,
+            freeze_time
+        )
 
         # update device pl
         result['pl'] = device_pl
@@ -4239,14 +4252,16 @@ class GISStaticInfo(View):
         result['pl_timestamp'] = pl_timestamp
 
         if device_pl != "100":
-            performance_value = self.get_performance_value(perf_payload,
-                                                           network_perf_data,
-                                                           performance_perf_data,
-                                                           service_perf_data,
-                                                           inventory_perf_data,
-                                                           status_perf_data,
-                                                           utilization_perf_data,
-                                                           ts_type)
+            performance_value = self.get_performance_value(
+                perf_payload,
+                network_perf_data,
+                performance_perf_data,
+                service_perf_data,
+                inventory_perf_data,
+                status_perf_data,
+                utilization_perf_data,
+                ts_type
+            )
             result['perf_value'] = performance_value
         else:
             result['perf_value'] = ""
@@ -4486,11 +4501,7 @@ class GISStaticInfo(View):
 
         return device_frequency
 
-    def get_device_pl(self,
-                      device_name,
-                      machine_name,
-                      network_perf_data,
-                      freeze_time):
+    def get_device_pl(self, device_name, machine_name, network_perf_data, freeze_time):
         """ Get device pl
             Parameters:
                 - device_name (unicode) - device name
@@ -4511,12 +4522,15 @@ class GISStaticInfo(View):
 
         try:
             if int(freeze_time):
-                result = PerformanceNetwork.objects.filter(device_name=device_name,
-                                                              service_name='ping',
-                                                              data_source='pl',
-                                                              sys_timestamp__gte=start_time,
-                                                              sys_timestamp__lte=end_time).order_by().using(
-                    alias=machine_name).values('current_value', 'sys_timestamp')
+                result = PerformanceNetwork.objects.filter(
+                    device_name=device_name,
+                    service_name='ping',
+                    data_source='pl',
+                    sys_timestamp__gte=start_time,
+                    sys_timestamp__lte=end_time
+                ).order_by().using(
+                    alias=machine_name
+                ).values('current_value', 'sys_timestamp')
 
             else:
                 result = [d for d in network_perf_data if d['device_name'] == device_name and
@@ -4556,12 +4570,15 @@ class GISStaticInfo(View):
 
         try:
             if int(freeze_time):
-                device_rta = PerformanceNetwork.objects.filter(device_name=device_name,
-                                                              service_name='ping',
-                                                              data_source='rta',
-                                                              sys_timestamp__gte=start_time,
-                                                              sys_timestamp__lte=end_time).order_by().using(
-                    alias=machine_name).values('current_value')
+                device_rta = PerformanceNetwork.objects.filter(
+                    device_name=device_name,
+                    service_name='ping',
+                    data_source='rta',
+                    sys_timestamp__gte=start_time,
+                    sys_timestamp__lte=end_time
+                ).order_by().using(
+                    alias=machine_name
+                ).values('current_value')
 
             else:
                 device_rta = [d for d in network_perf_data if d['device_name'] == device_name and
@@ -4813,7 +4830,8 @@ class GISStaticInfo(View):
 
             if performance_value and len(performance_value):
                 performance_value = performance_value[0]['current_value']
-
+            else:
+                performance_value = ''
         except Exception as e:
             return performance_value
 
