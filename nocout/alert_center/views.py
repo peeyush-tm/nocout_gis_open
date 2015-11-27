@@ -2176,7 +2176,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     # Sort the prepared result list
                     sorted_qs = sorted(
                         prepared_result,
-                        key=itemgetter(sort_using),
+                        key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
                         reverse=reverse
                     )
                 except Exception, e:
