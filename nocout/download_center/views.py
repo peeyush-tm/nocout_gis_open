@@ -137,7 +137,12 @@ class DownloadCenterListing(BaseDatatableView):
 
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ProcessedReportDetails.objects.filter(report_name=report_name).values(*self.columns+['id'])
+        
+        qs = ProcessedReportDetails.objects.filter(
+            report_name=report_name
+        ).values(*self.columns+['id']).order_by('-report_date')
+
+        return qs
 
     def prepare_results(self, qs):
         """
