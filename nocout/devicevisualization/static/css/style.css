@@ -506,3 +506,7 @@ iframe {
     width: auto;
     padding: 10px;
 }
+.svp_link, .svp_link:hover {
+    color: #b94a48 !important;
+    font-size: 95%;
+}

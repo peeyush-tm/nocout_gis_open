@@ -50,6 +50,7 @@ var mapInstance = "",
     india_center_lat = 21.1500,
     posLink1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
 	posLink2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId",
+	svp_link = "http://172.31.6.73/ipservices/wirelessintegrate/integratesv.php?viznet_id",
 	ptp_not_show_items = ['pe_ip'],
 	tech_list = ['PMP', 'PTP', 'P2P', 'WiMAX'];
 
@@ -3159,6 +3160,10 @@ function devicePlottingClass_gmap() {
 				if(ss_circuit_id) {
 					pos1 = "<a href='"+posLink1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a>";
 					pos2 = "<a href='"+posLink2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a>";
+					
+					tools_html += "<a href='"+svp_link+"="+ss_circuit_id+"' title='SVP' class='svp_link text-danger' target='_blank'> \
+								  SVP\
+								  </a>";
 				}
 
 				if(farend_perf_url) {
