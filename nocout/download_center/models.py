@@ -991,6 +991,7 @@ class BSOutageMasterStructure(models.Model):
     """
     # report_id = models.ForeignKey(BSOutageReports)
     # organization = models.CharField('Organization', max_length=128)
+    s_no = models.CharField('S. No.', max_length=128)
     processed_report = models.ForeignKey(ProcessedReportDetails, null=True, blank=True)
     week_number = models.CharField('Week of the Year', max_length=128)
     ticket_number = models.CharField('Trouble Ticket Number', max_length=128)
