@@ -31,7 +31,7 @@ var mapInstance = "",
 	green_status_array = ['ok','success','up'],
     red_status_array = ['critical','down'],
     orange_status_array = ['warning'],
-    ptp_tech_list = ['ptp','p2p','ptp bh'],
+    ptp_tech_list = ['ptp','p2p','ptp bh','ptp-bh'],
     search_element_bs_id = [],
     meter_unit_fields = [
     	'radwin_link_distance_invent_link_distance'

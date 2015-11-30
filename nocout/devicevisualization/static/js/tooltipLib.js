@@ -609,6 +609,15 @@ var ptp_ss_toolTip_polled = [
         'ds'           : 'service_throughput'
     },
     {
+        'name'         : 'radwin_crc_errors_crc_errors',
+        'title'        : 'CRC Error',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'radwin_crc_errors',
+        'ds'           : 'crc_errors'
+    },
+    {
         'name'         : 'radwin_link_distance_invent_link_distance',
         'title'        : 'Link Distance (mtr)',
         'show'         : 1,
@@ -635,13 +644,6 @@ var ptp_ss_toolTip_polled = [
         'service_name' : 'radwin_dl_utilization',
         'ds'           : 'Management_Port_on_Odu'
     },
-    // {
-    //     'name'      : 'session_uptime',
-    //     'title'     : 'Last Down',
-    //     'show'      : 1,
-    //     'value'     : '',
-    //     'url'       : ''
-    // },
     {
         'name'         : 'radwin_uptime_uptime',
         'title'        : 'Device Uptime',
@@ -963,6 +965,15 @@ var ptp_sector_toolTip_polled = [
         'url'          : '',
         'service_name' : 'radwin_service_throughput',
         'ds'           : 'service_throughput'
+    },
+    {
+        'name'         : 'radwin_crc_errors_crc_errors',
+        'title'        : 'CRC Error',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'radwin_crc_errors',
+        'ds'           : 'crc_errors'
     },
     {
         'name'         : 'radwin_link_distance_invent_link_distance',

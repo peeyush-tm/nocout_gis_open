@@ -77,7 +77,7 @@
 
             // Add 'Create Item' link on top header bar.
             {% for group in user.groups.all %}
-                {% if group.name == 'group_admin' or group.name == 'group_operator' %}
+                {% if group.name == 'Admin' or group.name == 'Operator' %}
 
                     {% if page_type == 'individual' and key == 'circuit' %}
                         var create_link_html = '<a href="/circuit/{{ circuit_id }}/l2_reports/create/" title="Upload Report" \
