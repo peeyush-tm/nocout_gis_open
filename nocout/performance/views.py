@@ -2301,7 +2301,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             if item['data_source'] in ['pl', 'rta', 'availability']:
                 sds_key = item['data_source']
             else:
-                sds_key = str(item['service_name']) + '_' + str(item['data_source'])
+                sds_key = str(item['service_name']).strip().lower() + '_' + str(item['data_source']).strip().lower()
             try:
                 if SERVICE_DATA_SOURCE.get(sds_key):
                     display_name = SERVICE_DATA_SOURCE.get(sds_key).get('display_name')
@@ -2558,7 +2558,7 @@ class GetServiceTypePerformanceData(View):
             start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
 
         if service_data_source_type.strip() not in ['topology', 'rta', 'pl', 'availability', 'rf']:
-            sds_name = service_name.strip() + "_" + service_data_source_type.strip()
+            sds_name = service_name.strip().lower() + "_" + service_data_source_type.strip().lower()
         else:
             sds_name = service_data_source_type.strip()
 
@@ -3560,7 +3560,7 @@ class GetServiceTypePerformanceData(View):
                     sds_name = str(data.data_source).strip()
                     if sds_name not in ['availability']:
                         if sds_name not in ['pl', 'rta']:
-                            sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
+                            sds_name = str(data.service_name).strip().lower() + "_" + str(data.data_source).strip().lower()
 
                     sds_display_name = SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                         if sds_name in SERVICE_DATA_SOURCE  else str(data.data_source).upper()
@@ -3806,7 +3806,7 @@ class GetServiceTypePerformanceData(View):
 
                         if sds_name not in ['availability']:
                             if sds_name not in ['pl', 'rta']:
-                                sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
+                                sds_name = str(data.service_name).strip().lower() + "_" + str(data.data_source).strip().lower()
 
                         sds_display_name = SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                             if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
@@ -4353,7 +4353,7 @@ class DeviceServiceDetail(View):
         for data in performance:
             try:
                 if (data.service_name, data.data_source) not in temp_chart_data:
-                    c = SERVICE_DATA_SOURCE[data.service_name.strip() + "_" +data.data_source.strip()]['chart_color']
+                    c = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['chart_color']
 
                     if technology and technology.name.lower() in ['ptp', 'p2p', 'switch']:
                         if 'ul' in data.service_name.strip().lower():
@@ -4377,7 +4377,7 @@ class DeviceServiceDetail(View):
                         'name': alias,
                         'data': [],
                         'color': c,
-                        'type': SERVICE_DATA_SOURCE[data.service_name.strip() + "_" +data.data_source.strip()]['type']
+                        'type': SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['type']
                     }
                 js_time = data.sys_timestamp*1000
                 value = float(data.current_value)
@@ -4499,7 +4499,7 @@ class CustomDashboardPerformanceData(View):
                         
             if data_source_type.strip() not in ['topology', 'rta', 'pl', 'availability', 'rf']:
                 # for service in service_name:
-                sds_name = service_name.strip() + "_" + data_source_type.strip()        
+                sds_name = service_name.strip().lower() + "_" + data_source_type.strip().lower()        
             else:
                 sds_name = data_source_type.strip()            
 
@@ -4997,7 +4997,7 @@ class CustomDashboardPerformanceData(View):
 
                         if sds_name not in ['availability']:
                             if sds_name not in ['pl', 'rta']:
-                                sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
+                                sds_name = str(data.service_name).strip().lower() + "_" + str(data.data_source).strip().lower()
 
                         sds_display_name = SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                             if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
@@ -6025,7 +6025,7 @@ class CustomDashboardPerformanceData(View):
                     sds_name = str(data.data_source).strip()
                     if sds_name not in ['availability']:
                         if sds_name not in ['pl', 'rta']:
-                            sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
+                            sds_name = str(data.service_name).strip().lower() + "_" + str(data.data_source).strip().lower()
 
                     sds_display_name = SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                         if sds_name in SERVICE_DATA_SOURCE  else str(data.data_source).upper()
