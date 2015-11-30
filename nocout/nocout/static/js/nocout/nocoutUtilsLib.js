@@ -1617,7 +1617,11 @@ function nocout_pausePollNow() {
  */
 function nocout_destroyDataTable(domId) {
 
-    if (!domId || $('#' + domId).length == 0) {
+    if (!domId) {
+        return true;
+    }
+
+    if ($('#' + domId).length == 0 && $('table[id*="' + domId + '"]').length == 0) {
         return true;
     }
 
