@@ -2884,8 +2884,8 @@ def getSSInventoryInfo(sub_station_id=None):
             IF(isnull(ss.alias), 'NA', ss.alias) AS alias,
             IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance) AS dl_rssi_during_acceptance,
             IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance,
-            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 1</a>") AS pos_link1,
-            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 2</a>") AS pos_link2
+            CONCAT("<a href = ",(CONCAT('https://121.244.244.23/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 1</a>") AS pos_link1,
+            CONCAT("<a href = ",(CONCAT('https://liferay/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 2</a>") AS pos_link2
 
         FROM
             inventory_substation AS ss
@@ -2977,8 +2977,8 @@ def getSectorInventoryInfo(sector_id=None):
             IF(isnull(customer.address), 'NA', customer.address) AS customer_address,
             IF(isnull(ckt.dl_rssi_during_acceptance), 'NA', ckt.dl_rssi_during_acceptance) AS dl_rssi_during_acceptance,
             IF(isnull(ckt.date_of_acceptance), 'NA', ckt.date_of_acceptance) AS date_of_acceptance,
-            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 1</a>") AS pos_link1,
-            CONCAT("<a href = ",(CONCAT('http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 2</a>") AS pos_link2
+            CONCAT("<a href = ",(CONCAT('https://121.244.244.23/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 1</a>") AS pos_link1,
+            CONCAT("<a href = ",(CONCAT('https://liferay/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId', '=', ckt.circuit_id)),">POS LINK 2</a>") AS pos_link2
         FROM
             inventory_sector AS sector
         LEFT JOIN
