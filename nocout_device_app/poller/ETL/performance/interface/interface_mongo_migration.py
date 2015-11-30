@@ -57,11 +57,9 @@ def main(**configs):
 	print e
 	return
     docs = read_data()
-    for doc in docs:
-        values_list = build_data(doc)
-        data_values.extend(values_list)
-    if data_values:
-        insert_data(configs.get('table_name'), data_values, db)
+    print len(docs)
+    if docs:
+        insert_data(configs.get('table_name'), docs, db,configs)
         print "Data inserted into performance_performancestatus table"
     else:
         print "No data in the mongo db in this time frame"
@@ -106,8 +104,32 @@ def read_data():
     else:
     	doc_len_key = key + "_len"
     	cur=memc_obj.retrieve(key,doc_len_key) 
-     
-    return cur
+    
+    values_list = []
+    configs = config_module.parse_config_obj()
+    for config, options in configs.items():
+	machine_name = options.get('machine')
+    for doc in cur:	 
+	t = (
+	    doc.get('device_name'),
+	    doc.get('service_name'),
+	    doc.get('sys_timestamp'),
+	    doc.get('check_timestamp'),
+	    doc.get('current_value'),
+	    doc.get('min_value'),
+	    doc.get('max_value'),
+	    doc.get('avg_value'),
+	    doc.get('warning_threshold'),
+	    doc.get('critical_threshold'),
+	    doc.get('severity'),
+	    doc.get('site_name'),
+	    doc.get('data_source'),
+	    doc.get('ip_address'),
+	    machine_name
+	)
+	values_list.append(t)
+        t = ()
+    return values_list
 
 def build_data(doc):
     """
@@ -144,7 +166,7 @@ def build_data(doc):
     t = ()
     return values_list
 
-def insert_data(table, data_values, db):
+def insert_data(table, data_values, db,configs):
     """
     Function to bulk insert data into mysql db
 
@@ -155,6 +177,9 @@ def insert_data(table, data_values, db):
     Kwargs:
         kwargs: Mysqldb connection variables
     """
+    if not db.is_connected():
+    	db = utility_module.mysql_conn(configs=configs)
+	
     query = 'INSERT INTO `%s` ' % table
     query += """
                 (device_name,service_name,sys_timestamp,check_timestamp,
