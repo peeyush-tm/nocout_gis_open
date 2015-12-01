@@ -369,7 +369,7 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}, b
     return ss_dict
 
 
-def prepare_raw_result_v2(resultset=None):
+def prepare_raw_result_v2(resultset=None, bs_ids=[]):
 
     result = list()
 
@@ -419,6 +419,10 @@ def prepare_raw_result_v2(resultset=None):
     
     for bs in resultset:
         if not bs.get('BSID'):
+            continue
+
+        # If non organization BS then don't plot it on map
+        if bs_ids and bs.get('BSID') not in bs_ids:
             continue
 
         sector_info_str = bs.get('SECT_STR', '')
@@ -1083,7 +1087,11 @@ class DeviceStatsApi(View):
             self.result['data']['objects'] = {
                 'children' : []
             }
-            self.result['data']['objects']['children'] = prepare_raw_result_v2(self.raw_result)
+
+            self.result['data']['objects']['children'] = prepare_raw_result_v2(
+                resultset=self.raw_result,
+                bs_ids=list(bs_id)
+            )
 
             self.result['data']['meta']['device_count'] = len(self.result['data']['objects']['children'])
             self.result['message'] = 'Data Fetched Successfully.'
