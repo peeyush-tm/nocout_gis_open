@@ -63,6 +63,12 @@ def check_cambium_ul_utilization(item, _no_params, info):
                 	status_list.append(("ul_utilization", "%.2f" % (rate)))
 			infotext = "Uplink utilization %s " % (rate)
 			state= 0
+			key = g_hostname + "_ul"
+			try:
+				if memc:
+					memc.set(key,"%.2f" % rate)
+			except: 
+				pass
 	else:
 	    infotext = "No interface present"
 	    

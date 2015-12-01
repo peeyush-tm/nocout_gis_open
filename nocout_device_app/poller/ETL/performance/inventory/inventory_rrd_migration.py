@@ -85,6 +85,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	matching_criteria = {}
 	multiple_ds_services = []
 	interface_oriented_service= ['cambium_ss_connected_bs_ip_invent']
+	ss_provis_helper_service = ['wimax_ss_ptx_invent']
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output perf_data\n"+\
                             "Filter: service_description ~ _invent\n"+\
@@ -99,7 +100,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	unknown_svc_data = filter(lambda x: x[4] == 3,query_output)
 	unknwn_state_svc_data = filter(lambda x: x[0] not in s_device_down_list,unknown_svc_data)
 	unknwn_state_svc_data  = calculate_avg_value(unknwn_state_svc_data,db)
-	#print "Query output", query_output
+	ss_provis_helper_serv_data = []
 	for entry in query_output:
 		if str(entry[0]) in s_device_down_list:
 			continue
@@ -205,6 +206,12 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 			except:
 				value = plugin_output[0]
 					
+			if service in ss_provis_helper_service:
+				ss_provis_helper_serv_data.append({
+				'device_name': host,
+				'service_name': service,
+				'current_value': value
+				})
 	
 				
 			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=host,
@@ -228,7 +235,10 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	memc_obj.store(key,invent_data_list,doc_len_key,exp_time,chunksize=1000)
 	#mongo_module.mongo_db_insert(db,invent_data_list,"inventory_services")
 	# redis implementation
-	
+	rds_obj=db_ops_module.RedisInterface()
+	#print ss_provis_helper_serv_data
+	rds_obj.multi_set(ss_provis_helper_serv_data, perf_type='provis',exp_time=1440)
+		
 
 
 def get_from_socket(site_name, query):
