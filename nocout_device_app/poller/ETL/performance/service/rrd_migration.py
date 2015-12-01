@@ -298,8 +298,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		#		 threshold_values=  threshold_values1
 			#print "entry", entry[0]
 			
-		else :
-			threshold_values = get_threshold(entry[-1])
+		
+		threshold_values = get_threshold(entry[-1])
 
 		severity = calculate_severity(entry[3])
 		# Age of last service state change
@@ -1237,12 +1237,12 @@ if __name__ == '__main__':
     and extracts data
 
     """
-    #try:
-    #    memc_obj1=db_ops_module.MemcacheInterface()
-    #    memc_obj =memc_obj1.memc_conn
-    #except:
-    #    print "Memcache Error",
-    #key = "master_ua" + "_switch"
+    try:
+        memc_obj1=db_ops_module.MemcacheInterface()
+        memc_obj =memc_obj1.memc_conn
+    except:
+        print "Memcache Error",
+    key = "master_ua" + "_switch"
     memcache_switch= memc_obj.get(key)
     #print memcache_switch
     configs = config_module.parse_config_obj()
