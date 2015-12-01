@@ -8,7 +8,7 @@ This script collects and stores data for all services running on all configured 
 
 from nocout_site_name import *
 import os
-import json
+import demjson,json
 from pprint import pformat
 import re
 from datetime import datetime, timedelta
@@ -44,7 +44,8 @@ service_data_values = []
 network_update_list = []
 service_update_list = []
 device_first_down_map = {}
-
+ss_provis_helper_serv_data =[]
+kpi_helper_serv_data = []
 def load_file(file_path):
     #Reset the global vars
     host_vars = {
@@ -106,6 +107,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	global network_update_list
 	global service_update_list
 	global device_first_down_map
+	global ss_provis_helper_serv_data
+	global kpi_helper_serv_data
         age = None
 	rt_min, rt_max = None, None
 	rta_dict = {}
@@ -126,6 +129,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	first_down_crit = {}
 	host_severity = 'unknown'
 	host_state = "unknown"
+	present_time = datetime.now()
 	device_first_down ={}
 	# Process network perf data
         nw_qry_output = network_result
@@ -165,6 +169,9 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		for ds, ds_values in threshold_values.items():
 			check_time = datetime.fromtimestamp(entry[3]) 
 			local_timestamp = pivot_timestamp_fwd(check_time)
+			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
+				local_timestamp = present_time
+				check_time = local_timestamp - timedelta(minutes=2)
 			check_time =int(time.mktime(check_time.timetuple()))
 			# Pivot the time stamp to next 5 mins time frame
 			local_timestamp =int(time.mktime(local_timestamp.timetuple()))
@@ -281,6 +288,15 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	pmp2_mrc_services = ['wimax_pmp2_utilization','wimax_pmp2_ul_util_bgp','wimax_pmp2_dl_util_bgp']
 	exceptional_serv = ['wimax_dl_cinr','wimax_ul_cinr','wimax_dl_intrf','wimax_ul_intrf','wimax_modulation_dl_fec','wimax_modulation_ul_fec',
                                 'wimax_dl_rssi','wimax_ul_rssi']
+
+	ss_provis_helper_service = ['cambium_ul_rssi', 'cambium_dl_rssi',
+					'cambium_dl_jitter', 'cambium_ul_jitter',
+					'cambium_rereg_count', 'wimax_ul_rssi',
+					'wimax_dl_rssi', 'wimax_dl_cinr', 'wimax_ss_ptx_invent','radwin_rssi','radwin_uas']
+	kpi_helper_services =['wimax_ul_cinr', 'wimax_ul_intrf', 'cambium_ul_jitter',
+                        'cambium_rereg_count']
+
+	#ss_provis_helper_serv_data = []	
 	for entry in serv_qry_output:
                 if len(entry) < 8:
                         continue
@@ -292,13 +308,6 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			continue
 		if not len(entry[-1]) and not dr_flag:
 			continue
-		#if str(entry[2]) in switch_checks_list:
-		#	threshold_values1 = get_threshold_switch(entry[-1], (entry[0]))
-		#	if threshold_values1:   #for - test case 
-		#		 threshold_values=  threshold_values1
-			#print "entry", entry[0]
-			
-		
 		threshold_values = get_threshold(entry[-1])
 
 		severity = calculate_severity(entry[3])
@@ -325,11 +334,9 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			#print "ds value", ds_values
 			try:
 				value =  ds_values.get('cur')
-				#print str(entry[2]),threshold_values,str(entry[0])
-
 			except:
-				#print str(entry[2]),threshold_values,str(entry[0])
-				continue	
+		        value=None
+				pass	
 			# Code has been Added to figure out if check is executed or not..if check not executed then take current value
 			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
 				local_timestamp = present_time
@@ -356,6 +363,22 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 				'service': str(entry[2]),
 				'ds': str(ds)
 				})
+			if str(entry[2]) in kpi_helper_services:
+				kpi_helper_serv_data.append({
+				'severity': severity,
+				'device_name': str(entry[0]),
+				'service_name': str(entry[2]),
+			})				
+			if str(entry[2]) in ss_provis_helper_service:
+				ss_provis_helper_serv_data.append({
+				'device_name': str(entry[0]),
+				'service_name': str(entry[2]),
+				'current_value': value
+			})				
+
+
+
+	 
 			if str(entry[2]) in pmp1_mrc_services and str(entry[0]) in mrc_hosts:
 				indexed_mrc_insert[(str(entry[0]),str(entry[2]))]=data_dict
 				indexed_mrc_update[(str(entry[0]),str(entry[2]))]=matching_criteria
@@ -517,6 +540,9 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_f
 		key = nocout_site_name + "_first_down"
 		device_first_down_info = device_first_down_map.values()
 		rds_obj.redis_cnx.set(key,device_first_down_info)
+		rds_obj.multi_set(ss_provis_helper_serv_data, perf_type='provis')
+		rds_obj.redis_update(kpi_helper_serv_data, update_queue=True,
+                                               perf_type='ul_issue')
 	except Exception,e:
 		print e
 		pass

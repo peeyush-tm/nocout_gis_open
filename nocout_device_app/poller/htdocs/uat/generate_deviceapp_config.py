@@ -414,19 +414,13 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         'wimax_bs_devices', 'cambium_bs_devices', 'radwin_bs_devices'])
     processed = []
     dr_en_devices = sorted(filter(lambda e: e[9] and e[9].lower() == 'yes' and e[10], data), key=itemgetter(10))
-    #print 'dr_en_devices --'
-    #print len(dr_en_devices)
     data = filter(lambda e: e[9] == '' or e[9] == None or (e[9] and e[9].lower() == 'no'), data)
     # dr_enabled devices ids
     # dr_configured_on_devices would be treated as master device
     dr_configured_on_ids = map(lambda e: e[10], dr_en_devices)
-    #print '--dr_configured_on_ids----'
-    #print len(dr_configured_on_ids)
     # Find dr_configured on devices from device_device table
     dr_configured_on_devices = get_dr_configured_on_devices(device_ids=dr_configured_on_ids)
     final_dr_devices = zip(dr_en_devices, dr_configured_on_devices)
-    #print '-- final_dr_devices --'
-    #print len(final_dr_devices)
 
     hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 
@@ -578,7 +572,8 @@ def get_disabled_services():
     return data
 
 
-def eval_qos(vals, out=[]):
+def eval_qos(vals, out=None):
+    out = []
     for v in vals:
         if v and int(v) > 10:
             v = float(v) / float(1024)
@@ -812,10 +807,8 @@ select device.device_name as device_name,  base_station.bh_port_name as port fro
         data = dict_rows(cur)
         cur.execute(query1)
         data1 = cur.fetchall()  # from back_haul
-	#print "data ", data1
 	cur.execute(query2)
 	data2 = cur.fetchall()  # from basestation
-        # print "data1 is ", data1
         cur.close()
         #logger.error('data in get_settings: ' + pformat(data))
     except Exception, exp:
@@ -825,29 +818,13 @@ select device.device_name as device_name,  base_station.bh_port_name as port fro
         db.close()
     memc_obj1=db_ops_module.MemcacheInterface()
     memc_obj =memc_obj1.memc_conn
-    #memc_obj= MemcacheInterface()
-    #redis_obj=db_ops_module.RedisInterface()
-    #rds_cnx=redis_obj.redis_cnx
     dict2 = [(key,value.replace("/", "_")) for key, value in data1 if value] # conversion of "/" into "_"  from backhual
-    dict_switch = dict(dict2)  # back_hual dict
-    #print "back_hual", dict_switch    
+    dict_switch = dict(dict2)  # back_hual dict   
     dict3 = [(key,value.replace("/", "_")) for key, value in data2 if value] # for basestation
     dict_switch2 = dict(dict3) # for basestation 
     dict_switch.update(dict_switch2) # back_haul dict updated with basestation dict
-    #print "dict is_bas ", dict_switch2
-    #print "dict is ", dict_switch
     key = "master_ua" + "_switch"
-    #print  [rds_cnx.hset(key, k, v) for k, v in dict_switch.items()]
-    #print rds_cnx.hgetall(key)
-    #dict_to_redis_hset(rds_cnx, key, dict_switch)
     memc_obj.set(key, dict_switch)
-    #list1 = []
-    #for each in data1:
-    #   list1.append(each[0])
-    #list2 = []
-    #[list2.append(dict_switch_cisco.get(each, " ")) for each in list1]
-    #list2 =  [x for x in list2 if x != " "]
-    #list2 = tuple(set(list2))
     processed = []
     active_check_services = []
     # Following utilization active checks should not be included in list of passive checks
