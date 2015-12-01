@@ -292,11 +292,12 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			continue
 		if not len(entry[-1]) and not dr_flag:
 			continue
-		if str(entry[2]) in switch_checks_list:
-			threshold_values1 = get_threshold_switch(entry[-1], (entry[0]))
-			if threshold_values1:   #for - test case 
-				 threshold_values=  threshold_values1
+		#if str(entry[2]) in switch_checks_list:
+		#	threshold_values1 = get_threshold_switch(entry[-1], (entry[0]))
+		#	if threshold_values1:   #for - test case 
+		#		 threshold_values=  threshold_values1
 			#print "entry", entry[0]
+			
 		else :
 			threshold_values = get_threshold(entry[-1])
 
@@ -949,7 +950,7 @@ def get_threshold(perf_data):
                         }
 
     return threshold_values
-
+# old function where for filter to get data for configured ports
 def get_threshold_switch(perf_data,host_name ):
     threshold_values = get_threshold(perf_data) #threshold value dict from checks
     threshold_values = dict((k.lower(), v) for k, v in threshold_values.iteritems())
@@ -1236,12 +1237,12 @@ if __name__ == '__main__':
     and extracts data
 
     """
-    try:
-        memc_obj1=db_ops_module.MemcacheInterface()
-        memc_obj =memc_obj1.memc_conn
-    except:
-        print "Memcache Error",
-    key = "master_ua" + "_switch"
+    #try:
+    #    memc_obj1=db_ops_module.MemcacheInterface()
+    #    memc_obj =memc_obj1.memc_conn
+    #except:
+    #    print "Memcache Error",
+    #key = "master_ua" + "_switch"
     memcache_switch= memc_obj.get(key)
     #print memcache_switch
     configs = config_module.parse_config_obj()
