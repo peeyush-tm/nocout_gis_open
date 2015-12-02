@@ -1474,8 +1474,10 @@ class InventoryDeviceServiceDataSource(View):
                         name__in=bh_data_sources).values_list('name', flat=True))
 
                     excluded_bh_data_sources_status = [str(x)+"_state" for x in excluded_bh_data_sources]
-
                     excluded_bh_data_sources += excluded_bh_data_sources_status
+
+                    excluded_bh_data_sources_kpi = [str(x)+"_kpi" for x in excluded_bh_data_sources]
+                    excluded_bh_data_sources += excluded_bh_data_sources_kpi
 
                     is_bh = True
                 except Exception as e:
