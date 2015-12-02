@@ -62,6 +62,7 @@ class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDa
     model = Service
     required_permissions = ('service.view_service',)
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
+    search_columns = ['name', 'alias', 'parameters__parameter_description', 'description']
     order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
 
     def get_initial_queryset(self):
