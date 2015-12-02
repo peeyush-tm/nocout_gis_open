@@ -36,17 +36,30 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
         var dataTableInstance = '',
-            page_type = '';
+            page_type = '',
+            report_name = '',
+            report_id = '',
+            reset_emails_url = '',
+            reset_emails_btn_html = '<li><button title="Reset Existing Emails" id="reset_email_btn"\
+                                     class="btn btn-default btn-sm"><i class="fa fa-times text-danger"></i></button></li>';
         $(document).ready(function (e) {
-            // Add configure email btn
-            // Add 'Create Item' link on top header bar.
-            var create_link_html = '<button title="Configure Emails List" id="scheduled_email_btn"\
-                                    class="btn btn-default btn-sm"><i class="fa fa-envelope"></i></button>';
+            {% if settings.SCHEDULED_REPORT_EMAIL %}
+                // Add configure email btn
+                // Add 'Create Item' link on top header bar.
+                var create_link_html = '<li><button title="Configure Emails List" id="scheduled_email_btn"\
+                                        class="btn btn-default btn-sm"><i class="fa fa-envelope"></i></button></li>';
 
-            $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+                {% if email_exists %}
+                    create_link_html += reset_emails_btn_html;
+                {% endif %}
+
+                $('.controls_container ul').prepend(create_link_html);
+            {% endif %}
 
 
             page_type = '{{ page_type }}';
+            report_id = '{{ report_id}}';
+            reset_emails_url = "{% url 'reset_emails' %}" + '?id='+report_id;
             // Disable advance filtering
             create_advance_filters = false;
             /*Make a instance of ourDataTableWidget class */
@@ -78,6 +91,47 @@
         $('.controls_container').delegate('#scheduled_email_btn', 'click', function(){
             getExisitingEmails(function(emails_list) {
                 initEmailPopup(emails_list, true);
+            });
+        });
+
+        $('.controls_container').delegate('#reset_email_btn', 'click', function(){
+            bootbox.confirm('Are you sure you want to remove all emails for this report?', function(response) {
+                if (response) {
+                    $.ajax({
+                        url: base_url+''+reset_emails_url,
+                        type: 'GET',
+                        success: function(response) {
+                            var result = response;
+
+                            if (typeof  response == 'string') {
+                                result = JSON.parse(response);
+                            }
+
+                            if (result.success) {
+                                $('#reset_email_btn').parent('li').remove();
+                            }
+
+                            $.gritter.add({
+                                // (string | mandatory) the heading of the notification
+                                title: 'Reset Configured Emails',
+                                // (string | mandatory) the text inside the notification
+                                text: result.message,
+                                // (bool | optional) if you want it to fade out on its own or just sit there
+                                sticky: true
+                            });
+                        },
+                        error: function(err) {
+                            $.gritter.add({
+                                // (string | mandatory) the heading of the notification
+                                title: 'Reset Configured Emails',
+                                // (string | mandatory) the text inside the notification
+                                text: err.statusText,
+                                // (bool | optional) if you want it to fade out on its own or just sit there
+                                sticky: true
+                            });
+                        }
+                    });
+                }
             });
         });
 
@@ -156,9 +210,10 @@
                                     }
                                 }
                             }
+
                             var api_url = '/download_center/emailreport/';
 
-                            initMailJob(valid_mail_ids, api_url, report_id);
+                            initMailJob(valid_mail_ids, api_url, report_id, is_update_request);
                         }
                     },
                     danger: {
@@ -187,7 +242,7 @@
             return re.test(email);
         }
 
-        function initMailJob(mail_ids, api_url, report_id) {
+        function initMailJob(mail_ids, api_url, report_id, is_update_request) {
             if (!report_id) {
                 report_id = '';
             }
@@ -206,6 +261,12 @@
 
                     if (typeof response == 'string') {
                         result = JSON.parse(response);
+                    }
+
+                    if (result.success && is_update_request) {
+                        if($('#reset_email_btn').length == 0) {
+                            $('.controls_container ul li:last-child').before(reset_emails_btn_html);
+                        }
                     }
 
                     bootbox.alert(result['message']);

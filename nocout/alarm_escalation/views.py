@@ -183,17 +183,17 @@ class EmailSender(View):
         return super(EmailSender, self).dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        print 'self.request.POST', self.request.POST
-        print 'request.POST', request.POST
         # From email id.
         from_email = self.request.POST.get('from_email', None)
         # To email id.
         to_email = self.request.POST.get('to_email')
         # If multiple values then by using eval converting into list.
+        logger.exception('################type of to_email------', type(to_email))
+        to_email = str(to_email)  # Parsing to string.
         if to_email:
             if "," in to_email:
                 to_email = eval(to_email)
-            elif type(to_email) == type(str):
+            elif type(to_email) == str:
                 to_email = to_email.split(",")
         # Subject.
         subject = self.request.POST.get('subject', None)
@@ -205,12 +205,12 @@ class EmailSender(View):
         if attachment_path:
             if "," in attachment_path:
                 attachment_path = eval(attachment_path)
-            else:
-                attachment_path = attachment_path.split(",")
+            elif type(attachment_path) == str:
+                    attachment_path = attachment_path.split(",")
 
         attachments = None
         try:
-            attachments = request.FILES.values()
+            attachments = self.request.FILES.values()
         except Exception as e:
             logger.exception(e.message)
 
@@ -248,7 +248,7 @@ class EmailSender(View):
                 else:
                     # If file exist in system
                     if not os.path.isfile(x):
-                        error_messages = "file: '%s' doesn't exist \n" % (x)
+                        error_messages = "file: '%s' doesn't exist \n" % x
         else:
             result['data']['attachment_path'] = []
 

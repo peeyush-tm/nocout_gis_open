@@ -465,6 +465,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'performance.tasks.calculate_rf_network_availability',
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=25, hour=0)
+    },
+    'scheduled_email_report_task':{
+        'task': 'download_center.tasks.scheduled_email_report',
+        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
     }
 }
 
@@ -700,7 +704,6 @@ DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
 
-
 # Special Calculation Mechanism for capacity management.
 CAPACITY_SPECIFIC_TIME = 0
 
@@ -787,7 +790,8 @@ SETTINGS_EXPORT = [
     'ENABLE_CUSTOM_DASHBOARD_VIEW',
     'SHOW_RF_COLUMN',
     'NO_ONDEMAND_POLL_SDS',
-    'SINGLE_REPORT_EMAIL'
+    'SINGLE_REPORT_EMAIL',
+    'SCHEDULED_REPORT_EMAIL'
 ]
 
 # Dashbaord Settings
@@ -960,6 +964,7 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
 
 # Global variable to show/hide single report mail optin in download center listing
 SINGLE_REPORT_EMAIL = True
+SCHEDULED_REPORT_EMAIL = True
 
 # Import the local_settings.py file to override global settings
 try:

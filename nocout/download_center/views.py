@@ -2,7 +2,7 @@ import json
 from device.models import DeviceTechnology
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.db.models.query import ValuesQuerySet
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.views.generic import ListView, DetailView, FormView, View
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -46,8 +46,10 @@ class DownloadCenter(ListView):
         # get report name & title
         report_name = ''
         report_title = ''
+        email_exists = False
         try:
             report_setting_obj = ReportSettings.objects.get(page_name=page_type)
+            report_id = report_setting_obj.id
             report_name = report_setting_obj.report_name
             report_title = report_setting_obj.report_title.strip()
 
@@ -57,6 +59,13 @@ class DownloadCenter(ListView):
             if 'Report' not in report_title:
                 report_title += ' Report'
         except Exception as e:
+            pass
+
+        try:
+            emails = EmailReport.objects.filter(report_name=report_setting_obj)
+            if emails.exists():
+                email_exists = True
+        except Exception, e:
             pass
 
         if 'bs_outage_daily' in page_type:
@@ -76,7 +85,9 @@ class DownloadCenter(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['page_type'] = page_type
         context['report_name'] = report_name
+        context['report_id'] = report_id
         context['report_title'] = report_title
+        context['email_exists'] = email_exists
 
         return context
 
@@ -658,7 +669,7 @@ class EmailListUpdating(View):
     def post(self, request, *args, **kwargs):
 
         page_name = self.request.POST.get('page_name',None)
-        email_list =  self.request.POST.getlist('emails[]', None)
+        email_list = self.request.POST.getlist('emails[]', None)
         report_id = self.request.POST.get('report_id',None)
         
         if report_id:
@@ -732,5 +743,38 @@ class GetEmails(View):
             result['message'] = 'Sucessfullly loaded pre-existing values'
         return JsonResponse(result)
 
+class ResetEmailReport(View):
+    """
 
+    """
+    def get(self, request, *args, **kwargs):
+        """
 
+        :param request:
+        :param page_type:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        result = {
+            'success': 0,
+            'message': 'Emails not deleted. Please try again later.'
+        }
+
+        report_id = request.GET.get('id')
+
+        if not report_id:
+            return HttpResponse(json.dumps(result))
+
+        try:
+            emails = EmailReport.objects.filter(report_name__id=report_id)
+            if emails.exists():
+                emails.delete()
+                result = {
+                    'success': 1,
+                    'message': 'Emails deleted successfully.'
+                }
+        except Exception, e:
+            logger.exception(e)
+
+        return HttpResponse(json.dumps(result))

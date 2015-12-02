@@ -688,9 +688,6 @@ def mail_send(result):
                                 "success": 1
                             }
     """
-    logger.info('Started')
-    logger.error('Started -- ')
-    logger.info(result)
     mail = EmailMessage(result['data']['subject'], result['data']['message'],
                         result['data']['from_email'],
                         result['data']['to_email'])
