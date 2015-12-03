@@ -3838,8 +3838,11 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         # queryset
-        queryset = GISExcelDownload.objects.filter(downloaded_by=self.request.user.username).values(
-            *self.columns + ['id'])
+        queryset = GISExcelDownload.objects.filter(
+            downloaded_by=self.request.user.username
+        ).values(
+            *self.columns + ['id']
+        ).order_by('-added_on')
 
         # if self.request.user.is_superuser:
         #     queryset = GISExcelDownload.objects.filter().values(*self.columns+['id'])

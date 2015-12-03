@@ -27,6 +27,7 @@ class Migration(migrations.Migration):
                 ('uptime', models.CharField(max_length=20)),
                 ('traptime', models.CharField(max_length=30)),
                 ('component_name', models.CharField(max_length=50)),
+                ('component_id', models.CharField(default=b'NA', max_length=50, null=True, verbose_name=b'Component ID', blank=True)),
                 ('description', models.CharField(max_length=256)),
             ],
             options={
@@ -50,6 +51,7 @@ class Migration(migrations.Migration):
                 ('uptime', models.CharField(max_length=20)),
                 ('traptime', models.CharField(max_length=30)),
                 ('component_name', models.CharField(max_length=50)),
+                ('component_id', models.CharField(default=b'NA', max_length=50, null=True, verbose_name=b'Component ID', blank=True)),
                 ('description', models.CharField(max_length=256)),
             ],
             options={
@@ -73,6 +75,7 @@ class Migration(migrations.Migration):
                 ('uptime', models.CharField(max_length=20)),
                 ('traptime', models.CharField(max_length=30)),
                 ('component_name', models.CharField(max_length=50)),
+                ('component_id', models.CharField(default=b'NA', max_length=50, null=True, verbose_name=b'Component ID', blank=True)),
                 ('description', models.CharField(max_length=256)),
             ],
             options={

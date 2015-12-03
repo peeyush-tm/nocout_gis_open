@@ -72,6 +72,12 @@ def check_rici_ul_utilization(item, _no_params, info):
                 		status_list.append((port_string+str(index+1),"%.2f" % rate))
                 		infotext += "count=%s " % (link_in_octets)
 		infotext +="]"
+		try:
+			if memc:
+				key = str(g_hostname) + "_ul"
+				memc.set(key,str(status_list),300)
+		except:
+			pass
     except ValueError:
         infotext = "type_mismatch_error"
     except:

@@ -35,7 +35,7 @@
 
             // Add 'Create Item' link on top header bar.
             {% for group in user.groups.all %}
-                {% if group.name == 'group_admin' or group.name == 'group_operator' %}
+                {% if group.name == 'Admin' or group.name == 'Operator' %}
                     var create_link_html = '<a href="/network_maps/kmz/add/" title="Upload KMZ" \
                                             class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
 
