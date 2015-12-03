@@ -699,20 +699,10 @@ REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 # }
 
 
-# # Email settings.
-# DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
-# EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-# EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
-
-# Email setting
-# EMAIL_BACKEND = 'dnago.core.mail.backends.filebased.EmailBackend'
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'chanish.agarwal1@gmail.com'
-EMAIL_HOST_PASSWORD = 'bqdcetvlpqlevabk'
-DEFAULT_FROM_EMAIL = 'chanish.agarwal1@gmail.com'
-DEFAULT_TO_EMAIL = 'chanishagarwal0@gmail.com'
+# Email settings.
+DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
 
 
 # Special Calculation Mechanism for capacity management.
