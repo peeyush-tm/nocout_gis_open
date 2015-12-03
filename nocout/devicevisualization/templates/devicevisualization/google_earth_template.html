@@ -227,6 +227,8 @@
         advJustSearch = new advanceSearchMainClass();
         /*Make a instance of ourDataTableWidget class */
         dataTableInstance = new ourDataTableWidget();
+        // Show loading spinner
+        showSpinner();
         /*Call the function to create map*/
         networkMapInstance.createMap("deviceMap");
 

@@ -17,8 +17,9 @@ import subprocess
 import imp
 import sys
 import memcache
-#from handlers.db_ops import *
 import time
+#from handlers.db_ops import *
+
 
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -62,34 +63,22 @@ def main(**configs):
     duplicate data.
     """
 
-    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
-    start_time, end_time = None, None
-    #try:
-    #    db = mongo_module.mongo_conn(
-    #        host=site_spec_mongo_conf[1],
-    #        port=int(site_spec_mongo_conf[2]),
-    #        db_name=configs.get('nosql_db')
-    #    )
-    #except:
-     #   sys.stdout.write('Mongodb connection problem\n')
-      #  sys.exit(1)
     db = None
-    # get most latest sys timestamp entry present in mysql
-    #time_doc = list(db.sys_timestamp_status.find({'_id': 'performance_servicestatus'}))
-    #for doc in time_doc:
-    #    start_time = doc.get('sys_timestamp')
-    #print start_time ,end_time
-    # Get all the entries from mongodb having timestam0p greater than start_time
-    docs = read_data(start_time, end_time, db)
+    try:
+    	db = utility_module.mysql_conn(configs=configs)
+    except Exception,e:
+	print e
+	return
+    docs = read_data()
     print len(docs)
     if docs:
-    	insert_data(configs.get('table_name'), docs, configs=configs)
+    	insert_data(configs.get('table_name'), docs, db,configs)
     	print "Data inserted into my mysql db"
     else:
 	    print "No data in mongo db in this time frame"
 
 
-def read_data(start_time, end_time, db):
+def read_data():
     """
     Function to read data from mongodb
 
@@ -103,26 +92,6 @@ def read_data(start_time, end_time, db):
 
     #db = None
     docs = [] 
-    #db = mongo_module.mongo_conn(
-    #    host=kwargs.get('configs')[1],
-    #    port=int(kwargs.get('configs')[2]),
-    #    db_name=kwargs.get('db_name')
-    #)
-    #if db:
-        #if start_time is None:
-            # read data from status, initially
-        #    start_time = end_time - timedelta(minutes=10)
-        #    cur = db.device_service_status.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
-        #elif (start_time + timedelta(minutes=15)) < end_time:
-            # data in mysql is older than mongo data by more than half an hour
-            # so we need to read data from live mongo collection, rather than status
-        #    if (start_time + timedelta(days=1) < end_time):
-                # max time range for data sync is 1 day 
-        #        start_time = end_time - timedelta(days=1)
-	    #rds_obj = RedisInterface()
-        #    cur = db.service_perf.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
-        #else:
-            # we should read from status rather than live
     key = nocout_site_name + "_service"
     current_time = datetime.now()
     doc_len_key = key + "_len"
@@ -223,7 +192,7 @@ def build_data(doc):
         #t = ()
     return t
 
-def insert_data(table, data_values, **kwargs):
+def insert_data(table, data_values, db,configs):
     """
     Function to insert data into mysql tables
 
@@ -233,8 +202,9 @@ def insert_data(table, data_values, **kwargs):
 
     Kwargs:
         kwargs (dict): Python dict to store connection variables
-    """   
-    db = utility_module.mysql_conn(configs=kwargs.get('configs'))
+    """  
+    if not db.is_connected():
+	db = utility_module.mysql_conn(configs=configs)
     query = "INSERT INTO `%s` " % table
     query += """
             (device_name, service_name, machine_name, 

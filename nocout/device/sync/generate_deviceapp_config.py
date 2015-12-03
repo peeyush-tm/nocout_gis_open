@@ -9,14 +9,12 @@ from pprint import pformat
 
 from celery.utils.log import get_task_logger
 
+from mysql_connection import mysql_conn
+
 logger = get_task_logger(__name__)
 info, warning, error = (
 		logger.info, logger.warning, logger.error
 		)
-
-
-from mysql_connection import mysql_conn
-
 
 pmp_ss_bs_checks = ['cambium_ul_jitter', 'cambium_reg_count', 'cambium_rereg_count', 'cambium_ul_rssi']
 
@@ -83,7 +81,7 @@ def prepare_hosts_file():
                 'radwin_bs_devices', 'wimax_ss_devices', 
                 'cambium_ss_devices', 'radwin_ss_devices', 
                 'total_radwin_devices', 'mrotek_devices',
-                'rici_devices', 'switch_devices'
+                'rici_devices', 'cisco_switch_devices', 'juniper_switch_devices'
                 ])
     all_hosts, ipaddresses, host_attributes = [], {}, {}
     wimax_bs_devices, cambium_bs_devices = [], []
@@ -111,8 +109,8 @@ def prepare_hosts_file():
     T.cambium_ss_devices = ss_devices.cambium_ss_devices
     T.mrotek_devices = devices_plus_backhaul.mrotek_devices
     T.rici_devices = devices_plus_backhaul.rici_devices
-    T.switch_devices = devices_plus_backhaul.switch_devices
-
+    T.cisco_switch_devices = devices_plus_backhaul.cisco_switch_devices
+    T.juniper_switch_devices = devices_plus_backhaul.juniper_switch_devices
     write_hosts_file(devices_plus_backhaul.all_hosts, 
             devices_plus_backhaul.ipaddresses, 
             devices_plus_backhaul.host_attributes)
@@ -165,7 +163,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     device_device.is_deleted=0 and
     device_device.host_state <> 'Disable'
     and 
-    device_devicetype.name in ('Switch', 'RiCi', 'PINE')
+    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE')
     group by device_device.ip_address
     ;
     """
@@ -187,17 +185,20 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
         db.close()
 
     # Processing backhaul configured on devices
-    mrotek_devices, rici_devices, switch_devices = [], [], []
+    mrotek_devices, rici_devices, cisco_switch_devices, juniper_switch_devices = [], [], [],[]
     processed = []
+    cisco_juniper = ['cisco','juniper']
     hosts_only = open('hosts.txt', 'a')
     for device in data:
-        if str(device[2].lower()) == 'switch':
+        if str(device[2].lower()) == 'cisco':
         	port_wise_capacities = [0]*26
+	elif str(device[2].lower()) == 'juniper':
+		port_wise_capacities = [0]*52
         else:
         	port_wise_capacities = [0]*8
         if  str(device[1]) in processed:
             continue
-        if '_' in str(device[8]):
+        if '_' in str(device[8]) and str(device[2].lower()) not in cisco_juniper :
             try:
                 int_ports = map(lambda x: x.split('_')[-1], device[8].split('$$'))
                 capacities = device[10].split('$$') if device[10] else device[10]
@@ -205,13 +206,44 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
                     port_wise_capacities[int(p_n)-1] = p_cap
             except (IndexError, TypeError, AttributeError) as err:
                 port_wise_capacities = [0]*8
-                warning('Err in port wise caps: {0}'.format(err))
+                #print err
+
+        if str(device[2].lower()) == 'cisco':
+            try :
+                int_ports = map(lambda x: x.split('/')[-1], device[9].split(','))
+                int_ports = map(lambda x: int(x), int_ports)   #convert int type
+                int_string = map(lambda x: x.split('/')[0], device[9].split(','))
+                for i in xrange(len(int_string)):
+                    if int_string[i]== 'Gi0':
+                        int_ports[i]= int_ports[i]+24
+                capacities = device[10].split(',') if device[10] else device[10]
+                for p_n, p_cap in zip(int_ports, capacities):
+                    port_wise_capacities[int(p_n)-1] = p_cap
+            except Exception as e:
+                port_wise_capacities = [0]*8
+        if str(device[2].lower()) == 'juniper':
+           try:
+               int_ports = map(lambda x: x.split('/')[-1], device[9].split(','))
+               int_ports = map(lambda x: int(x), int_ports)   #convert int type
+               int_ports_s = map(lambda x: x.split('/')[-2], device[9].split(','))
+               int_ports_s = map(lambda x: int(x), int_ports_s)
+               for i in xrange(len(int_ports_s)):
+                   if int_ports_s[i]== 1:
+                       int_ports[i]=int_ports[i]+48
+               capacities = device[10].split(',') if device[10] else device[10]
+               for p_n, p_cap in zip(int_ports, capacities):
+                   port_wise_capacities[int(p_n)] = p_cap
+           except Exception as e:
+               port_wise_capacities = [0]*8
+
         if str(device[2].lower()) == 'pine':
             mrotek_devices.append((device[1], device[5], port_wise_capacities))
         elif str(device[2].lower()) == 'rici':
             rici_devices.append((device[1], device[5], port_wise_capacities))
-        elif str(device[2].lower()) == 'switch':
-            switch_devices.append((device[1], device[5], port_wise_capacities))
+        elif str(device[2].lower()) == 'cisco':
+            cisco_switch_devices.append((device[1], device[5], port_wise_capacities))
+        elif str(device[2].lower()) == 'juniper':
+	    juniper_switch_devices.append((device[1], device[5], port_wise_capacities))
         hosts_only.write(str(device[1]) + '\n')
         processed.append(str(device[1]))
         # get all disabled services on this host, if any
@@ -235,8 +267,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     T.all_hosts, T.ipaddresses = all_hosts, ipaddresses
     T.host_attributes = host_attributes
     T.mrotek_devices, T.rici_devices = mrotek_devices, rici_devices
-    T.switch_devices = switch_devices
-
+    T.cisco_switch_devices, T.juniper_switch_devices  = cisco_switch_devices, juniper_switch_devices
     return T
 
 

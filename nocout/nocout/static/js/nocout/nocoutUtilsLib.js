@@ -225,7 +225,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
     table_string += '<table id="' + service_id + '_'+ table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
-        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+        table_string += '<th><b>' + grid_headers[i].toUpperCase() + '</b></th>';
         excel_columns.push(i);
     }
     table_string += '</thead></table>';
@@ -258,7 +258,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         },
         bPaginate: true,
         bDestroy: true,
-        aaSorting : [[0, 'desc']],
+        aaSorting : [[2, 'desc']],
         sPaginationType: "full_numbers"
     });
 }
@@ -491,13 +491,16 @@ function addDataToChartTable_nocout(table_obj, table_id) {
                 if (inner_data) {
                     if (inner_data.constructor === Array) {
                         if (inner_data[0]) {
-                            row_val.push(new Date(inner_data[0]).toLocaleString());
+                            var formatted_datetime = getFormattedDate(inner_data[0]);
+                            
+                            row_val.push(formatted_datetime);
                             var chart_val = inner_data[1];
                             row_val.push(chart_val);
                         }
                     } else if (inner_data.constructor === Object) {
                         if (inner_data.x) {
-                            row_val.push(new Date(inner_data.x).toLocaleString());
+                            var formatted_datetime = getFormattedDate(inner_data.x);
+                            row_val.push(formatted_datetime);
                             var chart_val = inner_data.y;
                             row_val.push(chart_val);
                         }
@@ -566,6 +569,8 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         exported_filename = 'Performance Chart'
     }
 
+    var reset_zoom_position = {x: -35, y: 0};
+
     // Create yAxis data as per the given params
     if (typeof chartConfig.valuetext == 'string' || chartConfig['is_single']) {
         var title_txt = chartConfig.valuetext;
@@ -583,6 +588,9 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
             reversed : is_y_inverted
         };
     } else if(chartConfig['valuetext'] && chartConfig['valuetext'].length) {
+        if (chartConfig.valuetext.length > 1) {
+            reset_zoom_position = {x: 15, y: 0};
+        }
         yAxisObj = [];
         for(var i=0;i<chartConfig.valuetext.length;i++) {
             var opposite = false;
@@ -609,6 +617,9 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     var chart_options = {
         chart: {
             zoomType: 'x',
+            resetZoomButton: {
+                position: reset_zoom_position
+            },
             type: chartConfig.type,
             events : {
                 load : function(evt) {
@@ -668,6 +679,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         exporting:{
             // url:'http://localhost:8080/highcharts-export-web/',
             enabled : true,
+            allowHTML: true,
             sourceWidth: 950,
             sourceHeight: 375,
             filename: exported_filename
@@ -689,7 +701,12 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                     };
 
                     try {
-                        tooltip_string = '<b>' + this_date.toLocaleString(date_str_options).toUpperCase()+ '</b>';
+                        var formatted_time = getFormattedDate(this.x);
+                        if (formatted_time) {                            
+                            tooltip_string = '<b>' + formatted_time + '</b>';
+                        } else {
+                            tooltip_string = '<b>' + this_date.toLocaleString()+ '</b>';
+                        }
                     } catch(e) {
                         tooltip_string = '<b>' + this_date.toLocaleString()+ '</b>';
                     }
@@ -793,7 +810,7 @@ function createTableHtml_nocout(dom_id, table_headers, table_data) {
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
-        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+        table_string += '<th><b>' + grid_headers[i].toUpperCase() + '</b></th>';
     }
 
     table_string += '</thead><tbody>';
@@ -834,12 +851,19 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
 
     /*Make table headers*/
     for (var i = 0; i < chartObj.length; i++) {
-        data_in_table += '<td colspan="2" align="center"><b>' + chartObj[i].name + '</b></td>';
+        data_in_table += '<th colspan="2" style="text-align: center;"><b>' + chartObj[i].name + '</b></th>';
     }
     data_in_table += '</tr><tr>';
 
     for (var i = 0; i < chartObj.length; i++) {
-        data_in_table += '<td><em>Time</em></td><td><em>Value</em></td>';
+        var name = '';
+        try {
+            splitted_chart_name = chartObj[i].name.split(':')
+            name = $.trim(splitted_chart_name[0]);
+        } catch(e) {
+            name = $.trim(chartObj[i].name);
+        }
+        data_in_table += '<th><em>Time ('+ name +')</em></th><th><em>Value ('+ name +')</em></th>';
     }
 
     data_in_table += '</tr></thead><tbody>';
@@ -856,10 +880,12 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
                 val = "";
             if (inner_data) {
                 if (inner_data instanceof Array) {
-                    time_val = new Date(inner_data[0]).toLocaleString();
+                    time_val = getFormattedDate(inner_data[0]);
+                    // time_val = new Date(inner_data[0]).toLocaleString();
                     val = inner_data[1];
                 } else {
-                    time_val = new Date(inner_data.x).toLocaleString();
+                    time_val = getFormattedDate(inner_data.x);
+                    // time_val = new Date(inner_data.x).toLocaleString();
                     val = inner_data.y;
                 }
             }
@@ -938,9 +964,13 @@ function nocout_livePollCurrentDevice(
                     critical_threshold = meta_info && meta_info["critical"] ? meta_info["critical"] : "",
                     dateObj = new Date(),
                     epoch_time = dateObj.getTime(),
-                    month = Number(dateObj.getMonth()) + 1,
-                    date_str = dateObj.getDate() + "-" + month + "-" + dateObj.getFullYear(),
-                    time_str = dateObj.getHours() + ":" + dateObj.getMinutes() + ":" + dateObj.getSeconds(),
+                    current_date = dateObj.getDate() > 9 ? dateObj.getDate() : '0' + String(dateObj.getDate()),
+                    month = Number(dateObj.getMonth()) + 1 > 9 ? Number(dateObj.getMonth()) + 1 : '0' + String(Number(dateObj.getMonth()) + 1),
+                    date_str = current_date + "-" + month + "-" + dateObj.getFullYear(),
+                    current_hour = dateObj.getHours() > 9 ? dateObj.getHours() : '0' + String(dateObj.getHours()),
+                    current_minutes = dateObj.getMinutes() > 9 ? dateObj.getMinutes() : '0' + String(dateObj.getMinutes()),
+                    current_second = dateObj.getSeconds() > 9 ? dateObj.getSeconds() : '0' + String(dateObj.getSeconds()),
+                    time_str = current_hour + ":" + current_minutes + ":" + current_second,
                     current_time = date_str + " " + time_str,
                     fetched_data = true;
 
@@ -1587,7 +1617,11 @@ function nocout_pausePollNow() {
  */
 function nocout_destroyDataTable(domId) {
 
-    if (!domId || $('#' + domId).length == 0) {
+    if (!domId) {
+        return true;
+    }
+
+    if ($('#' + domId).length == 0 && $('table[id*="' + domId + '"]').length == 0) {
         return true;
     }
 
@@ -1670,9 +1704,16 @@ function getRequiredTabId(help_txt) {
 
     for (var i=0;i<inner_tabs.length;i++) {
         var tab_id = $(inner_tabs[i]).children('a')[0].id;
-        if (tab_id.indexOf(help_txt) > -1) {
-            required_tab_id = tab_id;
-            break;
+        if (help_txt == 'hourly') {
+            if (tab_id.indexOf(help_txt) > -1 && tab_id.indexOf('bihourly') == -1) {
+                required_tab_id = tab_id;
+                break;
+            }
+        } else {
+            if (tab_id.indexOf(help_txt) > -1) {
+                required_tab_id = tab_id;
+                break;
+            }
         }
     }
 
@@ -1976,3 +2017,28 @@ $('#status_container').delegate('#final_status_table .severity_block', 'click', 
         }
     }
 });
+
+/**
+ * This function formats given date object in DD/MM/YY HH:MM(24 Hrs)
+ * @method getFormattedDate
+ * @param input_date {Object}, It contains date object
+ * @return formatted_date {String}, It contains the formatted date string
+ */
+function getFormattedDate(input_date) {
+    var formatted_date = '';
+
+    try {
+        var fetched_datetime = new Date(input_date),
+            fetched_day = fetched_datetime.getDate() > 9 ? fetched_datetime.getDate() : '0' + String(fetched_datetime.getDate()),
+            fetched_month = fetched_datetime.getMonth() + 1 > 9 ? fetched_datetime.getMonth() + 1 : '0' + String(fetched_datetime.getMonth() + 1),
+            fetched_year = String(fetched_datetime.getYear()).substr(-2),
+            fetched_hours = fetched_datetime.getHours() > 9 ? fetched_datetime.getHours() : '0' + String(fetched_datetime.getHours()),
+            fetched_minutes = fetched_datetime.getMinutes() > 9 ? fetched_datetime.getMinutes() : '0' + String(fetched_datetime.getMinutes());
+
+        formatted_date = fetched_day + '/' + fetched_month + '/' + fetched_year + ' ' + fetched_hours + ':' + fetched_minutes;
+    } catch(e) {
+        // console.error(e);
+    }
+
+    return formatted_date;
+}

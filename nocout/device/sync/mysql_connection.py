@@ -1,24 +1,12 @@
-import mysql.connector
+"""  Module to handle mysql connection for sync api"""
 
-from django.conf import settings
+from django.db import connection
 
 def mysql_conn():
-	conf = {
-			'HOST': 'localhost',
-			'USER': 'root',
-			'PASSWORD': 'root',
-			'NAME': 'nocout_m6_v2',
-			'PORT': 3306
-			}
-	conf = settings.DATABASES['default']
-	db = mysql.connector.connect(
-						host=conf.get('HOST'),
-						user=conf.get('USER'),
-						password=conf.get('PASSWORD'),
-						database=conf.get('NAME'),
-						port=conf.get('PORT')
-						)
-	return db
+	"""  Function to return mysql connection to execute raw MySQL
+	queries through django"""
+
+	return connection
 
 def dict_rows(cursor):
    desc = cursor.description

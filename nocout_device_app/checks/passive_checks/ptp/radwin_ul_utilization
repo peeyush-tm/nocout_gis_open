@@ -67,6 +67,12 @@ def check_radwin_ul_utilization(item, _no_params, info):
 		except MKCounterWrapped:
 			wrapped=True
                 status_list.append((if_name, "%.2f" % rate))
+		try:
+			if memc:
+				key = g_hostname + "_ul"
+				memc.set(key,rate,360)
+		except:
+			pass
             for name, rate in status_list:
                 infotext += "ul_utilization: [time=%s count=%s]" % (this_time, link_in_octets)
             state = 0

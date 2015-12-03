@@ -761,7 +761,7 @@ DISPLAY_SEVERITY_PIE_CHART = False
 
 # #### Enable Disable Service Impacting Alarms from GUI.
 # Version 1 : 25th March 2015
-SIA_ENABLED = False
+SIA_ENABLED = True
 TRAPS_DATABASE = 'default'
 # #### Enable Disable Service Impacting Alarms from GUI.
 
@@ -952,7 +952,11 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
     'wimax_ss_vlan_invent_ss_vlan',
     'wimax_transmit_power_pmp1_invent_transmit_power_pmp1',
     'wimax_transmit_power_pmp2_invent_transmit_power_pmp2',
-    'wimax_ul_intrf_ul_intrf'
+    'wimax_ul_intrf_ul_intrf',
+    'cisco_switch_ul_util_kpi_fa0_6',
+    'cisco_switch_ul_util_kpi_fa0_24',
+    'cisco_switch_dl_util_kpi_fa0_6',
+    'cisco_switch_dl_util_kpi_fa0_24'
 ])
 
 # Import the local_settings.py file to override global settings
