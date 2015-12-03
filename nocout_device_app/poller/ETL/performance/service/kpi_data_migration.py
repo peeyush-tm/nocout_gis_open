@@ -35,7 +35,7 @@ def main(**configs):
 	return
     docs = read_data()
     if docs:
-    	insert_data(configs.get('table_name'), docs, db)
+    	insert_data(configs.get('table_name'), docs, db,configs)
     	print "Data inserted into performance_utilization table"
     else:
 	print "No data in the mongo db in this time frame"
@@ -145,7 +145,7 @@ def build_data(doc):
 	t = ()
 	return values_list
 
-def insert_data(table, data_values,db):
+def insert_data(table, data_values,db,configs):
 	"""
 	function for building the data based on the collected record from mongodb database for inventory services.
 	Arg: table (mysql database table name)
@@ -153,6 +153,9 @@ def insert_data(table, data_values,db):
 	Return : None
 	Raises: mysql.connector.Error
 	"""
+	if not db.is_connected():
+    	    db = utility_module.mysql_conn(configs=configs)
+		
 	query = 'INSERT INTO `%s` ' % table
 	query += """
                 (device_name,service_name,sys_timestamp,check_timestamp,

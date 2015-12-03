@@ -14,9 +14,11 @@ import re
 from ast import literal_eval
 from nocout import get_parent
 import mysql.connector
-import memcache
+import memcache,imp
 logger = nocout_log()
 
+
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % get_site_name())
 
 try:
 	import nocout_settings
@@ -122,14 +124,7 @@ def get_current_value_old(current_values, device=None, service=None, data_source
     return current_values
 
 
-def memcache_connection():
-    try:
-	        memc = memcache.Client(['10.133.19.165:11211','10.133.12.163:11211'], debug=1)
-    except:
-	        memc =None
-    return memc
-
-def get_current_value(q,device=None, service_list=None, data_source_list=None, bs_name_ss_mac_mapping=None, ss_name_mac_mapping=None,is_first_call=0):
+def get_current_value(q,device=None, service_list=None, data_source_list=None, bs_name_ss_mac_mapping=None, ss_name_mac_mapping=None):
      #response = []
      # Teramatrix poller on which this device is being monitored
      site_name = get_site_name()
@@ -403,7 +398,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				else:
 					key = "".join([old_device,"_",service])
 				key =key.encode('ascii','ignore')
-				memc = memcache_connection()
+				memc_obj = db_ops_module.MemcacheInterface()
+				memc = memc_obj.memc_conn
 				key_value = ""
 				if is_first_call:
 					util_list = [this_time,this_value]

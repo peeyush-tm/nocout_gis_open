@@ -31,7 +31,7 @@ var mapInstance = "",
 	green_status_array = ['ok','success','up'],
     red_status_array = ['critical','down'],
     orange_status_array = ['warning'],
-    ptp_tech_list = ['ptp','p2p','ptp bh'],
+    ptp_tech_list = ['ptp','p2p','ptp bh','ptp-bh'],
     search_element_bs_id = [],
     meter_unit_fields = [
     	'radwin_link_distance_invent_link_distance'
@@ -48,8 +48,9 @@ var mapInstance = "",
 	],
     india_center_lon = 79.0900,
     india_center_lat = 21.1500,
-    posLink1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
-	posLink2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId",
+    posLink1 = "https://121.244.244.23/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
+	posLink2 = "https://liferay/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId",
+	svp_link = "http://172.31.6.73/ipservices/wirelessintegrate/integratesv.php?viznet_id",
 	ptp_not_show_items = ['pe_ip'],
 	tech_list = ['PMP', 'PTP', 'P2P', 'WiMAX'];
 
@@ -3159,6 +3160,10 @@ function devicePlottingClass_gmap() {
 				if(ss_circuit_id) {
 					pos1 = "<a href='"+posLink1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a>";
 					pos2 = "<a href='"+posLink2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a>";
+					
+					tools_html += "<a href='"+svp_link+"="+ss_circuit_id+"' title='SVP' class='svp_link text-danger' target='_blank'> \
+								  SVP\
+								  </a>";
 				}
 
 				if(farend_perf_url) {
@@ -3839,7 +3844,7 @@ function devicePlottingClass_gmap() {
 			/*Fresnel template String*/
 			var leftSlider = '<div class="col-md-2" align="center">\
 							  <div class="col-md-8 col-md-offset-2">\
-						 	  <input type="text" style="width:73%;float:left;" id="antinaVal1" class="form-control" value="'+antenaHight1+'"> \
+						 	  <input type="text" style="width:73%;float:left;background: #FFF;" id="antinaVal1" class="form-control" value="'+antenaHight1+'" disabled> \
 						 	  <span style="top:5px;position:relative;">m</span>\
 						 	  </div><div class="clearfix"></div>\
 						 	  <div id="antina_height1" style="height:300px;" class="slider slider-blue"></div>'+left_str+'</div>';
@@ -3880,7 +3885,7 @@ function devicePlottingClass_gmap() {
 							   <div class="col-md-4 col-md-offset-3">\
 							   <div id="clear-factor" class="slider slider-red"></div>\
 							   </div><div class="col-md-2">\
-							   <input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'">\
+							   <input type="text" id="clear-factor_val" style="background: #FFF;" class="form-control" disabled value="'+clear_factor+'">\
 							   </div><div class="clearfix"></div></div>\
 							   <div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div>\
 							   <div class="clearfix divide-10"></div>\
@@ -3888,7 +3893,7 @@ function devicePlottingClass_gmap() {
 			
 			var rightSlider = '<div class="col-md-2" align="center">\
 							   <div class="col-md-8 col-md-offset-2">\
-							   <input type="text" id="antinaVal2" style="width:73%;float:left;" class="form-control" value="'+antenaHight2+'">\
+							   <input type="text" id="antinaVal2" style="width:73%;float:left;background: #FFF;" class="form-control" disabled value="'+antenaHight2+'">\
 							   <span style="top:5px;position:relative;">m</span>\
 							   </div><div class="clearfix"></div>\
 							   <div id="antina_height2" class="slider slider-blue" style="height:300px;"></div>'+right_str+'</div>';

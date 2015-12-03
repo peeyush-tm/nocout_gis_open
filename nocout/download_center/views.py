@@ -137,7 +137,12 @@ class DownloadCenterListing(BaseDatatableView):
 
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ProcessedReportDetails.objects.filter(report_name=report_name).values(*self.columns+['id'])
+        
+        qs = ProcessedReportDetails.objects.filter(
+            report_name=report_name
+        ).values(*self.columns+['id']).order_by('-report_date')
+
+        return qs
 
     def prepare_results(self, qs):
         """
@@ -546,7 +551,6 @@ class BSOutageCustomReportListing(BaseDatatableView):
     ]
 
     order_columns = columns
-    report_name_list = ['DailyRawBaseStationOutage']
     report_ids = list()
 
     def filter_queryset(self, qs):
@@ -581,18 +585,8 @@ class BSOutageCustomReportListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        return self.model.objects.filter(processed_report__in=self.report_ids).values(*self.columns)
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        start_time = request.GET.get('start_time')
-        end_time = request.GET.get('end_time')
+        start_time = self.request.GET.get('start_date')
+        end_time = self.request.GET.get('end_date')
 
         if start_time and end_time:
             start_time_obj = datetime.datetime.fromtimestamp(float(start_time))
@@ -602,11 +596,35 @@ class BSOutageCustomReportListing(BaseDatatableView):
             end_time_obj = datetime.datetime.now()
 
         # Fetch report ids as per the selected date range
-        self.report_ids = list(ProcessedReportDetails.objects.filter(
-                        report_name__in=self.report_name_list,
+        report_ids = list(ProcessedReportDetails.objects.filter(
+                        report_name__in=['DailyRawBaseStationOutage'],
                         report_date__gte=start_time_obj,
                         report_date__lte=end_time_obj
                     ).values_list('id', flat=True))
+
+        qs = BSOutageMasterDaily.objects.filter(processed_report__in=report_ids).values(*self.columns)
+
+        return qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
+        request = self.request
+        self.initialize(*args, **kwargs)
         
         qs = self.get_initial_queryset()
 

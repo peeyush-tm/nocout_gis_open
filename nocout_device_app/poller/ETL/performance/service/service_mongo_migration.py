@@ -72,7 +72,7 @@ def main(**configs):
     docs = read_data()
     print len(docs)
     if docs:
-    	insert_data(configs.get('table_name'), docs, db)
+    	insert_data(configs.get('table_name'), docs, db,configs)
     	print "Data inserted into my mysql db"
     else:
 	    print "No data in mongo db in this time frame"
@@ -192,7 +192,7 @@ def build_data(doc):
         #t = ()
     return t
 
-def insert_data(table, data_values, db):
+def insert_data(table, data_values, db,configs):
     """
     Function to insert data into mysql tables
 
@@ -202,7 +202,9 @@ def insert_data(table, data_values, db):
 
     Kwargs:
         kwargs (dict): Python dict to store connection variables
-    """   
+    """  
+    if not db.is_connected():
+	db = utility_module.mysql_conn(configs=configs)
     query = "INSERT INTO `%s` " % table
     query += """
             (device_name, service_name, machine_name, 

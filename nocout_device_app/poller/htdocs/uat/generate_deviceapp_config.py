@@ -8,6 +8,10 @@ from datetime import datetime
 import memcache
 import imp
 
+from celery import Celery
+from celery.utils.celery_sentinel import register_celery_alias
+register_celery_alias('redis-sentinel')
+
 nocout_site_name= 'master_UA'
 db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
@@ -71,6 +75,46 @@ t_interval_s_type = {
         }
 
 wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
+
+
+def send_task_message(sentinels):
+    """ Sends task message on appropriate broker"""
+    class CeleryConfig(object):
+        #BROKER_URL = 'redis://10.133.19.165:6381/15'
+	SERVICE_NAME = 'mymaster'
+	# options needed for celery broker connection
+	BROKER_TRANSPORT_OPTIONS = {
+		'service_name': 'mymaster',
+		'sentinels': sentinels,
+		'min_other_sentinels': 2,
+		'db': 15
+	}
+        BROKER_URL = 'redis-sentinel://'
+    celery = Celery()
+    try:
+	    celery.config_from_object(CeleryConfig)
+	    celery.send_task('load-inventory')
+    except Exception as exc:
+	print 'Error in calling task load-inventory'
+	print exc
+
+
+def call_load_inventory():
+    # machines we need to send tasks to
+    machines = ['dev']
+    for m in machines:
+        sentinels = get_sentinels_for_machine(m)
+        send_task_message(sentinels)
+
+
+def get_sentinels_for_machine(m):
+	mapping = {
+		'dev': [
+			('10.133.19.165', 26379),
+			('10.133.19.165', 26380)
+		]
+	}
+	return mapping.get(m)
 
 
 def prepare_hosts_file():
@@ -211,9 +255,12 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
                 int_ports = map(lambda x: int(x), int_ports)   #convert int type
                 int_string = map(lambda x: x.split('/')[0], device[9].split(','))
                 for i in xrange(len(int_string)):
-                    if int_string[i]== 'Gi0':
+                    #if int_string[i]== 'Gi0':
+                    if 'gi' in int_string[i].lower():
                         int_ports[i]= int_ports[i]+24
                 capacities = device[10].split(',') if device[10] else device[10]
+                if len(int_string)>1:  # to multiple kpi for ring ports
+                    capacities.append(capacities[0])
                 for p_n, p_cap in zip(int_ports, capacities):
                     port_wise_capacities[int(p_n)-1] = p_cap
             except Exception as e:
@@ -228,6 +275,8 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
                    if int_ports_s[i]== 1:
                        int_ports[i]=int_ports[i]+48
                capacities = device[10].split(',') if device[10] else device[10]
+               if len(int_string)>1: # for ring port extra capcity added
+                   capacities.append(capacities[0])
                for p_n, p_cap in zip(int_ports, capacities):
                    port_wise_capacities[int(p_n)] = p_cap
            except Exception as e:
@@ -736,9 +785,49 @@ def dict_to_redis_hset(r, hkey, dict_to_store):
     return all([r.hset(hkey, k, v) for k, v in dict_to_store.items()])
 
 def get_settings():
-    query1 = """
-     select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as device left join (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  )  where device.device_type IN (12,18) and backhaul.bh_port_name <> 'NULL';
-    """ 
+
+    #query1 = """
+    # select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as device left join
+    # (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  )  where device.device_type IN (12,18) 
+    #and backhaul.bh_port_name <> 'NULL';
+    #"""
+
+
+    query2 = """
+select
+	bh_device.device_name,
+	
+	GROUP_CONCAT(bs.bh_port_name separator '|-|-') as bh_ports
+	
+from
+	inventory_basestation as bs
+left join
+	inventory_backhaul as bh
+on
+	bs.backhaul_id = bh.id
+left join
+	device_device as bh_device
+ON
+	bh_device.id = bh.bh_configured_on_id
+left join
+	device_devicetype as dtype
+ON
+	dtype.id = bh_device.device_type
+left join
+	service_servicedatasource as sds
+ON
+	lower(sds.name) = lower(bs.bh_port_name)
+	OR
+	lower(sds.alias) = lower(bs.bh_port_name)
+	OR
+	lower(sds.name) = lower(replace(bs.bh_port_name, '/', '_'))
+	OR
+	lower(sds.alias) = lower(replace(bs.bh_port_name, '/', '_'))
+WHERE
+	lower(dtype.name) in ('juniper', 'cisco')
+group by
+	bh_device.id;
+""" 
     global snmp_check_interval
     snmp_communities_db, snmp_ports_db = [], []
     data = []
@@ -756,8 +845,11 @@ def get_settings():
         cur = db.cursor()
         cur.execute(query)
         data = dict_rows(cur)
-        cur.execute(query1)
-        data1 = cur.fetchall()
+        #cur.execute(query1)
+        #data1 = cur.fetchall()  # from back_haul
+	#print "data ", data1
+	cur.execute(query2)
+	data2 = cur.fetchall()  # from basestation
         # print "data1 is ", data1
         cur.close()
         #logger.error('data in get_settings: ' + pformat(data))
@@ -771,9 +863,14 @@ def get_settings():
     #memc_obj= MemcacheInterface()
     #redis_obj=db_ops_module.RedisInterface()
     #rds_cnx=redis_obj.redis_cnx
-    dict2 = [(key,value.replace("/", "_")) for key, value in data1] # conversion of "/" into "_"
-    dict_switch = dict(dict2)
-    #print dict_switch
+    #dict2 = [(key,value.replace("/", "_")) for key, value in data1 if value] # conversion of "/" into "_"  from backhual
+    #dict_switch = dict(dict2)  # back_hual dict
+    #print "back_hual", dict_switch    
+    dict3 = [(key,value.replace("/", "_")) for key, value in data2 if value] # for basestation
+    dict_switch = dict(dict3) # for basestation 
+    #dict_switch.update(dict_switch2) # back_haul dict updated with basestation dict
+    #print "dict is_bas ", dict_switch2
+    #print "dict is ", dict_switch
     key = "master_ua" + "_switch"
     #print  [rds_cnx.hset(key, k, v) for k, v in dict_switch.items()]
     #print rds_cnx.hgetall(key)
@@ -1308,3 +1405,5 @@ def main():
 if __name__ == '__main__':
    
     main()
+    # call load inventory tasks by sending message to brokers on Prd servers
+    call_load_inventory()

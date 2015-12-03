@@ -93,9 +93,7 @@ class DatatableSearchMixin(object):
             try:
                 qs = qs.filter(q)
             except Exception, e:
-                print ' == e == '
-                print q
-                print ' == e == '
+                pass
         
         return self.advance_filter_queryset(qs)
 

@@ -63,6 +63,7 @@ def live_query_switch_ul_util_kpi(hostname,site,war,crit,qos,memc):
 			ul_kpi =  ul_util_dict[entry]
 			try:
 				ul_kpi = (float(ul_kpi)/float(qos_value[index-1])) *100
+				entry = entry+"_kpi"
 				tup1 = (entry,ul_kpi, index )
 				dict1_kpi.append(tup1)
 				#max_tuple = max(dict1_kpi, key = lambda x:x[1])
@@ -71,8 +72,9 @@ def live_query_switch_ul_util_kpi(hostname,site,war,crit,qos,memc):
 				continue
 	max_tuple = max(dict1_kpi, key = lambda x:x[1])
 	ul_kpi = max_tuple[1]
+	ul_kpi = round(ul_kpi,2)
 	if ul_kpi or ul_kpi ==0:
-		perf += str(max_tuple[0]) + "=%s;%s;%s;%s " % (max_tuple[1],war,crit,qos_value[max_tuple[2]-1])
+		perf += str(max_tuple[0]) + "=%s;%s;%s;%s " % (ul_kpi,war,crit,qos_value[max_tuple[2]-1])
 		if ul_kpi >= crit:
 			crit_flag = 1
 		elif ul_kpi >= war and ul_kpi < crit:

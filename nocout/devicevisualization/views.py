@@ -8,7 +8,7 @@ from django.template import RequestContext
 import logging
 from zipfile import ZipFile
 import glob
-from nocout.settings import MEDIA_ROOT, MEDIA_URL, LIVE_POLLING_CONFIGURATION, PERIODIC_POLL_PROCESS_COUNT
+from nocout.settings import MEDIA_ROOT, MEDIA_URL, LIVE_POLLING_CONFIGURATION, PERIODIC_POLL_PROCESS_COUNT, DATE_TIME_FORMAT
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView, View
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -473,40 +473,40 @@ class PointToolClass(View):
         if point_data:
             point_data = json.loads(point_data)
             # point_data = json_loads(point_data)
-            if(int(point_data["is_delete_req"]) > 0) :
-                GISPointTool.objects.filter(pk=point_data['point_id']).delete()
+            if(int(point_data.get("is_delete_req", 0)) > 0) :
+                GISPointTool.objects.filter(pk=point_data.get('point_id')).delete()
                 result["data"]["point_id"] = 0
                 result["success"] = 1
                 result["message"] = "Point Removed Successfully"
 
-            elif(int(point_data["is_update_req"]) > 0) :
+            elif(int(point_data.get("is_update_req", 0)) > 0) :
 
-                current_row = GISPointTool.objects.get(pk=point_data['point_id'])
-                current_row.name = point_data['name']
-                current_row.description = point_data['desc']
-                current_row.connected_lat = point_data['connected_lat']
-                current_row.connected_lon = point_data['connected_lon']
-                current_row.connected_point_type=point_data['connected_point_type']
-                current_row.connected_point_info=point_data['connected_point_info']
+                current_row = GISPointTool.objects.get(pk=point_data.get('point_id'))
+                current_row.name = point_data.get('name')
+                current_row.description = point_data.get('desc')
+                current_row.connected_lat = point_data.get('connected_lat')
+                current_row.connected_lon = point_data.get('connected_lon')
+                current_row.connected_point_type=point_data.get('connected_point_type')
+                current_row.connected_point_info=point_data.get('connected_point_info')
                 # update row with new values
                 current_row.save()
 
-                result["data"]["point_id"] = point_data['point_id']
+                result["data"]["point_id"] = point_data.get('point_id')
                 result["success"] = 1
                 result["message"] = "Point Updated Successfully"
 
             else:
                 try:
                     # check that the name already exist in db or not
-                    existing_rows_count = len(GISPointTool.objects.filter(name=point_data['name']))
+                    existing_rows_count = len(GISPointTool.objects.filter(name=point_data.get('name')))
 
                     if(existing_rows_count == 0):
                         new_row_obj = GISPointTool(
-                            name=point_data['name'],
-                            description=point_data['desc'],
-                            latitude=float(point_data['lat']),
-                            longitude=float(point_data['lon']),
-                            icon_url=point_data['icon_url'],
+                            name=point_data.get('name'),
+                            description=point_data.get('desc'),
+                            latitude=float(point_data.get('lat')),
+                            longitude=float(point_data.get('lon')),
+                            icon_url=point_data.get('icon_url'),
                             connected_lat=0,
                             connected_lon=0,
                             connected_point_type='',
@@ -578,16 +578,16 @@ class GetToolsData(View):
                     "connected_point_type" : "",
                     "connected_point_info" : ""
                 }
-                data_object['point_id'] = point_data['id']
-                data_object['lat'] = point_data['latitude']
-                data_object['lon'] = point_data['longitude']
-                data_object['name'] = point_data['name']
-                data_object['icon_url'] = point_data['icon_url']
-                data_object['desc'] = point_data['description']
-                data_object['connected_lat'] = point_data['connected_lat']
-                data_object['connected_lon'] = point_data['connected_lon']
-                data_object['connected_point_type'] = point_data['connected_point_type']
-                data_object['connected_point_info'] = point_data['connected_point_info']
+                data_object['point_id'] = point_data.get('id')
+                data_object['lat'] = point_data.get('latitude')
+                data_object['lon'] = point_data.get('longitude')
+                data_object['name'] = point_data.get('name')
+                data_object['icon_url'] = point_data.get('icon_url')
+                data_object['desc'] = point_data.get('description')
+                data_object['connected_lat'] = point_data.get('connected_lat')
+                data_object['connected_lon'] = point_data.get('connected_lon')
+                data_object['connected_point_type'] = point_data.get('connected_point_type')
+                data_object['connected_point_info'] = point_data.get('connected_point_info')
 
                 # Append data to point list
                 result["data"]["points"].append(data_object)
@@ -3899,7 +3899,7 @@ class GISStaticInfo(View):
         if not freeze_time:
             freeze_time = '0'
 
-        inventory = ""
+        bs_inventory = {}
 
         # Create instance of 'InventoryUtilsGateway' class
         inventory_utils = InventoryUtilsGateway()
@@ -3909,12 +3909,12 @@ class GISStaticInfo(View):
             try:
                 
                 devices_ip_address_list = list()
-
+                
                 # get formatted bs inventory
-                inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
+                bs_inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
 
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
-                bh_device_ip = inventory.get('bh_device_ip')
+                bh_device_ip = bs_inventory.get('bh_device_ip')
                 
                 try:
                     bh_device = Device.objects.get(ip_address=bh_device_ip)
@@ -3925,11 +3925,12 @@ class GISStaticInfo(View):
                 if bh_device_ip and bh_device:
                     devices_ip_address_list.append(bh_device_ip)
 
-                for sector in inventory['sectors']:
-                    if sector['ip_address']:
+                for sector in bs_inventory['sectors']:
+                    if sector['ip_address'] and sector['ip_address'] not in devices_ip_address_list:
                         devices_ip_address_list.append(sector['ip_address'])
+
                     for sub_station in sector['sub_stations']:
-                        if sub_station['ip_address']:
+                        if sub_station['ip_address'] and sub_station['ip_address'] not in devices_ip_address_list:
                             devices_ip_address_list.append(sub_station['ip_address'])
 
                 bs_devices = Device.objects.filter(
@@ -3949,15 +3950,15 @@ class GISStaticInfo(View):
                 # ********************************* BACKHAUL PERF INFO (START) ***********************************
                 if bh_device_ip and bh_device:
                     backhaul_data = self.get_backhaul_info(bh_device, complete_performance['network_perf_data'])
-                    inventory['bh_polled_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
-                    inventory['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
-                    inventory['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
+                    bs_inventory['bh_polled_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
+                    bs_inventory['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
+                    bs_inventory['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
 
                 # ********************************** BACKHAUL PERF INFO (END) ************************************
 
                 # ******************************** GET DEVICE MACHINE MAPPING (END) ******************************
 
-                for sector in inventory['sectors']:
+                for sector in bs_inventory['sectors']:
                     # get sector
                     try:
                         sector_obj = Sector.objects.get(id=sector['sector_id'])
@@ -3993,6 +3994,11 @@ class GISStaticInfo(View):
                             data_source = user_thematics.thematic_template.data_source
                     except Exception as e:
                         pass
+
+                    sector['perf_value'] = ''
+                    sector['pl'] = ''
+                    sector['rta'] = ''
+                    sector['pl_timestamp'] = ''
 
                     if service and data_source:
                         # performance value
@@ -4094,7 +4100,7 @@ class GISStaticInfo(View):
             except Exception as e:
                 pass
 
-        return HttpResponse(json.dumps(inventory))
+        return HttpResponse(json.dumps(bs_inventory))
 
     def get_backhaul_info(self, bh_device, network_perf_data):
         """ Get Sector performance info
@@ -4188,29 +4194,35 @@ class GISStaticInfo(View):
         utilization_perf_data = complete_performance['utilization_perf_data']
 
         # device frequency
-        device_frequency = self.get_device_polled_frequency(perf_payload['device_name'],
-                                                            perf_payload['machine_name'],
-                                                            freeze_time,
-                                                            performance_perf_data,
-                                                            inventory_perf_data,
-                                                            sector)
+        device_frequency = self.get_device_polled_frequency(
+            perf_payload['device_name'],
+            perf_payload['machine_name'],
+            freeze_time,
+            performance_perf_data,
+            inventory_perf_data,
+            sector
+        )
 
         # update device frequency
         result['polled_frequency'] = device_frequency
 
         # pl result
-        pl_result = self.get_device_pl(perf_payload['device_name'],
-                                       perf_payload['machine_name'],
-                                       network_perf_data,
-                                       freeze_time)
+        pl_result = self.get_device_pl(
+            perf_payload['device_name'],
+            perf_payload['machine_name'],
+            network_perf_data,
+            freeze_time
+        )
         # device pl
         device_pl = pl_result[0]
 
         # device rta
-        device_rta = self.get_device_rta(perf_payload['device_name'],
-                                         perf_payload['machine_name'],
-                                         network_perf_data,
-                                         freeze_time)
+        device_rta = self.get_device_rta(
+            perf_payload['device_name'],
+            perf_payload['machine_name'],
+            network_perf_data,
+            freeze_time
+        )
 
         # update device pl
         result['pl'] = device_pl
@@ -4240,14 +4252,16 @@ class GISStaticInfo(View):
         result['pl_timestamp'] = pl_timestamp
 
         if device_pl != "100":
-            performance_value = self.get_performance_value(perf_payload,
-                                                           network_perf_data,
-                                                           performance_perf_data,
-                                                           service_perf_data,
-                                                           inventory_perf_data,
-                                                           status_perf_data,
-                                                           utilization_perf_data,
-                                                           ts_type)
+            performance_value = self.get_performance_value(
+                perf_payload,
+                network_perf_data,
+                performance_perf_data,
+                service_perf_data,
+                inventory_perf_data,
+                status_perf_data,
+                utilization_perf_data,
+                ts_type
+            )
             result['perf_value'] = performance_value
         else:
             result['perf_value'] = ""
@@ -4487,11 +4501,7 @@ class GISStaticInfo(View):
 
         return device_frequency
 
-    def get_device_pl(self,
-                      device_name,
-                      machine_name,
-                      network_perf_data,
-                      freeze_time):
+    def get_device_pl(self, device_name, machine_name, network_perf_data, freeze_time):
         """ Get device pl
             Parameters:
                 - device_name (unicode) - device name
@@ -4512,12 +4522,15 @@ class GISStaticInfo(View):
 
         try:
             if int(freeze_time):
-                result = PerformanceNetwork.objects.filter(device_name=device_name,
-                                                              service_name='ping',
-                                                              data_source='pl',
-                                                              sys_timestamp__gte=start_time,
-                                                              sys_timestamp__lte=end_time).order_by().using(
-                    alias=machine_name).values('current_value', 'sys_timestamp')
+                result = PerformanceNetwork.objects.filter(
+                    device_name=device_name,
+                    service_name='ping',
+                    data_source='pl',
+                    sys_timestamp__gte=start_time,
+                    sys_timestamp__lte=end_time
+                ).order_by().using(
+                    alias=machine_name
+                ).values('current_value', 'sys_timestamp')
 
             else:
                 result = [d for d in network_perf_data if d['device_name'] == device_name and
@@ -4557,12 +4570,15 @@ class GISStaticInfo(View):
 
         try:
             if int(freeze_time):
-                device_rta = PerformanceNetwork.objects.filter(device_name=device_name,
-                                                              service_name='ping',
-                                                              data_source='rta',
-                                                              sys_timestamp__gte=start_time,
-                                                              sys_timestamp__lte=end_time).order_by().using(
-                    alias=machine_name).values('current_value')
+                device_rta = PerformanceNetwork.objects.filter(
+                    device_name=device_name,
+                    service_name='ping',
+                    data_source='rta',
+                    sys_timestamp__gte=start_time,
+                    sys_timestamp__lte=end_time
+                ).order_by().using(
+                    alias=machine_name
+                ).values('current_value')
 
             else:
                 device_rta = [d for d in network_perf_data if d['device_name'] == device_name and
