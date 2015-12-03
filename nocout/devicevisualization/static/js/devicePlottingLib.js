@@ -3844,7 +3844,7 @@ function devicePlottingClass_gmap() {
 			/*Fresnel template String*/
 			var leftSlider = '<div class="col-md-2" align="center">\
 							  <div class="col-md-8 col-md-offset-2">\
-						 	  <input type="text" style="width:73%;float:left;" id="antinaVal1" class="form-control" value="'+antenaHight1+'"> \
+						 	  <input type="text" style="width:73%;float:left;background: #FFF;" id="antinaVal1" class="form-control" value="'+antenaHight1+'" disabled> \
 						 	  <span style="top:5px;position:relative;">m</span>\
 						 	  </div><div class="clearfix"></div>\
 						 	  <div id="antina_height1" style="height:300px;" class="slider slider-blue"></div>'+left_str+'</div>';
@@ -3885,7 +3885,7 @@ function devicePlottingClass_gmap() {
 							   <div class="col-md-4 col-md-offset-3">\
 							   <div id="clear-factor" class="slider slider-red"></div>\
 							   </div><div class="col-md-2">\
-							   <input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'">\
+							   <input type="text" id="clear-factor_val" style="background: #FFF;" class="form-control" disabled value="'+clear_factor+'">\
 							   </div><div class="clearfix"></div></div>\
 							   <div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div>\
 							   <div class="clearfix divide-10"></div>\
@@ -3893,7 +3893,7 @@ function devicePlottingClass_gmap() {
 			
 			var rightSlider = '<div class="col-md-2" align="center">\
 							   <div class="col-md-8 col-md-offset-2">\
-							   <input type="text" id="antinaVal2" style="width:73%;float:left;" class="form-control" value="'+antenaHight2+'">\
+							   <input type="text" id="antinaVal2" style="width:73%;float:left;background: #FFF;" class="form-control" disabled value="'+antenaHight2+'">\
 							   <span style="top:5px;position:relative;">m</span>\
 							   </div><div class="clearfix"></div>\
 							   <div id="antina_height2" class="slider slider-blue" style="height:300px;"></div>'+right_str+'</div>';
