@@ -2,14 +2,14 @@ import json
 from device.models import DeviceTechnology
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.db.models.query import ValuesQuerySet
-from django.http import HttpResponseRedirect
-from django.views.generic import ListView, DetailView, FormView
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
+from django.views.generic import ListView, DetailView, FormView, View
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
-from download_center.forms import CityCharterSettingsForm
-from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon, \
-    CityCharterSettings, BSOutageMasterDaily
+from download_center.forms import CityCharterSettingsForm, EmailReportForm
+from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon,\
+    CityCharterSettings, BSOutageMasterDaily, EmailReport
 from django.db.models import Q
 from django.conf import settings
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -17,6 +17,9 @@ from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.utils.util import NocoutUtilsGateway
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
+from nocout.settings import SINGLE_REPORT_EMAIL
+
+from django.http import HttpRequest
 
 import os
 import logging
@@ -43,8 +46,10 @@ class DownloadCenter(ListView):
         # get report name & title
         report_name = ''
         report_title = ''
+        email_exists = False
         try:
             report_setting_obj = ReportSettings.objects.get(page_name=page_type)
+            report_id = report_setting_obj.id
             report_name = report_setting_obj.report_name
             report_title = report_setting_obj.report_title.strip()
 
@@ -54,6 +59,13 @@ class DownloadCenter(ListView):
             if 'Report' not in report_title:
                 report_title += ' Report'
         except Exception as e:
+            pass
+
+        try:
+            emails = EmailReport.objects.filter(report_name=report_setting_obj)
+            if emails.exists():
+                email_exists = True
+        except Exception, e:
             pass
 
         if 'bs_outage_daily' in page_type:
@@ -73,7 +85,9 @@ class DownloadCenter(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['page_type'] = page_type
         context['report_name'] = report_name
+        context['report_id'] = report_id
         context['report_title'] = report_title
+        context['email_exists'] = email_exists
 
         return context
 
@@ -188,7 +202,21 @@ class DownloadCenterListing(BaseDatatableView):
                     report_path, excel_green))
             dct.update(
                 actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                    dct.pop('id')))
+                    dct.get('id'))
+            )
+
+            if SINGLE_REPORT_EMAIL:
+                dct.update(
+                    actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a> &nbsp; \
+                             <span style="cursor: pointer;" class="send_report_btn" title="Email Report" report_id="{0}"> \
+                             <i class="fa fa-envelope text-primary"></i></span>'.format(dct.pop('id'))
+                )
+            else:
+                dct.update(
+                    actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                        dct.pop('id'))
+                )
+
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -653,3 +681,121 @@ class BSOutageCustomReportListing(BaseDatatableView):
             'aaData': aaData
         }
         return ret
+
+
+class EmailListUpdating(View):
+    """
+    This Class is used for two purpose.
+    1. Single report emailing which is in 'if report_id:' case
+    2. To update the scheduled email for particular report type.
+    """
+    def post(self, request, *args, **kwargs):
+
+        page_name = self.request.POST.get('page_name',None)
+        email_list = self.request.POST.getlist('emails[]', None)
+        report_id = self.request.POST.get('report_id',None)
+        
+        if report_id:
+            # Args: report_id, exist means functionality is being used to send a single report.
+            # Additional Functionality where we can send single report to multiple mail id's instantly.
+            report_name = ProcessedReportDetails.objects.get(id=report_id).report_name
+            file_path = ProcessedReportDetails.objects.get(id=report_id).path
+            request_object = HttpRequest()
+            from alarm_escalation.views import EmailSender
+            email_sender = EmailSender()
+            email_sender.request = request_object
+            try:
+                email_sender.request.POST = {
+                    'subject': report_name,
+                    'message': '',
+                    'to_email': email_list,
+                    'attachment_path': file_path
+                }
+            except Exception,e:
+                pass
+            email_sender.POST = {
+                'subject': report_name,
+                'message': '',
+                'to_email': email_list,
+                'attachment_path': file_path
+            }
+
+            email_sender.post(email_sender)
+
+            response = {
+                'success': 1,
+                'message': 'Report Mailed Successfully.'
+            }
+        else:
+            # Comma seperated string of emails.
+            email_list = ", ".join(email_list)
+
+            try:
+                report_name = ReportSettings.objects.get(page_name__iexact=page_name)
+            except ReportSettings.DoesNotExist:
+                report_name = ''
+
+            post_values = {
+                'email_list': email_list,
+            }
+            EmailReport.objects.update_or_create(report_name=report_name, defaults=post_values)
+            response = {
+                'success': 1,
+                'message': 'Successfully Updated'
+            }
+
+        return JsonResponse(response)
+
+
+class GetEmails(View):
+    """
+    This class is to get emails if exist for that report type.
+    """
+    def get(self, request, page_type, *args, **kwargs):
+        page_name = page_type
+        try:
+            emails = EmailReport.objects.get(report_name=ReportSettings.objects.get(page_name=page_name)).email_list
+        except EmailReport.DoesNotExist:
+            emails = ''
+
+        result = {
+            'success': 0,
+            'message': 'No existing Value',
+            'data': {
+                 'emails': emails
+            }
+        }
+
+        if emails:
+            result['success'] = 1
+            result['message'] = 'Sucessfullly loaded pre-existing values'
+        return JsonResponse(result)
+
+class ResetEmailReport(View):
+    """
+    User can Reset Scheduled Email report which will delete the delete the
+    record from database.
+    """
+    def get(self, request, *args, **kwargs):
+        result = {
+            'success': 0,
+            'message': 'Emails not deleted. Please try again later.'
+        }
+
+        report_id = request.GET.get('id')
+
+        if not report_id:
+            return HttpResponse(json.dumps(result))
+
+        try:
+            emails = EmailReport.objects.filter(report_name__id=report_id)
+            if emails.exists():
+                emails.delete()
+                result = {
+                    'success': 1,
+                    'message': 'Emails deleted successfully.'
+                }
+        except Exception, e:
+            logger.exception(e)
+
+        return HttpResponse(json.dumps(result))

@@ -1,6 +1,6 @@
 import logging
 from django import forms
-from models import CityCharterSettings
+from models import CityCharterSettings, EmailReport
 
 logger = logging.getLogger(__name__)
 
@@ -40,3 +40,30 @@ class CityCharterSettingsForm(forms.ModelForm):
         """
         model = CityCharterSettings
         fields = "__all__"
+
+class EmailReportForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        # super(EmailReportForm, self).__init(*args, **kwargs)
+        #
+        # try:
+        #     if 'instance' in kwargs:
+        #         self.id = kwargs['instance'].id
+        # except Exception as e:
+        #     logger.info(e.message)
+        #
+        # for name, field in self.field.items():
+        #     if field.widget.attrs.has_key('class'):
+        #         if isinstance(fields.widget, forms.widgets.Select):
+        #             field.widget.attrs['class'] += ' col-md-12'
+        #             field.widget.attrs['class'] += ' select2select'
+        #         else:
+        #             field.widget.attrs['class'] += ' form-control'
+        #     else:
+        #         if isinstance(field.widget, forms.widgets.Select):
+        #             field.widget.attrs.update({'class': 'cod-md-12 select2select'})
+        #         else:
+        #             field.widget.attrs.update({'class' : 'form-control'})
+        pass
+    class Meta:
+        model = EmailReport
+        fields = ('email_list',)
