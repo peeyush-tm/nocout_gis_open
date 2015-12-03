@@ -666,6 +666,11 @@ class BSOutageCustomReportListing(BaseDatatableView):
 
 
 class EmailListUpdating(View):
+    """
+    This Class is used for two purpose.
+    1. Single report emailing which is in 'if report_id:' case
+    2. To update the scheduled email for particular report type.
+    """
     def post(self, request, *args, **kwargs):
 
         page_name = self.request.POST.get('page_name',None)
@@ -673,6 +678,8 @@ class EmailListUpdating(View):
         report_id = self.request.POST.get('report_id',None)
         
         if report_id:
+            # Args: report_id, exist means functionality is being used to send a single report.
+            # Additional Functionality where we can send single report to multiple mail id's instantly.
             report_name = ProcessedReportDetails.objects.get(id=report_id).report_name
             file_path = ProcessedReportDetails.objects.get(id=report_id).path
             request_object = HttpRequest()
@@ -695,7 +702,7 @@ class EmailListUpdating(View):
                 'attachment_path': file_path
             }
 
-            fetched_result = email_sender.post(email_sender)
+            email_sender.post(email_sender)
 
             response = {
                 'success': 1,
@@ -723,6 +730,9 @@ class EmailListUpdating(View):
 
 
 class GetEmails(View):
+    """
+    This class is to get emails if exist for that report type.
+    """
     def get(self, request, page_type, *args, **kwargs):
         page_name = page_type
         try:
@@ -745,17 +755,10 @@ class GetEmails(View):
 
 class ResetEmailReport(View):
     """
-
+    User can Reset Scheduled Email report which will delete the delete the
+    record from database.
     """
     def get(self, request, *args, **kwargs):
-        """
-
-        :param request:
-        :param page_type:
-        :param args:
-        :param kwargs:
-        :return:
-        """
         result = {
             'success': 0,
             'message': 'Emails not deleted. Please try again later.'

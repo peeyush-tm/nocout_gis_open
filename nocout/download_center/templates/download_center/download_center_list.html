@@ -169,8 +169,9 @@
         }
 
         /**
-         *
-         *
+         * This function loads existing emails for given report type
+         * @method initEmailPopup
+         * @return {string}, Return emails in initial bootbox popup if exist emails
          */
         function initEmailPopup(existing_emails_list, is_update_request, report_id) {
             var popup_title = '<i class="fa fa-envelope"></i> Configure Emails List',
@@ -242,6 +243,15 @@
             return re.test(email);
         }
 
+        /**
+         *
+         * @param mail_ids
+         * @param api_url
+         * @param report_id: id for report_type/page_type
+         * @param is_update_request{Boolean}: True/False if user request for update
+         * @method initMailJob
+         * @return {String}, message from Json Responce
+         */
         function initMailJob(mail_ids, api_url, report_id, is_update_request) {
             if (!report_id) {
                 report_id = '';

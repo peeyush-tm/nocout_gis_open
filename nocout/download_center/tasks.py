@@ -45,11 +45,12 @@ def scheduled_email_report():
                             u'customer_report': u'/apps/tmp/media/download_center/ETL/Reports/CustomerReport/file.xlsx'
                         }
     """
+    message = ''
     cur_date = time.strftime("%Y-%m-%d")
     x = EmailReport.objects.all()
     # Dictionary contains keys = email_id and values = list of report_name to be send to the email user.
     email_report = {}
-    reports = list()  # List of report_name
+    reports = list()  # List of report_name.
     for i in x:
         report_name = i.report_name.report_name
         email_list = i.email_list.split(',')
@@ -63,15 +64,13 @@ def scheduled_email_report():
     # Dictionary where key will be report_name and value will be file_path based on Current Date.
     file_path = dict()
     for report in reports:
-        # Todo: change date with variable cur_date
         try:
-            path = ProcessedReportDetails.objects.filter(report_name=report, created_on__icontains='2015-04')[0].path
-            file_path[report] = path
-        except IndexError:
-            logger.exception('File not found')
-    # logger.info(email_report)
-    # logger.info(reports)
-    # logger.info(file_path)
+            path = ProcessedReportDetails.objects.filter(report_name=report, created_on__icontains=cur_date)[0].path
+            if path:
+                file_path[report] = path
+        except IndexError as e:
+            logger.exception(e.message)
+
     # Generating POST request for Email API.
     request_object = HttpRequest()
     from alarm_escalation.views import EmailSender
@@ -82,12 +81,14 @@ def scheduled_email_report():
         report_list = email_report[email]
         attachment_path = list()
         for report in report_list:
-            attachment_path.append(file_path[report])
-
+            try:
+                attachment_path.append(file_path[report])
+            except KeyError:
+                message += report + ' File Not Found\n'
         try:
             email_sender.request.POST = {
                 'subject': 'Scheduled email reports',
-                'message': '',
+                'message': message,
                 'to_email': email,
                 'attachment_path': attachment_path
             }
@@ -96,11 +97,11 @@ def scheduled_email_report():
 
         email_sender.POST = {
             'subject': 'Scheduled email reports',
-            'message': '',
+            'message': message,
             'to_email': email,
             'attachment_path': attachment_path
         }
-        # Calling Email Api (EmailSender) for POST method.
+        # Calling Email Api (EmailSender) POST request.
         email_sender.post(email_sender)
 
 

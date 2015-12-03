@@ -188,13 +188,15 @@ class EmailSender(View):
         # To email id.
         to_email = self.request.POST.get('to_email')
         # If multiple values then by using eval converting into list.
-        logger.exception('################type of to_email------', type(to_email))
-        to_email = str(to_email)  # Parsing to string.
         if to_email:
             if "," in to_email:
                 to_email = eval(to_email)
             elif type(to_email) == str:
                 to_email = to_email.split(",")
+            else:
+                to_email = str(to_email)  # Parsing to string.
+                to_email = to_email.split(',')
+
         # Subject.
         subject = self.request.POST.get('subject', None)
         # Message.
