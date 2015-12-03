@@ -142,8 +142,11 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
      util_service_list = ['wimax_pmp1_dl_util_bgp','wimax_pmp1_ul_util_bgp','wimax_pmp2_dl_util_bgp','wimax_pmp2_ul_util_bgp',
 	'radwin_dl_utilization','radwin_ul_utilization','cambium_dl_utilization','cambium_ul_utilization',
 	'cambium_ss_dl_utilization','cambium_ss_ul_utilization','mrotek_dl_utilization','mrotek_ul_utilization','rici_dl_utilization',
-	'rici_ul_utilization']
+	'rici_ul_utilization','cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization','juniper_switch_ul_utilization']
      wimax_ss_util_services = ['wimax_ss_ul_utilization','wimax_ss_dl_utilization']
+     wimax_ss_params_services=['wimax_qos_invent','wimax_ss_session_uptime']
+     switch_utilization = ['cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization',
+     'juniper_switch_ul_utilization']
      ss_device, ss_mac, bs_device = None, None, None
      old_device = device
      #logger.debug('service_list: ' + pformat(service_list))
@@ -172,11 +175,11 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 	     if service in rad5k_services:
 		     old_service = service
 		     service = 'rad5k_topology_discover'
-	     if service in wimax_ss_util_services:
+	     if service in wimax_ss_util_services or service in wimax_ss_params_services:
 		     old_service = service
 		     service = 'wimax_bs_ss_params'
 	     # Getting result from compiled checks output
-             cmd = '/apps/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (str(site_name), service, device)
+             cmd = '/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (str(site_name), service, device)
 	     # For host check [ping service]
 	     if service.lower() == 'ping':
 		     # Get the device ip from device name
@@ -250,7 +253,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					data_dict = {host_name:[]}
 			 		q.put(data_dict)
 			 	return
-		elif str(old_service) in wimax_ss_util_services:
+		elif str(old_service) in wimax_ss_util_services or str(old_service) in wimax_ss_params_services:
 			filtered_ss_data =[]
 			try:
 				data_value = []	
@@ -260,12 +263,25 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
 					filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t,check_output)
 					filtered_ss_data.extend(filtered_ss_output)
-				index = wimax_ss_util_services.index(old_service)
-				#logger.debug('filterred_ss_data: ' + pformat(filtered_ss_data))
+				if str(old_service) in wimax_ss_util_services:
+					index = wimax_ss_util_services.index(old_service)
+				elif str(old_service) in wimax_ss_params_services:
+				    try:
+				        index = wimax_ss_params_services.index(old_service)	
+					if str(old_service) == 'wimax_qos_invent':
+						ds = data_source_list[0]
+						if 'dl' in ds:
+							index = index + 3
+					if str(old_service) == 'wimax_ss_session_uptime':
+						index = index + 3
+				    except:
+					logger.error('ss_params: ' + pformat(index))
+				#logger.error('ss_params: ' + pformat(index))
 				for entry in filtered_ss_data:
 					value = entry.split('=')[1].split(',')[index]
-					value = float(value)/1024.0
-					value = "%.2f" % value
+					if str(old_service) not in wimax_ss_params_services:
+						value = float(value)/1024.0
+						value = "%.2f" % value
 					data_value.append(value)
 					cal_ss_mac = entry.split('=')[0]
 					# MARK
@@ -291,6 +307,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				check_output = check_output[0].split('- ')[1].split(',')
 				index =  wimax_ss_port_service.index(old_service)
 				value = check_output[index].split('=')[1]
+				value = value.strip('() ')
 				data_value.append(value)
 				data_dict = {old_device:data_value}
 				data_value = []
@@ -334,8 +351,10 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 			pl_info, rta_info = check_output[0], check_output[1]
 			if pl_info:
 			        pl = pl_info.split(',')[-2].split()[0]
+				pl = pl.strip('%')
 			if rta_info:
 			        rta = rta_info.split('=')[1].split('/')[1]
+				rta = rta.strip('ms')
 			if 'pl' in data_source_list:
 				data_dict = {device: [pl]}
 			if 'rta' in data_source_list:
@@ -356,10 +375,28 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					port4_value = int(cur_values[4].split('=')[1])
 					this_value = max(port1_value,port2_value,port3_value,port4_value)	
                  			logger.info('values : %s' % (this_value))
+				elif service in switch_utilization:
+					try:
+                 				logger.info('current_states : %s %s' % (util_values,is_first_call))
+						ds = data_source_list[0]
+						cur_values = util_values[0].rstrip().split(' ')
+						this_time = cur_values[0].split('=')[1]	
+						port_name = map(lambda x: x.split('=')[0] ,cur_values )	
+						port_value = map(lambda x: x.split('=')[1] ,cur_values )
+						port_index = port_name.index(ds)
+						if port_index:
+							this_value = port_value[port_index]
+						switch_key = "".join([old_device,"_",service,"_",ds])
+                 				logger.info('port_value : %s %s' % (this_value,is_first_call))
+					except:
+						pass  	
 				else:
 					this_time = util_values[0].split(' ')[0].split('=')[1]
 					this_value = util_values[0].split(' ')[1].split('=')[1]
-				key = "".join([old_device,"_",service])
+				if service in switch_utilization:
+					key = switch_key
+				else:
+					key = "".join([old_device,"_",service])
 				key =key.encode('ascii','ignore')
 				memc_obj = db_ops_module.MemcacheInterface()
 				memc = memc_obj.memc_conn
@@ -369,7 +406,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					if memc:
 						memc.set(key,util_list)
 						key_value = ""
-					data_dict = {old_device: key_value}
+					data_dict = {old_device: []}
 				 	q.put(data_dict)
 						
 				else:
@@ -384,7 +421,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 							timediff =  int(this_time) - int(pre_time)
 							valuediff =  float(this_value) - float(pre_value)
 							if timediff <= 0 or valuediff <= 0:
-								key_value = ""
+								key_value = []
 							else:
 								rate = float(valuediff)/timediff
 								rate = (rate * 8) / (1024.0 * 1024)
@@ -392,6 +429,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 						data_dict = {old_device: key_value}
 				 		q.put(data_dict)
 					except Exception,e:
+                 				logger.info('Error' % e)
 						data_dict = {old_device: key_value}
 				 		q.put(data_dict)
 			
