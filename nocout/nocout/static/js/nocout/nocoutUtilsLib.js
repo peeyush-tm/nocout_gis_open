@@ -860,6 +860,15 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
         try {
             splitted_chart_name = chartObj[i].name.split(':')
             name = $.trim(splitted_chart_name[0]);
+
+            if (splitted_chart_name.length > 1) {
+                if (splitted_chart_name[1].indexOf('PMP1') > -1) {
+                    name += ': PMP1'
+                } else if (splitted_chart_name[1].indexOf('PMP2') > -1) {
+                    name += ': PMP1'
+                }
+            }
+
         } catch(e) {
             name = $.trim(chartObj[i].name);
         }
