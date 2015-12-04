@@ -92,7 +92,6 @@ def extract_juniper_util_data(host_params,**args):
         else:
             break
 	try:
-    		qos_value = qos_value[0]
     		kpi_list_index = [i for i,x in enumerate(qos_value) if int(x) >0]
 	except:
 		continue
