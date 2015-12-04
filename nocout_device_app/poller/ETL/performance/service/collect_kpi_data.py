@@ -346,8 +346,10 @@ def kpi_data_data_main():
                         "Or: 3\n" +\
                         "OutputFormat: python\n"
 
-		device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\n" +\
-		"Filter: service_state = 3\nAnd: 2\nOutputFormat: python\n"
+		#device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\n" +\
+		#"Filter: service_state = 3\nAnd: 2\nOutputFormat: python\n"
+		device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\nFilter: service_state = 2\nOr: 2\n"+\
+		"And: 2\nOutputFormat: python\n"
 		service_qry_output = utility_module.get_from_socket(site,query)
 		output1 = utility_module.get_from_socket(site,query1)
 		query_output1 = eval(utility_module.get_from_socket(site,device_down_query).strip())
