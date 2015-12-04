@@ -869,32 +869,6 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
     data_in_table += '</tr></thead><tbody>';
     /*Table header creation end*/
 
-    var data = chartObj[0].data;
-
-    for (var j = 0; j < data.length; j++) {
-        data_in_table += '<tr>';
-
-        for (var i = 0; i < chartObj.length; i++) {
-            var inner_data = chartObj[i].data[j],
-                time_val = "",
-                val = "";
-            if (inner_data) {
-                if (inner_data instanceof Array) {
-                    time_val = getFormattedDate(inner_data[0]);
-                    // time_val = new Date(inner_data[0]).toLocaleString();
-                    val = inner_data[1];
-                } else {
-                    time_val = getFormattedDate(inner_data.x);
-                    // time_val = new Date(inner_data.x).toLocaleString();
-                    val = inner_data.y;
-                }
-            }
-            data_in_table += '<td>' + time_val + '</td><td>' + val + '</td>';
-        }
-        
-        data_in_table += '</tr>';
-    }
-
     data_in_table += '</tbody>';
     data_in_table += '</table>';
 
