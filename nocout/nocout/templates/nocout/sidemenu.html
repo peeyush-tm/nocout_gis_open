@@ -664,13 +664,6 @@
                         </a>
                     </li>
                     {% endif %}
-                    {% if perms.user_profile.view_userprofile %}
-                    <li>
-                        <a href="{% url 'permissions_list' %}">
-                            <span class="sub-menu-text">Permission</span>
-                        </a>
-                    </li>
-                    {% endif %}
                     {% if perms.activity_stream.view_useraction %}
                         <li>
                             <a href="{% url 'actionlist' %}">

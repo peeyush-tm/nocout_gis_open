@@ -60,8 +60,8 @@ class UserForm(forms.ModelForm):
         super(UserForm, self).__init__(*args, **kwargs)
 
         # Show permission field to only those who are allowed to edit permissions.
-        if not can_edit_permissions(self.request.user, kwargs['instance']):
-            del self.fields['user_permissions']
+        # if not can_edit_permissions(self.request.user, kwargs['instance']):
+        del self.fields['user_permissions']
 
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'

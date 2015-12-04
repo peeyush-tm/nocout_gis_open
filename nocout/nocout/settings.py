@@ -828,7 +828,7 @@ MAX_SUGGESTION_COUNT = 40
 DATATABLE_SEARCHTXT_KEY = 'sSearch'
 
 # Flag to enable/disable advance filters feature for datatables.
-ENABLE_ADVANCE_FILTERS = True
+ENABLE_ADVANCE_FILTERS = False
 
 # Flag to enable/disable unified service view on single performance page.
 ENABLE_UNIFIED_SERVICE_VIEW = True
@@ -843,13 +843,13 @@ ENABLE_WHITE_THEME = True
 SHOW_RF_COLUMN = 6
 
 # Flag to enable/disable topology view on single performance page.
-ENABLE_TOPO_VIEW = True
+ENABLE_TOPO_VIEW = False
 
 # Flag to enable/disable birdeye view on single performance page.
-ENABLE_BIRDEYE_VIEW = True
+ENABLE_BIRDEYE_VIEW = False
 
 # Flag to enable/disable custom dashboards on single performance page.
-ENABLE_CUSTOM_DASHBOARD_VIEW = True
+ENABLE_CUSTOM_DASHBOARD_VIEW = False
 
 # Password complexity settings.
 # ===============================
