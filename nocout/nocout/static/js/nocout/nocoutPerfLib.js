@@ -834,9 +834,12 @@ function nocoutPerfLib() {
                     nocout_destroyDataTable('perf_data_table');
 
                     perf_that.resetLivePolling(active_tab_content_dom_id);
-
                     /*Get Last opened tab id from cookie*/
                     var parent_tab_id = $.cookie('parent_tab_id');
+                    
+                    if(is_util_tab) {
+                        parent_tab_id = 'utilization_top'
+                    }
 
                     //If parent Tab id is there & parent tab element exist in the dom.
                     if (parent_tab_id && $('#' + parent_tab_id).length && $('#' + parent_tab_id)[0].className.indexOf('hide') == -1) {
