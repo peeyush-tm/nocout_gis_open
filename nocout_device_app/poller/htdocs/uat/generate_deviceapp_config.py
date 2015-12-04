@@ -414,13 +414,19 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         'wimax_bs_devices', 'cambium_bs_devices', 'radwin_bs_devices'])
     processed = []
     dr_en_devices = sorted(filter(lambda e: e[9] and e[9].lower() == 'yes' and e[10], data), key=itemgetter(10))
+    #print 'dr_en_devices --'
+    #print len(dr_en_devices)
     data = filter(lambda e: e[9] == '' or e[9] == None or (e[9] and e[9].lower() == 'no'), data)
     # dr_enabled devices ids
     # dr_configured_on_devices would be treated as master device
     dr_configured_on_ids = map(lambda e: e[10], dr_en_devices)
+    #print '--dr_configured_on_ids----'
+    #print len(dr_configured_on_ids)
     # Find dr_configured on devices from device_device table
     dr_configured_on_devices = get_dr_configured_on_devices(device_ids=dr_configured_on_ids)
     final_dr_devices = zip(dr_en_devices, dr_configured_on_devices)
+    #print '-- final_dr_devices --'
+    #print len(final_dr_devices)
 
     hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 
@@ -780,13 +786,47 @@ def dict_to_redis_hset(r, hkey, dict_to_store):
 
 def get_settings():
 
-    query1 = """
-     select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as device left join (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  )  where device.device_type IN (12,18) and backhaul.bh_port_name <> 'NULL';
-    """
+    #query1 = """
+    # select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as device left join
+    # (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  )  where device.device_type IN (12,18) 
+    #and backhaul.bh_port_name <> 'NULL';
+    #"""
 
 
     query2 = """
-select device.device_name as device_name,  base_station.bh_port_name as port from device_device as device left join (  inventory_basestation as base_station  ) on   (  device.id  = base_station.bs_switch_id  )where device.device_type IN (12,18) and base_station.bs_switch_id <> 'NULL';
+select
+	bh_device.device_name,
+	
+	GROUP_CONCAT(bs.bh_port_name separator '|-|-') as bh_ports
+	
+from
+	inventory_basestation as bs
+left join
+	inventory_backhaul as bh
+on
+	bs.backhaul_id = bh.id
+left join
+	device_device as bh_device
+ON
+	bh_device.id = bh.bh_configured_on_id
+left join
+	device_devicetype as dtype
+ON
+	dtype.id = bh_device.device_type
+left join
+	service_servicedatasource as sds
+ON
+	lower(sds.name) = lower(bs.bh_port_name)
+	OR
+	lower(sds.alias) = lower(bs.bh_port_name)
+	OR
+	lower(sds.name) = lower(replace(bs.bh_port_name, '/', '_'))
+	OR
+	lower(sds.alias) = lower(replace(bs.bh_port_name, '/', '_'))
+WHERE
+	lower(dtype.name) in ('juniper', 'cisco')
+group by
+	bh_device.id;
 """ 
     global snmp_check_interval
     snmp_communities_db, snmp_ports_db = [], []
@@ -805,10 +845,12 @@ select device.device_name as device_name,  base_station.bh_port_name as port fro
         cur = db.cursor()
         cur.execute(query)
         data = dict_rows(cur)
-        cur.execute(query1)
-        data1 = cur.fetchall()  # from back_haul
+        #cur.execute(query1)
+        #data1 = cur.fetchall()  # from back_haul
+	#print "data ", data1
 	cur.execute(query2)
 	data2 = cur.fetchall()  # from basestation
+        # print "data1 is ", data1
         cur.close()
         #logger.error('data in get_settings: ' + pformat(data))
     except Exception, exp:
@@ -818,13 +860,29 @@ select device.device_name as device_name,  base_station.bh_port_name as port fro
         db.close()
     memc_obj1=db_ops_module.MemcacheInterface()
     memc_obj =memc_obj1.memc_conn
-    dict2 = [(key,value.replace("/", "_")) for key, value in data1 if value] # conversion of "/" into "_"  from backhual
-    dict_switch = dict(dict2)  # back_hual dict   
+    #memc_obj= MemcacheInterface()
+    #redis_obj=db_ops_module.RedisInterface()
+    #rds_cnx=redis_obj.redis_cnx
+    #dict2 = [(key,value.replace("/", "_")) for key, value in data1 if value] # conversion of "/" into "_"  from backhual
+    #dict_switch = dict(dict2)  # back_hual dict
+    #print "back_hual", dict_switch    
     dict3 = [(key,value.replace("/", "_")) for key, value in data2 if value] # for basestation
-    dict_switch2 = dict(dict3) # for basestation 
-    dict_switch.update(dict_switch2) # back_haul dict updated with basestation dict
+    dict_switch = dict(dict3) # for basestation 
+    #dict_switch.update(dict_switch2) # back_haul dict updated with basestation dict
+    #print "dict is_bas ", dict_switch2
+    #print "dict is ", dict_switch
     key = "master_ua" + "_switch"
+    #print  [rds_cnx.hset(key, k, v) for k, v in dict_switch.items()]
+    #print rds_cnx.hgetall(key)
+    #dict_to_redis_hset(rds_cnx, key, dict_switch)
     memc_obj.set(key, dict_switch)
+    #list1 = []
+    #for each in data1:
+    #   list1.append(each[0])
+    #list2 = []
+    #[list2.append(dict_switch_cisco.get(each, " ")) for each in list1]
+    #list2 =  [x for x in list2 if x != " "]
+    #list2 = tuple(set(list2))
     processed = []
     active_check_services = []
     # Following utilization active checks should not be included in list of passive checks

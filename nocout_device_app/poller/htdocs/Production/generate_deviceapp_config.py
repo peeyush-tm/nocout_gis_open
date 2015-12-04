@@ -9,11 +9,11 @@ import memcache
 import imp
 
 from celery import Celery
-from celery.utils.celery_sentinel import register_celery_alias
+from celery_sentinel import register_celery_alias
 register_celery_alias('redis-sentinel')
 
 nocout_site_name= 'master_UA'
-db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/apps/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 
 logger = nocout_log()
@@ -77,44 +77,95 @@ t_interval_s_type = {
 wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
 
 
-def send_task_message(sentinels):
+def send_task_message(sentinels, service_name, min_sentinels):
     """ Sends task message on appropriate broker"""
     class CeleryConfig(object):
         #BROKER_URL = 'redis://10.133.19.165:6381/15'
-	SERVICE_NAME = 'mymaster'
-	# options needed for celery broker connection
-	BROKER_TRANSPORT_OPTIONS = {
-		'service_name': 'mymaster',
-		'sentinels': sentinels,
-		'min_other_sentinels': 2,
-		'db': 15
-	}
+        # options needed for celery broker connection
+        BROKER_TRANSPORT_OPTIONS = {
+                'service_name': service_name,
+                'sentinels': sentinels,
+                'min_other_sentinels': min_sentinels,
+                'db': 15
+        }
         BROKER_URL = 'redis-sentinel://'
     celery = Celery()
+    print '-----------------'
     try:
-	    celery.config_from_object(CeleryConfig)
-	    celery.send_task('load-inventory')
+            celery.config_from_object(CeleryConfig)
+            celery.send_task('load-inventory')
     except Exception as exc:
-	print 'Error in calling task load-inventory'
-	print exc
+        print 'Error in calling task load-inventory'
+        print exc
+    else:
+	print 'Task sent for: {0}'.format(service_name)
+    print '-----------------'
 
 
 def call_load_inventory():
     # machines we need to send tasks to
-    machines = ['dev']
+    machines = ['ospf1', 'ospf2', 'ospf3', 
+		'ospf4', 'ospf5', 'vrfprv', 'pub']
     for m in machines:
-        sentinels = get_sentinels_for_machine(m)
-        send_task_message(sentinels)
+        config = get_sentinels_for_machine(m)
+        send_task_message(config.get('sentinels'),
+		config.get('service_name'),
+		config.get('min_sentinels')
+	)
 
 
 def get_sentinels_for_machine(m):
-	mapping = {
-		'dev': [
-			('10.133.19.165', 26379),
-			('10.133.19.165', 26380)
-		]
+	default_sentinels = [
+		('115.114.79.37', 26379),
+		('115.114.79.38', 26379),
+		('115.114.79.39', 26380),
+		('115.114.79.40', 26379),
+		('115.114.79.41', 26379),
+	]
+	vrfprv_sentinels = [
+		('10.206.30.15', 26379)
+	]
+	pub_sentinels = [
+		('115.114.85.173', 26379)
+	]
+        mapping = {
+                'ospf1': {
+			'sentinels': default_sentinels,
+			'service_name': 'ospf1',
+			'min_sentinels': 3,
+        	},
+                'ospf2': {
+			'sentinels': default_sentinels,
+			'service_name': 'ospf2',
+			'min_sentinels': 3,
+        	},
+                'ospf3': {
+			'sentinels': default_sentinels,
+			'service_name': 'ospf3',
+			'min_sentinels': 3,
+        	},
+                'ospf4': {
+			'sentinels': default_sentinels,
+			'service_name': 'ospf4',
+			'min_sentinels': 3,
+        	},
+                'ospf5': {
+			'sentinels': default_sentinels,
+			'service_name': 'ospf5',
+			'min_sentinels': 3,
+        	},
+                'vrfprv': {
+			'sentinels': vrfprv_sentinels,
+			'service_name': 'vrfprv',
+			'min_sentinels': 0,
+        	},
+                'pub': {
+			'sentinels': pub_sentinels,
+			'service_name': 'pub',
+			'min_sentinels': 0,
+        	},
 	}
-	return mapping.get(m)
+        return mapping.get(m)
 
 
 def prepare_hosts_file():
@@ -231,15 +282,15 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     cisco_juniper = ['cisco','juniper']
     hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
-	if str(device[2].lower()) == 'cisco':
-		port_wise_capacities = [0]*26
+        if str(device[2].lower()) == 'cisco':
+        	port_wise_capacities = [0]*26
 	elif str(device[2].lower()) == 'juniper':
 		port_wise_capacities = [0]*52
-	else:
-		port_wise_capacities = [0]*8
-	if  str(device[1]) in processed:
-		continue
-	if '_' in str(device[8]) and str(device[2].lower()) not in cisco_juniper :
+        else:
+        	port_wise_capacities = [0]*8
+        if  str(device[1]) in processed:
+            continue
+        if '_' in str(device[8]) and str(device[2].lower()) not in cisco_juniper :
             try:
                 int_ports = map(lambda x: x.split('_')[-1], device[8].split('$$'))
                 capacities = device[10].split('$$') if device[10] else device[10]
@@ -706,7 +757,9 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
     radwin_ss_devices = map(lambda e: (e[4], e[8], e[15]), radwin_ss_devices)
     qos_values = eval_qos(map(lambda e: e[2], radwin_ss_devices))
     radwin_ss_devices = map(lambda e: (e[0], e[1]), radwin_ss_devices)
+    #print qos_values
     radwin_ss_devices = zip(radwin_ss_devices, qos_values)
+    #logger.error('radwin_ss {0}'.format(radwin_ss_devices))
     for e in radwin_ss_devices:
         final_radwin_devices_entry.append((e[0][0], e[0][1], e[1]))
     #for a, b in izip_longest(radwin_ss_devices, qos_values):
@@ -786,13 +839,47 @@ def dict_to_redis_hset(r, hkey, dict_to_store):
 
 def get_settings():
 
-    query1 = """
-     select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as device left join (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  )  where device.device_type IN (12,18) and backhaul.bh_port_name <> 'NULL';
-    """
+    #query1 = """
+    # select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as device left join
+    # (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  )  where device.device_type IN (12,18) 
+    #and backhaul.bh_port_name <> 'NULL';
+    #"""
 
 
     query2 = """
-select device.device_name as device_name,  base_station.bh_port_name as port from device_device as device left join (  inventory_basestation as base_station  ) on   (  device.id  = base_station.bs_switch_id  )where device.device_type IN (12,18) and base_station.bs_switch_id <> 'NULL';
+select
+	bh_device.device_name,
+	
+	GROUP_CONCAT(bs.bh_port_name separator '|-|-') as bh_ports
+	
+from
+	inventory_basestation as bs
+left join
+	inventory_backhaul as bh
+on
+	bs.backhaul_id = bh.id
+left join
+	device_device as bh_device
+ON
+	bh_device.id = bh.bh_configured_on_id
+left join
+	device_devicetype as dtype
+ON
+	dtype.id = bh_device.device_type
+left join
+	service_servicedatasource as sds
+ON
+	lower(sds.name) = lower(bs.bh_port_name)
+	OR
+	lower(sds.alias) = lower(bs.bh_port_name)
+	OR
+	lower(sds.name) = lower(replace(bs.bh_port_name, '/', '_'))
+	OR
+	lower(sds.alias) = lower(replace(bs.bh_port_name, '/', '_'))
+WHERE
+	lower(dtype.name) in ('juniper', 'cisco')
+group by
+	bh_device.id;
 """ 
     global snmp_check_interval
     snmp_communities_db, snmp_ports_db = [], []
@@ -808,16 +895,15 @@ select device.device_name as device_name,  base_station.bh_port_name as port fro
     query = prepare_query()
     db = mysql_conn()
     try:
-	cur = db.cursor()
-	cur.execute(query)
-	data = dict_rows(cur)
-        cur.execute(query1)
-	data1 = cur.fetchall()  # from back_haul
+        cur = db.cursor()
+        cur.execute(query)
+        data = dict_rows(cur)
+        #cur.execute(query1)
+        #data1 = cur.fetchall()  # from back_haul
 	#print "data ", data1
 	cur.execute(query2)
 	data2 = cur.fetchall()  # from basestation
-        # print "data1 is ", data1
-	cur.close()
+        cur.close()
         #logger.debug('data in get_settings: ' + pformat(data))
     except Exception, exp:
         logger.error('Exception in get_settings: ' + pformat(exp))
@@ -826,11 +912,17 @@ select device.device_name as device_name,  base_station.bh_port_name as port fro
         db.close()
     memc_obj1=db_ops_module.MemcacheInterface()
     memc_obj =memc_obj1.memc_conn
-    dict2 = [(key,value.replace("/", "_")) for key, value in data1 if value] # conversion of "/" into "_"  from backhual
-    dict_switch = dict(dict2)  # back_hual dict   
+    #memc_obj= MemcacheInterface()
+    #redis_obj=db_ops_module.RedisInterface()
+    #rds_cnx=redis_obj.redis_cnx
+    #dict2 = [(key,value.replace("/", "_")) for key, value in data1 if value] # conversion of "/" into "_"  from backhual
+    #dict_switch = dict(dict2)  # back_hual dict
+    #print "back_hual", dict_switch    
     dict3 = [(key,value.replace("/", "_")) for key, value in data2 if value] # for basestation
-    dict_switch2 = dict(dict3) # for basestation 
-    dict_switch.update(dict_switch2) # back_haul dict updated with basestation dict
+    dict_switch = dict(dict3) # for basestation 
+    #dict_switch.update(dict_switch2) # back_haul dict updated with basestation dict
+    #print "dict is_bas ", dict_switch2
+    #print "dict is ", dict_switch
     key = "master_ua" + "_switch"
     memc_obj.set(key, dict_switch)
     processed = []
@@ -896,7 +988,7 @@ select device.device_name as device_name,  base_station.bh_port_name as port fro
                 snmp_check_interval.append(
                         ((str(service['service']), 300), [], ['@all'])
                         )
-		
+
             threshold = ()
             try:
             	threshold = get_threshold(service)
@@ -911,7 +1003,8 @@ select device.device_name as device_name,  base_station.bh_port_name as port fro
             if str(service['service']) in exclude_ss_active_services:
                 continue
             service_config = [service['devicetype'], '!' + str(service['service'])], \
-                    ['@all'], service['service'], None, threshold
+	            ['@all'], service['service'], None, threshold
+
         if service_config and (service_config not in default_checks):
                 default_checks.append(service_config)
         if service['port'] and service['community']:
@@ -1352,7 +1445,6 @@ def main():
 
 
 if __name__ == '__main__':
-   
     main()
     # call load inventory tasks by sending message to brokers on Prd servers
     call_load_inventory()
