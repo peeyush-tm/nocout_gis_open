@@ -564,7 +564,12 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             try:
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
                 item['sector__sector_configured_on__device_technology'] = techno_name
-                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                
+                if item['sys_timestamp'] and item['age']:
+                    item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                else:
+                    item['age'] = str(item['age']) + ' second'
+
                 if item['severity'].strip().lower() == 'warning':
                     item['severity'] = "Needs Augmentation"
                 elif item['severity'].strip().lower() == 'critical':
@@ -1292,7 +1297,11 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
             try:
                 techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
                 item['backhaul__bh_configured_on__device_technology'] = techno_name
-                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+
+                if item['sys_timestamp'] and item['age']:
+                    item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                else:
+                    item['age'] = str(item['age']) + ' second'
 
                 if item['severity'].strip().lower() == 'warning':
                     item['severity'] = "Needs Augmentation"
