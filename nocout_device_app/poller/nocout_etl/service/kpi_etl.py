@@ -91,11 +91,14 @@ def extract_juniper_util_data(host_params,**args):
             hostname, site, ip_address,qos_value = eval(entry[0])
         else:
             break
-    	qos_value = qos_value.split('|')[:-1]
-    	kpi_list_index = [i for i,x in enumerate(qos_value) if int(x) >0]
-	if 'dl_utilization' in args['service']:
+	try:
+    		qos_value = qos_value[0]
+    		kpi_list_index = [i for i,x in enumerate(qos_value) if int(x) >0]
+	except:
+		continue
+	if 'dl_util' in args['service']:
 		util_type = 'dl'
-	if 'ul_utilization' in args['service']:
+	if 'ul_util' in args['service']:
 		util_type = 'ul'
 	try:
 		dl_util_dict= fetch_juni_util_from_memc(hostname,site,util_type,memc)
@@ -113,7 +116,6 @@ def extract_juniper_util_data(host_params,**args):
 					dict1_kpi.append(tup1)
 				except Exception,e:
 					continue
-					print e
 		max_tuple = max(dict1_kpi, key = lambda x:x[1])
 		kpi = max_tuple[1]
 		kpi = round(dl_kpi,2)
@@ -145,7 +147,7 @@ def extract_juniper_util_data(host_params,**args):
     if len(service_list) > 0:     
 	build_export.s(args['site_name'], service_list).apply_async()
 		
-def extract_cisco_util_data(hostparams,**args):
+def extract_cisco_util_data(host_params,**args):
     service_list = []
     for entry in host_params:
 	crit_flag = warn_flag = normal_flag = 0
@@ -157,11 +159,13 @@ def extract_cisco_util_data(hostparams,**args):
             hostname, site, ip_address,qos_value = eval(entry[0])
         else:
             break
-    	qos_value = qos_value.split('|')[:-1]
-    	kpi_list_index = [i+1 for i,x in enumerate(qos_value) if int(x) >0]
-	if 'dl_utilization' in args['service']:
+        try:
+    		kpi_list_index = [i+1 for i,x in enumerate(qos_value) if int(x) >0]
+	except Exception,e:
+		continue
+	if 'dl_util' in args['service']:
 		util_type = 'dl'
-	if 'ul_utilization' in args['service']:
+	if 'ul_util' in args['service']:
 		util_type = 'ul'
 	try:
 		dl_util_dict= fetch_cisco_util_from_memc(hostname,site,util_type,args['memc'])
@@ -183,7 +187,7 @@ def extract_cisco_util_data(hostparams,**args):
 					continue
 		max_tuple = max(dict1_kpi, key = lambda x:x[1])
 		kpi = max_tuple[1]
-		kpi = round(dl_kpi,2)
+		kpi = round(kpi,2)
 		if kpi or kpi ==0:
 			perf += str(max_tuple[0]) + "=%s;%s;%s;%s " % (kpi,war,crit,qos_value[max_tuple[2]-1])
 			if kpi >= crit:
@@ -845,7 +849,7 @@ def call_kpi_services(**opt):
 	    'radwin_ss_provis_kpi'
             ]
     mrotek_util_kpi_services = [
-            'mrotek_dl_util_kp',
+            'mrotek_dl_util_kpi',
             'mrotek_ul_util_kpi'
             ]
     rici_util_kpi_services = [
@@ -868,6 +872,8 @@ def call_kpi_services(**opt):
     total_services.extend(radwin_util_kpi_services)
     total_services.extend(mrotek_util_kpi_services)
     total_services.extend(rici_util_kpi_services)
+    total_services.extend(cisco_util_kpi_services)
+    total_services.extend(juniper_util_kpi_services)
     total_services.extend(['wimax_bs_ul_issue_kpi', 'cambium_bs_ul_issue_kpi'])
 
     for service_name in total_services:
