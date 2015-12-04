@@ -411,14 +411,61 @@ def load_inventory(self):
     	"device_device.is_deleted=0 and "
     	"device_device.host_state <> 'Disable' "
     	"and "
-    	"device_devicetype.name in ('Cisco','Juniper', 'RiCi', 'PINE') "
+    	"device_devicetype.name in ('RiCi', 'PINE') "
     	"group by device_device.ip_address;" )
 
+
+	switch_query = """
+	select
+		bh_device.device_name,
+		site_instance_siteinstance.name,
+		bh_device.ip_address,
+		dtype.name as device_type,
+		GROUP_CONCAT(bs.bh_port_name separator ',') as bh_ports,
+		GROUP_CONCAT(sds.name separator ',') as service_alias,
+		group_concat(bs.bh_capacity separator ',') as port_wise_capacity 
+	from
+		inventory_basestation as bs
+	left join
+		inventory_backhaul as bh
+	on
+		bs.backhaul_id = bh.id
+	left join
+		device_device as bh_device
+	ON
+		bh_device.id = bh.bh_configured_on_id
+	left join
+		device_devicetype as dtype
+	ON
+		dtype.id = bh_device.device_type
+	left join
+		service_servicedatasource as sds
+	ON
+		lower(sds.name) = lower(bs.bh_port_name)
+		OR
+		lower(sds.alias) = lower(bs.bh_port_name)
+		OR
+		lower(sds.name) = lower(replace(bs.bh_port_name, '/', '_'))
+		OR
+		lower(sds.alias) = lower(replace(bs.bh_port_name, '/', '_'))
+	left join 
+	(machine_machine,site_instance_siteinstance)
+	on
+	(
+	 machine_machine.id = bh_device.machine_id and site_instance_siteinstance.id = bh_device.site_instance_id
+	)
+	WHERE
+		lower(dtype.name) in ('juniper', 'cisco')
+	group by
+		bh_device.id;
+	"""
 
 	ping_threshold_query = ("select name,rta_warning,rta_critical,pl_warning,pl_critical from device_devicetype; ")
 
 	cur.execute(backhaul_query)
 	backhaul_out = cur.fetchall()
+	cur.execute(switch_query)
+	switch_output = cur.fetchall()
 	
 	ping_threshold_dict = {}
 	# Calculate warning and critical for device type to be used in Event 
@@ -452,6 +499,7 @@ def load_inventory(self):
 	# group based on device technologies and load the devices info to redis
 	out = sorted(out, key=itemgetter(3))
 	backhaul_out = sorted(backhaul_out, key=itemgetter(3))
+	switch_out = sorted(switch_output, key=itemgetter(2))
 
 	for grp, grp_vals in groupby(out, key=itemgetter(3)):
 		grouped_devices = list(grp_vals)
@@ -471,6 +519,9 @@ def load_inventory(self):
 	for bk_grp, bk_grp_vals in groupby(backhaul_out, key=itemgetter(3)):
 		bk_grouped_devices = list(bk_grp_vals)
 		load_backhaul_data(bk_grouped_devices, rds_pipe)
+	for switch_grp, switch_grp_vals in groupby(switch_out, key=itemgetter(2)):
+		switch_grouped_devices = list(switch_grp_vals)
+		load_switch_data(switch_grouped_devices, rds_pipe)
 
 	try:
 		rds_pipe.execute()
@@ -498,8 +549,9 @@ def store_ping_threshold(data_values,p,ping_threshold_dict):
 		#p.delete(host_key % data[0])
 		p.rpush(host_key % data[0],threshold_value)
 
-@app.task(name='load-backhaul-data')
-def load_backhaul_data(data_values, p, extra=None):
+
+@app.task(name='load-switch-data')
+def load_switch_data(data_values, p, extra=None):
 	t = data_values[0]
 	processed = []
 	#info('PORT-Data: {0}'.format(data_values))
@@ -512,15 +564,71 @@ def load_backhaul_data(data_values, p, extra=None):
         cisco_juniper = ['cisco','juniper']
 	for device in data_values:
 		device_attr = []
-		if str(device[3].lower()) == 'Cisco':
+		if str(device[3].lower()) == 'cisco':
 			port_wise_capacities = [0]*26
-		elif str(device[3].lower()) == 'Juniper':
+		elif str(device[3].lower()) == 'juniper':
 			port_wise_capacities = [0]*52
-		else:
-			port_wise_capacities = [0]*8
 		if  str(device[0]) in processed:
 		    continue
-		if '_' in str(device[5]) and str(device[3].lower())  not in cisco_juniper :
+		if str(device[3].lower()) == 'cisco':
+		    try :
+			int_ports = map(lambda x: x.split('/')[-1], device[4].split(','))
+			int_ports = map(lambda x: int(x), int_ports)   #convert int type
+			int_string = map(lambda x: x.split('/')[0], device[4].split(','))
+			for i in xrange(len(int_string)):
+			    #if int_string[i]== 'Gi0':
+			    if 'gi' in int_string[i].lower():
+				int_ports[i]= int_ports[i]+24
+			capacities = device[6].split(',') if device[6] else device[6]
+			#if len(int_string)>1:  # to multiple kpi for ring ports
+			#    capacities.append(capacities[0])
+			for p_n, p_cap in zip(int_ports, capacities):
+			    port_wise_capacities[int(p_n)-1] = p_cap
+
+		    except Exception as e:
+			port_wise_capacities = [0]*8
+		if str(device[3].lower()) == 'juniper':
+		   try:
+		       int_ports = map(lambda x: x.split('/')[-1], device[4].split(','))
+		       int_ports = map(lambda x: int(x), int_ports)   #convert int type
+		       int_ports_s = map(lambda x: x.split('/')[-2], device[4].split(','))
+		       int_ports_s = map(lambda x: int(x), int_ports_s)
+		       for i in xrange(len(int_ports_s)):
+			   if int_ports_s[i]== 1:
+			       int_ports[i]=int_ports[i]+48
+		       capacities = device[6].split(',') if device[6] else device[6]
+		       #if len(int_string)>1: # for ring port extra capcity added
+		       #	    capacities.append(capacities[0])
+		       for p_n, p_cap in zip(int_ports, capacities):
+			   port_wise_capacities[int(p_n)] = p_cap
+		   except Exception as e:
+		       port_wise_capacities = [0]*8
+		p.set(invent_key % device[0], device[2])
+		device_attr.extend([device[0],device[1],device[2]])
+		device_attr.append(port_wise_capacities)
+		#info('Output-Data: {0}'.format(device_attr))
+		p.rpush(key % (device[1], device[2]), device_attr)
+		processed.append(str(device[0]))
+
+
+
+@app.task(name='load-backhaul-data')
+def load_backhaul_data(data_values, p, extra=None):
+	t = data_values[0]
+	processed = []
+	error('PORT-Data: {0}'.format(data_values))
+	# key:: <device-tech>:<device-type>:<site-name>:<ip>
+	key = '%s:%s:%s:%s' % (str(t[3]).lower(),
+					'ss' if t[3].endswith('SS') else 'bs',
+					'%s',
+					'%s')
+	invent_key = 'device_inventory:%s'
+	for device in data_values:
+		device_attr = []
+		port_wise_capacities = [0]*8
+		if  str(device[0]) in processed:
+		    continue
+		if '_' in str(device[5]):
 		    try:
 			int_ports = map(lambda x: x.split('_')[-1], device[5].split('$$'))
 			capacities = device[7].split('$$') if device[7] else device[7]
@@ -529,40 +637,8 @@ def load_backhaul_data(data_values, p, extra=None):
 			    #port_wise_capacities[int(p_n)-1] = p_cap
 			    port_wise_capacities[int(p_n)-1] = p_cap
 		    except (IndexError, TypeError, AttributeError) as err:
-			#info('ERR-Data: {0}'.format(err))
+			error('ERR-Data: normal {0}'.format(err))
 			port_wise_capacities = [0]*8
-		if str(device[3].lower()) == 'cisco':
-		    try :
-			int_ports = map(lambda x: x.split('/')[-1], device[6].split(','))
-			int_ports = map(lambda x: int(x), int_ports)   #convert int type
-			int_string = map(lambda x: x.split('/')[0], device[6].split(','))
-			for i in xrange(len(int_string)):
-			    #if int_string[i]== 'Gi0':
-			    if 'gi' in int_string[i].lower():
-				int_ports[i]= int_ports[i]+24
-			capacities = device[10].split(',') if device[7] else device[7]
-			if len(int_string)>1:  # to multiple kpi for ring ports
-			    capacities.append(capacities[0])
-			for p_n, p_cap in zip(int_ports, capacities):
-			    port_wise_capacities[int(p_n)-1] = p_cap
-		    except Exception as e:
-			port_wise_capacities = [0]*8
-		if str(device[2].lower()) == 'juniper':
-		   try:
-		       int_ports = map(lambda x: x.split('/')[-1], device[6].split(','))
-		       int_ports = map(lambda x: int(x), int_ports)   #convert int type
-		       int_ports_s = map(lambda x: x.split('/')[-2], device[6].split(','))
-		       int_ports_s = map(lambda x: int(x), int_ports_s)
-		       for i in xrange(len(int_ports_s)):
-			   if int_ports_s[i]== 1:
-			       int_ports[i]=int_ports[i]+48
-		       capacities = device[10].split(',') if device[7] else device[7]
-		       if len(int_string)>1: # for ring port extra capcity added
-			   capacities.append(capacities[0])
-		       for p_n, p_cap in zip(int_ports, capacities):
-			   port_wise_capacities[int(p_n)] = p_cap
-		   except Exception as e:
-		       port_wise_capacities = [0]*8
 		p.set(invent_key % device[0], device[2])
 		device_attr.extend([device[0],device[1],device[2]])
 		device_attr.append(port_wise_capacities)
