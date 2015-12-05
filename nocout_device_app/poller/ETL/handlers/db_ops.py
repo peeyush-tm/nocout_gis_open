@@ -20,14 +20,17 @@ from configobj import ConfigObj
 import ujson
 import zlib
 import memcache
-from nocout_site_name import *
+#from nocout_site_name import *
 
 #logger = get_task_logger(__name__)
 #info , warning, error = logger.info, logger.warning, logger.error
 
 #DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
 #SENTINELS = getattr(app.conf, 'SENTINELS', None)
-
+import os
+p = os.path.dirname(os.path.abspath(__file__))
+paths = [path for path in p.split('/')]
+nocout_site_name = paths[paths.index('sites') + 1]
 
 
 config =ConfigObj('/omd/sites/%s/lib/python/handlers/redis_config.ini' % nocout_site_name)
@@ -154,14 +157,16 @@ class RedisInterface(object):
 
 		return out
 
-	def multi_set(self, data_values, perf_type=''):
+	def multi_set(self, data_values, perf_type='',exp_time=None):
 		""" Sets multiple key values through pipeline"""
 		KEY = '%s:%s:%s' % (perf_type, '%s', '%s')
 		p = self.redis_cnx.pipeline(transaction=True)
 		# keep the provis data keys with a timeout of 5 mins
+		if not exp_time:
+			exp_time = 300
 		[p.setex(KEY %
 		         (d.get('device_name'), d.get('service_name')),
-		         300, d.get('current_value')) for d in data_values
+		         exp_time, d.get('current_value')) for d in data_values
 		 ]
 		try:
 		    p.execute()
@@ -228,23 +233,29 @@ class MemcacheInterface(object):
 	   for i in xrange(0, len(value), chunksize):
 		#print i
 		values['%s.%s' % (key, i/chunksize)] = value[i : i+chunksize]
-	   doc_len = i/chunksize
+	   try: 
+	   	doc_len = i/chunksize
 	   #print len(values)
 
-	   if 1000*doc_len < len(value):
-		doc_len =doc_len +1
-		values['%s.%s' % (key, doc_len)] = value[i : len(value)]
-	   memc.set_multi(values,time)
-	   memc.set(doc_len_key,doc_len,time) 
+	   	if 1000*doc_len < len(value):
+			doc_len =doc_len +1
+			values['%s.%s' % (key, doc_len)] = value[i : len(value)]
+	   	memc.set_multi(values,time)
+	   	memc.set(doc_len_key,doc_len,time)
+	   except:
+		pass 
 	   #memc.set("service_doc_len",doc_len,time=240)
 	def retrieve(self,key,doc_len_key):
 	    memc=self.memc_conn
 	    my_list = []
-	    if memc:
-		y=memc.get(doc_len_key)
-		result = memc.get_multi(['%s.%s' % (key, i) for i in xrange(y)])
-		serv_list=[v for v in result.values() if v is not None]
-		my_list = [item for sublist in serv_list for item in sublist]	
+	    try:
+	    	if memc:
+			y=memc.get(doc_len_key)
+			result = memc.get_multi(['%s.%s' % (key, i) for i in xrange(y)])
+			serv_list=[v for v in result.values() if v is not None]
+			my_list = [item for sublist in serv_list for item in sublist]
+	    except:
+		pass	
 		#print len(my_list)
 	    return my_list
 	
