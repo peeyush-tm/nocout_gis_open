@@ -71,10 +71,13 @@ def main(**configs):
     print '...........'
     print len(docs)
     if docs:
-        insert_data(configs.get('table_name'), docs, db,configs)
-        print "Data inserted into mysql db"
-    else:
-        print "No data in the mongo db in this time frame"
+    	while docs:
+    		insert_data(configs.get('table_name'), docs[0:50000],db,configs)
+		docs = docs[50000:]
+    		print "Data inserted into my mysql db"
+		time.sleep(10)
+	else:
+    		print "No data in mongo db in this time frame"
     
 
 def read_data():
