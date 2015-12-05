@@ -18,6 +18,10 @@ import memcache,imp
 logger = nocout_log()
 
 
+def get_site_name(site=None):
+    site = defaults.omd_site
+
+    return site
 db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % get_site_name())
 
 try:
@@ -485,7 +489,3 @@ def alarm_handler(signum, frame):
 	raise Alarm
 
 
-def get_site_name(site=None):
-    site = defaults.omd_site
-
-    return site
