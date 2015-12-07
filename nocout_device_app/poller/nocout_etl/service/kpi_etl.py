@@ -719,7 +719,7 @@ def service_dict_for_kpi_services(
     service_dict['address'] = ip_address 
     service_dict['site'] = site
     service_dict['perf_data'] = perf
-    service_dict['last_state_change'] = ''
+    service_dict['last_state_change'] = age_of_state
     service_dict['state']  = state
     service_dict['last_chk'] = time.time()
     service_dict['service_description']=args['service']
