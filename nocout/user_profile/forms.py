@@ -15,11 +15,16 @@ Classes
 """
 
 from django import forms
-from passwords.fields import PasswordField
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.models import Permission, Group
 from nocout.widgets import MultipleToSingleSelectionWidget
 from organization.models import Organization
 from user_profile.models import UserProfile, UserPasswordRecord
+from fields import PasswordField
+from user_profile.utils.auth import can_edit_permissions
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserForm(forms.ModelForm):
@@ -28,8 +33,9 @@ class UserForm(forms.ModelForm):
     """
     first_name = forms.CharField(required=True)
     email = forms.CharField(label='Email', required=True)
-    password1 = PasswordField(label='Password')
-    password2 = PasswordField(label='Password confirmation')
+
+    password1 = PasswordField(label='Password', widget=forms.PasswordInput)
+    password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -39,15 +45,23 @@ class UserForm(forms.ModelForm):
         self.base_fields['username'].help_text = ''
 
         # Removing help text for role 'select' field
-        self.base_fields['role'].help_text = ''
+        self.base_fields['groups'].help_text = ''
+        self.base_fields['user_permissions'].help_text = ''
 
         # If request is for updating user then initialize role, parent, organization.
         if kwargs['instance']:
-            initial['role'] = kwargs['instance'].role.values_list('pk', flat=True)[0]
+            try:
+                initial['groups'] = kwargs['instance'].groups.all()[0].pk
+            except Exception as e:
+                pass
             initial['parent'] = kwargs['instance'].parent
             initial['organization'] = kwargs['instance'].organization
 
         super(UserForm, self).__init__(*args, **kwargs)
+
+        # Show permission field to only those who are allowed to edit permissions.
+        # if not can_edit_permissions(self.request.user, kwargs['instance']):
+        del self.fields['user_permissions']
 
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
@@ -68,24 +82,25 @@ class UserForm(forms.ModelForm):
             if self.instance.pk == self.request.user.pk:
                 self.fields['username'].widget.attrs['readonly'] = True
                 self.fields['parent'].widget.attrs['disabled'] = 'disabled'
-                self.fields['role'].widget.attrs['disabled'] = 'disabled'
-                self.fields['role'].widget.is_required = False
-                self.fields['role'].required = False
+                self.fields['groups'].widget.attrs['disabled'] = 'disabled'
                 self.fields['organization'].widget.attrs['readonly'] = True
                 self.fields['parent'].label = 'Manager'
                 # Don't show comment field.
                 self.fields.pop('comment')
 
         for name, field in self.fields.items():
+            select2class = ' select2select'
+            if name == 'user_permissions':
+                select2class = ''
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs['class'] += ' col-md-12'
-                    field.widget.attrs['class'] += ' select2select'
+                    field.widget.attrs['class'] += select2class
                 else:
                     field.widget.attrs['class'] += ' form-control'
             else:
                 if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                    field.widget.attrs.update({'class': 'col-md-12 %s' % select2class})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
 
@@ -96,11 +111,11 @@ class UserForm(forms.ModelForm):
         """
         model = UserProfile
         fields = (
-            'username', 'first_name', 'last_name', 'email', 'role', 'organization', 'parent', 'designation', 'company',
-            'address', 'phone_number', 'comment',
+            'username', 'first_name', 'last_name', 'email', 'organization', 'parent', 'groups', 'user_permissions',
+            'designation', 'company', 'address', 'phone_number', 'comment'
         )
         widgets = {
-            'role': MultipleToSingleSelectionWidget,
+            'groups': MultipleToSingleSelectionWidget
         }
         fieldsets = (
             ('Personal', {
@@ -116,7 +131,7 @@ class UserForm(forms.ModelForm):
         password1 = self.cleaned_data.get("password1")
 
         if (password1 or password2) and password1 != password2:
-            raise forms.ValidationError("Passwords don't match")
+            raise forms.ValidationError("Passwords do not match.")
 
         return password2
 
@@ -159,19 +174,19 @@ class UserForm(forms.ModelForm):
                     raise forms.ValidationError("User's child cannot be a parent of user.")
                 return parent
 
-    def clean_role(self):
+    def clean_groups(self):
         """
         Restrict the user other than super user to create the admin.
         """
-        role = self.cleaned_data['role']
+        groups = self.cleaned_data['groups']
 
-        if not self.request.user.is_superuser and len(role) == 1:
-            if role[0].role_name == 'admin':
+        if not self.request.user.is_superuser and len(groups) == 1:
+            if groups[0].name.lower() == 'admin':
                 raise forms.ValidationError("Not permitted to create admin.")
             else:
-                return role
+                return groups
         else:
-            return role
+            return groups
 
     def clean_password1(self):
         """
@@ -189,6 +204,7 @@ class UserForm(forms.ModelForm):
                 raise forms.ValidationError("Username and password should not be identical.")
 
             if password1:
+                # Last five password match validator.
                 user = UserProfile.objects.filter(username=username)
                 if user.exists():
                     # Neglect password if it's already from last five passwords used by the user.
@@ -226,3 +242,73 @@ class UserPasswordForm(forms.Form):
                 for pwd in user_password_used:
                     if check_password(confirm_pwd, pwd):
                         raise forms.ValidationError("This password is recently used.")
+
+
+class PermissionForm(forms.ModelForm):
+    """
+    Form required to create and update permission.
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize function to change attributes before rending the model form.
+        """
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(PermissionForm, self).__init__(*args, **kwargs)
+
+        self.fields['content_type'].empty_label = 'Select'
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = Permission
+        fields = "__all__"
+
+
+class GroupForm(forms.ModelForm):
+    """
+    Form required to create and update group.
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize function to change attributes before rending the model form.
+        """
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(GroupForm, self).__init__(*args, **kwargs)
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = Group
+        fields = "__all__"

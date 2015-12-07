@@ -6,17 +6,16 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device_group.models import DeviceGroup
 from .forms import OrganizationForm
 from .models import Organization
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
-from user_group.models import UserGroup
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin
 from nocout.mixins.generics import FormRequestMixin
+from user_profile.utils.auth import in_group
 
 
 class OrganizationList(PermissionsRequiredMixin, ListView):
@@ -42,14 +41,14 @@ class OrganizationList(PermissionsRequiredMixin, ListView):
             {'mData':'country',             'sTitle' : 'Country',       'sWidth':'auto'},
             {'mData':'description',         'sTitle' : 'Description',   'sWidth':'auto','bSortable': False}]
 
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%','bSortable': False })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class OrganizationListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, DatatableSearchMixin, BaseDatatableView):
+class OrganizationListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Organization Data table.
     """

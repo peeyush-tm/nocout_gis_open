@@ -59,10 +59,16 @@ def check_mrotek_ul_utilization(item, _no_params, info):
 			timedif, rate = get_counter("mrotek_ul_utilization" , this_time, saveint(link_out_octets))
 			rate = (rate * 8)/(1024.0 * 1024)
     			state = 0
+			try:
+				if memc:
+					key = str(g_hostname) + "_ul"
+					memc.set(key,rate,300)
+			except:
+				pass
 		except MKCounterWrapped:
 			wrapped=True
                 status_list.append(("fe_1","%.2f" % rate))
-                infotext = "ul_utilization: %s" % (rate)
+                infotext = "ul_utilization: [time=%s count=%s]" % (this_time,link_out_octets)
     except ValueError:
         infotext = "type_mismatch_error"
     except:

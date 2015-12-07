@@ -11,23 +11,14 @@
     <!-- Placed at the end of the document so the pages load faster -->
     <!-- CUSTOM SCRIPT -->
     <script src={% static "js/script.js" %}></script>
-    <!-- JQUERY UI-->
-    <script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %}></script>
+    <!-- jQuery UI Lib -->
+    <script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %} ></script>
     <!-- BOOTSTRAP -->
     <script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
     <!-- DATA TABLES -->
     <script type="text/javascript" src={% static "js/datatables/media/js/jquery.dataTables.min.js" %}></script>
-    <script type="text/javascript" src={% static "js/datatables/media/assets/js/datatables.min.js" %}></script>
     <script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/TableTools.min.js" %}></script>
     <script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/ZeroClipboard.min.js" %}></script>
-    <!-- BLOCK UI -->
-    <script type="text/javascript" src={% static "js/jQuery-BlockUI/jquery.blockUI.min.js" %}></script>
-    <!-- TYPEHEAD -->
-    <script type="text/javascript" src={% static "js/typeahead/typeahead.min.js" %}></script>
-    <!-- AUTOSIZE -->
-    <script type="text/javascript" src={% static "js/autosize/jquery.autosize.min.js" %}></script>
-    <!-- COUNTABLE -->
-    <script type="text/javascript" src={% static "js/countable/jquery.simplyCountable.min.js" %}></script>
     <!-- INPUT MASK -->
     <script type="text/javascript" src={% static "js/bootstrap-inputmask/bootstrap-inputmask.min.js" %}></script>
     <!-- FILE UPLOAD -->
@@ -40,10 +31,6 @@
     <script type="text/javascript" src={% static "js/ajax_csrf.js" %}></script>
     <!-- GRITTER -->
     <script type="text/javascript" src={% static "js/gritter/js/jquery.gritter.min.js" %}></script>
-    <!-- Table Cloth -->
-    <script type="text/javascript" src={% static "js/tablecloth/js/jquery.tablecloth.js" %}></script>
-    <!-- Table Cloth -->
-    <script type="text/javascript" src={% static "js/tablecloth/js/jquery.tablesorter.min.js" %}></script>
     <!-- SELECT2 -->
     <script type="text/javascript" src={% static "js/select2/select2.min.js" %}></script>
     <!-- SELECTED SIDE MENU-->
@@ -71,7 +58,17 @@
     <script src={% static "js/actions_create.js" %}></script>
     <!-- Custom library for Global Search -->
     <script type="text/javascript" src={% static "js/nocout/globalSearchLib.js" %}></script>
-
+    <!-- Custom script for droptown populate from server -->
+    <script type="text/javascript" src={% static "js/nocout/populateDropdownsLib.js" %}></script>
+    <script type="text/javascript">
+        {% if settings.ENABLE_ADVANCE_FILTERS %}
+            advance_filters_enabled = true;
+        {% else %}
+            advance_filters_enabled = false;
+        {% endif %}
+        </script>
+    <!-- Custom library for Datatables advance filtering -->
+    <script type="text/javascript" src={% static "js/nocout/nocoutDatatablesFilters.js" %}></script>
     <!-- CUSTOM SCRIPT -->
     {% block jquery %}{% endblock %}
     <!-- CUSTOM JAVASCRIPTS IMPORT BLOCK -->
@@ -118,7 +115,7 @@
                                         buttons: {
                                             main: {
                                                 label: "Ok",
-                                                className: "btn-primary",
+                                                className: "btn-default",
                                                 callback: function() {
                                                     $.ajax({
                                                         url:"/sm/dialog_expired_logout_user/",
@@ -171,9 +168,9 @@
             }
 
         });
+
+        createPaginateTabs();
     </script>
-
     </body>
-    </html>
-
+</html>
 {% endblock %}

@@ -9,6 +9,7 @@ import os
 import re
 import time
 import json
+from user_profile.utils.auth import in_group
 import xlrd
 import xlwt
 
@@ -35,33 +36,40 @@ from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_T
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
-from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin, \
+    AdvanceFilteringMixin
 from nocout.mixins.select2 import Select2Mixin
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 from organization.models import Organization
 from user_profile.models import UserProfile
-from user_group.models import UserGroup
-from device_group.models import DeviceGroup
 from device.models import Country, State, City, Device, DeviceType, DeviceTechnology
 from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, Status
 
-from inventory.models import (Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, Inventory,
-        IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, GISInventoryBulkImport,
-        UserThematicSettings, CircuitL2Report, PingThematicSettings, UserPingThematicSettings, GISExcelDownload)
+from inventory.models import (Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit,
+                              IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings,
+                              GISInventoryBulkImport,
+                              UserThematicSettings, CircuitL2Report, PingThematicSettings, UserPingThematicSettings,
+                              GISExcelDownload)
 from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm,
-        CircuitForm, L2ReportForm, InventoryForm, IconSettingsForm, LivePollingSettingsForm,
-        ThresholdConfigurationForm, ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm,
-        PingThematicSettingsForm,  ServiceThematicSettingsForm, ServiceThresholdConfigurationForm,
-        ServiceLivePollingSettingsForm, WizardBaseStationForm, WizardBackhaulForm, WizardSectorForm, WizardAntennaForm,
-        WizardSubStationForm, WizardCustomerForm, WizardCircuitForm, WizardPTPSubStationAntennaFormSet,
-        DownloadSelectedBSInventoryEditForm)
-from inventory.tasks import (validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory,
-        bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory,
-        bulk_upload_wimax_ss_inventory, bulk_upload_backhaul_inventory, generate_gis_inventory_excel,
-        bulk_upload_delta_generator, delete_gis_inventory)
+                             CircuitForm, L2ReportForm, IconSettingsForm, LivePollingSettingsForm,
+                             ThresholdConfigurationForm, ThematicSettingsForm, GISInventoryBulkImportForm,
+                             GISInventoryBulkImportEditForm,
+                             PingThematicSettingsForm, ServiceThematicSettingsForm, ServiceThresholdConfigurationForm,
+                             ServiceLivePollingSettingsForm, WizardBaseStationForm, WizardBackhaulForm,
+                             WizardSectorForm, WizardAntennaForm,
+                             WizardSubStationForm, WizardCustomerForm, WizardCircuitForm,
+                             WizardPTPSubStationAntennaFormSet,
+                             DownloadSelectedBSInventoryEditForm)
+from inventory.tasks import (validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory,
+                             bulk_upload_pmp_sm_inventory,
+                             bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory,
+                             bulk_upload_wimax_ss_inventory, bulk_upload_backhaul_inventory,
+                             generate_gis_inventory_excel,
+                             bulk_upload_delta_generator, delete_gis_inventory)
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 ##caching
@@ -76,192 +84,7 @@ from inventory.utils.util import InventoryUtilsGateway
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
-
-# **************************************** Inventory *********************************************
-def inventory(request):
-    """
-    Render the inventory page.
-    """
-    return render(request, 'inventory/inventory.html')
-
-
-class InventoryListing(PermissionsRequiredMixin, ListView):
-    """
-    Class Based Inventory View to render list page.
-    """
-    model = Inventory
-    template_name = 'inventory/inventory_list.html'
-    required_permissions = ('inventory.view_inventory',)
-
-    def get_context_data(self, **kwargs):
-        """
-        Preparing the Context Variable required in the template rendering.
-        """
-        context = super(InventoryListing, self).get_context_data(**kwargs)
-        datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'auto', },
-            {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },]
-
-        # if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable' : False})
-
-        context['datatable_headers'] = json.dumps(datatable_headers)
-        return context
-
-
-class InventoryListingTable(PermissionsRequiredMixin, BaseDatatableView):
-    """
-    Class based View to render Inventory Data table.
-    """
-
-    model = Inventory
-    required_permissions = ('inventory.view_inventory',)
-
-    # columns to display Inventory List Datatable columns.
-    columns = ['alias', 'user_group__name', 'organization__name', 'description']
-    # order columns is list of columns used for sorting the columns which is in this list.
-    order_columns = ['alias', 'user_group__name', 'organization__name', 'description']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids = self.request.user.userprofile.organization.get_descendants(
-            include_self=True).values_list('id', flat=True)
-        return Inventory.objects.filter(organization__in=organization_descendants_ids).values(*self.columns + ['id'])
-
-    def prepare_results(self, qs):
-        """
-        Preparing the final result after fetching from the data base to render on the data table.
-
-        :param qs:
-        :return qs
-
-        """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
-            dct.update(actions='<a href="/inventory/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                       <a href="/inventory/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                dct.pop('id')))
-
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
-
-
-class InventoryCreate(PermissionsRequiredMixin, CreateView):
-    """
-    Class based view to create new Inventory.
-    """
-
-    template_name = 'inventory/inventory_new.html'
-    model = Inventory
-    form_class = InventoryForm
-    success_url = reverse_lazy('InventoryList')
-    required_permissions = ('inventory.add_inventory',)
-
-
-class InventoryUpdate(PermissionsRequiredMixin, UpdateView):
-    """
-    Class based view to update new Inventory.
-    """
-    template_name = 'inventory/inventory_update.html'
-    model = Inventory
-    form_class = InventoryForm
-    success_url = reverse_lazy('InventoryList')
-    required_permissions = ('inventory.change_inventory',)
-
-
-class InventoryDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
-    """
-    Class based View to delete the Inventory
-
-    """
-    model = Inventory
-    template_name = 'inventory/inventory_delete.html'
-    success_url = reverse_lazy('InventoryList')
-    required_permissions = ('inventory.delete_inventory',)
-
-
-def inventory_details_wrt_organization(request):
-    """
-    Inventory details organization as a get organization parameter.
-    """
-    organization_id = request.GET['organization']
-    organization_descendants_ids = Organization.objects.get(id=organization_id).get_descendants(
-        include_self=True).values_list('id', flat=True)
-    user_group = UserGroup.objects.filter(organization__in=organization_descendants_ids, is_deleted=0).values_list('id',
-                                                                                                                   'name')
-    device_groups = DeviceGroup.objects.filter(organization__in=organization_descendants_ids, is_deleted=0).values_list(
-        'id', 'name')
-    response_device_groups = response_user_group = ''
-    for index in range(len(device_groups)):
-        response_device_groups += '<option value={0}>{1}</option>'.format(*map(str, device_groups[index]))
-    for index in range(len(user_group)):
-        response_user_group += '<option value={0}>{1}</option>'.format(*map(str, user_group[index]))
-
-    return HttpResponse(
-        json.dumps({'response': {'device_groups': response_device_groups, 'user_groups': response_user_group}}), \
-        content_type='application/json')
-
-
-#**************************************** Antenna *********************************************
+# **************************************** Antenna *********************************************
 class SelectAntennaListView(Select2Mixin, ListView):
     """
     Provide selector data for jquery select2 when loading data from Remote.
@@ -296,19 +119,19 @@ class AntennaList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'beam_width', 'sTitle': 'Beam Width', 'sWidth': '10%', },
             {'mData': 'azimuth_angle', 'sTitle': 'Azimuth Angle', 'sWidth': '10%', }, ]
 
-        #if the user role is Admin or operator or superuser then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role or self.request.user.is_superuser:
+        # if the user role is Admin or operator or superuser then the action column will appear on the datatable
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
 class AntennaListingTable(PermissionsRequiredMixin,
-        DatatableOrganizationFilterMixin,
-        DatatableSearchMixin,
-        BaseDatatableView,
-    ):
+                          DatatableOrganizationFilterMixin,
+                          DatatableSearchMixin,
+                          BaseDatatableView,
+                          AdvanceFilteringMixin
+                          ):
     """
     Class based View to render Antenna Data table. Returns json data for data table.
     :param Mixins- PermissionsRequiredMixin
@@ -335,15 +158,17 @@ class AntennaListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_antenna'):
-                edit_action = '<a href="/antenna/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/antenna/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                    device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_antenna'):
-                delete_action = '<a href="/antenna/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/antenna/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
-                dct.update(actions= edit_action+delete_action)
+                dct.update(actions=edit_action + delete_action)
         return json_data
 
 
@@ -391,7 +216,7 @@ class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_antenna',)
 
 
-#****************************************** Base Station ********************************************
+# ****************************************** Base Station ********************************************
 class SelectBaseStationListView(Select2Mixin, ListView):
     """
     Provide selector data for jquery select2 when loading data from Remote.
@@ -428,20 +253,20 @@ class BaseStationList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', },
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            ]
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        ]
+        # if the user role is Admin or operator then the action column will appear on the datatable
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
 class BaseStationListingTable(PermissionsRequiredMixin,
-        DatatableOrganizationFilterMixin,
-        DatatableSearchMixin,
-        BaseDatatableView,
-    ):
+                              DatatableOrganizationFilterMixin,
+                              DatatableSearchMixin,
+                              BaseDatatableView,
+                              AdvanceFilteringMixin
+                              ):
     """
     Class based View to render Base Station Data table.
     """
@@ -451,7 +276,6 @@ class BaseStationListingTable(PermissionsRequiredMixin,
                'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description', 'bh_port_name']
     order_columns = ['alias', 'bs_site_id', 'state__state_name', 'city__city_name', 'bh_capacity', 'tower_height',
                      'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description', 'bh_port_name']
-
 
     def prepare_results(self, qs):
         """
@@ -470,20 +294,22 @@ class BaseStationListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_basestation'):
-                edit_action = '<a href="/base_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
+                edit_action = '<a href="/base_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                    device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_basestation'):
-                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
+                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
                 # dct.update(actions= edit_action+delete_action)
-                actions = edit_action+delete_action
+                actions = edit_action + delete_action
             else:
                 actions = ''
             actions = actions + '<a href="/base_station/{0}/l2_reports/"><i class="fa fa-sign-in text-info" title="View L2 reports for Base station"\
-                            alt="View L2 reports for Base station"></i></a>&nbsp&nbsp'.format(device_id)
+                            alt="View L2 reports for Base station"></i></a>'.format(device_id)
             dct.update(actions=actions)
         return json_data
 
@@ -532,7 +358,7 @@ class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView
     required_permissions = ('inventory.delete_basestation',)
 
 
-#**************************************** Backhaul *********************************************
+# **************************************** Backhaul *********************************************
 class SelectBackhaulListView(Select2Mixin, ListView):
     """
     Provide selector data for jquery select2 when loading data from Remote.
@@ -565,21 +391,22 @@ class BackhaulList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', },
             {'mData': 'bh_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            ]
+        ]
 
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        # if the user role is Admin or operator then the action column will appear on the datatable
+
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
 class BackhaulListingTable(PermissionsRequiredMixin,
-        DatatableOrganizationFilterMixin,
-        DatatableSearchMixin,
-        BaseDatatableView,
-    ):
+                           DatatableOrganizationFilterMixin,
+                           DatatableSearchMixin,
+                           BaseDatatableView,
+                           AdvanceFilteringMixin
+                           ):
     """
     Class based View to render Backhaul Data table.
     """
@@ -618,15 +445,17 @@ class BackhaulListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_backhaul'):
-                edit_action = '<a href="/backhaul/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/backhaul/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                    device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_backhaul'):
-                delete_action = '<a href="/backhaul/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/backhaul/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
-                dct.update(actions= edit_action+delete_action)
+                dct.update(actions=edit_action + delete_action)
         return json_data
 
 
@@ -674,7 +503,7 @@ class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_backhaul',)
 
 
-#**************************************** Sector *********************************************
+# **************************************** Sector *********************************************
 class SelectSectorListView(Select2Mixin, ListView):
     """
     Provide selector data for jquery select2 when loading data from Remote.
@@ -710,11 +539,10 @@ class SectorList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'dr_site', 'sTitle': 'DR Site', 'sWidth': 'auto', },
             {'mData': 'dr_configured_on__id', 'sTitle': 'DR Configured On', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            ]
+        ]
 
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        # if the user role is Admin or operator then the action column will appear on the datatable
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -722,18 +550,21 @@ class SectorList(PermissionsRequiredMixin, TemplateView):
 
 
 class SectorListingTable(PermissionsRequiredMixin,
-        DatatableOrganizationFilterMixin,
-        DatatableSearchMixin,
-        BaseDatatableView,
-    ):
+                         DatatableOrganizationFilterMixin,
+                         DatatableSearchMixin,
+                         BaseDatatableView,
+                         AdvanceFilteringMixin
+                         ):
     """
     Class based View to render Sector Data Table.
     """
     model = Sector
     required_permissions = ('inventory.view_sector',)
-    columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id', 'dr_configured_on__id', 'dr_site',
+    columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id', 'dr_configured_on__id',
+               'dr_site',
                'base_station__alias', 'sector_configured_on_port__alias', 'antenna__alias', 'mrc', 'description']
-    order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id', 'dr_configured_on__id', 'dr_site',
+    order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id', 'dr_configured_on__id',
+                     'dr_site',
                      'base_station__alias', 'sector_configured_on_port__alias', 'antenna__alias', 'mrc', 'description']
 
     def get_initial_queryset(self):
@@ -742,15 +573,15 @@ class SectorListingTable(PermissionsRequiredMixin,
         if 'tab' in self.request.GET:
             if self.request.GET.get('tab') == 'corrupted':
                 qs = qs.annotate(num_circuit=Count('circuit')).filter(
-                        Q(sector_configured_on__isnull=True)
-                        |
-                        Q(base_station__isnull=True)
-                        |
-                        Q(bs_technology__in=[3, 4], sector_id__isnull=True)
-                        |
-                        Q(bs_technology__id=3, sector_configured_on_port__isnull=True)
-                        |
-                        Q(bs_technology__in=[2], num_circuit__gt=1)
+                    Q(sector_configured_on__isnull=True)
+                    |
+                    Q(base_station__isnull=True)
+                    |
+                    Q(bs_technology__in=[3, 4], sector_id__isnull=True)
+                    |
+                    Q(bs_technology__id=3, sector_configured_on_port__isnull=True)
+                    |
+                    Q(bs_technology__in=[2], num_circuit__gt=1)
                 )
             elif self.request.GET.get('tab') == 'unused':
                 qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
@@ -785,15 +616,16 @@ class SectorListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_sector'):
-                edit_action = '<a href="/sector/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/sector/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_sector'):
-                delete_action = '<a href="/sector/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/sector/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
-                dct.update(actions= edit_action+delete_action)
+                dct.update(actions=edit_action + delete_action)
         return json_data
 
 
@@ -841,7 +673,7 @@ class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_sector',)
 
 
-#**************************************** Customer *********************************************
+# **************************************** Customer *********************************************
 class SelectCustomerListView(Select2Mixin, ListView):
     """
     Provide selector data for jquery select2 when loading data from Remote.
@@ -863,22 +695,23 @@ class CustomerList(PermissionsRequiredMixin, TemplateView):
         context = super(CustomerList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'bSortable': False},
-            ]
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        ]
+        # if the user role is Admin or operator then the action column will appear on the datatable
+
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
 class CustomerListingTable(PermissionsRequiredMixin,
-        DatatableOrganizationFilterMixin,
-        DatatableSearchMixin,
-        BaseDatatableView,
-    ):
+                           DatatableOrganizationFilterMixin,
+                           DatatableSearchMixin,
+                           BaseDatatableView,
+                           AdvanceFilteringMixin
+                           ):
     """
     Class based View to render Customer Data table.
     """
@@ -907,15 +740,17 @@ class CustomerListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_customer'):
-                edit_action = '<a href="/customer/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/customer/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                    device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_customer'):
-                delete_action = '<a href="/customer/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/customer/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
-                dct.update(actions= edit_action+delete_action)
+                dct.update(actions=edit_action + delete_action)
         return json_data
 
 
@@ -963,7 +798,7 @@ class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_customer',)
 
 
-#**************************************** Sub Station *********************************************
+# **************************************** Sub Station *********************************************
 class SelectSubStationListView(Select2Mixin, ListView):
     """
     Provide selector data for jquery select2 when loading data from Remote.
@@ -998,12 +833,13 @@ class SubStationList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto'},
             {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
-            ]
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': False},
+        ]
 
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        # if the user role is Admin or operator then the action column will appear on the datatable
+
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1011,10 +847,11 @@ class SubStationList(PermissionsRequiredMixin, TemplateView):
 
 
 class SubStationListingTable(PermissionsRequiredMixin,
-        DatatableOrganizationFilterMixin,
-        DatatableSearchMixin,
-        BaseDatatableView,
-    ):
+                             DatatableOrganizationFilterMixin,
+                             DatatableSearchMixin,
+                             BaseDatatableView,
+                             AdvanceFilteringMixin
+                             ):
     """
     Class based View to render Sub Station Data table.
     """
@@ -1022,7 +859,8 @@ class SubStationListingTable(PermissionsRequiredMixin,
     required_permissions = ('inventory.view_substation',)
     columns = ['alias', 'device__id', 'device__ip_address', 'antenna__alias', 'version', 'serial_no', 'building_height',
                'tower_height', 'city__city_name', 'state__state_name', 'address', 'description']
-    order_columns = ['alias', 'device__id', 'device__ip_address', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    order_columns = ['alias', 'device__id', 'device__ip_address', 'antenna__alias', 'version', 'serial_no',
+                     'building_height',
                      'tower_height', 'city__city_name', 'state__state_name']
 
     def get_initial_queryset(self):
@@ -1043,7 +881,6 @@ class SubStationListingTable(PermissionsRequiredMixin,
                 qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
 
         return qs
-
 
     def prepare_results(self, qs):
         """
@@ -1068,17 +905,19 @@ class SubStationListingTable(PermissionsRequiredMixin,
 
             # if user has permission to edit the substation then edit option will be showed in data table.
             if self.request.user.has_perm('inventory.change_substation'):
-                edit_action = '<a href="/sub_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/sub_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                    device_id)
             else:
                 edit_action = ''
             # if user has permission to delete the substation then edit option will be showed in data table
             if self.request.user.has_perm('inventory.delete_substation'):
-                delete_action = '<a href="/sub_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/sub_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    device_id)
             else:
                 delete_action = ''
             # if edit_action or delete_action, then action column will be displayed in datatable else not.
             if edit_action or delete_action:
-                dct.update(actions= edit_action+delete_action)
+                dct.update(actions=edit_action + delete_action)
         return json_data
 
 
@@ -1131,7 +970,7 @@ class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView)
     required_permissions = ('inventory.delete_substation',)
 
 
-#**************************************** Circuit *********************************************
+# **************************************** Circuit *********************************************
 class SelectCircuitListView(Select2Mixin, ListView):
     """
     Provide selector data for jquery select2 when loading data from Remote.
@@ -1164,11 +1003,11 @@ class CircuitList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'sub_station__alias', 'sTitle': 'Sub Station', 'sWidth': 'auto', },
             {'mData': 'sub_station__device__ip_address', 'sTitle': 'Sub Station Configured On', 'sWidth': 'auto', },
             {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto',  'sClass': 'hidden-xs'}
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'}
         ]
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        # if the user role is Admin or operator then the action column will appear on the datatable
+
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1176,27 +1015,28 @@ class CircuitList(PermissionsRequiredMixin, TemplateView):
 
 
 class CircuitListingTable(PermissionsRequiredMixin,
-        DatatableOrganizationFilterMixin,
-        DatatableSearchMixin,
-        BaseDatatableView,
-    ):
+                          DatatableOrganizationFilterMixin,
+                          DatatableSearchMixin,
+                          BaseDatatableView,
+                          AdvanceFilteringMixin
+                          ):
     """
     Class based View to render Circuit Data table.
     """
     model = Circuit
     required_permissions = ('inventory.view_circuit',)
     # columns are used for list of fields which should be displayed on data table.
-    columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
+    columns = ['alias', 'circuit_id', 'sector__base_station__alias', 'sector__alias',
                'sector__sector_configured_on__ip_address', 'customer__alias',
                'sub_station__alias', 'sub_station__device__ip_address', 'date_of_acceptance', 'description']
-    #order_columns is used for list of fields which is used for sorting the data table.
-    order_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
+    # order_columns is used for list of fields which is used for sorting the data table.
+    order_columns = ['alias', 'circuit_id', 'sector__base_station__alias', 'sector__alias',
                      'sector__sector_configured_on__ip_address', 'customer__alias',
                      'sub_station__alias', 'sub_station__device__ip_address', 'date_of_acceptance', 'description']
-    #search_columns is used for list of fields which is used for searching the data table.
-    search_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
+    # search_columns is used for list of fields which is used for searching the data table.
+    search_columns = ['alias', 'circuit_id', 'sector__base_station__alias', 'sector__alias',
                       'sector__sector_configured_on__ip_address', 'customer__alias',
-               'sub_station__alias', 'sub_station__device__ip_address']
+                      'sub_station__alias', 'sub_station__device__ip_address']
 
     def get_initial_queryset(self):
         # getting the queryset from get_initial_queryset method of DatatableOrganizationFilterMixin.
@@ -1205,7 +1045,7 @@ class CircuitListingTable(PermissionsRequiredMixin,
         # if unused tab.
         if 'tab' in self.request.GET and self.request.GET.get('tab') == 'unused':
             # return the circuit which has no sub_station or no sector or no customer.
-            qs = qs.filter( Q(sub_station__isnull=True) | Q(sector__isnull=True) | Q(customer__isnull=True))
+            qs = qs.filter(Q(sub_station__isnull=True) | Q(sector__isnull=True) | Q(customer__isnull=True))
 
         return qs
 
@@ -1217,11 +1057,13 @@ class CircuitListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_circuit'):
-                edit_action = '<a href="/circuit/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
+                edit_action = '<a href="/circuit/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                    device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_circuit'):
-                delete_action = '<a href="/circuit/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
+                delete_action = '<a href="/circuit/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
@@ -1280,7 +1122,7 @@ class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_circuit',)
 
 
-#********************************* Circuit & Base Station L2 Reports*******************************************
+# ********************************* Circuit & Base Station L2 Reports*******************************************
 
 class CircuitL2Report_Init(ListView):
     """
@@ -1295,17 +1137,16 @@ class CircuitL2Report_Init(ListView):
         """
         context = super(CircuitL2Report_Init, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'file', 'sTitle': 'File', 'sWidth': 'auto', 'bSortable' : False},
+            {'mData': 'file', 'sTitle': 'File', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'file_name', 'sTitle': 'Report', 'sWidth': 'auto', },
             {'mData': 'added_on', 'sTitle': 'Uploaded On', 'sWidth': 'auto'},
             {'mData': 'user_id__username', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
         ]
-        
+
         bs_datatable_header = list()
         bs_datatable_header += datatable_headers
         if not ('circuit_id' in self.kwargs or 'bs_id' in self.kwargs):
-
             datatable_headers.append({
                 'mData': 'type_id',
                 'sTitle': 'Circuit ID',
@@ -1318,16 +1159,16 @@ class CircuitL2Report_Init(ListView):
             })
 
 
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        # if the user role is Admin or operator then the action column will appear on the datatable
+
         if (
-            ('admin' in user_role or 'operator' in user_role)
-            and
-            ( 
-             ('circuit_id' in self.kwargs and self.kwargs['circuit_id'] != 0)
-            or
-             ('bs_id' in self.kwargs and self.kwargs['bs_id'] != 0)
-            )
+                    (in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'))
+                and
+                    (
+                                ('circuit_id' in self.kwargs and self.kwargs['circuit_id'] != 0)
+                            or
+                                ('bs_id' in self.kwargs and self.kwargs['bs_id'] != 0)
+                    )
         ):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
@@ -1348,8 +1189,9 @@ class CircuitL2Report_Init(ListView):
 
         return context
 
+
 ## This class load L2 reports datatable for particular circuit_id
-class L2ReportListingTable(BaseDatatableView):
+class L2ReportListingTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Circuit Data table.
     """
@@ -1364,7 +1206,7 @@ class L2ReportListingTable(BaseDatatableView):
         'user_id__username',
         'type_id'
     ]
-    
+
     order_columns = columns
     ckt_id = 0
     is_searched = False
@@ -1379,29 +1221,31 @@ class L2ReportListingTable(BaseDatatableView):
 
         if int(self.ckt_id) > 0:
             # condition to fetch l2 reports data from db
-            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(report_type='circuit') & Q(type_id=self.ckt_id))
+            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (
+                Q(report_type='circuit') & Q(type_id=self.ckt_id))
         else:
             condition = (Q(user_id=self.request.user) | Q(is_public=1)) & Q(report_type='circuit')
 
-        queryset = self.model.objects.filter(condition).values(*self.columns+['id'])
+        queryset = self.model.objects.filter(condition).values(*self.columns + ['id'])
 
         return queryset
 
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             self.is_searched = True
             result = self.map_report_inventory(qs)
             result_list = list()
-            
+
             for item in result:
                 if sSearch.lower() in json.dumps(item).lower():
                     result_list.append(item)
-            return result_list
-        return qs
-        
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
+
     def ordering(self, qs):
         """
         sorting for the table
@@ -1457,7 +1301,7 @@ class L2ReportListingTable(BaseDatatableView):
                         logger.info(e.message)
                     dct.update(
                         type_id=type_name
-                        )
+                    )
         return qs
 
     def datetimeupdate(self, qs):
@@ -1500,12 +1344,12 @@ class L2ReportListingTable(BaseDatatableView):
             file_type_icon = ''
             file_path = dct['file_name']
             splitted_name = file_path.split("/")
-            downloaded_file_name = splitted_name[len(splitted_name)-1]
+            downloaded_file_name = splitted_name[len(splitted_name) - 1]
             download_path = MEDIA_URL + file_path
 
             try:
                 name_split = downloaded_file_name.split(".")
-                file_type = name_split[len(name_split)-1]
+                file_type = name_split[len(name_split) - 1]
             except Exception, e:
                 file_type = 'xls'
 
@@ -1535,7 +1379,6 @@ class L2ReportListingTable(BaseDatatableView):
             resultant_data.append(dct)
 
         return resultant_data
-
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1580,7 +1423,7 @@ class L2ReportListingTable(BaseDatatableView):
 
 
 ## This class load L2 reports datatable for particular Base Station
-class BSL2ReportListingTable(BaseDatatableView):
+class BSL2ReportListingTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Base Station Data table.
     """
@@ -1595,7 +1438,7 @@ class BSL2ReportListingTable(BaseDatatableView):
         'user_id__username',
         'type_id'
     ]
-    
+
     order_columns = columns
 
     bs_id = 0
@@ -1610,18 +1453,20 @@ class BSL2ReportListingTable(BaseDatatableView):
 
         if int(self.bs_id) > 0:
             # condition to fetch l2 reports data from db
-            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(report_type='base_station') & Q(type_id=self.bs_id))
+            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (
+                Q(report_type='base_station') & Q(type_id=self.bs_id))
         else:
             condition = (Q(user_id=self.request.user) | Q(is_public=1)) & Q(report_type='base_station')
 
-        queryset = self.model.objects.filter(condition).values(*self.columns+['id'])
+        queryset = self.model.objects.filter(condition).values(*self.columns + ['id'])
 
         return queryset
 
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             self.is_searched = True
@@ -1631,8 +1476,8 @@ class BSL2ReportListingTable(BaseDatatableView):
             for item in result:
                 if sSearch.lower() in json.dumps(item).lower():
                     result_list.append(item)
-            return result_list
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -1731,12 +1576,12 @@ class BSL2ReportListingTable(BaseDatatableView):
             file_type_icon = ''
             file_path = dct['file_name']
             splitted_name = file_path.split("/")
-            downloaded_file_name = splitted_name[len(splitted_name)-1]
+            downloaded_file_name = splitted_name[len(splitted_name) - 1]
             download_path = MEDIA_URL + file_path
 
             try:
                 name_split = downloaded_file_name.split(".")
-                file_type = name_split[len(name_split)-1]
+                file_type = name_split[len(name_split) - 1]
             except Exception, e:
                 file_type = 'xls'
 
@@ -1766,7 +1611,6 @@ class BSL2ReportListingTable(BaseDatatableView):
             resultant_data.append(dct)
 
         return resultant_data
-
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1817,11 +1661,12 @@ class BSL2ReportCreate(CreateView):
     template_name = 'circuit_l2/circuit_l2_new.html'
     model = CircuitL2Report
     form_class = L2ReportForm
+
     def get_context_data(self, **kwargs):
         """
         """
         context = super(BSL2ReportCreate, self).get_context_data(**kwargs)
-        context['type_id'] =  BaseStation.objects.get(id=self.kwargs['bs_id']).id
+        context['type_id'] = BaseStation.objects.get(id=self.kwargs['bs_id']).id
         context['report_type'] = 'base_station'
         return context
 
@@ -1830,16 +1675,16 @@ class BSL2ReportCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save(commit=False)
-        self.object.user_id =  UserProfile.objects.get(id=self.request.user.id)
+        self.object.user_id = UserProfile.objects.get(id=self.request.user.id)
         previous_reports = None
 
         if 'bs_id' in self.kwargs:
-            self.object.type_id =  BaseStation.objects.get(id=self.kwargs['bs_id']).id
+            self.object.type_id = BaseStation.objects.get(id=self.kwargs['bs_id']).id
             self.object.report_type = 'base_station'
             previous_reports = CircuitL2Report.objects.filter(type_id=self.kwargs['bs_id'])
 
         if previous_reports and previous_reports.exists():
-            l2_obj=previous_reports.values()
+            l2_obj = previous_reports.values()
             file_name = lambda x: MEDIA_ROOT + x
             for data in l2_obj:
                 try:
@@ -1852,7 +1697,8 @@ class BSL2ReportCreate(CreateView):
             previous_reports.delete()
         # save the new entry 
         self.object.save()
-        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'bs_id' : self.kwargs['bs_id']}))
+        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs={'bs_id': self.kwargs['bs_id']}))
+
 
 class CircuitL2ReportCreate(CreateView):
     """
@@ -1865,7 +1711,7 @@ class CircuitL2ReportCreate(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(CircuitL2ReportCreate, self).get_context_data(**kwargs)
-        context['type_id'] =  Circuit.objects.get(id=self.kwargs['circuit_id']).id
+        context['type_id'] = Circuit.objects.get(id=self.kwargs['circuit_id']).id
         context['report_type'] = 'circuit'
         return context
 
@@ -1874,16 +1720,16 @@ class CircuitL2ReportCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save(commit=False)
-        self.object.user_id =  UserProfile.objects.get(id=self.request.user.id)
+        self.object.user_id = UserProfile.objects.get(id=self.request.user.id)
         previous_reports = None
 
-        if 'circuit_id' in self.kwargs: 
-            self.object.type_id =  Circuit.objects.get(id=self.kwargs['circuit_id']).id
+        if 'circuit_id' in self.kwargs:
+            self.object.type_id = Circuit.objects.get(id=self.kwargs['circuit_id']).id
             self.object.report_type = 'circuit'
             previous_reports = CircuitL2Report.objects.filter(type_id=self.kwargs['circuit_id'])
 
         if previous_reports and previous_reports.exists():
-            l2_obj=previous_reports.values()
+            l2_obj = previous_reports.values()
             file_name = lambda x: MEDIA_ROOT + x
             for data in l2_obj:
                 try:
@@ -1897,10 +1743,10 @@ class CircuitL2ReportCreate(CreateView):
         # save the new entry
         self.object.save()
 
-        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
+        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs={'circuit_id': self.kwargs['circuit_id']}))
+
 
 class BsL2ReportDelete(DeleteView):
-
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -1921,11 +1767,10 @@ class BsL2ReportDelete(DeleteView):
 
         # delete entry from database
         CircuitL2Report.objects.filter(id=report_id).delete()
-        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'bs_id' : self.kwargs['bs_id']}))
+        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs={'bs_id': self.kwargs['bs_id']}))
 
 
 class CircuitL2ReportDelete(DeleteView):
-
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -1946,7 +1791,8 @@ class CircuitL2ReportDelete(DeleteView):
 
         # delete entry from database
         CircuitL2Report.objects.filter(id=report_id).delete()
-        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
+        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs={'circuit_id': self.kwargs['circuit_id']}))
+
 
 def get_l2report_count(request, type_id=None, report_type=None):
     """
@@ -1960,8 +1806,8 @@ def get_l2report_count(request, type_id=None, report_type=None):
     """
 
     result = {
-        "success" : int(),
-        "message" : ""
+        "success": int(),
+        "message": ""
     }
 
     try:
@@ -1971,7 +1817,7 @@ def get_l2report_count(request, type_id=None, report_type=None):
         ).exists()
 
         if is_exists:
-            report_type ='Base Station' if report_type == 'base_station' else report_type
+            report_type = 'Base Station' if report_type == 'base_station' else report_type
             result["success"] = 1
             result["message"] = "Are you sure you want to remove the existing file for this {0} ?".format(report_type)
     except Exception, e:
@@ -1979,7 +1825,8 @@ def get_l2report_count(request, type_id=None, report_type=None):
         pass
     return HttpResponse(json.dumps(result), content_type="application/json")
 
-#**************************************** IconSettings *********************************************
+
+# **************************************** IconSettings *********************************************
 class IconSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render IconSettings List Page.
@@ -1994,18 +1841,19 @@ class IconSettingsList(PermissionsRequiredMixin, ListView):
         """
         context = super(IconSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias',            'sTitle': 'Alias',              'sWidth': 'auto'},
-            {'mData': 'upload_image',     'sTitle': 'Image',       'sWidth': 'auto'},
-            ]
-        #if the user is superuser action column can be appeared in datatable.
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'upload_image', 'sTitle': 'Image', 'sWidth': 'auto'},
+        ]
+        # if the user is superuser action column can be appeared in datatable.
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable' : False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView,
+                               AdvanceFilteringMixin):
     """
     Class based View to render IconSettings Data table.
     """
@@ -2024,15 +1872,18 @@ class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, V
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
             try:
-                img_url = "/media/"+ (dct['upload_image']) if \
+                img_url = "/media/" + (dct['upload_image']) if \
                     "uploaded" in dct['upload_image'] \
                     else static("img/" + dct['upload_image'])
-                dct.update(upload_image='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(img_url))
+                dct.update(
+                    upload_image='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                        img_url))
             except Exception as e:
                 logger.info(e)
 
             dct.update(actions='<a href="/icon_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/icon_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/icon_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                dct.pop('id')))
         return json_data
 
 
@@ -2077,7 +1928,7 @@ class IconSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteVie
     required_permissions = ('inventory.delete_iconsettings',)
 
 
-#**************************************** LivePollingSettings *********************************************
+# **************************************** LivePollingSettings *********************************************
 class LivePollingSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render LivePollingSettings List Page.
@@ -2092,25 +1943,26 @@ class LivePollingSettingsList(PermissionsRequiredMixin, ListView):
         """
         context = super(LivePollingSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias',                   'sTitle': 'Alias',             'sWidth': 'auto'},
-            {'mData': 'technology__alias',       'sTitle': 'Technology',        'sWidth': 'auto'},
-            {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'auto'},
-            {'mData': 'data_source__alias',      'sTitle': 'Data Source',       'sWidth': 'auto'},
-            ]
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto'},
+            {'mData': 'service__alias', 'sTitle': 'Service', 'sWidth': 'auto'},
+            {'mData': 'data_source__alias', 'sTitle': 'Data Source', 'sWidth': 'auto'},
+        ]
         user_id = self.request.user.id
-        #if user is superadmin or gisadmin
-        if user_id in [1,2]:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable' : False})
+        # if user is superadmin or gisadmin
+        if user_id in [1, 2]:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
 class LivePollingSettingsListingTable(PermissionsRequiredMixin,
-        ValuesQuerySetMixin,
-        DatatableSearchMixin,
-        BaseDatatableView
-    ):
+                                      ValuesQuerySetMixin,
+                                      DatatableSearchMixin,
+                                      BaseDatatableView,
+                                      AdvanceFilteringMixin
+                                      ):
     """
     Class based View to render LivePollingSettings Data table.
     """
@@ -2130,7 +1982,8 @@ class LivePollingSettingsListingTable(PermissionsRequiredMixin,
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
             dct.update(actions='<a href="/live_polling_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/live_polling_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/live_polling_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                dct.pop('id')))
         return json_data
 
 
@@ -2190,19 +2043,20 @@ class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
         """
         context = super(ThresholdConfigurationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'auto'},
-            {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'auto'},
-            ]
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'live_polling_template__alias', 'sTitle': 'Live Polling Template', 'sWidth': 'auto'},
+        ]
         user_id = self.request.user.id
         # if user is superadmin or gisadmin
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable' : False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin,
+                                         BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render ThresholdConfiguration Data table.
     """
@@ -2211,9 +2065,9 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSear
     columns = ['alias', 'live_polling_template__alias']
     order_columns = ['alias', 'live_polling_template__alias']
     tab_search = {
-                   "tab_kwarg": 'technology',
-                   "tab_attr": "live_polling_template__technology__name",
-                 }
+        "tab_kwarg": 'technology',
+        "tab_attr": "live_polling_template__technology__name",
+    }
 
     def prepare_results(self, qs):
         """
@@ -2225,7 +2079,8 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSear
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
             dct.update(actions='<a href="/threshold_configuration/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/threshold_configuration/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/threshold_configuration/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                dct.pop('id')))
         return json_data
 
 
@@ -2270,7 +2125,7 @@ class ThresholdConfigurationDelete(PermissionsRequiredMixin, UserLogDeleteMixin,
     required_permissions = ('inventory.delete_threshold_configuration',)
 
 
-#**************************************** ThematicSettings *********************************************
+# **************************************** ThematicSettings *********************************************
 class ThematicSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render ThematicSettings List Page.
@@ -2285,14 +2140,14 @@ class ThematicSettingsList(PermissionsRequiredMixin, ListView):
         """
         context = super(ThematicSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
-            {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
-            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto',     'bSortable': False},
-            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto',     'bSortable': False},]
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'threshold_template', 'sTitle': 'Threshold Template', 'sWidth': 'auto'},
+            {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}, ]
 
         # user_id = self.request.user.id
 
-        #if user is superadmin or gisadmin
+        # if user is superadmin or gisadmin
         if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
@@ -2307,7 +2162,8 @@ class ThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class ThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin,
+                                   BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -2342,18 +2198,19 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
             threshold_config = ThresholdConfiguration.objects.get(id=int(dct['threshold_template']))
-            image_string, range_text, full_string='','',''
-            if dct['icon_settings'] and dct['icon_settings'] !='NULL':
+            image_string, range_text, full_string = '', '', ''
+            if dct['icon_settings'] and dct['icon_settings'] != 'NULL':
                 ###@nishant-teatrix. PLEASE SHOW THE RANGE MIN < ICON < RANGE MAX
                 for d in eval(dct['icon_settings']):
-                    img_url = str("/media/"+ (d.values()[0]) if "uploaded" in d.values()[0] else static("img/" + d.values()[0]))
-                    image_string= '<img src="{0}" style="height:25px; width:25px">'.format(img_url.strip())
+                    img_url = str(
+                        "/media/" + (d.values()[0]) if "uploaded" in d.values()[0] else static("img/" + d.values()[0]))
+                    image_string = '<img src="{0}" style="height:25px; width:25px">'.format(img_url.strip())
                     range_id_groups = re.match(r'[a-zA-Z_]+(\d+)', d.keys()[0])
                     if range_id_groups:
                         range_id = range_id_groups.groups()[-1]
-                        range_text= ' Range '+ range_id +', '
-                        range_start = 'range' + range_id +'_start'
-                        range_end = 'range' + range_id +'_end'
+                        range_text = ' Range ' + range_id + ', '
+                        range_start = 'range' + range_id + '_start'
+                        range_end = 'range' + range_id + '_end'
                         range_start_value = getattr(threshold_config, range_start)
                         range_end_value = getattr(threshold_config, range_end)
                     else:
@@ -2363,15 +2220,18 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin
 
                     full_string += image_string + range_text + "(" + range_start_value + ", " + range_end_value + ")" + "</br>"
             else:
-                full_string='N/A'
-            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user_profile.values_list('id', flat=True)
-            checkbox_checked_true='checked' if user_current_thematic_setting else ''
+                full_string = 'N/A'
+            user_current_thematic_setting = self.request.user.id in ThematicSettings.objects.get(
+                id=dct['id']).user_profile.values_list('id', flat=True)
+            checkbox_checked_true = 'checked' if user_current_thematic_setting else ''
             dct.update(
                 threshold_template=threshold_config.name,
-                icon_settings= full_string,
-                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
+                icon_settings=full_string,
+                user_selection='<input type="checkbox" class="check_class" ' + checkbox_checked_true + ' name="setting_selection" value={0}><br>'.format(
+                    dct['id']),
                 actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    dct.pop('id')))
         return json_data
 
 
@@ -2398,10 +2258,10 @@ class ThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         """
         Submit the form and to log the user activity.
         """
-        icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
-        icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
+        icon_settings_keys = list(set(form.data.keys()) - set(form.cleaned_data.keys() + ['csrfmiddlewaretoken']))
+        icon_settings_values_list = [{key: form.data[key]} for key in icon_settings_keys if form.data[key]]
         self.object = form.save()
-        self.object.icon_settings=icon_settings_values_list
+        self.object.icon_settings = icon_settings_values_list
         self.object.save()
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
@@ -2420,10 +2280,10 @@ class ThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
-        icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
+        icon_settings_keys = list(set(form.data.keys()) - set(form.cleaned_data.keys() + ['csrfmiddlewaretoken']))
+        icon_settings_values_list = [{key: form.data[key]} for key in icon_settings_keys if form.data[key]]
         self.object = form.save()
-        self.object.icon_settings=icon_settings_values_list
+        self.object.icon_settings = icon_settings_values_list
         self.object.save()
         # self.object = form.save()
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
@@ -2456,57 +2316,57 @@ class Get_Threshold_Ranges_And_Icon_For_Thematic_Settings(View):
             }
         }
 
-        threshold_template_id= self.request.GET.get('threshold_template_id','')
-        thematic_setting_name= self.request.GET.get('thematic_setting_name','')
+        threshold_template_id = self.request.GET.get('threshold_template_id', '')
+        thematic_setting_name = self.request.GET.get('thematic_setting_name', '')
         if threshold_template_id:
-           threshold_configuration_selected=ThresholdConfiguration.objects.get(id=int(threshold_template_id))
-           self.get_all_ranges(threshold_configuration_selected)
-           if self.result['data']['objects']['range_list']:
-              self.get_icon_details()
-              self.result['success']=1
-
+            threshold_configuration_selected = ThresholdConfiguration.objects.get(id=int(threshold_template_id))
+            self.get_all_ranges(threshold_configuration_selected)
+            if self.result['data']['objects']['range_list']:
+                self.get_icon_details()
+                self.result['success'] = 1
 
         if thematic_setting_name:
-            thematic_setting_object= ThematicSettings.objects.get(name=thematic_setting_name)
-            thematic_icon_setting= thematic_setting_object.icon_settings
-            thematic_icon_setting= '[]' if thematic_icon_setting =='NULL' or thematic_icon_setting =='' else thematic_icon_setting
-            thematic_icon_setting= eval(thematic_icon_setting)
+            thematic_setting_object = ThematicSettings.objects.get(name=thematic_setting_name)
+            thematic_icon_setting = thematic_setting_object.icon_settings
+            thematic_icon_setting = '[]' if thematic_icon_setting == 'NULL' or thematic_icon_setting == '' else thematic_icon_setting
+            thematic_icon_setting = eval(thematic_icon_setting)
             if thematic_icon_setting:
-               icon_details, icon_details_selected=list(), dict()
+                icon_details, icon_details_selected = list(), dict()
 
-               for icon_setting in thematic_icon_setting:
-                   # range_list.append('Range ' + icon_setting.keys()[0][-1])
-                   icon_details_selected['Range ' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
+                for icon_setting in thematic_icon_setting:
+                    # range_list.append('Range ' + icon_setting.keys()[0][-1])
+                    icon_details_selected['Range ' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
 
-               # self.result['data']['objects']['range_list'] = range_list
-               self.result['data']['objects']['icon_details_selected'] = icon_details_selected
-               # self.get_icon_details()
-               # self.result['success']=1
+                # self.result['data']['objects']['range_list'] = range_list
+                self.result['data']['objects']['icon_details_selected'] = icon_details_selected
+                # self.get_icon_details()
+                # self.result['success']=1
 
         return HttpResponse(json.dumps(self.result))
 
     def get_all_ranges(self, threshold_configuration_object):
-        range_list=list()
+        range_list = list()
         for ran in range(1, 11):
 
-            range_start= None
+            range_start = None
 
-            query= "range_start= threshold_configuration_object.range{0}_{1}".format(ran, 'start')
+            query = "range_start= threshold_configuration_object.range{0}_{1}".format(ran, 'start')
             exec query
             if range_start:
-               range_list.append('Range {0}'.format(ran))
+                range_list.append('Range {0}'.format(ran))
 
         self.result['data']['objects']['range_list'] = range_list
 
     def get_icon_details(self):
-        icon_details= IconSettings.objects.all().values('id','name', 'upload_image')
-        self.result['data']['objects']['icon_details'] =list(icon_details)
+        icon_details = IconSettings.objects.all().values('id', 'name', 'upload_image')
+        self.result['data']['objects']['icon_details'] = list(icon_details)
 
 
 class Update_User_Thematic_Setting(View):
     """
     The Class Based View to Response the Ajax call on click to bind the user with the thematic setting.
     """
+
     def get(self, request):
         self.result = {
             "success": 0,
@@ -2517,32 +2377,42 @@ class Update_User_Thematic_Setting(View):
             }
         }
 
-        thematic_setting_id= self.request.GET.get('threshold_template_id',None)
+        thematic_setting_id = self.request.GET.get('threshold_template_id', None)
         user_profile_id = self.request.user.id
+
         if thematic_setting_id:
-
-
-            ts_obj = ThematicSettings.objects.get(id= int(thematic_setting_id))
-            user_obj = UserProfile.objects.get(id= user_profile_id)
+            ts_obj = ThematicSettings.objects.get(id=int(thematic_setting_id))
+            user_obj = UserProfile.objects.get(id=user_profile_id)
             tech_obj = ts_obj.threshold_template.live_polling_template.technology
+            type_obj = ts_obj.threshold_template.live_polling_template.device_type
 
-            to_delete = UserThematicSettings.objects.filter(user_profile=user_obj, thematic_technology=tech_obj)
+            to_delete = UserThematicSettings.objects.filter(
+                user_profile=user_obj,
+                thematic_technology=tech_obj,
+                thematic_type=type_obj
+            )
+
             if len(to_delete):
                 to_delete.delete()
 
-            uts = UserThematicSettings(user_profile= user_obj,
-                                       thematic_template=ts_obj,
-                                       thematic_technology=tech_obj
+            uts = UserThematicSettings(
+                user_profile=user_obj,
+                thematic_template=ts_obj,
+                thematic_technology=tech_obj,
+                thematic_type=type_obj
             )
+
             uts.save()
-            self.result['success']=1
-            self.result['message']='Service Thematic Setting Bind to User Successfully'
-            self.result['data']['objects']['username']=self.request.user.userprofile.username
-            self.result['data']['objects']['thematic_setting_name']= ThematicSettings.objects.get(id=int(thematic_setting_id)).name
+            self.result['success'] = 1
+            self.result['message'] = 'Service Thematic Setting Bind to User Successfully'
+            self.result['data']['objects']['username'] = self.request.user.userprofile.username
+            self.result['data']['objects']['thematic_setting_name'] = ThematicSettings.objects.get(
+                id=int(thematic_setting_id)).name
 
         return HttpResponse(json.dumps(self.result))
 
-#************************************ Service Thematic Settings ******************************************
+
+# ************************************ Service Thematic Settings ******************************************
 class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render ServiceThematicSettings List Page.
@@ -2557,14 +2427,16 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
         """
         context = super(ServiceThematicSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
-            {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
-            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto',   'bSortable': False},
-            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto',   'bSortable': False},]
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'threshold_template', 'sTitle': 'Threshold Template', 'sWidth': 'auto'},
+            {'mData': 'threshold_template__live_polling_template__device_type__name', 'sTitle': 'Type',
+             'sWidth': 'auto'},
+            {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}, ]
 
         # user_id = self.request.user.id
 
-        #if user is superadmin or gisadmin
+        # if user is superadmin or gisadmin
         if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
@@ -2582,15 +2454,17 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin,
+                                          BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Thematic Settings Data table.
     """
     model = ThematicSettings
     required_permissions = ('inventory.view_thematicsettings',)
-    columns = ['alias', 'threshold_template', 'icon_settings']
-    order_columns = ['alias', 'threshold_template']
-    search_columns = ['alias', 'icon_settings']
+    columns = ['alias', 'threshold_template', 'threshold_template__live_polling_template__device_type__name',
+               'icon_settings', 'threshold_template__live_polling_template__device_type']
+    order_columns = ['alias', 'alias', 'threshold_template__live_polling_template__device_type__name']
+    search_columns = ['alias', 'icon_settings', 'threshold_template__live_polling_template__device_type__name']
 
     tab_search = {
         "tab_kwarg": 'technology',
@@ -2615,27 +2489,31 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        device_type_key = 'threshold_template__live_polling_template__device_type'
         for dct in json_data:
             obj_id = dct.pop('id')
             if self.request.GET.get('admin'):
-                actions='<a href="/serv_thematic_settings/admin/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/serv_thematic_settings/admin/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj_id)
+                actions = '<a href="/serv_thematic_settings/admin/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/admin/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    obj_id)
             else:
-                actions='<a href="/serv_thematic_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/serv_thematic_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj_id)
+                actions = '<a href="/serv_thematic_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    obj_id)
             threshold_config = ThresholdConfiguration.objects.get(id=int(dct['threshold_template']))
-            image_string, range_text, full_string='','',''
-            if dct['icon_settings'] and dct['icon_settings'] !='NULL':
+            image_string, range_text, full_string = '', '', ''
+            if dct['icon_settings'] and dct['icon_settings'] != 'NULL':
                 ###@nishant-teatrix. PLEASE SHOW THE RANGE MIN < ICON < RANGE MAX
                 for d in eval(dct['icon_settings']):
-                    img_url = str("/media/"+ (d.values()[0]) if "uploaded" in d.values()[0] else static("img/" + d.values()[0]))
-                    image_string= '<img src="{0}" style="height:25px; width:25px">'.format(img_url.strip())
+                    img_url = str(
+                        "/media/" + (d.values()[0]) if "uploaded" in d.values()[0] else static("img/" + d.values()[0]))
+                    image_string = '<img src="{0}" style="height:25px; width:25px">'.format(img_url.strip())
                     range_id_groups = re.match(r'[a-zA-Z_]+(\d+)', d.keys()[0])
                     if range_id_groups:
                         range_id = range_id_groups.groups()[-1]
-                        range_text= ' Range '+ range_id +', '
-                        range_start = 'range' + range_id +'_start'
-                        range_end = 'range' + range_id +'_end'
+                        range_text = ' Range ' + range_id + ', '
+                        range_start = 'range' + range_id + '_start'
+                        range_end = 'range' + range_id + '_end'
                         range_start_value = getattr(threshold_config, range_start)
                         range_end_value = getattr(threshold_config, range_end)
                     else:
@@ -2645,13 +2523,24 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
 
                     full_string += image_string + range_text + "(" + range_start_value + ", " + range_end_value + ")" + "</br>"
             else:
-                full_string='N/A'
-            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=obj_id).user_profile.values_list('id', flat=True)
-            checkbox_checked_true='checked' if user_current_thematic_setting else ''
+                full_string = 'N/A'
+            device_type = dct[device_type_key + '__name'] if device_type_key + '__name' in dct else ''
+            # user_current_thematic_setting = self.request.user.id in ThematicSettings.objects.get(
+            #     id=obj_id
+            # ).user_profile.values_list('id', flat=True)
+            user_current_thematic_setting = UserThematicSettings.objects.filter(
+                thematic_template=obj_id,
+                user_profile=self.request.user.id,
+                thematic_type=dct[device_type_key]
+            ).exists()
+
+            checkbox_checked_true = 'checked' if user_current_thematic_setting else ''
             dct.update(
                 threshold_template=threshold_config.alias,
-                icon_settings= full_string,
-                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(obj_id),
+                icon_settings=full_string,
+                user_selection='<input type="checkbox" data-deviceType="' + device_type + '" \
+                                class="check_class" ' + checkbox_checked_true + ' name="setting_selection" \
+                                value={0}><br>'.format(obj_id),
                 actions=actions)
         return json_data
 
@@ -2674,9 +2563,9 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
     form_class = ThematicSettingsForm
     success_url = reverse_lazy('service_thematic_settings_list')
     required_permissions = ('inventory.add_thematicsettings',)
-    icon_settings_keys = ( 'icon_settings1', 'icon_settings2', 'icon_settings3', 'icon_settings4', 'icon_settings5',
-                           'icon_settings6', 'icon_settings7', 'icon_settings8', 'icon_settings9', 'icon_settings10'
-            )
+    icon_settings_keys = ('icon_settings1', 'icon_settings2', 'icon_settings3', 'icon_settings4', 'icon_settings5',
+                          'icon_settings6', 'icon_settings7', 'icon_settings8', 'icon_settings9', 'icon_settings10'
+                          )
 
     def get(self, request, *args, **kwargs):
         """
@@ -2729,7 +2618,7 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         threshold_configuration_form.instance.live_polling_template = live_polling_object
         threshold_configuration_object = threshold_configuration_form.save()
         form.instance.threshold_template = threshold_configuration_object
-        icon_settings_values_list = [ { key: form.data[key] }  for key in self.icon_settings_keys if form.data[key]]
+        icon_settings_values_list = [{key: form.data[key]} for key in self.icon_settings_keys if form.data[key]]
         form.instance.icon_settings = icon_settings_values_list
         self.object = form.save()
 
@@ -2748,7 +2637,7 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         icon_details_selected = dict()
         if 'admin' in self.request.path:
             is_admin = True
-        icon_settings_values_list = [ { key: form.data[key] }  for key in self.icon_settings_keys if form.data[key]]
+        icon_settings_values_list = [{key: form.data[key]} for key in self.icon_settings_keys if form.data[key]]
         for icon_setting in icon_settings_values_list:
             icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
         return self.render_to_response(
@@ -2769,9 +2658,9 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = ServiceThematicSettingsForm
     success_url = reverse_lazy('service_thematic_settings_list')
     required_permissions = ('inventory.change_thematicsettings',)
-    icon_settings_keys = ( 'icon_settings1', 'icon_settings2', 'icon_settings3', 'icon_settings4', 'icon_settings5',
-                           'icon_settings6', 'icon_settings7', 'icon_settings8', 'icon_settings9', 'icon_settings10'
-            )
+    icon_settings_keys = ('icon_settings1', 'icon_settings2', 'icon_settings3', 'icon_settings4', 'icon_settings5',
+                          'icon_settings6', 'icon_settings7', 'icon_settings8', 'icon_settings9', 'icon_settings10'
+                          )
 
     def get(self, request, *args, **kwargs):
         """
@@ -2788,12 +2677,16 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         icon_details_selected = dict()
         if 'admin' in self.request.path:
             is_admin = True
-        if form.instance.icon_settings!='NULL':
+
+        if form.instance.icon_settings != 'NULL':
             form.instance.icon_settings
             form.instance.icon_settings = eval(form.instance.icon_settings)
             for icon_setting in form.instance.icon_settings:
                 icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
-        live_polling_settings_form = ServiceLivePollingSettingsForm(instance=self.object.threshold_template.live_polling_template)
+        live_polling_settings_form = ServiceLivePollingSettingsForm(
+            instance=self.object.threshold_template.live_polling_template
+        )
+
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
@@ -2808,11 +2701,20 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         formsets with the passed POST variables and then checking them for
         validity.
         """
+
         self.object = self.get_object()
         form_class = self.get_form_class()
-        form = ServiceThematicSettingsForm(self.request.POST, instance=self.object)
-        threshold_configuration_form = ServiceThresholdConfigurationForm(self.request.POST, instance=self.object.threshold_template)
-        live_polling_settings_form = ServiceLivePollingSettingsForm(self.request.POST, instance=self.object.threshold_template.live_polling_template)
+        form = ServiceThematicSettingsForm(
+            self.request.POST,
+            instance=self.object
+        )
+        threshold_configuration_form = ServiceThresholdConfigurationForm(self.request.POST,
+                                                                         instance=self.object.threshold_template)
+        live_polling_settings_form = ServiceLivePollingSettingsForm(
+            self.request.POST,
+            instance=self.object.threshold_template.live_polling_template
+        )
+
         if (form.is_valid() and threshold_configuration_form.is_valid() and live_polling_settings_form.is_valid()):
             return self.form_valid(form, threshold_configuration_form, live_polling_settings_form)
         else:
@@ -2825,7 +2727,7 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         self.object = self.get_object()
         name = form.instance.name
         alias = form.instance.alias
-        icon_settings_values_list = [ { key: form.data[key] }  for key in self.icon_settings_keys if form.data[key]]
+        icon_settings_values_list = [{key: form.data[key]} for key in self.icon_settings_keys if form.data[key]]
         form.instance.icon_settings = icon_settings_values_list
         form.save()
         threshold_configuration_form.instance.name = name
@@ -2834,6 +2736,7 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         live_polling_settings_form.instance.name = name
         live_polling_settings_form.instance.alias = alias
         live_polling_settings_form.save()
+
         if 'admin' in self.request.path:
             return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
         return HttpResponseRedirect(self.get_success_url())
@@ -2849,7 +2752,7 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         if 'admin' in self.request.path:
             is_admin = True
         icon_details_selected = dict()
-        if form.instance.icon_settings!='NULL':
+        if form.instance.icon_settings != 'NULL':
             form.instance.icon_settings = eval(form.instance.icon_settings)
             for icon_setting in form.instance.icon_settings:
                 icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
@@ -3016,7 +2919,8 @@ class GISInventoryBulkImportView(FormView):
             else:
                 technology = "Unknown"
 
-            keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+            keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if
+                    sheet.cell(0, col_index).value]
 
             keys_list = [x.encode('utf-8').strip() for x in keys]
 
@@ -3031,7 +2935,7 @@ class GISInventoryBulkImportView(FormView):
             for chunk in uploaded_file.chunks():
                 destination.write(chunk)
             destination.close()
-            #xlsave(book, filepath)
+            # xlsave(book, filepath)
             gis_bulk_obj = GISInventoryBulkImport()
             gis_bulk_obj.original_filename = relative_filepath
             gis_bulk_obj.status = 0
@@ -3042,7 +2946,8 @@ class GISInventoryBulkImportView(FormView):
             gis_bulk_obj.save()
             gis_bulk_id = gis_bulk_obj.id
 
-            result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id, complete_d, sheet_name, keys_list, full_time, uploaded_file.name)
+            result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id, complete_d, sheet_name, keys_list, full_time,
+                                                              uploaded_file.name)
             return HttpResponseRedirect('/bulk_import/')
         else:
             logger.info("No sheet is selected.")
@@ -3196,7 +3101,8 @@ class GISInventoryBulkImportList(ListView):
         return context
 
 
-class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView,
+                                         AdvanceFilteringMixin):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 
@@ -3488,19 +3394,18 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
-                        dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" \
-                                                         class="bulk_import_link" title="Upload Valid Inventory">\
-                                                         <i class="fa fa-upload text-success"></i></a>\
-                                                         <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" \
-                                                         class="bulk_import_link" title="Upload Invalid Inventory">\
-                                                         <i class="fa fa-upload text-danger"></i></a>\
-                                                         <a href="/bulk_import/generate_delta_sheet/valid/{0}/{1}" \
-                                                         class="bulk_import_link" title="Generate Valid Inventory \
-                                                         Delta"><i class="fa fa-check-circle-o text-success"></i></a> \
-                                                         <a href="/bulk_import/generate_delta_sheet/invalid/{0}/{1}" \
-                                                         class="bulk_import_link" title="Generate Invalid Inventory \
-                                                         Delta"><i class="fa fa-check-circle-o text-danger"></i> \
-                                                         </a>'.format(dct.get('id'), dct.get('sheet_name')))
+                        dct.update(
+                            bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" \
+                                                 class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
+                                                 <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" \
+                                                 class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>\
+                                                 <a href="/bulk_import/generate_delta_sheet/valid/{0}/{1}" \
+                                                 class="bulk_import_link" title="Generate Valid Inventory Delta"><i class="fa fa-check-circle-o text-success"></i></a> \
+                                                 <a href="/bulk_import/generate_delta_sheet/invalid/{0}/{1}" \
+                                                 class="bulk_import_link" title="Generate Invalid Inventory Delta"><i class="fa fa-check-circle-o text-danger"></i></a>'.format(
+                                dct.get('id'), dct.get('sheet_name')
+                            )
+                        )
                     else:
                         dct.update(bulk_upload_actions='')
             except Exception as e:
@@ -3509,13 +3414,14 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
-                        dct.update(inventory_delete_actions='<a href="/bulk_import/delete_inventory/valid/{0}/{1}" \
-                                                              class="bulk_import_link" title="Delete Valid Inventory"> \
-                                                              <i class="fa fa-minus-square-o text-success"></i></a> \
-                                                             <a href="/bulk_import/delete_inventory/invalid/{0}/{1}" \
-                                                             class="bulk_import_link" title="Delete Invalid Inventory \
-                                                             Delta"><i class="fa fa-minus-square-o text-danger"></i>\
-                                                             </a>'.format(dct.get('id'), dct.get('sheet_name')))
+                        dct.update(
+                            inventory_delete_actions='<a href="/bulk_import/delete_inventory/valid/{0}/{1}" \
+                                                      class="bulk_import_link" title="Delete Valid Inventory"><i class="fa fa-minus-square-o text-success"></i></a> \
+                                                      <a href="/bulk_import/delete_inventory/invalid/{0}/{1}" \
+                                                      class="bulk_import_link" title="Delete Invalid Inventory Delta"><i class="fa fa-minus-square-o text-danger"></i></a>'.format(
+                                dct.get('id'), dct.get('sheet_name')
+                            )
+                        )
                     else:
                         dct.update(inventory_delete_actions='')
             except Exception as e:
@@ -3586,11 +3492,12 @@ class PingThematicSettingsList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
             {'mData': 'service', 'sTitle': 'Service', 'sWidth': 'auto'},
             {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
-            {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto'},
-            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto'}]
+            {'mData': 'type__name', 'sTitle': 'Type', 'sWidth': 'auto'},
+            {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}, ]
 
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable' : False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -3607,13 +3514,14 @@ class PingThematicSettingsList(ListView):
         return context
 
 
-class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView,
+                                       AdvanceFilteringMixin):
     """
     Class based View to render Thematic Settings Data table.
     """
     model = PingThematicSettings
-    columns = ['alias', 'service', 'data_source', 'icon_settings']
-    order_columns = ['alias', 'service', 'data_source']
+    columns = ['id', 'alias', 'service', 'data_source', 'type__name', 'icon_settings', 'type__id']
+    order_columns = ['alias', 'service', 'data_source', 'type__name']
     tab_search = {
         "tab_kwarg": 'technology',
         "tab_attr": "technology__name",
@@ -3636,6 +3544,7 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
         :return qs
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
         for dct in json_data:
             # modify 'icon_setting' field for display in datatables i.e. format: "start_range > icon > end_range"
             icon_settings_display_field = ""
@@ -3656,7 +3565,8 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
 
                 # start range
                 try:
-                    start_range = PingThematicSettings.objects.filter(id=dct['id']).values(range_start_field)[0].values()[0]
+                    start_range = \
+                        PingThematicSettings.objects.filter(id=dct['id']).values(range_start_field)[0].values()[0]
                     if not start_range:
                         start_range = "N/A"
                 except Exception as e:
@@ -3681,12 +3591,21 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
                 # icon settings content to be displayed in datatable
                 icon_settings_display_field += " {} > {} > {} <br />".format(start_range, image_string, end_range)
 
-            user_current_thematic_setting = self.request.user.id in PingThematicSettings.objects.get(
-                id=dct['id']).user_profile.values_list('id', flat=True)
+            # user_current_thematic_setting = self.request.user.id in PingThematicSettings.objects.get(
+            #     id=dct['id']).user_profile.values_list('id', flat=True)
+            device_type = dct['type__name'] if 'type__name' in dct else ''
+
+            user_current_thematic_setting = UserPingThematicSettings.objects.filter(
+                thematic_template=dct['id'],
+                user_profile=self.request.user.id,
+                thematic_type=dct['type__id']
+            ).exists()
+
             checkbox_checked_true = 'checked' if user_current_thematic_setting else ''
+
             dct.update(
                 icon_settings=icon_settings_display_field,
-                user_selection='<input type="checkbox" class="check_class" ' + checkbox_checked_true +
+                user_selection='<input type="checkbox" data-deviceType="' + device_type + '" class="check_class" ' + checkbox_checked_true +
                                ' name="setting_selection" value={0}><br>'.format(dct['id']),
                 actions='<a href="/ping_thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/ping_thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
@@ -3782,20 +3701,29 @@ class Ping_Update_User_Thematic_Setting(View):
             }
         }
 
-        thematic_setting_id = self.request.GET.get('ts_template_id', None)
+        thematic_setting_id = self.request.GET.get('threshold_template_id', None)
         user_profile_id = self.request.user.id
+
         if thematic_setting_id:
             ts_obj = PingThematicSettings.objects.get(id=int(thematic_setting_id))
             user_obj = UserProfile.objects.get(id=user_profile_id)
             tech_obj = ts_obj.technology
-            to_delete = UserPingThematicSettings.objects.filter(user_profile=user_obj, thematic_technology=tech_obj)
+            type_obj = ts_obj.type
+
+            to_delete = UserPingThematicSettings.objects.filter(
+                user_profile=user_obj,
+                thematic_technology=tech_obj,
+                thematic_type=type_obj
+            )
 
             if len(to_delete):
                 to_delete.delete()
 
             uts = UserPingThematicSettings(user_profile=user_obj,
                                            thematic_template=ts_obj,
-                                           thematic_technology=tech_obj)
+                                           thematic_technology=tech_obj,
+                                           thematic_type=type_obj
+                                           )
             uts.save()
 
             result['success'] = 1
@@ -3884,13 +3812,14 @@ class DownloadSelectedBSInventoryList(ListView):
             {'mData': 'modified_on', 'sTitle': 'Request Completion Timestamp', 'sWidth': 'auto', },
         ]
 
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+        if in_group(self.request.user, 'admin'):
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView,
+                                              AdvanceFilteringMixin):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 
@@ -3909,7 +3838,11 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         # queryset
-        queryset = GISExcelDownload.objects.filter(downloaded_by=self.request.user.username).values(*self.columns+['id'])
+        queryset = GISExcelDownload.objects.filter(
+            downloaded_by=self.request.user.username
+        ).values(
+            *self.columns + ['id']
+        ).order_by('-added_on')
 
         # if self.request.user.is_superuser:
         #     queryset = GISExcelDownload.objects.filter().values(*self.columns+['id'])
@@ -3993,7 +3926,8 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             dct.update(actions='<a href="/gis_downloaded_inventories/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                                <a href="/gis_downloaded_inventories/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
+                                <a href="/gis_downloaded_inventories/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                dct.get('id')))
 
         return json_data
 
@@ -4085,7 +4019,8 @@ class DeleteBulkUploadGISInventory(View):
         # return HttpResponse(json.dumps(result))
         return HttpResponseRedirect('/bulk_import/')
 
-#**************************************** GIS Wizard ****************************************#
+
+# **************************************** GIS Wizard ****************************************#
 
 class GisWizardListView(BaseStationList):
     template_name = 'gis_wizard/wizard_list.html'
@@ -4102,9 +4037,12 @@ class GisWizardListView(BaseStationList):
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
             {'mData': 'bs_switch__id', 'sTitle': 'BS Switch IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'Backhaul IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'Backhaul IP', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
+            {'mData': 'sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
         ]
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -4112,8 +4050,10 @@ class GisWizardListView(BaseStationList):
 
 
 class GisWizardListingTable(BaseStationListingTable):
-    columns = ['alias', 'city__city_name', 'state__state_name', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address', 'description']
-    order_columns = ['alias', 'city__city_name', 'state__state_name', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address']
+    columns = ['alias', 'city__city_name', 'state__state_name', 'bs_site_id', 'bs_switch__id',
+               'backhaul__bh_configured_on__ip_address', 'description']
+    order_columns = ['alias', 'city__city_name', 'state__state_name', 'bs_site_id', 'bs_switch__id',
+                     'backhaul__bh_configured_on__ip_address']
 
     def prepare_results(self, qs):
         """
@@ -4133,22 +4073,26 @@ class GisWizardListingTable(BaseStationListingTable):
             device_id = dct.pop('id')
 
             sector_configured_on = Sector.objects.filter(base_station_id=device_id, sector_configured_on__isnull=False,
-                    bs_technology__in=[3, 4]).distinct().values_list('sector_configured_on__ip_address', flat=True)
+                                                         bs_technology__in=[3, 4]).distinct().values_list(
+                'sector_configured_on__ip_address', flat=True)
             sector_configured_on = ', '.join(sector_configured_on)
             dct.update(sector_configured_on=sector_configured_on)
 
-            detail_action = '<a href="/gis-wizard/base-station/{0}/details/"><i class="fa fa-list-alt text-info"></i></a>&nbsp'.format(device_id)
+            detail_action = '<a href="/gis-wizard/base-station/{0}/details/"><i class="fa fa-list-alt text-info"></i></a>'.format(
+                device_id)
             if self.request.user.has_perm('inventory.change_basestation'):
-                edit_action = '<a href="/gis-wizard/base-station/{0}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/gis-wizard/base-station/{0}/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                    device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_basestation'):
-                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    device_id)
             else:
                 delete_action = ''
             delete_action = ''
             if edit_action or delete_action:
-                dct.update(actions=detail_action+edit_action+delete_action)
+                dct.update(actions=detail_action + edit_action + delete_action)
             else:
                 dct.update(actions=detail_action)
         return json_data
@@ -4170,23 +4114,25 @@ class GisWizardBaseStationMixin(object):
         if self.request.GET.get('show', None):
             return reverse('gis-wizard-base-station-update', kwargs={'pk': self.object.id})
         if self.object.backhaul:
-            return reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': self.object.id, 'pk': self.object.backhaul.id})
+            return reverse('gis-wizard-backhaul-update',
+                           kwargs={'bs_pk': self.object.id, 'pk': self.object.backhaul.id})
         else:
             return reverse('gis-wizard-backhaul-select', kwargs={'bs_pk': self.object.id})
 
     def get_context_data(self, **kwargs):
         context = super(GisWizardBaseStationMixin, self).get_context_data(**kwargs)
-        if 'pk' in self.kwargs: # Update View
+        if 'pk' in self.kwargs:  # Update View
 
             base_station = BaseStation.objects.get(id=self.kwargs['pk'])
             if base_station.backhaul:
-                skip_url = reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': base_station.id, 'pk': base_station.backhaul.id})
+                skip_url = reverse('gis-wizard-backhaul-update',
+                                   kwargs={'bs_pk': base_station.id, 'pk': base_station.backhaul.id})
             else:
                 skip_url = reverse('gis-wizard-backhaul-select', kwargs={'bs_pk': base_station.id})
 
             save_text = 'Update'
             context['skip_url'] = skip_url
-        else: # Create View
+        else:  # Create View
             save_text = 'Save'
 
         context['save_text'] = save_text
@@ -4220,16 +4166,17 @@ class GisWizardBackhaulDetailView(BackhaulDetail):
 def gis_wizard_backhaul_select(request, bs_pk):
     base_station = BaseStation.objects.get(id=bs_pk)
     if base_station.backhaul:
-        return HttpResponseRedirect(reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': bs_pk, 'pk': base_station.backhaul.id}))
+        return HttpResponseRedirect(
+            reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': bs_pk, 'pk': base_station.backhaul.id}))
 
     return render(request, 'gis_wizard/backhaul.html',
-        {
-            'select_view': True,
-            'bs_pk': bs_pk,
-            'organization': base_station.organization,
-            'base_station': base_station,
-        }
-    )
+                  {
+                      'select_view': True,
+                      'bs_pk': bs_pk,
+                      'organization': base_station.organization,
+                      'base_station': base_station,
+                  }
+                  )
 
 
 def gis_wizard_backhaul_delete(request, bs_pk):
@@ -4250,7 +4197,7 @@ class GisWizardBackhaulMixin(object):
     def get_success_url(self):
         if self.request.GET.get('show', None):
             return reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': self.kwargs['bs_pk'], 'pk': self.object.id})
-        return reverse('gis-wizard-sector-list', kwargs = {
+        return reverse('gis-wizard-sector-list', kwargs={
             'bs_pk': self.kwargs['bs_pk']
         })
 
@@ -4279,9 +4226,9 @@ class GisWizardBackhaulMixin(object):
             context['base_station_has_backhaul'] = True
         else:
             context['base_station_has_backhaul'] = False
-        if 'pk' in self.kwargs: # Update View
+        if 'pk' in self.kwargs:  # Update View
             save_text = 'Update'
-        else: # Create View
+        else:  # Create View
             save_text = 'Save'
         context['save_text'] = save_text
         return context
@@ -4321,7 +4268,8 @@ class GisWizardSectorListView(SectorList):
             {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
             {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
         ]
@@ -4334,7 +4282,8 @@ class GisWizardSectorListView(SectorList):
              'sClass': 'hidden-xs'},
             {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
             {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
             {'mData': 'dr_configured_on__ip_address', 'sTitle': 'DR Configured On', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -4348,7 +4297,6 @@ class GisWizardSectorListView(SectorList):
 
 
 class GisWizardSectorListingMixin(object):
-
     def get_initial_queryset(self):
         qs = super(GisWizardSectorListingMixin, self).get_initial_queryset()
         qs = qs.filter(base_station_id=self.kwargs['bs_pk'], bs_technology_id=self.kwargs['selected_technology'])
@@ -4368,35 +4316,45 @@ class GisWizardSectorListingMixin(object):
             sector_id = dct.pop('id')
             kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology']}
             kwargs.update({'pk': sector_id})
-            detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
+            detail_action = '<a href="' + reverse('gis-wizard-sector-detail',
+                                                  kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>'
             if self.request.user.has_perm('inventory.change_sector'):
                 edit_url = reverse('gis-wizard-sector-update', kwargs=kwargs)
-                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp'
+                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>'
             else:
                 edit_action = ''
-            dct.update(actions=detail_action+edit_action)
+            dct.update(actions=detail_action + edit_action)
         return json_data
 
 
 class GisWizardP2PSectorListing(GisWizardSectorListingMixin, SectorListingTable):
     columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'bs_technology__alias',
-            'circuit__customer__alias', 'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'description']
-    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'bs_technology__alias',
-            'circuit__customer__alias', 'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'description']
+               'circuit__customer__alias', 'circuit__circuit_id', 'frequency__value', 'base_station__alias',
+               'description']
+    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address',
+                     'bs_technology__alias',
+                     'circuit__customer__alias', 'circuit__circuit_id', 'frequency__value', 'base_station__alias',
+                     'description']
 
 
 class GisWizardPMPSectorListing(GisWizardSectorListingMixin, SectorListingTable):
-    columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency__value', 'base_station__alias',
-            'antenna__polarization', 'description']
-    order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency__value', 'base_station__alias',
-            'antenna__polarization', 'description']
+    columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency__value',
+               'base_station__alias',
+               'antenna__polarization', 'description']
+    order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency__value',
+                     'base_station__alias',
+                     'antenna__polarization', 'description']
 
 
 class GisWizardWiMAXSectorListing(GisWizardSectorListingMixin, SectorListingTable):
-    columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'sector_configured_on_port__alias',
-            'frequency__value', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
-    order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'sector_configured_on_port__alias',
-            'frequency__value', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
+    columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address',
+               'sector_configured_on_port__alias',
+               'frequency__value', 'base_station__alias', 'antenna__polarization', 'mrc',
+               'dr_configured_on__ip_address', 'description']
+    order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address',
+                     'sector_configured_on_port__alias',
+                     'frequency__value', 'base_station__alias', 'antenna__polarization', 'mrc',
+                     'dr_configured_on__ip_address', 'description']
 
 
 class GisWizardSectorDetailView(SectorDetail):
@@ -4410,7 +4368,7 @@ class GisWizardSectorDetailView(SectorDetail):
         if self.object:
             if self.object.antenna:
                 context['sector_antenna'] = self.object.antenna
-            if int(self.kwargs['selected_technology']) == 2: # Technology is P2P
+            if int(self.kwargs['selected_technology']) == 2:  # Technology is P2P
                 if len(self.object.circuit_set.all()) == 1:
                     circuit = self.object.circuit_set.all()[0]
                     context['circuit'] = circuit
@@ -4430,24 +4388,25 @@ class GisWizardSectorDetailView(SectorDetail):
 
 
 def gis_wizard_sector_select(request, bs_pk, selected_technology):
-     base_station = BaseStation.objects.get(id=bs_pk)
-     technologies = DeviceTechnology.objects.filter(name__in=['P2P', 'WiMAX', 'PMP'])
-     return render(request, 'gis_wizard/sector.html',
-         {
-             'select_view': True,
-             'bs_pk': bs_pk,
-             'selected_technology': selected_technology,
-             'technologies': technologies,
-             'base_station': base_station,
-         }
-     )
+    base_station = BaseStation.objects.get(id=bs_pk)
+    technologies = DeviceTechnology.objects.filter(name__in=['P2P', 'WiMAX', 'PMP'])
+    return render(request, 'gis_wizard/sector.html',
+                  {
+                      'select_view': True,
+                      'bs_pk': bs_pk,
+                      'selected_technology': selected_technology,
+                      'technologies': technologies,
+                      'base_station': base_station,
+                  }
+                  )
 
 
 def gis_wizard_sector_delete(request, bs_pk, pk):
     sector = Sector.objects.get(id=pk)
     sector.base_station = None
     sector.save()
-    return HttpResponseRedirect(reverse('gis-wizard-sector-create', kwargs={'bs_pk': bs_pk, 'selected_technology': sector.bs_technology_id}))
+    return HttpResponseRedirect(
+        reverse('gis-wizard-sector-create', kwargs={'bs_pk': bs_pk, 'selected_technology': sector.bs_technology_id}))
 
 
 class GisWizardSectorMixin(object):
@@ -4463,11 +4422,11 @@ class GisWizardSectorMixin(object):
         technology_id = self.kwargs['selected_technology']
         if self.request.GET.get('show', None):
             return reverse('gis-wizard-sector-update', kwargs={'bs_pk': self.kwargs['bs_pk'], 'pk': self.object.id,
-                'selected_technology': technology_id})
+                                                               'selected_technology': technology_id})
         if int(technology_id) == 2:
             return self.success_url
 
-        return reverse('gis-wizard-sub-station-list', kwargs = {
+        return reverse('gis-wizard-sub-station-list', kwargs={
             'bs_pk': self.kwargs['bs_pk'], 'selected_technology': technology_id, 'sector_pk': self.object.id
         })
 
@@ -4495,7 +4454,7 @@ class GisWizardSectorMixin(object):
                 context['sector_antenna_form'] = self.antenna_form_class(**form_kwargs)
 
             ## If technology is P2P and method is GET; Then provide sub station, antenna, circuit and customer forms in context.
-            if int(self.kwargs['selected_technology']) == 2 and self.request.method == 'GET': # Technology is P2P
+            if int(self.kwargs['selected_technology']) == 2 and self.request.method == 'GET':  # Technology is P2P
                 if len(self.object.circuit_set.all()) == 1:
                     circuit = self.object.circuit_set.all()[0]
                     form_kwargs.update({'instance': circuit})
@@ -4503,7 +4462,7 @@ class GisWizardSectorMixin(object):
                     if circuit.sub_station:
                         form_kwargs.update({'instance': circuit.sub_station})
                         context['sub_station_form'] = self.sub_station_form_class(**form_kwargs)
-                        if circuit.sub_station.antenna: # Use formset as there are two antenna to avoid name conflicts
+                        if circuit.sub_station.antenna:  # Use formset as there are two antenna to avoid name conflicts
                             form_kwargs.pop('instance')
                             queryset = Antenna.objects.filter(id=circuit.sub_station.antenna.id)
                             formset = WizardPTPSubStationAntennaFormSet(queryset=queryset, **form_kwargs)
@@ -4516,17 +4475,20 @@ class GisWizardSectorMixin(object):
         skip_url = reverse('gis-wizard-base-station-list')
         if self.object and self.object.base_station == base_station:
             context['base_station_has_sector'] = True
-            context['delete_url'] = reverse('gis-wizard-sector-delete', kwargs={'bs_pk': base_station.id, 'pk': self.object.id})
+            context['delete_url'] = reverse('gis-wizard-sector-delete',
+                                            kwargs={'bs_pk': base_station.id, 'pk': self.object.id})
             if self.object.bs_technology_id != 2:
                 skip_url = reverse('gis-wizard-sub-station-list', kwargs={'bs_pk': base_station.id,
-                    'selected_technology': self.kwargs['selected_technology'], 'sector_pk': self.object.id})
+                                                                          'selected_technology': self.kwargs[
+                                                                              'selected_technology'],
+                                                                          'sector_pk': self.object.id})
         else:
             context['base_station_has_sector'] = False
         context['skip_url'] = skip_url
 
-        if 'pk' in self.kwargs: # Update View
+        if 'pk' in self.kwargs:  # Update View
             save_text = 'Update'
-        else: # Create View
+        else:  # Create View
             save_text = 'Save'
         context['save_text'] = save_text
         return context
@@ -4536,9 +4498,9 @@ class GisWizardSectorMixin(object):
         Save sector and antenna.
         """
 
-        try: # if update view
+        try:  # if update view
             self.object = self.get_object()
-        except AttributeError as e: # if create view
+        except AttributeError as e:  # if create view
             self.object = None
 
         form_kwargs = self.get_form_kwargs()
@@ -4562,7 +4524,8 @@ class GisWizardSectorMixin(object):
                 sub_station_instance = SubStation.objects.get(id=sub_station_id)
             else:
                 sub_station_instance = None
-            if request.POST.get('sub_station_customer_radio') == 'existing' and request.POST.get('sub_station_customer'):
+            if request.POST.get('sub_station_customer_radio') == 'existing' and request.POST.get(
+                    'sub_station_customer'):
                 customer_id = request.POST.get('sub_station_customer')
                 customer_instance = Customer.objects.get(id=customer_id)
             else:
@@ -4595,9 +4558,11 @@ class GisWizardSectorMixin(object):
 
             if (sector_form.is_valid() and antenna_form.is_valid() and sub_station_form.is_valid()
                 and sub_station_antenna_formset.is_valid() and customer_form.is_valid() and circuit_form.is_valid()):
-                return self.form_valid(sector_form, antenna_form, sub_station_form, sub_station_antenna_formset, customer_form, circuit_form)
+                return self.form_valid(sector_form, antenna_form, sub_station_form, sub_station_antenna_formset,
+                                       customer_form, circuit_form)
             else:
-                return self.form_invalid(sector_form, antenna_form, sub_station_form, sub_station_antenna_formset, customer_form, circuit_form)
+                return self.form_invalid(sector_form, antenna_form, sub_station_form, sub_station_antenna_formset,
+                                         customer_form, circuit_form)
         else:
 
             if (sector_form.is_valid() and antenna_form.is_valid()):
@@ -4605,7 +4570,8 @@ class GisWizardSectorMixin(object):
             else:
                 return self.form_invalid(sector_form, antenna_form)
 
-    def form_valid(self, sector_form, antenna_form, sub_station_form=None, sub_station_antenna_formset=None, customer_form=None, circuit_form=None):
+    def form_valid(self, sector_form, antenna_form, sub_station_form=None, sub_station_antenna_formset=None,
+                   customer_form=None, circuit_form=None):
         form_kwargs = self.get_form_kwargs()
         base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
         technology = self.kwargs['selected_technology']
@@ -4650,7 +4616,7 @@ class GisWizardSectorMixin(object):
             sub_station.name = device.ip_address
             sub_station.alias = device.ip_address
             sub_station.organization = base_station.organization
-            sub_station.antenna = sub_station_antenna # Far End Antenna.
+            sub_station.antenna = sub_station_antenna  # Far End Antenna.
             sub_station.save()
 
             customer = customer_form.save(commit=False)
@@ -4669,8 +4635,12 @@ class GisWizardSectorMixin(object):
 
         return HttpResponseRedirect(self.get_success_url())
 
-    def form_invalid(self, sector_form, antenna_form, sub_station_form=None, sub_station_antenna_formset=None, customer_form=None, circuit_form=None):
-        return self.render_to_response(self.get_context_data(form=sector_form, antenna_form=antenna_form, sub_station_form=sub_station_form, sub_station_antenna_form=sub_station_antenna_formset, customer_form=customer_form, circuit_form=circuit_form))
+    def form_invalid(self, sector_form, antenna_form, sub_station_form=None, sub_station_antenna_formset=None,
+                     customer_form=None, circuit_form=None):
+        return self.render_to_response(
+            self.get_context_data(form=sector_form, antenna_form=antenna_form, sub_station_form=sub_station_form,
+                                  sub_station_antenna_form=sub_station_antenna_formset, customer_form=customer_form,
+                                  circuit_form=circuit_form))
 
 
 class GisWizardSectorCreateView(GisWizardSectorMixin, SectorCreate):
@@ -4684,17 +4654,17 @@ class GisWizardSectorUpdateView(GisWizardSectorMixin, SectorUpdate):
 def get_wizard_form(request):
     model_str = request.GET.get('model')
     form_class = {
-                'antenna': WizardAntennaForm,
-                'sub_station': WizardSubStationForm,
-                'customer': WizardCustomerForm,
-                'circuit': WizardCircuitForm,
-        }[model_str]
+        'antenna': WizardAntennaForm,
+        'sub_station': WizardSubStationForm,
+        'customer': WizardCustomerForm,
+        'circuit': WizardCircuitForm,
+    }[model_str]
     model = {
-            'antenna': Antenna,
-            'sub_station': SubStation,
-            'customer': Customer,
-            'circuit': Circuit,
-        }[model_str]
+        'antenna': Antenna,
+        'sub_station': SubStation,
+        'customer': Customer,
+        'circuit': Circuit,
+    }[model_str]
     technology = DeviceTechnology.objects.get(id=request.GET.get('technology')).name
     form_kwargs = {'request': request, 'technology': technology}
     if 'pk' in request.GET:
@@ -4739,10 +4709,12 @@ class GisWizardSectorSubStationListView(SubStationList):
             {'mData': 'circuit__customer__alias', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
             {'mData': 'circuit__sector__sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto'},
-            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto'},
             {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
 
@@ -4755,9 +4727,11 @@ class GisWizardSubStationListing(SubStationListingTable):
     Class based View to render Sub Station Data table.
     """
     columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
-            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name', 'description']
-    order_columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
-            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name']
+               'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name',
+               'description']
+    order_columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias',
+                     'circuit__circuit_id',
+                     'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name']
 
     def get_initial_queryset(self):
         qs = super(GisWizardSubStationListing, self).get_initial_queryset()
@@ -4774,38 +4748,40 @@ class GisWizardSubStationListing(SubStationListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-
-
-            #if dct['device__device_technology']: Always is 3 and 4 as in self.kwargs['selected_technology']
-            dct['device__device_technology'] = DeviceTechnology.objects.get(pk=int(dct['device__device_technology'])).alias
+            # if dct['device__device_technology']: Always is 3 and 4 as in self.kwargs['selected_technology']
+            dct['device__device_technology'] = DeviceTechnology.objects.get(
+                pk=int(dct['device__device_technology'])).alias
 
             sub_station_id = dct.pop('id')
             kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology', 'sector_pk']}
             kwargs.update({'pk': sub_station_id})
-            detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
+            detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail',
+                                                  kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>'
             if self.request.user.has_perm('inventory.change_substation'):
                 edit_url = reverse('gis-wizard-sub-station-update', kwargs=kwargs)
-                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp'
+                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>'
             else:
                 edit_action = ''
-            dct.update(actions=detail_action+edit_action)
+            dct.update(actions=detail_action + edit_action)
         return json_data
 
 
 def gis_wizard_sub_station_select(request, bs_pk, selected_technology, sector_pk):
     technologies = DeviceTechnology.objects.order_by('-name').filter(name__in=['WiMAX', 'PMP'])
     base_station = BaseStation.objects.get(id=bs_pk)
+    sector = Sector.objects.get(id=sector_pk)
     return render(request, 'gis_wizard/sub_station.html',
-        {
-            'select_view': True,
-            'bs_pk': bs_pk,
-            'base_station' : base_station,
-            'selected_technology': selected_technology,
-            'sector_pk': sector_pk,
-            'technologies': technologies,
-            'organization': base_station.organization
-        }
-    )
+                  {
+                      'select_view': True,
+                      'bs_pk': bs_pk,
+                      'base_station': base_station,
+                      'selected_technology': selected_technology,
+                      'sector_pk': sector_pk,
+                      'technologies': technologies,
+                      'organization': base_station.organization,
+                      'sector': sector
+                  }
+                  )
 
 
 class GisWizardSubStationDetailView(SubStationDetail):
@@ -4834,7 +4810,8 @@ def gis_wizard_sub_station_delete(request, bs_pk, selected_technology, sector_pk
     circuit.sector = None
     circuit.save()
     return HttpResponseRedirect(reverse('gis-wizard-sub-station-create', kwargs={'bs_pk': bs_pk,
-        'selected_technology': selected_technology, 'sector_pk': sector_pk}))
+                                                                                 'selected_technology': selected_technology,
+                                                                                 'sector_pk': sector_pk}))
 
 
 class GisWizardSubStationMixin(object):
@@ -4848,7 +4825,9 @@ class GisWizardSubStationMixin(object):
     def get_success_url(self):
         if self.request.GET.get('show', None):
             return reverse('gis-wizard-sub-station-update', kwargs={'bs_pk': self.kwargs['bs_pk'], 'pk': self.object.id,
-                'selected_technology': self.kwargs['selected_technology'], 'sector_pk': self.kwargs['sector_pk']})
+                                                                    'selected_technology': self.kwargs[
+                                                                        'selected_technology'],
+                                                                    'sector_pk': self.kwargs['sector_pk']})
 
         return self.success_url
 
@@ -4892,14 +4871,15 @@ class GisWizardSubStationMixin(object):
                     if circuit.customer:
                         form_kwargs.update({'instance': circuit.customer})
                         context['customer_form'] = self.customer_form_class(**form_kwargs)
-        if self.object and Circuit.objects.filter(sector_id=self.kwargs['sector_pk'], sub_station_id=self.object.id).exists():
+        if self.object and Circuit.objects.filter(sector_id=self.kwargs['sector_pk'],
+                                                  sub_station_id=self.object.id).exists():
             context['sector_has_sub_station'] = True
         else:
             context['sector_has_sub_station'] = False
 
-        if 'pk' in self.kwargs: # Update View
+        if 'pk' in self.kwargs:  # Update View
             save_text = 'Update'
-        else: # Create View
+        else:  # Create View
             save_text = 'Save'
         context['save_text'] = save_text
         return context
@@ -4909,9 +4889,9 @@ class GisWizardSubStationMixin(object):
         Save sub_station, antenna, customer and circuit for WiMAX and PMP.
         """
 
-        try: # if update view
+        try:  # if update view
             self.object = self.get_object()
-        except AttributeError as e: # if create view
+        except AttributeError as e:  # if create view
             self.object = None
 
         form_kwargs = self.get_form_kwargs()
@@ -4952,7 +4932,8 @@ class GisWizardSubStationMixin(object):
         form_kwargs.update({'instance': circuit_instance})
         circuit_form = self.circuit_form_class(**form_kwargs)
 
-        if (sub_station_form.is_valid() and antenna_form.is_valid() and customer_form.is_valid() and circuit_form.is_valid()):
+        if (
+                            sub_station_form.is_valid() and antenna_form.is_valid() and customer_form.is_valid() and circuit_form.is_valid()):
             return self.form_valid(sub_station_form, antenna_form, customer_form, circuit_form)
         else:
             return self.form_invalid(sub_station_form, antenna_form, customer_form, circuit_form)
@@ -4995,7 +4976,9 @@ class GisWizardSubStationMixin(object):
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, sub_station_form, antenna_form, customer_form, circuit_form):
-        return self.render_to_response(self.get_context_data(form=sub_station_form, sub_station_antenna_form=antenna_form, customer_form=customer_form, circuit_form=circuit_form))
+        return self.render_to_response(
+            self.get_context_data(form=sub_station_form, sub_station_antenna_form=antenna_form,
+                                  customer_form=customer_form, circuit_form=circuit_form))
 
 
 class GisWizardSubStationCreateView(GisWizardSubStationMixin, SubStationCreate):
@@ -5005,7 +4988,8 @@ class GisWizardSubStationCreateView(GisWizardSubStationMixin, SubStationCreate):
 class GisWizardSubStationUpdateView(GisWizardSubStationMixin, SubStationUpdate):
     pass
 
-#************************************** Gis Wizard Start With PTP ****************************
+
+# ************************************** Gis Wizard Start With PTP ****************************
 
 class GisWizardPTPListView(SectorList):
     template_name = 'gis_wizard/wizard_list_ptp.html'
@@ -5032,18 +5016,22 @@ class GisWizardPTPListView(SectorList):
 
 
 class GisWizardPTPListingTable(SectorListingTable):
-    columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',
-            'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country',
-            'sector_configured_on__state', 'sector_configured_on__city', 'description']
-    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',
-            'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country',
-            'sector_configured_on__state', 'sector_configured_on__city', 'description']
-    search_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',
-            'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country__country_name',
-            'sector_configured_on__state__state_name', 'sector_configured_on__city__city_name', 'description']
+    columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address',
+               'circuit__customer__alias',
+               'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country',
+               'sector_configured_on__state', 'sector_configured_on__city', 'description']
+    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address',
+                     'circuit__customer__alias',
+                     'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country',
+                     'sector_configured_on__state', 'sector_configured_on__city', 'description']
+    search_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address',
+                      'circuit__customer__alias',
+                      'circuit__circuit_id', 'frequency__value', 'base_station__alias',
+                      'sector_configured_on__country__country_name',
+                      'sector_configured_on__state__state_name', 'sector_configured_on__city__city_name', 'description']
 
     def get_initial_queryset(self):
-        qs=super(GisWizardPTPListingTable, self).get_initial_queryset()
+        qs = super(GisWizardPTPListingTable, self).get_initial_queryset()
         qs = qs.filter(base_station__alias__isnull=False, bs_technology__name='P2P')
         return qs
 
@@ -5061,21 +5049,26 @@ class GisWizardPTPListingTable(SectorListingTable):
             dct.update(actions='')
             try:
                 if dct['sector_configured_on__country']:
-                    dct['sector_configured_on__country'] = Country.objects.get(id=dct['sector_configured_on__country']).country_name
+                    dct['sector_configured_on__country'] = Country.objects.get(
+                        id=dct['sector_configured_on__country']).country_name
                 if dct['sector_configured_on__state']:
-                    dct['sector_configured_on__state'] = State.objects.get(id=dct['sector_configured_on__state']).state_name
+                    dct['sector_configured_on__state'] = State.objects.get(
+                        id=dct['sector_configured_on__state']).state_name
                 if dct['sector_configured_on__city']:
                     dct['sector_configured_on__city'] = City.objects.get(id=dct['sector_configured_on__city']).city_name
 
                 device_id = dct.pop('id')
                 sector = Sector.objects.get(id=device_id)
-                kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sector.bs_technology.id , 'pk': sector.id}
-                detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
+                kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sector.bs_technology.id,
+                          'pk': sector.id}
+                detail_action = '<a href="' + reverse('gis-wizard-sector-detail',
+                                                      kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>'
                 if self.request.user.has_perm('inventory.change_sector'):
-                    edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sector.base_station.id, sector.bs_technology.id , device_id)
+                    edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                        sector.base_station.id, sector.bs_technology.id, device_id)
                 else:
                     edit_action = ''
-                dct.update(actions=detail_action+edit_action)
+                dct.update(actions=detail_action + edit_action)
             except Exception, e:
                 pass
         return json_data
@@ -5094,10 +5087,12 @@ class GisWizardSubStationListView(SubStationList):
              'sClass': 'hidden-xs'},
             {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
             {'mData': 'circuit__sector__sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto'},
-            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto'},
             {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
 
@@ -5107,14 +5102,16 @@ class GisWizardSubStationListView(SubStationList):
 
 class GisWizardSubStationListingTable(SubStationListingTable):
     columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
-            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name', 'description']
-    order_columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
-            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name']
+               'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name',
+               'description']
+    order_columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias',
+                     'circuit__circuit_id',
+                     'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name']
 
     def get_initial_queryset(self):
 
         qs = super(GisWizardSubStationListingTable, self).get_initial_queryset()
-        qs = qs.filter(device__device_technology__in=[3,4])
+        qs = qs.filter(device__device_technology__in=[3, 4])
         return qs
 
     def prepare_results(self, qs):
@@ -5135,28 +5132,34 @@ class GisWizardSubStationListingTable(SubStationListingTable):
             except Exception as e:
                 logger.info("Sub Station Device not present. Exception: ", e.message)
 
-            #if dct['device__device_technology']: Always is 3 and 4 as in get_initial_queryset
-            dct['device__device_technology'] = DeviceTechnology.objects.get(pk=int(dct['device__device_technology'])).alias
+            # if dct['device__device_technology']: Always is 3 and 4 as in get_initial_queryset
+            dct['device__device_technology'] = DeviceTechnology.objects.get(
+                pk=int(dct['device__device_technology'])).alias
             device_id = dct.pop('id')
             sub_station = SubStation.objects.get(id=device_id)
             detail_action = ''
             edit_action = ''
-            if len(sub_station.circuit_set.all()) == 1 and sub_station.circuit_set.all()[0].sector and sub_station.device:
+            if len(sub_station.circuit_set.all()) == 1 and sub_station.circuit_set.all()[
+                0].sector and sub_station.device:
                 sector = sub_station.circuit_set.all()[0].sector
                 kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sub_station.device.device_technology,
-                        'sector_pk': sector.id, 'pk': device_id}
-                detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
+                          'sector_pk': sector.id, 'pk': device_id}
+                detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail',
+                                                      kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>'
                 if self.request.user.has_perm('inventory.change_substation'):
-                    edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sub_station.circuit_set.all()[0].sector.base_station.id, sub_station.circuit_set.all()[0].sector.bs_technology.id, sub_station.circuit_set.all()[0].sector.id, device_id)
-            dct.update(actions=detail_action+edit_action)
+                    edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                        sub_station.circuit_set.all()[0].sector.base_station.id,
+                        sub_station.circuit_set.all()[0].sector.bs_technology.id,
+                        sub_station.circuit_set.all()[0].sector.id, device_id)
+            dct.update(actions=detail_action + edit_action)
         return json_data
 
-# This function returns model name & organization list as per the given param
-def getModelForSearch(request,search_by='default'):
 
+# This function returns model name & organization list as per the given param
+def getModelForSearch(request, search_by='default'):
     search_model = ''
 
-    if search_by in ['ip_address','mac_address']:
+    if search_by in ['ip_address', 'mac_address']:
         search_model = Device
     elif search_by in ['circuit_id']:
         search_model = Circuit
@@ -5176,7 +5179,7 @@ def getModelForSearch(request,search_by='default'):
     # Get the list of organization for logged in user
     current_user_organizations = list(nocout_utils.logged_in_user_organizations(self))
 
-    return (search_model , current_user_organizations)
+    return (search_model, current_user_organizations)
 
 
 def getPageType(deviceObj):
@@ -5191,14 +5194,14 @@ def getPageType(deviceObj):
         inventory_utils = InventoryUtilsGateway()
 
         if deviceObj.sector_configured_on.exists() or deviceObj.dr_configured_on.exists():
-            
+
             # GET technology name for current device
             try:
                 tech_id = deviceObj.device_technology
                 tech_name = DeviceTechnology.objects.get(pk=tech_id).name
             except Exception, e:
                 tech_name = ''
-            
+
             # Fetch BH devices list
             try:
                 bh_devices_qs = inventory_utils.ptp_device_circuit_backhaul()
@@ -5230,38 +5233,36 @@ def getPageType(deviceObj):
     return page_type
 
 
-
 # This function returns the auto suggestions data as per the given params
 def getAutoSuggestion(request, search_by="default", search_txt=""):
-
     result = {
-        "success" : 0,
-        "message" : "Record Not Found",
-        "data" : []
+        "success": 0,
+        "message": "Record Not Found",
+        "data": []
     }
 
     # Get model & organization as per the search criteria
     search_model, \
-    current_user_organizations = getModelForSearch(request,search_by)
+    current_user_organizations = getModelForSearch(request, search_by)
 
     if search_model and search_by:
         # Condition to fetch data
-        condition = '%s__istartswith'% search_by
+        condition = '%s__istartswith' % search_by
         if search_model.__name__ == 'Device':
             # fetch queryset as per the condition, for device model take one more condition of is_added_to_nms
             query_result = search_model.objects.filter(
-                Q(**{condition : str(search_txt)}),
+                Q(**{condition: str(search_txt)}),
                 Q(organization__in=current_user_organizations),
                 Q(is_added_to_nms__gt=0),
                 Q(is_deleted=0)
-            )[:30] 
+            )[:30]
         else:
             # fetch queryset as per the condition
             query_result = search_model.objects.filter(
-                Q(**{condition : str(search_txt)}),
+                Q(**{condition: str(search_txt)}),
                 Q(organization__in=current_user_organizations)
             )[:30]
-            
+
         # If any records found in queryset
         if len(query_result) > 0:
             # Initialize data list
@@ -5270,13 +5271,13 @@ def getAutoSuggestion(request, search_by="default", search_txt=""):
                 # loop queryset to make data dict
                 for data in query_result:
                     # Make required values dict
-                    single_data_dict = {"id" : data.id,"text" : getattr(data,search_by)}
+                    single_data_dict = {"id": data.id, "text": getattr(data, search_by)}
                     # Append dict to data list
                     response_data.append(single_data_dict)
                     # Clear the dict
                     single_data_dict = {}
 
-                #Update response dict
+                # Update response dict
                 result["success"] = 1
                 result["message"] = "Suggestion Fetched Successfully."
                 result["data"] = response_data
@@ -5289,16 +5290,15 @@ def getAutoSuggestion(request, search_by="default", search_txt=""):
 
 # This function returns search result as per the given params
 def getSearchData(request, search_by="default", pk=0):
-
     result = {
-        "success" : 0,
-        "message" : "Record Not Found",
-        "data" : {
-            "inventory_page_url" : '',
-            "perf_page_url" : '',
-            "alert_page_url" : '',
-            "circuit_inventory_url" : '',
-            "sector_inventory_url" : ''
+        "success": 0,
+        "message": "Record Not Found",
+        "data": {
+            "inventory_page_url": '',
+            "perf_page_url": '',
+            "alert_page_url": '',
+            "circuit_inventory_url": '',
+            "sector_inventory_url": ''
         }
     }
 
@@ -5326,7 +5326,7 @@ def getSearchData(request, search_by="default", pk=0):
                 sector_inventory_url = ''
 
                 # Get the single device inventory page, alert page & perf page url
-                if search_by in ['ip_address','mac_address']:
+                if search_by in ['ip_address', 'mac_address']:
                     # Get the page type as per the device
                     page_type = getPageType(query_result[0])
                     alert_page_type = page_type
@@ -5340,7 +5340,7 @@ def getSearchData(request, search_by="default", pk=0):
                     # Single Device perf page url
                     perf_page_url = reverse(
                         'SingleDevicePerf',
-                        kwargs={'page_type': page_type, 'device_id' : query_result[0].id},
+                        kwargs={'page_type': page_type, 'device_id': query_result[0].id},
                         current_app='performance'
                     )
 
@@ -5350,7 +5350,7 @@ def getSearchData(request, search_by="default", pk=0):
                     # Single Device alert page url
                     alert_page_url = reverse(
                         'SingleDeviceAlertsInit',
-                        kwargs={'page_type': alert_page_type, 'device_id' : query_result[0].id, 'data_source' : 'down'},
+                        kwargs={'page_type': alert_page_type, 'device_id': query_result[0].id, 'data_source': 'down'},
                         current_app='alert_center'
                     )
                 elif search_by in ['circuit_id']:
@@ -5380,7 +5380,7 @@ def getSearchData(request, search_by="default", pk=0):
                     # Single Device perf page url
                     perf_page_url = reverse(
                         'SingleDevicePerf',
-                        kwargs={'page_type': page_type, 'device_id' : ss_device_id},
+                        kwargs={'page_type': page_type, 'device_id': ss_device_id},
                         current_app='performance'
                     )
 
@@ -5390,7 +5390,7 @@ def getSearchData(request, search_by="default", pk=0):
                     # Single Device alert page url
                     alert_page_url = reverse(
                         'SingleDeviceAlertsInit',
-                        kwargs={'page_type': alert_page_type, 'device_id' : ss_device_id, 'data_source' : 'down'},
+                        kwargs={'page_type': alert_page_type, 'device_id': ss_device_id, 'data_source': 'down'},
                         current_app='alert_center'
                     )
 
@@ -5406,7 +5406,7 @@ def getSearchData(request, search_by="default", pk=0):
                     current_technology = current_technology.lower()
 
                     # Get page type as per the technology
-                    page_type = 'customer' if current_technology in ['ptp','p2p'] else 'network'
+                    page_type = 'customer' if current_technology in ['ptp', 'p2p'] else 'network'
                     alert_page_type = page_type
 
                     # Sector Conf. On Device Inventory page url
@@ -5425,7 +5425,7 @@ def getSearchData(request, search_by="default", pk=0):
                     # Single Device perf page url
                     perf_page_url = reverse(
                         'SingleDevicePerf',
-                        kwargs={'page_type': page_type, 'device_id' : query_result[0].sector_configured_on_id},
+                        kwargs={'page_type': page_type, 'device_id': query_result[0].sector_configured_on_id},
                         current_app='performance'
                     )
 
@@ -5435,7 +5435,8 @@ def getSearchData(request, search_by="default", pk=0):
                     # Single Device alert page url
                     alert_page_url = reverse(
                         'SingleDeviceAlertsInit',
-                        kwargs={'page_type': alert_page_type, 'device_id' : query_result[0].sector_configured_on_id, 'data_source' : 'down'},
+                        kwargs={'page_type': alert_page_type, 'device_id': query_result[0].sector_configured_on_id,
+                                'data_source': 'down'},
                         current_app='alert_center'
                     )
                 else:
@@ -5443,7 +5444,7 @@ def getSearchData(request, search_by="default", pk=0):
                     perf_page_url = ''
                     alert_page_url = ''
 
-                #Update response dict
+                # Update response dict
                 result["success"] = 1
                 result["message"] = "Search Successfully."
 

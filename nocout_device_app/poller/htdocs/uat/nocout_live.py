@@ -14,7 +14,11 @@ import re
 from ast import literal_eval
 from nocout import get_parent
 import mysql.connector
+import memcache,imp
 logger = nocout_log()
+
+
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % get_site_name())
 
 try:
 	import nocout_settings
@@ -130,6 +134,19 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
         'wimax_modulation_dl_fec','wimax_modulation_ul_fec']
      cambium_services = ['cambium_ul_rssi', 'cambium_ul_jitter',
 		     'cambium_reg_count', 'cambium_rereg_count']
+     rad5k_services = ['rad5k_ul_rssi' ,'rad5k_dl_rssi','rad5k_ss_dl_utilization' ,'rad5k_ss_ul_utilization',
+	'rad5k_dl_time_slot_alloted_invent','rad5k_ul_time_slot_alloted_invent','rad5k_dl_estmd_throughput_invent',
+	'rad5k_ul_estmd_throughput_invent',
+	'rad5k_ul_uas_invent','rad5k_dl_es_invent','rad5k_ul_ses_invent','rad5k_ul_bbe_invent','rad5k_ss_cell_radius_invent',
+	'rad5k_ss_cmd_rx_pwr_invent']
+     util_service_list = ['wimax_pmp1_dl_util_bgp','wimax_pmp1_ul_util_bgp','wimax_pmp2_dl_util_bgp','wimax_pmp2_ul_util_bgp',
+	'radwin_dl_utilization','radwin_ul_utilization','cambium_dl_utilization','cambium_ul_utilization',
+	'cambium_ss_dl_utilization','cambium_ss_ul_utilization','mrotek_dl_utilization','mrotek_ul_utilization','rici_dl_utilization',
+	'rici_ul_utilization','cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization','juniper_switch_ul_utilization']
+     wimax_ss_util_services = ['wimax_ss_ul_utilization','wimax_ss_dl_utilization']
+     wimax_ss_params_services=['wimax_qos_invent','wimax_ss_session_uptime']
+     switch_utilization = ['cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization',
+     'juniper_switch_ul_utilization']
      ss_device, ss_mac, bs_device = None, None, None
      old_device = device
      #logger.debug('service_list: ' + pformat(service_list))
@@ -155,6 +172,12 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 	     if service in wimax_ss_port_service:
 		     old_service = service
 		     service = 'wimax_ss_port_params'
+	     if service in rad5k_services:
+		     old_service = service
+		     service = 'rad5k_topology_discover'
+	     if service in wimax_ss_util_services or service in wimax_ss_params_services:
+		     old_service = service
+		     service = 'wimax_bs_ss_params'
 	     # Getting result from compiled checks output
              cmd = '/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (str(site_name), service, device)
 	     # For host check [ping service]
@@ -230,6 +253,53 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					data_dict = {host_name:[]}
 			 		q.put(data_dict)
 			 	return
+		elif str(old_service) in wimax_ss_util_services or str(old_service) in wimax_ss_params_services:
+			filtered_ss_data =[]
+			try:
+				data_value = []	
+				check_output = filter(lambda t: 'wimax_bs_ss_params' in t, check_output.split('\n'))
+				check_output = check_output[0].split('- ')[1].split(' ')
+				#logger.debug('Final check_output : ' + pformat(check_output))
+				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
+					filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t,check_output)
+					filtered_ss_data.extend(filtered_ss_output)
+				if str(old_service) in wimax_ss_util_services:
+					index = wimax_ss_util_services.index(old_service)
+				elif str(old_service) in wimax_ss_params_services:
+				    try:
+				        index = wimax_ss_params_services.index(old_service)	
+					if str(old_service) == 'wimax_qos_invent':
+						ds = data_source_list[0]
+						if 'dl' in ds:
+							index = index + 3
+					if str(old_service) == 'wimax_ss_session_uptime':
+						index = index + 3
+				    except:
+					logger.error('ss_params: ' + pformat(index))
+				#logger.error('ss_params: ' + pformat(index))
+				for entry in filtered_ss_data:
+					value = entry.split('=')[1].split(',')[index]
+					if str(old_service) not in wimax_ss_params_services:
+						value = float(value)/1024.0
+						value = "%.2f" % value
+					data_value.append(value)
+					cal_ss_mac = entry.split('=')[0]
+					# MARK
+					for host_name,mac_value in ss_name_mac_mapping.items():
+						if mac_value ==  cal_ss_mac.lower():
+							ss_host_name = host_name
+							break
+					data_dict = {ss_host_name:data_value}
+					data_value = []
+					q.put(data_dict)
+			         			
+			 	logger.error(filtered_ss_data)
+			except Exception, e:
+			 	logger.error('Empty check_output: ' + pformat(e))
+				for host_name,mac_value in ss_name_mac_mapping.items():
+					data_dict = {host_name:[]}
+			 		q.put(data_dict)
+			 	return
 		elif str(old_service) in wimax_ss_port_service:
 			try:
 				data_value =  []
@@ -237,6 +307,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				check_output = check_output[0].split('- ')[1].split(',')
 				index =  wimax_ss_port_service.index(old_service)
 				value = check_output[index].split('=')[1]
+				value = value.strip('() ')
 				data_value.append(value)
 				data_dict = {old_device:data_value}
 				data_value = []
@@ -247,20 +318,122 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				data_value = []
 				q.put(data_dict)
 				return	
+		elif str(old_service) in rad5k_services:
+			data_value = []
+			try:
+				check_output = filter(lambda t: 'rad5k_topology_discover' in t, check_output.split('\n'))
+				check_output = check_output[0].split('- ')[1].split(' ')
+				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
+					filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t, check_output)
+					filtered_ss_data.extend(filtered_ss_output)
+				logger.info('filtered_ss_data: ' + pformat(filtered_ss_data))
+				index = rad5k_services.index(old_service)
+				for entry in filtered_ss_data:
+					data_entry = entry.split('=')[1]
+					data_value = data_entry.split('/')[index]
+					cal_ss_ip = data_entry.split('/')[-1]
+					for host_name,ss_ip_value in ss_name_mac_mapping.items():
+						if ss_ip_value ==  cal_ss_ip:
+							ss_host_name = host_name
+							break
+					data_dict = {ss_host_name:data_value}
+					q.put(data_dict)
+			except Exception, e:
+			 	logger.error('Empty check_output: ' + pformat(e))
+				for host_name,mac_value in ss_name_mac_mapping.items():
+					ss_host_name = host_name
+					data_dict = {ss_host_name: []}
+			 	        q.put(data_dict)
+			 	        return
 		elif old_service.lower() == 'ping':
 			check_output = check_output.split('\n')[-3:]
 			logger.debug('check_output after split: ' + pformat(check_output))
 			pl_info, rta_info = check_output[0], check_output[1]
 			if pl_info:
 			        pl = pl_info.split(',')[-2].split()[0]
+				pl = pl.strip('%')
 			if rta_info:
 			        rta = rta_info.split('=')[1].split('/')[1]
+				rta = rta.strip('ms')
 			if 'pl' in data_source_list:
 				data_dict = {device: [pl]}
 			if 'rta' in data_source_list:
 				data_dict = {device: [rta]}
 			q.put(data_dict)
 			return
+		elif service in util_service_list:
+			reg_exp2 = re.compile(r'(?<=\[)[^]]*',re.MULTILINE)
+                 	util_values = re.findall(reg_exp2, check_output)
+                 	logger.info('current_states : %s %s' % (util_values,is_first_call))
+			if util_values:
+				if service == 'rici_dl_utilization' or service == 'rici_ul_utilization':
+					cur_values = util_values[0].split(' ')
+					this_time = cur_values[0].split('=')[1]	
+					port1_value = int(cur_values[1].split('=')[1])	
+					port2_value = int(cur_values[2].split('=')[1])	
+					port3_value = int(cur_values[3].split('=')[1])	
+					port4_value = int(cur_values[4].split('=')[1])
+					this_value = max(port1_value,port2_value,port3_value,port4_value)	
+                 			logger.info('values : %s' % (this_value))
+				elif service in switch_utilization:
+					try:
+                 				logger.info('current_states : %s %s' % (util_values,is_first_call))
+						ds = data_source_list[0]
+						cur_values = util_values[0].rstrip().split(' ')
+						this_time = cur_values[0].split('=')[1]	
+						port_name = map(lambda x: x.split('=')[0] ,cur_values )	
+						port_value = map(lambda x: x.split('=')[1] ,cur_values )
+						port_index = port_name.index(ds)
+						if port_index:
+							this_value = port_value[port_index]
+						switch_key = "".join([old_device,"_",service,"_",ds])
+                 				logger.info('port_value : %s %s' % (this_value,is_first_call))
+					except:
+						pass  	
+				else:
+					this_time = util_values[0].split(' ')[0].split('=')[1]
+					this_value = util_values[0].split(' ')[1].split('=')[1]
+				if service in switch_utilization:
+					key = switch_key
+				else:
+					key = "".join([old_device,"_",service])
+				key =key.encode('ascii','ignore')
+				memc_obj = db_ops_module.MemcacheInterface()
+				memc = memc_obj.memc_conn
+				key_value = ""
+				if is_first_call:
+					util_list = [this_time,this_value]
+					if memc:
+						memc.set(key,util_list)
+						key_value = ""
+					data_dict = {old_device: []}
+				 	q.put(data_dict)
+						
+				else:
+					try:
+					    if memc:
+						key =key.encode('ascii','ignore')
+						#key = str(key)
+					        util = memc.get(key)
+						if util:
+							pre_time = util[0]
+							pre_value = util[1]
+							timediff =  int(this_time) - int(pre_time)
+							valuediff =  float(this_value) - float(pre_value)
+							if timediff <= 0 or valuediff <= 0:
+								key_value = []
+							else:
+								rate = float(valuediff)/timediff
+								rate = (rate * 8) / (1024.0 * 1024)
+								key_value = "%.2f" % rate
+						data_dict = {old_device: key_value}
+				 		q.put(data_dict)
+					except Exception,e:
+                 				logger.info('Error' % e)
+						data_dict = {old_device: key_value}
+				 		q.put(data_dict)
+			
+			
 		else:
 			reg_exp1 = re.compile(r'(?<=\()[^)]*(?=\)$)', re.MULTILINE)
                  	# Parse perfdata for all services running on that device

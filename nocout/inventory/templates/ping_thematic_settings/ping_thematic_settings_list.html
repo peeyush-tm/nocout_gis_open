@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-cog'></i> Settings" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-cogs'></i> Settings" "javascript:;" %}
     {% breadcrumb_safe "Ping Thematic Settings" "javascript:;" %}
     {% if is_admin %}
         {% breadcrumb_safe "Admin Ping Thematic" "ping-admin-thematic-settings-list" %}
@@ -20,10 +20,6 @@
 {% block content_title %}Ping Thematic Settings Management{% endblock %}
 {% block content_description %}List of ping thematic settings{% endblock %}
 {% block content %}
-        {% if user.is_superuser %}
-            <p><a href="/ping_thematic_settings/new"><i class="fa fa-plus">&nbsp;</i> Create Ping Thematic Settings</a></p>
-        {% endif %}
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>PING THEMATIC SETTINGS LISTING</h4>
@@ -57,21 +53,31 @@
                 </div>
                 <div class="clearfix"></div>
             </div>
-            <!-- <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThematicSettingsListingTable">
-                <thead></thead>
-                <tbody></tbody>
-            </table> -->
         </div>
     </div>
 {% endblock %}
 
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+     <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <script type="text/javascript">
+        var dataTableInstance = '',
+            thematic_api_url = '';
         $(document).ready(function (e) {
 
+            {% if user.is_superuser %}
+               var create_link_html = '<a href="/ping_thematic_settings/new" title="Create Ping Thematic Settings" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
+
+            // Update thematic API url global variable
+            thematic_api_url = '{% url "ping_user_thematic_setting" %}';
+
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
 
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
@@ -90,74 +96,73 @@
                 ajax_url_wimax = '{% url "PingThematicSettingsListingTable" technology="wimax" %}' + '?admin=1';
             }
 
-            var destroy = false;
+             var location_array = window.location.href.split("#");
 
-            /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("PingThematicSettingsListingTable_ptp", gridHeadersObj, ajax_url_ptp, destroy);
-            dataTableInstance.createDataTable("PingThematicSettingsListingTable_pmp", gridHeadersObj, ajax_url_pmp, destroy);
-            dataTableInstance.createDataTable("PingThematicSettingsListingTable_wimax", gridHeadersObj, ajax_url_wimax, destroy);
-        });
-
-		/*Change event for PTP checkboxes*/
-        $(document).on('change', '#PingThematicSettingsListingTable_ptp .check_class', function() {
-			select_theme("PingThematicSettingsListingTable_ptp", this);
-        });
-
-        /*Change event for PMP checkboxes*/
-        $(document).on('change', '#PingThematicSettingsListingTable_pmp .check_class', function() {
-			select_theme("PingThematicSettingsListingTable_pmp", this);
-        });
-
-        /*Change event for Wimax checkboxes*/
-        $(document).on('change', '#PingThematicSettingsListingTable_wimax .check_class', function() {
-			select_theme("PingThematicSettingsListingTable_wimax", this);
-        });
-
-        /*This function select the check theme*/
-        function select_theme(tab_id, current_checkbox) {
-        	if (current_checkbox.checked) {
-                $('#'+tab_id+' input.check_class').not(current_checkbox).prop('checked', false);
-                $.ajax({
-                    url:'{% url "ping_user_thematic_setting" %}',
-                    data:{ 'ts_template_id': current_checkbox.value },
-                    dataType:"json",
-                    success:function(result){
-                        if(result.success){
-                            dialog_box_message= "Thematic Setting (0) is assigned to User: (1)".replace('(0)', result.data.objects.thematic_setting_name)
-                            dialog_box_message= dialog_box_message.replace('(1)', result.data.objects.username);
-                            bootbox.dialog({
-                                message:dialog_box_message,
-                                title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
-                                buttons: {
-                                    success: {
-                                        label: "OK",
-                                        className: "btn-success",
-                                        callback: function () {
-                                            $(".bootbox").modal("hide");
-                                        }
-                                    }
-                                }
-                            });
-                    	}
-                	}
-                });//ajax ends
+          tables_info = {
+            "network_p2p_tab" : {
+                "app_name" : "inventory",
+                "table_title" : "Ping Thematic Settings Listing Table-PTP",
+                "header_class_name" : "PingThematicSettingsList",
+                "data_class_name" : "PingThematicSettingsListingTable"
+               
+            },
+            "network_pmp_tab" : {
+                "app_name" : "inventory",
+                "table_title" : "Ping Thematic Settings Listing Table-PMP",
+                "header_class_name" : "PingThematicSettingsList",
+                "data_class_name" : "PingThematicSettingsListingTable"
+                
+            },
+            "network_wifi_tab" : {
+                "app_name" : "inventory",
+                "table_title" : "Ping Thematic Settings Listing Table-Wimax",
+                "header_class_name" : "PingThematicSettingsList",
+                "data_class_name" : "PingThematicSettingsListingTable"
+                
             }
-            else{
-		        bootbox.dialog({
-                    message:"You can not Uncheck the Selected Settings, Please Select the other setting.",
-                    title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
-                    buttons: {
-                        success: {
-                            label: "OK",
-                            className: "btn-success",
-                            callback: function () {
-                                $(".bootbox").modal("hide");
-                            }
-                        }
-                    }
-                });
-                $(current_checkbox).prop('checked', true);
-            }
+        };
+
+
+        $("#network_ptp_tab").attr("data_url", ajax_url_ptp);
+        $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#network_pmp_tab").attr("data_url", ajax_url_pmp);
+        $("#network_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#network_wifi_tab").attr("data_url", ajax_url_wimax);
+        $("#network_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+            /*Trigger click event on active tab to load its data*/
+            $("#network_ptp_tab").trigger('click', true);
         }
+});
+
+ /*Change event for PTP checkboxes*/
+    $(document).on('change', '#PingThematicSettingsListingTable_ptp .check_class', function() {
+        updateThematicSelection("PingThematicSettingsListingTable_ptp", this, $(this).attr('data-devicetype'));
+    });
+    /*Change event for PMP checkboxes*/
+    $(document).on('change', '#PingThematicSettingsListingTable_pmp .check_class', function() {
+        updateThematicSelection("PingThematicSettingsListingTable_pmp", this, $(this).attr('data-devicetype'));
+    });
+    /*Change event for Wimax checkboxes*/
+    $(document).on('change', '#PingThematicSettingsListingTable_wimax .check_class', function() {
+        updateThematicSelection("PingThematicSettingsListingTable_wimax", this, $(this).attr('data-devicetype'));
+    });
+
     </script>
 {% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+
+        });
+    </script>
+{% endblock %}
+
+

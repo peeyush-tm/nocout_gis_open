@@ -3,6 +3,38 @@
  * @for wizardNewBsLib.js
  * @event ready
  */
+// Global Variables
+var parent_class = 'formContainer',
+    change_event_dom_ids = [
+        '#id_country',
+        '#id_state'
+    ],
+    element_relation_dict = {
+        '#id_country' : {
+            "old_value" : $('#id_country').val(),
+            "update" : [
+                {
+                    "id" : '#id_state',
+                    "url_name" : fetch_state_url,
+                    "existing_value" : $('#id_state').val()
+                }
+            ],
+            "reset" : ['#id_state', '#id_city']
+        },
+        '#id_state' : {
+            "old_value" : $('#id_state').val(),
+            "update" : [
+                {
+                    "id" : '#id_city',
+                    "url_name" : fetch_city_url,
+                    "existing_value" : $('#id_city').val()
+                }
+            ],
+            "reset" : ['#id_city']
+        }
+    },
+    current_tech = "";
+
 $(document).ready(function () {
     $("#id_update_and_show").on("click", function(e) {
         e.preventDefault();
@@ -21,34 +53,20 @@ $(document).ready(function () {
 
     // Initialize the select2 selectbox.
     $(".select2select").select2();
+
+    // Loop to trigger change event on select boxes
+    for (var i=0;i<change_event_dom_ids.length;i++) {
+        if (element_relation_dict[change_event_dom_ids[i]]['old_value']) {
+            // trigger change event
+            $(change_event_dom_ids[i]).trigger('change', true);
+        }
+    }
+
     // Initialize tooltip
     $('.tip-focus').tooltip({
         placement: 'right',
         trigger: 'focus'
     });
-
-    // if none of the value from 'country' is selected than empty 'state' & 'city' selection too.
-    // or update value of 'state' corresponding to the selected 'country'
-    if ($("#id_country").val() == "") {
-        $("#id_state").empty();
-        $("#id_city").empty();
-    } else {
-        Dajaxice.inventory.update_states_after_invalid_form(Dajax.process, {
-            'option': $("#id_country").val(),
-            'state_id': $("#id_state").val()
-        });
-    }
-
-    // if 'state' has no value than empty 'city' selection menu
-    // or update 'city' corresponding to selected 'state'
-    if (!$("#id_state").val()) {
-        $("#id_city").empty();
-    } else {
-        Dajaxice.inventory.update_cities_after_invalid_form(Dajax.process, {
-            'option': $("#id_state").val(),
-            'city_id': $("#id_city").val()
-        });
-    }
 
     // Initialize BS Switch select2
     $("#id_bs_switch").select2({
@@ -138,33 +156,3 @@ $(document).ready(function () {
         }
     });
 });//end ready
-
-/**
- * This event triggers when country dropdown value changes. If updates the state dropdown accordingly
- * @event change
- */
-$("#id_country").change(function () {
-    if ($("#id_country").val() != "") {
-        Dajaxice.inventory.update_states(Dajax.process, {
-            'option': $("#id_country").val()
-        });
-        $("#id_city").empty();
-    }
-    else {
-        $("#id_state").select2("val","");
-        $("#id_state").empty();
-        $("#id_city").select2("val","");
-        $("#id_city").empty();
-    }
-});
-
-/**
- * This event triggers when state dropdown value changes. If updates the city dropdown accordingly
- * @event change
- */
-$("#id_state").change(function () {
-    $("#id_city").select2("val","");
-    Dajaxice.inventory.update_cities(Dajax.process, {
-        'option': $("#id_state").val()
-    });
-});

@@ -1,10 +1,10 @@
-{% extends "department/department.html" %}
+{% extends "nocout/base.html" %}
 
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-user'></i> User Management" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-sitemap'></i> User Management" "javascript:;" %}
     {% breadcrumb_safe "Users" "user_list" %}
     {% breadcrumb_safe "User Listing" "user_list" %}
     <!-- Render the created breadcrumbs -->
@@ -16,46 +16,41 @@
 {% block content_title %}Users Management{% endblock %}
 {% block content_description %}List of users{% endblock %}
 {% block content %}
-    {% for group in user.groups.all %}
-        {% if group.name == 'group_admin' %}
-            <p><a href="/user/new"><i class="fa fa-plus">&nbsp;</i> Create User</a></p>
-        {% endif %}
-    {% endfor %}
     <div class="box border lite">
-    <div id="tableContainer_div" class="box-title">
-        <h4><i class="fa fa-table"></i>USER LISTING</h4>
-    </div>
-    <div class="box-body">
-        <div class="tabbable header-tabs">
-            <ul class="nav nav-tabs">
-                <li>
-                    <a href="#UserArchivedListing" id="userArchived_tab" data-toggle="tab">
-                        <span class="hidden-inline-mobile">Archived User Listing</span>
-                    </a>
-                </li>
-                <li class="active">
-                    <a href="#UserListing" id="user_tab" data-toggle="tab">
-                        <span class="hidden-inline-mobile">User Listing</span>
-                    </a>
-                </li>
-            </ul>
-            <div class="tab-content" style="overflow: auto;">
-                <div class="tab-pane in active" id="UserListing">
-                    <table id="UserListingTable" class="datatable table table-striped table-bordered table-hover">
-                        <thead></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-                <div class="tab-pane" id="UserArchivedListing">
-                    <table id="UserArchivedListingTable" class="datatable table table-striped table-bordered table-hover">
-                        <thead></thead>
-                        <tbody></tbody>
-                    </table>
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>USER LISTING</h4>
+        </div>
+        <div class="box-body">
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                    <li>
+                        <a href="#UserArchivedListing" id="userArchived_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Archived User Listing</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#UserListing" id="user_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">User Listing</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="tab-content user_tab_content" style="overflow: auto;">
+                    <div class="tab-pane in active" id="UserListing">
+                        <table id="UserListingTable" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="UserArchivedListing">
+                        <table id="UserArchivedListingTable" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-{#    </div>#}
 {% endblock %}
 
 {% block jquery %}
@@ -67,9 +62,35 @@
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
 
-        var dataTableInstance = "";
+        var dataTableInstance = '',
+            user_soft_delete_url = '',
+            restore_user_url = '',
+            delete_user_url = '',
+            reset_perm_url = '',
+            reset_child_perm_url = '';
 
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% for group in user.groups.all %}
+                {% if perms.auth.add_user %}
+                    var create_link_html = '<a href="/user/new" title="Create User" \
+                                            class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                    $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+
+                    // var reset_child_perm_html = '<a href="javascript:;" title="Assign Default Permissions To All Child Users" \
+                    //                         class="btn btn-default btn-sm reset_child_perms"><i class="fa fa-retweet"></i></a>';
+
+                    // $('.controls_container ul').prepend('<li>' + reset_child_perm_html + '</li>');
+                    {% endif %}
+            {% endfor %}
+
+            user_soft_delete_url = "{% url 'user_soft_delete' 123 1111111 %}";
+            restore_user_url = "{% url 'restore_user' 123 %}";
+            delete_user_url = "{% url 'delete_user' 123 %}";
+            reset_perm_url = "{% url 'reset_user_permissions' 123 %}";
+            reset_child_perm_url = "{% url 'reset_admin_users_permissions' %}";
 
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
@@ -118,5 +139,122 @@
                 $("#user_tab").trigger('click',true);
             }
         });
+
+        function resetPermissions(user_id) {
+            var perm_url = reset_perm_url;
+            perm_url = perm_url.replace('123', user_id);
+            bootbox.confirm("Are you sure you want to reset current permissions to default once?", function(result) {
+                if (result) {
+                    $.ajax({
+                        'url': perm_url,
+                        'type': 'GET',
+                        'success': function(result) {
+                            bootbox.alert('Permissions reset successfully.')
+                        },
+                        error: function(err) {
+                            console.log(err.statusText);
+                        }
+                    })
+                }
+            });
+        }
+
+        /**
+         * This event triggers when delete icon on operational tab in action columns clicked
+         * @event click(with delegate)
+         */        
+        $('.user_tab_content').delegate('.user_soft_delete_btn', 'click', function(e) {
+            var device_id = $(this).attr('pk'),
+                soft_delete_ajax_url = '{% url "user_soft_delete_display_data" 123 %}';
+
+            if (device_id && soft_delete_ajax_url) {
+                var soft_delete_url = soft_delete_ajax_url.replace('123', device_id);
+                $.ajax({
+                    url : soft_delete_url,
+                    type : "GET",
+                    success : function(response) {
+                        var result = "";
+                        // Type check of response
+                        if (typeof response == 'string') {
+                            result = JSON.parse(response);
+                        } else {
+                            result = response;
+                        }
+
+                        get_soft_delete_form(result);
+                    },
+                    error : function(err) {
+                        // console.log(err.statusText);
+                    }
+                });
+            }
+        });
+
+        /**
+         * This event triggers when reset perms icon clicked(for individual user)
+         * @event click(with delegate)
+         */
+        $('.user_tab_content').delegate('.reset_perm_btn', 'click', function(e) {
+            var user_id = $(this).attr('pk');
+            if (user_id) {
+                resetPermissions(user_id)
+            }
+        });
+
+        /**
+         * This event triggers when reset child user permissions button clicked
+         * @event click(with delegate)
+         */
+        $('.controls_container').delegate('.reset_child_perms', 'click', function(e) {
+            bootbox.confirm("Are you sure you want to assign default permissions to all child users?", function(result) {
+                if (result) {
+                    // Show loading spinner
+                    showSpinner();
+                    $.ajax({
+                        url: reset_child_perm_url,
+                        type: 'GET',
+                        success: function(response) {
+                            var result = response;
+
+                            if (typeof(response) == 'string') {
+                                result = JSON.parse(response);
+                            }
+
+                            if (result['success']) {
+                                var users_list = result['data']['users'] ? result['data']['users'].split(',') : [],
+                                    msg_html = false;
+
+                                if (users_list.length > 0) {
+                                    msg_html = '<p><strong>Default permissions assigned to following users:</strong></p>';
+                                }
+                                for (var i=0;i<users_list.length;i++) {
+                                    msg_html += '<div class="col-md-3">' + users_list[i] + '</div>';
+                                }
+
+                                if (msg_html) {
+                                    msg_html = '<div style="height: 400px;overflow: auto;">' + msg_html + '<div class="clearfix"></div></div>';
+                                    bootbox.dialog({
+                                        message: msg_html,
+                                        title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Assign Default Permissions'
+                                    });
+                                } else {
+                                    bootbox.alert(result['message']);
+                                }
+                            } else {
+                                bootbox.alert(result['message']);
+                            }
+                        },
+                        error: function(err) {
+                            bootbox.alert('Please try again later.');
+                        },
+                        complete: function() {
+                            // Hide loading spinner
+                            hideSpinner();
+                        }
+                    })
+                }
+            });
+        });
+
     </script>
 {% endblock %}

@@ -15,13 +15,19 @@ from datetime import datetime, timedelta
 import subprocess
 import pymongo
 import imp
+import cPickle
 import sys
 import time
 import socket
-import json
+import ujson,zlib
+import memcache
 from collections import defaultdict
+from ast import literal_eval
+#from handlers.db_ops import *
 from itertools import groupby
 from operator import itemgetter
+#sys.path.append('/omd/sites/%s/nocout/utils' % nocout_site_name)
+#from nocout.utils.handlers.db_ops import *
 try:
         import nocout_settings
         from nocout_settings import _LIVESTATUS, _DATABASES
@@ -31,13 +37,15 @@ except Exception, exp:
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 network_data_values = []
 service_data_values = []
 network_update_list = []
 service_update_list = []
 device_first_down_map = {}
-
+ss_provis_helper_serv_data =[]
+kpi_helper_serv_data = []
 def load_file(file_path):
     #Reset the global vars
     host_vars = {
@@ -99,6 +107,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	global network_update_list
 	global service_update_list
 	global device_first_down_map
+	global ss_provis_helper_serv_data
+	global kpi_helper_serv_data
         age = None
 	rt_min, rt_max = None, None
 	rta_dict = {}
@@ -119,23 +129,22 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	first_down_crit = {}
 	host_severity = 'unknown'
 	host_state = "unknown"
+	present_time = datetime.now()
 	device_first_down ={}
-#	db = mongo_module.mongo_conn(
-#	    host=mongo_host,
-#	    port=int(mongo_port),
-#	    db_name=mongo_db
-#	)
 	# Process network perf data
         nw_qry_output = network_result
 	file_path = "/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk" % site
 	host_var = load_file(file_path)
 	host_list = [str(index[0]) for index in nw_qry_output]
 	try:
-		if db:
-			device_first_down_list = list(db.device_first_down.find())
-			for down_device_dict in device_first_down_list:
-				if down_device_dict.get('host'):
-					device_first_down_map[down_device_dict['host']] = down_device_dict
+		redis_obj=db_ops_module.RedisInterface()
+		rds_cnx=redis_obj.redis_cnx
+		key = nocout_site_name + "_first_down"	
+		device_first_down_list=rds_cnx.get(key)
+		device_first_down_list =literal_eval(device_first_down_list)
+		for down_device_dict in device_first_down_list:
+			if down_device_dict.get('host'):
+				device_first_down_map[down_device_dict['host']] = down_device_dict
 	except Exception,e:
 		print e
 	for entry in nw_qry_output:
@@ -159,8 +168,13 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
                     continue
 		for ds, ds_values in threshold_values.items():
 			check_time = datetime.fromtimestamp(entry[3]) 
-			# Pivot the time stamp to next 5 mins time frame
 			local_timestamp = pivot_timestamp_fwd(check_time)
+			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
+				local_timestamp = present_time
+				check_time = local_timestamp - timedelta(minutes=2)
+			check_time =int(time.mktime(check_time.timetuple()))
+			# Pivot the time stamp to next 5 mins time frame
+			local_timestamp =int(time.mktime(local_timestamp.timetuple()))
 			host_severity =host_state
 			if ds == 'pl':
 				ds_values['cur'] = ds_values['cur'].strip('%')
@@ -274,6 +288,15 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	pmp2_mrc_services = ['wimax_pmp2_utilization','wimax_pmp2_ul_util_bgp','wimax_pmp2_dl_util_bgp']
 	exceptional_serv = ['wimax_dl_cinr','wimax_ul_cinr','wimax_dl_intrf','wimax_ul_intrf','wimax_modulation_dl_fec','wimax_modulation_ul_fec',
                                 'wimax_dl_rssi','wimax_ul_rssi']
+
+	ss_provis_helper_service = ['cambium_ul_rssi', 'cambium_dl_rssi',
+					'cambium_dl_jitter', 'cambium_ul_jitter',
+					'cambium_rereg_count', 'wimax_ul_rssi',
+					'wimax_dl_rssi', 'wimax_dl_cinr', 'wimax_ss_ptx_invent','radwin_rssi','radwin_uas']
+	kpi_helper_services =['wimax_ul_cinr', 'wimax_ul_intrf', 'cambium_ul_jitter',
+                        'cambium_rereg_count']
+
+	#ss_provis_helper_serv_data = []	
 	for entry in serv_qry_output:
                 if len(entry) < 8:
                         continue
@@ -285,8 +308,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			continue
 		if not len(entry[-1]) and not dr_flag:
 			continue
-			   	
 		threshold_values = get_threshold(entry[-1])
+
 		severity = calculate_severity(entry[3])
 		# Age of last service state change
 		last_state_change = entry[-3]
@@ -301,20 +324,26 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			check_time = datetime.fromtimestamp(entry[4])
 			# Pivot the time stamp to next 5 mins time frame
 			local_timestamp = pivot_timestamp_fwd(check_time)
+			#try:
+			#	if  not ds_values.get('cur') or ((present_time - local_timestamp) >= timedelta(minutes=4)):
+			#		#print unknwn_state_svc_data
+			#		value = unknwn_state_svc_data[(str(entry[0]),str(entry[2]),str(ds))]
+			#		#print str(entry[0]), str(entry[2]),value
+			#	else:
+			#		value = ds_values.get('cur')
+			#print "ds value", ds_values
 			try:
-				if  not ds_values.get('cur') or ((present_time - local_timestamp) >= timedelta(minutes=4)):
-					#print unknwn_state_svc_data
-					value = unknwn_state_svc_data[(str(entry[0]),str(entry[2]),str(ds))]
-					#print str(entry[0]), str(entry[2]),value
-				else:
-					value = ds_values.get('cur')
-			except:
 				value =  ds_values.get('cur')
+			except:
+		        value=None
+				pass	
 			# Code has been Added to figure out if check is executed or not..if check not executed then take current value
 			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
 				local_timestamp = present_time
 				check_time = local_timestamp - timedelta(minutes=2)
 				#print local_timestamp,check_time,str(entry[1]), str(entry[2]) 	
+			check_time =int(time.mktime(check_time.timetuple()))
+			local_timestamp =int(time.mktime(local_timestamp.timetuple()))
 			data_values = [{'time': check_time, 'value': value}]
 			data_dict.update({
 				'site': site,
@@ -334,6 +363,22 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 				'service': str(entry[2]),
 				'ds': str(ds)
 				})
+			if str(entry[2]) in kpi_helper_services:
+				kpi_helper_serv_data.append({
+				'severity': severity,
+				'device_name': str(entry[0]),
+				'service_name': str(entry[2]),
+			})				
+			if str(entry[2]) in ss_provis_helper_service:
+				ss_provis_helper_serv_data.append({
+				'device_name': str(entry[0]),
+				'service_name': str(entry[2]),
+				'current_value': value
+			})				
+
+
+
+	 
 			if str(entry[2]) in pmp1_mrc_services and str(entry[0]) in mrc_hosts:
 				indexed_mrc_insert[(str(entry[0]),str(entry[2]))]=data_dict
 				indexed_mrc_update[(str(entry[0]),str(entry[2]))]=matching_criteria
@@ -428,7 +473,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			continue
 	elap = int(time.time()) - current1
 	#print 'service_data_values'
-	#print service_data_values
+	#print len(service_data_values)
 	# Bulk insert the values into Mongodb
 	#try:
 	#	mongo_module.mongo_db_insert(db, service_data_values, 'serv_perf_data')
@@ -436,71 +481,116 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	#	print e.message
 
 
-def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_first_down_list,db):
+
+
+def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_first_down_map,db):
 	#db = mongo_module.mongo_conn(
 	#    host=mongo_host,
 	#    port=int(mongo_port),
 	#    db_name=mongo_db
 	#)
 	match_dict = {}
-	try:
-		for index3 in range(len(net_values)):
-			mongo_module.mongo_db_update(db,net_update[index3], net_values[index3], 'network_perf_data')
-		
-		for index4 in range(len(serv_values)):
-			mongo_module.mongo_db_update(db,service_update[index4], serv_values[index4], 'serv_perf_data')
-	except Exception ,e:
-		print e.message
-	index1 = 0
-	index2 = min(1000,len(net_values))
+	#print '........'
 	#print len(net_values)
-	#print len(serv_values)
+	#my_string  = cPickle.dumps(serv_values)
+	#print sys.getsizeof(my_string)
+	#print sys.getsizeof(serv_values)
+	#print 'before Memcaceh storing...'
+
+	key = nocout_site_name + "_service" 
+	doc_len_key = key + "_len" 
+	memc_obj=db_ops_module.MemcacheInterface()
+	exp_time =240 # 4 min
+	memc_obj.store(key,serv_values,doc_len_key,exp_time,chunksize=1000)
+	
+	key = nocout_site_name + "_network"
+	doc_len_key =  key + "_len"
+	memc_obj.store(key,net_values,doc_len_key,exp_time,chunksize=1000)
+
+
+	#try:
+	#	#for index3 in range(len(net_values)):
+	#	#	mongo_module.mongo_db_update(db,net_update[index3], net_values[index3], 'network_perf_data')
+	#	
+	#	#for index4 in range(len(serv_values)):
+	#	#	mongo_module.mongo_db_update(db,service_update[index4], serv_values[index4], 'serv_perf_data')
+	#except Exception ,e:
+	#	print e.message
+	#index1 = 0
+	#index2 = min(1000,len(net_values))
+	print '.......values.......'
+	print len(net_values)
+	print len(serv_values)
 	#print device_first_down_list
-	try:
-		while(index2 <= len(net_values)):
-			mongo_module.mongo_db_insert(db, net_values[index1:index2], 'network_perf_data')
-			#mongo_module.mongo_db_update(db,net_update[index1:index2], net_values[index1:index2], 'network_perf_data')
-			index1 = index2
-			if index2 >= len(net_values):
-				break
-			if (len(net_values) - index2)  < 1000:
-				index2 += (len(net_values) - index2)
-			else:
-				index2 += 1000
-	except Exception, e:
-		print 'Insert error in NW perf values'
-		print e.message
 
-	try:
-		index1 = 0
-		index2 = min(1000,len(serv_values))
-		while(index2 <= len(serv_values)):
-			mongo_module.mongo_db_insert(db, serv_values[index1:index2], 'serv_perf_data')
-			#mongo_module.mongo_db_update(db,service_update[index1:index2], serv_values[index1:index2], 'serv_perf_data')
-			index1 = index2
-			if index2 >= len(serv_values):
-				break
-			if (len(serv_values) - index2)  < 1000:
-				index2 += (len(serv_values) - index2)
-			else:
-				index2 += 1000
-	except Exception, e:
-		print 'Insert error in Serv values'
-		print e.message
+	#################################################
+	# storing the performance data into redis /
+	#################################################
 
+	this_time = datetime.now()
+	t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+	t_stmp = t_stmp.replace(second=0,microsecond=0)
+	current_time =int(time.mktime(t_stmp.timetuple()))
 	try:
-		index3 =0
-		down_device = device_first_down_map.values()
-		for index3 in range(len(down_device)):
-			try:
-				match_dict = {'host':down_device[index3]['host']}
-			except:
-				continue
-			mongo_module.mongo_db_update(db,match_dict, down_device[index3], 
-			'device_first_down')
-			
+		rds_obj=db_ops_module.RedisInterface()
+		set_name = nocout_site_name + "_network"
+		rds_obj.zadd_compress(set_name,current_time,net_values)
+		set_name = nocout_site_name + "_service"
+		rds_obj.zadd_compress(set_name,current_time,serv_values)
+		key = nocout_site_name + "_first_down"
+		device_first_down_info = device_first_down_map.values()
+		rds_obj.redis_cnx.set(key,device_first_down_info)
+		rds_obj.multi_set(ss_provis_helper_serv_data, perf_type='provis')
+		rds_obj.redis_update(kpi_helper_serv_data, update_queue=True,
+                                               perf_type='ul_issue')
 	except Exception,e:
 		print e
+		pass
+
+	#try:
+	#	while(index2 <= len(net_values)):
+	#		mongo_module.mongo_db_insert(db, net_values[index1:index2], 'network_perf_data')
+	#		#mongo_module.mongo_db_update(db,net_update[index1:index2], net_values[index1:index2], 'network_perf_data')
+	#		index1 = index2
+	#		if index2 >= len(net_values):
+	#			break
+	#		if (len(net_values) - index2)  < 1000:
+	#			index2 += (len(net_values) - index2)
+	#		else:
+	#			index2 += 1000
+	#except Exception, e:
+	#	print 'Insert error in NW perf values'
+	#	print e.message
+
+	#try:
+	#	index1 = 0
+	#	index2 = min(1000,len(serv_values))
+	#	while(index2 <= len(serv_values)):
+	#		mongo_module.mongo_db_insert(db, serv_values[index1:index2], 'serv_perf_data')
+	#		#mongo_module.mongo_db_update(db,service_update[index1:index2], serv_values[index1:index2], 'serv_perf_data')
+	#		index1 = index2
+	#		if index2 >= len(serv_values):
+	#			break
+	#		if (len(serv_values) - index2)  < 1000:
+	#			index2 += (len(serv_values) - index2)
+	#		else:
+	#			index2 += 1000
+	#except Exception, e:
+	#	print 'Insert error in Serv values'
+	#	print e.message
+
+	#try:
+	#	index3 =0
+	#	for index3 in range(len(down_device)):
+	#		try:
+	#			match_dict = {'host':down_device[index3]['host']}
+	#		except:
+	#			continue
+	#		mongo_module.mongo_db_update(db,match_dict, down_device[index3], 
+	#		'device_first_down')
+	#		
+	#except Exception,e:
+	#	print e
 		
 def calculate_severity(severity_bit):
 	"""
@@ -555,8 +645,10 @@ def get_host_services_name(site_name=None, db=None):
                             "Filter: service_description ~ mrotek_port_values\n"+\
                             "Filter: service_description ~ rici_port_values\n"+\
                             "Or: 13\nNegate:\nOutputFormat: python\n"
-	    device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
-				"And: 2\nOutputFormat: python\n"
+	    #device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
+	    #			"And: 2\nOutputFormat: python\n"
+            device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\nFilter: service_state = 2\nOr: 2\n"+\
+                                "And: 2\nOutputFormat: python\n"
 
             #service_perf_query = "GET services\nColumns: host_name host_address service_description service_state "+\
             #                "last_check service_last_state_change host_state service_perf_data\nFilter: service_description ~ _invent\n"+\
@@ -576,12 +668,12 @@ def get_host_services_name(site_name=None, db=None):
 
   	    # Code has been added to take average value of last 10 entries if device is not down and still unknown values
 	    # comes because of packet lost in network for service.
-	    unknown_svc_data = filter(lambda x:(x[3] == 3) or ((st - pivot_timestamp_fwd(datetime.fromtimestamp(x[4]))) >= timedelta(minutes=4)),serv_qry_output)
-	    unknwn_state_svc_data = filter(lambda x: x[0] not in device_down_list ,unknown_svc_data)
+	    #unknown_svc_data = filter(lambda x:(x[3] == 3) or ((st - pivot_timestamp_fwd(datetime.fromtimestamp(x[4]))) >= timedelta(minutes=4)),serv_qry_output)
+	    #unknwn_state_svc_data = filter(lambda x: x[0] not in device_down_list ,unknown_svc_data)
 	    #print '............................................'
             #print unknwn_state_svc_data
 	    #print '............................................'
-	    #print device_down_list
+	    #print len(serv_qry_output)
 	    frequency_based_service_list =['wimax_ss_ip','wimax_modulation_dl_fec','wimax_modulation_ul_fec','wimax_dl_intrf',
 		'wimax_ul_intrf','wimax_ss_sector_id','wimax_ss_mac','wimax_ss_frequency','mrotek_e1_interface_alarm',
 		'mrotek_fe_port_state','mrotek_line1_port_state','mrotek_device_type','rici_device_type','rici_e1_interface_alarm',
@@ -589,8 +681,8 @@ def get_host_services_name(site_name=None, db=None):
 	    uptime_service =['wimax_ss_session_uptime','wimax_ss_uptime',
 		'wimax_bs_uptime','cambium_session_uptime_system','cambium_uptime','radwin_uptime']
 
-	    unknwn_state_svc_data  =  calculate_avg_value(unknwn_state_svc_data,frequency_based_service_list,db)
-	    #print unknwn_state_svc_data
+	    #unknwn_state_svc_data  =  calculate_avg_value(unknwn_state_svc_data,frequency_based_service_list,db)
+	    unknwn_state_svc_data ={}
 	    build_export(
                        site_name,
                        nw_qry_output,
@@ -886,7 +978,35 @@ def get_threshold(perf_data):
                         }
 
     return threshold_values
-
+# old function where for filter to get data for configured ports
+def get_threshold_switch(perf_data,host_name ):
+    threshold_values = get_threshold(perf_data) #threshold value dict from checks
+    threshold_values = dict((k.lower(), v) for k, v in threshold_values.iteritems())
+    #print type(host_name)
+    #host_name = int(host_name)
+    switch_ports = memcache_switch.get(host_name)
+    #if switch_ports:
+    #switch_ports = switch_ports.lower()
+    #print "host", host_name  
+    try :
+       switch_ports = switch_ports.lower()
+       if "," in switch_ports:  #string like 'Gi0/1,Gi0/2'
+            switch_ports = switch_ports.split(",")
+            #print "ring case", switch_ports
+            dict1 = {}
+            for each in switch_ports :
+                t =threshold_values.get(each)
+                dict1[each]= t
+            #print dict1
+            return dict1
+       else:
+            t =threshold_values.get(switch_ports)
+            dict1 = {}
+            dict1[switch_ports]= t
+            #print "non ring", dict1
+            return  dict1
+    except:
+    	pass       
 
 def pivot_timestamp(timestamp):
     """
@@ -1145,17 +1265,26 @@ if __name__ == '__main__':
     and extracts data
 
     """
+    try:
+        memc_obj1=db_ops_module.MemcacheInterface()
+        memc_obj =memc_obj1.memc_conn
+    except:
+        print "Memcache Error",
+    key = "master_ua" + "_switch"
+    memcache_switch= memc_obj.get(key)
+    #print memcache_switch
     configs = config_module.parse_config_obj()
     desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
     desired_config = configs.get(desired_site)
     site = desired_config.get('site')
-    db = mongo_module.mongo_conn(
-	    host=desired_config.get('host'),
-	    port = int(desired_config.get('port')),
-	    db_name= desired_config.get('nosql_db')
-    )
-    get_host_services_name(
-    site_name=site,db=db
-    )
-    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,device_first_down_list,db)
+    #print "site is ", site
+    switch_checks_list = ['juniper_switch_ul_utilization','juniper_switch_dl_utilization','cisco_switch_ul_utilization','cisco_switch_dl_utilization']
+    db= None
+    #db = mongo_module.mongo_conn(
+    #	    host=desired_config.get('host'),
+    #	    port = int(desired_config.get('port')),
+    #	    db_name= desired_config.get('nosql_db')
+    #)
+    get_host_services_name(site_name=site )
+    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,device_first_down_map,db)
 

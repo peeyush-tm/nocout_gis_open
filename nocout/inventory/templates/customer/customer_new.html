@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "GIS Inventory" "javascript:;" %}
     {% breadcrumb_safe "Customer" "customers_list" %}
     {% breadcrumb_safe "Add Customer" "javascript:;" %}
@@ -45,11 +45,17 @@
                                         </div>
                                         <div class="form-group">
                                             <div class="col-sm-offset-3 col-sm-9">
-                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
+                                                <button type="submit" class="btn btn-default">
+                                                    <i class="fa fa-pencil text-success"></i> Create
+                                                </button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
+                                                <button type="reset" class="btn btn-default" onclick="resetForm();">
+                                                    <i class="fa fa-refresh text-warning"></i> Reset
+                                                </button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/customer/')"><i class="fa fa-times"></i>Cancel</button>
+                                                <button type="reset" class="btn btn-default" onclick="window.location.replace('/customer/')">
+                                                    <i class="fa fa-times text-danger"></i> Cancel
+                                                </button>
                                             </div>
                                         </div>
                                     </form>

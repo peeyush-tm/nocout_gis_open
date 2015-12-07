@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-cog'></i> Settings" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-cogs'></i> Settings" "javascript:;" %}
     {% breadcrumb_safe "Icon Settings" "icon_settings_list" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -15,11 +15,6 @@
 {% block content_title %}Icon Settings Management{% endblock %}
 {% block content_description %}List of icons settings{% endblock %}
 {% block content %}
-
-        {% if perms.inventory.add_iconsettings %}
-            <p><a href="/icon_settings/new"><i class="fa fa-plus">&nbsp;</i> Create Icon Settings</a></p>
-        {% endif %}
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>ICON SETTINGS LISTING</h4>
@@ -36,9 +31,20 @@
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
+        var dataTableInstance = '';
         $(document).ready(function (e) {
+
+            {% if perms.inventory.add_iconsettings %}
+               var create_link_html = '<a href="/icon_settings/new" title="Create Icon Settings" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
+
+            // Disable advance filtering
+            create_advance_filters = false;
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/

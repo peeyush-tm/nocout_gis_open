@@ -1,10 +1,10 @@
-{% extends "department/department.html" %}
+{% extends "nocout/base.html" %}
 
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-user'></i> User Management" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-sitemap'></i> User Management" "javascript:;" %}
     {% breadcrumb_safe "Users" "user_list" %}
     {% breadcrumb_safe "Delete User" "javascript:;" %}
     <!-- Render the created breadcrumbs -->

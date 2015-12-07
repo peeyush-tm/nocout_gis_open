@@ -4,20 +4,20 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-download'></i> Download Center" "javascript:;" %}
-    {% breadcrumb_safe report_name|upper|add:" Reports" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-file-excel-o'></i> Download Center" "javascript:;" %}
+    {% breadcrumb_safe report_title "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
 
 {% load staticfiles %}
 
-{% block content_title %}{{ report_name }}{% endblock %}
+{% block content_title %}{{ report_title }}{% endblock %}
 {% block content_description %}List of reports{% endblock %}
 {% block content %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>{{ report_name|upper }} Reports</h4>
+            <h4><i class="fa fa-table"></i>{{ report_title }}</h4>
         </div>
 
         <div id="tableContainer" class="box-body">
@@ -33,10 +33,12 @@
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
-
+        var dataTableInstance = '';
         $(document).ready(function (e) {
+            // Disable advance filtering
+            create_advance_filters = false;
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/

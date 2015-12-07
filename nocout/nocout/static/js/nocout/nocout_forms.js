@@ -1,10 +1,24 @@
 /**
- * This file shows the validation error on any form
- * @uses jQuery.js
+ * This file manages the error presentation in forms & also load ajax data
+ * @uses jQuery
  * @uses gritter.js
  */
-$(document).ready(function (e) {
 
+// Global Variables
+var api_info_dict = {
+        "id_device_technology" : [
+            {
+                "dom_id" : "",
+                "api_url" : ""
+            }
+        ]
+    };
+
+/**
+ * This event trigger when page loaded
+ * @event ready
+ */
+$(document).ready(function (e) {
     /*Initialize the variables*/
     var hasError = 0,
         inputContainers = $(".formContainer form  .col-sm-9 .col-md-8"),
@@ -59,7 +73,10 @@ $(document).ready(function (e) {
     });
 });
 
-/*It removes the error class from fields if exists*/
+/**
+ * It removes the error class from fields if exists
+ * @method resetForm
+ */
 function resetForm() {    
     var inputContainers = $(".formContainer .col-md-3");
     /*Remove the error class from all the fields.*/
@@ -76,4 +93,37 @@ function resetForm() {
     }
     /*Remove the gritter popup when reset button is clicked*/
     $("#gritter-notice-wrapper").empty();
+}
+
+/**
+ * This function makes ajax call to given url & after formatting API response return it
+ * @method makeFormAjaxCall
+ * @param api_url {String}, It contains the url of api from which data is to be fetched
+ */
+function makeFormAjaxCall(api_url) {
+
+    if (!api_url) {
+        return "";
+    }
+
+    var complete_url = getCompleteUrl(api_url);
+
+    $.ajax({
+        url : complete_url,
+        type : "GET",
+        success : function(response) {
+            var result = "";
+            // Type check of response
+            if (typeof response == 'string') {
+                result = JSON.parse(response);
+            } else {
+                result = response;
+            }
+
+            console.log(result);
+        },
+        error : function(err) {
+            // console.log(err.statusText);
+        }
+    });
 }

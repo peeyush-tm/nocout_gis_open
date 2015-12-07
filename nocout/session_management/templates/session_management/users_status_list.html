@@ -1,10 +1,10 @@
-{% extends "department/department.html" %}
+{% extends "nocout/base.html" %}
 
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-user'></i> User Management" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-sitemap'></i> User Management" "javascript:;" %}
     {% breadcrumb_safe "Users Session" "sm_list" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -18,6 +18,7 @@
 <style type="text/css">
     #UserStatusList tr td h3 {
         cursor: pointer;
+        margin: 0px;
     }
 </style>
     <div class="box border lite">
@@ -38,9 +39,10 @@
     <!-- AJAX CSRF -->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
+        var dataTableInstance = '';
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
@@ -74,7 +76,7 @@
                 buttons: {
                     success: {
                         label: "YES",
-                        className: "btn-primary",
+                        className: "btn-default",
                         callback: function() {
                             username=$(ele).closest('tr').children('td').first().text();
                             $.ajax({
@@ -94,7 +96,7 @@
                     },//success ends
                     danger: {
                         label: "NO",
-                        className: "btn-danger",
+                        className: "btn-default",
                         callback: function (){
                             $(".bootbox").modal("hide");
                         }
@@ -110,7 +112,7 @@
                 buttons: {
                     success: {
                         label: "YES",
-                        className: "btn-primary",
+                        className: "btn-default",
                         callback: function() {
                             username= $(ele).closest('tr').children('td').first().text();
                             $.ajax({

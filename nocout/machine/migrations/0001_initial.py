@@ -1,40 +1,24 @@
 # -*- coding: utf-8 -*-
-from south.utils import datetime_utils as datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'Machine'
-        db.create_table(u'machine_machine', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('machine_ip', self.gf('django.db.models.fields.IPAddressField')(max_length=15, null=True, blank=True)),
-            ('agent_port', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'machine', ['Machine'])
+    dependencies = [
+    ]
 
-
-    def backwards(self, orm):
-        # Deleting model 'Machine'
-        db.delete_table(u'machine_machine')
-
-
-    models = {
-        u'machine.machine': {
-            'Meta': {'object_name': 'Machine'},
-            'agent_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'machine_ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
-        }
-    }
-
-    complete_apps = ['machine']
+    operations = [
+        migrations.CreateModel(
+            name='Machine',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(unique=True, max_length=255, verbose_name=b'Machine Name')),
+                ('alias', models.CharField(max_length=255, verbose_name=b'Alias')),
+                ('machine_ip', models.IPAddressField(null=True, verbose_name=b'Machine IP', blank=True)),
+                ('agent_port', models.IntegerField(null=True, verbose_name=b'Agent Port', blank=True)),
+                ('description', models.TextField(null=True, verbose_name=b'Description', blank=True)),
+            ],
+        ),
+    ]

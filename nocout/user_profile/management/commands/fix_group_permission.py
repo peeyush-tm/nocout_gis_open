@@ -113,13 +113,13 @@ class Command(BaseCommand):
         create_view_permissions()
 
         # Fixing permissions for admin group.
-        group_admin = Group.objects.get(name='group_admin')
+        group_admin = Group.objects.get(name='Admin')
         fix_group_permissions(group_admin, admin_perms)
 
         # Fixing permissions for operator group.
-        group_operator = Group.objects.get(name='group_operator')
+        group_operator = Group.objects.get(name='Operator')
         fix_group_permissions(group_operator, operator_perms)
 
         # Fixing permissions for viewer group.
-        group_viewer = Group.objects.get(name='group_viewer')
+        group_viewer = Group.objects.get(name='Viewer')
         fix_group_permissions(group_viewer, viewer_perms)

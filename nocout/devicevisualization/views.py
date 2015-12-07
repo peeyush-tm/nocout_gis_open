@@ -8,7 +8,7 @@ from django.template import RequestContext
 import logging
 from zipfile import ZipFile
 import glob
-from nocout.settings import MEDIA_ROOT, MEDIA_URL, LIVE_POLLING_CONFIGURATION, PERIODIC_POLL_PROCESS_COUNT
+from nocout.settings import MEDIA_ROOT, MEDIA_URL, LIVE_POLLING_CONFIGURATION, PERIODIC_POLL_PROCESS_COUNT, DATE_TIME_FORMAT
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView, View
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -34,14 +34,41 @@ from performance.formulae import rta_null, display_time
 # Import service utils gateway class
 from service.utils.util import ServiceUtilsGateway
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway
+from nocout.utils.util import NocoutUtilsGateway, getBSInventoryInfo, getSSInventoryInfo, getSectorInventoryInfo
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
+from user_profile.utils.auth import in_group
+from device.api import prepare_raw_result_v2
 
 logger = logging.getLogger(__name__)
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
+
+# Global Variables for infowindow keys
+BS_INFOWINDOW_LIST = [
+    'name', 'base_station_alias', 'bs_site_name', 'bs_site_id',
+    'building_height', 'tower_height', 'bs_type', 'bs_gps_type',
+    'bs_address', 'bs_city', 'bs_state', 'lat_lon',
+    'bs_infra_provider', 'tag1', 'tag2'
+]
+
+BH_INFOWINDOW_LIST = [
+    'bh_capacity', 'bh_connectivity', 'bh_type', 'bh_circuit_id',
+    'bh_ttsl_circuit_id', 'bh_pe_hostname', 'pe_ip', 'bs_switch_ip',
+    'aggregation_switch', 'aggregation_switch_port', 'bs_converter_ip', 'pop',
+    'bh_device_type', 'bh_configured_on', 'bh_device_port'
+]
+
+SS_INFOWINDOW_LIST = [
+    'cktid', 'customer_alias', 'ss_ip', 'pe_ip',
+    'qos_bandwidth', 'antenna_height', 'polarisation',
+    'mount_type', 'antenna_type', 'cable_length', 'ethernet_extender',
+    'building_height', 'tower_height', 'ss_technology', 'lat_lon',
+    'customer_address', 'alias', 'dl_rssi_during_acceptance', 'date_of_acceptance'
+]
 
 
 def init_network_maps(request, device_name="default_device_name", page_type="gmap"):
@@ -49,7 +76,6 @@ def init_network_maps(request, device_name="default_device_name", page_type="gma
     This function initializes gmap or gearth or wmap as per page type
     """
     is_admin = 'other'
-    user_roles_list = []
     template_path = 'devicevisualization/locate_devices.html'
 
     # Update template_path as per the page type
@@ -60,13 +86,7 @@ def init_network_maps(request, device_name="default_device_name", page_type="gma
     elif page_type == "wmap":
         template_path = 'devicevisualization/locate_devices_white_map.html'
 
-    try:
-        user_roles_list = request.user.userprofile.role.values_list('role_name', flat=True)
-    except Exception, e:
-        logger.info(e.message)
-        pass
-
-    if(request.user.is_superuser or 'admin' in user_roles_list):
+    if in_group(request.user, 'admin'):
         is_admin = 'admin'
 
     context_data = {
@@ -166,10 +186,12 @@ class Gis_Map_Performance_Data(View):
                 )
 
                 device_technology = DeviceTechnology.objects.get(id=device.device_technology)
+                device_type = DeviceType.objects.get(id=device.device_type)
                 user_obj = UserProfile.objects.get(id=self.request.user.id)
 
                 uts = UserThematicSettings.objects.get(user_profile=user_obj,
-                                                       thematic_technology=device_technology)
+                                                       thematic_technology=device_technology,
+                                                       thematic_type =device_type)
 
                 thematic_settings = uts.thematic_template
                 threshold_template = thematic_settings.threshold_template
@@ -203,7 +225,7 @@ class Gis_Map_Performance_Data(View):
                     'frequency':device_frequency
                     })
                 except Exception as e:
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     device_frequency=''
                     pass
@@ -232,7 +254,7 @@ class Gis_Map_Performance_Data(View):
                             device_pl = ''
 
                 except Exception as e:
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     device_pl=''
                     pass
@@ -246,8 +268,9 @@ class Gis_Map_Performance_Data(View):
                             if int(chek_dev_freq) > 10:
                                 corrected_dev_freq = chek_dev_freq
                         except Exception as e:
-                            logger.info(device)
-                            logger.exception("Frequency is Empty : %s" %(e.message))
+                            # logger.info(device)
+                            # logger.exception("Frequency is Empty : %s" %(e.message))
+                            pass
 
                         device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
                         device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
@@ -290,7 +313,7 @@ class Gis_Map_Performance_Data(View):
 
                     else:
                         device_link_color=''
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     pass
 
@@ -321,7 +344,7 @@ class Gis_Map_Performance_Data(View):
 
                 except Exception as e:
                     device_performance_value=''
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     pass
 
@@ -345,7 +368,7 @@ class Gis_Map_Performance_Data(View):
                                 if (float(range_start)) <= float(corrected_device_performance_value) <= (float(range_end)):
                                     performance_icon= data.values()[0]
                             except Exception as e:
-                                logger.info(device)
+                                # logger.info(device)
                                 logger.exception(e.message)
                                 continue
 
@@ -407,7 +430,7 @@ class Gis_Map_Performance_Data(View):
                         device_info.append(perf_info)
 
                 except Exception as e:
-                    logger.info(device)
+                    # logger.info(device)
                     logger.exception(e.message)
                     pass
 
@@ -450,40 +473,40 @@ class PointToolClass(View):
         if point_data:
             point_data = json.loads(point_data)
             # point_data = json_loads(point_data)
-            if(int(point_data["is_delete_req"]) > 0) :
-                GISPointTool.objects.filter(pk=point_data['point_id']).delete()
+            if(int(point_data.get("is_delete_req", 0)) > 0) :
+                GISPointTool.objects.filter(pk=point_data.get('point_id')).delete()
                 result["data"]["point_id"] = 0
                 result["success"] = 1
                 result["message"] = "Point Removed Successfully"
 
-            elif(int(point_data["is_update_req"]) > 0) :
+            elif(int(point_data.get("is_update_req", 0)) > 0) :
 
-                current_row = GISPointTool.objects.get(pk=point_data['point_id'])
-                current_row.name = point_data['name']
-                current_row.description = point_data['desc']
-                current_row.connected_lat = point_data['connected_lat']
-                current_row.connected_lon = point_data['connected_lon']
-                current_row.connected_point_type=point_data['connected_point_type']
-                current_row.connected_point_info=point_data['connected_point_info']
+                current_row = GISPointTool.objects.get(pk=point_data.get('point_id'))
+                current_row.name = point_data.get('name')
+                current_row.description = point_data.get('desc')
+                current_row.connected_lat = point_data.get('connected_lat')
+                current_row.connected_lon = point_data.get('connected_lon')
+                current_row.connected_point_type=point_data.get('connected_point_type')
+                current_row.connected_point_info=point_data.get('connected_point_info')
                 # update row with new values
                 current_row.save()
 
-                result["data"]["point_id"] = point_data['point_id']
+                result["data"]["point_id"] = point_data.get('point_id')
                 result["success"] = 1
                 result["message"] = "Point Updated Successfully"
 
             else:
                 try:
                     # check that the name already exist in db or not
-                    existing_rows_count = len(GISPointTool.objects.filter(name=point_data['name']))
+                    existing_rows_count = len(GISPointTool.objects.filter(name=point_data.get('name')))
 
                     if(existing_rows_count == 0):
                         new_row_obj = GISPointTool(
-                            name=point_data['name'],
-                            description=point_data['desc'],
-                            latitude=float(point_data['lat']),
-                            longitude=float(point_data['lon']),
-                            icon_url=point_data['icon_url'],
+                            name=point_data.get('name'),
+                            description=point_data.get('desc'),
+                            latitude=float(point_data.get('lat')),
+                            longitude=float(point_data.get('lon')),
+                            icon_url=point_data.get('icon_url'),
                             connected_lat=0,
                             connected_lon=0,
                             connected_point_type='',
@@ -555,16 +578,16 @@ class GetToolsData(View):
                     "connected_point_type" : "",
                     "connected_point_info" : ""
                 }
-                data_object['point_id'] = point_data['id']
-                data_object['lat'] = point_data['latitude']
-                data_object['lon'] = point_data['longitude']
-                data_object['name'] = point_data['name']
-                data_object['icon_url'] = point_data['icon_url']
-                data_object['desc'] = point_data['description']
-                data_object['connected_lat'] = point_data['connected_lat']
-                data_object['connected_lon'] = point_data['connected_lon']
-                data_object['connected_point_type'] = point_data['connected_point_type']
-                data_object['connected_point_info'] = point_data['connected_point_info']
+                data_object['point_id'] = point_data.get('id')
+                data_object['lat'] = point_data.get('latitude')
+                data_object['lon'] = point_data.get('longitude')
+                data_object['name'] = point_data.get('name')
+                data_object['icon_url'] = point_data.get('icon_url')
+                data_object['desc'] = point_data.get('description')
+                data_object['connected_lat'] = point_data.get('connected_lat')
+                data_object['connected_lon'] = point_data.get('connected_lon')
+                data_object['connected_point_type'] = point_data.get('connected_point_type')
+                data_object['connected_point_info'] = point_data.get('connected_point_info')
 
                 # Append data to point list
                 result["data"]["points"].append(data_object)
@@ -598,15 +621,14 @@ class KmzListing(ListView):
             {'mData': 'user', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
         ]
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
             table_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['table_headers'] = json.dumps(table_headers)
         return context
 
 
-class Kmzreport_listingtable(BaseDatatableView):
+class Kmzreport_listingtable(BaseDatatableView, AdvanceFilteringMixin):
 
     model = KMZReport
     columns = ['name', 'filename', 'added_on', 'user']
@@ -615,7 +637,8 @@ class Kmzreport_listingtable(BaseDatatableView):
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             query = []
@@ -629,7 +652,7 @@ class Kmzreport_listingtable(BaseDatatableView):
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -696,6 +719,7 @@ class Kmzreport_listingtable(BaseDatatableView):
         total_records = qs.count()
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = qs.count()
 
@@ -814,7 +838,7 @@ class PointListingInit(ListView):
         return context
 
 
-class PointListingTable(BaseDatatableView):
+class PointListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
     model = GISPointTool
     columns = ['name', 'description', 'icon_url', 'latitude', 'longitude', 'connected_lat', 'connected_lon']
@@ -823,7 +847,8 @@ class PointListingTable(BaseDatatableView):
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             query = []
@@ -837,7 +862,7 @@ class PointListingTable(BaseDatatableView):
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -896,6 +921,7 @@ class PointListingTable(BaseDatatableView):
         total_records = qs.count()
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = qs.count()
 
@@ -1530,8 +1556,17 @@ class GISPerfData(View):
                         except Exception as e:
                             device_technology = None
 
+                        # device technology
+                        try:
+                            device_type = DeviceType.objects.get(id=sector_device.device_type)
+                        except Exception as e:
+                            device_type = None
+
+
+
+
                         # thematic settings for current user
-                        user_thematics = self.get_thematic_settings(device_technology)
+                        user_thematics = self.get_thematic_settings(device_technology,device_type)
 
                         # service & data source
                         service = ""
@@ -2514,12 +2549,12 @@ class GISPerfData(View):
                 continue
             processed[perf['data_source'], perf['service_name']] = []
 
-            service_name = perf['service_name']
+            service_name = perf['service_name'].strip()
 
             sds_name = perf['data_source'].strip()
 
             if sds_name not in ['pl', 'rta']:
-                sds_name = service_name + "_" + sds_name
+                sds_name = service_name.lower() + "_" + sds_name.lower()
 
             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                 if sds_name in SERVICE_DATA_SOURCE \
@@ -2579,11 +2614,11 @@ class GISPerfData(View):
         if data_source:
             title = " ".join(data_source.split("_")).title()
 
-            key_name = service_name.strip() + "_" +data_source.strip()
+            key_name = service_name.strip().lower() + "_" +data_source.strip().lower()
 
             if data_source.strip().lower() in ['pl', 'rta']:
                 name = data_source.strip()
-                key_name = data_source.strip()
+                key_name = data_source.strip().lower()
             else:
                 name = key_name
 
@@ -2919,7 +2954,7 @@ class GISPerfData(View):
                                                                        is_static=False)
 
         # thematic settings for current user
-        user_thematics = self.get_thematic_settings(device_technology)
+        user_thematics = self.get_thematic_settings(device_technology,device_type)
 
         if not user_thematics:
             return substation_info
@@ -3186,11 +3221,11 @@ class GISPerfData(View):
         except Exception as e:
             if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
                 device_link_color = 'rgb(0,0,0)'
-            logger.error("Frequency color not exist. Exception: ", e.message)
+            # logger.error("Frequency color not exist. Exception: ", e.message)
 
         return device_link_color, radius
 
-    def get_thematic_settings(self, device_technology):
+    def get_thematic_settings(self, device_technology, device_type):
         """ Get device pl
 
             Parameters:
@@ -3215,19 +3250,24 @@ class GISPerfData(View):
         # device technology
         device_technology = device_technology
 
+         # device type
+        device_technology = device_type
+
         # fetch thematic settings for current user
 
         if ts_type == "normal":
             try:
                 user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                  thematic_technology=device_technology)
+                                                                  thematic_technology=device_technology,
+                                                                  thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
         elif ts_type == "ping":
             try:
                 user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                      thematic_technology=device_technology)
+                                                                      thematic_technology=device_technology,
+                                                                      thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
@@ -3856,78 +3896,76 @@ class GISStaticInfo(View):
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
 
-        # base station counter
-        bs_counter = 0
+        if not freeze_time:
+            freeze_time = '0'
 
-        inventory = ""
+        bs_inventory = {}
 
         # Create instance of 'InventoryUtilsGateway' class
         inventory_utils = InventoryUtilsGateway()
 
         # loop through all base stations having id's in bs_ids list
-        try:
-            for bs_id in bs_ids:
-                # increment base station counter
-                bs_counter += 1
-
-                # get raw bs inventory
-                bs_result = nocout_utils.non_cached_all_gis_inventory(bs_id=bs_id)
-
-                # we need to prepare bs wise list # this would cache static data for 300 seconds
-                # bs_id_wise_result = prepare_raw_result(bs_result)
-                # this would prepare the results for the bs id we are interested in cached for 300 seconds
-                # inventory = prepare_raw_bs_result(bs_id_wise_result[bs_id])
-
+        for bs_id in bs_ids:
+            try:
+                
+                devices_ip_address_list = list()
+                
                 # get formatted bs inventory
-                inventory = prepare_raw_bs_result(bs_result,True)
+                bs_inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
 
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
-                bh_device = None
-                bh_device_ip = ""
-                for d in inventory['data']['param']['backhual']:
-                    if 'bh_configured_on' in d['name']:
-                        bh_device_ip = d['value'].rstrip('|')
-                        bh_device = Device.objects.get(ip_address=bh_device_ip)
+                bh_device_ip = bs_inventory.get('bh_device_ip')
+                
+                try:
+                    bh_device = Device.objects.get(ip_address=bh_device_ip)
+                except Exception, e:
+                    bh_device = None
 
-                devices_ip_address_list = list()
-                for sector in inventory['data']['param']['sector']:
-                    devices_ip_address_list.append(sector['sector_configured_on'])
-                    # append backhaul device ip address
-                    if bh_device_ip:
-                        devices_ip_address_list.append(bh_device_ip)
-                    for sub_station in sector['sub_station']:
-                        devices_ip_address_list.append(sub_station['data']['substation_device_ip_address'])
+                # append backhaul device ip address
+                if bh_device_ip and bh_device:
+                    devices_ip_address_list.append(bh_device_ip)
 
-                bs_devices = Device.objects.filter(ip_address__in=devices_ip_address_list).values('device_name',
-                                                                                                  'machine__name',
-                                                                                                  'device_technology',
-                                                                                                  'device_type',
-                                                                                                  'ip_address')
+                for sector in bs_inventory['sectors']:
+                    if sector['ip_address'] and sector['ip_address'] not in devices_ip_address_list:
+                        devices_ip_address_list.append(sector['ip_address'])
+
+                    for sub_station in sector['sub_stations']:
+                        if sub_station['ip_address'] and sub_station['ip_address'] not in devices_ip_address_list:
+                            devices_ip_address_list.append(sub_station['ip_address'])
+
+                bs_devices = Device.objects.filter(
+                    ip_address__in=devices_ip_address_list
+                ).values(
+                    'device_name',
+                    'machine__name',
+                    'device_technology',
+                    'device_type',
+                    'ip_address'
+                )
 
                 machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
 
                 complete_performance = get_complete_performance(machine_dict)
 
                 # ********************************* BACKHAUL PERF INFO (START) ***********************************
-                if bh_device:
+                if bh_device_ip and bh_device:
                     backhaul_data = self.get_backhaul_info(bh_device, complete_performance['network_perf_data'])
-                    inventory['data']['param']['bh_polled_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
-                    inventory['data']['param']['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
-                    inventory['data']['param']['bhSeverity'] = backhaul_data[
-                        'bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
+                    bs_inventory['bh_polled_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
+                    bs_inventory['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
+                    bs_inventory['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
 
                 # ********************************** BACKHAUL PERF INFO (END) ************************************
 
                 # ******************************** GET DEVICE MACHINE MAPPING (END) ******************************
 
-                for sector in inventory['data']['param']['sector']:
+                for sector in bs_inventory['sectors']:
                     # get sector
                     try:
                         sector_obj = Sector.objects.get(id=sector['sector_id'])
                     except Exception as e:
                         sector_obj = None
 
-                    sector_device = [d for d in bs_devices if d['ip_address'] == sector['sector_configured_on']][0]
+                    sector_device = [d for d in bs_devices if d['ip_address'] == sector['ip_address']][0]
 
                     try:
                         sector_configured_on_type = DeviceType.objects.get(id=sector_device['device_type'])
@@ -3940,7 +3978,7 @@ class GISStaticInfo(View):
                         sector_configured_on_tech = None
 
                     # thematic settings for current user
-                    user_thematics = self.get_thematic_settings(sector_configured_on_tech)
+                    user_thematics = self.get_thematic_settings(sector_configured_on_tech, None)
 
                     # service & data source
                     service = ""
@@ -3957,6 +3995,11 @@ class GISStaticInfo(View):
                     except Exception as e:
                         pass
 
+                    sector['perf_value'] = ''
+                    sector['pl'] = ''
+                    sector['rta'] = ''
+                    sector['pl_timestamp'] = ''
+
                     if service and data_source:
                         # performance value
                         perf_payload = {
@@ -3966,13 +4009,16 @@ class GISStaticInfo(View):
                             'device_service_name': service,
                             'device_service_data_source': data_source
                         }
-                        sector_extra_info = self.get_extra_info(perf_payload,
-                                                                freeze_time,
-                                                                ts_type,
-                                                                sector_configured_on_type,
-                                                                user_thematics,
-                                                                complete_performance,
-                                                                sector_obj)
+
+                        sector_extra_info = self.get_extra_info(
+                            perf_payload,
+                            freeze_time,
+                            ts_type,
+                            sector_configured_on_type,
+                            user_thematics,
+                            complete_performance,
+                            sector_obj
+                        )
 
                         sector['markerUrl'] = sector_extra_info['markerUrl']
                         sector['radius'] = sector_extra_info['radius']
@@ -3983,9 +4029,9 @@ class GISStaticInfo(View):
                         sector['color'] = sector_extra_info['color']
                         sector['polled_frequency'] = sector_extra_info['polled_frequency']
 
-                        for sub_station in sector['sub_station']:
+                    for sub_station in sector['sub_stations']:
                             substation_device = [d for d in bs_devices if
-                                                 d['ip_address'] == sub_station['data']['substation_device_ip_address']][0]
+                                                 d['ip_address'] == sub_station['ip_address']][0]
 
                             try:
                                 substation_device_type = DeviceType.objects.get(id=substation_device['device_type'])
@@ -3999,7 +4045,7 @@ class GISStaticInfo(View):
                                 substation_device_tech = None
 
                             # thematic settings for current user
-                            user_thematics = self.get_thematic_settings(substation_device_tech)
+                            user_thematics = self.get_thematic_settings(substation_device_tech, substation_device_type)
 
                             # service & data source
                             service = ""
@@ -4016,6 +4062,11 @@ class GISStaticInfo(View):
                             except Exception as e:
                                 pass
 
+                            sub_station['perf_value'] = ''
+                            sub_station['pl'] = ''
+                            sub_station['pl_timestamp'] = ''
+                            sub_station['rta'] = ''
+
                             if service and data_source:
                                 # performance value
                                 perf_payload = {
@@ -4026,27 +4077,30 @@ class GISStaticInfo(View):
                                     'device_service_data_source': data_source
                                 }
 
-                                substation_extra_info = self.get_extra_info(perf_payload,
-                                                                            freeze_time,
-                                                                            ts_type,
-                                                                            substation_device_type,
-                                                                            user_thematics,
-                                                                            complete_performance)
-                                sub_station['data']['markerUrl'] = substation_extra_info['markerUrl']
+                                substation_extra_info = self.get_extra_info(
+                                    perf_payload,
+                                    freeze_time,
+                                    ts_type,
+                                    substation_device_type,
+                                    user_thematics,
+                                    complete_performance
+                                )
+
+                                sub_station['markerUrl'] = substation_extra_info['markerUrl']
+
                                 if substation_extra_info['color']:
-                                    sub_station['data']['link_color'] = substation_extra_info['color']
+                                    sub_station['link_color'] = substation_extra_info['color']
                                 else:
-                                    sub_station['data']['link_color'] = sector_extra_info['color']
-                                sub_station['data']['perf_value'] = substation_extra_info['perf_value']
-                                sub_station['data']['pl'] = substation_extra_info['pl']
-                                sub_station['data']['pl_timestamp'] = substation_extra_info['pl_timestamp']
-                                sub_station['data']['rta'] = substation_extra_info['rta']
-        except Exception as e:
-            pass
+                                    sub_station['link_color'] = sector_extra_info['color']
 
-        result = inventory
+                                sub_station['perf_value'] = substation_extra_info['perf_value']
+                                sub_station['pl'] = substation_extra_info['pl']
+                                sub_station['pl_timestamp'] = substation_extra_info['pl_timestamp']
+                                sub_station['rta'] = substation_extra_info['rta']
+            except Exception as e:
+                pass
 
-        return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(bs_inventory))
 
     def get_backhaul_info(self, bh_device, network_perf_data):
         """ Get Sector performance info
@@ -4140,29 +4194,35 @@ class GISStaticInfo(View):
         utilization_perf_data = complete_performance['utilization_perf_data']
 
         # device frequency
-        device_frequency = self.get_device_polled_frequency(perf_payload['device_name'],
-                                                            perf_payload['machine_name'],
-                                                            freeze_time,
-                                                            performance_perf_data,
-                                                            inventory_perf_data,
-                                                            sector)
+        device_frequency = self.get_device_polled_frequency(
+            perf_payload['device_name'],
+            perf_payload['machine_name'],
+            freeze_time,
+            performance_perf_data,
+            inventory_perf_data,
+            sector
+        )
 
         # update device frequency
         result['polled_frequency'] = device_frequency
 
         # pl result
-        pl_result = self.get_device_pl(perf_payload['device_name'],
-                                       perf_payload['machine_name'],
-                                       network_perf_data,
-                                       freeze_time)
+        pl_result = self.get_device_pl(
+            perf_payload['device_name'],
+            perf_payload['machine_name'],
+            network_perf_data,
+            freeze_time
+        )
         # device pl
         device_pl = pl_result[0]
 
         # device rta
-        device_rta = self.get_device_rta(perf_payload['device_name'],
-                                         perf_payload['machine_name'],
-                                         network_perf_data,
-                                         freeze_time)
+        device_rta = self.get_device_rta(
+            perf_payload['device_name'],
+            perf_payload['machine_name'],
+            network_perf_data,
+            freeze_time
+        )
 
         # update device pl
         result['pl'] = device_pl
@@ -4192,14 +4252,16 @@ class GISStaticInfo(View):
         result['pl_timestamp'] = pl_timestamp
 
         if device_pl != "100":
-            performance_value = self.get_performance_value(perf_payload,
-                                                           network_perf_data,
-                                                           performance_perf_data,
-                                                           service_perf_data,
-                                                           inventory_perf_data,
-                                                           status_perf_data,
-                                                           utilization_perf_data,
-                                                           ts_type)
+            performance_value = self.get_performance_value(
+                perf_payload,
+                network_perf_data,
+                performance_perf_data,
+                service_perf_data,
+                inventory_perf_data,
+                status_perf_data,
+                utilization_perf_data,
+                ts_type
+            )
             result['perf_value'] = performance_value
         else:
             result['perf_value'] = ""
@@ -4439,11 +4501,7 @@ class GISStaticInfo(View):
 
         return device_frequency
 
-    def get_device_pl(self,
-                      device_name,
-                      machine_name,
-                      network_perf_data,
-                      freeze_time):
+    def get_device_pl(self, device_name, machine_name, network_perf_data, freeze_time):
         """ Get device pl
             Parameters:
                 - device_name (unicode) - device name
@@ -4464,12 +4522,15 @@ class GISStaticInfo(View):
 
         try:
             if int(freeze_time):
-                result = PerformanceNetwork.objects.filter(device_name=device_name,
-                                                              service_name='ping',
-                                                              data_source='pl',
-                                                              sys_timestamp__gte=start_time,
-                                                              sys_timestamp__lte=end_time).order_by().using(
-                    alias=machine_name).values('current_value', 'sys_timestamp')
+                result = PerformanceNetwork.objects.filter(
+                    device_name=device_name,
+                    service_name='ping',
+                    data_source='pl',
+                    sys_timestamp__gte=start_time,
+                    sys_timestamp__lte=end_time
+                ).order_by().using(
+                    alias=machine_name
+                ).values('current_value', 'sys_timestamp')
 
             else:
                 result = [d for d in network_perf_data if d['device_name'] == device_name and
@@ -4509,12 +4570,15 @@ class GISStaticInfo(View):
 
         try:
             if int(freeze_time):
-                device_rta = PerformanceNetwork.objects.filter(device_name=device_name,
-                                                              service_name='ping',
-                                                              data_source='rta',
-                                                              sys_timestamp__gte=start_time,
-                                                              sys_timestamp__lte=end_time).order_by().using(
-                    alias=machine_name).values('current_value')
+                device_rta = PerformanceNetwork.objects.filter(
+                    device_name=device_name,
+                    service_name='ping',
+                    data_source='rta',
+                    sys_timestamp__gte=start_time,
+                    sys_timestamp__lte=end_time
+                ).order_by().using(
+                    alias=machine_name
+                ).values('current_value')
 
             else:
                 device_rta = [d for d in network_perf_data if d['device_name'] == device_name and
@@ -4578,11 +4642,11 @@ class GISStaticInfo(View):
         except Exception as e:
             if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
                 device_link_color = 'rgb(0,0,0)'
-            logger.error("Frequency color not exist. Exception: ", e.message)
+            # logger.error("Frequency color not exist. Exception: ", e.message)
 
         return device_link_color, radius
 
-    def get_thematic_settings(self, device_technology):
+    def get_thematic_settings(self, device_technology, device_type):
         """ Get device pl
 
             Parameters:
@@ -4607,21 +4671,45 @@ class GISStaticInfo(View):
         # device technology
         device_technology = device_technology
 
-        # fetch thematic settings for current user
+        # device type
+        device_type = device_type
 
+        # fetch thematic settings for current user
         if ts_type == "normal":
-            try:
-                user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                  thematic_technology=device_technology)
-            except Exception as e:
-                return user_thematics
+            if device_technology:
+                if device_type:
+                    try:
+                        user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
+                                                                          thematic_technology=device_technology,
+                                                                          thematic_type=device_type)
+                    except Exception as e:
+                        return user_thematics
+                else:
+                    try:
+                        user_thematics = UserThematicSettings.objects.filter(user_profile=current_user,
+                                                                             thematic_technology=device_technology)[0]
+                    except Exception as e:
+                        return user_thematics
 
         elif ts_type == "ping":
-            try:
-                user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                      thematic_technology=device_technology)
-            except Exception as e:
-                return user_thematics
+            if device_technology:
+                if device_type:
+                    try:
+                        user_thematics = UserPingThematicSettings.objects.get(
+                            user_profile=current_user,
+                            thematic_technology=device_technology,
+                            thematic_type=device_type
+                        )
+                    except Exception as e:
+                        return user_thematics
+                else:
+                    try:
+                        user_thematics = UserPingThematicSettings.objects.filter(
+                            user_profile=current_user,
+                            thematic_technology=device_technology
+                        )[0]
+                    except Exception as e:
+                        return user_thematics
 
         return user_thematics
 
@@ -4742,7 +4830,8 @@ class GISStaticInfo(View):
 
             if performance_value and len(performance_value):
                 performance_value = performance_value[0]['current_value']
-
+            else:
+                performance_value = ''
         except Exception as e:
             return performance_value
 
@@ -4962,7 +5051,7 @@ class GISPerfInfo(View):
 
         device_info = list()
 
-        logger.info("************************ {} ".format(performance))
+        # logger.info("************************ {} ".format(performance))
 
         for perf in performance:
             res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
@@ -4973,12 +5062,12 @@ class GISPerfInfo(View):
                 continue
             processed[perf['data_source'], perf['service_name']] = []
 
-            service_name = perf['service_name']
+            service_name = perf['service_name'].strip()
 
             sds_name = perf['data_source'].strip()
 
             if sds_name not in ['pl', 'rta']:
-                sds_name = service_name + "_" + sds_name
+                sds_name = service_name.lower() + "_" + sds_name.lower()
 
             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                 if sds_name in SERVICE_DATA_SOURCE \
@@ -5042,11 +5131,11 @@ class GISPerfInfo(View):
         if data_source:
             title = " ".join(data_source.split("_")).title()
 
-            key_name = service_name.strip() + "_" +data_source.strip()
+            key_name = service_name.strip().lower() + "_" +data_source.strip().lower()
 
             if data_source.strip().lower() in ['pl', 'rta']:
                 name = data_source.strip()
-                key_name = data_source.strip()
+                key_name = data_source.strip().lower()
             else:
                 name = key_name
 
@@ -5088,48 +5177,68 @@ def get_complete_performance(machine_dict):
     inventory_perf_data = list()
     status_perf_data = list()
     utilization_perf_data = list()
+    polled_columns = [
+        'device_name',
+        'service_name',
+        'data_source',
+        'current_value',
+        'sys_timestamp',
+        'severity'
+    ]
 
     for machine_name in machine_dict:
         devices_list = machine_dict[machine_name]
 
         # device network info
-        device_network_info = NetworkStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        device_network_info = NetworkStatus.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         network_perf_data.extend(list(device_network_info))
 
         # device performance info
-        performance_network_info = PerformanceStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        performance_network_info = PerformanceStatus.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         performance_perf_data.extend(list(performance_network_info))
 
         # device service info
-        device_service_info = ServiceStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        device_service_info = ServiceStatus.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         service_perf_data.extend(list(device_service_info))
 
         # device inventory info
-        device_inventory_info = InventoryStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        device_inventory_info = InventoryStatus.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         inventory_perf_data.extend(list(device_inventory_info))
 
         # device status info
-        device_status_info = Status.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        device_status_info = Status.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         status_perf_data.extend(list(device_status_info))
 
         # device utilization info
-        device_utilization_info = UtilizationStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
+        device_utilization_info = UtilizationStatus.objects.filter(
+            device_name__in=devices_list
+        ).values(
+            *polled_columns
         ).order_by().using(alias=machine_name)
 
         utilization_perf_data.extend(list(device_utilization_info))
@@ -5144,3 +5253,115 @@ def get_complete_performance(machine_dict):
     }
 
     return result
+
+
+class GetInfoWindowContent(View):
+    """
+
+    """
+
+    def get(self, request, *args, **kwargs):
+        """
+
+        """
+        result = {
+            'success': 0,
+            'message': 'Data not fetched',
+            'data': []
+        }
+
+        elem_type = request.GET.get('elem_type')
+        elem_id = request.GET.get('elem_id')
+        child_id = request.GET.get('child_id', 0)
+        technology = request.GET.get('technology')
+
+        if elem_type and elem_id:
+            info_list = list()
+            child_info_list = list()
+            if elem_type == 'base_station':
+                info_list = getBSInventoryInfo(base_station_id=elem_id)
+            elif elem_type == 'sub_station':
+                info_list = getSSInventoryInfo(sub_station_id=elem_id)
+            elif 'sector' in elem_type:
+                info_list = getSectorInventoryInfo(sector_id=elem_id)
+            elif elem_type == 'path':
+                info_list = getBSInventoryInfo(base_station_id=elem_id)
+                child_info_list = getSSInventoryInfo(sub_station_id=child_id)
+            else:
+                result.update(message='Invalid element type.')
+
+            if len(info_list) > 0:
+                info_list = info_list[0]
+                if elem_type == 'base_station' or elem_type == 'path':
+                    bs_info = list()
+                    bh_info = list()
+
+                    for key in info_list:
+                        temp_dict = {
+                            'show': 1,
+                            'name': key,
+                            'title': key,
+                            'value': info_list.get(key, 'NA')
+                        }
+                        if key in BS_INFOWINDOW_LIST:
+                            bs_info.append(temp_dict)
+                        elif key in BH_INFOWINDOW_LIST:
+                            bh_info.append(temp_dict)
+                        else:
+                            continue
+
+                    result.update(
+                        data={
+                            'base_station': bs_info,
+                            'backhaul': bh_info
+                        }
+                    )
+
+                    if elem_type == 'path' and len(child_info_list) > 0:
+                        ss_info = list()
+                        child_info_list = child_info_list[0]
+                        for key in child_info_list:
+                            temp_dict = {
+                                'show': 1,
+                                'name': key,
+                                'title': key,
+                                'value': child_info_list.get(key, 'NA')
+                            }
+                            if key in SS_INFOWINDOW_LIST:
+                                ss_info.append(temp_dict)
+                            else:
+                                continue
+
+                        result.update(
+                            data={
+                                'base_station': bs_info,
+                                'backhaul': bh_info,
+                                'sub_station': ss_info
+                            }
+                        )
+                else:
+                    dataset = list()
+                    for key in info_list:
+                        temp_dict = {
+                            'show': 1,
+                            'name': key,
+                            'title': key,
+                            'value': info_list.get(key, 'NA')
+                        }
+
+                        dataset.append(temp_dict)
+
+
+                    result.update(
+                        data=dataset
+                    )
+
+                result.update(
+                    success=1,
+                    message='Data fetched successfully.'
+                )
+
+        else:
+            result.update(message='Invalid element type & id.')
+
+        return HttpResponse(json.dumps(result))

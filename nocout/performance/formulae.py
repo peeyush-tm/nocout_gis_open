@@ -10,7 +10,7 @@ def rta_null(rta=0):
     """
     try:
         if float(rta) == 0:
-            return None
+            return rta
     except Exception as e:
         return None
 

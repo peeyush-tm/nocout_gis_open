@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "GIS Wizard" "javascript:;" %}
     {% breadcrumb_safe "Base Station Wizard" "gis-wizard-base-station-list" %}
     {% breadcrumb_safe "BS : "|add:base_station.alias "gis-wizard-base-station-update" bs_pk %}
@@ -251,18 +251,18 @@
 
                                     <div class="form-group">
                                         <div class="col-sm-offset-3 col-sm-9">
-                                            <button type="submit" class="btn btn-success">
-                                                <i class="fa fa-pencil"></i>{{ save_text }} &amp; Next
+                                            <button type="submit" class="btn btn-default">
+                                                <i class="fa fa-pencil text-success"></i> {{ save_text }} &amp; Next
                                             </button>
-                                            <button type="submit" id="id_update_and_show" class="btn btn-success">
-                                                <i class="fa fa-pencil"></i>{{ save_text }} &amp; Show
+                                            <button type="submit" id="id_update_and_show" class="btn btn-default">
+                                                <i class="fa fa-pencil text-success"></i> {{ save_text }} &amp; Show
                                             </button>
-                                            <button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ skip_url }}')">
-                                                <i class="fa fa-times"></i> Skip
+                                            <button type="reset" class="btn btn-default" onclick="window.location.replace('{{ skip_url }}')">
+                                                <i class="fa fa-times text-warning"></i> Skip
                                             </button>
                                             {% if base_station_has_sector %}
-                                            <button type="reset" class="btn btn-danger" onclick="delete_and_show()">
-                                                <i class="fa fa-times"></i> Delete &amp; Show
+                                            <button type="reset" class="btn btn-default" onclick="delete_and_show()">
+                                                <i class="fa fa-times text-danger"></i> Delete &amp; Show
                                             </button>
                                             {% endif %}
                                         </div>
@@ -279,15 +279,37 @@
     </div>
 
     {% if form %}
-    <script>
-    var current_tech = "";
-        {% if base_station_has_sector %}
-            function delete_and_show(){
-                if (confirm('Remove relationship of Sector and Base Station?')) {
-                    window.location.replace('{{ delete_url }}');
+    <script type="text/javascript">
+        var parent_class = 'formContainer',
+            change_event_dom_ids = [
+                '#id_country',
+                '#id_state'
+            ],
+            element_relation_dict = {
+                '#id_country' : {
+                    "old_value" : $('#id_country').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_state',
+                            "url_name" : '{% url "get_states_for_country" 123 %}',
+                            "existing_value" : $('#id_state').val()
+                        }
+                    ],
+                    "reset" : ['#id_state', '#id_city']
+                },
+                '#id_state' : {
+                    "old_value" : $('#id_state').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_city',
+                            "url_name" : '{% url "get_cities_for_state" 123 %}',
+                            "existing_value" : $('#id_city').val()
+                        }
+                    ],
+                    "reset" : ['#id_city']
                 }
-            }
-        {% endif %}
+            },
+            current_tech = "";
 
         $(document).ready(function() {
 
@@ -357,8 +379,12 @@
                         });
                     }
                 },
-                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(device) {
+                    return device.device_alias;
+                },
+                formatSelection: function(device) {
+                    return device.device_alias;
+                }
             });
 
             {% if not sector_antenna_form %}
@@ -494,92 +520,96 @@
 
         });
 
-        function repoFormatResult(device) {
-          return device.device_alias;
-        }
-
-        function repoFormatSelection(device) {
-          return device.device_alias;
-        }
+        {% if base_station_has_sector %}
+            function delete_and_show(){
+                if (confirm('Remove relationship of Sector and Base Station?')) {
+                    window.location.replace('{{ delete_url }}');
+                }
+            }
+        {% endif %}
 
     </script>
     {% endif %}
 
-    <script>
+    <script type="text/javascript">
         // Radio specific functions only, nothing to do with form fields.
         $(function() {
             /* --Changed-- :START: Technology radio select selected and disable it. */
             /* :START: Technology radio select selected and bind reload onchange event */
-                $('input:radio[name=technology_radio]').filter('[value={{ selected_technology }}]').prop('checked', true);
-                {% if base_station_has_sector %}
-                    $('input:radio[name=technology_radio]').attr('disabled',true);
-                {% else %}
-                $("input:radio[name=technology_radio]").change(function (){
-                    var technology = $("input:radio[name=technology_radio]:checked").val();
-                    location.href="/gis-wizard/base-station/{{ bs_pk }}/technology/" + technology + "/sector/new/";
-                });
-                {% endif %}
+            $('input:radio[name=technology_radio]').filter('[value={{ selected_technology }}]').prop('checked', true);
+            {% if base_station_has_sector %}
+                $('input:radio[name=technology_radio]').attr('disabled',true);
+            {% else %}
+            $("input:radio[name=technology_radio]").change(function (){
+                var technology = $("input:radio[name=technology_radio]:checked").val();
+                location.href="/gis-wizard/base-station/{{ bs_pk }}/technology/" + technology + "/sector/new/";
+            });
+            {% endif %}
             /* :END: Technology radio select selected and bind reload onchange event */
             /* --changed-- :END: Technology radio select selected and disable it. */
-                var $radios = $('input:radio[name=sector_radio]');
-                {% if select_view or object %}
-                    $radios.filter('[value=existing]').prop('checked', true);
+            var $radios = $('input:radio[name=sector_radio]');
+            {% if select_view or object %}
+                $radios.filter('[value=existing]').prop('checked', true);
 
-                        $("#id_sector").select2({
-                            placeholder: "Search for a sector.",
-                            minimumInputLength: 2,
-                            width: "resolve",
-                            ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                                url: "/sector/select2/elements/",
-                                dataType: 'json',
-                                quietMillis: 250,
-                                data: function (term, page) {
-                                    return {
-                                        sSearch: term, // search term
-                                        org: 0,
-                                    };
-                                },
-                                results: function (data, page) { // parse the results into the format expected by Select2.
-                                    // since we are using custom formatting functions we do not need to alter the remote JSON data
-                                    return { results: data.items };
-                                },
-                                cache: false
-                            },
-                            initSelection: function(element, callback) {
-                                // the input tag has a value attribute preloaded that points to a preselected repository's id
-                                // this function resolves that id attribute to an object that select2 can render
-                                // using its formatResult renderer - that way the repository name is shown preselected
-                                var id = $(element).val();
-                                if (id !== "") {
-                                    $.ajax("/sector/select2/elements/", {
-                                        dataType: "json",
-                                        data: {'obj_id': id}
-                                    }).done(function(data) {
+                $("#id_sector").select2({
+                    placeholder: "Search for a sector.",
+                    minimumInputLength: 2,
+                    width: "resolve",
+                    ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                        url: "/sector/select2/elements/",
+                        dataType: 'json',
+                        quietMillis: 250,
+                        data: function (term, page) {
+                            return {
+                                sSearch: term, // search term
+                                org: 0,
+                            };
+                        },
+                        results: function (data, page) { // parse the results into the format expected by Select2.
+                            // since we are using custom formatting functions we do not need to alter the remote JSON data
+                            return { results: data.items };
+                        },
+                        cache: false
+                    },
+                    initSelection: function(element, callback) {
+                        // the input tag has a value attribute preloaded that points to a preselected repository's id
+                        // this function resolves that id attribute to an object that select2 can render
+                        // using its formatResult renderer - that way the repository name is shown preselected
+                        var id = $(element).val();
+                        if (id !== "") {
+                            $.ajax("/sector/select2/elements/", {
+                                dataType: "json",
+                                data: {'obj_id': id}
+                            }).done(function(data) {
 
-                                        // Update box-title html with selected sector name
-                                        var current_tech_id = "{{ selected_technology }}",
-                                            type_text = "Sector",
-                                            current_box_title_html = $.trim($(".box .box-title h4").html()),
-                                            splitted_title = current_box_title_html.split("GIS WIZARD: ");
+                                // Update box-title html with selected sector name
+                                var current_tech_id = "{{ selected_technology }}",
+                                    type_text = "Sector",
+                                    current_box_title_html = $.trim($(".box .box-title h4").html()),
+                                    splitted_title = current_box_title_html.split("GIS WIZARD: ");
 
-                                        if(current_tech_id == 2) {
-                                            type_text = "PTP";
-                                        }
-
-                                        splitted_title[1] = type_text+" - "+data[0];
-                                        // Update Box Title HTML
-                                        $(".box .box-title h4")[0].innerHTML = splitted_title.join("GIS WIZARD: ");
-                                        $(".box .box-title h4").html(splitted_title.join("GIS WIZARD: "));
-                                        // Callback data
-                                        callback({id: id, alias: data[0]});
-                                    });
+                                if(current_tech_id == 2) {
+                                    type_text = "PTP";
                                 }
-                            },
-                            formatResult: repoSectorFormatResult, // omitted for brevity, see the source of this page
-                            formatSelection: repoSectorFormatSelection,  // omitted for brevity, see the source of this page
-                        }).on("select2-selecting", function(el) {
-                            location.href="/gis-wizard/base-station/{{ bs_pk }}/technology/{{ selected_technology }}/sector/"+el.val+"/";
-                        });
+
+                                splitted_title[1] = type_text+" - "+data[0];
+                                // Update Box Title HTML
+                                $(".box .box-title h4")[0].innerHTML = splitted_title.join("GIS WIZARD: ");
+                                $(".box .box-title h4").html(splitted_title.join("GIS WIZARD: "));
+                                // Callback data
+                                callback({id: id, alias: data[0]});
+                            });
+                        }
+                    },
+                    formatResult: function(result) {
+                        return result.alias;
+                    },
+                    formatSelection: function(result) {
+                        return result.alias;
+                    },
+                }).on("select2-selecting", function(el) {
+                    location.href="/gis-wizard/base-station/{{ bs_pk }}/technology/{{ selected_technology }}/sector/"+el.val+"/";
+                });
                 {% else %}
                     $radios.filter('[value=new]').prop('checked', true);
                 {% endif %}
@@ -593,43 +623,47 @@
 
             function bind_dr_configured_on () {
 
-                    $("#id_dr_configured_on").select2({
-                        placeholder: "Search for a dr config on.",
-                        minimumInputLength: 2,
-                        width: "resolve",
-                        ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                            url: "/device/select2/elements/",
-                            dataType: 'json',
-                            quietMillis: 250,
-                            data: function (term, page) {
-                                return {
-                                    sSearch: term, // search term
-                                    org: {{ base_station.organization.id }},
-                                };
-                            },
-                            results: function (data, page) { // parse the results into the format expected by Select2.
-                                // since we are using custom formatting functions we do not need to alter the remote JSON data
-                                return { results: data.items };
-                            },
-                            cache: false
+                $("#id_dr_configured_on").select2({
+                    placeholder: "Search for a dr config on.",
+                    minimumInputLength: 2,
+                    width: "resolve",
+                    ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                        url: "/device/select2/elements/",
+                        dataType: 'json',
+                        quietMillis: 250,
+                        data: function (term, page) {
+                            return {
+                                sSearch: term, // search term
+                                org: {{ base_station.organization.id }},
+                            };
                         },
-                        initSelection: function(element, callback) {
-                            // the input tag has a value attribute preloaded that points to a preselected repository's id
-                            // this function resolves that id attribute to an object that select2 can render
-                            // using its formatResult renderer - that way the repository name is shown preselected
-                            var id = $(element).val();
-                            if (id !== "") {
-                                $.ajax("/device/select2/elements/", {
-                                    dataType: "json",
-                                    data: {'obj_id': id}
-                                }).done(function(data) {
-                                    callback({id: id, device_alias: data[0]});
-                                    });
-                            }
+                        results: function (data, page) { // parse the results into the format expected by Select2.
+                            // since we are using custom formatting functions we do not need to alter the remote JSON data
+                            return { results: data.items };
                         },
-                        formatResult: repoFormatResult, // omitted for brevity, see the source of this page
-                        formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
-                    });
+                        cache: false
+                    },
+                    initSelection: function(element, callback) {
+                        // the input tag has a value attribute preloaded that points to a preselected repository's id
+                        // this function resolves that id attribute to an object that select2 can render
+                        // using its formatResult renderer - that way the repository name is shown preselected
+                        var id = $(element).val();
+                        if (id !== "") {
+                            $.ajax("/device/select2/elements/", {
+                                dataType: "json",
+                                data: {'obj_id': id}
+                            }).done(function(data) {
+                                callback({id: id, device_alias: data[0]});
+                                });
+                        }
+                    },
+                    formatResult: function(device) {
+                        return device.device_alias;
+                    },
+                    formatSelection: function(device) {
+                        return device.device_alias;
+                    }
+                });
             }
 
             if ($("#id_dr_site").val() == 'Yes') {
@@ -650,16 +684,7 @@
                     dr_configured_on.parent().parent().parent().attr('style', 'display:None');
                 }
             }); // :END: id_dr_site.change_event
-
         });
-
-        function repoSectorFormatResult(result) {
-          return result.alias;
-        }
-
-        function repoSectorFormatSelection(result) {
-          return result.alias;
-        }
 
         function bind_sector_antenna_select2() {
 
@@ -697,8 +722,12 @@
                             });
                     }
                 },
-                formatResult: repoAntennaFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoAntennaFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(antenna) {
+                    return antenna.alias;
+                },
+                formatSelection: function(antenna) {
+                    return antenna.alias;
+                },
             }).on("select2-selecting", function(el) {
                 var sector_antenna_form = document.getElementById("id_sector_antenna_form");
                 $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}, pk: el.val}, function (data) {sector_antenna_form.innerHTML = data;
@@ -707,16 +736,9 @@
             });
         }
 
-        function repoAntennaFormatResult(antenna) {
-          return antenna.alias;
-        }
-
-        function repoAntennaFormatSelection(antenna) {
-          return antenna.alias;
-        }
-
         {% if selected_technology == '2' %}
         {% if not sub_station_form %}
+
         function bind_sub_station_select2() {
             $("#id_sub_station").select2({
                 placeholder: "Search for a sub_station.",
@@ -752,24 +774,22 @@
                             });
                     }
                 },
-                formatResult: repoSubStationFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoSubStationFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(sub_station) {
+                    return sub_station.alias;
+                },
+                formatSelection: function(sub_station) {
+                    return sub_station.alias;
+                },
             }).on("select2-selecting", function(el) {
                 var sub_station_form = document.getElementById("id_sub_station_form");
                 $.get('/gis-wizard/get-form/', {model: 'sub_station', technology: {{ selected_technology }}, pk: el.val}, function (data) {sub_station_form.innerHTML=data; bind_device_select2(); bind_region_select2();}, 'html');
             });
         }
 
-        function repoSubStationFormatResult(sub_station) {
-          return sub_station.alias;
-        }
-
-        function repoSubStationFormatSelection(sub_station) {
-          return sub_station.alias;
-        }
         {% endif %}
 
         {% if not sub_station_antenna_form %}
+
         function bind_sub_station_antenna_select2() {
 
             $("#id_sub_station_antenna").select2({
@@ -806,8 +826,12 @@
                             });
                     }
                 },
-                formatResult: repoAntennaFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoAntennaFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(antenna) {
+                    return antenna.alias;
+                },
+                formatSelection: function(antenna) {
+                    return antenna.alias;
+                },
             }).on("select2-selecting", function(el) {
                 var sub_station_antenna_form = document.getElementById("id_sub_station_antenna_form");
                 $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', { pk: el.val}, function (data) {
@@ -816,9 +840,11 @@
                 }, 'html');
             });
         }
+
         {% endif %}
 
         {% if not circuit_form %}
+
         function bind_sub_station_circuit_select2() {
             $("#id_sub_station_circuit").select2({
                 placeholder: "Search for a circuit.",
@@ -854,24 +880,22 @@
                             });
                     }
                 },
-                formatResult: repoCircuitFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoCircuitFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(circuit) {
+                    return circuit.alias;
+                },
+                formatSelection: function(circuit) {
+                    return circuit.alias;
+                },
             }).on("select2-selecting", function(el) {
                 var sub_station_circuit_form = document.getElementById("id_sub_station_circuit_form");
                 $.get('/gis-wizard/get-form/', {model: 'circuit', technology: {{ selected_technology }}, pk: el.val}, function (data) {sub_station_circuit_form.innerHTML=data}, 'html');
             });
         }
 
-        function repoCircuitFormatResult(circuit) {
-          return circuit.alias;
-        }
-
-        function repoCircuitFormatSelection(circuit) {
-          return circuit.alias;
-        }
         {% endif %}
 
         {% if not customer_form %}
+
         function bind_sub_station_customer_select2() {
             $("#id_sub_station_customer").select2({
                 placeholder: "Search for a customer.",
@@ -907,21 +931,18 @@
                             });
                     }
                 },
-                formatResult: repoCustomerFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoCustomerFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(customer) {
+                    return customer.alias;
+                },
+                formatSelection: function(customer) {
+                    return customer.alias;
+                },
             }).on("select2-selecting", function(el) {
                 var sub_station_customer_form = document.getElementById("id_sub_station_customer_form");
                 $.get('/gis-wizard/get-form/', {model: 'customer', technology: {{ selected_technology }}, pk: el.val}, function (data) {sub_station_customer_form.innerHTML=data}, 'html');
             });
         }
 
-        function repoCustomerFormatResult(customer) {
-          return customer.alias;
-        }
-
-        function repoCustomerFormatSelection(customer) {
-          return customer.alias;
-        }
         {% endif %}
 
         function bind_device_select2() {
@@ -960,68 +981,26 @@
                             });
                     }
                 },
-                formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoDeviceFormatSelection,  // omitted for brevity, see the source of this page
-            });
-
-        }
-
-        function bind_region_select2(){
-
-            // if none of the value from 'country' is selected than empty 'state' & 'city' selection too.
-            // or update value of 'state' corresponding to the selected 'country'
-
-            if ($("#id_country").val() == "") {
-                $("#id_state").empty();
-                $("#id_city").empty();
-            }
-            else {
-                Dajaxice.inventory.update_states_after_invalid_form(Dajax.process, {'option': $("#id_country").val(), 'state_id': $("#id_state").val()});
-            }
-
-            // if 'state' has no value than empty 'city' selection menu
-            // or update 'city' corresponding to selected 'state'
-            if (!$("#id_state").val()) {
-                $("#id_city").empty();
-            }
-            else {
-                Dajaxice.inventory.update_cities_after_invalid_form(Dajax.process, {'option': $("#id_state").val(), 'city_id': $("#id_city").val()});
-            }
-
-            // update 'states' on selecting 'country'
-            $("#id_country").change(function () {
-                if ($("#id_country").val() != "") {
-                    Dajaxice.inventory.update_states(Dajax.process, {'option': $("#id_country").val()});
-                    $("#id_city").empty();
-                }
-                else {
-                    $("#id_state").select2("val","");
-                    $("#id_state").empty();
-                    $("#id_city").select2("val","");
-                    $("#id_city").empty();
+                formatResult: function(device) {
+                    return device.device_alias;
+                },
+                formatSelection: function(device) {
+                    return device.device_alias;
                 }
             });
-
-            // update 'cities' on selecting 'state'
-            $("#id_state").change(function () {
-                $("#id_city").select2("val","");
-                Dajaxice.inventory.update_cities(Dajax.process, {'option': $("#id_state").val()});
-            });
-            $("#id_country, #id_state, #id_city, #id_ethernet_extender").select2();
-            
         }
 
-        function repoDeviceFormatResult(device) {
-          return device.device_alias;
+        function bind_region_select2() {
+
+            // Loop to trigger change event on select boxes
+            for (var i=0;i<change_event_dom_ids.length;i++) {
+                if (element_relation_dict[change_event_dom_ids[i]]['old_value']) {
+                    // trigger change event
+                    $(change_event_dom_ids[i]).trigger('change', true);
+                }
+            }
         }
 
-        function repoDeviceFormatSelection(device) {
-          return device.device_alias;
-        }
-        {% endif %} {# End if selected_technology == '2' #}
-
+        {% endif %}
     </script>
-    {% block content_js %}
-    <!-- <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script> -->
-    {% endblock %}
 {% endblock %}

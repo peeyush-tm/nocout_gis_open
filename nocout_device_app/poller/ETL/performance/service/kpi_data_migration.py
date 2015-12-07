@@ -11,9 +11,11 @@ from datetime import datetime, timedelta
 import socket
 import imp
 import time
+#from handlers.db_ops import *
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -26,38 +28,20 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    #db = utility_module.mysql_conn(configs=configs)
-    """
-    start_time variable would store the latest time uptill which mysql
-    table has an entry, so the data having time stamp greater than start_time
-    would be imported to mysql, only, and this way mysql would not store
-    duplicate data.
-    """
-    #for i in range(len(configs.get('mongo_conf'))):
-    #    start_time = mongo_module.get_latest_entry(
-    #                    db_type='mysql',
-    #                    db=db,
-    #                   site=configs.get('mongo_conf')[i][0],
-    #                    table_name=configs.get('table_name')
-    #   )
-
-    end_time = datetime.now()
-    start_time = end_time-timedelta(minutes=5)
-    #db = mysql_conn(configs=configs)
-    # Get the time for latest entry in mysql
-    #start_time = get_latest_entry(db_type='mysql', db=db, site=configs.get('site'),table_name=configs.get('table_name'))
-
-    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]    
-    #for i in range(len(configs.get('mongo_conf'))):
-    docs = read_data(start_time, end_time, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
+    try:
+    	db = utility_module.mysql_conn(configs=configs)
+    except Exception,e:
+	print e
+	return
+    docs = read_data()
     if docs:
-    	insert_data(configs.get('table_name'), docs, configs=configs)
+    	insert_data(configs.get('table_name'), docs, db,configs)
     	print "Data inserted into performance_utilization table"
     else:
 	print "No data in the mongo db in this time frame"
     
 
-def read_data(start_time, end_time, **kwargs):
+def read_data():
 
     """
     function for reading the data from mongodb database for inventory services.After reading the data
@@ -70,27 +54,37 @@ def read_data(start_time, end_time, **kwargs):
     db = None
     port = None
     docs = []
-    #end_time = datetime(2014, 6, 26, 18, 30)
-    #start_time = end_time - timedelta(minutes=10)
-    docs = []
-    db = mongo_module.mongo_conn(
-        host=kwargs.get('configs')[1],
-        port=int(kwargs.get('configs')[2]),
-        db_name=kwargs.get('db_name')
-    ) 
-    if db:
-	if start_time is None:
-            start_time = end_time - timedelta(minutes=15)
-        cur = db.kpi_data.find({
-            "sys_timestamp": {"$gt": start_time, "$lt": end_time}
-        })
-	configs1 = config_module.parse_config_obj()
-    	for config, options in configs1.items():
-            machine_name = options.get('machine')
-        for doc in cur:
-		local_timestamp = utility_module.get_epoch_time(doc.get('sys_timestamp'))
-		check_timestamp = utility_module.get_epoch_time(doc.get('check_timestamp'))
-        	t = (
+    key = nocout_site_name + "_kpi"
+    doc_len_key = key + "_len" 
+    memc_obj = db_ops_module.MemcacheInterface()
+    current_time = datetime.now()
+    memc = memc_obj.memc_conn
+    start_time = memc.get('performance_utilizationstatus')
+    print start_time
+    if start_time: 
+    	start_time = datetime.fromtimestamp(start_time)
+    if start_time and (start_time + timedelta(minutes=20)) < current_time:
+    	if start_time + timedelta(days=1) < current_time:
+		start_time = current_time -  timedelta(days=1)
+	print "....in...back up...stage"
+	print start_time
+	redis_obj=db_ops_module.RedisInterface()
+	t_stmp = start_time + timedelta(minutes=-(start_time.minute % 5))
+        t_stmp = t_stmp.replace(second=0,microsecond=0)
+        start_time =int(time.mktime(t_stmp.timetuple()))
+        current_time = current_time + timedelta(minutes=-(current_time.minute % 5))
+        current_time = current_time.replace(second=0,microsecond=0)
+        current_time =int(time.mktime(current_time.timetuple()))
+	cur=redis_obj.zrangebyscore_dcompress(key,start_time,current_time)
+    else:		
+    	cur = memc_obj.retrieve(key,doc_len_key)
+    configs1 = config_module.parse_config_obj()
+    for config, options in configs1.items():
+	machine_name = options.get('machine')
+    for doc in cur:
+	local_timestamp = utility_module.get_epoch_time(doc.get('sys_timestamp'))
+	check_timestamp = utility_module.get_epoch_time(doc.get('check_timestamp'))
+        t = (
         		doc.get('device_name'),
         		doc.get('service_name'),
         		local_timestamp,
@@ -108,9 +102,9 @@ def read_data(start_time, end_time, **kwargs):
 			doc.get('refer'),
 			doc.get('age'),
 			machine_name	
-        	)
-            	docs.append(t)
-		t = ()
+        )
+	docs.append(t)
+	t = ()
      
     return docs
 
@@ -151,7 +145,7 @@ def build_data(doc):
 	t = ()
 	return values_list
 
-def insert_data(table, data_values, **kwargs):
+def insert_data(table, data_values,db,configs):
 	"""
 	function for building the data based on the collected record from mongodb database for inventory services.
 	Arg: table (mysql database table name)
@@ -159,7 +153,9 @@ def insert_data(table, data_values, **kwargs):
 	Return : None
 	Raises: mysql.connector.Error
 	"""
-	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
+	if not db.is_connected():
+    	    db = utility_module.mysql_conn(configs=configs)
+		
 	query = 'INSERT INTO `%s` ' % table
 	query += """
                 (device_name,service_name,sys_timestamp,check_timestamp,

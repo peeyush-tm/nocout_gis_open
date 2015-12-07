@@ -1,52 +1,34 @@
 # -*- coding: utf-8 -*-
-from south.utils import datetime_utils as datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
+import mptt.fields
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'Organization'
-        db.create_table(u'organization_organization', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('city', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('state', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('country', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('parent', self.gf('mptt.fields.TreeForeignKey')(blank=True, related_name='organization_children', null=True, to=orm['organization.Organization'])),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            (u'lft', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
-            (u'rght', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
-            (u'tree_id', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
-            (u'level', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
-        ))
-        db.send_create_signal(u'organization', ['Organization'])
+    dependencies = [
+    ]
 
-
-    def backwards(self, orm):
-        # Deleting model 'Organization'
-        db.delete_table(u'organization_organization')
-
-
-    models = {
-        u'organization.organization': {
-            'Meta': {'object_name': 'Organization'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'country': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
-            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'organization_children'", 'null': 'True', 'to': u"orm['organization.Organization']"}),
-            u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
-        }
-    }
-
-    complete_apps = ['organization']
+    operations = [
+        migrations.CreateModel(
+            name='Organization',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(unique=True, max_length=250, verbose_name=b'Name')),
+                ('alias', models.CharField(max_length=250, verbose_name=b'Alias')),
+                ('city', models.CharField(max_length=200, null=True, verbose_name=b'City', blank=True)),
+                ('state', models.CharField(max_length=200, null=True, verbose_name=b'State', blank=True)),
+                ('country', models.CharField(max_length=200, null=True, verbose_name=b'Country', blank=True)),
+                ('description', models.TextField(null=True, verbose_name=b'Description', blank=True)),
+                ('lft', models.PositiveIntegerField(editable=False, db_index=True)),
+                ('rght', models.PositiveIntegerField(editable=False, db_index=True)),
+                ('tree_id', models.PositiveIntegerField(editable=False, db_index=True)),
+                ('level', models.PositiveIntegerField(editable=False, db_index=True)),
+                ('parent', mptt.fields.TreeForeignKey(related_name='organization_children', blank=True, to='organization.Organization', null=True)),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+    ]

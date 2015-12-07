@@ -17,34 +17,44 @@ var perf_that = "",
     chart_instance = "",
     old_table = "",
     base_url = "",
+    timeInterval = "",
     live_data_tab = [
         {"id": "live", "title": "Live"}
     ],
     poll_now_tab = [
-        { "id" : "live_poll_now", "title" : "Poll Now", disabled_url : true }
+        { "id" : "live_poll_now", "title" : "On Demand Poll", disabled_url : true }
     ],
     tabs_with_historical = [
-        {"id": "bihourly", "title": "Bi-Hourly"},
+        {"id": "bihourly", "title": "Half-Hourly"},
         {"id": "hourly", "title": "Hourly"},
         {"id": "daily", "title": "Daily"},
         {"id": "weekly", "title": "Weekly"},
         {"id": "monthly", "title": "Monthly"},
-        {"id": "yearly", "title": "Yearly" }
+        // {"id": "yearly", "title": "Yearly" }
     ],
     inventory_status_inner_inner_tabs = [
         {"id": "daily", "title": "Daily"},
         {"id": "weekly", "title": "Weekly"},
         {"id": "monthly", "title": "Monthly"},
-        {"id": "yearly", "title": "Yearly"}
+        // {"id": "yearly", "title": "Yearly"}
     ],
-    default_live_table_headers = [
+    default_live_table_headers_without_ds = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true}
+    ],
+    default_live_table_headers_with_ds = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true}
-    ],
-    default_hist_table_headers = [
+    ]
+    default_hist_table_headers_without_ds = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': true},
@@ -52,7 +62,17 @@ var perf_that = "",
         {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true}
+    ],
+    default_hist_table_headers_with_ds = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
     ],
     date_range_picker_html = "",
     spinner_html = '<h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>',
@@ -85,34 +105,10 @@ if (window.location.origin) {
 date_range_picker_html = '<input type="text" name="reservation" id="reservationtime" \
                           class="form-control input-large search-query" value="" readonly/>';
 
-
-$.urlParam = function (name) {
-    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href),
-        url_param = "";
-    if (results == null) {
-        url_param = null;
-    } else {
-        url_param = results[1] || 0;
-    }
-    return url_param;
-};
-
-function updateQueryStringParameter(uri, key, value) {
-    var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i"),
-        separator = uri.indexOf('?') !== -1 ? "&" : "?",
-        query_str = "";
-    if (uri.match(re)) {
-        query_str = uri.replace(re, '$1' + key + "=" + value + '$2');
-    } else {
-        query_str = uri + separator + key + "=" + value;
-    }
-
-    return query_str;
-}
-
-var timeInterval = "";
-
-
+/**
+ * This class(function) contains function to handle single device performance page functionality
+ * @method nocoutPerfLib
+ */
 function nocoutPerfLib() {
 
     /*Save reference of current pointer to the global variable*/
@@ -125,8 +121,6 @@ function nocoutPerfLib() {
      */
     this.initDateRangePicker = function(domElemet) {
 
-        // var saved_start_date = $.cookie('filter_start_date') ? $.cookie('filter_start_date') : "",
-        //     saved_end_date = $.cookie('filter_end_date') ? $.cookie('filter_end_date') : "",
         var saved_start_date = "",
             saved_end_date = "",
             oldStartDate = saved_start_date ? new Date(saved_start_date * 1000) : new Date(),
@@ -148,9 +142,9 @@ function nocoutPerfLib() {
                 'This Month': [moment().startOf('month'), moment().endOf('month')],
                 'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
             },
-            buttonClasses: ['btn btn-default'],
-            applyClass: 'btn-small btn-primary',
-            cancelClass: 'btn-small',
+            buttonClasses: ['btn btn-sm'],
+            applyClass: 'btn-default',
+            cancelClass: 'btn-default',
             format: "DD-MM-YYYY HH:mm:ss",
             separator: ' to ',
             startDate: oldStartDate,
@@ -203,7 +197,7 @@ function nocoutPerfLib() {
             live_poll_condition2 = page_type == 'customer';
 
         if (!live_poll_condition1 && !live_poll_condition2) {
-            $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
+            $(".single_perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
         }
 
     };
@@ -350,7 +344,7 @@ function nocoutPerfLib() {
     /**
      * This function make HTML for TAB content
      * @method make_tab_content_html
-     * @param tab_content_config "{Object}", It contains the configuration for creating tab content html
+     * @param tab_content_config {Object}, It contains the configuration for creating tab content html
      * @return content_html {String}, It contains the required HTML string
      */
     this.make_tab_content_html = function(tab_content_config) {
@@ -363,10 +357,12 @@ function nocoutPerfLib() {
         var active_class = tab_content_config.active_class ? tab_content_config.active_class : "",
             unique_key = tab_content_config.unique_key ? tab_content_config.unique_key : "",
             id = unique_key ? unique_key + "_block" : "",
-            show_last_updated = tab_content_config.show_last_updated != undefined ? tab_content_config.show_last_updated : true,
+            show_last_updated = tab_content_config.show_last_updated != 'undefined' ? tab_content_config.show_last_updated : true,
             last_updated_id = unique_key ? "last_updated_" + unique_key + "_block" : "",
             chart_id = unique_key ? unique_key + "_chart" : "",
-            bottom_table_id = unique_key ? unique_key + "_bottom_table" : "";
+            bottom_table_id = unique_key ? unique_key + "_bottom_table" : "",
+            legends_block_id = unique_key ? unique_key + "_legends_block" : "";
+
 
         content_html += '<div class="tab-pane ' + active_class+ '" id="' + id+ '">';
 
@@ -375,23 +371,30 @@ function nocoutPerfLib() {
                             <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
                             </div>';
         }
+        
         if (tab_content_config.tab_id == 'live_poll_now') {
-            content_html += '<div class="col-md-3">\
-                                <button class="btn btn-primary perf_poll_now " title="Poll Now" \
+            content_html += '<div class="col-md-1">\
+                                <button class="btn btn-default btn-sm single_perf_poll_now " title="Poll Now" \
                                 data-complete-text="<i class=\'fa fa-flash\'></i>" data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
                                 <i class="fa fa-flash"></i></button>\
                             </div>\
-                            <div class="col-md-3">\
-                                <select name="poll_interval" class="form-control poll_interval">\
+                            <div class="col-md-2" align="center" style="padding-top:4px;">\
+                            <strong>OR</strong> \
+                            </div>\
+                            <div class="col-md-9 row">\
+                            <div class="col-md-4">\
+                                <select name="poll_interval" class="form-control input-sm poll_interval">\
                                 <option value="">Select Poll Interval</option>\
                                 <option value="10">10 Seconds</option>\
                                 <option value="20">20 Seconds</option>\
                                 <option value="30">30 Seconds</option>\
+                                <option value="40">40 Seconds</option>\
+                                <option value="50">50 Seconds</option>\
                                 <option value="60">60 Seconds</option>\
                                 </select>\
                             </div>\
-                            <div class="col-md-3">\
-                                <select name="poll_maxInterval" class="form-control poll_maxInterval">\
+                            <div class="col-md-4">\
+                                <select name="poll_maxInterval" class="form-control input-sm poll_maxInterval">\
                                 <option value="">Select Maximum Interval</option>\
                                 <option value="1">1 Minute</option>\
                                 <option value="2">2 Minute</option>\
@@ -399,25 +402,44 @@ function nocoutPerfLib() {
                                 <option value="4">4 Minute</option>\
                                 </select>\
                             </div>\
-                            <div class="col-md-3">\
-                                <button class="btn btn-success play_pause_btns poll_play_btn" data-complete-text="<i class=\'fa fa-play\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
-                                    <i class="fa fa-play"> </i>\
+                            <div class="col-md-4">\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_play_btn" \
+                                    data-complete-text="<i class=\'fa fa-play text-success\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
+                                    <i class="fa fa-play text-success"> </i>\
                                 </button>\
-                                <button class="btn btn-warning play_pause_btns poll_pause_btn" data-complete-text="<i class=\'fa fa-pause\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
-                                    <i class="fa fa-pause"> </i>\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_pause_btn" \
+                                    data-complete-text="<i class=\'fa fa-pause text-warning\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
+                                    <i class="fa fa-pause text-warning"> </i>\
                                 </button>\
-                                <button class="btn btn-danger play_pause_btns poll_stop_btn" data-complete-text="<i class\'fa fa-stop\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
-                                    <i class="fa fa-stop"> </i>\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_stop_btn" \
+                                    data-complete-text="<i class\'fa fa-stop text-danger\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
+                                    <i class="fa fa-stop text-danger"> </i>\
                                 </button>\
-                            </div><div class="clearfix"></div><div class="divide-20"></div>';
+                                <div align="right" class="pull-right"> \
+                                    <button class="btn btn-default btn-sm play_pause_btns reset_live_polling" title="Clear all polled data"> \
+                                        <i class="fa fa-trash-o text-danger"></i> \
+                                    </button> \
+                                </div> \
+                            </div>\
+                            <div class="clearfix"></div></div>\
+                            <div class="clearfix"></div><div class="divide-20"></div>';
 
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;"></div>\
+                            <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
+                            <div class="custom_legends_block"></div><div class="clearfix"></div> \
+                            </div> \
                             <div id="' + bottom_table_id+ '"></div></div></div>';
         } else {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\
                             <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
+                            <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
+                            <div class="custom_legends_block"></div><div class="clearfix"></div> \
+                            </div> \
                             <div id="' + bottom_table_id+ '"></div></div></div>';
         }
 
@@ -456,6 +478,13 @@ function nocoutPerfLib() {
                 }
 
                 if (result.success == 1) {
+                    all_services_list = [];
+                    try {
+                        all_services_list = result.data.meta.services_list;
+                    } catch(e) {
+                        all_services_list = [];
+                    }
+                    $('#all_serv_live_report_btn').attr('data-services', JSON.stringify(all_services_list));
 
                     var first_loop = 0;
                     // If any data exists
@@ -482,7 +511,7 @@ function nocoutPerfLib() {
                                 if (device_services && device_services.length > 0) {
                                     var tabs_hidden_class = "";
                                     
-                                    if (device_services.length == 1) {
+                                    if (device_services.length == 1 && tab_id.indexOf('custom_dashboard') == -1) {
                                         tabs_hidden_class = "hide";
                                     }
 
@@ -497,10 +526,10 @@ function nocoutPerfLib() {
                                         $("#" + tab_id).parent("li").addClass("active");
                                         $("#" + service_key).addClass("active");
                                     }
-
+                                    
                                     $.each(device_services, function (key, value) {
-
-                                        var unique_item_key = service_key+ '_' + String(count)+ '_' + String(i),
+                                        var sds_key = value.sds_key ? value.sds_key : '',
+                                            unique_item_key = service_key+ '_' + String(count)+ '_' + String(i),
                                             active_class = '';
 
                                         if (is_first_tab == 1 && count == 0) {
@@ -513,19 +542,24 @@ function nocoutPerfLib() {
                                             active_class = 'active';
                                         }
 
+                                        var show_last_updated = true;
+
+                                        if (unique_item_key.indexOf('custom_dashboard') > -1) {
+                                            show_last_updated = false;
+                                        }
+
                                         var tab_info_obj = {
                                                 'active_class' : active_class,
                                                 'unique_key' : unique_item_key,
-                                                'icon_class' : 'fa fa-arrow-circle-o-right',
+                                                'icon_class' : 'fa ' + default_left_tab_icon,
                                                 'api_url' : value.url,
                                                 'title' : value.title
                                             },
                                             content_info_obj = {
                                                 'active_class' : active_class,
                                                 'unique_key' : unique_item_key,
-                                                'show_last_updated' : true
+                                                'show_last_updated' : show_last_updated,
                                             };
-
 
                                         // Create Tab HTML
                                         service_tabs += perf_that.make_tab_li_html(tab_info_obj);
@@ -540,13 +574,17 @@ function nocoutPerfLib() {
                                         if ((show_historical_on_performance && all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) || is_perf_polling_enabled) {
 
                                             if(all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) {
-                                                service_tabs_data += '<div class="tab-pane ' + active_class+ '" id="' + unique_item_key+ '_block">\
-                                                                      <div align="center" class="last_updated_container" id="last_updated_' + unique_item_key+ '_block">\
+                                                
+                                                service_tabs_data += '<div class="tab-pane ' + active_class+ '" id="' + unique_item_key+ '_block">';
+                                                if (show_last_updated) {
+                                                    service_tabs_data += '<div align="center" class="last_updated_container" id="last_updated_' + unique_item_key+ '_block">\
                                                                       <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
-                                                                      </div><div class="tabbable"><ul class="nav nav-tabs inner_inner_tab">';
+                                                                      </div>';
+                                                }
+
+                                                service_tabs_data += '<div class="tabbable"><ul class="nav nav-tabs inner_inner_tab">';
 
                                                 if(show_historical_on_performance) {
-                                                    // inner_inner_tabs = tabs_with_historical;
                                                     inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
                                                     if(unique_item_key.indexOf('_status') == -1) {
                                                         inner_inner_tabs = inner_inner_tabs.concat(tabs_with_historical);
@@ -560,12 +598,14 @@ function nocoutPerfLib() {
 
                                                 // If poll now flag enabled
                                                 if(is_perf_polling_enabled) {
-                                                    // Append poll now  & live tab
-                                                    if(!inner_inner_tabs.length) {
-                                                        inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
-                                                    }
-                                                    if(non_polled_ids.indexOf(value["name"]) == -1) {
-                                                        inner_inner_tabs = inner_inner_tabs.concat(poll_now_tab);
+                                                    if (non_poll_sds.indexOf(sds_key) == -1) {
+                                                        // Append poll now  & live tab
+                                                        if(!inner_inner_tabs.length) {
+                                                            inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
+                                                        }
+                                                        if(non_polled_ids.indexOf(value["name"]) == -1) {
+                                                            inner_inner_tabs = inner_inner_tabs.concat(poll_now_tab);
+                                                        }
                                                     }
                                                 }
                                                 
@@ -581,11 +621,21 @@ function nocoutPerfLib() {
                                                         var current_item = inner_inner_tabs[x],
                                                             id = current_item.id,
                                                             title = current_item.title,
-                                                            data_url = !current_item["disabled_url"] ? value.url + "?data_for=" + id : "",
-                                                            inner_tab_info_obj = {
+                                                            data_url = "";
+
+                                                        if (!current_item["disabled_url"]) {
+                                                            if (value.url.indexOf('?') == -1) {
+                                                                data_url = value.url + "?data_for=" + id        
+                                                            } else {
+                                                                data_url = value.url + "&data_for=" + id
+                                                            }
+                                                        }
+
+
+                                                        var inner_tab_info_obj = {
                                                                 'active_class' : inner_active_class,
                                                                 'unique_key' : id + "_" + unique_item_key,
-                                                                'icon_class' : 'fa fa-caret-right',
+                                                                'icon_class' : 'fa fa-clock-o',
                                                                 'api_url' : data_url,
                                                                 'title' : title
                                                             };
@@ -642,7 +692,7 @@ function nocoutPerfLib() {
                                     // service_tabs_data += '</div>';
                                     tabs_with_data = service_tabs + " " + service_tabs_data;
                                 } else {
-                                    if (!$("#" + tab_id).hasClass("hide")) {
+                                    if (!$("#" + tab_id).hasClass("hide") && tab_id.indexOf('custom_dashboard') == -1) {
                                         $("#" + tab_id).addClass("hide");
                                     }
                                 }
@@ -652,7 +702,7 @@ function nocoutPerfLib() {
                         }
 
                         /*Bind click event on tabs*/
-                        $('.inner_tab_container > .panel-body > .tabs-left > ul.nav-tabs > li > a').click(function (e) {
+                        $('.inner_tab_container .panel-body .tabs-left').delegate('ul.nav-tabs > li > a', 'click', function (e) {
                             // show loading spinner
                             // showSpinner();
                             var current_target = e.currentTarget,
@@ -666,9 +716,11 @@ function nocoutPerfLib() {
                                 serviceDataUrl = "";
 
                             if(serviceId.indexOf('_status_') == -1 || serviceId.indexOf('_inventory_') == -1) {
-                                // Hide display type option from only table tabs
-                                if ($("#display_type_container").hasClass("hide")) {
-                                    $("#display_type_container").removeClass("hide")
+                                if ($('.top_perf_tabs > li.active a').attr('id').indexOf('bird') == -1) {
+                                    // Hide display type option from only table tabs
+                                    if ($("#display_type_container").hasClass("hide")) {
+                                        $("#display_type_container").removeClass("hide")
+                                    }
                                 }
                             }
 
@@ -682,6 +734,15 @@ function nocoutPerfLib() {
 
                             if ($("#last_updated_" + tab_content_dom_id).length > 0) {
                                 perf_that.resetLivePolling(tab_content_dom_id);
+                                // add 'only_service' param to querystring if unified view
+                                var view_type = $.trim($('input[name="service_view_type"]:checked').val());
+                                if (view_type == 'unified') {
+                                    if (serviceDataUrl.indexOf('?') > -1) {
+                                        serviceDataUrl += '&only_service=1';
+                                    } else {
+                                        serviceDataUrl += '?only_service=1';
+                                    }
+                                }
                                 // get the service status for that service
                                 perfInstance.getServiceStatus(serviceDataUrl, is_exact_url, function(response_type,data_obj) {
                                     if (response_type == 'success') {
@@ -692,6 +753,7 @@ function nocoutPerfLib() {
                                     }
                                 });
                             }
+
                             if (
                                 (
                                     !show_historical_on_performance
@@ -734,15 +796,27 @@ function nocoutPerfLib() {
             },
             complete: function () {
                 if (active_tab_url && active_tab_id) {
+                    // remove the 'active_left_tab_icon' class from all link (if exists)
+                    $('.left_tabs_container li a i').removeClass(active_left_tab_icon);
+                    //  Add 'default_left_tab_icon' class to active link
+                    $('.left_tabs_container li a i').addClass(default_left_tab_icon);
+                    //  Add 'active_left_tab_icon' class to active link
+                    $('#' + active_tab_id + '_tab i').addClass(active_left_tab_icon);
+                    //  Remove 'default_left_tab_icon' class to active link
+                    $('#' + active_tab_id + '_tab i').removeClass(default_left_tab_icon);
+
                     /*Reset Variables & counters */
                     clearTimeout(timeInterval);
                     nocout_destroyDataTable('other_perf_table');
                     nocout_destroyDataTable('perf_data_table');
 
                     perf_that.resetLivePolling(active_tab_content_dom_id);
-
                     /*Get Last opened tab id from cookie*/
                     var parent_tab_id = $.cookie('parent_tab_id');
+                    
+                    if(is_util_tab) {
+                        parent_tab_id = 'utilization_top'
+                    }
 
                     //If parent Tab id is there & parent tab element exist in the dom.
                     if (parent_tab_id && $('#' + parent_tab_id).length && $('#' + parent_tab_id)[0].className.indexOf('hide') == -1) {
@@ -751,6 +825,15 @@ function nocoutPerfLib() {
                         // show loading spinner
                         // showSpinner();
                         if ($("#last_updated_" + active_tab_content_dom_id).length > 0) {
+                            // add 'only_service' param to querystring if unified view
+                            var view_type = $.trim($('input[name="service_view_type"]:checked').val());
+                            if (view_type == 'unified') {
+                                if (active_tab_url.indexOf('?') > -1) {
+                                    active_tab_url += '&only_service=1';
+                                } else {
+                                    active_tab_url += '?only_service=1';
+                                }
+                            }
                             perfInstance.getServiceStatus(active_tab_url, is_exact_url, function(response_type,data_obj) {
                                 if (response_type == 'success') {
                                     // Call function to populate latest status for this service
@@ -783,9 +866,16 @@ function nocoutPerfLib() {
     this.getServiceStatus = function(service_status_url, is_exact_url, callback) {
 
         if(!is_exact_url) {
-            var splitted_status_url = service_status_url.split("/"),
-                updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url + "/" : service_status_url,
-                device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            
+            if (service_status_url.indexOf('?') == -1) {
+                var splitted_status_url = service_status_url.split("/"),
+                    updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url + "/" : service_status_url,
+                    device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            } else {
+                var splitted_status_url = service_status_url.split('?')[0].split("/");
+                var updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url.split('?')[0] + "/" + "?" + service_status_url.split('?')[1] : service_status_url,
+                    device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            }
 
             if (updated_url.indexOf("/servicedetail/") > -1) {
                 if (updated_url.indexOf("rssi") > -1) {
@@ -799,6 +889,10 @@ function nocoutPerfLib() {
             }
         } else {
             updated_url = service_status_url;
+        }
+
+        if (updated_url[0] != '/') {
+            updated_url = '/' + updated_url;
         }
 
         $.ajax({
@@ -831,7 +925,7 @@ function nocoutPerfLib() {
                             "status" : status
                         };
 
-                        callback("success",response_obj);
+                        callback("success",result.data.objects);
                     } else {
                         callback("error","");
                     }
@@ -862,6 +956,11 @@ function nocoutPerfLib() {
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
 
+        // Hide custom legends block if exists
+        if(!$('#' + service_id + '_legends_block').hasClass('hide')) {
+            $('#' + service_id + '_legends_block').addClass('hide');
+        }
+
         if (!get_service_data_url || (service_id.indexOf('live_poll_now') > -1 && get_service_data_url.indexOf('live_poll_now') > -1)) {
             if(service_id.indexOf('live_poll_now') > -1 && get_service_data_url.indexOf('live_poll_now') > -1) {
                 perf_that.resetLivePolling(service_id);
@@ -875,10 +974,17 @@ function nocoutPerfLib() {
 
         var draw_type = $("input[name='item_type']:checked").val(),
             listing_ajax_url = "",
-            listing_headers = default_live_table_headers;
+            listing_headers = default_live_table_headers,
+            is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1,
+            is_custom_view = clicked_tab_id.indexOf('custom') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('custom') > -1;
 
-        if (!draw_type) {
+        if (!draw_type || clicked_tab_id.indexOf('bird') > -1 || clicked_tab_id.indexOf('custom_dashboard') > -1) {
             draw_type = "chart";
+        }
+
+        // If birdeye view then show header with DS
+        if (clicked_tab_id.indexOf('bird') > -1) {
+            listing_headers = default_live_table_headers_with_ds;
         }
 
         // Decrement the tabs click on evert click counter
@@ -902,7 +1008,7 @@ function nocoutPerfLib() {
         start_date = "";
         end_date = "";
 
-        if (startDate && endDate) {
+        if (startDate && endDate && clicked_tab_id.indexOf('bird') == -1) {
             
             var myStartDate = startDate.toDate(),
                 myEndDate = endDate.toDate();
@@ -957,29 +1063,31 @@ function nocoutPerfLib() {
             // console.log(e);
         }
 
-
         if(listing_ajax_url.indexOf("_invent") > -1 || listing_ajax_url.indexOf("_status") > -1) {
+            if (clicked_tab_id.indexOf('bird') == -1 || clicked_tab_id.indexOf('custom') == -1) {
+                // Hide display type option from only table tabs
+                if (!$("#display_type_container").hasClass("hide")) {
+                    $("#display_type_container").addClass("hide")
+                }
+                
+                draw_type = 'table';
+                // Update radio button selection
+                $('#display_table').attr('checked', 'checked');
+                $('#display_table').prop('checked', true);
 
-            // Hide display type option from only table tabs
-            if (!$("#display_type_container").hasClass("hide")) {
-                $("#display_type_container").addClass("hide")
+                // Update dropdown button html
+                updateDropdownHtml();
             }
-
-            draw_type = 'table';
-            // Checked the chart type radio
-            $('#display_table')[0].checked = true;
 
             $('#' + service_id+ '_chart').html("");
 
-            setTimeout(function() {
-                initChartDataTable_nocout(
-                    "other_perf_table",
-                    listing_headers,
-                    service_id,
-                    listing_ajax_url,
-                    true
-                );
-            }, 300);
+            initChartDataTable_nocout(
+                "other_perf_table",
+                listing_headers,
+                service_id,
+                listing_ajax_url,
+                true
+            );
         } else {
             // Send ajax call
             sendAjax(start_date, end_date);
@@ -1020,8 +1128,13 @@ function nocoutPerfLib() {
         function sendAjax(ajax_start_date, ajax_end_date) {
 
             var urlDataStartDate = '', urlDataEndDate = '';
-            if (ajax_start_date == '' && ajax_end_date == '') {  
-                // Pass              
+            if (ajax_start_date == '' && ajax_end_date == '') {
+                // Pass
+            } else if(clicked_tab_id.indexOf('custom') > -1) {
+                urlDataStartDate = getDateInEpochFormat(ajax_start_date);
+                urlDataEndDate = getDateInEpochFormat(ajax_end_date);
+            } else if(clicked_tab_id.indexOf('bird') > -1) {
+                // Pass
             } else {
                 var end_Date = "";
                 if (moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
@@ -1042,8 +1155,6 @@ function nocoutPerfLib() {
                 type: "GET",
                 dataType: "json",
                 success: function (response) {
-                    // TESTING DATA JSON
-                    // $.getJSON(base_url + "/static/js/nocout/dummy_data/bs_temperature.json",function(response) {
                     var result = "";
                     // Type check of response
                     if (typeof response == 'string') {
@@ -1058,14 +1169,20 @@ function nocoutPerfLib() {
 
                         if (grid_headers && grid_headers.length > 0) {
 
-                            // update 'draw_type' variable
-                            draw_type = 'table';
-                            // Checked the chart type radio
-                            $('#display_table')[0].checked = true;
+                            if (!is_birdeye_view) {
+                                // update 'draw_type' variable
+                                draw_type = 'table';
+                                // Update radio button selection
+                                $('#display_table').attr('checked', 'checked');
+                                $('#display_table').prop('checked', true);
 
-                            // Hide display type option from only table tabs
-                            if (!$("#display_type_container").hasClass("hide")) {
-                                $("#display_type_container").addClass("hide")
+                                // Update dropdown button html
+                                updateDropdownHtml();
+
+                                // Hide display type option from only table tabs
+                                if (!$("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").addClass("hide")
+                                }
                             }
                             
                             // Destroy Highchart
@@ -1074,7 +1191,7 @@ function nocoutPerfLib() {
                             if (typeof(grid_headers[0]) == 'string') {
                                 is_normal_table = true;
                                 var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
-                                if ($("#other_perf_table").length == 0) {
+                                if ($('table[id*="other_perf_table"]').length == 0) {
                                     initNormalDataTable_nocout(
                                         'other_perf_table',
                                         grid_headers,
@@ -1086,7 +1203,8 @@ function nocoutPerfLib() {
                                 addDataToNormalTable_nocout(
                                     table_data,
                                     grid_headers,
-                                    'other_perf_table'
+                                    'other_perf_table',
+                                    service_id
                                 );
                             } else {
                                 setTimeout(function() {
@@ -1108,25 +1226,36 @@ function nocoutPerfLib() {
                                 listing_ajax_url.indexOf('servicedetail') > -1
                                 ||
                                 listing_ajax_url.indexOf('availability') > -1) {
-                                // Show display type option from only table tabs
-                                if (!$("#display_type_container").hasClass("hide")) {
-                                    $("#display_type_container").addClass("hide")
+                                
+                                if (!is_birdeye_view && !is_custom_view) {
+                                    // Show display type option from only table tabs
+                                    if (!$("#display_type_container").hasClass("hide")) {
+                                        $("#display_type_container").addClass("hide")
+                                    }
+                                    draw_type = 'chart';
+                                    // Update radio button selection
+                                    $('#display_chart').attr('checked', 'checked');
+                                    $('#display_chart').prop('checked', true);
+
+                                    // Update dropdown button html
+                                    updateDropdownHtml();
                                 }
-                                draw_type = 'chart';
-                                // Checked the chart type radio
-                                $('#display_chart')[0].checked = true
                             } else {
-                                // Show display type option from only table tabs
-                                if ($("#display_type_container").hasClass("hide")) {
-                                    $("#display_type_container").removeClass("hide")
+                                if (!is_birdeye_view && !is_custom_view) {
+                                    // Show display type option from only table tabs
+                                    if ($("#display_type_container").hasClass("hide")) {
+                                        $("#display_type_container").removeClass("hide")
+                                    }
                                 }
                             }
 
                             // If any data available then plot chart & table
                             if (chart_config.chart_data.length > 0) {
                                 if (draw_type == 'chart') {
-                                    // Destroy 'perf_data_table'
-                                    nocout_destroyDataTable('other_perf_table');
+                                    if (!is_birdeye_view && !is_custom_view) {
+                                        // Destroy 'perf_data_table'
+                                        nocout_destroyDataTable('other_perf_table');
+                                    }
 
                                     if (!(
                                         listing_ajax_url.indexOf('service/rf/') > -1
@@ -1135,7 +1264,9 @@ function nocoutPerfLib() {
                                         ||
                                         listing_ajax_url.indexOf('availability') > -1
                                     )) {
+                                        if (!is_birdeye_view && !is_custom_view) {
                                             nocout_destroyDataTable('perf_data_table');
+                                        }
                                     }
 
                                     if (!$('#' + service_id+ '_chart').highcharts()) {
@@ -1154,9 +1285,7 @@ function nocoutPerfLib() {
                                         ||
                                         listing_ajax_url.indexOf('availability') > -1
                                     ) {
-                                        if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
-                                            addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table');
-                                        } else {
+                                        if ($("#perf_data_table").length == 0 || !$("#perf_data_table").html()) {
                                             var contentHtml = createChartDataTableHtml_nocout(
                                                 "perf_data_table",
                                                 chart_config.chart_data
@@ -1181,23 +1310,40 @@ function nocoutPerfLib() {
                                                         }
                                                     ]
                                                 },
+                                                fnInitComplete: function(oSettings) {
+                                                    var row_per_pages_selectbox = '#perf_data_table_wrapper div.dataTables_length label select',
+                                                        search_box = '#perf_data_table_wrapper div.dataTables_filter label input';
+                                                    // Update search txt box & row per pages dropdown style
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).addClass("form-control");
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).addClass("input-sm");
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).css("max-width","150px");
+                                                },
                                                 bPaginate: true,
                                                 bDestroy: true,
                                                 aaSorting : [[0,'desc']],
                                                 sPaginationType: "full_numbers"
                                             });
                                         }
+                                        // Add data to table
+                                        addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table');
                                     }
 
                                 } else {
                                     // Destroy Highcharts
-                                    nocout_destroyHighcharts(service_id);
+                                    if (!is_birdeye_view && !is_custom_view) {
+                                        nocout_destroyHighcharts(service_id);
+                                    }
 
                                     if (listing_ajax_url.indexOf('servicedetail') == -1) {
+                                        if (!is_birdeye_view && !is_custom_view) {
+                                            draw_type = 'table';
+                                            // Update radio button selection
+                                            $('#display_table').attr('checked', 'checked');
+                                            $('#display_table').prop('checked', true);
 
-                                        draw_type = 'table';
-                                        // Checked the chart type radio
-                                        $('#display_table')[0].checked = true;
+                                            // Update dropdown button html
+                                            updateDropdownHtml();
+                                        }
 
                                         setTimeout(function() {
                                             initChartDataTable_nocout(
@@ -1212,9 +1358,10 @@ function nocoutPerfLib() {
                                 }
                             } else {
                                 if (draw_type == 'chart') {
-                                    if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
-                                        $("#perf_data_table").dataTable().fnDestroy();
-                                        $("#perf_data_table").remove();
+                                    if (!is_birdeye_view && !is_custom_view) {
+                                        if (!$('#' + service_id+ '_chart').highcharts()) {
+                                            nocout_destroyDataTable('perf_data_table');
+                                        }
                                     }
 
                                     if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
@@ -1236,10 +1383,15 @@ function nocoutPerfLib() {
                                         if (show_historical_on_performance && not_availability_page && not_live_tab) {
                                             table_headers = default_hist_table_headers;
                                         }
+                                        if (!is_birdeye_view && !is_custom_view) {
+                                            draw_type = 'table';
+                                            // Update radio button selection
+                                            $('#display_table').attr('checked', 'checked');
+                                            $('#display_table').prop('checked', true);
 
-                                        draw_type = 'table';
-                                        // Checked the chart type radio
-                                        $('#display_table')[0].checked = true;
+                                            // Update dropdown button html
+                                            updateDropdownHtml();
+                                        }
 
                                         setTimeout(function() {
                                             initChartDataTable_nocout(
@@ -1255,7 +1407,6 @@ function nocoutPerfLib() {
                             }
                         }
                     } else {
-
                         if (
                             listing_ajax_url.indexOf('service/rf/') > -1
                             ||
@@ -1263,21 +1414,29 @@ function nocoutPerfLib() {
                             ||
                             listing_ajax_url.indexOf('availability') > -1
                         ) {
-                            // Show display type option from only table tabs
-                            if (!$("#display_type_container").hasClass("hide")) {
-                                $("#display_type_container").addClass("hide")
-                            }
+                            if (!is_birdeye_view && !is_custom_view) {
+                                // Show display type option from only table tabs
+                                if (!$("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").addClass("hide")
+                                }
 
-                            draw_type = 'chart';
-                            // Checked the chart type radio
-                            $('#display_chart')[0].checked = true
+                                draw_type = 'chart';
+                                // Update radio button selection
+                                $('#display_chart').attr('checked', 'checked');
+                                $('#display_chart').prop('checked', true);
+
+                                // Update dropdown button html
+                                updateDropdownHtml();
+                            }
                         } else {
-                            // Show display type option from only table tabs
-                            if ($("#display_type_container").hasClass("hide")) {
-                                $("#display_type_container").removeClass("hide")
+                            if (!is_birdeye_view && !is_custom_view) {
+                                // Show display type option from only table tabs
+                                if ($("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").removeClass("hide")
+                                }
                             }
                         }
-                        
+
                         if (draw_type == 'chart') {
                             if(!(
                                 listing_ajax_url.indexOf('service/rf/') > -1
@@ -1286,11 +1445,11 @@ function nocoutPerfLib() {
                                 ||
                                 listing_ajax_url.indexOf('availability') > -1
                             )) {
-                                if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
-                                    $("#perf_data_table").dataTable().fnDestroy();
-                                    $("#perf_data_table").remove();
+                                if (!is_birdeye_view && !is_custom_view) {
+                                    if (!$('#' + service_id+ '_chart').highcharts()) {
+                                        nocout_destroyDataTable('perf_data_table');
+                                    }
                                 }
-
                             }
                             if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
                                 if (!$('#' + service_id+ '_chart').highcharts()) {
@@ -1306,20 +1465,24 @@ function nocoutPerfLib() {
                             if (show_historical_on_performance && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
                                 table_headers = default_hist_table_headers;
                             }
+                            
+                            if (!is_birdeye_view && !is_custom_view) {
+                                draw_type = 'table';
+                                // Update radio button selection
+                                $('#display_table').attr('checked', 'checked');
+                                $('#display_table').prop('checked', true);
 
-                            draw_type = 'table';
-                            // Checked the chart type radio
-                            $('#display_table')[0].checked = true;
+                                // Update dropdown button html
+                                updateDropdownHtml();
+                            }
 
-                            setTimeout(function() {
-                                initChartDataTable_nocout(
-                                    "other_perf_table",
-                                    listing_headers,
-                                    service_id,
-                                    listing_ajax_url,
-                                    true
-                                );
-                            }, 300);
+                            initChartDataTable_nocout(
+                                "other_perf_table",
+                                listing_headers,
+                                service_id,
+                                listing_ajax_url,
+                                true
+                            );
                         }
                     }
 
@@ -1328,10 +1491,6 @@ function nocoutPerfLib() {
                         if ($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
                             //if last date
                             if (moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
-
-                                if ($('#' + service_id+ '_chart').highcharts()) {
-                                    $('#' + service_id + '_chart').highcharts().redraw();
-                                }
 
                                 if (!$('#' + service_id+ '_chart').highcharts()) {
                                     $('#' + service_id+ '_chart').html(result.message);
@@ -1371,11 +1530,7 @@ function nocoutPerfLib() {
                         } else {
                             hideSpinner();    
                         }
-                    } else {
-                        hideSpinner();
                     }
-
-                    // });
                 },
                 error : function(err) {
                     // console.log(err.statusText);
@@ -1434,21 +1589,10 @@ function nocoutPerfLib() {
             clearTimeout(timeInterval);
         }
 
-        // if ($('#' + service_id+ '_chart').highcharts()) {
-        //     $('#' + service_id+ '_chart').highcharts().destroy();
-        // }
-
-        // for(var i=0;i<Highcharts.charts.length;i++) {
-        //     if (Highcharts.charts[i]) {
-        //         Highcharts.charts[i].destroy();
-        //     }
-        // }
-        
-        // Highcharts.charts = [];
-
         nocout_destroyHighcharts(service_id);
         nocout_destroyDataTable('other_perf_table');
         nocout_destroyDataTable('perf_data_table');
+
         if(get_service_data_url && service_id && device_id) {
             /*Call getServiceData function to fetch the data for clicked service tab*/
             perfInstance.getServiceData(get_service_data_url, service_id, device_id);
@@ -1461,6 +1605,71 @@ function nocoutPerfLib() {
 }
 
 
+/** 
+ * This function updates service/datasource dropdown HTML on change of its value
+ * @method updateServiceTypeDropdownHtml
+ */
+function updateServiceTypeDropdownHtml() {
+
+    var view_type = $("input[name='service_view_type']:checked").val(),
+        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i>';
+
+    if (view_type == 'normal') {
+        icon_html += ' Datasource View';
+    } else {
+        icon_html += ' Service View';
+    }
+
+    // Create button new html
+    var caret_html = ' <span class="caret"></span> ',
+        btn_html = icon_html + caret_html,
+        radioId = $("input[name='service_view_type']:checked").attr('id');
+
+    // Remove active class from all li
+    $('#service_view_type_ul li').removeClass('active');
+
+    // Add active class of current parent li
+    $('a[radioId="' + radioId + '"]').parent().addClass('active');
+
+    // Update dropdown button html
+    $('#service_view_type_btn').html(btn_html);
+}
+
+
+/** 
+ * This function updates display table/chart dropdown HTML on change of its value
+ * @method updateDropdownHtml
+ */
+function updateDropdownHtml() {
+    var draw_type = $("input[name='item_type']:checked").val(),
+        icon_html = '';
+
+    if (draw_type == 'chart') {
+        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i> Display Chart';
+    } else {
+        icon_html = '<i class="text-primary fa fa-table"> </i> Display Table';
+    }
+
+    // Create button new html
+    var caret_html = ' <span class="caret"></span> ',
+        btn_html = icon_html + caret_html,
+        radioId = $("input[name='item_type']:checked").attr('id');
+
+    // Remove active class from all li
+    $('#item_type_ul li').removeClass('active');
+
+    // Add active class of current parent li
+    $('a[radioId="' + radioId + '"]').parent().addClass('active');
+
+    // Update dropdown button html
+    $('#item_type_btn').html(btn_html);
+}
+
+
+/**
+ * This event trigger when innermost tabs (historical + live) clicked
+ * @event click(with delegate)
+ */
 $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e) {
     var current_target = e.currentTarget,
         current_attr = current_target.attributes,
@@ -1491,7 +1700,11 @@ $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e
     last_active_tab = tab_service_id;
 });
 
-// Change event on display type radio buttons
+
+/**
+ * This event trigger when display type radio buttons changed
+ * @event Change
+ */
 $('input[name="item_type"]').change(function(e) {
 
     var active_tab_obj = nocout_getPerfTabDomId(),
@@ -1511,25 +1724,22 @@ $('input[name="item_type"]').change(function(e) {
             get_service_data_url = active_inner_tab.attr("url");
     }
 
+    // Update dropdown button html
+    updateDropdownHtml();
+
     if (get_service_data_url && service_id && current_device) {
-
-        // if ($("#other_perf_table").length > 0) {
-        //     $("#other_perf_table").dataTable().fnDestroy();
-        //     $("#other_perf_table").remove();
-        // }
-
-        // if ($("#perf_data_table").length > 0) {
-        //     $("#perf_data_table").dataTable().fnDestroy();
-        //     $("#perf_data_table").remove();
-        // }
-
         perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
     } else if (is_perf_polling_enabled) {
         nocout_togglePollNowContent();
     }
 });
 
-$(".perfContainerBlock").delegate('.perf_poll_now', 'click', function(e) {
+
+/**
+ * This event trigger when one time poll button under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
+$(".perfContainerBlock").delegate('.single_perf_poll_now', 'click', function(e) {
 
     var active_tab_obj = nocout_getPerfTabDomId(),
         tab_id = active_tab_obj["active_dom_id"];
@@ -1537,19 +1747,24 @@ $(".perfContainerBlock").delegate('.perf_poll_now', 'click', function(e) {
     var currentTarget = e.currentTarget;
     // Show button in loading view
     $(currentTarget).button('loading');
-    if(!$("#" + tab_id + " .play_pause_btns").hasClass("disabled")) {
-        $("#" + tab_id + " .play_pause_btns").addClass("disabled");
+    if(!$("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+        $("#" + tab_id + "_block .play_pause_btns").addClass("disabled");
     }
     initSingleDevicePolling(function(response) {
         
         $(currentTarget).button('complete');
         
-        if($("#" + tab_id + " .play_pause_btns").hasClass("disabled")) {
-            $("#" + tab_id + " .play_pause_btns").removeClass("disabled");
+        if($("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+            $("#" + tab_id + "_block .play_pause_btns").removeClass("disabled");
         }
     });
 });
 
+
+/**
+ * This event trigger when recursive poll button(Play Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.poll_play_btn', 'click', function(e) {
     // Update the flag
     is_polling_active = true;
@@ -1567,8 +1782,8 @@ $(".perfContainerBlock").delegate('.poll_play_btn', 'click', function(e) {
             $("#"+tab_id+ "_block .poll_pause_btn").removeClass("disabled");
         }
 
-        if(!$("#" + tab_id + "_block .perf_poll_now").hasClass("disabled")) {
-            $("#" + tab_id + "_block .perf_poll_now").addClass("disabled");
+        if(!$("#" + tab_id + "_block .single_perf_poll_now").hasClass("disabled")) {
+            $("#" + tab_id + "_block .single_perf_poll_now").addClass("disabled");
         }
         /*Disable poll interval & max interval dropdown*/
         $("#" + tab_id + "_block .poll_interval").attr("disabled","disabled");
@@ -1589,10 +1804,331 @@ $(".perfContainerBlock").delegate('.poll_play_btn', 'click', function(e) {
     }
 });
 
+
+/**
+ * This event trigger when recursive poll pause button(Pause Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.poll_pause_btn', 'click', function(e) {
     nocout_pausePollNow();
 });
 
+
+/**
+ * This event trigger when recursive poll stop button(Stop Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
     nocout_stopPollNow();
 });
+
+
+/**
+ * This event trigger when reset live polled data button(Reset Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
+$(".perfContainerBlock").delegate('.reset_live_polling', 'click', function(e) {
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        tab_id = active_tab_obj["active_dom_id"];
+
+    if (poll_now_data_dict[tab_id] && poll_now_data_dict[tab_id].length > 0) {
+        try {
+            if ($("#" + tab_id + "_chart").highcharts()) {
+                var chart = $("#" + tab_id + "_chart").highcharts(),
+                    chart_series = chart.series;
+
+                if (chart_series && chart_series.length > 0) {
+                    // Remove series from highchart
+                    while(chart_series.length > 0) {
+                        chart_series[0].remove(true);
+                    }
+                }
+                // Destroy highchart
+                $("#" + tab_id + "_chart").highcharts().destroy();
+            }
+
+            if ($("#" + tab_id + "_bottom_table").length) {
+                $("#" + tab_id + "_bottom_table").html("");
+            }
+
+            nocout_destroyDataTable('other_perf_table');
+        } catch(e) {
+            // console.log(e);
+        }
+
+        // Reset the global variable
+        poll_now_data_dict[tab_id] = [];
+        // Reset the min, max & avg legends DOM
+        if(!$('#' + tab_id + '_legends_block').hasClass('hide')) {
+            $('#' + tab_id + '_legends_block').addClass('hide');
+        }
+    } else {
+        bootbox.alert("You don't have any live polled data for this service/data source.");
+    }
+});
+
+
+/**
+ * This event trigger when service/datasource view radio buttons changed
+ * @event Change
+ */
+$('input[name="service_view_type"]').change(function(e) {
+
+    // selected value of 'service_view_type'
+    var service_view_type = $(this).val();
+
+    // Set the 'service_view_type'  cookie
+    $.cookie("service_view_type", service_view_type, {path: '/'});
+    
+    // Reload the page
+    initPerformancePage();
+});
+
+
+/**
+ * This event trigger when display type value clicked from display type dropdown
+ * @event Click
+ */
+$('#item_type_ul li a').click(function(e) {
+
+    // Prevent default functionality
+    e.preventDefault();
+
+    var radio_id = $(this).attr('radioId')
+
+    $('#' + radio_id)[0].checked = true;
+    $('#' + radio_id).trigger('change');
+});
+
+
+/**
+ * This event trigger when service/datasource view value clicked from service/datasource view dropdown
+ * @event Click
+ */
+$('#service_view_type_ul li a').click(function(e) {
+
+    // Prevent default functionality
+    e.preventDefault();
+
+    var radio_id = $(this).attr('radioId')
+
+    // Update radio button selection
+    $('#' + radio_id).attr('checked', 'checked');
+    $('#' + radio_id).prop('checked', true);
+
+    // Update dropdown button html
+    updateServiceTypeDropdownHtml();
+
+    // Set the 'service_view_type'  cookie
+    $.cookie("service_view_type", $('#' + radio_id).val(), {path: '/'});
+
+    // Reload the page
+    initPerformancePage();
+});
+
+
+/**
+ * This event trigger all service report download button clicked
+ * @event Click
+ */
+$('#all_serv_live_report_btn').click(function(e) {
+    
+    // prevent default functionality
+    e.preventDefault();
+
+    var report_title = 'All Services(Live Data - 5 Min.)' + current_device_ip,
+        services_list = $(this).data('services');
+
+    if (services_list && typeof services_list == 'object') {
+        services_list = JSON.stringify(services_list);
+    }
+
+    var main_url = base_url+"/downloader/datatable/?",
+        url_get_param = '';
+        applied_start_date = '',
+        applied_end_date = '';
+
+    // If any datetime filter applied
+    if (startDate && endDate) {
+        applied_start_date = startDate.toDate().getTime() / 1000;
+        applied_end_date = endDate.toDate().getTime() / 1000;
+    }
+
+    var datetime_filter_param = " 'start_date' : '" + applied_start_date + "', 'end_date' : '" + applied_end_date + "' ",
+        device_id_param = " 'device_id' : '" + current_device + "' ",
+        service_list_param = " 'service_view_type' : '" + $('input[name="service_view_type"]:checked').val() + "', 'services_list' : "+services_list,
+        sds_param = " 'service_data_source_type' : 'all', 'service_name' : 'all', 'data_for' : 'live' ",
+        common_param = " 'download_excel' : 'yes', 'report_title' : '" + report_title + "' ",
+        specific_params = " 'is_multi_sheet' : 1, 'data_key' : 'services_list', 'change_key' : 'service_name' "
+        row_data_param = "";
+
+    // prepare row_data params
+    row_data_param += sds_param + "," + datetime_filter_param + ",";
+    row_data_param += device_id_param + "," + common_param + ",";
+    row_data_param += specific_params + "," + service_list_param ;
+
+    // prepare get params
+    url_get_param += "app=performance";
+    url_get_param += "&rows="+data_class_name;
+    url_get_param += "&rows_data={" + row_data_param + "}"
+    url_get_param += "&headers="+header_class_name;
+    url_get_param += "&headers_data={" + common_param + "}";
+
+    var api_url = main_url + url_get_param;
+
+    // Make Ajax Call
+    $.ajax({
+        url : api_url,
+        type : 'GET',
+        success : function(response) {
+            var result = response;
+            // parse response if stringified.
+            if(typeof response == 'string') {
+                result = JSON.parse(response);
+            }
+
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: result.message,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        },
+        error : function(err) {
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: err.statusText,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        }
+    });
+});
+
+
+/**
+ * This event trigger when live+hist report download button clicked.
+ * @event Click
+ */
+$('#live_hist_report_btn').click(function(e) {
+    
+    // prevent default functionality
+    e.preventDefault();
+
+    var main_url = base_url+"/downloader/datatable/?",
+        live_hist_obj = [],
+        url_get_param = '';
+        applied_start_date = '',
+        applied_end_date = '',
+        active_tab_obj = nocout_getPerfTabDomId(),
+        tab_text = $.trim($('#' + active_tab_obj.active_dom_id + '_tab').text()),
+        active_tab_api_url = active_tab_obj.active_tab_api_url,
+        service_name = active_tab_api_url.split('/service/')[1].split('/')[0],
+        ds_name = active_tab_api_url.split('/service_data_source/')[1].split('/')[0],
+        report_title = 'Single Service (Live + Historical) - ' + current_device_ip;
+
+    // If any datetime filter applied
+    if (startDate && endDate) {
+        applied_start_date = startDate.toDate().getTime() / 1000;
+        applied_end_date = endDate.toDate().getTime() / 1000;
+    }
+
+    if (service_name.indexOf('_status') > -1 || service_name.indexOf('_invent') > -1) {
+        live_hist_obj = live_data_tab.concat(inventory_status_inner_inner_tabs);
+    } else {
+        live_hist_obj = live_data_tab.concat(tabs_with_historical);
+    }
+
+    var datetime_filter_param = " 'start_date' : '" + applied_start_date + "', 'end_date' : '" + applied_end_date + "' ",
+        device_id_param = " 'device_id' : '" + current_device + "' ",
+        tabs_list_param = " 'tabs_list' : "+JSON.stringify(live_hist_obj),
+        sds_param = " 'service_data_source_type' : '" + ds_name + "', 'service_name' : '" + service_name + "', 'data_for' : 'live' ",
+        common_param = " 'download_excel' : 'yes', 'report_title' : '" + report_title + "' ",
+        specific_params = " 'is_multi_sheet' : 1, 'data_key' : 'tabs_list', 'change_key' : 'data_for' "
+        row_data_param = "";
+
+    // prepare row_data params
+    row_data_param += sds_param + "," + datetime_filter_param + ",";
+    row_data_param += device_id_param + "," + common_param + ",";
+    row_data_param += specific_params + "," + tabs_list_param + ",";
+    row_data_param += " 'service_view_type' : '" + $('input[name="service_view_type"]:checked').val() + "' ";
+
+    // prepare get params
+    url_get_param += "app=performance";
+    url_get_param += "&rows="+data_class_name;
+    url_get_param += "&rows_data={" + row_data_param + "}"
+    url_get_param += "&headers="+header_class_name;
+    url_get_param += "&headers_data={" + common_param + "}";
+
+    var api_url = main_url + url_get_param;
+
+    // Make Ajax Call
+    $.ajax({
+        url : api_url,
+        type : 'GET',
+        success : function(response) {
+            var result = response;
+            // parse response if stringified.
+            if(typeof response == 'string') {
+                result = JSON.parse(response);
+            }
+
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: result.message,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        },
+        error : function(err) {
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: err.statusText,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        }
+    });
+});
+
+
+$.urlParam = function (name) {
+    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href),
+        url_param = "";
+    if (results == null) {
+        url_param = null;
+    } else {
+        url_param = results[1] || 0;
+    }
+    return url_param;
+};
+
+
+function updateQueryStringParameter(uri, key, value) {
+    var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i"),
+        separator = uri.indexOf('?') !== -1 ? "&" : "?",
+        query_str = "";
+    if (uri.match(re)) {
+        query_str = uri.replace(re, '$1' + key + "=" + value + '$2');
+    } else {
+        query_str = uri + separator + key + "=" + value;
+    }
+
+    return query_str;
+}

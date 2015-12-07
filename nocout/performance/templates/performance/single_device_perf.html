@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-bar-chart'></i> Performance Reports" "javascript:;" %}
     {% breadcrumb_safe page_type|title|add:" Live" "performance_listing" page_type %}
 
     {% if page_type == 'network' and device_technology|upper == 'P2P'  %}
@@ -25,19 +25,41 @@
 {% block css %}
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
-
+    <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
-    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
-    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
+    <link rel="stylesheet" type="text/css" href={% static "js/vis/vis/dist/vis.css" %} >
 {% endblock %}
 
 {% block content %}
     <style>
+        .box .header-tabs .nav-tabs > li:first-child {
+            border-right: 1px inset #c6c6ce !important;
+        }
+        .box .header-tabs .nav-tabs > li:last-child {
+            border: 0px none !important;
+        }
+        .box .header-tabs .top_perf_tabs > li,
+        .box .header-tabs .top_perf_tabs > li > a {
+            margin: 0px;
+        }
+        .box .header-tabs .top_perf_tabs > li > a {
+            border-bottom: 3px solid transparent;
+        }
+        .box .header-tabs .top_perf_tabs > li {
+            padding: 0px 5px;
+        }
         .perfContainerBlock .box-title .pull-right .list-inline > li {
             max-width: 200px !important;
         }
-        .perfContainerBlock .left_tabs_container {
-            /*padding: 0px !important;*/
+        .perfContainerBlock .header-tabs {
+            overflow: hidden;
+            margin: 0px;
+        }
+        .top_perf_tabs {
+            width: 2000px;
+        }
+        .top_perf_tabs li {
+            float: left !important;
         }
         .inner_tab_container .panel-body {
             padding: 10px !important;
@@ -48,11 +70,11 @@
         .top_perf_tabs {
             top: 0px !important;
             float: left;
-            padding-left: 15px;
+            padding-left: 0px;
             margin-right: 0px !important;
         }
         .box .header-tabs .top_perf_tabs > li > a {
-            padding: 7px 5px !important;
+            padding: 6px 2px !important;
         }
         .top_perf_tab_content, .top_perf_tab_content .panel .panel-body {
             overflow: auto;
@@ -60,17 +82,31 @@
         .chart_container h3, .last_updated_container h3, #latestStatusContainer h3 {
             margin-top: 0px;
         }
+        .paging_arrow {
+            position: absolute;
+            left: 14px;
+            top: 14px;
+            font-size: 25px;
+            cursor: pointer;
+        }
+        .right_arrow {
+            right: 10px;
+            left: auto;
+        }
+        #birdeye_container table tbody tr td {
+            font-size: 12px !important;
+        }
     </style>
     <!--Device Status Block Start-->
-    <div class="well well-sm" id="status_container" style="overflow:auto;">
-        <div id="latestStatusContainer">
-            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>
-        </div>
+    <div id="status_container" style="overflow:auto;">
         <div style="overflow:auto;">
             <table id="status_table" class="table table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
                 <thead></thead>
                 <tbody></tbody>
             </table>
+        </div>
+        <div id="latestStatusContainer">
+            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>
         </div>
     </div>
     <!--Device Status Block End-->
@@ -93,82 +129,177 @@
                         <i class="fa fa-filter"></i> Apply Filter
                     </button>
                 </li>
-                <li>
-                    <button id="reset_filter" class="btn  btn-warning btn-sm">
-                        <i class="fa fa-times"></i> Reset Filter
+                <li class="reset_filter_li">
+                    <button id="reset_filter" class="btn  btn-default btn-sm">
+                        <i class="fa fa-times text-danger"></i> Reset Filter
                     </button>
                 </li>
+                {% if settings.ENABLE_UNIFIED_SERVICE_VIEW %}
+                <li id="display_type_container" class="unified_item_type">
+                {% else %}
                 <li id="display_type_container">
-                    <label class="checkbox-inline">
+                {% endif %}
+                    <label class="checkbox-inline hide">
                         <input type="radio" id="display_chart" name="item_type" value="chart" checked="checked"/>  Display Chart
                     </label>
-                    <label class="checkbox-inline">
+                    <label class="checkbox-inline hide">
                         <input type="radio" id="display_table" name="item_type" value="table"/>  Display Table
                     </label>
+
+                    <div class="btn-group dropdown">
+                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="item_type_btn" title="Display Chart/Table">
+                            <i class="text-primary fa fa-bar-chart-o"> </i>  Display Chart
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu context" id="item_type_ul">
+                            <li class="active">
+                                <a href="javascript:;" radioId="display_chart">
+                                    <i class="fa fa-bar-chart-o"> </i> Display Chart
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" radioId="display_table">
+                                    <i class="fa fa-table"> </i> Display Table
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
                 </li>
-                <li class="pull-right">
-                    <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
-                        <i class="fa fa-dropbox text-primary"></i>
-                    </a>
+                {% if settings.ENABLE_UNIFIED_SERVICE_VIEW %}
+                <li class="unified_normal_li">
+                    <label class="checkbox-inline hide">
+                        <input type="radio" id="normal_view" name="service_view_type" value="normal" checked="checked"/> Datasource View
+                    </label>
+                    <label class="checkbox-inline hide">
+                        <input type="radio" id="unified_view" name="service_view_type" value="unified"/>  Service View
+                    </label>
+
+                    <div class="btn-group dropdown">
+                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="service_view_type_btn" title="Datasource/Service View">
+                            <i class="text-primary fa fa-bar-chart-o"> </i> Datasource View
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu context" id="service_view_type_ul">
+                            <li class="active">
+                                <a href="javascript:;" radioId="normal_view">
+                                    <i class="fa fa-bar-chart-o"> </i> Datasource View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" radioId="unified_view">
+                                    <i class="fa fa-bar-chart-o"> </i> Service View
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </li>
-                <li class="pull-right">
-                    <a href="#" class="btn btn-default btn-sm hide" id="alerts_link_tag" title="Alerts" target="_blank">
-                        <i class="fa fa-warning text-danger"></i>
-                    </a>
+                {% endif %}
+
+                {% if settings.ENABLE_AGGREGATE_REPORT_DOWNLOAD %}
+                <li>
+                    <div class="btn-group dropdown">
+                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="" title="Download Reports">
+                            <i class="text-primary fa fa-download"> </i> Report
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu context">
+                            <li>
+                                <a href="javascript:;" id="all_serv_live_report_btn">
+                                    <i class="fa fa-download"> </i> All Services(Live Data - 5 Min.)
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" id="live_hist_report_btn">
+                                    <i class="fa fa-download"> </i> Single Service(Live + Historical)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </li>
+                {% endif %}
             </ul>
             <!--Filters Block End-->
             <div class="clearfix"></div>
         </div>
-        <div class='box-body'>
+        <div class='box-body' style="position: relative;">
             <!-- <div id="tableContainer" class="box-body"> -->
-            <div class="tabbable header-tabs">
+            <i class="fa fa-arrow-circle-o-left text-ttpl paging_arrow hide">&nbsp;</i>
+            <div class="tabbable header-tabs" style="width: 94%; margin:0px auto;">
                 <ul class="nav nav-tabs top_perf_tabs">
-                    <li>
-                        <a href="#utilization_top_tab" title="Utilization" id="utilization_top" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Utilization</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#topology_tab" id="topology" title="IA Table" class="hide" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">IA Table</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#availability_tab" id="availability" title="Availability" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Availability</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#inventory_status_tab" id="inventory_status" title="Inventory Status" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Inventory Status</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#service_status_tab" id="service_status" title="Service Status" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Service Status</span>
+                    <li class="active">
+                        <a href="#network_perf_tab" id="network_perf" title="Network Performance" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Network Performance &nbsp;</span>
                         </a>
                     </li>
                     <li>
                         <a href="#service_perf_tab" id="service_perf" title="Service Performance" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Service Performance</span>
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Service Performance &nbsp;</span>
                         </a>
                     </li>
-                    <li class="active">
-                        <a href="#network_perf_tab" id="network_perf" title="Network Performance" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Network Performance</span>
+                    <li>
+                        <a href="#service_status_tab" id="service_status" title="Service Status" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Service Status &nbsp;</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="#inventory_status_tab" id="inventory_status" title="Inventory Status" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Inventory Status &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#availability_tab" id="availability" title="Availability" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Availability &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#topology_tab" id="topology" title="IA Table" class="hide" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">IA Table &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#utilization_top_tab" title="Utilization" id="utilization_top" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Utilization &nbsp;</span>
+                        </a>
+                    </li>
+
+                    {% if settings.ENABLE_BIRDEYE_VIEW %}
+                    <li>
+                        <a href="#birdeye_view_tab" title="Birdeye View" id="birdeye_view" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Birdeye View &nbsp;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if settings.ENABLE_TOPO_VIEW %}
+                    <li>
+                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if settings.ENABLE_CUSTOM_DASHBOARD_VIEW %}
+                    <li>
+                        <a href="#custom_dashboard_tab" title="Custom Dashboards" id="custom_dashboard" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Custom Dashboards &nbsp;</span>
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
                 <div class="clearfix"></div>
             </div>
+            <i class="fa fa-arrow-circle-o-right text-ttpl right_arrow paging_arrow hide">&nbsp;</i>
             <div class="tab-content top_perf_tab_content">
                 <div class="tab-pane active" id="network_perf_tab">
                     <div class="panel panel-default inner_tab_container">
@@ -237,6 +368,54 @@
                         </div>
                     </div>
                 </div>
+
+                {% if settings.ENABLE_BIRDEYE_VIEW %}
+                <div class="tab-pane" id="birdeye_view_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div id="birdeye_container"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if settings.ENABLE_TOPO_VIEW %}
+                <div class="tab-pane" id="topo_view_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div id="topo_network"></div>
+                            <!--Info Window Content Container START-->
+                            <div id="infoWindowContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:200;"></div>
+                            <!--Info Window Content Container END-->
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if settings.ENABLE_CUSTOM_DASHBOARD_VIEW %}
+                <div class="tab-pane" id="custom_dashboard_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div id="custom_dashboard_container">                                      
+                                <ul class="list-unstyled list-inline control_btn_countainer" style="position:absolute;">
+                                    <li class="pull-right">                                            
+                                        <button id="add_custom_dashboard" class="btn btn-sm btn-default normal_screen " type="button" title="Add_Custom_Dashboard">
+                                            <i class="fa fa-plus"></i>
+                                        </button>                                           
+                                        <button id="delete_custom_dashboard" class="btn btn-sm btn-default normal_screen " type="button" title="Delete_Custom_Dashboard">
+                                            <i class="fa fa-trash-o" title="Soft Delete"></i>
+                                        </button>
+                                     </li>  
+                                </ul>                                
+                                <div class="tabbable tabs-left">
+                                    <i class="fa fa-spinner fa-spin" title="Fetching Utilization Services"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <div class="clearfix"></div>
             </div>
         </div>
@@ -259,6 +438,19 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <!-- Bootstrap switch lib for BS maintenance infowindow -->
     <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
+    <!-- Bootstrap switch lib for BS maintenance infowindow -->
+    <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
+    <!-- Device toottip lib -->
+    <script type="text/javascript" src={% static "js/tooltipLib.js" %} ></script>
+    <!-- Network Topology Lib -->
+    <script type="text/javascript" src={% static "js/vis/vis/dist/vis.js" %}></script>
+    <!-- Populate network topology custom lib -->
+    <script type="text/javascript" src={% static "js/nocout/networkTopologyLib.js" %}></script>
+    <!-- Populate custom dashboard script -->
+    <script type="text/javascript" src={% static "js/nocout/custom_dashboard.js" %}></script>
+    <!-- Datetime range picker lib -->
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
     <script type="text/javascript">
         /*Global Variables*/
         var perfInstance = "",
@@ -269,7 +461,9 @@
             live_poll_condition2 = "",
             ptp_tech_list = ['ptp','p2p','ptp bh'],
             is_perf_polling_enabled = false,
+            polling_config = {},
             show_historical_on_performance = false,
+            is_unified_enabled = false,
             base_url = "",
             startDate = "",
             endDate = "",
@@ -281,96 +475,180 @@
             warn_color = "",
             crit_color = "",
             warn_type = "",
-            crit_type = "";
-
+            crit_type = "",
+            default_live_table_headers = [],
+            default_hist_table_headers = [],
+            is_radwin5 = 0,
+            is_viewer = 0,
+            bs_id = "",
+            all_services_list = [],
+            perf_base_url = '',
+            clicked_tab_id = '',
+            severity_wise_data_api = '',
+            default_left_tab_icon = 'fa-circle-o',
+            active_left_tab_icon = 'fa-dot-circle-o',
+            topo_dom_id = 'topo_network',
+            non_poll_sds = [];
 
         $(document).ready(function (e) {
+            service_view_type = $('input[name="service_view_type"]:checked').val();
+            device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "";
+            get_services_url = "{{ get_services_url }}" ? $.trim("{{ get_services_url }}") : "";
+            inventory_page_url = "{{ inventory_page_url }}" ? $.trim("{{ inventory_page_url }}") : "";
+            alert_page_url = "{{ alert_page_url }}" ? $.trim("{{ alert_page_url }}") : "";
+            page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer";
+            is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
+            is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
+            is_viewer = "{{is_viewer_flag }}" ? Number($.trim("{{ is_viewer_flag }}")) : 0;
+            bs_id = '{{ bs_id|safe }}' ? '{{ bs_id|safe }}' : [];
+            perf_base_url = "{{ perf_base_url }}" ? $.trim("{{ perf_base_url }}") : "";
+            non_poll_sds = '{{ settings.NO_ONDEMAND_POLL_SDS|safe }}' ? JSON.parse('{{ settings.NO_ONDEMAND_POLL_SDS|safe }}') : [];
+            current_device_technology = "";
+            statusUrl = "";
+            serviceUrl = "";
+            inventory_url = "";
+            alert_url = "";
 
-            var device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "",
-                get_services_url = "{{ get_services_url }}" ? $.trim("{{ get_services_url }}") : "",
-                inventory_page_url = "{{ inventory_page_url }}" ? $.trim("{{ inventory_page_url }}") : "",
-                alert_page_url = "{{ alert_page_url }}" ? $.trim("{{ alert_page_url }}") : "",
-                page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer",
-                is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0,
-                current_device_technology = "",
-                statusUrl = "",
-                serviceUrl = "",
-                inventory_url = "",
-                alert_url = "";
+            // Hide topo view tab if no bs id exists in context
+            if ((typeof(bs_id) == 'string' && bs_id == '[]') || typeof(bs_id) != 'str' && bs_id.length == 0) {
+                $('#topo_view').addClass('hide');
+                $('#topo_view_tab').addClass('hide');
+            }
 
-            statusUrl = getCompleteUrl(device_status_url);
-            serviceUrl = getCompleteUrl(get_services_url);
-            inventory_url = getCompleteUrl(inventory_page_url);
-            alert_url = getCompleteUrl(alert_page_url);
+            severity_wise_data_api = "{% url 'get_severity_wise_status' %}";
 
-            current_device = "{{ device.id }}";
-            device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
-            current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
-            current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
-            is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
-            is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
-            device_name = current_device;
-            warn_color = "{{ settings.WARN_COLOR}}";
-            warn_type = "{{ settings.WARN_TYPE}}";
-            crit_color = "{{ settings.CRIT_COLOR}}";
-            crit_type = "{{ settings.CRIT_TYPE}}";
-            // Update global variable as per context data
-            {% if is_dr_device %}
-                is_dr_device = true;
-                bold_class = 'text-bold';
+            if (severity_wise_data_api) {
+                severity_wise_data_api = getCompleteUrl(severity_wise_data_api);
+            }
+
+            if (!service_view_type || !$.cookie("service_view_type")) {
+                $.cookie("service_view_type", 'normal', {path: '/'})
+                service_view_type = 'normal';
+            }
+
+            {% if not settings.ENABLE_UNIFIED_SERVICE_VIEW %}
+                $.cookie("service_view_type", 'normal', {path: '/'});
             {% endif %}
 
-            /*Make a instance of ourDataTableWidget class */
-            dataTableInstance = new ourDataTableWidget();
+            initPerformancePage(true);
+        });
 
-            {% if settings.HISTORICAL_ON_PERFORMANCE %}
-                show_historical_on_performance = true;
-            {% endif %}
-            
-            // If call for utilization tab the reset tab cookie
-            if(is_util_tab) {
-                $.cookie('parent_tab_id', '', {path: '/', secure: true});
+        function initPerformancePage(is_first_triggered) {
+
+            isLatestStatusUpdated = false;
+
+            if ($.cookie("service_view_type") == 'normal') {
+                default_live_table_headers = default_live_table_headers_without_ds;
+                default_hist_table_headers = default_hist_table_headers_without_ds;
+            } else {
+                default_live_table_headers = default_live_table_headers_with_ds;
+                default_hist_table_headers = default_hist_table_headers_with_ds;
             }
 
+            if (is_first_triggered) {
+                
+                if ($.cookie("service_view_type")) {
+                    $('input[value="' + $.cookie("service_view_type") + '"]').prop('checked', true)
+                    $('input[value="' + $.cookie("service_view_type") + '"]').attr('checked', 'checked');
 
-            // Show/hide live polling button & chart container
-            live_poll_condition1 = ptp_tech_list.indexOf(current_device_technology) > -1;
-            live_poll_condition2 = page_type_val == 'customer';
-            if(!live_poll_condition1 && !live_poll_condition2) {
-                $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
-            }
-
-            if(inventory_url) {
-                $("#inventory_link_tag").attr("href",inventory_url);
-                $("#inventory_link_tag").removeClass("hide");
-            }
-
-            if(alert_url) {
-                $("#alerts_link_tag").attr("href",alert_url);
-                $("#alerts_link_tag").removeClass("hide");
-            }
-
-            // SET utc false for highcharts to show time in GMT+5:30
-            Highcharts.setOptions({
-                global: {
-                    useUTC: false
+                    updateServiceTypeDropdownHtml();
                 }
-            });
 
-            // Create nocoutPerfLib instance to access its functions
-            perfInstance = new nocoutPerfLib();
+                statusUrl = getCompleteUrl(device_status_url);
+                serviceUrl = getCompleteUrl(get_services_url);
+                inventory_url = getCompleteUrl(inventory_page_url);
+                alert_url = getCompleteUrl(alert_page_url);
+                // perf_base_url = getCompleteUrl(perf_base_url);
 
-            perfInstance.togglePerfPageElements(page_type_val, current_device_technology);
+                current_device = "{{ device.id }}";
+                device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
+                current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
+                current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
+                polling_config = $.parseJSON('{{ live_poll_config|safe }}');
+                is_perf_polling_enabled = polling_config ? polling_config['performance'] : false;
+                device_name = "{{ device.device_name }}";
+                warn_color = "{{ settings.WARN_COLOR}}";
+                warn_type = "{{ settings.WARN_TYPE}}";
+                crit_color = "{{ settings.CRIT_COLOR}}";
+                crit_type = "{{ settings.CRIT_TYPE}}";
+                // Update global variable as per context data
+                {% if is_dr_device %}
+                    is_dr_device = true;
+                    bold_class = 'text-bold';
+                {% endif %}
 
-            /*To initialize date range picker*/
-            perfInstance.initDateRangePicker(dateRangePicker_domId);
+                /*Make a instance of ourDataTableWidget class */
+                dataTableInstance = new ourDataTableWidget();
+
+                {% if settings.HISTORICAL_ON_PERFORMANCE %}
+                    show_historical_on_performance = true;
+                {% endif %}
+                
+                // If call for utilization tab the reset tab cookie
+                if(is_util_tab) {
+                    $.cookie('parent_tab_id', '', {path: '/', secure: true});
+                }
+
+
+                // Show/hide live polling button & chart container
+                live_poll_condition1 = ptp_tech_list.indexOf(current_device_technology) > -1;
+                live_poll_condition2 = page_type_val == 'customer';
+                if(!live_poll_condition1 && !live_poll_condition2) {
+                    $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
+                }
+
+                // Append inventory & alert center link to top header bar
+                var inventory_link_html = '<a href="#" class="btn btn-default btn-sm normal_screen transitionbtn hide" \
+                                           id="inventory_link_tag" title="Inventory" target="_blank"> \
+                                           <i class="fa fa-dropbox text-primary"></i></a>',
+                    alert_link_html = '<a href="#" class="btn btn-default btn-sm normal_screen transitionbtn hide" id="alerts_link_tag" title="Alerts" \
+                                       target="_blank"><i class="fa fa-warning text-danger"></i></a>';
+                $('.controls_container ul').prepend('<li>' + inventory_link_html + '</li>');
+                $('.controls_container ul').prepend('<li>' + alert_link_html + '</li>');
+
+
+                if(inventory_url) {
+                    $("#inventory_link_tag").attr("href",inventory_url);
+                    $("#inventory_link_tag").removeClass("hide");
+                }
+
+                if(alert_url) {
+                    $("#alerts_link_tag").attr("href",alert_url);
+                    $("#alerts_link_tag").removeClass("hide");
+                }
+
+                // SET utc false for highcharts to show time in GMT+5:30
+                Highcharts.setOptions({
+                    global: {
+                        useUTC: false
+                    }
+                });
+
+                // Create nocoutPerfLib instance to access its functions
+                perfInstance = new nocoutPerfLib();
+
+                perfInstance.togglePerfPageElements(page_type_val, current_device_technology);
+
+                /*To initialize date range picker*/
+                perfInstance.initDateRangePicker(dateRangePicker_domId);
+
+                createTabsPaging('ul.top_perf_tabs', 'li');
+            }
+
+            // Add 'service_view_type' GET param to API url
+            if (serviceUrl.indexOf('service_view_type') == -1) {
+                serviceUrl = serviceUrl.indexOf('?') > -1 ? serviceUrl + '&service_view_type='+$.cookie("service_view_type") : serviceUrl + '?service_view_type='+$.cookie("service_view_type");
+            } else {
+                serviceUrl = serviceUrl.split('&service_view_type=')[0];
+                serviceUrl = serviceUrl.indexOf('?') > -1 ? serviceUrl + '&service_view_type='+$.cookie("service_view_type") : serviceUrl + '?service_view_type='+$.cookie("service_view_type");
+            }
 
             /*To populate the status table*/
             perfInstance.getStatus(statusUrl, current_device);
 
             /*To populate the services tabs*/
             perfInstance.getServices(serviceUrl, current_device);
-        });
+        }
     
         /**
          * This event triggers when apply filter button clicked
@@ -378,27 +656,96 @@
          */
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
-                var active_tab_obj = nocout_getPerfTabDomId(),
-                    service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
-                    get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
-
-                if(
-                    service_id.indexOf('availability') > -1
-                    ||
-                    service_id.indexOf('utilization_top') > -1
-                    ||
-                    service_id.indexOf('topology') > -1
-                ) {
-
-                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
-                        service_id = active_inner_tab.attr("id").slice(0, -4),
-                        get_service_data_url = active_inner_tab.attr("url");
-
-                } 
-
-                if(get_service_data_url && service_id && current_device) {
-                    perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
+                var active_tab_obj = '';
+                try {
+                    active_tab_obj = nocout_getPerfTabDomId();
+                } catch(e) {
+                    active_tab_obj = false;
                 }
+
+                if (show_historical_on_performance && active_tab_obj) {
+                    var start = new Date(startDate),
+                        end   = new Date(),
+                        days_diff = (end-start)/(1000*60*60*24);
+
+                    if (days_diff <= 30) {
+                        // live
+                        if (active_tab_obj.active_dom_id.indexOf('live') > -1) {
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('live');
+
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    } else if (days_diff > 30 && days_diff <= 35) {
+                        // bi-hourly
+                        if (active_tab_obj.active_dom_id.indexOf('bihourly') > -1) {
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('bihourly');
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            } else {
+                                var my_tab_id = getRequiredTabId('daily');
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    } else if (days_diff > 35 && days_diff <= 180) {
+                        // hourly
+                        if (active_tab_obj.active_dom_id.indexOf('bihourly') == -1 && active_tab_obj.active_dom_id.indexOf('hourly') > -1) {
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('hourly');
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            } else {
+                                var my_tab_id = getRequiredTabId('daily');
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    } else if (days_diff > 180) {
+                        var condition1 = active_tab_obj.active_dom_id.indexOf('daily') > -1,
+                            condition2 = active_tab_obj.active_dom_id.indexOf('weekly') > -1,
+                            condition3 = active_tab_obj.active_dom_id.indexOf('monthly') > -1,
+                            condition4 = active_tab_obj.active_dom_id.indexOf('yearly') > -1;
+
+                        // Daily, weekly, monthly or yearly
+                        if (condition1 || condition2 || condition3 || condition4) {
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('daily');
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    }
+                } else {
+                    var temp_serv_id = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("id");
+
+                    if(
+                        temp_serv_id.indexOf('availability') > -1
+                        ||
+                        temp_serv_id.indexOf('utilization_top') > -1
+                        ||
+                        temp_serv_id.indexOf('topology') > -1
+                    ) {
+
+                        var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+                            service_id = active_inner_tab.attr("id").slice(0, -4),
+                            get_service_data_url = active_inner_tab.attr("url");
+
+                    } else {
+                        var service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                            get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                    }
+
+                    if(get_service_data_url && service_id && current_device) {
+                        perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
+                    }
+                }
+
             } else {
                 alert("Select Start & End Date");
             }
@@ -409,6 +756,7 @@
          * @event click
          */
         $("#reset_filter").on('click', function () {
+
             if(startDate && endDate) {
 
                 startDate = "";
@@ -423,23 +771,25 @@
                 /*To initialize date range picker*/
                 perfInstance.initDateRangePicker(dateRangePicker_domId);
 
-                var active_tab_obj = nocout_getPerfTabDomId(),
-                    service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
-                    get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                var temp_serv_id = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("id");
 
                 if(
-                    service_id.indexOf('availability') > -1
+                    temp_serv_id.indexOf('availability') > -1
                     ||
-                    service_id.indexOf('utilization_top') > -1
+                    temp_serv_id.indexOf('utilization_top') > -1
                     ||
-                    service_id.indexOf('topology') > -1
+                    temp_serv_id.indexOf('topology') > -1
                 ) {
 
                     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
                         service_id = active_inner_tab.attr("id").slice(0, -4),
                         get_service_data_url = active_inner_tab.attr("url");
 
-                } 
+                } else {
+                    var active_tab_obj = nocout_getPerfTabDomId(),
+                        service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                        get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                }
 
                 if(get_service_data_url && service_id && current_device) {
                     // perfInstance.getServiceData(get_service_data_url, service_id, current_device);
@@ -459,9 +809,82 @@
            #inventory_status,\
            #availability,\
            #topology,\
-           #utilization_top"
+           #utilization_top,\
+           #custom_dashboard"
         ).click(function (e) {
+            // Show li panel
+            $('.perfContainerBlock .box-title ul li:not(.pull-right)').removeClass('hide');
+
+            clicked_tab_id = $(this).attr('id');
             fetchFirstTabContent(this);
+        });
+
+        // Fetch & Draw birdeye view on tab click
+        $("#birdeye_view").click(function (e) {
+
+            // Hide li panel
+            $('.perfContainerBlock .box-title ul li:not(.pull-right)').addClass('hide');
+
+            clicked_tab_id = 'birdeye_view';
+            // Show loading spinner
+            showSpinner();
+            // Call function to Fetch & Draw birdeye
+            initBirdEyeView('birdeye_container');
+        });
+
+
+        // Fetch & Draw Topology view on tab click
+        $("#topo_view").click(function(e) {
+            // Show loading Spinner
+            showSpinner();
+
+            var single_bs_id = bs_id;
+
+            $.ajax({
+                url: base_url +  "/performance/get_topology/?bs_id=" + bs_id,
+                type: 'GET',
+                success: function(response) {
+                    var result = response;
+
+                    if (typeof result == 'string') {
+                        result = JSON.parse(result);
+                    }
+
+                    if (result.success) {
+                        topo_api_data = result['data'];
+                        // Calling function to convert JSON response to VIS lib format
+                        convertToVis(result, topo_dom_id);
+                    } else {
+                        $.gritter.add({
+                            // (string | mandatory) the heading of the notification
+                            title: 'Topology View',
+                            // (string | mandatory) the text inside the notification
+                            text: result.message,
+                            // (bool | optional) if you want it to fade out on its own or just sit there
+                            sticky: false,
+                            // Time in ms after which the gritter will dissappear.
+                            time : 1000
+                        });
+                    }
+
+                },
+                error : function(err) {
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Topology View',
+                        // (string | mandatory) the text inside the notification
+                        text: err.statusText,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false,
+                        // Time in ms after which the gritter will dissappear.
+                        time : 1000
+                    });
+                },
+                complete: function() {
+                    // Hide loading Spinner
+                    hideSpinner();
+                }
+            });
         });
 
         /**
@@ -474,24 +897,19 @@
             var tab_id = $(this_pointer).attr("href") ? $(this_pointer).attr("href").split("#")[1] : "",
                 li_count = $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li").length;
 
-            // Save parent tab reference in cookie
-            $.cookie('parent_tab_id', tab_id.slice(0, -4), {path: '/', secure: true});
+            if ($(this_pointer).attr('id') != 'custom_dashboard') {
+                // Save parent tab reference in cookie
+                $.cookie('parent_tab_id', tab_id.slice(0, -4), {path: '/', secure: true});
+            }
 
             if (li_count > 0) {
 
-                if($("#other_perf_table").length > 0) {
-                    $("#other_perf_table").dataTable().fnDestroy();
-                    $("#other_perf_table").remove();
-                }
-
-                if($("#perf_data_table").length > 0) {
-                    $("#perf_data_table").dataTable().fnDestroy();
-                    $("#perf_data_table").remove();
-                }
+                nocout_destroyDataTable('other_perf_table');
+                nocout_destroyDataTable('perf_data_table');
 
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
-                if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length) {
+                if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length > 0) {
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).trigger('click');
                 } else {
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li:first-child a").trigger('click');
@@ -506,31 +924,23 @@
          */
         $("body").delegate('.left_tabs_container li','click',function(e) {
             var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
+
             if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
+                // remove the 'active_left_tab_icon' class from all link (if exists)
+                $('.left_tabs_container li a i').removeClass(active_left_tab_icon);                
+                //  Add 'default_left_tab_icon' class to active link
+                $('.left_tabs_container li a i').addClass(default_left_tab_icon);
+                //  Add 'active_left_tab_icon' class to active link
+                $($(this).children('a').children('i')).addClass(active_left_tab_icon);
+                //  Remove 'default_left_tab_icon' class to active link
+                $($(this).children('a').children('i')).removeClass(default_left_tab_icon);
 
-                if($("#other_perf_table").length > 0) {
-                    $("#other_perf_table").dataTable().fnDestroy();
-                    $("#other_perf_table").remove();
-                }
-
-                if($("#perf_data_table").length > 0) {
-                    $("#perf_data_table").dataTable().fnDestroy();
-                    $("#perf_data_table").remove();
-                }
+                nocout_destroyDataTable('other_perf_table');
+                nocout_destroyDataTable('perf_data_table');
 
                 $(".inner_tab_container #"+tab_content_id+"_block .inner_inner_tab li:first-child a").trigger('click');
             }
         });
-
-        /**
-         * This event triggers when poll now button clicked
-         * @event click
-         */
-        // $(".perfContainerBlock").delegate('.perf_poll_now, .poll_play_btn','click',function(e) {
-        //     initSingleDevicePolling(function(response) {
-        //         // pass
-        //     });
-        // });
     </script>
 
 {% endblock %}

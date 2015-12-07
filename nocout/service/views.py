@@ -11,7 +11,7 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
 from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet,\
                 DTServiceDataSourceUpdateFormSet, DeviceServiceConfigurationForm
 from device.forms import DeviceTypeServiceDataSourceUpdateFormset
@@ -19,6 +19,7 @@ from device.models import DeviceTypeService, Device
 
 # ########################################################
 from django.conf import settings
+from user_profile.utils.auth import in_group
 
 if settings.DEBUG:
     import logging
@@ -48,19 +49,20 @@ class ServiceList(PermissionsRequiredMixin, ListView):
             {'mData': 'service_data_sources__alias', 'sTitle': 'Data Sources', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Service Listing Table.
     """
     model = Service
     required_permissions = ('service.view_service',)
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
+    search_columns = ['name', 'alias', 'parameters__parameter_description', 'description']
     order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
 
     def get_initial_queryset(self):
@@ -268,13 +270,13 @@ class ServiceParametersList(PermissionsRequiredMixin, ListView):
             {'mData': 'retry_check_interval', 'sTitle': 'Retry Check Intervals', 'sWidth': 'auto', },
             {'mData': 'max_check_attempts', 'sTitle': 'Max Check Attempts', 'sWidth': 'auto', },
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class ServiceParametersListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class ServiceParametersListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render ServiceParameters Data table.
     """
@@ -363,14 +365,14 @@ class ServiceDataSourceList(PermissionsRequiredMixin, ListView):
             {'mData': 'warning', 'sTitle': 'Warning', 'sWidth': 'auto', },
             {'mData': 'critical', 'sTitle': 'Critical', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class ServiceDataSourceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class ServiceDataSourceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     model = ServiceDataSource
     required_permissions = ('service.view_servicedatasource',)
     columns = ['name', 'alias', 'warning', 'critical']
@@ -474,13 +476,13 @@ class ProtocolList(PermissionsRequiredMixin, ListView):
             {'mData': 'private_phase', 'sTitle': 'Private Phase', 'sWidth': 'auto', },
             {'mData': 'private_pass_phase', 'sTitle': 'Private Pass Phase', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class ProtocolListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class ProtocolListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class Based View to render the protocol Data table.
     """
@@ -599,7 +601,7 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
             {'mData': 'modified_on', 'sTitle': 'Updated On', 'sWidth': 'null', },
         ]
 
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -610,7 +612,7 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
 
 
 class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin,
-                                             BaseDatatableView):
+                                             BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View render the Device Service Configuration Table.
     """
@@ -637,7 +639,8 @@ class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Datatable
         exclude_columns = []
 
         # search keyword
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % self.model.__name__
@@ -651,7 +654,7 @@ class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Datatable
             exec_query += ").filter(operation__in=['c', 'e']).values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -688,7 +691,7 @@ class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Datatable
 
 
 class DeletedDeviceServiceConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin,
-                                                    BaseDatatableView):
+                                                    BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View render the Device Service Configuration Table.
     """
@@ -715,7 +718,8 @@ class DeletedDeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Da
         exclude_columns = []
 
         # search keyword
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % self.model.__name__
@@ -729,7 +733,7 @@ class DeletedDeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Da
             exec_query += ").filter(operation__in=['d']).values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """

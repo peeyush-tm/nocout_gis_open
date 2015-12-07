@@ -29,13 +29,14 @@ from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin, SuperUserRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
 from nocout.mixins.select2 import Select2Mixin
 from django.db.models import Q
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
 from scheduling_management.models import Event
 import logging
+from user_profile.utils.auth import in_group
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         # if the user role is Admin or superadmin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '9%', 'bSortable': False})
             datatable_headers.append(
@@ -102,7 +103,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         # if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers_no_nms_actions.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '15%', 'bSortable': False})
 
@@ -123,7 +124,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
         context['datatable_headers_no_nms_actions'] = json.dumps(datatable_headers_no_nms_actions)
 
         # show sync only if user is admin
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             context['deadlock_status'] = deadlock_status
             context['last_sync_time'] = last_sync_time
 
@@ -141,7 +142,7 @@ def create_device_tree(request):
     return render_to_response('device/devices_tree_view.html', templateData, context_instance=RequestContext(request))
 
 
-class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, BaseDatatableView):
+class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing operational devices only
     """
@@ -203,10 +204,11 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         :param qs:
         :return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
 
         # If searched character is 3 or more than 3. Then search the entered text on the basis fields of search_columns.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -220,7 +222,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -281,21 +283,18 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             #                       d. others (any device, may be out of inventory)
 
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i>\
-                            </a>&nbsp&nbsp'.format(dct['id'])
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
 
             # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                     dct['id'])
             else:
                 edit_action = ''
 
             # view device delete action only if user has permissions
             if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
-                                 (get_soft_delete_form, {{\'value\': {0}}})">\
-                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
 
@@ -320,36 +319,29 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 pass
 
             try:
-                dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status\
-                                        (device_services_status_frame, {{\'device_id\': {0}}})">\
-                                        <i class="fa fa-list-alt {1}" title="Services Status"></i></a>\
-                                        <a href="javascript:;" onclick="modify_device_state({0});">\
-                                        <i class="fa fa-ban {1}" title="Disable Device"></i></a>\
-                                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form\
-                                        (get_service_add_form, {{\'value\': {0}}})">\
-                                        <i class="fa fa-plus {1}" title="Add Services"></i></a>\
-                                        <a href="javascript:;" onclick="Dajaxice.device.edit_service_form\
-                                        (get_service_edit_form, {{\'value\': {0}}})">\
-                                        <i class="fa fa-pencil {1}" title="Edit Services"></i></a>\
-                                        <a href="javascript:;" onclick="Dajaxice.device.delete_service_form\
-                                        (get_service_delete_form, {{\'value\': {0}}})">\
-                                        <i class="fa fa-minus {1}" title="Delete Services"></i></a>'.format(
-                    dct['id'], text_color))
+                dct.update(
+                    nms_actions='<a href="javascript:;" class="nms_action view" pk="{0}"><i class="fa fa-list-alt {1}" title="Services Status"></i></a>\
+                                 <a href="javascript:;" class="nms_action disable" pk="{0}"><i class="fa fa-ban {1}" title="Disable Device"></i></a>\
+                                 <a href="javascript:;" class="nms_action add" pk="{0}"><i class="fa fa-plus {1}" title="Add Services"></i></a>\
+                                 <a href="javascript:;" class="nms_action edit" pk="{0}"><i class="fa fa-pencil {1}" title="Edit Services"></i></a>\
+                                 <a href="javascript:;" class="nms_action delete" pk="{0}"><i class="fa fa-minus {1}" title="Delete Services"></i></a>'.format(
+                                    dct['id'], text_color
+                                )
+                )
             except Exception as e:
                 logger.exception("Device is not a substation. %s" % e.message)
 
             # show sync button only if user is superuser or admin
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            if in_group(self.request.user, 'admin'):
                 try:
-                    dct['nms_actions'] += '<a href="javascript:;" onclick="sync_devices();">\
-                                            <i class="fa fa-refresh {1}" title="Sync Device"></i></a>'.format(
+                    dct['nms_actions'] += '<a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh {1}" title="Sync Device"></i></a>'.format(
                         dct['id'], text_color)
                 except Exception as e:
                     logger.exception("Device is not a substation. %s" % e.message)
         return json_data
 
 
-class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
+class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing non-operational devices only
     """
@@ -409,8 +401,9 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -424,8 +417,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
-
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -480,21 +472,18 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             #                       d. others (any device, may be out of inventory)
 
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail">\
-                             </i></a>&nbsp&nbsp'.format(dct['id'])
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
 
             # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                     dct['id'])
             else:
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
-                                 (get_soft_delete_form, {{\'value\': {0}}})">\
-                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+            if in_group(self.request.user, 'admin'):
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
 
@@ -520,17 +509,16 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
 
             # update nms actions
             try:
-                dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form\
-                                        (add_device_form, {{\'device_id\': {0}}})">\
-                                        <i class="fa fa-plus-square {1}" title="Add device to NMS."></i></a>'.format(
-                    dct['id'], text_color))
+                dct.update(
+                    nms_actions='<a href="javascript:;" class="device_add_to_nms_form_btn" pk="{0}"><i class="fa fa-plus-square {1}" title="Add device to NMS."></i></a>'.format(dct['id'], text_color)
+                )
             except Exception as e:
                 pass
 
         return json_data
 
 
-class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
+class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing disabled devices only
     """
@@ -589,8 +577,9 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -604,7 +593,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -659,21 +648,18 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             #                       d. others (any device, may be out of inventory)
 
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail">\
-                             </i></a>&nbsp&nbsp'.format(dct['id'])
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
 
             # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                     dct['id'])
             else:
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
-                                 (get_soft_delete_form, {{\'value\': {0}}})">\
-                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+            if in_group(self.request.user, 'admin'):
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
 
@@ -699,8 +685,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
             # update nms actions
             try:
-                dct.update(nms_actions='<a href="javascript:;" onclick="modify_device_state({0});">\
-                                        <i class="fa fa-check {1}" title="Enable Device"></i></a>'.format(
+                dct.update(nms_actions='<a href="javascript:;" onclick="modify_device_state({0});"><i class="fa fa-check {1}" title="Enable Device"></i></a>'.format(
                     dct['id'], text_color))
             except Exception as e:
                 pass
@@ -708,7 +693,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         return json_data
 
 
-class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
+class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing archived devices only
     """
@@ -767,8 +752,9 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -782,7 +768,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -827,29 +813,25 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             # update status icon
             dct.update(status_icon='<i class="fa fa-circle red-dot"></i>')
 
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-                add_action = '<a href="javascript:;" onclick="Dajaxice.device.device_restore_form\
-                (get_restore_device_form, {{\'value\': {0}}})">\
-                <i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
+            if in_group(self.request.user, 'admin'):
+                add_action = '<a href="javascript:;" pk="{0}" class="nms_action restore"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
             else:
                 add_action = ''
 
             # device detail
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i>\
-                             </a>&nbsp&nbsp'.format(dct['id'])
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
 
             # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                     dct['id'])
             else:
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True)\
+            if in_group(self.request.user, 'admin')\
                     and device.device_name != 'default':
-                delete_action = '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i>\
-                                 </a>&nbsp'.format(dct['id'])
+                delete_action = '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
 
@@ -859,7 +841,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         return json_data
 
 
-class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
+class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of all devices
     """
@@ -917,8 +899,9 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -932,7 +915,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -990,21 +973,18 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
                 dct.update(status_icon='<img src="">')
 
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i>\
-                             </a>&nbsp&nbsp'.format(dct['id'])
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
 
             # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                     dct['id'])
             else:
                 edit_action = ''
 
             # view device delete action only if user has permissions
             if self.request.user.is_superuser:
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
-                                 (get_soft_delete_form, {{\'value\': {0}}})">\
-                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
 
@@ -1093,7 +1073,7 @@ class DeviceCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
         device.device_vendor = form.cleaned_data['device_vendor']
         device.device_model = form.cleaned_data['device_model']
         device.device_type = form.cleaned_data['device_type']
-        device.parent = form.cleaned_data['parent']
+        # device.parent = form.cleaned_data['parent']
         device.ip_address = form.cleaned_data['ip_address']
         device.mac_address = form.cleaned_data['mac_address']
         device.netmask = form.cleaned_data['netmask']
@@ -1186,7 +1166,7 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         self.object.device_vendor = form.cleaned_data['device_vendor']
         self.object.device_model = form.cleaned_data['device_model']
         self.object.device_type = form.cleaned_data['device_type']
-        self.object.parent = form.cleaned_data['parent']
+        # self.object.parent = form.cleaned_data['parent']
         self.object.ip_address = form.cleaned_data['ip_address']
         self.object.mac_address = form.cleaned_data['mac_address']
         self.object.netmask = form.cleaned_data['netmask']
@@ -1270,7 +1250,8 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
             """
             cleaned_data_field_dict = {}
             for field in form.cleaned_data.keys():
-                if field in ('parent', 'site_instance', 'organization'):
+                # if field in ('parent', 'site_instance', 'organization'):
+                if field in ('site_instance', 'organization'):
                     cleaned_data_field_dict[field] = form.cleaned_data[field].pk if form.cleaned_data[field] else None
                 elif field in ('device_model', 'device_type', 'device_vendor', 'device_technology') and \
                         form.cleaned_data[field]:
@@ -1285,8 +1266,8 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         changed_fields_dict = nocout_utils.init_dict_differ_changed(initial_field_dict, cleaned_data_field_dict)
         try:
             if changed_fields_dict:
-                initial_field_dict['parent'] = Device.objects.get(pk=initial_field_dict['parent']).device_name \
-                    if initial_field_dict['parent'] else str(None)
+                # initial_field_dict['parent'] = Device.objects.get(pk=initial_field_dict['parent']).device_name \
+                #     if initial_field_dict['parent'] else str(None)
                 initial_field_dict['organization'] = Organization.objects.get(
                     pk=initial_field_dict['organization']).name \
                     if initial_field_dict['organization'] else str(None)
@@ -1304,8 +1285,8 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
                     pk=initial_field_dict['device_technology']).name \
                     if initial_field_dict['device_technology'] else str(None)
 
-                cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent']).device_name \
-                    if cleaned_data_field_dict['parent'] else str(None)
+                # cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent']).device_name \
+                #     if cleaned_data_field_dict['parent'] else str(None)
                 cleaned_data_field_dict['organization'] = Organization.objects.get(
                     pk=cleaned_data_field_dict['organization']).name \
                     if cleaned_data_field_dict['organization'] else str(None)
@@ -1371,13 +1352,13 @@ class DeviceTypeFieldsList(PermissionsRequiredMixin, ListView):
             {'mData': 'field_display_name', 'sTitle': 'Field Display Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'device_type__name', 'sTitle': 'Device Type', 'sWidth': 'auto'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device type fields
     """
@@ -1390,8 +1371,9 @@ class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -1408,8 +1390,9 @@ class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
                         else:
                             if sSearch == dictionary[dict] and dictionary not in result_list:
                                 result_list.append(dictionary)
-            return result_list
-        return qs
+            # advance filtering the query set
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -1535,13 +1518,13 @@ class DeviceTechnologyList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_vendor__model__name', 'sTitle': 'Device Model', 'sWidth': '10%', },
             {'mData': 'device_vendor__model_type__name', 'sTitle': 'Device Type', 'sWidth': '10%', }
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device technologies
     """
@@ -1554,8 +1537,9 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -1572,8 +1556,8 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
                         else:
                             if sSearch == dictionary[dict] and dictionary not in result_list:
                                 result_list.append(dictionary)
-            return result_list
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -1774,13 +1758,13 @@ class DeviceVendorList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_models', 'sTitle': 'Device Models', 'sWidth': 'auto', },
             {'mData': 'device_types', 'sTitle': 'Device Types', 'sWidth': 'auto', },
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device vendors
     """
@@ -1793,8 +1777,9 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -1811,9 +1796,8 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
                         else:
                             if sSearch == dictionary[dict] and dictionary not in result_list:
                                 result_list.append(dictionary)
-            return result_list
-
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -1825,15 +1809,16 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         qs_query = DeviceVendor.objects.prefetch_related()
         for dvendor in qs_query:
-            dct = dict()
-            dct = {
-                'id': dvendor.id,
-                'name': dvendor.name,
-                'alias': dvendor.alias,
-                'device_models': ', '.join(dvendor.device_models.values_list('name', flat=True)),
-            }
+            dct = {'id': dvendor.id,
+                   'name': dvendor.name,
+                   'alias': dvendor.alias,
+                   'device_models': ', '.join(dvendor.device_models.values_list('name', flat=True))}
+            dct['device_types'] = ''
             for dmodels in dvendor.device_models.prefetch_related():
-                dct['device_types'] = ', '.join(dmodels.device_types.values_list('name', flat=True))
+                if dct['device_types']:
+                    dct['device_types'] += ', ' + ', '.join(dmodels.device_types.values_list('name', flat=True))
+                else:
+                    dct['device_types'] += ', '.join(dmodels.device_types.values_list('name', flat=True))
             qs.append(dct)
 
         return qs
@@ -2014,13 +1999,13 @@ class DeviceModelList(PermissionsRequiredMixin, ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'device_types', 'sTitle': 'Device Types', 'sWidth': 'auto', }
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device models
     """
@@ -2033,8 +2018,9 @@ class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -2051,9 +2037,9 @@ class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
                         else:
                             if sSearch == dictionary[dict] and dictionary not in result_list:
                                 result_list.append(dictionary)
-            return result_list
+            return self.advance_filter_queryset(result_list)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2235,14 +2221,14 @@ class DeviceTypeList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_icon', 'sTitle': 'Device Icon', 'sWidth': 'auto'},
             {'mData': 'device_gmap_icon', 'sTitle': 'Device GMap Icon', 'sWidth': 'auto'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device types
     """
@@ -2257,8 +2243,9 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -2275,9 +2262,8 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
                         else:
                             if sSearch == dictionary[dict] and dictionary not in result_list:
                                 result_list.append(dictionary)
-            return result_list
-
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2477,13 +2463,13 @@ class DevicePortList(PermissionsRequiredMixin, ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'value', 'sTitle': 'Value', 'sWidth': 'auto', },
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device ports
     """
@@ -2496,8 +2482,9 @@ class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
@@ -2507,7 +2494,7 @@ class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2628,7 +2615,7 @@ class DeviceFrequencyListing(PermissionsRequiredMixin, ListView):
         return context
 
 
-class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device frequencies
     """
@@ -2643,9 +2630,10 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
         : param qs:
         : return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
         # search if the entered text is atleast 3 characters long.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
             # If character '\' is in entered text then replace the character '\' from entered text. Because it will create an error in sql query execution.
             sSearch = sSearch.replace("\\", "")
 
@@ -2663,7 +2651,7 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"  # returns the id of DeviceFrequency
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2790,7 +2778,7 @@ class CountryListing(SuperUserRequiredMixin, ListView):
         return context
 
 
-class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
+class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of country
     """
@@ -2804,10 +2792,11 @@ class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
         :param qs:
         :return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
 
         #if entered text is atleast 3 characters long, then search.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
             # if character '\' is in entered text, then remove the character '\' from entered text. because '\' will raise the error in execution of sql query.
             sSearch = sSearch.replace("\\", "")
             query = []
@@ -2819,7 +2808,7 @@ class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2939,7 +2928,7 @@ class StateListing(SuperUserRequiredMixin, ListView):
         return context
 
 
-class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
+class StateListingTable(SuperUserRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of state. Only SuperUser can see the state list for that SuperUserRequiredMixin is used.
     """
@@ -2953,10 +2942,11 @@ class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
         : param qs:
         : return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
 
         # if entered text is atleast 3 characters long, then search.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
             # if character '\' is in entered text, then replace '\' from entered text because it will raise the error in sql query execution.
             sSearch = sSearch.replace("\\", "")
             query = []
@@ -2968,7 +2958,7 @@ class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -3088,7 +3078,7 @@ class CityListing(SuperUserRequiredMixin, ListView):
         return context
 
 
-class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
+class CityListingTable(SuperUserRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of city. Only SuperUser can see the city list for that SuperUserRequiredMixin is used.
     """
@@ -3102,8 +3092,9 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
         : param qs:
         : return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
@@ -3114,7 +3105,7 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -3291,14 +3282,14 @@ class GisWizardServiceListView(PermissionsRequiredMixin, ListView):
             {'mData': 'parameter__parameter_description', 'sTitle': 'Parameter', 'sWidth': 'auto', },
             {'mData': 'service_data_sources__alias', 'sTitle': 'Service Data Sources', 'sWidth': 'auto', },
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Service Listing Table.
     """
@@ -3642,7 +3633,7 @@ class DeviceSyncHistoryList(ListView):
             {'mData': 'completed_on', 'sTitle': 'Sync Completion Timestamp', 'sWidth': 'auto', },
         ]
 
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
             context['deadlock_status'] = deadlock_status
             context['last_sync_time'] = last_sync_time
@@ -3652,7 +3643,7 @@ class DeviceSyncHistoryList(ListView):
         return context
 
 
-class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 

@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-calendar'></i> Scheduling Management" "event_list" %}
+    {% breadcrumb_safe "<i class='fa fa-calendar-o'></i> Scheduling Management" "event_list" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -16,7 +16,7 @@
 {% block content %}
 	<div class="box border lite">
         <div class="box-title">
-            <h4><i class="fa fa-calendar"></i>SCHEDULING</h4>
+            <h4><i class="fa fa-calendar-o"></i>SCHEDULING</h4>
         </div>
 
         <div class="box-body">
@@ -26,12 +26,6 @@
     			<div class="clearfix"></div>
             </div>
             <div class="divide-20"></div>
-            {% if perms.scheduling_management.add_event %}
-                <p>
-                    <a href="/scheduling/new"><i class="fa fa-plus">&nbsp;</i> Create Event</a>
-                </p>
-            {% endif %}
-            <div class="divide-10"></div>
             <table class="datatable table table-striped table-bordered table-hover" id="EventsListingTable">
                 <thead></thead>
                 <tbody></tbody>
@@ -45,7 +39,7 @@
 {% endblock %}
 
 
-{% block load_js %}
+{% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <!-- FULL CALENDAR -->
     <script type="text/javascript" src={% static "js/fullcalendar/fullcalendar.min.js" %}></script>
@@ -54,8 +48,13 @@
 	<script>
         var dataTableInstance = "";
 	    $(document).ready(function () {
-	        App.setPage("");  //Set current page
-	        App.init(); //Initialise plugins and elements
+	        // Add 'Create Item' link on top header bar.
+            {% if perms.scheduling_management.add_event %}
+                var create_link_html = '<a href="/scheduling/new" title="Create Event" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
 
             dataTableInstance = new ourDataTableWidget();
 
@@ -64,19 +63,18 @@
 
             dataTableInstance.createDataTable("EventsListingTable", gridHeadersObj, ajax_url, false);
             // get the event list on load of the page.
-            event_month_list()
-
+            event_month_list();
         });
         
         //on change of the month to previous month.
         $(".fc-button-prev").click(function(){
             event_month_list()
-        })
+        });
 
         //on change of the month to next month.
         $(".fc-button-next").click(function(){
             event_month_list()
-        })
+        });
 
         //function to get the list of the parent according to the ogranisation.
         function event_month_list(){
@@ -103,7 +101,5 @@
             });
             return false;
         }
-
 	</script>
 {% endblock %}
-

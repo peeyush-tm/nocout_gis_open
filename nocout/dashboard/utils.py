@@ -9,6 +9,8 @@ from django.conf import settings
 from django.db.models import Count
 from datetime import datetime, timedelta
 from django.utils.dateformat import format
+from django.db.models import Q
+import operator
 
 from dashboard.models import DashboardSetting
 from dashboard.config import dashboards
@@ -78,21 +80,24 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
     :return:
         service_status_data : List of dictionaries of required data from particular model & from particular given conditions
     """
+    service_status_data = []
     required_severity = ['warning','critical']
-    required_values = ['id',
-                        'device_name',
-                        'service_name',
-                        'ip_address',
-                        'data_source',
-                        'severity',
-                        'current_value',
-                        'warning_threshold',
-                        'critical_threshold',
-                        'sys_timestamp',
-                        'check_timestamp',
-                        'age'
+    required_values = [
+        'id',
+        'device_name',
+        'service_name',
+        'ip_address',
+        'data_source',
+        'severity',
+        'current_value',
+        'warning_threshold',
+        'critical_threshold',
+        'sys_timestamp',
+        'check_timestamp',
+        'age'
     ]
-    if data_source.strip().lower() in ['availability']:
+
+    if data_source[0].strip().lower() in ['availability']:
         required_values = [
             'id',
             'device_name',
@@ -109,15 +114,13 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
 
     service_status_data = model.objects.filter(
         device_name__in=machine_device_list,
-        service_name__icontains=service_name,
-        data_source=data_source
+        service_name__in=service_name,
+        data_source__in=data_source
     ).using(machine).values(*required_values)
 
-    if data_source.strip().lower() in ['availability']:
-        # availablity is a daily value
-        # inserted once a day
-        # as a new row
-        # so to calculate this we would require
+
+    if data_source[0].strip().lower() in ['availability']:
+        # Availablity is a daily value inserted once a day as a new row, so to calculate this we would require
         now = datetime.now()
         today = datetime(now.year, now.month, now.day, 0, 0)
         yesterday = float(format(today + timedelta(days=-1), 'U'))
@@ -168,8 +171,9 @@ class MultiQuerySet(object):
     
     def __iter__(self):
         for qs in self.querysets:
-            for item in qs.all():
-                yield item
+            if qs:
+                for item in qs.all():
+                    yield item
         
     def __getitem__(self, item):
         indices = (offset, stop, step) = item.indices(self.count())
@@ -193,9 +197,9 @@ def get_service_status_results(user_devices, model, service_name, data_source):
 
     :Args:
        user_devices : list of devices
-       model : Nmae of model
-       service_name : Name of service
-       data_source  : Name of data source
+       model : Name of model
+       service_name : list of name of services
+       data_source  : list of name of data sources
 
     :return:
         service_status_results : list of dictionaries
@@ -239,13 +243,14 @@ def get_service_status_results(user_devices, model, service_name, data_source):
                 break
     else:
         for machine, machine_device_list in machine_dict.items():
-            service_status_results_temp = get_service_status_data(False,
-                                                              machine_device_list,
-                                                              machine=machine,
-                                                              model=model,
-                                                              service_name=service_name,
-                                                              data_source=data_source
-                                                            )
+            service_status_results_temp = get_service_status_data(
+                False,
+                machine_device_list,
+                machine=machine,
+                model=model,
+                service_name=service_name,
+                data_source=data_source
+            )
             # Appending in list
             multi_qyery_list.append(service_status_results_temp)
         # Calling function MultiQuerySet for combination of Query Sets on diffrent databases.

@@ -18,10 +18,13 @@ import subprocess
 import socket
 import imp
 import time
+#from handlers.db_ops import *
+
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -68,8 +71,12 @@ def main(**configs):
 #    )	
 #    db.close()
 
-    end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=5)
+    start_time = None
+    end_time = None
+    #end_time = datetime.now()
+    #start_time = end_time - timedelta(minutes=5)
+    #end_time =int(time.mktime(end_time.timetuple()))
+    #start_time =int(time.mktime(start_time.timetuple()))
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
     # Get all the entries from mongodb having timestam0p greater than start_time
     docs = read_data(start_time, end_time, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
@@ -77,8 +84,8 @@ def main(**configs):
     for conf, options in configs1.items():
 	machine_name = options.get('machine')
     for doc in docs:
-	local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
-	check_time_epoch = utility_module.get_epoch_time(doc.get('check_time'))
+	#local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
+	#check_time_epoch = utility_module.get_epoch_time(doc.get('check_time'))
 	refer = utility_module.get_epoch_time(doc.get('refer'))
 	if doc.get('ds') == 'rta':
 		rtmin = doc.get('data')[0].get('min_value')
@@ -98,8 +105,8 @@ def main(**configs):
 	doc.get('data')[0].get('value'),
 	doc.get('meta').get('war'),
 	doc.get('meta').get('cric'),
-	local_time_epoch,
-	check_time_epoch,
+	doc.get('local_timestamp'),
+	doc.get('check_time'),
 	doc.get('ip_address'),
 	doc.get('severity'),
 	doc.get('age'),
@@ -129,11 +136,12 @@ def read_data(start_time, end_time, **kwargs):
     docs = []
     #start_time = end_time - timedelta(minutes=10)
     # Connection to mongodb database, `db` is a python dictionary object 
-    db = mongo_module.mongo_conn(
-        host=kwargs.get('configs')[1],
-        port=int(kwargs.get('configs')[2]),
-        db_name=kwargs.get('db_name')
-    )
+    #db = mongo_module.mongo_conn(
+    #    host=kwargs.get('configs')[1],
+    #    port=int(kwargs.get('configs')[2]),
+    #    db_name=kwargs.get('db_name')
+    #)
+    """
     if db:
 	if start_time is None:
 		cur = db.device_network_status.find()
@@ -143,6 +151,11 @@ def read_data(start_time, end_time, **kwargs):
         	})
         for doc in cur:
             docs.append(doc)
+    """
+    memc_obj = db_ops_module.MemcacheInterface()
+    key = nocout_site_name + "_network"
+    doc_key_len = key + "_len"
+    docs = memc_obj.retrieve(key,doc_key_len) 
     return docs
 
 

@@ -29,8 +29,12 @@ from inventory.utils.util import InventoryUtilsGateway
 # Import inventory utils gateway class
 from scheduling_management.views import SchedulingViewsGateway
 from inventory.tasks import bulk_update_create
+import re
 import logging
 logger = logging.getLogger(__name__)
+
+# Create instance of 'PerformanceUtilsGateway' class
+perf_utils = PerformanceUtilsGateway()
 
 ### SMS Sending
 import requests
@@ -391,8 +395,25 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     message = render_to_string('alarm_message/bad_message.html', context_dict)
     msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails)
     msg.content_subtype = "html"  # Main content is now text/html
+    # If the mail is for temperature then attach the chart image as per current status
+    try:
+        # if 'temperature' in level.service.name:
+        device_name = alarm.device.device_name
+        service = level.service.name
+        data_source = level.service_data_source.name
+
+        chart_img_dict = perf_utils.create_perf_chart_img(device_name, service, data_source)
+        img_path = chart_img_dict.get('chart_url')
+        print ' -- img_path -- '
+        print img_path
+        print ' -- img_path -- '
+        if img_path:
+            msg.attach_file(img_path)
+
+    except Exception, e:
+        pass
     msg.send()
-    #send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
+
     return True
 
 
@@ -525,9 +546,6 @@ def check_device_status():
     service_list = []
     service_data_source_list = []
 
-    # Create instance of 'PerformanceUtilsGateway' class
-    perf_utils = PerformanceUtilsGateway()
-
     # Create instance of 'InventoryUtilsGateway' class
     inventory_utils = InventoryUtilsGateway()
 
@@ -639,3 +657,50 @@ def prepare_service_data_sources(service_name_list):
     return list(DeviceTypeServiceDataSource.objects.filter(
         device_type_service__service__name__in=service_name_list).values_list('service_data_sources__name', flat=True)
     )
+
+
+
+@task
+def mail_send(result):
+    """
+    This is a Celery function which send mail for given parameters(valid and checked)
+    used If Else for case of attachments availability
+
+    Args:
+        result (dict): Dictionary containing email data.
+                       For e.g.,
+                            {
+                                "message": "Successfully send the email.",
+                                "data": {
+                                    "to_email": [
+                                        "chanishagarwal0@gmail.com"
+                                    ],
+                                    "attachments": [
+                                        "EmailAPI.docx",
+                                        "IMG-20151020-WA0000.jpg"
+                                    ],
+                                    "from_email": "chanish.agarwal1@gmail.com",
+                                    "attachment_path": [
+                                        "/home/chanish/Desktop/chart-35-02.png"
+                                    ],
+                                    "message": "Please find attachmetn Below",
+                                    "subject": "Warning system is getting slow"
+                                },
+                                "success": 1
+                            }
+    """
+    mail = EmailMessage(result['data']['subject'], result['data']['message'],
+                        result['data']['from_email'],
+                        result['data']['to_email'])
+    # Handling mail without an attachment.
+
+
+    for attachment in result['data']['attachments']:
+        mail.attach(attachment.name, attachment.read(), attachment.content_type)
+    for files in result['data']['attachment_path']:
+        if re.search('^http.*', files):
+            pass
+        else:
+            mail.attach_file(files)
+
+    mail.send()

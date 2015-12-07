@@ -5,7 +5,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-television'></i> Dashboard" "javascript:;" %}
     {% breadcrumb_safe "RF Performance Dashboard: PMP" "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -18,13 +18,19 @@
 
 {% block content %}
 <style type="text/css">
-    i.fa-signal {
+    i.fa-line-chart {
         cursor: pointer;
+    }
+    .tab-content{
+        margin-top:-30px;
+    }
+    #pmp_block .box .box-title{
+        border-bottom: 0px none !important;
     }
 </style>
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
-        <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: PMP</h4>
+        <h4><i class="fa fa-television"></i> RF Performance Dashboard: PMP</h4>
     </div>
     <div id="tableContainer" class="box-body">
         <div class="tabbable header-tabs">
@@ -36,14 +42,16 @@
             </ul>
             <div class="tab-content" style="overflow-y:auto;">
                 <div class="tab-pane active" id="pmp_block">
-                    <div class="col-md-12">
-                        <div class="col-md-6 box-container ui-sortable">
+                    <div class="tab-rf-perf">
+                        <h4 class="bigger dashboard_headings">- Jitter</h4>
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
+                            <div class="custom_seperator">&nbsp;</div>
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
-                                        UL Jitter <span id="ul_jitter_timestamp"></span>
-                                        <i class="fa fa-signal text-success pull-right" id="ul_jitter_trend" title="UL JITTER Trends">&nbsp;</i>
-                                    </h3>
+                                    <h5 class="bigger">
+                                        UL <span id="ul_jitter_timestamp"></span>
+                                        <i class="fa fa-line-chart rf_trends pull-right" id="ul_jitter_trend" title="UL JITTER Trends">&nbsp;</i>
+                                    </h5>
                                 </div>
                                 <div class="box-body">
                                     <div id="ul_jitter" class="rf_chart_style"></div>
@@ -51,13 +59,14 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6 box-container ui-sortable">
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
+                            <div class="custom_seperator">&nbsp;</div>
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
-                                        DL Jitter <span id="dl_jitter_timestamp"></span>
-                                        <i class="fa fa-signal text-success pull-right" id="dl_jitter_trend" title="DL JITTER Trends">&nbsp;</i>
-                                    </h3>
+                                    <h5 class="bigger">
+                                        DL <span id="dl_jitter_timestamp"></span>
+                                        <i class="fa fa-line-chart rf_trends pull-right" id="dl_jitter_trend" title="DL JITTER Trends">&nbsp;</i>
+                                    </h5>
                                 </div>
                                 <div class="box-body">
                                     <div id="dl_jitter" class="rf_chart_style"></div>
@@ -65,27 +74,15 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6 box-container ui-sortable">
+                        <h4 class="bigger dashboard_headings">- RSSI</h4>
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
+                            <div class="custom_seperator">&nbsp;</div>
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
-                                        ReReg Counter <span id="rereg_count_timestamp"></span>
-                                        <i class="fa fa-signal text-success pull-right" id="rereg_count_trend" title="REREG COUNT Trends">&nbsp;</i>
-                                    </h3>
-                                </div>
-                                <div class="box-body">
-                                    <div id="rereg_count" class="rf_chart_style"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 box-container ui-sortable">
-                            <div class="box">
-                                <div class="box-title" style="background-color: transparent;">
-                                    <h3>
-                                        UL RSSI <span id="ul_rssi_timestamp"></span>
-                                        <i class="fa fa-signal text-success pull-right" id="ul_rssi_trend" title="UL RSSI Trends">&nbsp;</i>
-                                    </h3>
+                                    <h5 class="bigger">
+                                        UL <span id="ul_rssi_timestamp"></span>
+                                        <i class="fa fa-line-chart rf_trends pull-right" id="ul_rssi_trend" title="UL RSSI Trends">&nbsp;</i>
+                                    </h5>
                                 </div>
                                 <div class="box-body">
                                     <div id="ul_rssi" class="rf_chart_style"></div>
@@ -93,19 +90,35 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6 box-container ui-sortable">
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
+                            <div class="custom_seperator">&nbsp;</div>
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
-                                        DL RSSI <span id="dl_rssi_timestamp"></span>
-                                        <i class="fa fa-signal text-success pull-right" id="dl_rssi_trend" title="DL RSSI Trends">&nbsp;</i>
-                                    </h3>
+                                    <h5 class="bigger">
+                                        DL <span id="dl_rssi_timestamp"></span>
+                                        <i class="fa fa-line-chart rf_trends pull-right" id="dl_rssi_trend" title="DL RSSI Trends">&nbsp;</i>
+                                    </h5>
                                 </div>
                                 <div class="box-body">
                                     <div id="dl_rssi" class="rf_chart_style"></div>
                                 </div>
                             </div>
                         </div>
+
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
+                            <div class="box">
+                                <div class="box-title" style="background-color: transparent;">
+                                    <h5 class="bigger">
+                                        ReReg Counter <span id="rereg_count_timestamp"></span>
+                                        <i class="fa fa-line-chart rf_trends pull-right" id="rereg_count_trend" title="REREG COUNT Trends">&nbsp;</i>
+                                    </h5>
+                                </div>
+                                <div class="box-body">
+                                    <div id="rereg_count" class="rf_chart_style"></div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -129,7 +142,8 @@
         ajax_url = "";
         trends_ajax_url = "",
         is_bh = 0,
-        tech_name = "PMP";
+        tech_name = "PMP",
+        show_rf_perf_column = "{{settings.SHOW_RF_COLUMN}}";
     $(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements

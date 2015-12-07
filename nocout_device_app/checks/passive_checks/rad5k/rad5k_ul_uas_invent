@@ -1,0 +1,150 @@
+#!/usr/bin/python
+# ######################################################################
+# Function: check_rad5k_ul_uas_invent
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+def live_query_for_rad5k_ss_ul_uas(serial_number):
+        """
+                live_query_for_rad5k_ss_ul_uas function calculates the SS Uplink UAS by extracting data
+                from memory using SS Serial number as key from memcache; if data is not present in memcache
+                it retrieves the data from Livestatus by making a socket connection and reading plugin output
+                of 'rad5k_topology_discover' through the details of its corresponded Base Station whose
+                details are fetched from memcache or MySQL DB(if not present in memcache)
+
+                Args:
+                        serial_number(str) Sub Station Serial Number
+
+                Returns:
+                        ul_uas(string): SS Uplink UAS
+
+                Raises:
+                        Exception
+
+        """
+        exit_value = 3
+        ul_uas = None
+        bs_params = None
+        if memc:
+                key = serial_number + "_param"
+                value_list = memc.get(key)
+                if value_list:
+                        try:
+                                ul_uas = value_list[8]
+                        except:
+                                ul_uas = None
+                if ul_uas is None:
+                        try:
+                                key_bs = serial_number + "_topology"
+                                bs_params = memc.get(key_bs)
+                        except :
+                                pass
+        if ul_uas is None :
+                if not bs_params :
+                        host_name = extract_host_from_rad5k_topology(serial_number)
+                        try :
+                                bs_hostname = host_name[0][0]
+                                bs_site = host_name[0][1]
+                        except :
+                                bs_hostname = None
+                        if memc :
+                                if bs_hostname :
+                                        try :
+                                                arg_list = []
+                                                arg_list.append([bs_hostname,bs_site])
+                                                key = serial_number + "_topology"
+                                                memc.set(key,arg_list,360)
+                                        except Exception,e :
+                                                pass
+                else :
+                        bs_hostname = bs_params[0][0]
+                        bs_site = bs_params[0][1]
+
+                try:
+                        if bs_hostname:
+                                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("rad5k_topology_discover", bs_hostname)
+                                site = bs_site
+                                machine_name = site.split('_')[0]
+                                socket_ip = _LIVESTATUS[machine_name]['host']
+                                socket_port = _LIVESTATUS[machine_name][site]['port']
+
+                                query_output = eval(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
+                                if query_output[0][0]:
+                                        plugin_output = str(query_output[0][0].split(' - ')[1])
+                                        plugin_output = [entry for entry in plugin_output.split(' ')]
+                                        entry=filter(lambda x: serial_number in x, plugin_output)
+                                        ul_uas = int(entry[0].split('=')[1].split('/')[8])
+
+                except Exception,e:
+                        ul_uas = None
+							
+        return ul_uas
+
+def check_rad5k_ul_uas_invent(item, params, info):
+	"""
+            check_rad5k_ul_uas_invent function calculates the Uplink UAS
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter results
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                                    3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - ul_uas=1
+
+                    Raises:
+                            ValueError ,Exception
+
+	"""
+        try:
+                warn , crit = params
+        except ValueError :
+                war = 1
+                crit = 5
+	
+	state = 3
+	infotext = "unknown_value"
+	ul_uas= None
+	try:
+		if info :
+	        	ss_serial_number = info[0][0]
+        		if ss_serial_number:
+                		ul_uas =int(live_query_for_rad5k_ss_ul_uas(ss_serial_number))
+                		if ul_uas is not None:
+	                		if  ul_uas >= warn and  ul_uas < crit:
+        	                		state = 1
+                			elif  ul_uas >= crit:
+                        			state = 2
+                			elif ul_uas == 0 :
+                        			state = 0
+             		           	infotext = "ul_uas=%s" % ul_uas
+	except ValueError:
+        	infotext = "type_mismatch_value"
+	except:
+        	infotext = "unknown_value"
+
+	return (state, infotext,[("ul_uas",ul_uas,warn,crit)])
+
+check_info["rad5k_ul_uas_invent"] = {
+    'check_function': check_rad5k_ul_uas_invent,
+    'service_description': 'rad5k_ul_uas_invent',
+    'has_perfdata': True,
+}
+
+#########################################################################
+#       SNMP OID for the Uplink UAS
+#########################################################################
+snmp_info["rad5k_ul_uas_invent"] = (  ".1.3.6.1.4.1.4458.1000.1.1", ["29.0"] )
+
+

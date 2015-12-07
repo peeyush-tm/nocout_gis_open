@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "GIS Wizard" "javascript:;" %}
     {% breadcrumb_safe "Base Station Wizard" "gis-wizard-base-station-list" %}
     {% breadcrumb_safe "Base Station Wizard : "|add:object.alias "javascript:;" %}
@@ -119,11 +119,17 @@
                 </table>
                 {% if object.backhaul %}
                     {% url 'gis-wizard-backhaul-detail' bs_pk=object.id pk=object.backhaul_id as next_url %}
-                    <br><button type="reset" class="btn btn-success" onclick="window.location.replace('{{ next_url }}')"><i class="fa fa-pencil"></i>Next (Backhaul)</button>
+                    <br>
+                    <button type="reset" class="btn btn-default" onclick="window.location.replace('{{ next_url }}')">
+                        <i class="fa fa-pencil text-success"></i> Next (Backhaul)
+                    </button>
                 {% else %}
                     {% url 'gis-wizard-sector-list' bs_pk=object.id as next_url %}
-                    <br><h3>No backhaul for this base station.</h3>
-                    <button type="reset" class="btn btn-success" onclick="window.location.replace('{{ next_url }}')"><i class="fa fa-pencil"></i>Next (Sectors List)</button>
+                    <br>
+                    <h3>No backhaul for this base station.</h3>
+                    <button type="reset" class="btn btn-default" onclick="window.location.replace('{{ next_url }}')">
+                        <i class="fa fa-pencil text-success"></i> Next (Sectors List)
+                    </button>
                 {% endif %}
             </div>
             <div class="clearfix"></div>

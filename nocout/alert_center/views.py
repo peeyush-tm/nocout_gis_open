@@ -9,9 +9,9 @@ from django.core.urlresolvers import reverse
 from django.views.generic import ListView, View
 from django.http import HttpResponse
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device.models import Device, DeviceTechnology
+from device.models import Device, DeviceTechnology,DeviceType
 # For SIA Listing
-from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
+from alert_center.models import StatusAlarms, HistoryAlarms
 
 from performance.models import EventNetwork, EventService
 
@@ -34,6 +34,9 @@ from django.utils.dateformat import format
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME
 
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -46,6 +49,11 @@ alert_utils = AlertCenterUtilsGateway()
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
+device_technology_dict = {}
+device_type_dict = {}
+device_type_dict.update(DeviceType.objects.values_list('id', 'name'))
+device_technology_list = DeviceTechnology.objects.extra(select={'name' : 'LOWER(name)', 'id':'id'}).values_list('name','id')
+device_technology_dict.update(device_technology_list)
 
 class AlertCenterListing(ListView):
     """
@@ -207,7 +215,7 @@ class AlertCenterListing(ListView):
         return context
 
 
-class AlertListingTable(BaseDatatableView):
+class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     Generic Class Based View for the Alert Center Network Listing Tables.
 
@@ -372,12 +380,12 @@ class AlertListingTable(BaseDatatableView):
             data_sources_list = ['rta']
         elif data_source in ['packet_drop']:
             data_sources_list = ['pl']
-            extra_query_condition = ' AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) '
+            extra_query_condition = ' AND (`{0}`.`current_value` BETWEEN 0 AND 99 ) '
             extra_query_condition += severity_condition
         elif data_source in ['down']:
             data_sources_list = ['pl']
             extra_query_condition = ' AND (`{0}`.`current_value` >= 100 ) '
-            extra_query_condition += ' AND `{0}`.`severity` in ("down") '
+            extra_query_condition += ' AND `{0}`.`severity` in ("down", "critical") '
         elif data_source in ['service', 'customer']:
             is_customer_detail_page = True
             extra_query_condition = severity_condition
@@ -473,73 +481,97 @@ class AlertListingTable(BaseDatatableView):
         :param qs:
         :return result_list:
         """
-
-        sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
+        
         if sSearch:
             self.is_initialised = False
             self.is_searched = True
             result = self.prepare_devices(qs)
             result_list = list()
             for item in result:
-                for data in item:
-                    if item[data]:
-                        condition_1 = isinstance(item[data], unicode)
-                        condition_2 = isinstance(item[data], str)
-                        if (condition_1 or condition_2) and (item not in result_list):
-                            if sSearch.encode('utf-8').lower() in item[data].encode('utf-8').lower():
-                                result_list.append(item)
-                        else:
-                            if sSearch == item[data] and item not in result_list:
-                                result_list.append(item)
+                try:
+                    dict_values_str_list = [str(i) for i in item.values()]
+                    dict_values_string = ', '.join(dict_values_str_list).lower()
+                    sSearch = sSearch.lower()
+                except Exception, e:
+                    dict_values_string = item.values()
+                    sSearch = sSearch
+                if sSearch in dict_values_string :
+                    result_list.append(item)
 
-            return result_list
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
         sorting for the table
         :param qs:
         """
-        request = self.request
         # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        reverse = True
-        order_columns = self.columns
-
-        for i in range(i_sorting_cols):
-            # sorting column
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
             except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
-            reverse = True if s_sort_dir == 'desc' else False
+        order = []
+        order_columns = self.get_order_columns()
+        sort_using = ''
+        reverse = ''
 
-        self.is_initialised = False
-        self.is_ordered = True
-        try:
-            sort_data = self.prepare_devices(qs)
-            sort_using = order_columns[i_sort_col]
-            if sort_using in self.polled_value_columns:
-                sorted_qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+            sort_using = order_columns[sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
             else:
-                sorted_qs = sorted(
-                    sort_data,
-                    key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
-                    reverse=reverse
-                )
-            return sorted_qs
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
 
-        except Exception, e:
-            self.is_initialised = True
-            self.is_ordered = False
-            self.is_polled = False
+        if order and sort_using:
+            self.is_initialised = False
+            self.is_ordered = True
+            try:
+                sort_data = self.prepare_devices(qs)
+                if sort_using in self.polled_value_columns:
+                    sorted_qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
+                else:
+                    sorted_qs = sorted(
+                        sort_data,
+                        key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
+                        reverse=reverse
+                    )
+                return sorted_qs
+
+            except Exception, e:
+                self.is_initialised = True
+                self.is_ordered = False
+                self.is_polled = False
+                return qs
+        else:
             return qs
 
     def prepare_initial_params(self):
@@ -805,7 +837,7 @@ class NetworkAlertDetailHeaders(ListView):
         return context
 
 
-class GetNetworkAlertDetail(BaseDatatableView):
+class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
     """
     
     Generic Class Based View for the Alert Center Network  Detail Listing Tables.
@@ -1141,31 +1173,24 @@ class GetNetworkAlertDetail(BaseDatatableView):
         :param qs:
         :return result_list:
         """
-
-        sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             self.is_initialised = False
             self.is_searched = True
             result = self.prepare_devices(qs)
             result_list = list()
             for search_data in result:
-                temp_var = json.dumps(search_data)
-                search_data = json.loads(temp_var)
-                for data in search_data:
-                    if search_data[data]:
-                        if(
-                            (isinstance(search_data[data], unicode) or isinstance(search_data[data], str))
-                            and
-                            (search_data not in result_list)
-                        ):
-                            if sSearch.encode('utf-8').lower() in search_data[data].encode('utf-8').lower():
-                                result_list.append(search_data)
-                        else:
-                            if sSearch == search_data[data] and search_data not in result_list:
-                                result_list.append(search_data)
-
-            return result_list
-        return qs
+                try:
+                    dict_values_str_list = [str(i) for i in search_data.values()]
+                    dict_values_string = ', '.join(dict_values_str_list).lower()
+                    sSearch = sSearch.lower()
+                except Exception, e:
+                    dict_values_string = search_data.values()
+                    sSearch = sSearch
+                if sSearch in dict_values_string :
+                    result_list.append(search_data)
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -1175,33 +1200,53 @@ class GetNetworkAlertDetail(BaseDatatableView):
         # Initilize order columns variable
         self.prepare_initial_params()
 
-        request = self.request      
- 
-        i_sort_col = None
-
         # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        reverse = True
-
-        for i in range(i_sorting_cols):
-            # sorting column
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
             except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
-            reverse = True if s_sort_dir == 'desc' else False
+        order = []
+        order_columns = self.get_order_columns()
+        sort_using = ''
+        reverse = ''
 
-        if i_sort_col != None:
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+            sort_using = order_columns[sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+            else:
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+
+        if order and sort_using:
             sort_data = self.prepare_devices(qs)
             self.is_ordered = True
-            sort_using = self.order_columns[i_sort_col]
             try:
                 if sort_using in self.polled_value_columns:
                     qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
@@ -1439,6 +1484,14 @@ class SingleDeviceAlertsInit(ListView):
         
         is_dr_device = device_obj.dr_configured_on.exists()
 
+        is_backhaul = device_obj.backhaul.exists()
+        is_backhaul_switch = device_obj.backhaul_switch.exists()
+        is_backhaul_pop = device_obj.backhaul_pop.exists()
+        is_backhaul_aggregator = device_obj.backhaul_aggregator.exists()
+        # If device is backhaul or backhaul_switch or backhaul_pop or backhaul_aggregator
+        if is_backhaul or is_backhaul_switch or is_backhaul_pop or is_backhaul_aggregator:
+            page_type = 'other'
+
         # Create Context Dict
         context['table_headers'] = json.dumps(table_headers)
         context['ping_table_headers'] = json.dumps(ping_table_headers)
@@ -1494,7 +1547,7 @@ class SingleDeviceAlertsInit(ListView):
         return context
 
 
-class SingleDeviceAlertsListing(BaseDatatableView):
+class SingleDeviceAlertsListing(BaseDatatableView, AdvanceFilteringMixin):
 
     model = EventNetwork
     required_columns = [
@@ -1515,8 +1568,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         """ Filter datatable as per requested value
         :param qs:
         """
-
-        sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
 
@@ -1597,7 +1649,8 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 exec_query += ".using(alias='" + self.public_params['machine_name'] + "')"
 
                 exec exec_query
-        return qs
+        # advance filtering the query set
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -1786,6 +1839,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         total_records = len(qs)
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = len(qs)
 
@@ -1815,7 +1869,7 @@ class SIAListing(ListView):
     """
 
     # need to associate ListView class with a model here
-    model = CurrentAlarms
+    model = StatusAlarms
     template_name = 'alert_center/current_list.html'
 
     def get_context_data(self, **kwargs):
@@ -1839,11 +1893,12 @@ class SIAListing(ListView):
 
         common_columns = [
             {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'component_id', 'sTitle': 'Component ID', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'component_name', 'sTitle': 'Component Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'uptime', 'sTitle': 'Up Since', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         specific_invent_columns = [
@@ -1868,7 +1923,7 @@ class SIAListing(ListView):
         return context
 
 
-class SIAListingTable(BaseDatatableView):
+class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     View to render service impacting alarms;
     namely history, current and clear alarms for all the devices.
@@ -1878,17 +1933,17 @@ class SIAListingTable(BaseDatatableView):
     alarm_type = None
     tech_name = None
     columns = [
-        'severity', 'ip_address', 'device_type', 'component_id',
-        'component_name', 'eventname', 'traptime', 'uptime'
+        'severity', 'ip_address', 'eventname',
+        'traptime', 'alarm_count','first_occurred','last_occurred'
     ]
     
     order_columns = [
         'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state', 
-        'device_type', 'component_id', 'component_name', 'eventname', 
-        'traptime', 'uptime'
+        'eventname','traptime','uptime', 'alarm_count',
+        'first_occurred','last_occurred'
     ]
 
-    other_columns = ['bs_alias', 'bs_city', 'bs_state', 'sector_id']
+    other_columns = ['bs_alias', 'bs_city', 'bs_state', 'sector_id','device_type']
 
     is_ordered = False
     is_searched = False
@@ -1920,46 +1975,94 @@ class SIAListingTable(BaseDatatableView):
         # model_columns = self.model._meta.get_all_field_names()
         model_columns = self.columns
 
-        if self.tech_name == 'all':
+        if self.tech_name == 'all':            
             if filter_condition:
-                query = "queryset = self.model.objects.filter(\
-                                {0}\
+                if self.alarm_type in ['clear']:
+                    query = "queryset = self.model.objects.filter( \
+                                {0},Q(severity__in = ['informational']) \
                             ).using(TRAPS_DATABASE).values(*{1})".format(
                                 filter_condition,
                                 model_columns
                             )
-                exec query
-            else:
-                queryset = self.model.objects.using(
-                    TRAPS_DATABASE
-                ).values(*model_columns).all()
-        else:
-            tech_name_list = [self.tech_name]
-            not_condition_sign = ''
-            if self.tech_name not in ['pmp', 'wimax']:
-                tech_name_list = ['pmp', 'wimax']
-                not_condition_sign = '~'
+                else:
 
-            if filter_condition:
-                query = "queryset = self.model.objects.filter( \
-                                {0}Q(device_technology__in={1}), \
-                                ({2}) \
-                            ).using(TRAPS_DATABASE).values(*{3})".format(
-                                not_condition_sign,
-                                tech_name_list,
+                    query = "queryset = self.model.objects.filter( \
+                                {0} \
+                            ).using(TRAPS_DATABASE).values(*{1})".format(
                                 filter_condition,
                                 model_columns
                             )
+
+                exec query
             else:
-                query = "queryset = self.model.objects.filter( \
-                            {0}Q(device_technology__in={1}) \
+                if self.alarm_type in ['clear']:                                        
+                    queryset = self.model.objects.filter(
+                        severity__in =['informational'] 
+                        ).using(
+                        TRAPS_DATABASE
+                    ).values(*model_columns).all()
+                else:
+                    queryset = self.model.objects.using(
+                        TRAPS_DATABASE
+                    ).values(*model_columns).all()           
+        else:
+            tech_name_list = [self.tech_name]
+            tech_name_id= list()
+
+            for tech_name in tech_name_list:                
+                if tech_name in device_technology_dict:
+                    tech_name_id.append(device_technology_dict.get(tech_name))
+
+            not_condition_sign = ''
+            if self.tech_name not in ['pmp', 'wimax']:                
+                tech_name_list = ['pmp', 'wimax']
+                not_condition_sign = '~'
+
+                for tech_name in tech_name_list:                             
+                    if tech_name in device_technology_dict:
+                        tech_name_id.append(device_technology_dict.get(tech_name))
+                # print tech_name_id
+            if filter_condition:
+                if self.alarm_type in ['clear']:            
+                    query = "queryset = self.model.objects.filter( \
+                                    {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), \
+                                    ({2}),Q(severity__in = ['informational']) \
+                                ).using(TRAPS_DATABASE).values(*{3})".format(
+                                    not_condition_sign,
+                                    tech_name_id,
+                                    filter_condition,
+                                    model_columns
+                                )
+                else:
+                    query = "queryset = self.model.objects.filter( \
+                                    {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), \
+                                    ({2}) \
+                                ).using(TRAPS_DATABASE).values(*{3})".format(
+                                    not_condition_sign,
+                                    tech_name_id,
+                                    filter_condition,
+                                    model_columns
+                                )
+
+            else:
+                if self.alarm_type in ['clear']:
+                    query = "queryset = self.model.objects.filter( \
+                            {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))),Q(severity__in = ['informational'])\
                         ).using(TRAPS_DATABASE).values(*{2})".format(
                             not_condition_sign,
-                            tech_name_list,
+                            tech_name_id,
                             model_columns
                         )
+                else:
+                    query = "queryset = self.model.objects.filter( \
+                            {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address')))\
+                        ).using(TRAPS_DATABASE).values(*{2})".format(
+                            not_condition_sign,
+                            tech_name_id,
+                            model_columns
+                        )                   
+            
             exec query
-
         return queryset
 
     def filter_queryset(self, qs):
@@ -1969,94 +2072,119 @@ class SIAListingTable(BaseDatatableView):
         :param qs:
         :return result_list:
         """
-
-        sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             self.is_searched = True
             if type(qs) == type(list()):
                 result = qs
             else:
-                result = self.prepare_device_inventory(qs)
+                result = self.prepare_devices(qs)
 
             result_list = list()
             for search_data in result:
                 # Convert the dict to string & check the search text in that string
-                dict_str = str(search_data).lower()
-                if sSearch.lower() in dict_str :
+                try:
+                    dict_values_str_list = [str(i) for i in search_data.values()]
+                    dict_values_string = ', '.join(dict_values_str_list).lower()
+                    sSearch = sSearch.lower()
+                except Exception, e:
+                    dict_values_string = search_data.values()
+                    sSearch = sSearch
+                if sSearch in dict_values_string :
                     result_list.append(search_data)
-
-            return result_list
+            # advance filtering the query set
+            return self.advance_filter_queryset(result_list)
         else:
-            self.is_searched = False
-        return qs
+            if self.request.GET.get('advance_filter', None):
+                self.is_searched = True
+                if type(qs) == type(list()):
+                    qs = qs
+                else:
+                    qs = self.prepare_devices(qs)
+            else:
+                self.is_searched = False
+
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
 
         if self.tech_name in ['pmp', 'wimax', 'all']:
             self.order_columns = [
                 'severity', 'ip_address', 'sector_id', 'bs_alias',
-                'bs_city', 'bs_state', 'device_type', 'component_id',
-                'component_name', 'eventname', 'traptime', 'uptime'
+                'bs_city', 'bs_state', 'device_type',
+                'eventname', 'traptime', 'uptime','alarm_count','first_occurred','last_occurred'
             ]
 
-        order_columns = self.order_columns
-        sorting_column = None
-        reverse = ''
-        for i in range(i_sorting_cols):
-            # sorting column
+        # Number of columns that are used in sorting
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
             except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-            reverse = True if s_sort_dir == 'desc' else False
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
-            sdir = '-' if s_sort_dir == 'desc' else ''
+        order = []
+        order_columns = self.order_columns
+        reverse = False
+        sort_using = ''
 
-            sortcol = order_columns[i_sort_col]
-            sorting_column = sortcol
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+
             if isinstance(sortcol, list):
                 for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+                    sort_using = sc
             else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+                sort_using = sortcol
+        if sort_using and sort_using in order_columns:
             # If sorting request is from other columns 
-            if sorting_column in self.other_columns or type(qs) == type(list()):
+            if type(qs) == type(list()) or sort_using in self.other_columns:
                 # Update the 'is_ordered' flag
                 self.is_ordered = True
                 # prepare result as per the complete queryset
                 if self.is_searched or type(qs) == type(list()):
                     prepared_result = qs
                 else:
-                    prepared_result = self.prepare_device_inventory(qs)
+                    prepared_result = self.prepare_devices(qs)
 
                 try:
                     # Sort the prepared result list
                     sorted_qs = sorted(
                         prepared_result,
-                        key=itemgetter(sorting_column),
+                        key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
                         reverse=reverse
                     )
                 except Exception, e:
                     sorted_qs = prepared_result
-
                 return sorted_qs
             else:
                 # Update the 'is_ordered' flag
                 self.is_ordered = False
-
                 return qs.order_by(*order)
         return qs
     
@@ -2087,25 +2215,25 @@ class SIAListingTable(BaseDatatableView):
             else:
                 filtering_condition += ' Q(eventname__in={0}) '.format(eventname_list)
 
-        # component id filtering
-        component_id = self.request.GET.get('component_id', False)
-        component_id_list = component_id.split('|') if component_id else False
+        # # component id filtering
+        # component_id = self.request.GET.get('component_id', False)
+        # component_id_list = component_id.split('|') if component_id else False
 
-        if component_id_list:
-            if filtering_condition:
-                filtering_condition += ' | Q(component_id__in={0}) '.format(component_id_list)
-            else:
-                filtering_condition += ' Q(component_id__in={0}) '.format(component_id_list)
+        # if component_id_list:
+        #     if filtering_condition:
+        #         filtering_condition += ' | Q(component_id__in={0}) '.format(component_id_list)
+        #     else:
+        #         filtering_condition += ' Q(component_id__in={0}) '.format(component_id_list)
 
-        # component name filtering
-        component_name = self.request.GET.get('component_name', False)
-        component_name_list = component_name.split('|') if component_name else False
+        # # component name filtering
+        # component_name = self.request.GET.get('component_name', False)
+        # component_name_list = component_name.split('|') if component_name else False
 
-        if component_name_list:
-            if filtering_condition:
-                filtering_condition += ' | Q(component_name__in={0}) '.format(component_name_list)
-            else:
-                filtering_condition += ' Q(component_name__in={0}) '.format(component_name_list)
+        # if component_name_list:
+        #     if filtering_condition:
+        #         filtering_condition += ' | Q(component_name__in={0}) '.format(component_name_list)
+        #     else:
+        #         filtering_condition += ' Q(component_name__in={0}) '.format(component_name_list)
 
         # trap start_date & end_date filtering
         start_date = self.request.GET.get('start_date', False)
@@ -2136,16 +2264,13 @@ class SIAListingTable(BaseDatatableView):
         self.alarm_type = self.request.GET.get('alarm_type', 'current')
         self.tech_name = self.request.GET.get('tech_name', 'all')
         # set model as per alarm type
-        if self.alarm_type in ['clear']:
-            self.model = ClearAlarms
-        elif self.alarm_type in ['history']:
-            self.model = HistoryAlarms
+        if self.alarm_type in ['clear','current']:
+            self.model = StatusAlarms
         else:
-            self.model = CurrentAlarms
-
+            self.model = HistoryAlarms
         return True
 
-    def prepare_device_inventory(self, qs):
+    def prepare_devices(self, qs):
         """
         """
         return prepare_snmp_gis_data(qs, self.tech_name)
@@ -2174,19 +2299,27 @@ class SIAListingTable(BaseDatatableView):
             for dct in  qs:
                 severity = dct.get('severity')
                 severity_icon = alert_utils.common_get_severity_icon(severity)
-                component_id = dct.get('component_id','NA')
                 uptime = dct.get('uptime')
                 formatted_uptime = uptime
+
+                try:
+                    first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                except Exception, e:
+                    first_occurred = dct.get('first_occurred')
+
+                try:
+                    last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                except Exception, e:
+                    last_occurred = dct.get('last_occurred')
+
                 if uptime:
                     formatted_uptime = self.format_uptime_value(uptime)
 
-                if component_id == '':
-                    component_id = 'NA'
-
                 dct.update(
                     severity=severity_icon,
-                    component_id=component_id,
-                    uptime=formatted_uptime
+                    uptime=formatted_uptime,
+                    first_occurred=first_occurred,
+                    last_occurred=last_occurred
                 )
 
             return qs
@@ -2219,9 +2352,8 @@ class SIAListingTable(BaseDatatableView):
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-
         if not (self.is_ordered or self.is_searched):
-            qs = self.prepare_device_inventory(qs)
+            qs = self.prepare_devices(qs)
         
         aaData = self.prepare_results(qs)
 
@@ -2256,12 +2388,12 @@ class GetSiaFiltersData(View):
 
         if item_type and search_txt:
             # Select model as per the alarm type
-            if alarm_type in 'clear':
-                model = ClearAlarms
-            elif alarm_type in 'history':
-                model = HistoryAlarms
+            if alarm_type in ['clear','current']:
+                model = StatusAlarms
             else:
-                model = CurrentAlarms
+                model = HistoryAlarms
+            # else:
+            #     model = StatusAlarms
 
             try:
                 column_alias = {
@@ -2271,18 +2403,39 @@ class GetSiaFiltersData(View):
                 if tab_id and tab_id != 'all':
                     not_condition_sign = ''
                     tech_name_list = [tab_id]
+                    tech_name_id = list()
+
+                    for tech_name in tech_name_list:
+                        if tech_name in device_technology_dict:
+                            tech_name_id.append(device_technology_dict.get(tech_name))
+
                     if tab_id not in ['pmp', 'wimax']:
                         not_condition_sign = '~'
                         tech_name_list = ['pmp', 'wimax']
 
-                    where_condition = "{0}Q(device_technology__in={1}), Q({2}__istartswith='{3}')".format(
-                        not_condition_sign,
-                        tech_name_list,
-                        item_type,
-                        search_txt
-                    )
+                    for tech_name in tech_name_list:
+                        if tech_name in device_technology_dict:
+                            tech_name_id.append(device_technology_dict.get(tech_name))
+
+                    if alarm_type in ['clear']:
+                        where_condition = "{0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), Q({2}__istartswith='{3}'),Q(severity__in = ['informational'])".format(
+                            not_condition_sign,
+                            tech_name_id,
+                            item_type,
+                            search_txt
+                        )
+                    else:
+                        where_condition = "{0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), Q({2}__istartswith='{3}')".format(
+                            not_condition_sign,
+                            tech_name_id,
+                            item_type,
+                            search_txt
+                        )
                 else:
-                    where_condition = "Q({0}__istartswith='{1}')".format(item_type, search_txt)
+                    if alarm_type in ['clear']:
+                        where_condition = "Q({0}__istartswith='{1}'),Q(severity__in = ['informational'])".format(item_type, search_txt)
+                    else:
+                        where_condition = "Q({0}__istartswith='{1}')".format(item_type, search_txt)                    
 
                 # Django ORM query as per the GET params
                 query = "resultset = {0}.objects.extra(select={1}).filter({2}).values(*{3}).distinct()[:40]".format(
@@ -2317,7 +2470,6 @@ def prepare_snmp_gis_data(qs, tech_name):
     else:
         qs_list = list(qs.values())
 
-
     # Get IP address list from qs
     ip_address_list = [x['ip_address'] for x in qs_list]
 
@@ -2326,33 +2478,41 @@ def prepare_snmp_gis_data(qs, tech_name):
     if tech_name in ['pmp', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
+        ).extra(
+            select={'device_type' : 'device_device.device_type'}
         ).values(
             'sector_id',
             'base_station__alias',
             'base_station__city__city_name',
             'base_station__state__state_name',
-            'sector_configured_on__ip_address'
+            'sector_configured_on__ip_address',
+            'device_type'
         ).distinct()
 
         # If wimax only then check for DR device
         if tech_name in ['wimax', 'all']:
             dr_data_qs =  Sector.objects.filter(
                 dr_configured_on__ip_address__in=ip_address_list
+            ).extra(
+                select={'device_type' : 'device_device.device_type'}
             ).values(
                 'sector_id',
                 'base_station__alias',
                 'base_station__city__city_name',
                 'base_station__state__state_name',
-                'dr_configured_on__ip_address'
+                'dr_configured_on__ip_address',
+                'device_type'
             ).distinct()
 
     # If requert from converter or all tab only then check Backhaul model
     if tech_name in ['switch', 'converter', 'all']:
+
         bh_conf_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name'
+                'base_station__state__state_name' : 'device_state.state_name',
+                'device_type': 'device_device.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__ip_address__in=ip_address_list
@@ -2362,14 +2522,16 @@ def prepare_snmp_gis_data(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
-            'backhaul__bh_configured_on__ip_address'
+            'backhaul__bh_configured_on__ip_address',
+            'device_type'
         ).distinct()
 
         bh_switch_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name'
+                'base_station__state__state_name' : 'device_state.state_name',
+                'device_type': 'T4.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__isnull=False,
@@ -2380,14 +2542,16 @@ def prepare_snmp_gis_data(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
-            'backhaul__bh_switch__ip_address'
+            'backhaul__bh_switch__ip_address',
+            'device_type'
         ).distinct()
 
         pop_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name'
+                'base_station__state__state_name' : 'device_state.state_name',
+                'device_type': 'device_device.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__isnull=False,
@@ -2398,14 +2562,16 @@ def prepare_snmp_gis_data(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
-            'backhaul__pop__ip_address'
+            'backhaul__pop__ip_address',
+            'device_type'
         ).distinct()
 
         aggr_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name'
+                'base_station__state__state_name' : 'device_state.state_name',
+                'device_type': 'T4.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__isnull=False,
@@ -2416,7 +2582,8 @@ def prepare_snmp_gis_data(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
-            'backhaul__aggregator__ip_address'
+            'backhaul__aggregator__ip_address',
+            'device_type'
         ).distinct()
 
         mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
@@ -2457,13 +2624,15 @@ def prepare_snmp_gis_data(qs, tech_name):
     mapped_result = mapped_sector_result.copy()
     mapped_result.update(mapped_dr_result)
     mapped_result.update(converter_mapped_data)
+   
     for data in qs_list:
         ip_address = data.get('ip_address')
         data.update(
             bs_alias='NA',
             bs_city='NA',
             bs_state='NA',
-            sector_id='NA'
+            sector_id='NA',
+            device_type='NA'
         )
         if not ip_address:
             continue
@@ -2473,14 +2642,13 @@ def prepare_snmp_gis_data(qs, tech_name):
         except Exception, e:
             sector_dct = None
             pass
-
         if sector_dct:
             data.update(
                 sector_id=sector_dct.get('sector_id', 'NA'),
                 bs_alias=sector_dct.get('base_station__alias', 'NA'),
                 bs_city=sector_dct.get('base_station__city__city_name', 'NA'),
-                bs_state=sector_dct.get('base_station__state__state_name', 'NA')
+                bs_state=sector_dct.get('base_station__state__state_name', 'NA'),
+                device_type=device_type_dict.get(sector_dct.get('device_type'))
             )
 
     return qs_list
-

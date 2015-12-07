@@ -42,6 +42,8 @@ def check_cambium_topology_discover(item, params, info):
     """
     state = 3
     infotext = "unknown"
+    ss_list= []
+    ss_value =[]
     try:
         if info:
 	    infotext = ""
@@ -57,6 +59,7 @@ def check_cambium_topology_discover(item, params, info):
 				ap_color_code = int(info[i][2])
 			except:
 				ap_color_code = None
+			sec_id  = "%s_%s" % (ap_ip ,ap_color_code)
 			infotext += "%s %s_%s " %(ap_mac,ap_ip,ap_color_code)
 		else:
 			connected_ss_mac = info[i][3]
@@ -83,10 +86,23 @@ def check_cambium_topology_discover(item, params, info):
                 	connected_ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
                 	infotext += "%s/%s/%s/%s/%s/%s " % (connected_ss_ip,connected_ss_mac,connected_ss_ul_rssi,connected_ss_ul_jitter,
 			connected_ss_reg_count,connected_ss_rereg_count)
+			ss_list.append(connected_ss_ip)
+			ss_value.extend([connected_ss_ip,connected_ss_mac,connected_ss_ul_rssi,connected_ss_ul_jitter, 
+				connected_ss_reg_count,connected_ss_rereg_count,sec_id])
+			try:
+				if memc:
+					memc.set(connected_ss_mac,ss_value)
+			except:
+				pass
 			
         	state = 0
+	    try:
+		if memc:
+			memc.set("%s_conn_ss" % g_hostname,ss_list)
+	    except:
+		pass
     except:
-        infotext = "unknow"
+        infotext = "unknown"
     return (state, infotext)
 
 

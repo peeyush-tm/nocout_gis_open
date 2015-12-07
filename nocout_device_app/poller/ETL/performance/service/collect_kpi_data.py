@@ -17,10 +17,11 @@ from collections import defaultdict
 from itertools import groupby
 from operator import itemgetter
 
-
+#from handlers.db_ops import *
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 
 
@@ -64,8 +65,8 @@ def calculate_avg_value(unknwn_state_svc_data,db):
 	avg = None
 	service_list = set()
 	for doc in unknwn_state_svc_data:
-		host_list.append(doc[0])
-		service_list.append(doc[3])
+		host_list.add(doc[0])
+		service_list.add(doc[3])
 	#print unknwn_state_svc_data
 	try:
 		host_list = list(host_list)		
@@ -217,6 +218,8 @@ def format_kpi_data(site,output,output1,unknwn_state_svc_data,device_down_list,o
 			for ds, ds_values in threshold_values.items():
 				check_time =datetime.fromtimestamp(entry[5])
 				local_timestamp = utility_module.pivot_timestamp_fwd(check_time)
+				local_timestamp =int(time.mktime(local_timestamp.timetuple()))
+				check_time =int(time.mktime(check_time.timetuple()))
 				try:
 					if service == 'wimax_bs_ul_issue_kpi':
 						if reverse == 1:
@@ -277,21 +280,40 @@ def format_kpi_data(site,output,output1,unknwn_state_svc_data,device_down_list,o
 		except Exception as e:
 			print e
 			continue
-	index1 = 0
-        index2 = min(1000,len(kpi_data_list))
+	#index1 = 0
+        #index2 = min(1000,len(kpi_data_list))
         try:
-                for index3 in range(len(kpi_data_list)):
-                        mongo_module.mongo_db_update(db,kpi_update[index3], kpi_data_list[index3], 'kpi_services')
-
-                while(index2 <= len(kpi_data_list)):
-                        mongo_module.mongo_db_insert(db, kpi_data_list[index1:index2], 'kpi_services')
-                        index1 = index2
-                        if index2 >= len(kpi_data_list):
-                                break
-                        if (len(kpi_data_list) - index2)  < 1000:
-                                index2 += (len(kpi_data_list) - index2)
-                        else:
-                                index2 += 1000
+		key = nocout_site_name + "_kpi" 
+		doc_len_key = key + "_len" 
+		memc_obj=db_ops_module.MemcacheInterface()
+		exp_time =240 # 4 min
+		memc_obj.store(key,kpi_data_list,doc_len_key,exp_time,chunksize=1000)
+		# redis implentation
+		this_time = datetime.now()
+		t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+		t_stmp = t_stmp.replace(second=0,microsecond=0)
+		current_time =int(time.mktime(t_stmp.timetuple()))
+		try:
+			rds_obj=db_ops_module.RedisInterface()
+			set_name = nocout_site_name + "_kpi"
+			rds_obj.zadd_compress(set_name,current_time,kpi_data_list)
+		except Exception,e:
+			print e
+			pass
+		
+		"""
+                #for index3 in range(len(kpi_data_list)):
+                #        mongo_module.mongo_db_update(db,kpi_update[index3], kpi_data_list[index3], 'kpi_services')
+                #while(index2 <= len(kpi_data_list)):
+                #        mongo_module.mongo_db_insert(db, kpi_data_list[index1:index2], 'kpi_services')
+                #        index1 = index2
+                #       if index2 >= len(kpi_data_list):
+                #                break
+                #        if (len(kpi_data_list) - index2)  < 1000:
+                #                index2 += (len(kpi_data_list) - index2)
+                #        else:
+                #                index2 += 1000
+		"""
 	except Exception,e:
 		print e
 def kpi_data_data_main():
@@ -304,6 +326,7 @@ def kpi_data_data_main():
 	Raises: No Exception
 	"""
 	try:
+		original_dr_host_list = []
 		configs = config_module.parse_config_obj()
 		desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
 		desired_config = configs.get(desired_site)
@@ -323,8 +346,10 @@ def kpi_data_data_main():
                         "Or: 3\n" +\
                         "OutputFormat: python\n"
 
-		device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\n" +\
-		"Filter: service_state = 3\nAnd: 2\nOutputFormat: python\n"
+		#device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\n" +\
+		#"Filter: service_state = 3\nAnd: 2\nOutputFormat: python\n"
+		device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\nFilter: service_state = 2\nOr: 2\n"+\
+		"And: 2\nOutputFormat: python\n"
 		service_qry_output = utility_module.get_from_socket(site,query)
 		output1 = utility_module.get_from_socket(site,query1)
 		query_output1 = eval(utility_module.get_from_socket(site,device_down_query).strip())

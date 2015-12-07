@@ -6,7 +6,7 @@ from nocout.settings import P2P, WiMAX, PMP, CACHE_TIME
 from django.db.models import Count, Q
 
 #nocout specific functions
-from device.models import Device, DeviceTechnology
+from device.models import Device, DeviceTechnology, DeviceType, DeviceFrequency
 
 #inventory specific functions
 from inventory.models import Sector, Circuit, SubStation, Backhaul
@@ -380,7 +380,7 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
     :return list of network devices
     """
 
-    if not technology:
+    if not technology and specify_ptp_bh_type:
         devices = Device.objects.filter(
             Q(id__in=ptp_device_circuit_backhaul())
             |
@@ -412,9 +412,16 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
             )
             |
             Q(
-                device_technology=int(WiMAX.ID),
+                Q(device_technology=int(WiMAX.ID))
+        &
+        Q(
+            Q(
                 sector_configured_on__isnull=False,
                 sector_configured_on__sector_id__isnull=False
+            )
+            |
+            Q(dr_configured_on__isnull=False)
+        )
             ),
             is_added_to_nms__gt=0,
             # is_added_to_nms=1,
@@ -726,3 +733,47 @@ def list_to_indexed_dict(inventory_list, key):
         inventory_dict[device_info[key]] = device_info
 
     return inventory_dict
+
+
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 3600))
+def getDeviceTypeNamedDict():
+    """
+    This function returns device type data dict with devicetype name as key
+    """
+    device_type_dict = dict()
+
+    deviceTypeObj = DeviceType.objects.all()
+
+    for device_type in deviceTypeObj:
+        if device_type.name not in device_type_dict:
+            if len(str(device_type.device_gmap_icon)) > 5:
+                img_url = str("media/"+ str(device_type.device_gmap_icon)) if "uploaded" in str(device_type.device_gmap_icon) else "static/img/" + str(device_type.device_gmap_icon)
+            else:
+                img_url = 'static/img/icons/mobilephonetower10.png'
+
+            device_type_dict[device_type.name] = {
+                'gmap_icon': img_url
+            }
+
+    return device_type_dict
+
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 3600))
+def getFrequencyDict():
+    """
+    This function returns all frequency name & color in dict with id(PK) as key
+    """
+    frequency_dict = dict()
+
+    freq_obj = DeviceFrequency.objects.all()
+
+    for freq in freq_obj:
+        pk = str(freq.id)
+        if pk not in frequency_dict:
+            frequency_dict[pk] = {
+                'color': freq.color_hex_value,
+                'value': freq.value,
+                'radius': freq.frequency_radius
+            }
+
+
+    return frequency_dict

@@ -34,7 +34,7 @@ DATABASES = {
         'NAME': 'nocout_dev',  # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
         'USER': 'root',
-        'PASSWORD': 'mydesk',
+        'PASSWORD': 'pass',
         'HOST': 'localhost',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
         'PORT': '3306',  # Set to empty string for default.
     }
@@ -103,14 +103,18 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'dajaxice.finders.DajaxiceFinder',
+    # 'dajaxice.finders.DajaxiceFinder',
     # 'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
+# A secret key for a particular Django installation.
+# This is used to provide cryptographic signing,
+# and should be set to a unique, unpredictable value.
 SECRET_KEY = 'q+(_ijqc+^&#_51_duhnl+u-$&63tzgdo2b0_gaw!*%swxkc!&'
 
-TEMPLATE_DIRS = ( os.path.join(PROJECT_DIR, "templates"), )
+TEMPLATE_DIRS = (os.path.join(PROJECT_DIR, "templates"),)
+
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
@@ -143,20 +147,32 @@ MIDDLEWARE_CLASSES = (
     # Uncomment the next line for simple clickjacking protection
     # required for GISS SCAN
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
     # site caching
     # 'django.middleware.cache.FetchFromCacheMiddleware',
     # site caching
 )
 
-# cookies settings
+# Whether to use HttpOnly flag on the CSRF cookie. If this is set to True,
+# client-side JavaScript will not to be able to access the CSRF cookie.
 CSRF_COOKIE_HTTPONLY = True
+
+# Whether to use a secure cookie for the CSRF cookie. If this is set to True,
+# the cookie will be marked as secure, which means browsers may ensure that
+# the cookie is only sent with an HTTPS connection.
 CSRF_COOKIE_SECURE = True
 
-# session cookie
+# Whether to use HTTPOnly flag on the session cookie. If this is set to True,
+# client-side JavaScript will not to be able to access the session cookie.
 SESSION_COOKIE_HTTPONLY = True
+
+# Whether to use a secure cookie for the session cookie. If this is set to True,
+# the cookie will be marked as secure, which means browsers may ensure that the
+# cookie is only sent under an HTTPS connection.
 SESSION_COOKIE_SECURE = True
 
+# A string representing the full Python import path to your root URLconf.
+# For example: 'mydjangoapps.urls'. Can be overridden on a per-request basis by
+# setting the attribute urlconf on the incoming HttpRequest object.
 ROOT_URLCONF = 'nocout.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
@@ -171,18 +187,13 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django_extensions',
     'session_security',
-    'south',
     'nocout.signals',  # Load before nocout apps
     'nocout',  # 25th March 2015
     'user_profile',
-    'user_group',
     'device',
-    'device_group',
     'inventory',
     'organization',
-    'department',
     'service',
-    'service_group',
     'command',
     'site_instance',
     'machine',
@@ -196,8 +207,6 @@ INSTALLED_APPS = (
     'performance',
     'dashboard',
     'scheduling_management',
-    'dajaxice',
-    'dajax',
     'django.contrib.admin',
     'session_management',
     'corsheaders',
@@ -214,27 +223,31 @@ AUTHENTICATION_BACKENDS = (
     'session_management.backends.TokenAuthBackend',
 )
 
-# Celery Settings
-
+# Celery settings.
 import djcelery
 djcelery.setup_loader()
 
-# REDIS
+# Redis settings.
 REDIS_HOST = "localhost"
 REDIS_PORT = 6379
 REDIS_DB = 0
-# celery result backend configuration
+REDIS_CONNECT_RETRY = True
+
+# Celery result backend configuration.
 CELERY_RESULT_BACKEND = 'redis://' + str(REDIS_HOST) + ':' + str(REDIS_PORT) + '/' + str(REDIS_DB)
 
-REDIS_CONNECT_RETRY = True
-BROKER_HOST = REDIS_HOST  # Maps to redis host.
-BROKER_PORT = REDIS_PORT  # Maps to redis port.
-BROKER_VHOST = (REDIS_DB + 1)   # Maps to database number.
-# celery broker configuration
+# Celery broker settings.
+BROKER_HOST = REDIS_HOST         # Maps to redis host.
+BROKER_PORT = REDIS_PORT         # Maps to redis port.
+BROKER_VHOST = (REDIS_DB + 1)    # Maps to database number.
+
+# Celery broker configuration.
 BROKER_URL = 'redis://' + str(BROKER_HOST) + ':' + str(BROKER_PORT) + '/' + str(BROKER_VHOST)
 
+# Celery periodic tasks settings.
 from celery import crontab
-# =time zone for celery periodic tasks
+
+# Time zone for celery periodic tasks.
 CELERY_TIMEZONE = 'Asia/Calcutta'
 CELERY_ENABLE_UTC = False
 CELERYD_TASK_TIME_LIMIT = 300
@@ -245,6 +258,9 @@ REDIS_CACHE_PORT = REDIS_PORT
 REDIS_CACHE_DB = (REDIS_DB + 2)
 REDIS_CACHE_URL = 'redis://' + str(REDIS_CACHE_HOST) + ':' + str(REDIS_CACHE_PORT) + '/' + str(REDIS_CACHE_DB)
 
+# A dictionary containing the settings for all caches to be used with Django.
+# It is a nested dictionary whose contents maps cache aliases to a dictionary
+# containing the options for an individual cache.
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -272,24 +288,28 @@ QUEUES = {
         'NAMESPACE': 'noc:queue:'
     }
 }
-# 16th March 2016 : Using Redis Server as Cache Server instead of much performant Memcached
+# 16th March 2016 : Using Redis Server as Cache Server instead of much performant Memcached.
 
 ALLOWED_APPS_TO_CLEAR_CACHE = [
     'inventory',
 ]
 
-
+# Celerybeat tasks scheduler configuration.
 CELERYBEAT_SCHEDULE = {
     # BEGIN Topology Updates
-    'pmp-topology-site-wise': {
-        'task': 'inventory.tasks.topology_site_wise',
-        'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
-        'args': ['PMP']
-    },
-    'wimax-topology-site-wise': {
-        'task': 'inventory.tasks.topology_site_wise',
-        'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
-        'args': ['WiMAX']
+    # 'pmp-topology-site-wise': {
+    #     'task': 'inventory.tasks.topology_site_wise',
+    #     'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
+    #     'args': ['PMP']
+    # },
+    # 'wimax-topology-site-wise': {
+    #     'task': 'inventory.tasks.topology_site_wise',
+    #     'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
+    #     'args': ['WiMAX']
+    # },
+    'update-inventory-topology': {
+        'task': 'inventory.tasks.update_topology',
+        'schedule': timedelta(seconds=300),
     },
     # END Topology Updates
     # updating the polled sector frequency
@@ -450,6 +470,7 @@ CELERYBEAT_SCHEDULE = {
 
 CORS_ORIGIN_ALLOW_ALL = True
 
+# Full import path of a serializer class to use for serializing session data.
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 
 # A sample logging configuration. The only tangible logging
@@ -509,17 +530,24 @@ LOGGING = {
     },
 }
 
-# #FOR MULTI PROC data analysis
-MULTI_PROCESSING_ENABLED = True
-# #FOR MULTI PROC data analysis
+# Multi processing data analysis settings.
+# If True, then multiprocessing is allowed.
+MULTI_PROCESSING_ENABLED = False
 
+
+# Configuration for 'django-session-security' module.
+# Time (in seconds) before the user should be warned that is session will expire because of inactivity.
 SESSION_SECURITY_WARN_AFTER = 540
+# Time (in seconds) before the user should be logged out if inactive.
 SESSION_SECURITY_EXPIRE_AFTER = 600
+# Expire session on closing web browser.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# List of urls that should be ignored by the middleware.
 SESSION_SECURITY_PASSIVE_URLS = ['dialog_for_page_refresh', 'dialog_expired_logout_user']
-
+# Maximum number of users logged in.
 MAX_USER_LOGIN_LIMIT = 100
 
+# Nocout custom settings.
 DEFAULT_USERS = namedtuple('DEFAULT_USERS', 'USERNAME ID')
 NOCOUT_USER = DEFAULT_USERS(USERNAME='nocout', ID=1)
 GISADMIN = DEFAULT_USERS(USERNAME='gisadmin', ID=2)
@@ -527,7 +555,8 @@ GISOPERATOR_ID = DEFAULT_USERS(USERNAME='gisoperator', ID=3)
 GISVIEWER_ID = DEFAULT_USERS(USERNAME='gisviewer', ID=3)
 
 
-# TODO: with each deployment check for all the technologies
+# TODO: With each deployment check for all the technologies.
+# Device technologies used in nocout.
 DEVICE_TECHNOLOGY = namedtuple('DEVICE_TECHNOLOGY', 'NAME ID')
 P2P = DEVICE_TECHNOLOGY('P2P', '2')
 WiMAX = DEVICE_TECHNOLOGY('WiMAX', '3')
@@ -549,19 +578,16 @@ PING_RTA_CRITICAL = 3000
 PING_PL_WARNING = 80
 PING_PL_CRITICAL = 100
 
-######################list of private IPs
-
+# List of private IP's.
 PRIVATE_IPS_PREFIX = ('10.', '172.', '192.', )
 GIS_MAP_MAX_DEVICE_LIMIT = 1000
 
-##############################################
+# Exceptional services, i.e. 'ss' services which get service data from 'bs' instead from 'ss'.
 EXCEPTIONAL_SERVICES = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
                         'wimax_ul_rssi', 'wimax_ul_intrf', 'wimax_dl_intrf',
                         'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec',
                         'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count',
                         'cambium_rereg_count']
-
-###################################################################################################################
 
 DEVICE_APPLICATION = {
     'default': {
@@ -569,7 +595,7 @@ DEVICE_APPLICATION = {
     }
 }
 
-# Services & SErvice Datasoruces settings
+# Services & service datasources settings.
 SERVICE_DATA_SOURCE = {
     "rta": {
         "display_name": "Latency",
@@ -577,8 +603,8 @@ SERVICE_DATA_SOURCE = {
         "valuesuffix": " ms",
         "valuetext": "ms",
         "formula": "rta_null",
-        "show_min": 0,
-        "show_max": 0,
+        "show_min": 1,
+        "show_max": 1,
         "show_gis": 1,
         "show_performance_center": 1,
         "is_inverted": 0,
@@ -639,104 +665,102 @@ SERVICES = {
 
 }
 
-#Date Format to be used throughout the application
-# Before
+# Date Format to be used throughout the application.
+# Before:
 # DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
-# After - 29-April-15
+# After: 29-April-15
 DATE_TIME_FORMAT = "%d/%m/%y %H:%M"
 
-# ##################REPORT_PATH
-
+# Reports configurations.
 REPORT_PATH = '/opt/nocout/nocout_gis/nocout/media/download_center/reports'
 REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 
 
-# ********************** django password options **********************
-PASSWORD_MIN_LENGTH = 6  # Defaults to 6
-PASSWORD_MAX_LENGTH = 120  # Defaults to None
+# Configuration for 'django-passwords' module.
+# PASSWORD_MIN_LENGTH = 6  # Defaults to 6
+# PASSWORD_MAX_LENGTH = 120  # Defaults to None
+#
+# PASSWORD_DICTIONARY = "/usr/share/dict/words"  # Defaults to None
+# # PASSWORD_DICTIONARY = "/usr/share/dict/american-english" # Defaults to None
+#
+# PASSWORD_MATCH_THRESHOLD = 0.9  # Defaults to 0.9, should be 0.0 - 1.0 where 1.0 means exactly the same
+# PASSWORD_COMMON_SEQUENCES = []  # Should be a list of strings, see passwords/validators.py for default
+# PASSWORD_COMPLEXITY = {  # You can ommit any or all of these for no limit for that particular set
+#                          "UPPER": 1,  # Uppercase
+#                          "LOWER": 1,  # Lowercase
+#                          "DIGITS": 1,  # Digits
+#                          "PUNCTUATION": 0,  # Punctuation (string.punctuation)
+#                          "NON ASCII": 0,  # Non Ascii (ord() >= 128)
+#                          "WORDS": 0  # Words (substrings seperates by a whitespace)
+# }
 
-PASSWORD_DICTIONARY = "/usr/share/dict/words"  # Defaults to None
-# PASSWORD_DICTIONARY = "/usr/share/dict/american-english" # Defaults to None
 
-PASSWORD_MATCH_THRESHOLD = 0.9  # Defaults to 0.9, should be 0.0 - 1.0 where 1.0 means exactly the same
-PASSWORD_COMMON_SEQUENCES = []  # Should be a list of strings, see passwords/validators.py for default
-PASSWORD_COMPLEXITY = {  # You can ommit any or all of these for no limit for that particular set
-                         "UPPER": 1,  # Uppercase
-                         "LOWER": 1,  # Lowercase
-                         "DIGITS": 1,  # Digits
-                         "PUNCTUATION": 0,  # Punctuation (string.punctuation)
-                         "NON ASCII": 0,  # Non Ascii (ord() >= 128)
-                         "WORDS": 0  # Words (substrings seperates by a whitespace)
-}
-
-
-# ###EMAIL SETTINGS
+# Email settings.
 DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = '/nocout/tmp/app-messages'  # change this to a proper location
+EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
 
-# ### Special Calculation Mechanism for Capacity Management
+# Special Calculation Mechanism for capacity management.
 CAPACITY_SPECIFIC_TIME = 0
 
-####################### Live Polling Configuration #######################
+# Live Polling Configuration.
 LIVE_POLLING_CONFIGURATION = {
     'maps_default': True,
     'maps_themetics': True,
     'maps_single_service': True,
-    'performance': False
+    'performance': True
 }
 
-####################### Periodic Polling Parallel Processes Count #######################
+# Periodic polling parallel processes count.
 PERIODIC_POLL_PROCESS_COUNT = 2
 
-####################### Flag to enable/disable global search #######################
+# Flag to enable/disable global search.
 GLOBAL_SEARCH_FLAG = True
 
-####################### Flag to enable/disable datatable download option #######################
+# Flag to enable/disable datatable download option.
 DATATABLES_DOWNLOAD_FLAG = True
-####################### White map configuration dict #######################
+
+# White map configuration.
 # 1 April 2015
 WHITE_MAP_CONFIGURATION = json.dumps({
-    "format"                :   "application/openlayers",
-    "geoserver_url_India"   :   "http://10.133.12.163:5008/geoserver/cite/wms",
-    "layer"                 :   "cite:STATE",
-    "initial_bounds"        :   [68.14339447036186,6.748584270488672,97.40963745103579,37.07349395945833],
+    "format": "application/openlayers",
+    "geoserver_url_India": "http://10.133.12.163:5008/geoserver/cite/wms",
+    "layer": "cite:STATE",
+    "initial_bounds": [68.14339447036186, 6.748584270488672, 97.40963745103579, 37.07349395945833],
 })
 
-####################### FLAG To SHOW/HIDE HISTORICAL DATA ON PERFORMANCE PAGE #######################
+# Flag to show/hide historical data on performance page.
 # 4 April 2015
-HISTORICAL_ON_PERFORMANCE = False
+HISTORICAL_ON_PERFORMANCE = True
 
-####################### Chart type for min, max & avg values #######################
+# Chart type for min, max & avg values.
 # 11 April 2015
 MIN_CHART_TYPE = 'spline'
 MAX_CHART_TYPE = 'spline'
 AVG_CHART_TYPE = 'spline'
 
-####################### Chart color for min, max & avg values #######################
+# Chart color for min, max & avg values.
 # 15 April 2015
 MIN_CHART_COLOR = '#0000FF'
 MAX_CHART_COLOR = '#FF00FF'
 AVG_CHART_COLOR = '#00FFFF'
 
-####################### Warnign, Critical Color & Type ########################
+# Warning, critical color & type.
 # 6 June 2015
 WARN_COLOR = '#FFE90D' 
 CRIT_COLOR = '#FF193B'
 WARN_TYPE = 'line'
 CRIT_TYPE = 'line'
 
-####################### Display flag for severity distrubution pie chart #######################
+# Display flag for severity distrubution pie chart.
 # 15 April 2015
 DISPLAY_SEVERITY_PIE_CHART = False
 
-# Import the local_settings.py file to override global settings
-
-# #### Enable Disable Service Impacting Alarms from GUI #### #
+# #### Enable Disable Service Impacting Alarms from GUI.
 # Version 1 : 25th March 2015
-SIA_ENABLED = False
+SIA_ENABLED = True
 TRAPS_DATABASE = 'default'
-# #### Enable Disable Service Impacting Alarms from GUI #### #
+# #### Enable Disable Service Impacting Alarms from GUI.
 
 # #### Access Variables in Templates
 # Version 1: 25th March 2015
@@ -752,34 +776,41 @@ SETTINGS_EXPORT = [
     'WARN_COLOR',
     'CRIT_COLOR',
     'WARN_TYPE',
-    'CRIT_TYPE'
+    'CRIT_TYPE',
+    'ENABLE_ADVANCE_FILTERS',
+    'ENABLE_UNIFIED_SERVICE_VIEW',
+    'ENABLE_AGGREGATE_REPORT_DOWNLOAD',
+    'ENABLE_WHITE_THEME',
+    'ENABLE_TOPO_VIEW',
+    'ENABLE_BIRDEYE_VIEW',
+    'ENABLE_CUSTOM_DASHBOARD_VIEW',
+    'SHOW_RF_COLUMN',
+    'NO_ONDEMAND_POLL_SDS'
 ]
-# #### Access Variables in Templates
 
-# 25th March : Dashbaord Settings
+# Dashbaord Settings
+# 25th March
 SPEEDOMETER_DASHBAORDS = ['down-network', 'packetloss-network', 'latency-network', 'temperature-idu']
-# 25th March : Dashbaord Settings
 
-# /////////////////////// VARIABLES FOR CHARTS SERVER SIDE RENDERING ///////////////////////  #
-
+# Variables for charts server side rendering.
 # 5 May 2015
 # Variables for phantom js host location
 PHANTOM_PROTOCOL = "http"
-PHANTOM_HOST = "127.0.0.1"
-PHANTOM_PORT = "3003"
+PHANTOM_HOST = "10.133.12.163"
+PHANTOM_PORT = "5004"
 
 # Exported Chart Image Type, Width & Height
-CHART_WIDTH = 600
+CHART_WIDTH = 900
 CHART_HEIGHT = 400
 CHART_IMG_TYPE = "png"
+# Variable for env name i.e. either it is localhost, uat or prod
+ENV_NAME = 'uat'
 
-# highcharts-convert.js url variable
-HIGHCHARTS_CONVERT_JS = "~/Downloads/highcharts-convert.js"
+# URL for 'highcharts-convert.js'.
+HIGHCHARTS_CONVERT_JS = STATIC_ROOT + "js/highcharts-convert-" + ENV_NAME + "/highcharts-convert.js"
 
+# For cache time properties, static data caching period and polling data caching period
 # 2nd June 2016
-# for cache time properties
-# for static data caching period
-# and polling data caching period
 CACHE_TIME = {
     'DASHBOARD': 300,
     'INVENTORY': 3600,
@@ -792,6 +823,140 @@ CACHE_TIME = {
     'DEFAULT': 60
 }
 
+# Params for advance filters feature.
+MAX_SUGGESTION_COUNT = 40
+DATATABLE_SEARCHTXT_KEY = 'sSearch'
+
+# Flag to enable/disable advance filters feature for datatables.
+ENABLE_ADVANCE_FILTERS = False
+
+# Flag to enable/disable unified service view on single performance page.
+ENABLE_UNIFIED_SERVICE_VIEW = True
+
+# Flag to enable/disable aggregate report download on single performance page.
+ENABLE_AGGREGATE_REPORT_DOWNLOAD = False
+
+####################### Flag to enable/disable new Theme #######################
+ENABLE_WHITE_THEME = True
+
+# Flag to show the number of columns on Rf_Performance Dashboard.(equals to 12/number_of_columns_to_be_shown)
+SHOW_RF_COLUMN = 6
+
+# Flag to enable/disable topology view on single performance page.
+ENABLE_TOPO_VIEW = False
+
+# Flag to enable/disable birdeye view on single performance page.
+ENABLE_BIRDEYE_VIEW = False
+
+# Flag to enable/disable custom dashboards on single performance page.
+ENABLE_CUSTOM_DASHBOARD_VIEW = False
+
+# Password complexity settings.
+# ===============================
+PASSWORD_MIN_LENGTH = 6
+PASSWORD_MAX_LENGTH = 44
+PASSWORD_DICTIONARY = {
+    'PATH': os.path.join(BASE_DIR, 'user_profile', 'files', 'dictionary.txt'),
+    'CHECK': False
+}
+PASSWORD_COMPLEXITY = {
+    'UPPER': 1,
+    'LOWER': 1,
+    'PUNCTUATION': 1,
+    'DIGITS': 1
+}
+
+# SDS for which on-demand poll tab should not be visible
+NO_ONDEMAND_POLL_SDS = json.dumps([
+    'cambium_bs_frequency_invent_frequency',
+    'cambium_bs_ip_invent_bs_ip',
+    'cambium_bs_mac_invent_bs_mac',
+    'cambium_bs_sector_id_invent_bs_sector_id',
+    'cambium_bs_ul_issue_kpi_bs_ul_issue',
+    'cambium_cell_radius_invent_cell_radius',
+    'cambium_color_code_invent_color_code',
+    'cambium_commanded_rx_power_invent_commanded_rx_power',
+    'cambium_data_rate_modulation_invent_data_rate_modulation',
+    'cambium_dl_util_kpi_cam_dl_util_kpi',
+    'cambium_odu_type_invent_odu_type',
+    'cambium_qos_invent_bw_dl_sus_rate',
+    'cambium_qos_invent_bw_ul_sus_rate',
+    'cambium_qos_invent_dl_burst_allocation',
+    'cambium_qos_invent_ul_burst_allocation',
+    'cambium_serial_number_invent_serial_number',
+    'cambium_ss_connected_bs_ip_invent_bs_ip',
+    'cambium_ss_connected_bs_mac_invent_ss_connected_bs_mac',
+    'cambium_ss_frequency_invent_frequency',
+    'cambium_ss_ip_invent_ss_ip',
+    'cambium_ss_mac_invent_ss_mac',
+    'cambium_ss_provis_kpi_ss_state',
+    'cambium_ss_sector_id_invent_ss_sector_id',
+    'cambium_ss_ul_issue_kpi_ul_issue',
+    'cambium_transmit_power_invent_transmit_power',
+    'cambium_ul_util_kpi_cam_ul_util_kpi',
+    'cambium_vlan_invent_vlan',
+    'radwin_dl_util_kpi_rad_dl_util_kpi',
+    'radwin_idu_sn_invent_idu_sn',
+    'radwin_link_distance_invent_link_distance',
+    'radwin_mimo_diversity_invent_mimo_diversity',
+    'radwin_odu_sn_invent_odu_sn',
+    'radwin_producttype_invent_producttype',
+    'radwin_ss_provis_kpi_ss_state',
+    'radwin_ssid_invent_ssid',
+    'radwin_ul_util_kpi_rad_ul_util_kpi',
+    'wimax_bs_ip_invent_bs_ip',
+    'wimax_bs_temperature_acb_acb_temp',
+    'wimax_bs_temperature_fan_fan_temp',
+    'wimax_bs_ul_issue_kpi_pmp1_ul_issue',
+    'wimax_bs_ul_issue_kpi_pmp2_ul_issue',
+    'wimax_bs_uptime_uptime',
+    'wimax_dl_intrf_dl_intrf',
+    'wimax_idu_serial_invent_Carrier_Board',
+    'wimax_idu_serial_invent_Chassis',
+    'wimax_idu_type_invent_idu_type',
+    'wimax_odu_serial_invent_odu1',
+    'wimax_odu_serial_invent_odu2',
+    'wimax_p1_cmd_rx_pwr_invent_p1_cmd_rx_pwr',
+    'wimax_p1_mrc_stc_invent_pmp1_mrc',
+    'wimax_p1_mrc_stc_invent_pmp1_stc',
+    'wimax_p2_cmd_rx_pwr_invent_p2_cmd_rx_pwr',
+    'wimax_p2_mrc_stc_invent_pmp2_mrc',
+    'wimax_p2_mrc_stc_invent_pmp2_stc',
+    'wimax_pmp1_dl_util_kpi_pmp1_dl_util_kpi',
+    'wimax_pmp1_frequency_invent_bs_frequency_pmp1',
+    'wimax_pmp1_sector_id_invent_pmp1_sector_id',
+    'wimax_pmp1_ul_util_kpi_pmp1_ul_util_kpi',
+    'wimax_pmp2_dl_util_kpi_pmp2_dl_util_kpi',
+    'wimax_pmp2_frequency_invent_bs_frequency_pmp2',
+    'wimax_pmp2_sector_id_invent_pmp2_sector_id',
+    'wimax_pmp2_ul_util_kpi_pmp2_ul_util_kpi',
+    'wimax_pmp_bw_invent_pmp1_bw',
+    'wimax_pmp_bw_invent_pmp2_bw',
+    'wimax_pmp_cyclic_prefix_invent_pmp1_prefix',
+    'wimax_pmp_cyclic_prefix_invent_pmp2_prefix',
+    'wimax_pmp_frame_length_invent_pmp1_fr_len',
+    'wimax_pmp_frame_length_invent_pmp2_fr_len',
+    'wimax_qos_invent_dl_qos',
+    'wimax_qos_invent_ul_qos',
+    'wimax_ss_errors_status_ifin_errors',
+    'wimax_ss_errors_status_ifout_errors',
+    'wimax_ss_frequency_frequency',
+    'wimax_ss_ip_ss_ip',
+    'wimax_ss_mac_ss_mac',
+    'wimax_ss_provis_kpi_ss_state',
+    'wimax_ss_sector_id_ss_sector_id',
+    'wimax_ss_ul_issue_kpi_ul_issue',
+    'wimax_ss_vlan_invent_ss_vlan',
+    'wimax_transmit_power_pmp1_invent_transmit_power_pmp1',
+    'wimax_transmit_power_pmp2_invent_transmit_power_pmp2',
+    'wimax_ul_intrf_ul_intrf',
+    'cisco_switch_ul_util_kpi_fa0_6',
+    'cisco_switch_ul_util_kpi_fa0_24',
+    'cisco_switch_dl_util_kpi_fa0_6',
+    'cisco_switch_dl_util_kpi_fa0_24'
+])
+
+# Import the local_settings.py file to override global settings
 try:
     from local_settings import *
 except ImportError:

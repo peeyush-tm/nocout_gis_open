@@ -20,9 +20,10 @@ from scheduling_management.forms import EventForm, SNMPTrapSettingsForm
 
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from device.models import Device, DeviceType
+from user_profile.utils.auth import in_group
 
 
 class SchedulingViewsGateway:
@@ -99,14 +100,13 @@ class EventList(PermissionsRequiredMixin, TemplateView):
 
         #if the user role is Admin or superuser then the action column will appear on the datatable
         datatable_headers.append({'mData': 'no_of_devices', 'sTitle': 'No.of devices', 'sWidth': '5%', 'bSortable': False})
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or self.request.user.is_superuser:
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
-class EventListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class EventListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Event Data table.
     """
@@ -146,8 +146,6 @@ class EventListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseData
         repeat_choice = dict(Event.REPEAT)
         scheduling_type_choice = dict(Event.SCHEDULING_TYPE)
         json_data = []
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        is_super_user = self.request.user.is_superuser
         for obj in qs:
             dct = {}
             repeat = repeat_choice["%s"%(obj.repeat)]
@@ -178,7 +176,7 @@ class EventListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseData
                 no_of_devices = no_of_devices
             )
 
-            if 'admin' in user_role or is_super_user:
+            if in_group(self.request.user, 'admin'):
                 dct.update(actions='<a href="/scheduling/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                     <a href="/scheduling/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj.id))
             json_data.append(dct)
@@ -578,8 +576,7 @@ class SNMPTrapSettingsList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': '10%', }]
 
         #if the user role is Admin or operator or superuser then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role or self.request.user.is_superuser:
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -588,7 +585,8 @@ class SNMPTrapSettingsList(PermissionsRequiredMixin, TemplateView):
 class SNMPTrapSettingsListingTable(PermissionsRequiredMixin, 
     DatatableOrganizationFilterMixin, 
     DatatableSearchMixin, 
-    BaseDatatableView):
+    BaseDatatableView,
+    AdvanceFilteringMixin):
     """
     Class based View to render SNMPTrapSettings Data table. Returns json data for data table.
     :param Mixins- PermissionsRequiredMixin

@@ -579,6 +579,7 @@ WhiteMapClass.prototype.createOpenLayerVectorMarker= function(size, iconUrl, lon
 
 	var feature= "",
 		point = new OpenLayers.Geometry.Point(lon, lat);
+
 	//If size and iconUrl is present, create Vector feature using those
 	if(size && iconUrl) {
 		feature = new OpenLayers.Feature.Vector(
@@ -635,13 +636,10 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		link_path_color = linkColor;
 
 	var ss_info_obj = "",
-		ss_height = 40,
-		bs_index = 0,
-		ss_index = 0;
+		ss_height = 40;
 
 	if(ss_info != undefined || ss_info == "") {
 		ss_info_obj = ss_info.info;
-		ss_index = ss_info.ss_item_index > -1 ? ss_info.ss_item_index : 0;
 		ss_height = ss_info.antenna_height && ss_info.antenna_height != 'NA' ? ss_info.antenna_height : 40;
 	} else {
 		ss_info_obj = "";
@@ -652,7 +650,6 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		bs_height = 40;
 	if(bs_info != undefined || bs_info == "") {
 		bs_info_obj = bs_info.info;
-		bs_index = bs_info.bs_item_index > -1 ? bs_info.bs_item_index : 0;
 		bs_height = bs_info.antenna_height && bs_info.antenna_height != 'NA' ? bs_info.antenna_height : 40;
 	} else {
 		bs_info_obj = "";
@@ -670,8 +667,6 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		strokeWeight	: 3,
 		pointType 		: "path",
 		geodesic		: true,
-		bs_item_index   : bs_index,
-		ss_item_index   : ss_index,
 		ss_info			: ss_info_obj,
 		ss_lat 			: startEndObj.endLat,
 		ss_lon 			: startEndObj.endLon,
@@ -682,7 +677,14 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		ss_height 		: sect_height,
 		sector_lat 		: startEndObj.sectorLat,
 		sector_lon 		: startEndObj.sectorLon,
-		filter_data 	: {"bs_name" : bs_name, "sector_name" : sector_name, "ss_name" : ss_name, "bs_id" : bs_id, "sector_id" : sector_id},
+		filter_data 	: {
+			"bs_name" : bs_name,
+			"sector_name" : sector_name,
+			"ss_name" : ss_name,
+			"bs_id" : bs_id,
+			"sector_id" : sector_id,
+			"ss_id": ss_info.ss_id ? ss_info.ss_id : ''
+		},
 		nearLat 		: startEndObj.nearEndLat,
 		nearLon 		: startEndObj.nearEndLon,
 		sectorName 	    : sector_name,
@@ -731,7 +733,7 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
  * @param polarisation {String}, It contains the polarisation(horizontal or vertical) of sector device.
  */
 // WhiteMapClass.prototype.plotSector_wmap = function(sectorPointsArray, additionalInfo) {
-WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology,polarisation,rad,azimuth,beam_width) {
+WhiteMapClass.prototype.plotSector_wmap = function(pointsArray, sectorInfo) {
 	if(isDebug) {
 		console.log("Plot Sector Polygon");
 		console.log("Plot Sector Polygon Start Time :- "+ new Date().toLocaleString());
@@ -739,6 +741,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 
 	var polyPathArray = [],
 		halfPt = Math.floor(pointsArray.length / (+2)),
+		technology = sectorInfo.technology ? sectorInfo.technology : '',
 		startLat = pointsArray[halfPt].lat,
 		startLon = pointsArray[halfPt].lon;
 
@@ -757,51 +760,31 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 
 	var linearRing = new OpenLayers.Geometry.LinearRing(polyPathArray),
 		sector = new OpenLayers.Geometry.Polygon([linearRing]),
-		style = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']),
-		item_info_index = sectorInfo.sector_info_index > -1 ? sectorInfo.sector_info_index : 0;
+		style = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
 
 	style.strokeColor = sColor;
-	style.fillColor = bgColor;
+	style.fillColor = sectorInfo.bg_color;
 	style.strokeOpacity = 1;
 	style.fillOpacity = 0.5;
 	style.strokeWidth = sWidth;
 
-	var poly = new OpenLayers.Feature.Vector(sector, null, style),
-		sector_device_name = sectorInfo.device_name ? sectorInfo.device_name : "";
+	var poly = new OpenLayers.Feature.Vector(sector, null, style);
 
-	var polyInfo = {
-		path 		     : polyPathArray,
-		ptLat 		     : lat,
-		ptLon 		     : lon,
-		strokeColor      : sColor,
-		fillColor 	     : bgColor,
-		pointType	     : "sector",
-		strokeOpacity    : 1,
-		fillOpacity 	 : 0.5,
-		item_index 		 : item_info_index,
-		strokeWeight     : sWidth,
-		poll_info 		 : [],
-		radius 			 : rad,
-		azimuth 		 : azimuth,
-		beam_width 		 : beam_width,
-		technology 		 : sectorInfo.technology,
-		vendor 			 : sectorInfo.vendor,
-		perf_url 		 : sectorInfo.sector_perf_url,
-		inventory_url    : sectorInfo.inventory_url,
-		deviceExtraInfo  : sectorInfo.info,
-		deviceInfo 		 : sectorInfo.device_info,
-		device_name 	 : sector_device_name,
-		startLat 	     : startLat,
-		startLon 	     : startLon,
-		filter_data 	 : {"bs_name" : sectorInfo.bs_name, "sector_name" : sectorInfo.sector_name},
-		bhInfo 			 : [],
-		child_ss 	     : sector_child,
-		polarisation 	 : polarisation,
-		original_sectors : sector_child,
-		zIndex 			 : 180,
-		geodesic		 : true,
-		isActive 		 : 1
-    };
+	var polyInfo = sectorInfo;
+
+	polyInfo['path'] = polyPathArray;
+	polyInfo['startLat'] = startLat;
+	polyInfo['startLon'] = startLon;
+	polyInfo['child_ss'] = polyInfo.sector_child;
+	polyInfo['original_sectors'] = polyInfo.sector_child;
+	polyInfo['strokeColor'] = sColor;
+	polyInfo['fillColor'] = sectorInfo.bg_color;
+	polyInfo['strokeOpacity'] = 1;
+	polyInfo['fillOpacity'] = 0.5;
+	polyInfo['strokeWeight'] = sWidth;
+	polyInfo['zIndex'] = 180;
+	polyInfo['geodesic'] = true;
+	polyInfo['isActive'] = 1;
 
     for(var keys in polyInfo) {
     	if(polyInfo.hasOwnProperty(keys)) {
@@ -809,17 +792,13 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
     	}
     }
 
-    // poly.setMap(mapInstance);
-    // allMarkersArray_wmap.push(poly);
+    allMarkersObject_wmap['sector_polygon']['poly_'+sectorInfo.sectorName+"_"+sectorInfo.sector_id] = poly;
 
-    allMarkersObject_wmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+sectorInfo.sector_id] = poly;
-
-	if(sector_child) {
-		for(var i=sector_child.length;i--;) {
-			markersMasterObj['Poly'][sector_child[i]["device_name"]]= poly;
+	if(polyInfo.sector_child) {
+		for(var i=polyInfo.sector_child.length;i--;) {
+			markersMasterObj['Poly'][polyInfo.sector_child[i]["device_name"]] = poly;
 		}			
 	}
-    
 
 	if(isDebug) {
 		console.log("Plot Sector Polygon End Time :- "+ new Date().toLocaleString());

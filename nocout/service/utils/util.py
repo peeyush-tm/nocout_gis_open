@@ -87,7 +87,7 @@ def service_data_sources():
         if sds['service_data_sources__formula'] and len(sds['service_data_sources__formula'].strip()):
             formula = sds['service_data_sources__formula']
 
-        sds_name = sds['service__name'].strip() + "_" +sds['service_data_sources__name'].strip()
+        sds_name = sds['service__name'].strip().lower() + "_" +sds['service_data_sources__name'].strip().lower()
         sds_alias = sds['service_data_sources__alias'].strip()
 
         ds_to_append = {
@@ -101,12 +101,13 @@ def service_data_sources():
             'show_gis': sds['service_data_sources__show_gis'],
             'show_performance_center': sds['service_data_sources__show_performance_center'],
             'is_inverted': sds['service_data_sources__is_inverted'],
-            'data_source_type': 'String' if sds['service_data_sources__data_source_type'] else 'Numeric',
+            'data_source_type': 'String' if sds['service_data_sources__data_source_type'] == 2 else 'Numeric',
             'warning': sds['service_data_sources__warning'],
             'critical': sds['service_data_sources__critical'],
             'chart_color': sds['service_data_sources__chart_color'],
             'service_name': sds['service__name'],
             'service_alias': sds['service__alias'],
+            'ds_name': sds['service_data_sources__name']
         }
         SDS.update({sds_name: ds_to_append})
     return SDS

@@ -58,6 +58,7 @@ class CommandForm(forms.ModelForm):
         information required to render for the form.
         """
         model = Command
+        fields = "__all__"
 
     def clean_name(self):
         """

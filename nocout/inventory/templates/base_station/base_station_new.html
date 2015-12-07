@@ -17,16 +17,16 @@
 {% block content_title %}Add Base Station{% endblock %}
 {% block content_description %}Add base station{% endblock %}
 {% block content %}
-    <div class="row formContainer">
-        <div class="col-md-12">
-            <div class="row">
-                <div class="col-md-12">
+    <div class=" formContainer">
+        <div class="">
+            <div class="">
+                <div class="">
                     <div class="box border lite">
                         <div class="box-title">
                             <h4><i class="fa fa-bars"></i> ADD BASE STATION</h4>
                         </div>
                             <div class="box-body">
-                                <div class="col-md-8"><br />
+                                <div class="col-md-8">
                                     <form action="/base_station/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
@@ -45,11 +45,17 @@
                                         </div>
                                         <div class="form-group">
                                             <div class="col-sm-offset-3 col-sm-9">
-                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
+                                                <button type="submit" class="btn btn-default">
+                                                    <i class="fa fa-pencil text-success"></i> Create
+                                                </button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
+                                                <button type="reset" class="btn btn-default" onclick="resetForm();">
+                                                    <i class="fa fa-refresh text-warning"></i> Reset
+                                                </button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/base_station/')"><i class="fa fa-times"></i>Cancel</button>
+                                                <button type="reset" class="btn btn-default" onclick="window.location.replace('/base_station/')">
+                                                    <i class="fa fa-times text-danger"></i> Cancel
+                                                </button>
                                             </div>
                                         </div>
                                     </form>
@@ -64,8 +70,37 @@
     {% block content_js %}
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
-    <script>
-    $(document).ready(function () {
+    <script type="text/javascript">
+        var parent_class = 'formContainer',
+            change_event_dom_ids = [
+                '#id_country',
+                '#id_state'
+            ],
+            element_relation_dict = {
+                '#id_country' : {
+                    "old_value" : $('#id_country').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_state',
+                            "url_name" : '{% url "get_states_for_country" 123 %}',
+                            "existing_value" : $('#id_state').val()
+                        }
+                    ],
+                    "reset" : ['#id_state', '#id_city']
+                },
+                '#id_state' : {
+                    "old_value" : $('#id_state').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_city',
+                            "url_name" : '{% url "get_cities_for_state" 123 %}',
+                            "existing_value" : $('#id_city').val()
+                        }
+                    ],
+                    "reset" : ['#id_city']
+                }
+            };
+        $(document).ready(function () {
             // Changing labels of form fields
             $("label[for=id_bs_technology]").html('<span class="mandatory">* </span>BS Technology');
             $("label[for=id_bs_site_id]").text('BS Site ID');
@@ -79,31 +114,22 @@
 
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            // Loop to trigger change event on select boxes
+            for (var i=0;i<change_event_dom_ids.length;i++) {
+                if (element_relation_dict[change_event_dom_ids[i]]['old_value']) {
+                    // trigger change event
+                    $(change_event_dom_ids[i]).trigger('change', true);
+                }
+            }
+
+            // Initialize the tooltip.
             $('.tip-focus').tooltip({
                 placement: 'right',
                 trigger: 'focus'
             });
 
-            // if none of the value from 'country' is selected than empty 'state' & 'city' selection too.
-            // or update value of 'state' corresponding to the selected 'country'
-
-            if ($("#id_country").val() == "") {
-                $("#id_state").empty();
-                $("#id_city").empty();
-            }
-            else {
-                Dajaxice.inventory.update_states_after_invalid_form(Dajax.process, {'option': $("#id_country").val(), 'state_id': $("#id_state").val()});
-            }
-
-            // if 'state' has no value than empty 'city' selection menu
-            // or update 'city' corresponding to selected 'state'
-            if (!$("#id_state").val()) {
-                $("#id_city").empty();
-            }
-            else {
-                Dajaxice.inventory.update_cities_after_invalid_form(Dajax.process, {'option': $("#id_state").val(), 'city_id': $("#id_city").val()});
-            }
-
+            // initialize select2 on bs_switch
             $("#id_bs_switch").select2({
                 placeholder: "Search for a device.",
                 minimumInputLength: 2,
@@ -136,13 +162,18 @@
                             data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
-                            });
+                        });
                     }
                 },
-                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(device) {
+                    return device.device_alias
+                },
+                formatSelection: function(device) {
+                    return device.device_alias
+                }
             });
-
+    
+            // initialize select2 on backhaul
             $("#id_backhaul").select2({
                 placeholder: "Search for a backhaul.",
                 minimumInputLength: 2,
@@ -175,50 +206,17 @@
                             data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
-                            });
+                        });
                     }
                 },
-                formatResult: repoBackhaulFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoBackhaulFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(backhaul) {
+                    return backhaul.alias;
+                },
+                formatSelection: function(backhaul) {
+                    return backhaul.alias;
+                }
             });
-
-    });//end ready
-    // update 'states' on selecting 'country'
-        $("#id_country").change(function () {
-            if ($("#id_country").val() != "") {
-                Dajaxice.inventory.update_states(Dajax.process, {'option': $("#id_country").val()});
-                $("#id_city").empty();
-            }
-            else {
-                $("#id_state").select2("val","");
-                $("#id_state").empty();
-                $("#id_city").select2("val","");
-                $("#id_city").empty();
-            }
         });
-
-        function repoFormatResult(device) {
-          return device.device_alias;
-        }
-
-        function repoFormatSelection(device) {
-          return device.device_alias;
-        }
-
-        function repoBackhaulFormatResult(backhaul) {
-          return backhaul.alias;
-        }
-
-        function repoBackhaulFormatSelection(backhaul) {
-          return backhaul.alias;
-        }
-
-        // update 'cities' on selecting 'state'
-        $("#id_state").change(function () {
-            $("#id_city").select2("val","");
-            Dajaxice.inventory.update_cities(Dajax.process, {'option': $("#id_state").val()});
-        });
-
     </script>
 {% endblock %}
 

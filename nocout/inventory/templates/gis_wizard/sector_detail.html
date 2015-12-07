@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "GIS Wizard" "javascript:;" %}
     {% breadcrumb_safe "Base Station Wizard" "gis-wizard-base-station-list" %}
     {% breadcrumb_safe "BS : "|add:base_station.alias "gis-wizard-base-station-update" base_station.id %}
@@ -277,12 +277,20 @@
                 </table>
                 {% url 'gis-wizard-sector-list' bs_pk=base_station.id as prev_url %}
                 {% if selected_technology == '2' %}
-                <br><button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ prev_url }}')"><i class="fa fa-times"></i>Previous (PTP List)</button>
+                <br>
+                <button type="reset" class="btn btn-default" onclick="window.location.replace('{{ prev_url }}')">
+                    <i class="fa fa-times text-warning"></i> Previous (PTP List)
+                </button>
                 {% else %}
                 {% url 'gis-wizard-sub-station-list' bs_pk=base_station.id selected_technology=selected_technology sector_pk=object.id as next_url %}
-                <br><button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ prev_url }}')"><i class="fa fa-times"></i>Previous ({{ sector_text }} List)</button>
+                <br>
+                <button type="reset" class="btn btn-default" onclick="window.location.replace('{{ prev_url }}')">
+                    <i class="fa fa-times text-warning"></i> Previous ({{ sector_text }} List)
+                </button>
                 &nbsp;
-                <button type="reset" class="btn btn-success" onclick="window.location.replace('{{ next_url }}')"><i class="fa fa-pencil"></i>Next (Sub Station List)</button>
+                <button type="reset" class="btn btn-default" onclick="window.location.replace('{{ next_url }}')">
+                    <i class="fa fa-pencil text-success"></i> Next (Sub Station List)
+                </button>
                 {% endif %}
             </div>
             <div class="clearfix"></div>

@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('configparser', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 
 
@@ -49,8 +50,19 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 
         db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
         service = "availability"
+	availability_list= []
         end_time = datetime.now()
         start_time = end_time - timedelta(hours=24)
+
+	start_time = start_time + timedelta(minutes=-(start_time.minute % 5))
+	end_time = end_time + timedelta(minutes=-(end_time.minute % 5))
+
+	start_time =start_time.replace(second=0,microsecond=0)
+	end_time =end_time.replace(second=0,microsecond=0)
+
+        start_time =int(time.mktime(start_time.timetuple()))
+        end_time =int(time.mktime(end_time.timetuple()))
+	"""
         pipe =  [
                 {"$match": {
                 "local_timestamp": { "$gt": start_time, "$lt": end_time}, "service": "ping", "ds": "pl"
@@ -67,27 +79,50 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 		result = result.get('result')
 	except:
 		return
+        """
+	
+	try:
+		redis_obj = db_ops_module.RedisInterface()
+		key = nocout_site_name + "_network"
+		result=redis_obj.zrangebyscore_dcompress(key,start_time,end_time)
+	except Exception,e:
+		print e
+	host_down_result = {}
+	down_devices = filter(lambda x: x.get('data')[0].get('value') == "100" ,result)
         for entry in result:
-                try:
-                        host = entry.get('_id')
-                        host_ip = entry.get('ip')
-                        down_count = entry.get('count')
-                        total_down = ((down_count * 5)/(24*60.0) *100)
+		if (entry['host'],entry['ip_address']) in host_down_result:
+			if entry.get('data')[0].get('value') == "100":
+				host_down_result[(entry['host'],entry['ip_address'])] =  host_down_result.get((entry['host'],entry['ip_address'])) + 1
+		else:
+			host_down_result[(entry['host'],entry['ip_address'])] = 0
+			if entry.get('data')[0].get('value') == "100":
+				host_down_result[(entry['host'],entry['ip_address'])] =  host_down_result.get((entry['host'],entry['ip_address'])) + 1
+ 	for key in host_down_result:
+		try:
+			down_count = host_down_result[key]
+			total_down = ((down_count * 5)/(24*60.0) *100)
 			if total_down >=100:
 				total_down = 100.0
-                        total_up = 100 -total_down
-                        host_state = "ok"
+			total_up = "%.2f" % (100 -total_down )
+ 			host_state = "ok"
                 except Exception ,e:
                         print e
                         continue
                 ds="availability"
 
 		current_time = int(time.time())
-		availability_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host),
+		availability_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(key[0]),
 						service_name=service,current_value=total_up,min_value=0,max_value=0,avg_value=0,
 						data_source=ds,severity=host_state,site_name=site,warning_threshold=0,
-						critical_threshold=0,ip_address=host_ip)
-		mongo_module.mongo_db_insert(db,availability_dict,"availability")
+						critical_threshold=0,ip_address=str(key[1]))
+		availability_list.append(availability_dict)	
+	key = nocout_site_name + "_availability" 
+	doc_len_key = key + "_len" 
+	memc_obj=db_ops_module.MemcacheInterface()
+	exp_time =1440 # 1 day
+	print len(availability_list)
+	memc_obj.store(key,availability_list,doc_len_key,exp_time,chunksize=1000)
+		#mongo_module.mongo_db_insert(db,availability_dict,"availability")
 
 def device_availability_main():
 	"""

@@ -16,10 +16,16 @@ from datetime import datetime, timedelta
 import subprocess
 import imp
 import sys
+import memcache
+import time
+#from handlers.db_ops import *
+
+
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -57,33 +63,25 @@ def main(**configs):
     duplicate data.
     """
 
-    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
-    start_time, end_time = None, None
+    db = None
     try:
-        db = mongo_module.mongo_conn(
-            host=site_spec_mongo_conf[1],
-            port=int(site_spec_mongo_conf[2]),
-            db_name=configs.get('nosql_db')
-        )
-    except:
-        sys.stdout.write('Mongodb connection problem\n')
-        sys.exit(1)
-    end_time = datetime.now()
-    # get most latest sys timestamp entry present in mysql
-    time_doc = list(db.sys_timestamp_status.find({'_id': 'performance_servicestatus'}))
-    for doc in time_doc:
-        start_time = doc.get('sys_timestamp')
-    print start_time ,end_time
-    # Get all the entries from mongodb having timestam0p greater than start_time
-    docs = read_data(start_time, end_time, db)
+    	db = utility_module.mysql_conn(configs=configs)
+    except Exception,e:
+	print e
+	return
+    docs = read_data()
     print len(docs)
     if docs:
-    	insert_data(configs.get('table_name'), docs, configs=configs)
-    	print "Data inserted into my mysql db"
-    else:
-	    print "No data in mongo db in this time frame"
+    	while docs:
+    		insert_data(configs.get('table_name'), docs[0:50000],db,configs)
+		docs = docs[50000:]
+    		print "Data inserted into my mysql db"
+		time.sleep(10)
+	else:
+    		print "No data in mongo db in this time frame"
 
-def read_data(start_time, end_time, db):
+
+def read_data():
     """
     Function to read data from mongodb
 
@@ -97,32 +95,38 @@ def read_data(start_time, end_time, db):
 
     #db = None
     docs = [] 
-    #db = mongo_module.mongo_conn(
-    #    host=kwargs.get('configs')[1],
-    #    port=int(kwargs.get('configs')[2]),
-    #    db_name=kwargs.get('db_name')
-    #)
-    if db:
-        if start_time is None:
-            # read data from status, initially
-            start_time = end_time - timedelta(minutes=10)
-            cur = db.device_service_status.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
-        elif (start_time + timedelta(minutes=15)) < end_time:
-            # data in mysql is older than mongo data by more than half an hour
-            # so we need to read data from live mongo collection, rather than status
-            if (start_time + timedelta(days=1) < end_time):
-                # max time range for data sync is 1 day 
-                start_time = end_time - timedelta(days=1)
-            cur = db.service_perf.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
-        else:
-            # we should read from status rather than live
-            cur = db.device_service_status.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
+    key = nocout_site_name + "_service"
+    current_time = datetime.now()
+    doc_len_key = key + "_len"
+    memc_obj = db_ops_module.MemcacheInterface()
+    memc = memc_obj.memc_conn
+    start_time = memc.get('performance_servicestatus')
+    print 'in service'
+    print start_time
+    if start_time: 
+    	start_time = datetime.fromtimestamp(start_time)
+    if start_time and (start_time + timedelta(minutes=20)) < current_time:
+    	if start_time + timedelta(days=1) < current_time:
+		start_time = current_time -  timedelta(days=1)
+	print "....in...back up...stage"
+	print start_time
+	redis_obj=db_ops_module.RedisInterface()
+	t_stmp = start_time + timedelta(minutes=-(start_time.minute % 5))
+        t_stmp = t_stmp.replace(second=0,microsecond=0)
+        start_time =int(time.mktime(t_stmp.timetuple()))
+        current_time = current_time + timedelta(minutes=-(current_time.minute % 5))
+        current_time = current_time.replace(second=0,microsecond=0)
+        current_time =int(time.mktime(current_time.timetuple()))
+	cur=redis_obj.zrangebyscore_dcompress(key,start_time,current_time)
+    else:
+    	cur=memc_obj.retrieve(key,doc_len_key)
+    #print cur
     configs = config_module.parse_config_obj()
     for config, options in configs.items():
 	    machine_name = options.get('machine')
     for doc in cur:
-        check_time_epoch = utility_module.get_epoch_time(doc.get('data')[0].get('time'))
-        local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
+        #check_time_epoch = utility_module.get_epoch_time(doc.get('data')[0].get('time'))
+        #local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
         t = (
             #uuid,
             doc.get('host'),
@@ -136,8 +140,8 @@ def read_data(start_time, end_time, db):
             doc.get('data')[0].get('value'),
             doc.get('meta').get('war'),
             doc.get('meta').get('cric'),
-            local_time_epoch,
-            check_time_epoch,
+            doc.get('local_timestamp'),
+            doc.get('data')[0].get('time'),
             doc.get('ip_address'),
             doc.get('severity'),
             doc.get('age')
@@ -191,7 +195,7 @@ def build_data(doc):
         #t = ()
     return t
 
-def insert_data(table, data_values, **kwargs):
+def insert_data(table, data_values, db,configs):
     """
     Function to insert data into mysql tables
 
@@ -201,8 +205,9 @@ def insert_data(table, data_values, **kwargs):
 
     Kwargs:
         kwargs (dict): Python dict to store connection variables
-    """   
-    db = utility_module.mysql_conn(configs=kwargs.get('configs'))
+    """  
+    if not db.is_connected():
+	db = utility_module.mysql_conn(configs=configs)
     query = "INSERT INTO `%s` " % table
     query += """
             (device_name, service_name, machine_name, 

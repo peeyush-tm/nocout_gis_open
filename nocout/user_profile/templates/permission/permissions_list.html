@@ -1,0 +1,83 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-sitemap'></i> User Management" "javascript:;" %}
+    {% breadcrumb_safe "Permissions" "permissions_list" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}Permissions{% endblock %}
+{% block content_description %}List of permissions{% endblock %}
+{% block content %}
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>PERMISSIONS LISTING</h4>
+        </div>
+
+        <div id="tableContainer" class="box-body">
+            <table class="datatable table table-striped table-bordered table-hover" id="PermissionListingTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        var dataTableInstance = '';
+        $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% for group in user.groups.all %}
+                {% if group.name == 'Admin' %}
+                    var create_link_html = '<a href="/permission/new" title="Create Permission" \
+                                            class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                    $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+                {% endif %}
+            {% endfor %}
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
+            /*Ajax url to get grid data*/
+            var ajax_url = '{% url "PermissionListingTable" %}';
+
+            var common_extra_param = "'download_excel': 'yes'",
+                table_title = "Permissions Listing",
+                app_name = "permission",
+                header_class_name = "PermissionList",
+                data_class_name = "PermissionListingTable",
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}",
+                destroy = false;
+                
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable(
+                "PermissionListingTable",
+                gridHeadersObj,
+                ajax_url,
+                destroy,
+                table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                extra_param,
+                extra_param
+            );
+        });
+
+    </script>
+{% endblock %}
+
+

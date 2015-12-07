@@ -4,9 +4,10 @@ from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic import RedirectView
 # Include dajaxice ajax module
-from dajaxice.core import dajaxice_autodiscover, dajaxice_config
+# from dajaxice.core import dajaxice_autodiscover, dajaxice_config
+from nocout import api
 
-dajaxice_autodiscover()
+# dajaxice_autodiscover()
 
 from nocout.views import AuthView
 from dashboard.views import MainDashboard
@@ -24,9 +25,9 @@ urlpatterns = patterns('',
                        url(r'^$', RedirectView.as_view(url='home/')),
                        url(r'^home/', MainDashboard.as_view(), name='home'),
                        url(r'^user/', include('user_profile.urls')),
-                       url(r'^user_group/', include('user_group.urls')),
+                       url(r'^group/', include('user_profile.group_urls')),
+                       url(r'^permission/', include('user_profile.perms_urls')),
                        url(r'^device/', include('device.urls')),
-                       url(r'^device_group/', include('device_group.urls')),
                        url(r'^organization/', include('organization.urls')),
                        url(r'^inventory/', include('inventory.urls')),
                        url(r'^command/', include('command.urls')),
@@ -62,6 +63,7 @@ urlpatterns = patterns('',
                        url(r'^auth/$', AuthView.as_view(), name='auth-view'),
                        url(r'^logout/$', 'nocout.views.logout'),
                        url(r'^reset-cache/$', 'nocout.views.reset_cache'),
+                       url(r'^update_service_thematic/$', 'nocout.views.updateThematicType'),
                        url(r'^site/', include('site_instance.urls')),
                        url(r'^network_maps/', include('devicevisualization.urls')),
                        url(r'^gis/', include('sitesearch.urls')),
@@ -74,7 +76,6 @@ urlpatterns = patterns('',
                        url(r'^dashboard/', include('dashboard.urls')),
                        url(r'^scheduling/', include('scheduling_management.urls')),
                        url(r'^snmp_trap_settings/', include('scheduling_management.snmp_trap_settings_urls')),
-                       url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
                        url(r'^session_security/', include('session_security.urls')),
                        url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
                        url(r'^admin/', include(admin.site.urls)),
@@ -83,14 +84,19 @@ urlpatterns = patterns('',
                        url(r'^bulk_import/', include('inventory.bulk_import_urls')),
                        url(r'^gis_downloaded_inventories/', include('inventory.gis_selected_bs_inventories_urls')),
                        url(r'^device_sync_history/', include('device.device_sync_history_urls')),
+                       url(r'^api/', include('nocout.api_urls')),
                        url(r'^api/', include('inventory.api_urls')),
+                       url(r'^api/', include('device.api_urls')),
+                        url(r'^api/', include('performance.api_urls')),
+                       url(r'^api/', include('user_profile.api_urls')),
                        url(r'^country/', include('device.country_urls')),
                        url(r'^state/', include('device.state_urls')),
                        url(r'^cities/', include('device.city_urls')),
                        url(r'^city_charter_settings/', include('download_center.city_charter_settings_url')),
                        url(r'^wizard/', include('device.wizard_device_type_urls')),
                        url(r'^escalation/', include('alarm_escalation.urls')),
-                       url(r'^global_search/', include('inventory.global_search_urls'))
+                       url(r'^global_search/', include('inventory.global_search_urls')),
+                       url(r'^docs/', include('rest_framework_swagger.urls'))
                        )
 
 # if settings.DEBUG:

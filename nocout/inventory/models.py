@@ -21,11 +21,8 @@ from django.db.models.signals import post_save, pre_save, pre_delete
 
 from organization.models import Organization
 from user_profile.models import UserProfile
-from user_group.models import UserGroup
-
 from service.models import Service, ServiceDataSource
-from device_group.models import DeviceGroup
-from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency, Country, State, City
+from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency, Country, State, City, DeviceType
 
 from inventory import signals as inventory_signals
 
@@ -35,22 +32,6 @@ def get_default_org():
     :return: organisation ID = 1
     """
     return Organization.objects.get(id=1)
-
-
-# inventory model --> mapper of user_group & device groups
-class Inventory(models.Model):
-    """
-    Inventory Model Columns Declaration.
-    """
-    name = models.CharField('Name', max_length=200, unique=True)
-    alias = models.CharField('Alias', max_length=250)
-    organization = models.ForeignKey(Organization)
-    user_group = models.ForeignKey(UserGroup)
-    device_groups = models.ManyToManyField(DeviceGroup, null=True, blank=True)
-    description = models.TextField('Description', null=True, blank=True)
-
-    def __unicode__(self):
-        return self.name
 
 
 # gis antenna model
@@ -101,12 +82,14 @@ class Backhaul(models.Model):
     aggregator_port_name = models.CharField('Aggregator Port Name', max_length=40, null=True, blank=True)
     aggregator_port = models.IntegerField('Aggregator Port', null=True, blank=True)
     pe_hostname = models.CharField('PE Hostname', max_length=250, null=True, blank=True)
-    pe_ip = models.IPAddressField('PE IP Address', null=True, blank=True)
+    pe_ip = models.GenericIPAddressField('PE IP Address', null=True, blank=True)
     bh_connectivity = models.CharField('BH Connectivity', max_length=40, null=True, blank=True)
     bh_circuit_id = models.CharField('BH Circuit ID', max_length=250, null=True, blank=True)
     bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True, help_text='Enter a number.')
     ttsl_circuit_id = models.CharField('TTSL Circuit ID', max_length=250, null=True, blank=True)
     dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
+    ior_id = models.CharField('IOR ID', max_length=250, null=True, blank=True)
+    bh_provider = models.CharField('BH Provider', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -146,6 +129,10 @@ class BaseStation(models.Model):
     provisioning_status = models.CharField('Provisioning Status', max_length=250, null=True, blank=True)
     tag1 = models.CharField('Tag 1', max_length=60, null=True, blank=True)
     tag2 = models.CharField('Tag 2', max_length=60, null=True, blank=True)
+    site_ams = models.CharField('Site AMS', max_length=250, null=True, blank=True)
+    site_infra_type = models.CharField('Site Infra Type', max_length=250, null=True, blank=True)
+    site_sap_id = models.CharField('Site SAP ID', max_length=250, null=True, blank=True)
+    mgmt_vlan = models.CharField('MGMT VLAN', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -180,6 +167,7 @@ class Sector(models.Model):
     frequency = models.ForeignKey(DeviceFrequency, null=True, blank=True)
     planned_frequency = models.CharField('Planned Frequency', max_length=250, null=True, blank=True)
     modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
+    rfs_date = models.DateField('RFS Date', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -220,6 +208,8 @@ class SubStation(models.Model):
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     mac_address = models.CharField('MAC Address', max_length=100, null=True, blank=True)
+    cpe_vlan = models.CharField('CPE VLAN', max_length=250, null=True, blank=True)
+    sacfa_no = models.CharField('SACFA No.', max_length=250, null=True, blank=True)
     country = models.ForeignKey(Country, null=True, blank=True)
     state = models.ForeignKey(State, null=True, blank=True)
     city = models.ForeignKey(City, null=True, blank=True)
@@ -244,6 +234,7 @@ class Circuit(models.Model):
     customer = models.ForeignKey(Customer, null=True, blank=True, on_delete=models.SET_NULL)
     sub_station = models.ForeignKey(SubStation, null=True, blank=True, on_delete=models.SET_NULL)
     qos_bandwidth = models.FloatField('QOS(BW)', null=True, blank=True, help_text='(kbps) Enter a number.')
+    sold_cir = models.FloatField('Customer Sold CIR', null=True, blank=True, help_text='(mbps) Enter a number.')
     dl_rssi_during_acceptance = models.CharField('RSSI During Acceptance', max_length=100, null=True, blank=True)
     dl_cinr_during_acceptance = models.CharField('CINR During Acceptance', max_length=100, null=True, blank=True)
     jitter_value_during_acceptance = models.CharField('Jitter Value During Acceptance', max_length=100, null=True, blank=True)
@@ -255,25 +246,26 @@ class Circuit(models.Model):
         return self.name
 
 
+# function to modify name and path of uploaded file
+def uploaded_file_name(instance, filename):
+    timestamp = time.time()
+    full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+    year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+    # modified filename
+    filename = "{}_{}".format(full_time, filename)
+
+    # modified path where file is uploaded
+    path = "uploaded/icons"
+
+    return '{}/{}/{}'.format(path, year_month_date, filename)
+
+
 # icon settings model
 class IconSettings(models.Model):
     """
     IconSettings Model Columns Declaration.
     """
-
-    # function to modify name and path of uploaded file
-    def uploaded_file_name(instance, filename):
-        timestamp = time.time()
-        full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
-        year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
-
-        # modified filename
-        filename = "{}_{}".format(full_time, filename)
-
-        # modified path where file is uploaded
-        path = "uploaded/icons"
-
-        return '{}/{}/{}'.format(path, year_month_date, filename)
 
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
@@ -298,6 +290,7 @@ class LivePollingSettings(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     technology = models.ForeignKey(DeviceTechnology)
+    device_type = models.ForeignKey(DeviceType, null=True)
     service = models.ForeignKey(Service)
     data_source = models.ForeignKey(ServiceDataSource)
 
@@ -374,7 +367,7 @@ class UserThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(ThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
-
+    thematic_type = models.ForeignKey(DeviceType, null=True)
 
 class GISInventoryBulkImport(models.Model):
     original_filename = models.CharField('Inventory', max_length=250, null=True, blank=True)
@@ -401,23 +394,27 @@ class GISInventoryBulkImport(models.Model):
         Device Ping Configuration object presentation
         """
         return self.original_filename
-#*********** L2 Reports Model *******************
+
+
+
+# function to modify name and path of uploaded file
+def uploaded_report_name(instance, filename):
+    timestamp = time.time()
+    year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+    filename = instance.file_name
+    if instance.report_type == 'base_station':
+        prefixreportname = BaseStation.objects.filter(id=instance.type_id).values('state__state_name', 'city__city_name')
+        filename = "{0}-{1}_{2}".format(prefixreportname[0]['state__state_name'], prefixreportname[0]['city__city_name'], instance.file_name)
+
+    # modified path where file is uploaded
+    path = "uploaded/l2"
+
+    return '{}/{}/{}'.format(path, year_month_date, filename)
+
+
+# *********** L2 Reports Model *******************
 class CircuitL2Report(models.Model):
-
-    # function to modify name and path of uploaded file
-    def uploaded_report_name(instance, filename):
-        timestamp = time.time()
-        year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
-
-        filename = instance.file_name
-        if instance.report_type == 'base_station':
-            prefixreportname = BaseStation.objects.filter(id=instance.type_id).values('state__state_name', 'city__city_name')
-            filename = "{0}-{1}_{2}".format(prefixreportname[0]['state__state_name'], prefixreportname[0]['city__city_name'], instance.file_name)
-
-        # modified path where file is uploaded
-        path = "uploaded/l2"
-
-        return '{}/{}/{}'.format(path, year_month_date, filename)
 
     name = models.CharField('Name', max_length=250, unique=False)
     file_name = models.FileField(max_length=512, upload_to=uploaded_report_name)
@@ -436,6 +433,7 @@ class PingThematicSettings(models.Model):
     alias = models.CharField('Alias', max_length=250)
 
     technology = models.ForeignKey(DeviceTechnology)
+    type = models.ForeignKey(DeviceType,null=True)
     service = models.CharField('Service', max_length=250)
     data_source = models.CharField('Data Source', max_length=250)
 
@@ -484,6 +482,7 @@ class UserPingThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(PingThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
+    thematic_type = models.ForeignKey(DeviceType, null=True)
 
 
 class GISExcelDownload(models.Model):
@@ -506,8 +505,7 @@ class GISExcelDownload(models.Model):
         return self.file_path
 
 
-#********************* Connect Inventory Signals *******************
-
+# ********************* Connect Inventory Signals *******************
 post_save.connect(inventory_signals.auto_assign_thematic, sender=UserProfile)
 pre_save.connect(inventory_signals.resize_icon_size, sender=IconSettings)
 pre_delete.connect(inventory_signals.delete_antenna_of_sector, sender=Sector)

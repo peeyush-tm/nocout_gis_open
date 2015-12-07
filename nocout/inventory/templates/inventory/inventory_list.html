@@ -5,7 +5,7 @@
 {% block content_description %}List of Inventory{% endblock %}
 {% block content %}
     {% for group in user.groups.all %}
-        {% if group.name == 'group_admin' %}
+        {% if group.name == 'Admin' %}
             <p><a href="/inventory/new"><i class="fa fa-plus">&nbsp;</i> Create Inventory</a></p>
         {% endif %}
     {% endfor %}
@@ -26,9 +26,10 @@
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
+        var dataTableInstance = '';
         $(document).ready(function (e) {
             /*Make a     instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/

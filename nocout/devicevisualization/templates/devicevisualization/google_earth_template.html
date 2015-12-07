@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-map-marker'></i> Network Maps" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-map-o'></i> Network Maps" "javascript:;" %}
     {% breadcrumb_safe "Google Earth" "init_network_maps" page_type %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -56,7 +56,7 @@
         <!-- Select Device Content End-->
 
         <!-- Tools Content Start-->
-        <div id="toolsContainerBlock" class="hide">
+        <div id="toolsContainerBlock" class="hide settings_content_container">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Google Earth Tools</h4>
             <ul class="list-unstyled list-inline">
                 <li>
@@ -193,12 +193,14 @@
         is_super_admin = "",
         deviceName = "",
         default_polling = true,
-        dataTableInstance = "";
+        dataTableInstance = "",
+        tech_type_api = "";
 
     $(document).ready(function (e) {
         
         // Set 'isMapsPage' flag to true
         isMapsPage = true;
+        tech_type_api = "{% url 'get_types_for_tech' 123 %}";
 
         try {
             // Is user super admin or admin
@@ -225,6 +227,8 @@
         advJustSearch = new advanceSearchMainClass();
         /*Make a instance of ourDataTableWidget class */
         dataTableInstance = new ourDataTableWidget();
+        // Show loading spinner
+        showSpinner();
         /*Call the function to create map*/
         networkMapInstance.createMap("deviceMap");
 

@@ -14,9 +14,16 @@ var tables_info = {},
     server_side_rendering = true,
     refresh_time = '';
 
+/**
+ * This event triggers when any tab clicked
+ * @event click
+ */
 $(".nav-tabs li a").click(function (e, isFirst) {
+
+    var tab_txt = $.trim($(this).text());
+    
     // Update the breadcrumb as per clicked tab
-    $(".breadcrumb li.active").html($.trim($(this).text()));
+    $(".breadcrumb li.active").html(tab_txt);
 
     /*Initialize the timer in seconds.Right now its 1 year*/
     /*86400 is 24 hrs miliseconds*/

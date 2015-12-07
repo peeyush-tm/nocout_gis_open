@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-bullhorn'></i> Escalation" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-paper-plane-o'></i> Escalation" "javascript:;" %}
     {% breadcrumb_safe "Escalation Level" level_create %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -15,11 +15,6 @@
 {% block content_title %}Level Management{% endblock %}
 {% block content_description %}List of level{% endblock %}
 {% block content %}
-    {% if perms.alarm_escalation.add_escalationlevel %}
-        <p>
-            <a href="/escalation/level/new/"><i class="fa fa-plus">&nbsp;</i> Create Level</a>
-        </p>
-    {% endif %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>LEVEL LISTING</h4>
@@ -36,9 +31,18 @@
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
+        var dataTableInstance = '';
         $(document).ready(function (e) {
+            // Add 'Create Item' link on top header bar.
+            {% if perms.alarm_escalation.add_escalationlevel %}
+                var create_link_html = '<a href="/escalation/level/new/" title="Create Level" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
+
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/

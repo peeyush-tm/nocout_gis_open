@@ -9,6 +9,7 @@ from django.http import HttpRequest
 from datetime import datetime
 import xlwt
 import simplejson
+import json
 
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
@@ -100,6 +101,7 @@ def get_datatable_response(payload):
         # create request attribute for http request
         rows_req.REQUEST = payload['rows_data']
         rows_req.REQUEST['iDisplayStart'] = 0
+        rows_req.REQUEST['start'] = 0
 
         # bind current user with http request
         rows_req.user = user
@@ -156,40 +158,100 @@ def get_datatable_response(payload):
                         file_headers_list.append(headers_dict['sTitle'])
         except Exception as e:
             logger.info(e.message)
-
+        
         # create view class object (for rows data)
         rows_req_obj = eval("{}()".format(payload['rows']))
         rows_req_obj.request = rows_req
-        
-        rows_req_obj.kwargs = payload['rows_data']
 
+        # is the request for single sheet or multi
         try:
-            # get datatable data
-            query_set_length = len(rows_req_obj.get_initial_queryset())
-
-            rows_req.REQUEST['iDisplayLength'] = query_set_length
-
-            if payload['max_rows']:
-                rows_req_obj.max_display_length = int(payload['max_rows'])
-            else:
-                rows_req_obj.max_display_length = query_set_length
+            is_multi_sheet = int(payload['rows_data'].get('is_multi_sheet', 0))
         except Exception, e:
-            logger.error(e.message)
+            is_multi_sheet = 0
 
-        result = rows_req_obj.get_context_data()
+        resultset = list()
+        titles_list = list()
 
-        # error rows list
-        rows_list = []
+        if is_multi_sheet:
+            data_key = payload['rows_data'].get('data_key')
+            data_list = payload['rows_data'].get(data_key)
+            change_key = payload['rows_data'].get('change_key')
 
-        # headers for excel sheet
-        if result['aaData']:
-            headers = headers_list
-            if headers:
-                # Create instance of 'NocoutUtilsGateway' class
-                nocout_utils = NocoutUtilsGateway()
+            if type(data_list) == type(str):
+                data_list = json.loads(data_list)
 
+            for item in data_list:
+                # create view class object (for rows data)
+                rows_req_obj = eval("{}()".format(payload['rows']))
+                rows_req_obj.request = rows_req
+
+                payload['rows_data'][change_key] = item['id']
+                titles_list.append(item['title'])
+                rows_req_obj.kwargs = payload['rows_data']
+                rows_req_obj.request.GET = payload['rows_data']
+
+                try:
+                    # get datatable data
+                    query_set_length = len(rows_req_obj.get_initial_queryset())
+
+                    rows_req.REQUEST['iDisplayLength'] = query_set_length
+                    rows_req.REQUEST['length'] = query_set_length
+
+                    if payload['max_rows']:
+                        rows_req_obj.max_display_length = int(payload['max_rows'])
+                    else:
+                        rows_req_obj.max_display_length = query_set_length
+                except Exception, e:
+                    logger.info(e.message)
+
+                resultset.append(rows_req_obj.get_context_data())
+
+        else:
+            rows_req_obj.kwargs = payload['rows_data']
+
+            try:
+                # get datatable data
+                query_set_length = len(rows_req_obj.get_initial_queryset())
+
+                rows_req.REQUEST['iDisplayLength'] = query_set_length
+                rows_req.REQUEST['length'] = query_set_length
+
+                if payload['max_rows']:
+                    rows_req_obj.max_display_length = int(payload['max_rows'])
+                else:
+                    rows_req_obj.max_display_length = query_set_length
+            except Exception, e:
+                logger.error(e.message)
+            titles_list = ['Sheet 1']
+            resultset.append(rows_req_obj.get_context_data())
+
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        counter = 0
+
+        is_created = False
+
+        # excel workbook
+        wb = xlwt.Workbook()
+
+        for result in resultset:
+
+            # error rows list
+            rows_list = []
+
+            data_key = 'aaData'
+            if 'data' in result and result['data']:
+                data_key = 'data'
+
+            # headers for excel sheet
+            if data_key in result and result[data_key] and headers_list:
+                
+                headers = headers_list
+                    
+                is_created = True
                 # create list of lists containing excel rows data (except header)
-                for val in result['aaData']:
+                for val in result[data_key]:
                     temp_list = list()
                     for key in headers:
                         try:
@@ -199,11 +261,8 @@ def get_datatable_response(payload):
                             logger.info(e.message)
                     rows_list.append(temp_list)
 
-                # excel workbook
-                wb = xlwt.Workbook()
-
                 # excel worksheet
-                ws = wb.add_sheet('Sheet 1')
+                ws = wb.add_sheet(titles_list[counter])
 
                 # xlwt style object for styling header row
                 style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
@@ -227,32 +286,34 @@ def get_datatable_response(payload):
                             ws.write(i, j, col)
                 except Exception as e:
                     pass
+            counter += 1
 
-                # if directory for bulk upload excel sheets didn't exist than create one
-                if not os.path.exists(MEDIA_ROOT + 'download_excels'):
-                    os.makedirs(MEDIA_ROOT + 'download_excels')
+        if is_created:
+            # if directory for bulk upload excel sheets didn't exist than create one
+            if not os.path.exists(MEDIA_ROOT + 'download_excels'):
+                os.makedirs(MEDIA_ROOT + 'download_excels')
 
-                # saving bulk upload errors excel sheet
-                try:
-                    # file path
-                    file_path = 'download_excels/{}_{}.xls'.format(payload['username'],
-                                                                      payload['fulltime'])
+            # saving bulk upload errors excel sheet
+            try:
+                # file path
+                file_path = 'download_excels/{}_{}.xls'.format(payload['username'],
+                                                                  payload['fulltime'])
 
-                    # saving workbook
-                    wb.save(MEDIA_ROOT + file_path)
-                    # update downloader object (on success)
-                    d_obj.file_path = file_path
-                    d_obj.file_type = 'MS-Excel'
-                    d_obj.status = 1
-                    d_obj.description += "\nSuccessfully downloaded on {}.".format(payload['fulltime'])
-                    d_obj.request_completion_on = datetime.now()
-                    d_obj.save()
-                except Exception as e:
-                    # update downloader object
-                    d_obj.status = 2
-                    d_obj.request_completion_on = datetime.now()
-                    d_obj.save()
-                    logger.info(e.message)
+                # saving workbook
+                wb.save(MEDIA_ROOT + file_path)
+                # update downloader object (on success)
+                d_obj.file_path = file_path
+                d_obj.file_type = 'MS-Excel'
+                d_obj.status = 1
+                d_obj.description += "\nSuccessfully downloaded on {}.".format(payload['fulltime'])
+                d_obj.request_completion_on = datetime.now()
+                d_obj.save()
+            except Exception as e:
+                # update downloader object
+                d_obj.status = 2
+                d_obj.request_completion_on = datetime.now()
+                d_obj.save()
+                logger.info(e.message)
         else:
             # update downloader object (on success)
             d_obj.description += "\nData table has no data."

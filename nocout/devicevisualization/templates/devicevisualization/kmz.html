@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-map-marker'></i> Network Maps" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-map-o'></i> Network Maps" "javascript:;" %}
     {% breadcrumb_safe "KMZ" "kmz_list" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -14,11 +14,6 @@
 {% block content_title %}KMZ Reports Management{% endblock %}
 {% block content_description %}List of KMZ Reports{% endblock %}
 {% block content %}
-    {% for group in user.groups.all %}
-        {% if group.name == 'group_admin' or group.name == 'group_operator' %}
-            <p><a href="/network_maps/kmz/add/"><i class="fa fa-plus">&nbsp;</i> Upload KMZ</a></p>
-        {% endif %}
-    {% endfor %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> KMZ REPORTS LISTING</h4>
@@ -35,9 +30,21 @@
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
+        var dataTableInstance = '';
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% for group in user.groups.all %}
+                {% if group.name == 'Admin' or group.name == 'Operator' %}
+                    var create_link_html = '<a href="/network_maps/kmz/add/" title="Upload KMZ" \
+                                            class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                    $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+                {% endif %}
+            {% endfor %}
+
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ table_headers|safe }}');
             /*Ajax url to get grid data*/

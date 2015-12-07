@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "GIS Inventory" "javascript:;" %}
     {% breadcrumb_safe "Customer" "customers_list" %}
     {% breadcrumb_safe "All" "customers_list" %}
@@ -17,11 +17,6 @@
 {% block content_title %}Customer Management{% endblock %}
 {% block content_description %}List of customer{% endblock %}
 {% block content %}
-
-        {% if perms.inventory.add_customer %}
-            <p><a href="/customer/new"><i class="fa fa-plus">&nbsp;</i> Create Customer</a></p>
-        {% endif %}
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>CUSTOMER LISTING</h4>
@@ -68,6 +63,15 @@
         var dataTableInstance = "";
 
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% if perms.inventory.add_customer %}
+                var create_link_html = '<a href="/customer/new" title="Create Customer" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 

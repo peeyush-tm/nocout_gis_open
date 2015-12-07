@@ -1,0 +1,172 @@
+#!/usr/bin/python
+import binascii
+import time
+import memcache
+from mysql_connection import memc
+#import datetime
+# ######################################################################
+# Function : check_rad5k_topology_discover
+#
+# Parameters: info (SNMP Output) _no_params(No Parameters)
+#
+# Output: service state and plugin output
+# #####################################################################
+
+def check_rad5k_topology_discover(item, params, info):
+    """
+            check_rad5k_ss_ul_utilization function calculates the BS and SS parameters and maintains the topology
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter results
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                                    3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - 00:15:67:5e:d8:a2/10.169.241.2/HBS1Krishna_Complex 
+					      P11190I100A009A5=-55/-53/0.00/0.00/1/1/195800/196000/0/0/0/0/450/-55
+					      P11190I100A0096A=-61/-58/0.00/0.00/1/1/195800/196000/0/0/0/0/450/-61
+					      P11190I100A009A8=-54/-50/0.00/0.00/1/1/195800/195696/0/0/0/0/450/-54
+
+                    Raises:
+                            ValueError ,Exception
+    """
+    infotext = None
+    try:
+        if info:
+	    #start = datetime.datetime.now()
+            infotext = ""
+            ap_ip = info[0][0]
+            ap_mac = info[0][1]
+            n= 2
+            ap_mac=(':').join([ap_mac[j:j+2] for j in range(0, len(ap_mac), n)])
+            ap_sector_id = info[0][2].replace(" ","_")
+            infotext += "%s %s %s " %(ap_mac,ap_ip,ap_sector_id)
+            info_list1 = info[1:17]
+            info_list2 = info[17:]
+	    #print info_list1, "\n", info_list2
+            for i in range(len(info_list1)):
+                try:
+                    connected_ss_serial_number = info_list1[i][3].split(',')[4]
+                except:
+                    connected_ss_serial_number = None
+		if connected_ss_serial_number is None :
+		    break			    		
+
+		try:
+		    hex_ip = info_list1[i][3].split(',')[1]
+		    connected_ss_ip_address = '.'.join(str(int(index, 16)) for index in ([hex_ip[index:index+2] for index in range(0, len(hex_ip), 2)]))
+		except:
+		    connected_ss_ip_address = None
+		try:
+                    connected_ss_rssi_ul = info_list1[i][4]
+		except:
+		    connected_ss_rssi_ul = None
+	        try:
+	    	    connected_ss_rssi_dl = info_list1[i][5]
+        	except:
+		    connected_ss_rssi_dl = None
+		try:
+		    #print 'DL : %s\n' % info_list1[i][6]
+		    connected_ss_dl_utilization = int(info_list1[i][6]) / (1024.0)
+                    connected_ss_dl_utilization = "%.2f" % connected_ss_dl_utilization
+		except Exception,e:
+                    connected_ss_dl_utilization = None
+		try:
+		    #print 'UL : %s\n' % info_list1[i][7]
+                    connected_ss_ul_utilization = int(info_list1[i][7]) / (1024.0)
+		    connected_ss_ul_utilization = "%.2f" % connected_ss_ul_utilization
+		except Exception,exp:
+                    connected_ss_ul_utilization= None
+		try:
+		    connected_ss_time_slot_alloted_dl = int(info_list1[i][8])
+		except:
+		    connected_ss_time_slot_alloted_dl = None
+                try:
+                    connected_ss_time_slot_alloted_ul = int(info_list1[i][9])
+                except:
+		    connected_ss_time_slot_alloted_ul = None
+		try:
+		    connected_ss_estimated_throughput_dl = int(info_list1[i][10])
+		except:
+		    connected_ss_estimated_throughput_dl = None
+		try:
+		    connected_ss_estimated_throughput_ul = int(info_list1[i][11])
+		except:
+		    connected_ss_estimated_throughput_ul = None
+        	try:
+		    connected_ss_cell_radius = int(info_list1[i][16])
+	        except:
+        	    connected_ss_cell_radius = None
+                try:
+		    connected_ss_commanded_rx_power = int(info_list1[i][17])
+		except:
+		    connected_ss_commanded_rx_power = None
+
+	        try:
+        	    connected_ss_ul_uas = int(info_list2[i][12])
+	        except:
+        	    connected_ss_ul_uas = None
+     	        try:
+                    connected_ss_ul_es = int(info_list2[i][13])
+	        except:
+        	    connected_ss_ul_es = None
+                try:
+                    connected_ss_ul_ses = int(info_list2[i][14])
+                except:
+                    connected_ss_ul_ses = None
+	        try:
+        	    connected_ss_ul_bbe = int(info_list2[i][15])
+                except:
+                    connected_ss_ul_bbe = None
+
+                infotext += "%s=%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s " % (connected_ss_serial_number, \
+		connected_ss_rssi_ul,connected_ss_rssi_dl,connected_ss_dl_utilization,connected_ss_ul_utilization,\
+		connected_ss_time_slot_alloted_dl,connected_ss_time_slot_alloted_ul,connected_ss_estimated_throughput_dl,\
+		connected_ss_estimated_throughput_ul,connected_ss_ul_uas,connected_ss_ul_es,connected_ss_ul_ses,\
+		connected_ss_ul_bbe,connected_ss_cell_radius,connected_ss_commanded_rx_power,connected_ss_ip_address)
+                try:
+                    value_list= []
+                    value_list.extend([connected_ss_rssi_ul,connected_ss_rssi_dl,connected_ss_dl_utilization,\
+                                            connected_ss_ul_utilization,connected_ss_time_slot_alloted_dl,\
+					    connected_ss_time_slot_alloted_ul,connected_ss_estimated_throughput_dl,\
+					    connected_ss_estimated_throughput_ul,connected_ss_ul_uas,connected_ss_ul_es,\
+					    connected_ss_ul_ses,connected_ss_ul_bbe,connected_ss_cell_radius,connected_ss_commanded_rx_power,connected_ss_ip_address])
+                    memc.set(connected_ss_serial_number+"_param",value_list,360)
+		    #print memc.get("%s_params" % connected_ss_serial_number),'\n' 
+                except Exception ,e:
+		    #print e
+                    pass
+
+	    #end = datetime.datetime.now()
+	    #diff= end - start
+	    #print diff
+	    state = 0
+    except Exception,e:
+        #print e
+        infotext = None
+    return (state, infotext)
+check_info["rad5k_topology_discover"] = {
+    'check_function': check_rad5k_topology_discover,
+    'service_description': 'rad5k_topology_discover',
+}
+
+############################################################################################################
+#SNMP OID value for poller script
+#Parameters :	BS_MAC, BS_IP, BS_Sector_ID
+#		SS_RSSI_UL, SS_RSSI_DL, SS_DL_UTILIZATION, SS_UL_UTILIZATION, SS_TIME_SLOT_ALLOTED_DL, 
+#		SS_TIME_SLOT_ALLOTED_UL, SS_ESTIMATED_THROUGHPUT_DL, SS_ESTIMATED_THROUGHPUT_UL, SS_UL_UAS,
+#		SS_UL_ES, SS_UL_SES,SS_UL_BBE, SS_CELL_RADIUS, SS_COMMANDED_RX_POWER				
+############################################################################################################
+snmp_info["rad5k_topology_discover"] = ( ".1.3.6.1.4.1.4458.1000", ["1.1.6.0", "1.3.2.1.5.0", "1.5.3.0", "3.1.7.2.1.23",\
+					 "3.1.7.2.1.9", "3.1.7.2.1.11", "3.1.7.2.1.26", "3.1.7.2.1.27", "3.1.6.2.1.7",\
+					 "3.1.6.2.1.13","3.1.7.2.1.6","3.1.7.2.1.7","1.6.1.1.1","1.6.1.1.2","1.6.1.1.3",\
+					 "1.6.1.1.4","3.1.7.2.1.8","3.1.7.2.1.9"] )
+

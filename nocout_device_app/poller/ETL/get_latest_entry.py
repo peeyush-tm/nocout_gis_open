@@ -8,10 +8,12 @@ import imp
 import sys
 from pprint import pformat
 from datetime import datetime
+import time
 
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 
 def get_and_insert_last_timestamp():
@@ -33,7 +35,15 @@ def get_and_insert_last_timestamp():
             'db_name': desired_config.get('nosql_db')
             }
     table_list = ['performance_networkstatus', 'performance_servicestatus',
-            'performance_status']
+            'performance_status','performance_utilizationstatus']
+
+
+    # updating timeout value of each table in case mysql goes down ,it shows old stored value in memcache all the time
+    memc_obj=db_ops_module.MemcacheInterface() 
+    memc=memc_obj.memc_conn
+    for table in table_list:
+	value = memc.get(table)
+	memc.set(table,value,300)		
     try:
         db = utility_module.mysql_conn(configs=mysql_configs)
         cursor = db.cursor()
@@ -62,9 +72,15 @@ def get_and_insert_last_timestamp():
                 'sys_timestamp': latest_sys_timestamp,
 		'_id': table
                 }
-        if mongo_db:
-            mongo_db['sys_timestamp_status'].update({'_id': table}, doc, upsert=True)
-    db.close()
+	try:
+		updated_time =int(time.mktime(latest_sys_timestamp.timetuple()))	
+		memc.set(table,updated_time,300)
+	except Exception,e:
+            sys.stdout.write('Exception in DB query !!!\n{0}\n'.format(pformat(e)))
+	    pass	
+        #if mongo_db:
+        #    mongo_db['sys_timestamp_status'].update({'_id': table}, doc, upsert=True)
+    #db.close()
     sys.stdout.write('End -- %s\n' % (datetime.now()))
 
 

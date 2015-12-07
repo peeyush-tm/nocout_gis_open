@@ -62,7 +62,7 @@ var App = function () {
 	/*	Sidebar
 	/*-----------------------------------------------------------------------------------*/
 	var handleSidebar = function () {
-	jQuery('.sidebar-menu .has-sub > a').click(function () {
+	    jQuery('.sidebar-menu .has-sub > a').click(function () {
             var last = jQuery('.has-sub.open', $('.sidebar-menu'));
             last.removeClass("open");
             jQuery('.arrow', last).removeClass("open");
@@ -94,12 +94,31 @@ var App = function () {
             }
         });
 		
-	// Handle sub-sub menus
-	jQuery('.sidebar-menu .has-sub .sub .has-sub-sub > a').click(function () {
+	    // Handle sub-sub menus
+	    jQuery('.sidebar-menu .has-sub .sub .has-sub-sub > a').click(function () {
             var last = jQuery('.has-sub-sub.open', $('.sidebar-menu'));
             last.removeClass("open");
             jQuery('.arrow', last).removeClass("open");
             jQuery('.sub', last).slideUp(200);
+                
+            var sub = jQuery(this).next();
+            if (sub.is(":visible")) {
+                jQuery('.arrow', jQuery(this)).removeClass("open");
+                jQuery(this).parent().removeClass("open");
+                sub.slideUp(200);
+            } else {
+                jQuery('.arrow', jQuery(this)).addClass("open");
+                jQuery(this).parent().addClass("open");
+                sub.slideDown(200);
+            }
+        });
+
+        // Handle sub-sub-sub menus
+        jQuery('.sidebar-menu .has-sub .sub .has-sub-sub .sub-sub .has-sub-sub-sub > a').click(function () {
+            var last = jQuery('.has-sub-sub-sub.open', $('.sidebar-menu'));
+            last.removeClass("open");
+            jQuery('.arrow', last).removeClass("open");
+            jQuery('.sub-sub', last).slideUp(200);
                 
             var sub = jQuery(this).next();
             if (sub.is(":visible")) {
@@ -225,6 +244,28 @@ var App = function () {
 					e.stopPropagation();
 				});
 			}
+
+            // Highcharts reflow event as per width change
+            if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
+                
+                if (typeof clicked_tab_id != 'undefined' && clicked_tab_id.indexOf('bird') > -1) {
+                    
+                    var service_list = typeof all_services_list != 'undefined' ? all_services_list : [];
+
+                    for (var i=0;i<service_list.length;i++) {
+                        if ($('#' + service_list[i]['id'] + '_chart').highcharts()) {
+                            $('#' + service_list[i]['id'] + '_chart').highcharts().reflow();
+                        }
+                    }
+                } else {
+                    var active_tab_obj = nocout_getPerfTabDomId(),
+                        active_dom_id = active_tab_obj.active_dom_id;
+
+                    if ($('#' + active_dom_id + '_chart').highcharts()) {
+                        $('#' + active_dom_id + '_chart').highcharts().reflow();
+                    }
+                }
+            }
         });
 	}
 	/*-----------------------------------------------------------------------------------*/

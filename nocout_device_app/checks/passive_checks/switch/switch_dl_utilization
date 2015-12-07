@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import re
 import time
+from operator import itemgetter
 """
 Downlink utilizationPoller script.
 
@@ -51,24 +52,38 @@ def check_switch_dl_utilization(item, _no_params, info):
     wrapped = False
     infotext = "unknown_value"
     status_list = []
-    port_string = "fe_"
+    port_string = "Fa0/"
+    port_string2 ="Gi0/"
+    #print info
     try:
 	if info:
 		infotext = ""
-        	for index in range(len(info[0][0])):
-			link_up = info[0][0][index]
-			if link_up:
-				link_out_octets = int(info[1][0][index])
-				this_time = int(time.time())
-				try:
-					timedif, rate = get_counter("switch_dl_utilization_%s" % (port_string+str(index+1)), 
-					this_time, saveint(link_out_octets))
-					rate = (rate * 8)/(1024.0 * 1024)
-    					state = 0
-				except MKCounterWrapped:
-					wrapped=True
-                		status_list.append((port_string+str(index+1),"%.4f" % rate))
-                		infotext += "dl_utilization: %s=%s " % (port_string+str(index+1),rate)
+        	for index in range(len(info[0])):
+			if info[0][index][0]=='2':
+				link_up = info[0][index]
+				if link_up:
+					#link_out_octets = int(info[1][index])
+					link_out_octets = (info[1][index])
+					link_out_octets = int(link_out_octets[0])
+					this_time = int(time.time())
+					try:
+						if index < len(info[0])-2 :
+                                                	port_string1 = port_string+str(index+1)
+                                                	timedif, rate = get_counter("switch_dl_utilization_%s" % (port_string1), 
+							this_time, saveint(link_out_octets))
+							rate = (rate * 8)/(1024.0 * 1024)
+    							state = 0
+                                                else:
+                                                        port_string1 = port_string2+str(index+1-(len(info[0])-2))
+                                                        #print port_string2
+                                                        timedif, rate = get_counter("switch_dl_utilization_%s" % (port_string1),
+                                                        this_time, saveint(link_out_octets))
+                                                        rate = (rate * 8)/(1024.0 * 1024)
+                                                        state = 0
+					except MKCounterWrapped:
+						wrapped=True
+                			status_list.append((port_string1,"%.2f" % rate))
+                			infotext += "dl_utilization: %s=%s " % (port_string1,rate)
     except ValueError:
         infotext = "type_mismatch_error"
     except:

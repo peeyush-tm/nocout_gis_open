@@ -12,10 +12,12 @@ from datetime import timedelta
 from events_rrd_migration import get_latest_event_entry
 import imp
 
+#from handlers.db_ops import *
+
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -67,15 +69,21 @@ def read_data(start_time, end_time, **kwargs):
     db = None
     port = None
     docs = []
+    """
     db = mongo_module.mongo_conn(
         host=kwargs.get('configs')[1],
         port=int(kwargs.get('configs')[2]),
         db_name=kwargs.get('db_name')
     )
-    if db:
-            cur = db.nocout_host_event_log.find({
-                "sys_timestamp": {"$gte": start_time, "$lt": end_time}
-            })
+    """
+    key = nocout_site_name + "_network_event"
+    doc_len_key = key + "_len"
+    memc_obj = db_ops_module.MemcacheInterface()
+    cur=memc_obj.retrieve(key,doc_len_key)
+    #if db:
+    #        cur = db.nocout_host_event_log.find({
+    #            "sys_timestamp": {"$gte": start_time, "$lt": end_time}
+    #        })
     for doc in cur:
         docs.append(doc)
     return docs

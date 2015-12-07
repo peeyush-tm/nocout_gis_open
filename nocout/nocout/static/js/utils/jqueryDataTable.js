@@ -1,5 +1,7 @@
 var downloader_api_call = "",
-    server_side_rendering = true;
+    server_side_rendering = true,
+    create_advance_filters = true;
+    // advance_filters_enabled = false;
 /**
  * This file creates the jquery data table as per given params
  * @for jqueryDataTable.js
@@ -24,8 +26,47 @@ function ourDataTableWidget() {
         data_class_name,
         header_extra_param,
         data_extra_param,
-        excluded_columns
+        excluded_columns,
+        advance_filter
     ) {
+
+        if (typeof advance_filter == 'undefined') {
+            advance_filter = '[]';
+        }
+        // Condition added to not add adv filters for birdeye view
+        if (typeof clicked_tab_id == 'undefined') {
+            clicked_tab_id = '';
+        }
+
+        // If advance filtering is enabled from settings then create advance filters
+        if (
+            typeof advance_filters_enabled != 'undefined'
+            &&
+            advance_filters_enabled
+            &&
+            create_advance_filters
+            &&
+            clicked_tab_id.indexOf('bird') == -1 
+            &&
+            clicked_tab_id.indexOf('custom_dashboard') == -1
+        ) {
+            // Call nocout_createAdvanceFilter to create advance filters for grid
+            nocout_createAdvanceFilter(
+                tableId,
+                tableheaders,
+                ajax_url,
+                destroy,
+                current_table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                header_extra_param,
+                data_extra_param,
+                excluded_columns,
+                advance_filter
+            );
+        }
+
         /*Show the spinner*/
         showSpinner();
 
@@ -43,15 +84,15 @@ function ourDataTableWidget() {
             $("#"+tableId).dataTable().fnDestroy();
         }
 
-        $("#"+tableId).DataTable({
+        $("#"+tableId).dataTable({
             bAutoWidth: false,
             bDestroy : true,
             bPaginate: true,
-            bProcessing : true,
-            bServerSide: server_side_rendering,
+            processing : true,
+            serverSide: server_side_rendering,
             aLengthMenu: page_length_val,
             iDisplayLength : default_selected_page_length,
-            sAjaxSource: ajax_url,
+            ajax: ajax_url,
             /*This is the callback funtion for data ajax call*/
             fnInitComplete: function(oSettings) {
                 /*Hide the spinner*/
@@ -82,15 +123,22 @@ function ourDataTableWidget() {
                                             header_extra_param="'+header_extra_param+'" \
                                             data_extra_param="'+data_extra_param+'" \
                                             excluded_columns="'+excluded_columns+'"\
+                                            advance_filter=""\
                                             class="btn btn-sm btn-default" title="Download">\
                                             <i class="fa fa-download"></i></button>';
                     }
                 }
 
-                // Add search button near search txt box
-                if ($('#'+tableId+'_wrapper div.dataTables_filter label').html().indexOf('fa-search') == -1) {
-                    $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);
+                try {
+                    // Add search button near search txt box
+                    if ($('#'+tableId+'_wrapper div.dataTables_filter label').html().indexOf('fa-search') == -1) {
+                        $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);
+                    }
+                } catch(e) {
+                    // console.error(e);
                 }
+                // Append the advance_filter stringified object to download btn
+                $('#' + tableId + '_download_btn').attr('advance_filter', advance_filter);
                 
                 // Update search txt box & row per pages dropdown style
                 $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("form-control");
@@ -105,7 +153,7 @@ function ourDataTableWidget() {
 
         
 
-        var dtable = $("#"+tableId).DataTable();
+        var dtable = $("#"+tableId).dataTable();
 
         // Grab the datatables input box and alter how it is bound to events
         $("#"+tableId+"_wrapper .dataTables_filter input")
@@ -151,12 +199,14 @@ function ourDataTableWidget() {
                     header_extra_param = attributes_dict.header_extra_param ? attributes_dict.header_extra_param.value : "",
                     data_extra_param = attributes_dict.data_extra_param ? attributes_dict.data_extra_param.value : "",
                     excluded_columns = attributes_dict.excluded_columns ? attributes_dict.excluded_columns.value : "",
+                    advance_filter = attributes_dict.advance_filter ? attributes_dict.advance_filter.value : "",
                     url_get_param = "";
 
                 url_get_param += "app="+app_name;
                 url_get_param += "&rows="+data_class_name+"&rows_data="+data_extra_param;
                 url_get_param += "&headers="+header_class_name+"&headers_data="+header_extra_param;
                 url_get_param += "&excluded="+excluded_columns;
+                url_get_param += "&advance_filter="+advance_filter;
 
                 var download_url = main_url+""+url_get_param;
                 

@@ -40,6 +40,9 @@ from session_management.models import Visitor
 from user_profile.models import UserProfile
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
+from user_profile.utils.auth import in_group
 
 
 class UserStatusList(PermissionsRequiredMixin, ListView):
@@ -59,12 +62,12 @@ class UserStatusList(PermissionsRequiredMixin, ListView):
         datatable_headers = [
             {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'auto', },
             {'mData': 'full_name', 'sTitle': 'Full Name', 'sWidth': 'auto'},
-            {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'auto'},
+            {'mData': 'groups__name', 'sTitle': 'Role', 'sWidth': 'auto'},
             {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'auto', 'bSortable': False}
         ]
 
         # If the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({
                 'mData': 'actions',
                 'sTitle': 'Actions',
@@ -77,20 +80,21 @@ class UserStatusList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class UserStatusTable(BaseDatatableView):
+class UserStatusTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     View to show list of logged in user status in datatable.
         URL - 'http://127.0.0.1:8000/sm/'
     """
     model = UserProfile
-    columns = ['username', 'first_name', 'last_name', 'role__role_name']
-    order_columns = ['username', 'first_name', 'role__role_name']
+    columns = ['username', 'first_name', 'last_name', 'groups__name']
+    order_columns = ['username', 'first_name', 'groups__name']
 
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             result_list = list()
@@ -107,9 +111,8 @@ class UserStatusTable(BaseDatatableView):
                         break
                 if 'logged_in_status' in dictionary:
                     dictionary.pop('logged_in_status')
-            return result_list
-
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -118,7 +121,7 @@ class UserStatusTable(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] == 'admin':
+        if in_group(self.request.user, 'admin'):
             organization_descendants_ids = list(
                 self.request.user.userprofile.organization.get_descendants(include_self=True)
                 .values_list('id', flat=True))
@@ -186,6 +189,7 @@ class UserStatusTable(BaseDatatableView):
 
         qs = self.get_initial_queryset()
 
+
         # Number of records before filtering.
         if type(qs) == type(list()):
             total_records = len(qs)
@@ -193,7 +197,7 @@ class UserStatusTable(BaseDatatableView):
             total_records = qs.count()
 
         qs = self.filter_queryset(qs)
-
+        
         # Number of records after filtering.
         if type(qs) == type(list()):
             total_display_records = len(qs)

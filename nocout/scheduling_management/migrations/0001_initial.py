@@ -1,237 +1,70 @@
 # -*- coding: utf-8 -*-
-from south.utils import datetime_utils as datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
+import django.db.models.deletion
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'Weekdays'
-        db.create_table(u'scheduling_management_weekdays', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=128, unique=True, null=True, blank=True)),
-        ))
-        db.send_create_signal(u'scheduling_management', ['Weekdays'])
+    dependencies = [
+        ('user_profile', '0001_initial'),
+        ('organization', '0001_initial'),
+        ('device', '0001_initial'),
+    ]
 
-        # Adding model 'Event'
-        db.create_table(u'scheduling_management_event', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('repeat', self.gf('django.db.models.fields.CharField')(default='dai', max_length=10)),
-            ('repeat_every', self.gf('django.db.models.fields.IntegerField')(max_length=2, null=True, blank=True)),
-            ('repeat_by', self.gf('django.db.models.fields.CharField')(default='dofm', max_length=10, null=True, blank=True)),
-            ('created_at', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('start_on', self.gf('django.db.models.fields.DateTimeField')()),
-            ('end_never', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('end_after', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('end_on', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
-            ('created_by', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_profile.UserProfile'])),
-            ('organization', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['organization.Organization'])),
-            ('scheduling_type', self.gf('django.db.models.fields.CharField')(default='', max_length=10)),
-        ))
-        db.send_create_signal(u'scheduling_management', ['Event'])
-
-        # Adding M2M table for field repeat_on on 'Event'
-        m2m_table_name = db.shorten_name(u'scheduling_management_event_repeat_on')
-        db.create_table(m2m_table_name, (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('event', models.ForeignKey(orm[u'scheduling_management.event'], null=False)),
-            ('weekdays', models.ForeignKey(orm[u'scheduling_management.weekdays'], null=False))
-        ))
-        db.create_unique(m2m_table_name, ['event_id', 'weekdays_id'])
-
-        # Adding M2M table for field device on 'Event'
-        m2m_table_name = db.shorten_name(u'scheduling_management_event_device')
-        db.create_table(m2m_table_name, (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('event', models.ForeignKey(orm[u'scheduling_management.event'], null=False)),
-            ('device', models.ForeignKey(orm[u'device.device'], null=False))
-        ))
-        db.create_unique(m2m_table_name, ['event_id', 'device_id'])
-
-
-    def backwards(self, orm):
-        # Deleting model 'Weekdays'
-        db.delete_table(u'scheduling_management_weekdays')
-
-        # Deleting model 'Event'
-        db.delete_table(u'scheduling_management_event')
-
-        # Removing M2M table for field repeat_on on 'Event'
-        db.delete_table(db.shorten_name(u'scheduling_management_event_repeat_on'))
-
-        # Removing M2M table for field device on 'Event'
-        db.delete_table(db.shorten_name(u'scheduling_management_event_device'))
-
-
-    models = {
-        u'auth.group': {
-            'Meta': {'object_name': 'Group'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '80'}),
-            'permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'})
-        },
-        u'auth.permission': {
-            'Meta': {'ordering': "(u'content_type__app_label', u'content_type__model', u'codename')", 'unique_together': "((u'content_type', u'codename'),)", 'object_name': 'Permission'},
-            'codename': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['contenttypes.ContentType']"}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
-        },
-        u'auth.user': {
-            'Meta': {'object_name': 'User'},
-            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
-            'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'groups': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "u'user_set'", 'blank': 'True', 'to': u"orm['auth.Group']"}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_superuser': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
-            'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "u'user_set'", 'blank': 'True', 'to': u"orm['auth.Permission']"}),
-            'username': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '30'})
-        },
-        u'contenttypes.contenttype': {
-            'Meta': {'ordering': "('name',)", 'unique_together': "(('app_label', 'model'),)", 'object_name': 'ContentType', 'db_table': "'django_content_type'"},
-            'app_label': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
-        },
-        u'device.device': {
-            'Meta': {'ordering': "['machine']", 'object_name': 'Device'},
-            'address': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'city': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'country': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'device_alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'device_model': ('django.db.models.fields.IntegerField', [], {}),
-            'device_name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
-            'device_technology': ('django.db.models.fields.IntegerField', [], {}),
-            'device_type': ('django.db.models.fields.IntegerField', [], {}),
-            'device_vendor': ('django.db.models.fields.IntegerField', [], {}),
-            'dhcp_state': ('django.db.models.fields.CharField', [], {'default': "'Disable'", 'max_length': '200'}),
-            'gateway': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
-            'host_priority': ('django.db.models.fields.CharField', [], {'default': "'Normal'", 'max_length': '200'}),
-            'host_state': ('django.db.models.fields.CharField', [], {'default': "'Enable'", 'max_length': '200'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'ip_address': ('django.db.models.fields.IPAddressField', [], {'unique': 'True', 'max_length': '15'}),
-            'is_added_to_nms': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
-            'is_deleted': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
-            'is_monitored_on_nms': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
-            'latitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'longitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'mac_address': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'machine': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['machine.Machine']", 'null': 'True', 'blank': 'True'}),
-            'netmask': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
-            'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'device_children'", 'null': 'True', 'to': u"orm['device.Device']"}),
-            'ports': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.DevicePort']", 'null': 'True', 'blank': 'True'}),
-            u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'site_instance': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['site_instance.SiteInstance']", 'null': 'True', 'blank': 'True'}),
-            'state': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'timezone': ('django.db.models.fields.CharField', [], {'default': "'Asia/Kolkata'", 'max_length': '100'}),
-            u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
-        },
-        u'device.deviceport': {
-            'Meta': {'object_name': 'DevicePort'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),
-            'value': ('django.db.models.fields.IntegerField', [], {'default': '0'})
-        },
-        u'machine.machine': {
-            'Meta': {'object_name': 'Machine'},
-            'agent_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'machine_ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
-        },
-        u'organization.organization': {
-            'Meta': {'object_name': 'Organization'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'country': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
-            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'organization_children'", 'null': 'True', 'to': u"orm['organization.Organization']"}),
-            u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
-        },
-        u'scheduling_management.event': {
-            'Meta': {'object_name': 'Event'},
-            'created_at': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'created_by': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['user_profile.UserProfile']"}),
-            'device': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['device.Device']", 'symmetrical': 'False'}),
-            'end_after': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'end_never': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'end_on': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
-            'repeat': ('django.db.models.fields.CharField', [], {'default': "'dai'", 'max_length': '10'}),
-            'repeat_by': ('django.db.models.fields.CharField', [], {'default': "'dofm'", 'max_length': '10', 'null': 'True', 'blank': 'True'}),
-            'repeat_every': ('django.db.models.fields.IntegerField', [], {'max_length': '2', 'null': 'True', 'blank': 'True'}),
-            'repeat_on': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['scheduling_management.Weekdays']", 'symmetrical': 'False'}),
-            'scheduling_type': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '10'}),
-            'start_on': ('django.db.models.fields.DateTimeField', [], {})
-        },
-        u'scheduling_management.weekdays': {
-            'Meta': {'object_name': 'Weekdays'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '128', 'unique': 'True', 'null': 'True', 'blank': 'True'})
-        },
-        u'site_instance.siteinstance': {
-            'Meta': {'object_name': 'SiteInstance'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'live_status_tcp_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'machine': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['machine.Machine']", 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
-            'password': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'username': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'web_service_port': ('django.db.models.fields.IntegerField', [], {'default': '80'})
-        },
-        u'user_profile.roles': {
-            'Meta': {'object_name': 'Roles'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'role_description': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
-            'role_name': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'})
-        },
-        u'user_profile.userprofile': {
-            'Meta': {'object_name': 'UserProfile', '_ormbases': [u'auth.User']},
-            'address': ('django.db.models.fields.CharField', [], {'max_length': '150', 'null': 'True', 'blank': 'True'}),
-            'comment': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'company': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'designation': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'is_deleted': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
-            u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
-            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'user_children'", 'null': 'True', 'to': u"orm['user_profile.UserProfile']"}),
-            'password_changed_at': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'phone_number': ('django.db.models.fields.CharField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
-            u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'role': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['user_profile.Roles']", 'symmetrical': 'False'}),
-            u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'user_invalid_attempt': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
-            'user_invalid_attempt_at': ('django.db.models.fields.DateTimeField', [], {'null': 'True'}),
-            u'user_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': u"orm['auth.User']", 'unique': 'True', 'primary_key': 'True'})
-        }
-    }
-
-    complete_apps = ['scheduling_management']
+    operations = [
+        migrations.CreateModel(
+            name='Event',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=255, verbose_name=b'Title')),
+                ('repeat', models.CharField(default=b'dai', max_length=10, verbose_name=b'Repeats', choices=[(b'dai', b'Daily'), (b'mtf', b'Every weekday (Monday to Friday)'), (b'mwf', b'Every Monday, Wednesday, and Friday'), (b'tat', b'Every Tuesday and Thursday'), (b'wee', b'Weekly'), (b'mon', b'Monthly'), (b'yea', b'Yearly')])),
+                ('repeat_every', models.IntegerField(max_length=2, null=True, verbose_name=b'Repeat every', blank=True)),
+                ('repeat_by', models.CharField(default=b'dofm', choices=[(b'dofm', b'day of the month'), (b'dofw', b'day of the week')], max_length=10, blank=True, null=True, verbose_name=b'Repeat by')),
+                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name=b'Created at')),
+                ('start_on', models.DateField(verbose_name=b'Starts on')),
+                ('start_on_time', models.TimeField(verbose_name=b'Start time')),
+                ('end_on_time', models.TimeField(verbose_name=b'End time')),
+                ('end_never', models.BooleanField(default=False, verbose_name=b'Ends')),
+                ('end_after', models.IntegerField(null=True, verbose_name=b'Ends after', blank=True)),
+                ('end_on', models.DateField(null=True, verbose_name=b'Ends on', blank=True)),
+                ('scheduling_type', models.CharField(default=b'', max_length=10, verbose_name=b'Scheduling type', choices=[(b'', b'Select'), (b'devi', b'Device Specific'), (b'dety', b'Device Type'), (b'cust', b'Customer Device'), (b'netw', b'Network Device'), (b'back', b'Backhaul Device')])),
+                ('created_by', models.ForeignKey(to='user_profile.UserProfile')),
+                ('device', models.ManyToManyField(to='device.Device', null=True, blank=True)),
+                ('device_type', models.ManyToManyField(to='device.DeviceType', null=True, blank=True)),
+                ('organization', models.ForeignKey(to='organization.Organization')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='SNMPTrapSettings',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=150, verbose_name=b'Trap Name')),
+                ('alias', models.CharField(max_length=150, null=True, verbose_name=b'Trap Alias', blank=True)),
+                ('trap_oid', models.CharField(max_length=255, null=True, verbose_name=b'Trap OID', blank=True)),
+                ('severity', models.CharField(max_length=20, null=True, verbose_name=b'Severity', blank=True)),
+                ('device_model', models.ForeignKey(related_name='device_model', on_delete=django.db.models.deletion.SET_NULL, blank=True, to='device.DeviceModel', null=True)),
+                ('device_technology', models.ForeignKey(related_name='device_technology', on_delete=django.db.models.deletion.SET_NULL, blank=True, to='device.DeviceTechnology', null=True)),
+                ('device_type', models.ForeignKey(related_name='device_type', on_delete=django.db.models.deletion.SET_NULL, blank=True, to='device.DeviceType', null=True)),
+                ('device_vendor', models.ForeignKey(related_name='device_vendor', on_delete=django.db.models.deletion.SET_NULL, blank=True, to='device.DeviceVendor', null=True)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Weekdays',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(blank=True, max_length=128, null=True, verbose_name=b'Weekdays', choices=[(b'1', b'Monday'), (b'2', b'Tuesday'), (b'3', b'Wednesday'), (b'4', b'Thursday'), (b'5', b'Friday'), (b'6', b'Saturday'), (b'7', b'Sunday')])),
+            ],
+        ),
+        migrations.AddField(
+            model_name='event',
+            name='repeat_on',
+            field=models.ManyToManyField(to='scheduling_management.Weekdays', null=True, blank=True),
+        ),
+        migrations.AddField(
+            model_name='event',
+            name='technology',
+            field=models.ForeignKey(blank=True, to='device.DeviceTechnology', null=True),
+        ),
+    ]

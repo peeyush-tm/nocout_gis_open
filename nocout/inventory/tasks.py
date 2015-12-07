@@ -1,3 +1,4 @@
+import types
 from celery import task, group
 from dateutil.parser import *
 from models import GISInventoryBulkImport
@@ -14,6 +15,7 @@ from nocout.tasks import cache_clear_task
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, Status
 from performance.formulae import display_time
 from django.http import HttpRequest
+from django.db.models import Q
 from IPy import IP
 import ipaddr
 from decimal import *
@@ -422,6 +424,8 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             regex_ip_address = '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
             regex_alnum_comma_hyphen_fslash_underscore_space = '^[a-zA-Z0-9\s,_/-]+$'
             regex_alnum_comma_fslash = '^[a-zA-Z0-9,/]+$'
+            regex_alnum_pipe_fslash = '^[a-zA-Z0-9|/]+$'
+            regex_alnum_pipe = '^[a-zA-Z0-9|]+$'
             regex_alnum_underscore = '^[a-zA-Z0-9_]+$'
             regex_alnum_comma_underscore_space = '^[a-zA-Z0-9,\s_]+$'
             regex_alpha_underscore = '^[a-zA-Z_]+$'
@@ -668,7 +672,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             try:
                 if aggregation_switch_port:
                     if str(aggregation_switch_port).strip().lower() not in [x.lower() for x in 'NA', 'N/A']:
-                        if not re.match(regex_alnum_comma_fslash, aggregation_switch_port.strip()):
+                        if not re.match(regex_alnum_pipe, aggregation_switch_port.strip()):
                             errors += 'Aggregation Switch Port can only contains alphanumeric, comma, forward slash.\n'
             except Exception as e:
                 pass
@@ -716,7 +720,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             # 'switch or converter port' validation (can only contains alphanumeric, comma, forward slash)
             try:
                 if switch_or_converter_port:
-                    if not re.match(regex_alnum_comma_fslash, switch_or_converter_port.strip()):
+                    if not re.match(regex_alnum_pipe, switch_or_converter_port.strip()):
                         errors += 'Switch/Converter Port {} can only contains alphanumeric, comma, forward slash.\n'.format(switch_or_converter_port)
                 else:
                     errors += 'Switch/Converter Port must not be empty.\n'
@@ -988,7 +992,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             try:
                 if hssu_port:
                     if str(hssu_port).strip().lower() not in [x.lower() for x in 'NA', 'N/A']:
-                        if not re.match(regex_alnum_comma_fslash, hssu_port.strip()):
+                        if not re.match(regex_alnum_pipe, hssu_port.strip()):
                             errors += 'HSSU Port can only contains alphanumeric, comma, forward slash.\n'
             except Exception as e:
                 pass
@@ -3273,7 +3277,6 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                                        file_path,
                                        sheettype)
 
-
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
@@ -3396,6 +3399,21 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
             basestation = ""
             sector = ""
 
+            # BS device vendor.
+            bs_device_vendor = 4
+
+            # BS device model.
+            bs_device_model = 4
+
+            # BS device type
+            bs_device_type = 6
+
+            if 'Vendor' in row.keys():
+                if row['Vendor'] == 'Radwin5K':
+                    bs_device_vendor = 11
+                    bs_device_model = 14
+                    bs_device_type = 16
+
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
 
@@ -3467,9 +3485,9 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                         'machine': machine,
                         'site': site,
                         'device_technology': 4,
-                        'device_vendor': 4,
-                        'device_model': 4,
-                        'device_type': 6,
+                        'device_vendor': bs_device_vendor,
+                        'device_model': bs_device_model,
+                        'device_type': bs_device_type,
                         'ip': row['ODU IP'] if 'ODU IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -3811,6 +3829,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
                     'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
                     'ttsl_circuit_id': row['BSO Circuit ID'] if 'BSO Circuit ID' in row.keys() else "",
+                    'ior_id': row['IOR ID'] if 'IOR ID' in row.keys() else "",
+                    'bh_provider': row['BH Provider'] if 'BH Provider' in row.keys() else "",
                     'description': 'Backhaul created on {}.'.format(full_time)
                 }
 
@@ -3867,6 +3887,10 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'state': row['State'] if 'State' in row.keys() else "",
                     'city': row['City'] if 'City' in row.keys() else "",
                     'address': row['Address'] if 'Address' in row.keys() else "",
+                    'site_ams': row['Site AMS'] if 'Site AMS' in row.keys() else "",
+                    'site_infra_type': row['Site Infra Type'] if 'Site Infra Type' in row.keys() else "",
+                    'site_sap_id': row['Site SAP ID'] if 'Site SAP ID' in row.keys() else "",
+                    'mgmt_vlan': row['MGMT VLAN'] if 'MGMT VLAN' in row.keys() else "",
                     'description': 'Base Station created on {}.'.format(full_time)
                 }
 
@@ -3892,6 +3916,12 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 # sector alias
                 alias = row['Sector Name'].upper() if 'Sector Name' in row.keys() else ""
 
+                # rfs date
+                if 'RFS Date' in row.keys():
+                    rfs_date = validate_date(row['RFS Date'])
+                else:
+                    rfs_date = ""
+
                 # sector data
                 sector_data = {
                     'name': name,
@@ -3903,6 +3933,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'antenna': sector_antenna,
                     'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
+                    'rfs_date': rfs_date,
                     'description': 'Sector created on {}.'.format(full_time)
                 }
 
@@ -3925,7 +3956,6 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                                        'PMP BS',
                                        file_path,
                                        sheettype)
-
 
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -4050,6 +4080,21 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
             customer = ""
             circuit = ""
 
+            # SS device vendor.
+            ss_device_vendor = 4
+
+            # SS device model.
+            ss_device_model = 5
+
+            # SS device type
+            ss_device_type = 5
+
+            if 'Vendor' in row.keys():
+                if row['Vendor'] == 'Radwin5K':
+                    ss_device_vendor = 11
+                    ss_device_model = 14
+                    ss_device_type = 17
+
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
 
@@ -4119,9 +4164,9 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                         'machine': machine,
                         'site': site,
                         'device_technology': 4,
-                        'device_vendor': 4,
-                        'device_model': 5,
-                        'device_type': 9,
+                        'device_vendor': ss_device_vendor,
+                        'device_model': ss_device_model,
+                        'device_type': ss_device_type,
                         'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
                         'mac': row['MAC'] if 'MAC' in row.keys() else "",
                         'state': "",
@@ -4197,6 +4242,8 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                     'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
                     'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
                     'mac_address': row['MAC'] if 'MAC' in row.keys() else "",
+                    'cpe_vlan': row['CPE VLAN'] if 'CPE VLAN' in row.keys() else "",
+                    'sacfa_no': row['SACFA No'] if 'SACFA No' in row.keys() else "",
                     'address': row['Customer Address'] if 'Customer Address' in row.keys() else "",
                     'description': 'Sub Station created on {}.'.format(full_time)
                 }
@@ -4276,6 +4323,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                     'qos_bandwidth': row['QOS (BW)'] if 'QOS (BW)' in row.keys() else "",
                     'dl_rssi_during_acceptance': row['RSSI During Acceptance'] if 'RSSI During Acceptance' in row.keys() else "",
                     'dl_cinr_during_acceptance': row['CINR During Acceptance'] if 'CINR During Acceptance' in row.keys() else "",
+                    'sold_cir': row['Customer Sold CIR In Mbps'] if 'Customer Sold CIR In Mbps' in row.keys() else "",
                     'date_of_acceptance': date_of_acceptance,
                     'description': 'Circuit created on {}.'.format(full_time)
                 }
@@ -4301,7 +4349,6 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                                        'PMP SM',
                                        file_path,
                                        sheettype)
-
 
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -5112,7 +5159,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'antenna': sector_antenna,
                     'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'dr_site': dr_site,
-                    'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'mrc': row['MRC'].strip() if 'MRC' in row.keys() else "",
                     'dr_configured_on': slave_device,
                     'description': 'Sector created on {}.'.format(full_time)
@@ -5262,6 +5308,9 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
             customer = ""
             circuit = ""
 
+            # SS device type
+            ss_device_type = 5
+
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
 
@@ -5333,7 +5382,7 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
                         'device_technology': 3,
                         'device_vendor': 3,
                         'device_model': 3,
-                        'device_type': 5,
+                        'device_type': ss_device_type,
                         'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
                         'mac': row['MAC'] if 'MAC' in row.keys() else "",
                         'state': "",
@@ -7385,7 +7434,6 @@ def create_device(device_payload):
 
     # dictionary containing device data
     device_payload = device_payload
-
     # initializing variables
     device_name, device_alias, machine, device_technology, device_vendor, device_model, device_type = [''] * 7
     site_instance, ip_address, mac_address, state, city, latitude, longitude, address, description = [''] * 9
@@ -8001,7 +8049,7 @@ def create_backhaul(backhaul_payload):
     # initializing variables
     name, alias, bh_configured_on, bh_port_name, bh_port, bh_type, bh_switch, switch_port_name, switch_port = [''] * 9
     pop, pop_port_name, pop_port, aggregator, aggregator_port_name, aggregator_port, pe_hostname, pe_ip = [''] * 8
-    dr_site, bh_connectivity, bh_circuit_id, ttsl_circuit_id, description, bh_capacity = [''] * 6
+    dr_site, bh_connectivity, bh_circuit_id, ttsl_circuit_id, description, bh_capacity, ior_id, bh_provider = [''] * 8
 
     # get backhaul parameters
     if 'ip' in backhaul_payload.keys():
@@ -8049,6 +8097,10 @@ def create_backhaul(backhaul_payload):
         ttsl_circuit_id = backhaul_payload['ttsl_circuit_id'] if backhaul_payload['ttsl_circuit_id'] else ""
     if 'description' in backhaul_payload.keys():
         description = backhaul_payload['description'] if backhaul_payload['description'] else ""
+    if 'ior_id' in backhaul_payload.keys():
+        ior_id = backhaul_payload['ior_id'] if backhaul_payload['ior_id'] else ""
+    if 'bh_provider' in backhaul_payload.keys():
+        bh_provider = backhaul_payload['bh_provider'] if backhaul_payload['bh_provider'] else ""
     if name:
         if name not in ['NA', 'na', 'N/A', 'n/a']:
             # ------------------------------ UPDATING BACKHAUL -------------------------------
@@ -8185,13 +8237,25 @@ def create_backhaul(backhaul_payload):
                     try:
                         backhaul.ttsl_circuit_id = ttsl_circuit_id
                     except Exception as e:
-                        logger.info("BSO Circuit IB: ({} - {})".format(ttsl_circuit_id, e.message))
+                        logger.info("BSO Circuit ID: ({} - {})".format(ttsl_circuit_id, e.message))
                 # description
                 if description:
                     try:
                         backhaul.description = description
                     except Exception as e:
                         logger.info("Description: ({} - {})".format(description, e.message))
+                # ior id
+                if ior_id:
+                    try:
+                        backhaul.ior_id = ior_id
+                    except Exception as e:
+                        logger.info("IOR ID: ({} - {})".format(ior_id, e.message))
+                # bh_provider
+                if bh_provider:
+                    try:
+                        backhaul.bh_provider = bh_provider
+                    except Exception as e:
+                        logger.info("BH Provider: ({} - {})".format(bh_provider, e.message))
                 # saving backhaul
                 backhaul.save()
                 return backhaul
@@ -8342,6 +8406,18 @@ def create_backhaul(backhaul_payload):
                         backhaul.description = description
                     except Exception as e:
                         logger.info("Description: ({} - {})".format(description, e.message))
+                # ior id
+                if ior_id:
+                    try:
+                        backhaul.ior_id = ior_id
+                    except Exception as e:
+                        logger.info("IOR ID: ({} - {})".format(ior_id, e.message))
+                # bh_provider
+                if bh_provider:
+                    try:
+                        backhaul.bh_provider = bh_provider
+                    except Exception as e:
+                        logger.info("BH Provider: ({} - {})".format(bh_provider, e.message))
                 try:
                     backhaul.save()
                     return backhaul
@@ -8380,10 +8456,11 @@ def create_basestation(basestation_payload):
 
     # dictionary containing base station payload
     basestation_payload = basestation_payload
+
     # initializing variables
     name, alias, bs_site_id, bs_site_type, bs_switch, backhaul, bs_type, bh_bso, hssu_used, hssu_port = [''] * 10
     latitude, longitude, infra_provider, gps_type, building_height, tower_height, country, state, city = [''] * 9
-    bh_port_name, bh_port, bh_capacity, address, description = [''] * 5
+    bh_port_name, bh_port, bh_capacity, address, description, site_ams, site_infra_type, site_sap_id, mgmt_vlan = [''] * 9
 
     # get base station parameters
     if 'name' in basestation_payload.keys():
@@ -8613,6 +8690,30 @@ def create_basestation(basestation_payload):
                         basestation.description = description
                     except Exception as e:
                         logger.info("BS Description: ({} - {})".format(description, e.message))
+                # site ams
+                if site_ams:
+                    try:
+                        basestation.site_ams = site_ams
+                    except Exception as e:
+                        logger.info("Site AMS: ({} - {})".format(site_ams, e.message))
+                # site infra type
+                if site_infra_type:
+                    try:
+                        basestation.site_infra_type = site_infra_type
+                    except Exception as e:
+                        logger.info("Site Infra Type: ({} - {})".format(site_infra_type, e.message))
+                # site sap id
+                if site_sap_id:
+                    try:
+                        basestation.site_sap_id = site_sap_id
+                    except Exception as e:
+                        logger.info("Site SAP Type: ({} - {})".format(site_sap_id, e.message))
+                # mgmt vlan
+                if mgmt_vlan:
+                    try:
+                        basestation.mgmt_vlan = mgmt_vlan
+                    except Exception as e:
+                        logger.info("MGMT VLAN: ({} - {})".format(mgmt_vlan, e.message))
                 # saving base station
                 basestation.save()
                 return basestation
@@ -8788,6 +8889,30 @@ def create_basestation(basestation_payload):
                         basestation.description = description
                     except Exception as e:
                         logger.info("BS Description: ({} - {})".format(description, e.message))
+                # site ams
+                if site_ams:
+                    try:
+                        basestation.site_ams = site_ams
+                    except Exception as e:
+                        logger.info("Site AMS: ({} - {})".format(site_ams, e.message))
+                # site infra type
+                if site_infra_type:
+                    try:
+                        basestation.site_infra_type = site_infra_type
+                    except Exception as e:
+                        logger.info("Site Infra Type: ({} - {})".format(site_infra_type, e.message))
+                # site sap id
+                if site_sap_id:
+                    try:
+                        basestation.site_sap_id = site_sap_id
+                    except Exception as e:
+                        logger.info("Site SAP Type: ({} - {})".format(site_sap_id, e.message))
+                # mgmt vlan
+                if mgmt_vlan:
+                    try:
+                        basestation.mgmt_vlan = mgmt_vlan
+                    except Exception as e:
+                        logger.info("MGMT VLAN: ({} - {})".format(mgmt_vlan, e.message))
                 try:
                     basestation.save()
                     return basestation
@@ -8820,7 +8945,7 @@ def create_sector(sector_payload):
     # initializing variables
     name, alias, sector_id, base_station, bs_technology, sector_configured_on, sector_configured_on_port = [''] * 7
     antenna, mrc, tx_power, rx_power, rf_bandwidth, frame_length, cell_radius, frequency, modulation = [''] * 9
-    dr_site, dr_configured_on, description, planned_frequency = [''] * 4
+    dr_site, dr_configured_on, description, planned_frequency, rfs_date = [''] * 5
 
     # get sector parameters
     if 'name' in sector_payload.keys():
@@ -8863,6 +8988,8 @@ def create_sector(sector_payload):
         modulation = sector_payload['modulation'] if sector_payload['modulation'] else ""
     if 'description' in sector_payload.keys():
         description = sector_payload['description'] if sector_payload['description'] else ""
+    if 'rfs_date' in sector_payload.keys():
+        rfs_date = sector_payload['rfs_date'] if sector_payload['rfs_date'] else ""
 
     if name:
         if name not in ['NA', 'na', 'N/A', 'n/a', '_']:
@@ -8998,6 +9125,12 @@ def create_sector(sector_payload):
                         sector.description = description
                     except Exception as e:
                         logger.info("Sector Description: ({} - {})".format(description, e.message))
+                # rfs date
+                if rfs_date:
+                    try:
+                        sector.rfs_date = rfs_date
+                    except Exception as e:
+                        logger.info("RFS Date: ({} - {})".format(rfs_date, e.message))
                 # saving sector
                 sector.save()
                 return sector
@@ -9138,6 +9271,12 @@ def create_sector(sector_payload):
                         sector.description = description
                     except Exception as e:
                         logger.info("Sector Description: ({} - {})".format(description, e.message))
+                # rfs date
+                if rfs_date:
+                    try:
+                        sector.rfs_date = rfs_date
+                    except Exception as e:
+                        logger.info("RFS Date: ({} - {})".format(rfs_date, e.message))
                 try:
                     sector.save()
                     return sector
@@ -9293,6 +9432,7 @@ def create_substation(substation_payload):
     # initializing variables
     name, alias, device, antenna, version, serial_no, building_height, tower_height, ethernet_extender = [''] * 9
     cable_length, latitude, longitude, mac_address, country, state, city, address, description = [''] * 9
+    cpe_vlan, sacfa_no = [''] * 2
 
     # get substation parameters
     if 'name' in substation_payload.keys():
@@ -9329,6 +9469,10 @@ def create_substation(substation_payload):
         city = substation_payload['city'] if substation_payload['city'] else ""
     if 'address' in substation_payload.keys():
         address = substation_payload['address'] if substation_payload['address'] else ""
+    if 'cpe_vlan' in substation_payload.keys():
+        cpe_vlan = substation_payload['cpe_vlan'] if substation_payload['cpe_vlan'] else ""
+    if 'sacfa_no' in substation_payload.keys():
+        sacfa_no = substation_payload['sacfa_no'] if substation_payload['sacfa_no'] else ""
     if 'description' in substation_payload.keys():
         description = substation_payload['description'] if substation_payload['description'] else ""
 
@@ -9450,6 +9594,18 @@ def create_substation(substation_payload):
                         substation.address = address
                     except Exception as e:
                         logger.info("Sub Station Address: ({})".format(e.message))
+                # cpe vlan
+                if cpe_vlan:
+                    try:
+                        substation.cpe_vlan = cpe_vlan
+                    except Exception as e:
+                        logger.info("CPE VLAN: ({})".format(e.message))
+                # sacfa no
+                if sacfa_no:
+                    try:
+                        substation.sacfa_no = sacfa_no
+                    except Exception as e:
+                        logger.info("SACFA No.: ({})".format(e.message))
                 # description
                 if description:
                     try:
@@ -9581,6 +9737,18 @@ def create_substation(substation_payload):
                         substation.address = address
                     except Exception as e:
                         logger.info("Sub Station Address: ({})".format(e.message))
+                # cpe vlan
+                if cpe_vlan:
+                    try:
+                        substation.cpe_vlan = cpe_vlan
+                    except Exception as e:
+                        logger.info("CPE VLAN: ({})".format(e.message))
+                # sacfa no
+                if sacfa_no:
+                    try:
+                        substation.sacfa_no = sacfa_no
+                    except Exception as e:
+                        logger.info("SACFA No.: ({})".format(e.message))
                 # description
                 if description:
                     try:
@@ -9624,7 +9792,7 @@ def create_circuit(circuit_payload):
     # initializing variables
     name, alias, circuit_type, circuit_id, sector, customer, sub_station, qos_bandwidth = [''] * 8
     dl_rssi_during_acceptance, dl_cinr_during_acceptance, jitter_value_during_acceptance = [''] * 3
-    throughput_during_acceptance, date_of_acceptance, description = [''] * 3
+    throughput_during_acceptance, date_of_acceptance, description, sold_cir = [''] * 4
 
     # get circuit parameters
     if 'name' in circuit_payload.keys():
@@ -9655,6 +9823,8 @@ def create_circuit(circuit_payload):
         date_of_acceptance = circuit_payload['date_of_acceptance'] if circuit_payload['date_of_acceptance'] else ""
     if 'description' in circuit_payload.keys():
         description = circuit_payload['description'] if circuit_payload['description'] else ""
+    if 'sold_cir' in circuit_payload.keys():
+        sold_cir = circuit_payload['sold_cir'] if circuit_payload['sold_cir'] else ""
 
     if name:
         if name not in ['NA', 'na', 'N/A', 'n/a']:
@@ -9741,6 +9911,12 @@ def create_circuit(circuit_payload):
                         circuit.description = description
                     except Exception as e:
                         logger.info("Circuit Description: ({} - {})".format(description, e.message))
+                # sold cir
+                if sold_cir:
+                    try:
+                        circuit.sold_cir = sold_cir
+                    except Exception as e:
+                        logger.info("Sold CIR: ({} - {})".format(sold_cir, e.message))
                 # saving circuit
                 circuit.save()
                 return circuit
@@ -9833,6 +10009,12 @@ def create_circuit(circuit_payload):
                         circuit.description = description
                     except Exception as e:
                         logger.info("Circuit Description: ({} - {})".format(description, e.message))
+                # sold cir
+                if sold_cir:
+                    try:
+                        circuit.sold_cir = sold_cir
+                    except Exception as e:
+                        logger.info("Sold CIR: ({} - {})".format(sold_cir, e.message))
                 try:
                     circuit.save()
                     return circuit
@@ -10074,6 +10256,10 @@ def sanitize_mac_address(mac=None):
         mac (unicode): u'0a:00:3e:66:fd:94'
 
     """
+    number_types = (types.IntType, types.LongType, types.FloatType, types.ComplexType)
+    if isinstance(mac, number_types):
+        mac = str(mac)
+
     mac = ''.join(e for e in mac if e.isalnum()).lower()
     if len(mac) == 12:
         mac = ':'.join(mac[i:i+2] for i in range(0, len(mac), 2))
@@ -11496,6 +11682,13 @@ def get_selected_pmp_inventory(base_station, sector):
     except Exception as e:
         logger.info("PMP BS Device not exist. Exception: ", e.message)
 
+    # bs device type
+    bs_device_type = None
+    try:
+        bs_device_type = DeviceType.objects.get(id=sector.sector_configured_on.device_type).name
+    except Exception as e:
+        logger.info(e.message)
+
     # base station machine
     bs_machine_name = ""
     try:
@@ -11524,6 +11717,13 @@ def get_selected_pmp_inventory(base_station, sector):
                 ss_device_name = sub_station.device.device_name
             except Exception as e:
                 logger.info("PMP SS device not found. Exception: ", e.message)
+
+            # ss device type
+            ss_device_type = None
+            try:
+                ss_device_type = DeviceType.objects.get(id=sub_station.device.device_type).name
+            except Exception as e:
+                logger.info(e.message)
 
             # sub station machine
             ss_machine_name = ""
@@ -11828,19 +12028,35 @@ def get_selected_pmp_inventory(base_station, sector):
 
                 # dl utilization
                 try:
-                    pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                            service_name='cambium_dl_utilization',
-                                                                            data_source='dl_utilization').using(
-                                                                            alias=bs_machine_name)[0].current_value
+                    if bs_device_type == "Radwin5KBS":
+                        pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='rad5k_bs_dl_utilization',
+                            data_source='dl_utilization').using(
+                            alias=bs_machine_name)[0].current_value
+                    else:
+                        pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='cambium_dl_utilization',
+                            data_source='dl_utilization').using(
+                            alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization DL not exist for base station ({}).".format(base_station.name, e.message))
 
                 # ul utilization
                 try:
-                    pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                            service_name='cambium_ul_utilization',
-                                                                            data_source='ul_utilization').using(
-                                                                            alias=bs_machine_name)[0].current_value
+                    if bs_device_type == "Radwin5KBS":
+                        pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='rad5k_bs_ul_utilization',
+                            data_source='ul_utilization').using(
+                            alias=bs_machine_name)[0].current_value
+                    else:
+                        pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='cambium_ul_utilization',
+                            data_source='ul_utilization').using(
+                            alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization UL not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12026,7 +12242,7 @@ def get_selected_pmp_inventory(base_station, sector):
                 logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
 
             if pl != "100":
-            # frequency
+                # frequency
                 try:
                     pmp_sm_row['Frequency'] = InventoryStatus.objects.filter(device_name=ss_device_name,
                                                                              data_source='frequency').using(
@@ -12100,37 +12316,70 @@ def get_selected_pmp_inventory(base_station, sector):
 
                 # polles bs mac
                 try:
-                    pmp_sm_row['Polled BS MAC'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                             data_source='ss_connected_bs_mac').using(
-                                                                             alias=ss_machine_name)[0].current_value
+                    if ss_device_name == "Radwin5KSS":
+                        pmp_sm_row['Polled BS MAC'] = InventoryStatus.objects.filter(
+                            device_name=ss_device_name,
+                            service_name="rad5k_ss_conn_bs_ip_invent",
+                            data_source='bs_ip').using(
+                            alias=ss_machine_name)[0].current_value
+                    else:
+                        pmp_sm_row['Polled BS MAC'] = InventoryStatus.objects.filter(
+                            device_name=ss_device_name,
+                            data_source='ss_connected_bs_mac').using(
+                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Polled BS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # uptime
                 try:
-                    session_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                  service_name='cambium_session_uptime_system',
-                                                                  data_source='uptime').using(
-                                                                  alias=ss_machine_name)[0].current_value
-                    pmp_sm_row['Session Uptime'] = display_time(session_uptime)
+                    if ss_device_name == "Radwin5KSS":
+                        session_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                      service_name='rad5k_ss_session_uptime_invent',
+                                                                      data_source='session_uptime').using(
+                                                                      alias=ss_machine_name)[0].current_value
+                        pmp_sm_row['Session Uptime'] = display_time(session_uptime)
+                    else:
+                        session_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                      service_name='cambium_session_uptime_system',
+                                                                      data_source='uptime').using(
+                                                                      alias=ss_machine_name)[0].current_value
+                        pmp_sm_row['Session Uptime'] = display_time(session_uptime)
+
                 except Exception as e:
                     logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # dl utilization
                 try:
-                    pmp_sm_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                            service_name='cambium_ss_dl_utilization',
-                                                                            data_source='dl_utilization').using(
-                                                                            alias=ss_machine_name)[0].current_value
+                    if ss_device_name == "Radwin5KSS":
+                        pmp_sm_row['Utilization DL'] = ServiceStatus.objects.filter(
+                            device_name=ss_device_name,
+                            service_name='rad5k_ss_dl_utilization',
+                            data_source='dl_utilization').using(
+                            alias=ss_machine_name)[0].current_value
+                    else:
+                        pmp_sm_row['Utilization DL'] = ServiceStatus.objects.filter(
+                            device_name=ss_device_name,
+                            service_name='cambium_ss_dl_utilization',
+                            data_source='dl_utilization').using(
+                            alias=ss_machine_name)[0].current_value
+
                 except Exception as e:
                     logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # ul utilization
                 try:
-                    pmp_sm_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                            service_name='cambium_ss_ul_utilization',
-                                                                            data_source='ul_utilization').using(
-                                                                            alias=ss_machine_name)[0].current_value
+                    if ss_device_name == "Radwin5KSS":
+                        pmp_sm_row['Utilization UL'] = ServiceStatus.objects.filter(
+                            device_name=ss_device_name,
+                            service_name='rad5k_ss_ul_utilization',
+                            data_source='ul_utilization').using(
+                            alias=ss_machine_name)[0].current_value
+                    else:
+                        pmp_sm_row['Utilization UL'] = ServiceStatus.objects.filter(
+                            device_name=ss_device_name,
+                            service_name='cambium_ss_ul_utilization',
+                            data_source='ul_utilization').using(
+                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -13449,6 +13698,7 @@ def bulk_update_create(bulky, action='update', model=None):
     """
     logger.debug(bulky)
     if bulky and len(bulky):
+
         if action == 'update':
             try:
                 bulk_update_internal_no_save(bulky)
@@ -13519,3 +13769,261 @@ def bulk_update_internal_no_save(bulky):
         for update_this in bulky:
             update_this.save()
     return True
+
+
+@task
+def update_topology():
+    """
+    Update mapping of sector, sub station in circuit using topology.
+    """
+
+    # Radwin device technology.
+    radwin5k_types = None
+    try:
+        radwin5k_types = DeviceType.objects.filter(name__icontains='radwin5k').values_list('id', flat=True)
+    except Exception as e:
+        pass
+
+    # Radwin5K: Device mapper.
+    radwin5k_devices = Device.objects.filter(device_type__in=set(radwin5k_types)).values('ip_address', 'machine__name')
+
+    # Radwin5K machines.
+    radwin5k_machines = set(radwin5k_devices.values_list('machine__name', flat=True))
+
+    # Radwin5K: Device IP and MAC Info.
+    radwin5k_mac_info = []
+    for machine in radwin5k_machines:
+        temp_macs = InventoryStatus.objects.filter(
+            ip_address__in=set(radwin5k_devices.values_list('ip_address', flat=True)),
+            service_name__in=['rad5k_bs_mac_invent', 'rad5k_ss_mac_invent']).values('ip_address',
+                                                                                    'current_value'
+                                                                                    ).using(alias=machine)
+        radwin5k_mac_info.extend(temp_macs)
+
+    # Radwin5K: Device IP and MAC Mapper.
+    radwin5k_mac_mapper = {}
+    for row in radwin5k_mac_info:
+        if row['ip_address']:
+            radwin5k_mac_mapper[row['ip_address']] = row
+
+    # MAC regex.
+    mac_regex = "[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$"
+
+    # Sector ID's from inventory.
+    sector_ids = set(Sector.objects.values_list('sector_id', flat=True))
+
+    # Sector ID's from topology.
+    topo_sector_ids = list(set(Topology.objects.values_list('sector_id', flat=True)))
+
+    # Sector ID's from topology: Uppercase
+    topo_sector_ids_upper = map(lambda x: x.upper(), topo_sector_ids)
+
+    # Sector ID's from topology: Lowercase
+    topo_sector_ids_lower = map(lambda x: x.lower(), topo_sector_ids)
+
+    # Sector ID's common in topology and inventory.
+    # common_sector_ids = sector_ids.intersection(topo_sector_ids)
+
+    # Radwin5K: Special case where sector id cannot be considered.
+    radwin5k_topology = Topology.objects.filter(service_name="rad5k_topology_discover").values('connected_device_ip',
+                                                                                               'sector_id',
+                                                                                               'connected_device_mac',
+                                                                                               'mac_address',
+                                                                                               'ip_address')
+
+    # Radwin 5K: Sector configured on ip's.
+    radwin5k_sector_ips = set(radwin5k_topology.values_list('ip_address', flat=True))
+
+    # Radwin 5K: Sub station ip's.
+    radwin5k_ss_ips = set(radwin5k_topology.values_list('connected_device_ip', flat=True))
+
+    # Sectors & sub stations mapping from Topology.
+    topology = Topology.objects.filter(
+        Q(sector_id__in=topo_sector_ids) | Q(connected_device_ip__in=radwin5k_ss_ips)).values(
+        'connected_device_ip',
+        'sector_id',
+        'connected_device_mac',
+        'mac_address',
+        'ip_address')
+
+    # ################################### MAPPERS START #####################################
+
+    # Sectors from Inventory corressponding to sector_id's fetched from Topology.
+    sectors = Sector.objects.filter(Q(sector_id__in=topo_sector_ids_upper) | Q(sector_id__in=topo_sector_ids_lower))
+
+    # Sector ID's list.
+    sector_ids = sectors.values_list('sector_id', flat=True)
+
+    # SectorIP's list.
+    sector_ips = sectors.values_list('sector_configured_on__ip_address', flat=True)
+
+    dr_ips = sectors.values_list('dr_configured_on__ip_address', flat=True)
+
+    # Sectors Mapper: {<sector_id> + <sector_configured_on__ip_address>: <sector object>, ....}
+    sectors_mapper = {}
+    for s_id, s_ip, dr_ip, obj in zip(sector_ids, sector_ips, dr_ips, sectors):
+        if s_id and s_ip:
+            key = s_id.strip().lower() + "|" + s_ip.strip()
+            sectors_mapper[key] = obj
+        if s_id and dr_ip:
+            key = s_id.strip().lower() + "|" + dr_ip.strip()
+            sectors_mapper[key] = obj
+
+    # Radwin 5K sectors.
+    radwin5k_sectors = Sector.objects.filter(Q(sector_configured_on__ip_address__in=radwin5k_sector_ips) | Q(
+        dr_configured_on__ip_address__in=radwin5k_sector_ips))
+
+    # Radwin 5K sector configured on ip's list.
+    radwin5k_sector_ips = radwin5k_sectors.values_list('sector_configured_on__ip_address', flat=True)
+
+    # Radwin 5K sectors Mapper: {<sector_configured_on__ip_address>: <sector object>, ....}
+    radwin5k_sectors_mapper = {}
+    for s_ip, obj in zip(radwin5k_sector_ips, radwin5k_sectors):
+        if s_ip:
+            key = s_ip.strip()
+            radwin5k_sectors_mapper[key] = obj
+
+    # BS devices corressponding to the sector_configured_on ip's from Topology.
+    bs_devices = Device.objects.filter(ip_address__in=topology.values_list('ip_address', flat=True))
+
+    # BS devices IP's list.
+    bs_devices_ips = bs_devices.values_list('ip_address', flat=True)
+
+    # BS Devices Mapper: {<sector_configured_on__ip_address>: <device object>, ....}
+    bs_devices_mapper = {}
+    for ip, bs_device in zip(bs_devices_ips, bs_devices):
+        bs_devices_mapper[ip] = bs_device
+
+    # Sectors & sub stations mapping from Circuit.
+    circuits = Circuit.objects.filter(sub_station__device__ip_address__isnull=False).select_related(
+        'sub_station',
+        'sub_station__device__ip_address',
+        'sector__sector_id').order_by('name')
+
+    # Sub Station devices IP's list corressponding to the connected_device_ip ip's.
+    circuits_ss_ips = circuits.values_list('sub_station__device__ip_address', flat=True)
+
+    # Circuit Mapper: {<sub_station__device__ip_address>: <circuit object>, ....}
+    circuits_mapper = {}
+    for ss_ip, circuit in zip(circuits_ss_ips, circuits):
+        circuits_mapper[ss_ip] = circuit
+
+    # ################################### MAPPERS END #######################################
+
+    # Serialized sectors & sub stations mapping from Topology.
+    serialized_topology = list(topology)
+
+    # List of sectors & sub stations mapping from Topology.
+    sectors_list = circuits.values('sector__sector_id',
+                                   'sub_station__device__ip_address',
+                                   'sub_station__device__mac_address',
+                                   'sector__sector_configured_on__ip_address',
+                                   'sector__sector_configured_on__mac_address')
+
+    # Serialized sectors & sub stations mapping from Circuit.
+    serialized_sectors_list = [{'connected_device_ip': a['sub_station__device__ip_address'],
+                                'sector_id': a['sector__sector_id'],
+                                'connected_device_mac': a['sub_station__device__mac_address'],
+                                'mac_address': a['sector__sector_configured_on__mac_address'],
+                                'ip_address': a['sector__sector_configured_on__ip_address']} for a in sectors_list]
+
+    # Updated mapping.
+    updated_mapping = compare_lists_of_dicts(serialized_sectors_list, serialized_topology)
+
+    # Lists containing objects needs to be updated in database.
+    update_ss_list = []
+    update_device_list = []
+    update_circuit_list = []
+
+    # Update inventory from updated topology.
+    for info in updated_mapping:
+        # Get circuit from inventory.
+        circuit = None
+        sector = None
+        ss = None
+        ss_device = None
+        sector_device = None
+        try:
+            circuit = circuits_mapper[info['connected_device_ip']]
+        except Exception as e:
+            pass
+
+        if circuit:
+            # Update sub station.
+            try:
+                ss = circuit.sub_station
+                if re.match(mac_regex, info['connected_device_mac'].lower()):
+                    ss.mac_address = info['connected_device_mac']
+                    update_ss_list.append(ss)
+                else:
+                    ss.mac_address = radwin5k_mac_mapper[info['connected_device_ip']]['current_value']
+                    update_ss_list.append(ss)
+            except Exception as e:
+                pass
+            # Update sub station device.
+            try:
+                ss_device = circuit.sub_station.device
+                if re.match(mac_regex, info['connected_device_mac'].lower()):
+                    ss_device.mac_address = info['connected_device_mac']
+                    update_device_list.append(ss_device)
+                else:
+                    ss_device.mac_address = radwin5k_mac_mapper[info['connected_device_ip']]['current_value']
+                    update_device_list.append(ss_device)
+            except Exception as e:
+                pass
+            # Update sector device.
+            try:
+                sector_device = bs_devices_mapper[info['ip_address']]
+                if re.match(mac_regex, info['mac_address'].lower()):
+                    sector_device.mac_address = info['mac_address']
+                    update_device_list.append(sector_device)
+                else:
+                    sector_device.mac_address = radwin5k_mac_mapper[info['ip_address']]['current_value']
+                    update_device_list.append(sector_device)
+            except Exception as e:
+                pass
+            # Update circuit.
+            try:
+                if info['connected_device_ip'] in radwin5k_ss_ips:
+                    circuit.sector = radwin5k_sectors_mapper[info['ip_address'].strip()]
+                else:
+                    circuit.sector = sectors_mapper[
+                        info['sector_id'].strip().lower() + "|" + info['ip_address'].strip()]
+                update_circuit_list.append(circuit)
+            except Exception as e:
+                pass
+
+    g_jobs = list()
+
+    if len(update_ss_list):
+        g_jobs.append(bulk_update_create.s(bulky=update_ss_list, action='update'))
+
+    if len(update_device_list):
+        g_jobs.append(bulk_update_create.s(bulky=update_device_list, action='update'))
+
+    if len(update_circuit_list):
+        g_jobs.append(bulk_update_create.s(bulky=update_circuit_list, action='update'))
+
+    if not len(g_jobs):
+        return False
+
+    job = group(g_jobs)
+    result = job.apply_async()
+
+    return result
+
+
+def compare_lists_of_dicts(list1, list2):
+    check = set([(d['connected_device_ip'] if d['connected_device_ip'] else '',
+                  d['sector_id'] if d['sector_id'] else '',
+                  d['connected_device_mac'] if d['connected_device_mac'] else '',
+                  d['mac_address'] if d['mac_address'] else '',
+                  d['ip_address'] if d['ip_address'] else ''
+                  ) for d in list1])
+
+    return [d for d in list2 if (d['connected_device_ip'] if d['connected_device_ip'] else '',
+                                 d['sector_id'] if d['sector_id'] else '',
+                                 d['connected_device_mac'] if d['connected_device_mac'] else '',
+                                 d['mac_address'] if d['mac_address'] else '',
+                                 d['ip_address'] if d['ip_address'] else ''
+                                 ) not in check]

@@ -159,36 +159,54 @@ $("#global_search_btn").click(function(e) {
 			// Clear Previous links
 			$(".global_search_container #redirect_link_container").html("");
 			
-			var link_html = "";
+			var link_html = "",
+				svp_link_html = "";
+
+			if (search_by == 'circuit_id') {
+				var ckt_id = "";
+				try {
+					ckt_id = $("#global_search_txt").select2("data").text;
+				} catch(e) {
+					ckt_id = "";
+				}
+
+				if (ckt_id) {
+					var link = "http://172.31.6.73/ipservices/wirelessintegrate/integratesv.php?viznet_id";
+					svp_link_html = '<a href="'+link+'='+ckt_id+'" class="btn btn-default btn-sm" title="SVP" target="_blank">SVP</a>';
+				}
+			}
 
 			if(search_data["inventory_page_url"]) {
 				var inventory_url = base_url+""+search_data["inventory_page_url"];
-				link_html += '<a href="'+inventory_url+'" class="btn btn-default btn-xs" title="Device Inventory" target="_blank"><i class="fa fa-dropbox text-primary"></i></a>';
+				link_html += '<a href="'+inventory_url+'" class="btn btn-default btn-sm" title="Device Inventory" target="_blank"><i class="fa fa-dropbox text-primary"></i></a>';
 			}
 
 			if(search_data["circuit_inventory_url"]) {
 				var inventory_url = base_url+""+search_data["circuit_inventory_url"];
-				link_html += '<a href="'+inventory_url+'" class="btn btn-default btn-xs" title="Circuit Inventory" target="_blank"><i class="fa fa-arrow-circle-o-right text-primary"></i></a>';
+				link_html += '<a href="'+inventory_url+'" class="btn btn-default btn-sm" title="Circuit Inventory" target="_blank"><i class="fa fa-arrow-circle-o-right text-primary"></i></a>';
 			}
 
 			if(search_data["sector_inventory_url"]) {
 				var inventory_url = base_url+""+search_data["sector_inventory_url"];
-				link_html += '<a href="'+inventory_url+'" class="btn btn-default btn-xs" title="Sector Inventory" target="_blank"><i class="fa fa-arrow-circle-o-right text-primary"></i></a>';
+				link_html += '<a href="'+inventory_url+'" class="btn btn-default btn-sm" title="Sector Inventory" target="_blank"><i class="fa fa-arrow-circle-o-right text-primary"></i></a>';
 			}
 
 			if(search_data["perf_page_url"]) {
 				var perf_url = base_url+""+search_data["perf_page_url"];
-				link_html += '<a href="'+perf_url+'" class="btn btn-default btn-xs" title="Performance" target="_blank"><i class="fa fa-bar-chart-o text-primary"></i></a>';
+				link_html += '<a href="'+perf_url+'" class="btn btn-default btn-sm" title="Performance" target="_blank"><i class="fa fa-bar-chart-o text-primary"></i></a>';
 			}
 
 			if(search_data["alert_page_url"]) {
 				var alert_url = base_url+""+search_data["alert_page_url"];
-				link_html += '<a href="'+alert_url+'" class="btn btn-default btn-xs" title="Alerts" target="_blank"><i class="fa fa-warning text-primary"></i></a>';
+				link_html += '<a href="'+alert_url+'" class="btn btn-default btn-sm" title="Alerts" target="_blank"><i class="fa fa-warning text-primary"></i></a>';
 			}
 
+			if (svp_link_html) {
+				link_html += svp_link_html;
+			}
 
 			if(link_html) {
-				link_html += "<button class='btn btn-deafult btn-xs' title='Reset' id='reset_global_search'><i class='fa fa-refresh'></i></button>"
+				link_html += "<button class='btn btn-default btn-sm' title='Reset' id='reset_global_search'><i class='fa fa-refresh'></i></button>"
 			}
 
 			$(".global_search_container #redirect_link_container").html(link_html);

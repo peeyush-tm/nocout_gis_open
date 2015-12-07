@@ -14,11 +14,12 @@ import mysql.connector
 from datetime import datetime, timedelta
 import imp
 import sys
-
+import time
+#from handlers.db_ops import *
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 def main(**configs):
     """
     The entry point for the all the functions in this file,
@@ -49,39 +50,22 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-
-    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
-    start_time, end_time = None, None
+    db=None
     try:
-        db = mongo_module.mongo_conn(
-            host=site_spec_mongo_conf[1],
-            port=int(site_spec_mongo_conf[2]),
-            db_name=configs.get('nosql_db')
-        ) 
-    except:
-        sys.stdout.write('Mongodb connection problem\n')
-        sys.exit(1)
-    end_time = datetime.now()
-    end_epoch = int(end_time.strftime('%s'))
-    # get most latest sys timestamp entry present in mysql for interface services
-    time_doc = list(db.sys_timestamp_status.find({'_id': 'performance_status'}))
-    for doc in time_doc:
-        start_time = doc.get('sys_timestamp')
-        start_epoch = int(start_time.strftime('%s'))
-    print start_time,end_time
-    
-    docs = read_data(start_epoch, end_epoch, db)
-    for doc in docs:
-        values_list = build_data(doc)
-        data_values.extend(values_list)
-    if data_values:
-        insert_data(configs.get('table_name'), data_values, configs=configs)
+    	db = utility_module.mysql_conn(configs=configs)
+    except Exception,e:
+	print e
+	return
+    docs = read_data()
+    print len(docs)
+    if docs:
+        insert_data(configs.get('table_name'), docs, db,configs)
         print "Data inserted into performance_performancestatus table"
     else:
         print "No data in the mongo db in this time frame"
     
 
-def read_data(start_time, end_time, db):
+def read_data():
     """
     Function to read data from mongodb
 
@@ -95,34 +79,57 @@ def read_data(start_time, end_time, db):
 
     #db = None
     docs = []
-    docs = [] 
-    #db = mongo_module.mongo_conn(
-    #    host=kwargs.get('configs')[1],
-    #    port=int(kwargs.get('configs')[2]),
-    #    db_name=kwargs.get('db_name')
-    #) 
-    if db:
-        if start_time is None:
-            # read data from status, initially
-            start_time = end_time - 3600
-            cur = db.device_status_services_status.find({
-                "check_timestamp": {"$gt": start_time, "$lt": end_time}})
-        elif (end_time - start_time) >= 7200:
-            # data in mysql is older than mongo data by more thn 2 hours
-            # so we need to read data from live mongo collection rather than status collection
-            if (end_time - start_time) > 86400:
-                # max time range for data sync is 1 day
-                start_time = end_time - 86400
-            cur = db.status_perf.find({
-                "check_timestamp": {"$gt": start_time, "$lt": end_time}})
-        else:
-            # read data from status collection, normally
-            cur = db.device_status_services_status.find({
-                "check_timestamp": {"$gt": start_time, "$lt": end_time}})
-        for doc in cur:
-            docs.append(doc)
-     
-    return docs
+    current_time = datetime.now()
+    memc_obj = db_ops_module.MemcacheInterface()
+    key = nocout_site_name + "_interface"
+    memc = memc_obj.memc_conn
+    start_time = memc.get('performance_status')
+    print 'in service'
+    print start_time
+    if start_time: 
+    	start_time = datetime.fromtimestamp(start_time)
+    if start_time and (start_time + timedelta(minutes=120)) < current_time:
+    	if start_time + timedelta(days=1) < current_time:
+		start_time = current_time -  timedelta(days=1)
+	print "....in...back up...stage"
+	print start_time
+	redis_obj=db_ops_module.RedisInterface()
+	t_stmp = start_time + timedelta(minutes=-(start_time.minute % 5))
+        t_stmp = t_stmp.replace(second=0,microsecond=0)
+        start_time =int(time.mktime(t_stmp.timetuple()))
+        current_time = current_time + timedelta(minutes=-(current_time.minute % 5))
+        current_time = current_time.replace(second=0,microsecond=0)
+        current_time =int(time.mktime(current_time.timetuple()))
+	cur=redis_obj.zrangebyscore_dcompress(key,start_time,current_time)
+    else:
+    	doc_len_key = key + "_len"
+    	cur=memc_obj.retrieve(key,doc_len_key) 
+    
+    values_list = []
+    configs = config_module.parse_config_obj()
+    for config, options in configs.items():
+	machine_name = options.get('machine')
+    for doc in cur:	 
+	t = (
+	    doc.get('device_name'),
+	    doc.get('service_name'),
+	    doc.get('sys_timestamp'),
+	    doc.get('check_timestamp'),
+	    doc.get('current_value'),
+	    doc.get('min_value'),
+	    doc.get('max_value'),
+	    doc.get('avg_value'),
+	    doc.get('warning_threshold'),
+	    doc.get('critical_threshold'),
+	    doc.get('severity'),
+	    doc.get('site_name'),
+	    doc.get('data_source'),
+	    doc.get('ip_address'),
+	    machine_name
+	)
+	values_list.append(t)
+        t = ()
+    return values_list
 
 def build_data(doc):
     """
@@ -159,7 +166,7 @@ def build_data(doc):
     t = ()
     return values_list
 
-def insert_data(table, data_values, **kwargs):
+def insert_data(table, data_values, db,configs):
     """
     Function to bulk insert data into mysql db
 
@@ -170,7 +177,9 @@ def insert_data(table, data_values, **kwargs):
     Kwargs:
         kwargs: Mysqldb connection variables
     """
-    db = utility_module.mysql_conn(configs=kwargs.get('configs'))
+    if not db.is_connected():
+    	db = utility_module.mysql_conn(configs=configs)
+	
     query = 'INSERT INTO `%s` ' % table
     query += """
                 (device_name,service_name,sys_timestamp,check_timestamp,

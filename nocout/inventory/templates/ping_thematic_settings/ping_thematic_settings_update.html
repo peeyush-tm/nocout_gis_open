@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-cog'></i> Settings" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-cogs'></i> Settings" "javascript:;" %}
     {% breadcrumb_safe "Ping Thematic Settings" "javascript:;" %}
     {% if is_admin %}
         {% breadcrumb_safe "Admin Ping Thematic" "ping-admin-thematic-settings-list" %}
@@ -53,9 +53,13 @@
                                         </div>
                                         <div class="form-group">
                                             <div class="col-sm-offset-3 col-sm-9">
-                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                                <button type="submit" class="btn btn-default">
+                                                    <i class="fa fa-edit text-info"></i> Update
+                                                </button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/ping_thematic_settings/')"><i class="fa fa-times"></i> Cancel</button>
+                                                <button type="reset" class="btn btn-default" onclick="window.location.replace('/ping_thematic_settings/')">
+                                                    <i class="fa fa-times text-danger"></i> Cancel
+                                                </button>
                                             </div>
                                         </div>
                                     </form>
@@ -71,11 +75,39 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
+        var parent_class = 'formContainer',
+            change_event_dom_ids = [
+                '#id_technology',
+                '#id_type'
+            ],
+            element_relation_dict = {
+                '#id_technology' : {
+                    "old_value" : $('#id_technology').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_type',
+                            "url_name" : '{% url "get_types_for_tech" 123 %}',
+                            "existing_value" : $('#id_type').val()
+                        }
+                    ],
+                    "reset" : ['#id_type']
+                }
+            };
         $(document).ready(function () {
             // implement select2 on selection menu fields
             $("#id_technology").select2();
+            $("#id_type").select2();
             $("#id_service").select2();
             $("#id_data_source").select2();
+
+            // Loop to trigger change event on select boxes
+            for (var i=0;i<change_event_dom_ids.length;i++) {
+                var elem = element_relation_dict[change_event_dom_ids[i]];
+                if (elem && elem['old_value']) {
+                    // trigger change event
+                    $(change_event_dom_ids[i]).trigger('change', true);
+                }
+            }
 
             /*Number of range inputs*/
             var total_label = $("label").length,

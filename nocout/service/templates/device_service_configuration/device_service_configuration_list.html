@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "Device Inventory" "javascript:;" %}
     {% breadcrumb_safe "Device Service Configuration" "device_service_configuration_list" %}
     {% breadcrumb_safe "Edited" "device_service_configuration_list" %}
@@ -18,7 +18,7 @@
 {% block content_description %}List of running services{% endblock %}
 {% block page_setting_block %}
     {% if request.user.is_superuser %}
-        <span class="pull-right">
+        <span class="pull-right" style="padding-bottom: 5px;">
             <span class="btn-group">
                 {% if dsc_reset == 'yes' %}
                     <i class="red-dot">Reset: <a class="" href="#" onclick="reset_service_configuration();"><i class="fa fa-times-circle red-dot" title="Reset device service configurations."></i></a></i>

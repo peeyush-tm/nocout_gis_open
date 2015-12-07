@@ -22,6 +22,8 @@ from device.models import DeviceTechnology, Device
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway, time_delta_calculator
 
+from nocout.mixins.datatable import AdvanceFilteringMixin
+
 from nocout.settings import DATE_TIME_FORMAT
 
 from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
@@ -117,7 +119,7 @@ class SectorStatusHeaders(ListView):
         return context
 
 
-class SectorStatusListing(BaseDatatableView):
+class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
     """
     Extend the Sector Status View
     """
@@ -208,7 +210,8 @@ class SectorStatusListing(BaseDatatableView):
         :param qs:
         :return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         self.is_technology_searched = False
         if sSearch:
             if sSearch.lower() in ['pmp', 'wimax']:
@@ -219,8 +222,8 @@ class SectorStatusListing(BaseDatatableView):
                 for data in prepared_data:
                     if sSearch.lower() in str(data).lower():
                         filtered_result.append(data)
-
-                return filtered_result
+                        
+                return self.advance_filter_queryset(filtered_result)
             else:
                 query = []
                 exec_query = "qs = qs.filter("
@@ -230,7 +233,7 @@ class SectorStatusListing(BaseDatatableView):
                 exec_query += " | ".join(query)
                 exec_query += ").values(*" + str(self.columns) + ")"
                 exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -460,7 +463,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             # In case of severity search, update the search txt
@@ -483,7 +487,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                     if sSearch.lower() in str(data).lower():
                         filtered_result.append(data)
 
-                return filtered_result
+                return self.advance_filter_queryset(filtered_result)
             else:
                 self.is_technology_searched = False
                 query = []
@@ -497,7 +501,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                 exec_query += " | ".join(query)
                 exec_query += ").values(*" + str(self.columns + ['id']) + ")"
                 exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -560,7 +564,12 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             try:
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
                 item['sector__sector_configured_on__device_technology'] = techno_name
-                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                
+                if item['sys_timestamp'] and item['age']:
+                    item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                else:
+                    item['age'] = str(item['age']) + ' second'
+
                 if item['severity'].strip().lower() == 'warning':
                     item['severity'] = "Needs Augmentation"
                 elif item['severity'].strip().lower() == 'critical':
@@ -704,7 +713,7 @@ class BackhaulStatusHeaders(ListView):
         return context
 
 
-class BackhaulStatusListing(BaseDatatableView):
+class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
     """
     Extend the Backhaul Status View
     """
@@ -789,7 +798,8 @@ class BackhaulStatusListing(BaseDatatableView):
     is_technology_ordered = False
 
     def filter_queryset(self, qs):
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         self.is_technology_searched = False
         if sSearch:
             if sSearch.lower() in ['pmp', 'wimax', 'tcl pop', 'pop']:
@@ -800,7 +810,7 @@ class BackhaulStatusListing(BaseDatatableView):
                 for data in prepared_data:
                     if sSearch.lower() in str(data).lower():
                         filtered_result.append(data)
-                return filtered_result
+                return self.advance_filter_queryset(filtered_result)
             else:
                 query = []
                 exec_query = "qs = qs.filter("
@@ -810,7 +820,7 @@ class BackhaulStatusListing(BaseDatatableView):
                 exec_query += " | ".join(query)
                 exec_query += ").values(*" + str(self.columns) + ")"
                 exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -819,34 +829,46 @@ class BackhaulStatusListing(BaseDatatableView):
         :param self_instance:
         :param qs:
         """
-        request = self.request
-
         # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
+            try:
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
+            except ValueError:
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
         order = []
+        order_columns = self.get_order_columns()
 
-        for i in range(i_sorting_cols):
+        for i in range(sorting_cols):
             # sorting column
+            sort_dir = 'asc'
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
 
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = self.order_columns[i_sort_col]
+            sdir = '-' if sort_dir == 'desc' else ''
+            sortcol = order_columns[sort_col]
 
             if isinstance(sortcol, list):
                 for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
             else:
-                order.append('%s%s' % (sdir, sortcol))
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+
         if order:
             key_name = order[0][1:] if '-' in order[0] else order[0]
             if key_name == 'backhaul__bh_configured_on__device_technology':
@@ -1114,7 +1136,8 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             # In case of severity search, update the search txt
@@ -1137,7 +1160,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
                     if sSearch.lower() in str(data).lower():
                         filtered_result.append(data)
 
-                return filtered_result
+                return self.advance_filter_queryset(filtered_result)
             else:
                 self.is_technology_searched = False
                 query = []
@@ -1151,7 +1174,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
                 exec_query += " | ".join(query)
                 exec_query += ").values(*" + str(self.columns + ['id']) + ")"
                 exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -1274,7 +1297,11 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
             try:
                 techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
                 item['backhaul__bh_configured_on__device_technology'] = techno_name
-                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+
+                if item['sys_timestamp'] and item['age']:
+                    item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                else:
+                    item['age'] = str(item['age']) + ' second'
 
                 if item['severity'].strip().lower() == 'warning':
                     item['severity'] = "Needs Augmentation"

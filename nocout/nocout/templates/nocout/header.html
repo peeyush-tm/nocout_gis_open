@@ -3,7 +3,6 @@
 {% block header_block %}
 
     {% load staticfiles %}
-    {% load dajaxice_templatetags %}
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -21,12 +20,11 @@
         <meta name="author" content="">
         
         <link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %}>
-        <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher">
         <link rel="stylesheet" type="text/css" href={% static "css/responsive.css" %}>
 
         <link href={% static "font-awesome/css/font-awesome.min.css" %} rel="stylesheet">
         <!-- NOCOUT DEFAULT CSS -->
-        <link rel="stylesheet" type="text/css" href={% static "css/nocout_default.css" %} />
+        <link rel="stylesheet" type="text/css" href={% static "css/nocout_default.css" %} />        
         <!-- ANIMATE -->
         <link rel="stylesheet" type="text/css" href={% static "css/animatecss/animate.min.css" %} />
         <!-- DATE RANGE PICKER -->
@@ -67,9 +65,13 @@
             <script src={% static "js/html5/html5.js" %}></script>
             <script src={% static "js/media-ie/css3-mediaqueries.js" %}></script>
         <![endif]-->
-        
 
-        {% dajaxice_js_import %}
+        {% if settings.ENABLE_WHITE_THEME %}
+            <link rel="stylesheet" type="text/css" href={% static "css/themes/nocout.css" %}>
+        {% else %}
+            <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher">
+        {% endif %}
+            <link rel="stylesheet" type="text/css" href={% static "css/themes/nocout_size.css" %}>
         {% block css %}{% endblock %}
     </head>
     <body>
@@ -77,27 +79,31 @@
     <header class="navbar clearfix" id="header">
         <div class="container navbar clearfix">
             <div class="navbar-brand">
-                <!-- COMPANY LOGO -->
-{#                <a href="/home/">#}
-{#                    <img src={% static "img/logo/logo.png" %} alt="CloudAdminLogo" class="img-responsive" height="30"#}
-{#                         width="120">#}
-{#                </a>#}
-                <!-- /COMPANY LOGO -->
                 
                 <!-- /TEAM STATUS FOR MOBILE -->
                 <!-- SIDEBAR COLLAPSE -->
-                <div id="sidebar-collapse" class="sidebar-collapse btn">
-                    <i class="fa fa-bars" data-icon1="fa fa-bars" data-icon2="fa fa-bars"></i>
+                <div id="sidebar-collapse" class="sidebar-collapse btn">                    
+
+                    <span class = "fa-bar logo" data-icon1="fa fa-bars" data-icon2="fa fa-bars">
+                        {% if settings.ENABLE_WHITE_THEME %}
+                            <img class="fa fa-barsd" src="/static/img/logo/logo_red.png"></img>
+                        {% else %}
+                            <img class="fa fa-barsd" src="/static/img/logo/logo_white.png"></img>
+                        {% endif %}
+                    </span>
+                        
+                    <!-- <i class="fa fa-bars" data-icon1="fa fa-bars" data-icon2="fa fa-bars"></i> -->
                 </div>
                 <!-- /SIDEBAR COLLAPSE -->
+                <div class="orgTitle">{{ user_organization }}</div>
             </div>
             <!-- NAVBAR LEFT -->
 
-            <ul class="nav navbar-nav pull-left orgTitleBlock">
+            <!-- <ul class="nav navbar-nav pull-left orgTitleBlock">
                 <li class="org">
                     Organization: {{ user_organization }}
                 </li>
-            </ul>
+            </ul> -->
 
             <!-- /NAVBAR LEFT -->
             <!-- BEGIN TOP NAVIGATION MENU -->

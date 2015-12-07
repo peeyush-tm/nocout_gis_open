@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "Device Inventory" "javascript:;" %}
     {% breadcrumb_safe "Country" "country_list" %}
     <!-- Render the created breadcrumbs -->
@@ -16,7 +16,6 @@
 {% block content_title %}Country{% endblock %}
 {% block content_description %}List of country{% endblock %}
 {% block content %}
-    <p><a href="/country/new"><i class="fa fa-plus">&nbsp;</i> Create Country</a></p>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> Country LISTING</h4>
@@ -34,9 +33,17 @@
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
+        var dataTableInstance = '';
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            var create_link_html = '<a href="/country/new" title="Create Country" \
+                                    class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+            $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
 
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
