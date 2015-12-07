@@ -388,6 +388,7 @@ function applyDatatableAdvanceFilter(current_object) {
 	}
 }
 
+
 /**
  * This event triggers when Columns dropdown value changed
  * @event delegate('change')
@@ -418,6 +419,11 @@ $('#content').delegate('.columns_selectbox', 'change', function(e) {
 	$('#' + condition_dom_id).append(extra_columns);
 });
 
+
+/**
+ * This event triggers when any single filter remove button clicked
+ * @event delegate('click')
+ */
 $('#content').delegate('i.single_filter_remove_btn', 'click', function(e) {
 	
 	var form_id = global_table_id + '_advance_filter_form';
@@ -451,20 +457,32 @@ $('#content').delegate('i.single_filter_remove_btn', 'click', function(e) {
 });
 
 
+/**
+ * This event triggers when advance filter button clicked & it shows the filtering form
+ * @event delegate('click')
+ */
 $('#content').delegate('.show_advance_filters_btn', 'click', function(e) {
 	var button_id = $(this)[0].id,
 		splitted_id = button_id.split('_advance_filter_btn'),
 		filter_container_id = splitted_id[0] + '_advance_filter';
 
 	$('#' + filter_container_id).slideToggle('slow');
-
 });
 
+
+/**
+ * This event triggers when cancel button clicked & it hide the filtering form
+ * @event delegate('click')
+ */
 $('#content').delegate('.filter_cancel_btn', 'click', function(e) {
 	$('.advance_filters_container').slideUp('slow');
 });
 
 
+/**
+ * This event triggers when remove advance filter button clicked
+ * @event delegate('click')
+ */
 $('#content').delegate('.remove_advance_filters_btn', 'click', function(e, is_single) {
 
 	var api_main_url = global_api_url ? global_api_url.split('advance_filter')[0] : '',
@@ -545,5 +563,4 @@ $('#content').delegate('.remove_advance_filters_btn', 'click', function(e, is_si
 	    global_data_extra_param,
 	    global_excluded_columns
     );
-
 });
