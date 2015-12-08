@@ -1576,6 +1576,14 @@ function nocout_stopPollNow() {
     if($("#" + tab_id + "_block .single_perf_poll_now").hasClass("disabled")) {
         $("#" + tab_id + "_block .single_perf_poll_now").removeClass("disabled");
     }
+
+    try {
+        if (perf_page_live_polling_call) {
+            perf_page_live_polling_call.abort();
+        }
+    } catch(e) {
+        // console.error(e);
+    }
 }
 
 
@@ -1605,7 +1613,16 @@ function nocout_pausePollNow() {
             pollCallingTimeout = "";
         }
         isPollingPaused = 1;
-        $("#" + tab_id + "_block .poll_play_btn").button('complete');        
+        $("#" + tab_id + "_block .poll_play_btn").button('complete');
+
+        try {
+            if (perf_page_live_polling_call) {
+                perf_page_live_polling_call.abort();
+            }
+        } catch(e) {
+            // console.error(e);
+        }
+
     } else {
         bootbox.alert("Please run polling first.");
     }
