@@ -748,6 +748,7 @@ class GetPerfomance(View):
         page_data = {
             'page_title': page_type.capitalize(),
             'device_technology': device_technology,
+            'device_type': device_type,
             'device': device,
             'realdevice': realdevice,
             'bs_alias' : bs_alias,

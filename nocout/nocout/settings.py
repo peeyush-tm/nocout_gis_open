@@ -537,9 +537,9 @@ MULTI_PROCESSING_ENABLED = False
 
 # Configuration for 'django-session-security' module.
 # Time (in seconds) before the user should be warned that is session will expire because of inactivity.
-SESSION_SECURITY_WARN_AFTER = 540
+SESSION_SECURITY_WARN_AFTER = 3540
 # Time (in seconds) before the user should be logged out if inactive.
-SESSION_SECURITY_EXPIRE_AFTER = 600
+SESSION_SECURITY_EXPIRE_AFTER = 3600
 # Expire session on closing web browser.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # List of urls that should be ignored by the middleware.
