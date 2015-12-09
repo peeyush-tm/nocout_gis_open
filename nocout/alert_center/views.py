@@ -1488,8 +1488,10 @@ class SingleDeviceAlertsInit(ListView):
         is_backhaul_switch = device_obj.backhaul_switch.exists()
         is_backhaul_pop = device_obj.backhaul_pop.exists()
         is_backhaul_aggregator = device_obj.backhaul_aggregator.exists()
+
+        is_ss = device_obj.substation_set.exists()
         # If device is backhaul or backhaul_switch or backhaul_pop or backhaul_aggregator
-        if is_backhaul or is_backhaul_switch or is_backhaul_pop or is_backhaul_aggregator:
+        if (is_backhaul or is_backhaul_switch or is_backhaul_pop or is_backhaul_aggregator) and not is_ss:
             page_type = 'other'
 
         # Create Context Dict
