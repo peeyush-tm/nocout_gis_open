@@ -17,7 +17,7 @@ from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.utils.util import NocoutUtilsGateway
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
-from nocout.settings import SINGLE_REPORT_EMAIL
+from nocout.settings import SINGLE_REPORT_EMAIL, REPORT_EMAIL_PERM
 
 from django.http import HttpRequest
 
@@ -200,22 +200,22 @@ class DownloadCenterListing(BaseDatatableView):
             dct.update(
                 path='<a href="{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
                     report_path, excel_green))
-            dct.update(
-                actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                    dct.get('id'))
-            )
+            
+            actions_data = '<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id'))
 
-            if SINGLE_REPORT_EMAIL:
-                dct.update(
-                    actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a> &nbsp; \
-                             <span style="cursor: pointer;" class="send_report_btn" title="Email Report" report_id="{0}"> \
-                             <i class="fa fa-envelope text-primary"></i></span>'.format(dct.pop('id'))
-                )
-            else:
-                dct.update(
-                    actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                        dct.pop('id'))
-                )
+            try:
+                if SINGLE_REPORT_EMAIL:
+                    report_email_perm = json.loads(REPORT_EMAIL_PERM)
+            except ValueError:
+                report_email_perm = {}
+            
+            page_type = self.request.GET.get('page_type')
+
+            if report_email_perm.get(page_type):
+                actions_data += '&nbsp; <span style="cursor: pointer;" class="send_report_btn" title="Email Report" report_id="{0}"> \
+                                <i class="fa fa-envelope text-primary"></i></span>'.format(dct.pop('id'))
+
+            dct.update(actions=actions_data)
 
         return qs
 
