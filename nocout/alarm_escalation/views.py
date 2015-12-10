@@ -191,23 +191,28 @@ class EmailSender(View):
         if to_email:
             if "," in to_email:
                 to_email = eval(to_email)
-            else:
+            elif type(to_email) == str:
                 to_email = to_email.split(",")
+            else:
+                to_email = str(to_email)  # Parsing to string.
+                to_email = to_email.split(',')
+
         # Subject.
         subject = self.request.POST.get('subject', None)
         # Message.
         message = self.request.POST.get('message', None)
         # Path of File attachments.
         attachment_path = self.request.POST.get('attachment_path')
+
         if attachment_path:
             if "," in attachment_path:
                 attachment_path = eval(attachment_path)
-            else:
-                attachment_path = attachment_path.split(",")
+            elif type(attachment_path) == str:
+                    attachment_path = attachment_path.split(",")
 
         attachments = None
         try:
-            attachments = request.FILES.values()
+            attachments = self.request.FILES.values()
         except Exception as e:
             logger.exception(e.message)
 
@@ -245,7 +250,7 @@ class EmailSender(View):
                 else:
                     # If file exist in system
                     if not os.path.isfile(x):
-                        error_messages = "file: '%s' doesn't exist \n" % (x)
+                        error_messages = "file: '%s' doesn't exist \n" % x
         else:
             result['data']['attachment_path'] = []
 
@@ -257,8 +262,8 @@ class EmailSender(View):
             result['message'] = "Successfully send the email."
             # Sending email as a backend task.
             mail_send.delay(result)
-
-        attachments_name = [x.name for x in result['data']['attachments']]
-        result['data']['attachments'] = attachments_name
+        if result['data']['attachments']:
+            attachments_name = [x.name for x in result['data']['attachments']]
+            result['data']['attachments'] = attachments_name
 
         return HttpResponse(json.dumps(result))
