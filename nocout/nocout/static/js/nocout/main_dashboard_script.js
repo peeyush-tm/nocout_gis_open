@@ -1,3 +1,10 @@
+/**
+ * This file handles all the js functionality implemented for main dashboard.
+ * @class main_dashboard_script
+ * @uses Highcharts.js
+ * @uses jquery.datatables.js
+ */
+
 //Global Variables
 var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:#EEEEEE;"+
                             "padding:0px 5px;border-radius:3px;text-shadow: 1.5px 1.5px 2px #CCCCCC;",

@@ -17,6 +17,7 @@ var perf_that = "",
     chart_instance = "",
     old_table = "",
     base_url = "",
+    timeInterval = "",
     live_data_tab = [
         {"id": "live", "title": "Live"}
     ],
@@ -104,34 +105,10 @@ if (window.location.origin) {
 date_range_picker_html = '<input type="text" name="reservation" id="reservationtime" \
                           class="form-control input-large search-query" value="" readonly/>';
 
-
-$.urlParam = function (name) {
-    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href),
-        url_param = "";
-    if (results == null) {
-        url_param = null;
-    } else {
-        url_param = results[1] || 0;
-    }
-    return url_param;
-};
-
-function updateQueryStringParameter(uri, key, value) {
-    var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i"),
-        separator = uri.indexOf('?') !== -1 ? "&" : "?",
-        query_str = "";
-    if (uri.match(re)) {
-        query_str = uri.replace(re, '$1' + key + "=" + value + '$2');
-    } else {
-        query_str = uri + separator + key + "=" + value;
-    }
-
-    return query_str;
-}
-
-var timeInterval = "";
-
-
+/**
+ * This class(function) contains function to handle single device performance page functionality
+ * @method nocoutPerfLib
+ */
 function nocoutPerfLib() {
 
     /*Save reference of current pointer to the global variable*/
@@ -190,9 +167,17 @@ function nocoutPerfLib() {
      * @param page_type "String", It contains the page type i.e either the page is of network, customer or other devices
      * @param technology "String", It contains current device technology
      */
-    this.togglePerfPageElements = function(page_type, technology) {
+    this.togglePerfPageElements = function(page_type, technology, device_type) {
 
-        var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p',
+        if (!device_type) {
+            device_type = '';
+        }
+        console.log(device_type);
+        if (!technology) {
+            technology = '';
+        }
+
+        var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p' || device_type.toLowerCase() == 'radwin2kss',
             condition_2 = page_type == 'other';
 
         // Show/hide parent Tabs
@@ -834,9 +819,12 @@ function nocoutPerfLib() {
                     nocout_destroyDataTable('perf_data_table');
 
                     perf_that.resetLivePolling(active_tab_content_dom_id);
-
                     /*Get Last opened tab id from cookie*/
                     var parent_tab_id = $.cookie('parent_tab_id');
+                    
+                    if(is_util_tab) {
+                        parent_tab_id = 'utilization_top'
+                    }
 
                     //If parent Tab id is there & parent tab element exist in the dom.
                     if (parent_tab_id && $('#' + parent_tab_id).length && $('#' + parent_tab_id)[0].className.indexOf('hide') == -1) {
@@ -1625,6 +1613,71 @@ function nocoutPerfLib() {
 }
 
 
+/** 
+ * This function updates service/datasource dropdown HTML on change of its value
+ * @method updateServiceTypeDropdownHtml
+ */
+function updateServiceTypeDropdownHtml() {
+
+    var view_type = $("input[name='service_view_type']:checked").val(),
+        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i>';
+
+    if (view_type == 'normal') {
+        icon_html += ' Datasource View';
+    } else {
+        icon_html += ' Service View';
+    }
+
+    // Create button new html
+    var caret_html = ' <span class="caret"></span> ',
+        btn_html = icon_html + caret_html,
+        radioId = $("input[name='service_view_type']:checked").attr('id');
+
+    // Remove active class from all li
+    $('#service_view_type_ul li').removeClass('active');
+
+    // Add active class of current parent li
+    $('a[radioId="' + radioId + '"]').parent().addClass('active');
+
+    // Update dropdown button html
+    $('#service_view_type_btn').html(btn_html);
+}
+
+
+/** 
+ * This function updates display table/chart dropdown HTML on change of its value
+ * @method updateDropdownHtml
+ */
+function updateDropdownHtml() {
+    var draw_type = $("input[name='item_type']:checked").val(),
+        icon_html = '';
+
+    if (draw_type == 'chart') {
+        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i> Display Chart';
+    } else {
+        icon_html = '<i class="text-primary fa fa-table"> </i> Display Table';
+    }
+
+    // Create button new html
+    var caret_html = ' <span class="caret"></span> ',
+        btn_html = icon_html + caret_html,
+        radioId = $("input[name='item_type']:checked").attr('id');
+
+    // Remove active class from all li
+    $('#item_type_ul li').removeClass('active');
+
+    // Add active class of current parent li
+    $('a[radioId="' + radioId + '"]').parent().addClass('active');
+
+    // Update dropdown button html
+    $('#item_type_btn').html(btn_html);
+}
+
+
+/**
+ * This event trigger when innermost tabs (historical + live) clicked
+ * @event click(with delegate)
+ */
 $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e) {
     var current_target = e.currentTarget,
         current_attr = current_target.attributes,
@@ -1655,7 +1708,11 @@ $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e
     last_active_tab = tab_service_id;
 });
 
-// Change event on display type radio buttons
+
+/**
+ * This event trigger when display type radio buttons changed
+ * @event Change
+ */
 $('input[name="item_type"]').change(function(e) {
 
     var active_tab_obj = nocout_getPerfTabDomId(),
@@ -1685,6 +1742,11 @@ $('input[name="item_type"]').change(function(e) {
     }
 });
 
+
+/**
+ * This event trigger when one time poll button under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.single_perf_poll_now', 'click', function(e) {
 
     var active_tab_obj = nocout_getPerfTabDomId(),
@@ -1706,6 +1768,11 @@ $(".perfContainerBlock").delegate('.single_perf_poll_now', 'click', function(e) 
     });
 });
 
+
+/**
+ * This event trigger when recursive poll button(Play Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.poll_play_btn', 'click', function(e) {
     // Update the flag
     is_polling_active = true;
@@ -1745,14 +1812,29 @@ $(".perfContainerBlock").delegate('.poll_play_btn', 'click', function(e) {
     }
 });
 
+
+/**
+ * This event trigger when recursive poll pause button(Pause Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.poll_pause_btn', 'click', function(e) {
     nocout_pausePollNow();
 });
 
+
+/**
+ * This event trigger when recursive poll stop button(Stop Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
     nocout_stopPollNow();
 });
 
+
+/**
+ * This event trigger when reset live polled data button(Reset Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.reset_live_polling', 'click', function(e) {
     var active_tab_obj = nocout_getPerfTabDomId(),
         tab_id = active_tab_obj["active_dom_id"];
@@ -1793,6 +1875,11 @@ $(".perfContainerBlock").delegate('.reset_live_polling', 'click', function(e) {
     }
 });
 
+
+/**
+ * This event trigger when service/datasource view radio buttons changed
+ * @event Change
+ */
 $('input[name="service_view_type"]').change(function(e) {
 
     // selected value of 'service_view_type'
@@ -1806,6 +1893,10 @@ $('input[name="service_view_type"]').change(function(e) {
 });
 
 
+/**
+ * This event trigger when display type value clicked from display type dropdown
+ * @event Click
+ */
 $('#item_type_ul li a').click(function(e) {
 
     // Prevent default functionality
@@ -1818,32 +1909,10 @@ $('#item_type_ul li a').click(function(e) {
 });
 
 
-function updateDropdownHtml() {
-    var draw_type = $("input[name='item_type']:checked").val(),
-        icon_html = '';
-
-    if (draw_type == 'chart') {
-        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i> Display Chart';
-    } else {
-        icon_html = '<i class="text-primary fa fa-table"> </i> Display Table';
-    }
-
-    // Create button new html
-    var caret_html = ' <span class="caret"></span> ',
-        btn_html = icon_html + caret_html,
-        radioId = $("input[name='item_type']:checked").attr('id');
-
-    // Remove active class from all li
-    $('#item_type_ul li').removeClass('active');
-
-    // Add active class of current parent li
-    $('a[radioId="' + radioId + '"]').parent().addClass('active');
-
-    // Update dropdown button html
-    $('#item_type_btn').html(btn_html);
-}
-
-
+/**
+ * This event trigger when service/datasource view value clicked from service/datasource view dropdown
+ * @event Click
+ */
 $('#service_view_type_ul li a').click(function(e) {
 
     // Prevent default functionality
@@ -1865,33 +1934,11 @@ $('#service_view_type_ul li a').click(function(e) {
     initPerformancePage();
 });
 
-function updateServiceTypeDropdownHtml() {
 
-    var view_type = $("input[name='service_view_type']:checked").val(),
-        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i>';
-
-    if (view_type == 'normal') {
-        icon_html += ' Datasource View';
-    } else {
-        icon_html += ' Service View';
-    }
-
-    // Create button new html
-    var caret_html = ' <span class="caret"></span> ',
-        btn_html = icon_html + caret_html,
-        radioId = $("input[name='service_view_type']:checked").attr('id');
-
-    // Remove active class from all li
-    $('#service_view_type_ul li').removeClass('active');
-
-    // Add active class of current parent li
-    $('a[radioId="' + radioId + '"]').parent().addClass('active');
-
-    // Update dropdown button html
-    $('#service_view_type_btn').html(btn_html);
-}
-
-
+/**
+ * This event trigger all service report download button clicked
+ * @event Click
+ */
 $('#all_serv_live_report_btn').click(function(e) {
     
     // prevent default functionality
@@ -1975,7 +2022,10 @@ $('#all_serv_live_report_btn').click(function(e) {
 });
 
 
-
+/**
+ * This event trigger when live+hist report download button clicked.
+ * @event Click
+ */
 $('#live_hist_report_btn').click(function(e) {
     
     // prevent default functionality
@@ -2064,3 +2114,29 @@ $('#live_hist_report_btn').click(function(e) {
         }
     });
 });
+
+
+$.urlParam = function (name) {
+    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href),
+        url_param = "";
+    if (results == null) {
+        url_param = null;
+    } else {
+        url_param = results[1] || 0;
+    }
+    return url_param;
+};
+
+
+function updateQueryStringParameter(uri, key, value) {
+    var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i"),
+        separator = uri.indexOf('?') !== -1 ? "&" : "?",
+        query_str = "";
+    if (uri.match(re)) {
+        query_str = uri.replace(re, '$1' + key + "=" + value + '$2');
+    } else {
+        query_str = uri + separator + key + "=" + value;
+    }
+
+    return query_str;
+}

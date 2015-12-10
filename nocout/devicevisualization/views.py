@@ -3961,7 +3961,7 @@ class GISStaticInfo(View):
                 for sector in bs_inventory['sectors']:
                     # get sector
                     try:
-                        sector_obj = Sector.objects.get(id=sector['sector_id'])
+                        sector_obj = Sector.objects.get(id=sector['id'])
                     except Exception as e:
                         sector_obj = None
 

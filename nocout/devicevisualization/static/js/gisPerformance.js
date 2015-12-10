@@ -1,3 +1,8 @@
+/**
+ * This file contains the script for handling periodic calling functionality for all maps
+ * @class gisPerformance
+ */
+
 //Global Variables
 var recallPerf = "",
     current_bs_list = [],
@@ -120,15 +125,15 @@ function GisPerformance() {
         }
     };
 
-    /*
-     This will stop Sending Request by Setting isFrozen variable to 1
+    /**
+     * This will stop Sending Request by Setting isFrozen variable to 1
      */
     this.stop = function () {
         this._isFrozen = 1;
     }
 
-    /*
-     This will restart the Request by Setting isFrozen variable to 0 and sending Request for First BS
+    /**
+     *This will restart the Request by Setting isFrozen variable to 0 and sending Request for First BS
      */
     this.restart = function () {
         this._isFrozen = isFreeze;
@@ -143,8 +148,8 @@ function GisPerformance() {
         }
     }
 
-    /*
-     Here we reset all variables defined.
+    /**
+     * Here we reset all variables defined.
      */
     this.resetVariable = function () {
         this.gisData = null;
@@ -155,8 +160,8 @@ function GisPerformance() {
         isPerfCallStarted = 0;
     }
 
-    /*
-     This function sends Request based on the counter value.
+    /**
+     * This function sends Request based on the counter value.
      */
     this.sendRequest = function (counter) {
         if(isPollingActive == 0  && isPerfCallStopped == 0) {
@@ -189,8 +194,8 @@ function GisPerformance() {
         }
     }
 
-    /*
-     This function sends a Ajax request based on param and counter provided. If All the calls for BS is completed, then we resetVariables and start Performance again in 5 mins.
+    /**
+     * This function sends a Ajax request based on param and counter provided. If All the calls for BS is completed, then we resetVariables and start Performance again in 5 mins.
      */
     this.waitAndSend = function (bs_id, counter) {
 

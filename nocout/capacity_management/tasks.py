@@ -299,16 +299,22 @@ def gather_backhaul_status():
         else:
             ports.append(port)
 
-    device_ports = DevicePort.objects.filter(alias__in=ports).values_list('name', flat=True)
-    ports_upper = map(lambda x: x.upper(), device_ports)
-    ports_lower = map(lambda x: x.lower(), device_ports)
+    device_ports = list(DevicePort.objects.filter(alias__in=ports).values_list('name', flat=True))
+    kpi_ds = list()
+    
+    # Add KPI DS to port list
+    for port in device_ports:
+        if port and str(port) + '_kpi' not in kpi_ds:
+            kpi_ds.append(str(port) + '_kpi')
 
-    data_sources = set(ServiceDataSource.objects.filter(Q(name__in=ports_lower) | Q(name__in=ports_upper)
-                                                        ).values_list('name', flat=True))
+    device_ports += kpi_ds
+
+    data_sources = set(list(ServiceDataSource.objects.filter(name__in=device_ports).values_list('name', flat=True)))
 
     kpi_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi', 'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
                     'cisco_switch_dl_util_kpi', 'cisco_switch_ul_util_kpi', 'juniper_switch_dl_util_kpi',
                     'juniper_switch_ul_util_kpi']
+
     val_services = ['rici_dl_utilization', 'rici_ul_utilization', 'mrotek_dl_utilization', 'mrotek_ul_utilization',
                     'cisco_switch_dl_utilization', 'cisco_switch_ul_utilization', 'juniper_switch_dl_utilization',
                     'juniper_switch_ul_utilization']
@@ -325,16 +331,16 @@ def gather_backhaul_status():
         ))
 
         val = ServiceStatus.objects.filter(
-                    device_name__in=machine_bh_devices,
-                    service_name__in=val_services,
-                    data_source__in=data_sources
-        ).order_by().using(alias=machine)
+                device_name__in=machine_bh_devices,
+                service_name__in=val_services,
+                data_source__in=data_sources
+        ).order_by('-sys_timestamp').using(alias=machine)
 
         kpi = UtilizationStatus.objects.filter(
-                    device_name__in=machine_bh_devices,
-                    service_name__in=kpi_services,
-                    data_source__in=data_sources
-        ).order_by().using(alias=machine)
+            device_name__in=machine_bh_devices,
+            service_name__in=kpi_services,
+            data_source__in=data_sources
+        ).order_by('-sys_timestamp').using(alias=machine)
 
         # pass only base stations connected on a machine
         avg_max_val = None
@@ -1035,11 +1041,16 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     ds = ds.strip()
                     tmp_port = DevicePort.objects.get(alias=ds).name
                     ds_name = ServiceDataSource.objects.get(name__iexact=tmp_port).name.lower()
-                    ul = ServiceStatus.objects.filter(device_name=bh_device.device_name,
-                                                      service_name=val_dl_service,
-                                                      data_source__iexact=ds_name
-                                                      ).using(device_machine)[0].current_value
-                    ds_dict[ul] = ds_name
+                    util = ServiceStatus.objects.filter(
+                        device_name=bh_device.device_name,
+                        service_name=val_dl_service,
+                        data_source__iexact=ds_name
+                    ).using(device_machine)[0].current_value
+
+                    if util not in ['', None]:
+                        util = float(util)
+
+                    ds_dict[util] = ds_name
 
                 data_source = ds_dict[max(ds_dict.keys())]
             except Exception as e:
@@ -1058,15 +1069,26 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 continue
 
         if data_source:
-            # in % values index
-            in_per_index = (bs.backhaul.bh_configured_on.device_name,
-                            backhaul_tech_model_services[bs_device_type]['kpi']['dl']['service_name'],
-                            data_source)
+            try:
+                # in % values index
+                in_per_index = (bs.backhaul.bh_configured_on.device_name,
+                                backhaul_tech_model_services[bs_device_type]['kpi']['dl']['service_name'],
+                                str(data_source) + '_kpi')
 
-            # out % values index
-            out_per_index = (bs.backhaul.bh_configured_on.device_name,
-                             backhaul_tech_model_services[bs_device_type]['kpi']['ul']['service_name'],
-                             data_source)
+                # out % values index
+                out_per_index = (bs.backhaul.bh_configured_on.device_name,
+                                 backhaul_tech_model_services[bs_device_type]['kpi']['ul']['service_name'],
+                                 str(data_source) + '_kpi')
+            except Exception, e:
+                # in % values index
+                in_per_index = (bs.backhaul.bh_configured_on.device_name,
+                                backhaul_tech_model_services[bs_device_type]['kpi']['dl']['service_name'],
+                                data_source)
+
+                # out % values index
+                out_per_index = (bs.backhaul.bh_configured_on.device_name,
+                                 backhaul_tech_model_services[bs_device_type]['kpi']['ul']['service_name'],
+                                 data_source)
 
             # in % values index
             in_val_index = (bs.backhaul.bh_configured_on.device_name,
@@ -1097,30 +1119,35 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
 
             severity_s = dict()
             try:
-                # time of update
-                sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
-
-                if time_delta_calculator(sys_timestamp, minutes=7):
-                    # current in/out %
-                    current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
-                    # current in/out %
-                    current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
-                    # current in/out values
-                    current_in_val = float(indexed_val[in_val_index][0]['current_value'])
-                    # current in/out values
-                    current_out_val = float(indexed_val[out_val_index][0]['current_value'])
-                else:
+                try:
+                    # time of update
+                    sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
+                    if time_delta_calculator(sys_timestamp, minutes=8):
+                        # current in/out %
+                        current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
+                        # current in/out %
+                        current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
+                    else:
+                        current_in_per = 0
+                        current_out_per = 0
+                except Exception, e:
                     current_in_per = 0
                     current_out_per = 0
+
+                try:
+                    val_sys_timestamp = indexed_val[in_val_index][0]['sys_timestamp']
+                    if time_delta_calculator(val_sys_timestamp, minutes=8):
+                        # current in/out values
+                        current_in_val = float(indexed_val[in_val_index][0]['current_value'])
+                        # current in/out values
+                        current_out_val = float(indexed_val[out_val_index][0]['current_value'])
+                    else:
+                        current_in_val = 0
+                        current_out_val = 0
+                except Exception, e:
                     current_in_val = 0
                     current_out_val = 0
-                # if bs.backhaul.bh_configured_on.device_name in [15491, 15492]:
 
-                # current in/out values # formula driven
-                # current_out_val = current_out_per * backhaul_capacity / 100.00
-                # current in/out values # formula driven
-                # current_in_val = current_in_per * backhaul_capacity / 100.00
-                # severity for KPI services
                 severity_s = {
                     indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age'],
                     indexed_kpi[out_per_index][0]['severity']: indexed_kpi[out_per_index][0]['age'],
@@ -1139,40 +1166,47 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
 
             # now that we have severity and age all we need to do now is gather the average and peak values
             if calc_util_last_day():
-
                 try:
                     # average percentage in/out
                     avg_in_per = float(indexed_avg_max_per[in_per_index][0]['avg_val'])
                     # peak percentage in/out
                     peak_in_per = float(indexed_avg_max_per[in_per_index][0]['max_val'])
+                except Exception, e:
+                    avg_in_per = 0
+                    peak_in_per = None
+                    pass
+
+                try:
                     # average percentage in/out
                     avg_out_per = float(indexed_avg_max_per[out_per_index][0]['avg_val'])
                     # peak percentage in/out
                     peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
 
                 except Exception as e:
-                    pass
-                    avg_in_per = 0
-                    peak_in_per = None
                     avg_out_per = 0
                     peak_out_per = None
+                    pass
 
                 try:
                     # average percentage in/out
                     avg_in_val = float(indexed_avg_max_val[in_val_index][0]['avg_val'])
                     # peak percentage in/out
                     peak_in_val = float(indexed_avg_max_val[in_val_index][0]['max_val'])
+                except Exception, e:
+                    avg_in_val = 0
+                    peak_in_val = 0
+                    pass
+
+                try:
                     # average percentage in/out
                     avg_out_val = float(indexed_avg_max_val[out_val_index][0]['avg_val'])
                     # peak percentage in/out
                     peak_out_val = float(indexed_avg_max_val[out_val_index][0]['max_val'])
 
                 except Exception as e:
-                    pass
                     avg_out_val = 0
-                    avg_in_val = 0
-                    peak_in_val = 0
                     peak_out_val = 0
+                    pass
 
                 peak_in_per, peak_in_timestamp = get_peak_sectors_util(
                     device=bs.backhaul.bh_configured_on.device_name,
@@ -1191,6 +1225,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     max_value=peak_out_per,
                     getit='per'
                 )
+
             if bhs:
                 # values that would be updated per 5 minutes
                 bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0

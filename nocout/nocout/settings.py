@@ -541,9 +541,9 @@ MULTI_PROCESSING_ENABLED = False
 
 # Configuration for 'django-session-security' module.
 # Time (in seconds) before the user should be warned that is session will expire because of inactivity.
-SESSION_SECURITY_WARN_AFTER = 540
+SESSION_SECURITY_WARN_AFTER = 3540
 # Time (in seconds) before the user should be logged out if inactive.
-SESSION_SECURITY_EXPIRE_AFTER = 600
+SESSION_SECURITY_EXPIRE_AFTER = 3600
 # Expire session on closing web browser.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # List of urls that should be ignored by the middleware.
@@ -835,7 +835,7 @@ MAX_SUGGESTION_COUNT = 40
 DATATABLE_SEARCHTXT_KEY = 'sSearch'
 
 # Flag to enable/disable advance filters feature for datatables.
-ENABLE_ADVANCE_FILTERS = True
+ENABLE_ADVANCE_FILTERS = False
 
 # Flag to enable/disable unified service view on single performance page.
 ENABLE_UNIFIED_SERVICE_VIEW = True
@@ -850,13 +850,13 @@ ENABLE_WHITE_THEME = True
 SHOW_RF_COLUMN = 6
 
 # Flag to enable/disable topology view on single performance page.
-ENABLE_TOPO_VIEW = True
+ENABLE_TOPO_VIEW = False
 
 # Flag to enable/disable birdeye view on single performance page.
-ENABLE_BIRDEYE_VIEW = True
+ENABLE_BIRDEYE_VIEW = False
 
 # Flag to enable/disable custom dashboards on single performance page.
-ENABLE_CUSTOM_DASHBOARD_VIEW = True
+ENABLE_CUSTOM_DASHBOARD_VIEW = False
 
 # Password complexity settings.
 # ===============================

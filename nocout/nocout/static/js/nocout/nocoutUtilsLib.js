@@ -3,7 +3,6 @@
  * @for nocoutUtilsLib
  */
 
-
 // Global Variables
 var green_color = "#468847",
     orange_color = "#f0ad4e",
@@ -95,6 +94,7 @@ function populateDeviceStatus_nocout(domElement,info) {
         isLatestStatusUpdated = true;
     }
 }
+
 
 /**
  * This function is used to get icon & color as per the severity
@@ -199,6 +199,7 @@ function addDataToNormalTable_nocout(table_data, table_headers, table_id, servic
     }
 }
 
+
 /**
  * This function creates blank data table as per given params
  * @method initNormalDataTable_nocout
@@ -262,7 +263,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         sPaginationType: "full_numbers"
     });
 }
-// 69-75
+
 
 /**
  * This function creates blank data table for chart data as per given params
@@ -472,6 +473,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
 
 }
 
+
 /**
  * This function adds data to initialized datatable as per given params
  * @method addDataToChartTable_nocout
@@ -521,6 +523,7 @@ function addDataToChartTable_nocout(table_obj, table_id) {
     }
 }
 
+
 /**
  * This function adds data to created highchart
  * @method addPointsToChart_nocout
@@ -544,6 +547,7 @@ function addPointsToChart_nocout(pointArray, dom_id) {
         prepareValueLegends($('#'+dom_id+'_chart').highcharts().series, dom_id);
     }
 }
+
 
 /**
  * This function creates highchart for device performance
@@ -789,6 +793,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     callback(true);
 }
 
+
 /**
  * This function creates & returns table structur(with data) html
  * @method createTableHtml_nocout
@@ -832,6 +837,7 @@ function createTableHtml_nocout(dom_id, table_headers, table_data) {
     return table_string;
 }
 
+
 /**
  * This function creates & returns table structur(with data) html
  * @method createTableHtml_nocout
@@ -860,6 +866,15 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
         try {
             splitted_chart_name = chartObj[i].name.split(':')
             name = $.trim(splitted_chart_name[0]);
+
+            if (splitted_chart_name.length > 1) {
+                if (splitted_chart_name[1].indexOf('PMP1') > -1) {
+                    name += ': PMP1'
+                } else if (splitted_chart_name[1].indexOf('PMP2') > -1) {
+                    name += ': PMP1'
+                }
+            }
+
         } catch(e) {
             name = $.trim(chartObj[i].name);
         }
@@ -869,37 +884,12 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
     data_in_table += '</tr></thead><tbody>';
     /*Table header creation end*/
 
-    var data = chartObj[0].data;
-
-    for (var j = 0; j < data.length; j++) {
-        data_in_table += '<tr>';
-
-        for (var i = 0; i < chartObj.length; i++) {
-            var inner_data = chartObj[i].data[j],
-                time_val = "",
-                val = "";
-            if (inner_data) {
-                if (inner_data instanceof Array) {
-                    time_val = getFormattedDate(inner_data[0]);
-                    // time_val = new Date(inner_data[0]).toLocaleString();
-                    val = inner_data[1];
-                } else {
-                    time_val = getFormattedDate(inner_data.x);
-                    // time_val = new Date(inner_data.x).toLocaleString();
-                    val = inner_data.y;
-                }
-            }
-            data_in_table += '<td>' + time_val + '</td><td>' + val + '</td>';
-        }
-        
-        data_in_table += '</tr>';
-    }
-
     data_in_table += '</tbody>';
     data_in_table += '</table>';
 
     return data_in_table;
 }
+
 
 /**
  * This function triggers when live poll button is clicked. It fetched the live polled value & create or update sparkline chart
@@ -1096,6 +1086,7 @@ function nocout_livePollCurrentDevice(
     });
 }
 
+
 /**
  * This function concat base url & given url as per the "/" cases
  * @method getCompleteUrl
@@ -1123,6 +1114,7 @@ function getCompleteUrl(api_url) {
 
     return complete_url;
 }
+
 
 /**
  * This function returns the base url of the webpage
@@ -1152,6 +1144,7 @@ function getBaseUrl() {
 
     return webpage_base_url;
 }
+
 
 /**
  * This function recursively performs poll now functionality as per the selected criteria
@@ -1187,6 +1180,7 @@ function recursivePolling() {
         nocout_stopPollNow();
     }
 }
+
 
 /**
  * This function triggers when live poll functionality trigger from single device page
@@ -1259,8 +1253,10 @@ function initSingleDevicePolling(callback) {
     }
 }
 
+
 /**
  * This function draws chart/table as per the poll now response
+ * @method checkpollvalues
  * @param  {[type]}   result      [description]
  * @param  {Boolean}  is_new_data [description]
  * @param  {Function} callback    [description]
@@ -1454,6 +1450,7 @@ function checkpollvalues(result, is_new_data, callback) {
     callback(true);
 }
 
+
 /**
  * This function toggles the current state of poll now content(chart/table) as per the item type selection
  * @method nocout_togglePollNowContent
@@ -1492,6 +1489,7 @@ function nocout_togglePollNowContent() {
         });
     }
 }
+
 
 /**
  * This function returns the active tab dom id & API url
@@ -1535,6 +1533,7 @@ function nocout_getPerfTabDomId() {
     return response_dict;
 }
 
+
 /**
  * This function stops active recursive polling
  * @method nocout_stopPollNow
@@ -1577,7 +1576,16 @@ function nocout_stopPollNow() {
     if($("#" + tab_id + "_block .single_perf_poll_now").hasClass("disabled")) {
         $("#" + tab_id + "_block .single_perf_poll_now").removeClass("disabled");
     }
+
+    try {
+        if (perf_page_live_polling_call) {
+            perf_page_live_polling_call.abort();
+        }
+    } catch(e) {
+        // console.error(e);
+    }
 }
+
 
 /**
  * This function pause active recursive polling
@@ -1605,11 +1613,21 @@ function nocout_pausePollNow() {
             pollCallingTimeout = "";
         }
         isPollingPaused = 1;
-        $("#" + tab_id + "_block .poll_play_btn").button('complete');        
+        $("#" + tab_id + "_block .poll_play_btn").button('complete');
+
+        try {
+            if (perf_page_live_polling_call) {
+                perf_page_live_polling_call.abort();
+            }
+        } catch(e) {
+            // console.error(e);
+        }
+
     } else {
         bootbox.alert("Please run polling first.");
     }
 }
+
 
 /**
  * This function destroy datatable with given dom id
@@ -1659,6 +1677,7 @@ function nocout_destroyDataTable(domId) {
     }
 }
 
+
 /**
  * This function destroy highcharts with given dom id
  * @method nocout_destroyHighcharts
@@ -1690,6 +1709,7 @@ function nocout_destroyHighcharts(domId) {
         // console.log(e);
     }
 }
+
 
 /**
  * This function find & returns the tab id as per the given help text
@@ -1790,6 +1810,7 @@ function prepareValueLegends(dataset, dom_id, is_zoom_in) {
     }
 }
 
+
 /**
  * This function calculates & return the average value as per given params
  * @method calculateAverageValue
@@ -1805,6 +1826,12 @@ function calculateAverageValue(resultset, key) {
     return (total_val/resultset.length).toFixed(2);
 }
 
+
+/**
+ * This function calls different functions to generate birdeye view HTML & draw respective table/chart
+ * @method initBirdEyeView
+ * @param container_id {String}, It contains the dom id of parent element on which birdeye view is to be created
+ */
 function initBirdEyeView(container_id) {
 
     if (typeof all_services_list != 'undefined' && all_services_list.length) {
@@ -1821,6 +1848,13 @@ function initBirdEyeView(container_id) {
     hideSpinner();
 }
 
+
+/**
+ * This function call getServiceData for different services in loop to populate chart/table in birdeye view
+ * @method populateBirdViewCharts
+ * @param start {Number}, It contains the start index of for loop for all_services_list array
+ * @param end {Number}, It contains the end index of for loop for all_services_list array
+ */
 function populateBirdViewCharts(start, end) {
     for (var i=start;i<end;i++) {
         if (all_services_list[i]) {
@@ -1869,6 +1903,11 @@ function populateBirdViewCharts(start, end) {
 }
 
 
+/**
+ * This function creates birdeye view content HTML skull.
+ * @method createBirdEyeViewHTML
+ * @param container_id {String}, It contains the dom id of parent element on which birdeye view is to be created
+ */
 function createBirdEyeViewHTML(container_id) {
 
     var birdeye_html = '';
@@ -1915,9 +1954,36 @@ function createBirdEyeViewHTML(container_id) {
     $('#' + container_id).html(birdeye_html);
 }
 
+
+/**
+ * This function formats given date object in DD/MM/YY HH:MM(24 Hrs)
+ * @method getFormattedDate
+ * @param input_date {Object}, It contains date object
+ * @return formatted_date {String}, It contains the formatted date string
+ */
+function getFormattedDate(input_date) {
+    var formatted_date = '';
+
+    try {
+        var fetched_datetime = new Date(input_date),
+            fetched_day = fetched_datetime.getDate() > 9 ? fetched_datetime.getDate() : '0' + String(fetched_datetime.getDate()),
+            fetched_month = fetched_datetime.getMonth() + 1 > 9 ? fetched_datetime.getMonth() + 1 : '0' + String(fetched_datetime.getMonth() + 1),
+            fetched_year = String(fetched_datetime.getYear()).substr(-2),
+            fetched_hours = fetched_datetime.getHours() > 9 ? fetched_datetime.getHours() : '0' + String(fetched_datetime.getHours()),
+            fetched_minutes = fetched_datetime.getMinutes() > 9 ? fetched_datetime.getMinutes() : '0' + String(fetched_datetime.getMinutes());
+
+        formatted_date = fetched_day + '/' + fetched_month + '/' + fetched_year + ' ' + fetched_hours + ':' + fetched_minutes;
+    } catch(e) {
+        // console.error(e);
+    }
+
+    return formatted_date;
+}
+
+
 /**
  * This event trigger when severity status block clicked
- * @event click
+ * @event click(with delegate)
  */
 $('#status_container').delegate('#final_status_table .severity_block', 'click', function(e) {
 
@@ -2017,28 +2083,3 @@ $('#status_container').delegate('#final_status_table .severity_block', 'click', 
         }
     }
 });
-
-/**
- * This function formats given date object in DD/MM/YY HH:MM(24 Hrs)
- * @method getFormattedDate
- * @param input_date {Object}, It contains date object
- * @return formatted_date {String}, It contains the formatted date string
- */
-function getFormattedDate(input_date) {
-    var formatted_date = '';
-
-    try {
-        var fetched_datetime = new Date(input_date),
-            fetched_day = fetched_datetime.getDate() > 9 ? fetched_datetime.getDate() : '0' + String(fetched_datetime.getDate()),
-            fetched_month = fetched_datetime.getMonth() + 1 > 9 ? fetched_datetime.getMonth() + 1 : '0' + String(fetched_datetime.getMonth() + 1),
-            fetched_year = String(fetched_datetime.getYear()).substr(-2),
-            fetched_hours = fetched_datetime.getHours() > 9 ? fetched_datetime.getHours() : '0' + String(fetched_datetime.getHours()),
-            fetched_minutes = fetched_datetime.getMinutes() > 9 ? fetched_datetime.getMinutes() : '0' + String(fetched_datetime.getMinutes());
-
-        formatted_date = fetched_day + '/' + fetched_month + '/' + fetched_year + ' ' + fetched_hours + ':' + fetched_minutes;
-    } catch(e) {
-        // console.error(e);
-    }
-
-    return formatted_date;
-}

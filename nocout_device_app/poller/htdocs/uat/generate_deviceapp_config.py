@@ -797,7 +797,7 @@ def get_settings():
 select
 	bh_device.device_name,
 	
-	GROUP_CONCAT(bs.bh_port_name separator '|-|-') as bh_ports
+	GROUP_CONCAT(bs.bh_port_name separator ',') as bh_ports
 	
 from
 	inventory_basestation as bs
