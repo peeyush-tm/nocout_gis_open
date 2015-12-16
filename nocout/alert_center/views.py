@@ -247,7 +247,9 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         'current_value',
         'min_value',
         'max_value',
-        'avg_value'
+        'avg_value',
+        'age',
+        'sys_timestamp'
     ]
 
     main_qs = []
@@ -460,14 +462,26 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     current_app='device'
                 )
 
-                dct.update(
-                    action='<a href="' + alert_url + '" title="Device Alerts">\
-                            <i class="fa fa-warning text-warning"></i></a>\
-                            <a href="' + performance_url + '" title="Device Performance">\
-                            <i class="fa fa-bar-chart-o text-info"></i></a>\
-                            <a href="' + inventory_url + '" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted"></i></a>'
-                )
+                try:
+                    dct.update(
+                        sys_timestamp=datetime.datetime.fromtimestamp(dct.get('sys_timestamp')).strftime(DATE_TIME_FORMAT) if dct.get('sys_timestamp') else "",
+                        age=datetime.datetime.fromtimestamp(dct.get('age')).strftime(DATE_TIME_FORMAT) if dct.get('age') else "",
+                        action='<a href="' + alert_url + '" title="Device Alerts">\
+                                <i class="fa fa-warning text-warning"></i></a>\
+                                <a href="' + performance_url + '" title="Device Performance">\
+                                <i class="fa fa-bar-chart-o text-info"></i></a>\
+                                <a href="' + inventory_url + '" title="Device Inventory">\
+                                <i class="fa fa-dropbox text-muted"></i></a>'
+                    )
+                except Exception, e:
+                    dct.update(
+                        action='<a href="' + alert_url + '" title="Device Alerts">\
+                                <i class="fa fa-warning text-warning"></i></a>\
+                                <a href="' + performance_url + '" title="Device Performance">\
+                                <i class="fa fa-bar-chart-o text-info"></i></a>\
+                                <a href="' + inventory_url + '" title="Device Inventory">\
+                                <i class="fa fa-dropbox text-muted"></i></a>'
+                    )
 
                 dct = alert_utils.common_prepare_results(dct)
 
@@ -884,7 +898,9 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         'min_value',
         'max_value',
         'current_value',
-        'avg_value'
+        'avg_value',
+        'age',
+        'sys_timestamp'
     ]
 
     main_qs = []
@@ -1154,15 +1170,27 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                     current_app='device'
                 )
 
-                dct.update(
-                    action='<a href="' + alert_url + '" title="Device Alerts">\
-                            <i class="fa fa-warning text-warning"></i></a>\
-                            <a href="' + performance_url + '" title="Device Performance">\
-                            <i class="fa fa-bar-chart-o text-info"></i></a>\
-                            <a href="' + inventory_url + '" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted"></i>\
-                            </a>'
-                )
+                try:
+                    dct.update(
+                        sys_timestamp=datetime.datetime.fromtimestamp(dct.get('sys_timestamp')).strftime(DATE_TIME_FORMAT) if dct.get('sys_timestamp') else "",
+                        age=datetime.datetime.fromtimestamp(dct.get('age')).strftime(DATE_TIME_FORMAT) if dct.get('age') else "",
+                        action='<a href="' + alert_url + '" title="Device Alerts">\
+                                <i class="fa fa-warning text-warning"></i></a>\
+                                <a href="' + performance_url + '" title="Device Performance">\
+                                <i class="fa fa-bar-chart-o text-info"></i></a>\
+                                <a href="' + inventory_url + '" title="Device Inventory">\
+                                <i class="fa fa-dropbox text-muted"></i></a>'
+                    )
+                except Exception, e:
+                    dct.update(
+                        action='<a href="' + alert_url + '" title="Device Alerts">\
+                                <i class="fa fa-warning text-warning"></i></a>\
+                                <a href="' + performance_url + '" title="Device Performance">\
+                                <i class="fa fa-bar-chart-o text-info"></i></a>\
+                                <a href="' + inventory_url + '" title="Device Inventory">\
+                                <i class="fa fa-dropbox text-muted"></i>\
+                                </a>'
+                    )
 
         return qs
 
