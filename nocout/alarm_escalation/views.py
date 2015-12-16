@@ -16,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import re
 import os.path
+import ast
 
 import logging
 
@@ -184,18 +185,31 @@ class EmailSender(View):
 
     def post(self, request, *args, **kwargs):
         # From email id.
-        from_email = self.request.POST.get('from_email', None)
+        from_email = self.request.POST.get('from_email')
+
         # To email id.
         to_email = self.request.POST.get('to_email')
         # If multiple values then by using eval converting into list.
+        # if to_email:
+        #     if "," in to_email:
+        #         # to_email = eval(to_email)
+        #         logger.info(type(to_email))
+        #         if isinstance(to_email, unicode):
+        #             to_email = to_email.encode('ascii')
+        #         logger.info(type(to_email))
+        #         to_email = to_email.split(',')
+        #         to_email = map(str.strip, to_email)
+        #
+        #     elif type(to_email) == str:
+        #         to_email = to_email.split(",")
+        #     else:
+        #         to_email = str(to_email)  # Parsing to string.
+        #         to_email = to_email.split(',')
+
         if to_email:
-            if "," in to_email:
-                to_email = eval(to_email)
-            elif type(to_email) == str:
-                to_email = to_email.split(",")
-            else:
-                to_email = str(to_email)  # Parsing to string.
-                to_email = to_email.split(',')
+            if isinstance(to_email, unicode):
+                to_email = ast.literal_eval(to_email)
+            to_email = map(lambda x: x.strip(), to_email)
 
         # Subject.
         subject = self.request.POST.get('subject', None)
@@ -205,10 +219,8 @@ class EmailSender(View):
         attachment_path = self.request.POST.get('attachment_path')
 
         if attachment_path:
-            if "," in attachment_path:
-                attachment_path = eval(attachment_path)
-            elif type(attachment_path) == str:
-                    attachment_path = attachment_path.split(",")
+            if isinstance(attachment_path, unicode):
+                attachment_path = ast.literal_eval(attachment_path)
 
         attachments = None
         try:
@@ -242,6 +254,8 @@ class EmailSender(View):
         if not from_email:
             result['from_email'] = settings.DEFAULT_FROM_EMAIL
 
+        logger.info('attachment_path')
+        logger.info(attachment_path)
         if attachment_path:
             for x in attachment_path:
                 # Avoiding if it is URL Path.

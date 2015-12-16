@@ -696,10 +696,14 @@ class EmailListUpdating(View):
         report_id = self.request.POST.get('report_id',None)
         
         if report_id:
+            print 'report_id', report_id
+            print 'single report mailing'
+            print 'emails', email_list
             # Args: report_id, exist means functionality is being used to send a single report.
             # Additional Functionality where we can send single report to multiple mail id's instantly.
             report_name = ProcessedReportDetails.objects.get(id=report_id).report_name
             file_path = ProcessedReportDetails.objects.get(id=report_id).path
+            file_path = file_path.split()
             request_object = HttpRequest()
             from alarm_escalation.views import EmailSender
             email_sender = EmailSender()
@@ -713,13 +717,14 @@ class EmailListUpdating(View):
                 }
             except Exception,e:
                 pass
-            email_sender.POST = {
-                'subject': report_name,
-                'message': '',
-                'to_email': email_list,
-                'attachment_path': file_path
+            # email_sender.POST = {
+            #     'subject': report_name,
+            #     'message': '',
+            #     'to_email': email_list,
+            #     'attachment_path': file_path
             }
-
+            logger.info('email_sender.request.POST')
+            logger.info(email_sender.request.POST)
             email_sender.post(email_sender)
 
             response = {

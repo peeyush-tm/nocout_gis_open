@@ -699,11 +699,19 @@ REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 # }
 
 
-# Email settings.
-DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
-EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
-
+# # Email settings.
+# DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
+# EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+# EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
+#email setting
+# EMAIL_BACKEND = 'dnago.core.mail.backends.filebased.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'chanish.agarwal1@gmail.com'
+EMAIL_HOST_PASSWORD = 'bqdcetvlpqlevabk'
+DEFAULT_FROM_EMAIL = 'chanish.agarwal1@gmail.com'
+DEFAULT_TO_EMAIL = 'chanishagarwal0@gmail.com'
 
 # Special Calculation Mechanism for capacity management.
 CAPACITY_SPECIFIC_TIME = 0
@@ -980,7 +988,8 @@ REPORT_EMAIL_PERM = json.dumps({
 
 # Global variable to show/hide single report mail optin in download center listing
 SINGLE_REPORT_EMAIL = True
-SCHEDULED_REPORT_EMAIL = True
+SCHEDULED_REPORT_EMAIL = False
+SCHEDULED_SINGLE_REPORT_EMAIL = True
 
 # Import the local_settings.py file to override global settings
 try:
