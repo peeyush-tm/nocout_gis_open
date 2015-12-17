@@ -1218,7 +1218,7 @@ class InventoryDeviceStatus(View):
                 # get machine name from fetched info
                 machine_name = list_devices_invent_info[0]['machine_name']
                 # If customer device then fetch the polled frequency from distributed DB's
-                if page_type == 'customer':
+                if (page_type == 'customer') or (page_type == 'network' and lowered_device_tech in ['ptp', 'p2p']):
                     service_name = ''
                     ds_name = ''
                     if lowered_device_tech in ['ptp', 'p2p']:
@@ -1242,11 +1242,18 @@ class InventoryDeviceStatus(View):
                         pass
 
                     if service_name and device_name and machine_name:
-                        freq_data_obj = InventoryStatus.objects.filter(
-                            device_name=device_name,
-                            service_name=service_name,
-                            data_source='frequency'
-                        ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
+                        if lowered_device_tech in ['wimax']:
+                            freq_data_obj = ServiceStatus.objects.filter(
+                                device_name=device_name,
+                                service_name=service_name,
+                                data_source='frequency'
+                            ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
+                        else:
+                            freq_data_obj = InventoryStatus.objects.filter(
+                                device_name=device_name,
+                                service_name=service_name,
+                                data_source='frequency'
+                            ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
 
                         if freq_data_obj and freq_data_obj[0].current_value:
                             list_devices_invent_info[0]['polled_frequency'] = freq_data_obj[0].current_value
@@ -1316,6 +1323,7 @@ class InventoryDeviceStatus(View):
                 header_key = header["name"]
                 if header_key in data:
                     header["value"] = data[header_key]
+                    
                     if header["value"] and header["value"] != 'NA':
                         try:
                             header["url"] = reverse(
@@ -1326,8 +1334,7 @@ class InventoryDeviceStatus(View):
                         except Exception, e:
                             header["url"] = ''
                     else:  # If no value then show NA
-                        header["value"] = 'NA' 
-                       
+                        header["value"] = 'NA'
 
             resultant_data.append(new_headers)
 

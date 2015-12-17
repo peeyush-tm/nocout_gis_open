@@ -960,7 +960,9 @@ def prepare_gis_devices_optimized(
                     "ckt_pk" : 0,
                     "sect_pk" : 0,
                     "cust_id" : 0,
-                    "qos_bw" : "NA"
+                    "qos_bw" : "NA",
+                    "polled_frequency": "NA",
+                    "freq_id": 0
                 })
 
 
@@ -1001,7 +1003,9 @@ def prepare_gis_devices_optimized(
                         "ckt_pk" : inventory_row.get('CID', 0),
                         "sect_pk" : inventory_row.get('SECT_ID', 0),
                         "cust_id" : inventory_row.get('CUSTID', 0),
-                        "qos_bw" : inventory_row.get('CKT_QOS', 0)
+                        "qos_bw" : inventory_row.get('CKT_QOS', 0),
+                        "polled_frequency" : inventory_row.get('FREQUENCY', "NA"),
+                        "freq_id" : inventory_row.get('FREQ_ID', 0)
                     })
 
                     # append the deep copied dict
