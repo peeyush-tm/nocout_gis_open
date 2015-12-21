@@ -92,7 +92,8 @@ function makeFormAjaxCall(api_url, affected_element_id, existing_value) {
             } else {
                 result = response;
             }
-            var option_html = '<option value="0">Select</option>';
+            var option_html = '<option value="0">Select</option>',
+                all_ids = [];
 
             for (var x=0;x<result.length;x++) {
                 var existing_keys = Object.keys(result[x]).filter(function(items) {return items != 'id'}),
@@ -102,13 +103,17 @@ function makeFormAjaxCall(api_url, affected_element_id, existing_value) {
                 if (existing_value && existing_value == result[x].id) {
                     selected_txt = 'selected="selected"';
                 }
-
+                all_ids.push(result[x].id);
                 option_html += '<option value="' + result[x].id + '" ' + selected_txt + '>' + result[x][alias_key] + '</option>';
             }
             // Update select box HTML
             $(affected_element_id).html(option_html);
             try {
                 $(affected_element_id).select2('val', existing_value);
+
+                if (affected_element_id == '#id_user_permissions' && !existing_value) {
+                   $(affected_element_id).select2('val', all_ids);
+               }
             } catch(e) {
                 // console.error(e);
             }
