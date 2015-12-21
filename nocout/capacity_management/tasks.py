@@ -962,7 +962,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
     indexed_val = nocout_utils.indexed_query_set(
         query_set=val,
         indexes=['device_name', 'service_name', 'data_source'],
-        values=['device_name', 'service_name', 'data_source', 'current_value'],
+        values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
     )
 
     indexed_avg_max_val = dict()
@@ -980,8 +980,10 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
             is_raw=True
         )
-
+    count = 0
     for bs in basestations:
+        logger.exception("***************************** {}".format(count))
+        count += 1
         # base station device
         bh_device = bs.backhaul.bh_configured_on
 
@@ -1122,7 +1124,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 try:
                     # time of update
                     sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
-                    if time_delta_calculator(sys_timestamp, minutes=8):
+                    if time_delta_calculator(sys_timestamp, minutes=20):
                         # current in/out %
                         current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
                         # current in/out %
@@ -1136,7 +1138,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
 
                 try:
                     val_sys_timestamp = indexed_val[in_val_index][0]['sys_timestamp']
-                    if time_delta_calculator(val_sys_timestamp, minutes=8):
+                    if time_delta_calculator(val_sys_timestamp, minutes=20):
                         # current in/out values
                         current_in_val = float(indexed_val[in_val_index][0]['current_value'])
                         # current in/out values
@@ -1477,7 +1479,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 # time of update
                 sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
-                if time_delta_calculator(sys_timestamp, minutes=7):
+                if time_delta_calculator(sys_timestamp, minutes=20):
                     # current in/out percentages
                     current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
 
@@ -1675,7 +1677,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 # time of update
                 sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
-                if time_delta_calculator(sys_timestamp, minutes=7):
+                if time_delta_calculator(sys_timestamp, minutes=20):
                     # current in/out percentages
                     current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
 
