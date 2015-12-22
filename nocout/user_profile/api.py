@@ -568,6 +568,13 @@ class ParentOnOrganizationChange(APIView):
         # Response data.
         data = list()
 
+        # Get edited user.
+        edit_user = None
+        try:
+            edit_user = request.GET.get('user_id')
+        except Exception, e:
+            pass
+
         # Get user.
         user = request.user
         data.append({'id': user.id, 'alias': user.username})
@@ -577,6 +584,9 @@ class ParentOnOrganizationChange(APIView):
             if oid:
                 # Get child users existing within user's organizations.
                 child_users = child_users.filter(organization__id=oid)
+            if edit_user:
+                child_users = child_users.exclude(id=edit_user)
+
             for child_user in child_users:
                 data.append({'id': child_user.id, 'alias': child_user.username})
 

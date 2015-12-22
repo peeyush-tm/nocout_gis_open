@@ -88,7 +88,7 @@
                     "update" : [
                         {
                             "id" : '#id_parent',
-                            "url_name" : "{% url 'parent_on_organization_change' 123 %}",
+                            "url_name" : "{% url 'parent_on_organization_change' 123 %}" + "?user_id={{ object.id }}",
                             "existing_value" : $('#id_parent').val()
                         }
                     ],
@@ -98,7 +98,8 @@
                 }
             };
 
-        $(document).ready(function(){
+        $(document).ready(function() {
+
             // Initialize the select2 selectbox.
             $(".select2select").select2();
 
