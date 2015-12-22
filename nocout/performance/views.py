@@ -2167,10 +2167,40 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
                         self.sds_type = SERVICE_DATA_SOURCE[sds]['data_source_type']
                 else:
                     break
+            if 'min_value' not in self.columns:
+                self.columns.append('min_value')
 
-            self.columns.append('min_value')
-            self.columns.append('max_value')
+            if 'max_value' not in self.columns:
+                self.columns.append('max_value')
         else:
+            if data_for == 'live' and data_source not in ['rta']:
+                self.columns = [
+                    'sys_timestamp',
+                    'current_value',
+                    'severity',
+                    'warning_threshold',
+                    'critical_threshold',
+                    'service_name',
+                    'min_value',
+                    'max_value',
+                    'avg_value',
+                    'ip_address',
+                    'data_source'
+                ]
+            else:
+                self.columns = [
+                    'sys_timestamp',
+                    'avg_value',
+                    'min_value',
+                    'max_value',
+                    'current_value',
+                    'severity',
+                    'warning_threshold',
+                    'critical_threshold',
+                    'service_name',
+                    'data_source'
+                ]
+
             if self.data_source in SERVICE_DATA_SOURCE and 'data_source_type' in  SERVICE_DATA_SOURCE[self.data_source]:
                 self.sds_type = SERVICE_DATA_SOURCE[self.data_source].get('data_source_type', 'Numeric')
             # check for the formula
@@ -2442,7 +2472,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
                 try:
                     if self.sds_type == 'Numeric':
                         sorted_device_data = qs.extra(
-                            select={sort_using: 'CAST(' + sort_using + ' AS DECIMAL)'}
+                            select={sort_using: 'CAST(' + sort_using + ' AS DECIMAL(9,3))'}
                         ).order_by(*order)
                     else:
                         sorted_device_data = qs.order_by(*order)    
