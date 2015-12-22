@@ -776,6 +776,9 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
     """
     start_date, end_date = get_time()
 
+    if '_kpi' not in data_source:
+        data_source += '_kpi'
+
     if not max_value:
         return 0, 0
 
