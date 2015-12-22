@@ -602,20 +602,22 @@ def calc_util_last_day():
     :return: True. False
     """
 
-    tdy = datetime.datetime.today()
+    # tdy = datetime.datetime.today()
+    #
+    # # this is the end time today's 00:10:00
+    # end_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 10), 'U'))
+    #
+    # # this is the start time yesterday's 00:00:00
+    # start_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0), 'U'))
+    #
+    # # this is the time when we would be considering to get last 24 hours performance
+    # time_now = float(format(datetime.datetime.now(), 'U'))
+    #
+    # if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
+    #     return True
+    # return False
 
-    # this is the end time today's 00:10:00
-    end_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 10), 'U'))
-
-    # this is the start time yesterday's 00:00:00
-    start_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0), 'U'))
-
-    # this is the time when we would be considering to get last 24 hours performance
-    time_now = float(format(datetime.datetime.now(), 'U'))
-
-    if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
-        return True
-    return False
+    return True
 
 
 def get_sector_bw(devices, service_name, data_source, machine):
@@ -776,6 +778,9 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
     """
     start_date, end_date = get_time()
 
+    if '_kpi' not in data_source:
+        data_source += '_kpi'
+
     if not max_value:
         return 0, 0
 
@@ -797,7 +802,7 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
     except Exception as e:
         logger.exception(e)
         return 0, 0
-
+    
     if perf and perf.exists():
         return float(perf[0]['current_value']), float(perf[0]['sys_timestamp'])
     else:
