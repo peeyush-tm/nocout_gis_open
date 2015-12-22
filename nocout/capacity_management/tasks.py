@@ -602,22 +602,20 @@ def calc_util_last_day():
     :return: True. False
     """
 
-    # tdy = datetime.datetime.today()
-    #
-    # # this is the end time today's 00:10:00
-    # end_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 10), 'U'))
-    #
-    # # this is the start time yesterday's 00:00:00
-    # start_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0), 'U'))
-    #
-    # # this is the time when we would be considering to get last 24 hours performance
-    # time_now = float(format(datetime.datetime.now(), 'U'))
-    #
-    # if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
-    #     return True
-    # return False
+    tdy = datetime.datetime.today()
 
-    return True
+    # this is the end time today's 00:10:00
+    end_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 10), 'U'))
+
+    # this is the start time yesterday's 00:00:00
+    start_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0), 'U'))
+
+    # this is the time when we would be considering to get last 24 hours performance
+    time_now = float(format(datetime.datetime.now(), 'U'))
+
+    if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
+        return True
+    return False
 
 
 def get_sector_bw(devices, service_name, data_source, machine):
