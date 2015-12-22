@@ -21,7 +21,7 @@ from nocout.widgets import MultipleToSingleSelectionWidget
 from organization.models import Organization
 from user_profile.models import UserProfile, UserPasswordRecord
 from fields import PasswordField
-from user_profile.utils.auth import can_edit_permissions
+from user_profile.utils.auth import can_edit_permissions, get_user_organizations
 import logging
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,7 @@ class UserForm(forms.ModelForm):
         # Removing help text for role 'select' field
         self.base_fields['groups'].help_text = ''
         self.base_fields['user_permissions'].help_text = ''
+        # self.base_fields['organization'].queryset = get_user_organizations(self.request.user)
 
         # If request is for updating user then initialize role, parent, organization.
         if kwargs['instance']:
@@ -61,13 +62,10 @@ class UserForm(forms.ModelForm):
 
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
-
-        if not self.request.user.is_superuser:
-            logged_in_user_organization_list = self.request.user.userprofile.organization.get_descendants(
-                include_self=True)
-            self.fields['organization'].queryset = logged_in_user_organization_list
-        else:
-            self.fields['organization'].queryset = Organization.objects.all()
+        logged_in_user_organization_list = get_user_organizations(self.request.user)
+        print "****************************** - ", self.request.user
+        print "****************************** - ", logged_in_user_organization_list
+        self.fields['organization'].queryset = logged_in_user_organization_list
 
         # If request is for updating user then make password non mandatory fields.
         if self.instance.pk:

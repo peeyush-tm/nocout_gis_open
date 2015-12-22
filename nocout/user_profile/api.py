@@ -553,11 +553,11 @@ class ParentOnOrganizationChange(APIView):
                                         "data": {
                                             "users": [
                                                 {
-                                                    "username": "priyesh",
+                                                    "alias": "priyesh",
                                                     "id": 64
                                                 },
                                                 {
-                                                    "username": "test-op1",
+                                                    "alias": "test-op1",
                                                     "id": 315
                                                 }
                                             ]
@@ -566,15 +566,11 @@ class ParentOnOrganizationChange(APIView):
                                     }
         """
         # Response data.
-        result = dict()
-        result['data'] = {}
-        result['success'] = 0
-        result['message'] = "Failed to fetch users."
-        result['data']['users'] = list()
+        data = list()
 
         # Get user.
         user = request.user
-        result['data']['users'].append({'id': user.id, 'username': user.username})
+        data.append({'id': user.id, 'alias': user.username})
 
         if user:
             child_users = user.userprofile.get_children()
@@ -582,13 +578,9 @@ class ParentOnOrganizationChange(APIView):
                 # Get child users existing within user's organizations.
                 child_users = child_users.filter(organization__id=oid)
             for child_user in child_users:
-                result['data']['users'].append({'id': child_user.id, 'username': child_user.username})
+                data.append({'id': child_user.id, 'alias': child_user.username})
 
-        if result['data']['users']:
-            result['success'] = 1
-            result['message'] = "Successfully fetched users."
-
-        return Response(result)
+        return Response(data)
 
 
 class GetUserOrganizations(APIView):

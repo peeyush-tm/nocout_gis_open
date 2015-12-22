@@ -68,7 +68,7 @@
 
         var parent_class = 'formContainer',
             change_event_dom_ids = [
-                '#id_groups'
+                '#id_organization', '#id_groups'
             ],
             element_relation_dict = {
                 '#id_groups' : {
@@ -82,6 +82,19 @@
                     ],
                     "reset" : [
                         '#id_user_permissions'
+                    ]
+                },
+                '#id_organization' : {
+                    "old_value" : $('#id_organization').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_parent',
+                            "url_name" : "{% url 'parent_on_organization_change' 123 %}",
+                            "existing_value" : $('#id_parent').val()
+                        }
+                    ],
+                    "reset" : [
+                        '#id_parent'
                     ]
                 }
             };
@@ -107,78 +120,6 @@
                     $(change_event_dom_ids[i]).trigger('change', true);
                 }
             }
-
-            //Check weather the organization and parent is selected or not
-            if ($("#id_organization").val() == "") {
-                $("#id_parent").empty();
-            }
-            else if ($("#id_parent").val() == ""){
-                $("#id_parent").empty();
-                list_parent_according_to_organisation()
-            }
-            else{
-                select_parent_already_selected()
-            }
-
-            //on change of the organisation list the parent list.
-            $('#id_organization').change(function(){
-                list_parent_according_to_organisation()
-            })
-
-            //function to get the list of the parent according to the ogranisation.
-            function list_parent_according_to_organisation(){
-                var organisation_id = $('#id_organization option:selected').val()
-                console.log(parent)
-                //if no organisation is selected.
-                if(organisation_id == '' ){
-                    $('#id_parent').html("<option value=>Select</option>").change();
-                }
-                else{
-                    $.ajax({
-                        url : "/user/organisation/user/list/",
-                        type : "GET",
-                        dataType: "html",
-                        data: {
-                            organisation_id : organisation_id
-                        },
-                        success : function(parent_list_option) {
-                            $('#id_parent').html(parent_list_option);
-                            $('#id_parent').change();
-                        },
-                        error : function(xhr,errmsg,err) {
-                            console.log(xhr.status + ": " + xhr.responseText);
-                        }
-                    });
-                    return false;
-                }
-            }
-
-            function select_parent_already_selected(){
-                var organization_id = $('#id_organization option:selected').val()
-                var parent_id = $('#id_parent option:selected').val()
-                //if no organisation is selected.
-                if(organization_id == '' ){
-                    $('#id_parent').html("<option value=>Select</option>").change();
-                }
-                else{
-                    $.ajax({
-                        url : "/user/organisation/user/select/",
-                        type : "GET",
-                        dataType: "html",
-                        data: {
-                            parent_id : parent_id,
-                        },
-                        success : function(parent_select) {
-                            $('#id_parent').empty();
-                            $('#id_parent').html(parent_select);
-                        },
-                        error : function(xhr,errmsg,err) {
-                            console.log(xhr.status + ": " + xhr.responseText);
-                        }
-                    });
-                    return false;
-                }
-            }
-        })
+        });
     </script>
 {% endblock %}
