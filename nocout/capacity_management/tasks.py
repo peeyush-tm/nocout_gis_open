@@ -802,7 +802,7 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
     except Exception as e:
         logger.exception(e)
         return 0, 0
-    
+
     if perf and perf.exists():
         return float(perf[0]['current_value']), float(perf[0]['sys_timestamp'])
     else:
