@@ -257,13 +257,15 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         """
         if self.technology == 'ALL':
             sectors = self.model.objects.filter(
-                Q(organization__in=kwargs['organizations'])
+                sector__sector_configured_on__isnull=False,
+                organization__in=kwargs['organizations']
             ).prefetch_related(*self.related_columns).values(*self.columns)
         else:
             tech_id = DeviceTechnology.objects.get(name=self.technology).id
             sectors = self.model.objects.filter(
-                    Q(organization__in=kwargs['organizations']),
-                    Q(sector__sector_configured_on__device_technology=tech_id)
+                    sector__sector_configured_on__isnull=False,
+                    organization__in=kwargs['organizations'],
+                    sector__sector_configured_on__device_technology=tech_id
                 ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
