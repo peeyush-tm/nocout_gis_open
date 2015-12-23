@@ -14,6 +14,27 @@ from nocout.utils.util import NocoutUtilsGateway
 nocout_utils = NocoutUtilsGateway()
 
 
+def update_site_on_bs_bhport_change(sender, instance=None, created=False, **kwargs):
+    """
+    Signal to modify site 'id_device_change' field, if 'bh_port_name' field change.
+    :param sender:
+    :param instance:
+    :param created:
+    :param kwargs:
+    :return:
+    """
+    from inventory.models import BaseStation
+
+    # Old Instance.
+    old_instance = BaseStation.objects.get(id=instance.id)
+
+    if instance and old_instance:
+        if old_instance.bh_port_name != instance.bh_port_name:
+            site = old_instance.backhaul.bh_configured_on.site_instance
+            # Modify site bit.
+            site.is_device_change = 1
+            site.save()
+
 @nocout_utils.disable_for_loaddata
 def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
     """

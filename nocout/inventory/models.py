@@ -506,6 +506,7 @@ class GISExcelDownload(models.Model):
 
 
 # ********************* Connect Inventory Signals *******************
+pre_save.connect(inventory_signals.update_site_on_bs_bhport_change, sender=BaseStation)
 post_save.connect(inventory_signals.auto_assign_thematic, sender=UserProfile)
 pre_save.connect(inventory_signals.resize_icon_size, sender=IconSettings)
 pre_delete.connect(inventory_signals.delete_antenna_of_sector, sender=Sector)
