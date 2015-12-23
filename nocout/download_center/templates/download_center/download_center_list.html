@@ -50,7 +50,7 @@
             report_id = '{{ report_id}}';
             reset_emails_url = "{% url 'reset_emails' %}" + '?id='+report_id;
 
-            {% if settings.SCHEDULED_REPORT_EMAIL %}
+            {% if settings.SCHEDULED_REPORT_EMAIL or settings.SCHEDULED_SINGLE_REPORT_EMAIL %}
                 if (report_mail_perms[page_type]) {
                     // Add configure email btn
                     // Add 'Create Item' link on top header bar.

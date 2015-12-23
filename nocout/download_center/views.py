@@ -206,8 +206,10 @@ class DownloadCenterListing(BaseDatatableView):
             try:
                 if SINGLE_REPORT_EMAIL:
                     report_email_perm = json.loads(REPORT_EMAIL_PERM)
-            except ValueError:
-                report_email_perm = {}
+                else:
+                    report_email_perm = {}
+            except Exception as e:
+                logger.exception(e)
             
             page_type = self.request.GET.get('page_type')
 
@@ -717,20 +719,21 @@ class EmailListUpdating(View):
                 }
             except Exception,e:
                 pass
-            # email_sender.POST = {
-            #     'subject': report_name,
-            #     'message': '',
-            #     'to_email': email_list,
-            #     'attachment_path': file_path
-            }
-            logger.info('email_sender.request.POST')
-            logger.info(email_sender.request.POST)
-            email_sender.post(email_sender)
 
-            response = {
-                'success': 1,
-                'message': 'Report Mailed Successfully.'
-            }
+            try:
+                email_sender.post(email_sender)
+                response = {
+                    'success': 1,
+                    'message': 'Report Mailed Successfully.'
+                }
+            except Exception, e:
+                print e
+                response = {
+                    'success': 0,
+                    'message': 'Report Mailed not sent.'
+                }
+                pass
+
         else:
             # Comma seperated string of emails.
             email_list = ", ".join(email_list)

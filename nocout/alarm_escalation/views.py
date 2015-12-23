@@ -189,22 +189,6 @@ class EmailSender(View):
 
         # To email id.
         to_email = self.request.POST.get('to_email')
-        # If multiple values then by using eval converting into list.
-        # if to_email:
-        #     if "," in to_email:
-        #         # to_email = eval(to_email)
-        #         logger.info(type(to_email))
-        #         if isinstance(to_email, unicode):
-        #             to_email = to_email.encode('ascii')
-        #         logger.info(type(to_email))
-        #         to_email = to_email.split(',')
-        #         to_email = map(str.strip, to_email)
-        #
-        #     elif type(to_email) == str:
-        #         to_email = to_email.split(",")
-        #     else:
-        #         to_email = str(to_email)  # Parsing to string.
-        #         to_email = to_email.split(',')
 
         if to_email:
             if isinstance(to_email, unicode):
@@ -254,8 +238,6 @@ class EmailSender(View):
         if not from_email:
             result['from_email'] = settings.DEFAULT_FROM_EMAIL
 
-        logger.info('attachment_path')
-        logger.info(attachment_path)
         if attachment_path:
             for x in attachment_path:
                 # Avoiding if it is URL Path.

@@ -7,10 +7,11 @@ from nocout.settings import SCHEDULED_SINGLE_REPORT_EMAIL
 
 
 @task
-def scheduled_email_report(report):
+def scheduled_email_report(report=None):
     """
-    This is a celery function which will send Reports to user defined email on scheduled time
-    Timing can be changed from settings.py file
+    This is a celery function which supports two types of email report generation
+    1.) Single email report to multiple emails triggered when report is ready using Signal.
+    2.) Scheduled email report generation(per user email contains multiple reports) based on time time definedin settings file.
 
     Args:
         email_report(dict) : Dictionary containing email_id as a Key and list of report_name
@@ -57,13 +58,10 @@ def scheduled_email_report(report):
     email_sender.request = request_object
 
     if SCHEDULED_SINGLE_REPORT_EMAIL:
-        logger.info('task has been called scheduled_email_report')
-        logger.info('report', report)
         report_id = ReportSettings.objects.get(report_name=report).id
         email_list = EmailReport.objects.get(report_name=report_id).email_list
         attachment_path = ProcessedReportDetails.objects.filter(report_name=report, created_on__icontains=cur_date)[0].path
         attachment_path = attachment_path.split()
-
 
         email_list = email_list.split(',')
         try:
@@ -77,15 +75,8 @@ def scheduled_email_report(report):
             logger.exception(e)
             pass
 
-        # email_sender.POST = {
-        #     'subject': 'Scheduled email reports',
-        #     'message': message,
-        #     'to_email': email_list,
-        #     'attachment_path': attachment_path
-        # }
         # Calling Email Api (EmailSender) POST request.
         email_sender.post(email_sender)
-
 
     else:
         # Dictionary contains keys = email_id and values = list of report_name to be send to the email user.
@@ -105,7 +96,7 @@ def scheduled_email_report(report):
         file_path = dict()
         for report in reports:
             try:
-                path = ProcessedReportDetails.objects.filter(report_name=report, created_on__icontains=cur_date)[0].path
+                path = ProcessedReportDetails.objects.filter(report_name=report, created_on__icontains='2015-04-18')[0].path
                 if path:
                     file_path[report] = path
             except IndexError as e:
@@ -119,6 +110,7 @@ def scheduled_email_report(report):
                     attachment_path.append(file_path[report])
                 except KeyError:
                     message += report + ' File Not Found\n'
+            email = email.split()
             try:
                 email_sender.request.POST = {
                     'subject': 'Scheduled email reports',
@@ -128,12 +120,4 @@ def scheduled_email_report(report):
                 }
             except Exception, e:
                 pass
-
-            # email_sender.POST = {
-            #     'subject': 'Scheduled email reports',
-            #     'message': message,
-            #     'to_email': email,
-            #     'attachment_path': attachment_path
-            # }
-            # Calling Email Api (EmailSender) POST request.
             email_sender.post(email_sender)

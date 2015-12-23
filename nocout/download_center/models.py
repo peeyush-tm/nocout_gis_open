@@ -5,6 +5,7 @@ import datetime
 from django.db.models.signals import post_save
 from download_center.tasks import scheduled_email_report
 from django.dispatch import receiver
+import signals as dc_signals
 
 
 def uploaded_file_name(instance, filename):
@@ -1134,29 +1135,5 @@ class EmailReport(models.Model):
     report_name= models.ForeignKey(ReportSettings)
     email_list = models.TextField()
 
-@receiver(post_save, sender=ProcessedReportDetails)
-def send_mail_on_report_generation(sender, instance=None, created=False, **kwargs):
-    """
-        Set 'is_device_change' for all site instances to 1 if protocol is modified
-        Parameters:
-            - sender (<class 'django.db.models.base.ModelBase'>) - sender model class
-                                                                   i.e. <class 'service.models.Protocol'>
-            - instance (<class 'service.models.Protocol'>) - instance being saved
-                                                                     for e.g. Protocol object
-            - created (bool) - object created or updated
-            - kwargs (dict) - a dictionary of keyword arguments passed to constructor for e.g.
-                                {
-                                    'update_fields': None,
-                                    'raw': False,
-                                    'signal': <django.dispatch.dispatcher.Signalobjectat0x7f44749958d0>,
-                                    'using': 'default'
-                                }
-    """
-    print "siganl executed----------------------\n"
-    if instance:
-        report = instance.report_name
-        print 'instance', instance
-        print 'instance.report_name', instance.report_name
-        scheduled_email_report.delay(report)
-
-# post_save.connect(send_mail_on_report_generation, sender=ProcessedReportDetails)
+# Post Singnal call triggers to initiate email report.
+post_save.connect(dc_signals.send_mail_on_report_generation, sender=ProcessedReportDetails)

@@ -699,19 +699,10 @@ REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 # }
 
 
-# # Email settings.
-# DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
-# EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-# EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
-#email setting
-# EMAIL_BACKEND = 'dnago.core.mail.backends.filebased.EmailBackend'
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'chanish.agarwal1@gmail.com'
-EMAIL_HOST_PASSWORD = 'bqdcetvlpqlevabk'
-DEFAULT_FROM_EMAIL = 'chanish.agarwal1@gmail.com'
-DEFAULT_TO_EMAIL = 'chanishagarwal0@gmail.com'
+# Email settings.
+DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
 
 # Special Calculation Mechanism for capacity management.
 CAPACITY_SPECIFIC_TIME = 0
@@ -801,7 +792,8 @@ SETTINGS_EXPORT = [
     'NO_ONDEMAND_POLL_SDS',
     'SINGLE_REPORT_EMAIL',
     'SCHEDULED_REPORT_EMAIL',
-    'REPORT_EMAIL_PERM'
+    'REPORT_EMAIL_PERM',
+    'SCHEDULED_SINGLE_REPORT_EMAIL'
 ]
 
 # Dashbaord Settings
@@ -971,7 +963,7 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
     'cisco_switch_dl_util_kpi_fa0_6',
     'cisco_switch_dl_util_kpi_fa0_24'
 ])
-
+# Global variable to show/hide Scheduled report mail option in dowload center listing.
 REPORT_EMAIL_PERM = json.dumps({
     'bs_dump': 1,
     'ss_dump': 1,
@@ -986,7 +978,7 @@ REPORT_EMAIL_PERM = json.dumps({
     'health_ptp_bh': 1    
 })
 
-# Global variable to show/hide single report mail optin in download center listing
+# Global variable to show/hide single report mail option in download center listing
 SINGLE_REPORT_EMAIL = True
 SCHEDULED_REPORT_EMAIL = False
 SCHEDULED_SINGLE_REPORT_EMAIL = True
