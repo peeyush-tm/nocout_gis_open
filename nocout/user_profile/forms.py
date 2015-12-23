@@ -63,8 +63,6 @@ class UserForm(forms.ModelForm):
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
         logged_in_user_organization_list = get_user_organizations(self.request.user)
-        print "****************************** - ", self.request.user
-        print "****************************** - ", logged_in_user_organization_list
         self.fields['organization'].queryset = logged_in_user_organization_list
 
         # If request is for updating user then make password non mandatory fields.
