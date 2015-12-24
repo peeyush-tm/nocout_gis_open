@@ -303,8 +303,13 @@
                 ajax_url_sectorutil = '{% url "SectorAugmentationAlertsListing" %}',
                 ajax_url_bhutil = '{% url "BackhaulAugmentationAlertsListing" %}';
 
-            // Grid Data Ajax URL -- END
+            if (ajax_url_bhutil.indexOf('?') > -1) {
+                ajax_url_bhutil += '&is_alert_page=1';
+            } else {
+                ajax_url_bhutil += '?is_alert_page=1';
+            }
 
+            // Grid Data Ajax URL -- END
 
             // Report Download Feature -- START
 
