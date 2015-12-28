@@ -1449,6 +1449,38 @@ def is_lat_long_in_state(latitude, longitude, state):
     :param state:
     :return: True
     """
+
+    is_inside = False
+    if state and latitude and longitude:
+        from device.models import StateGeoInfo
+        state_geo_info = list()
+        try:
+            state_geo_info = list(StateGeoInfo.objects.filter(
+                Q(state=state)
+                |
+                Q(state__state_name__iexact=state)
+                |
+                Q(state_id=state)
+            ).values_list('latitude', 'longitude'))
+        except Exception, e:
+            pass
+
+        n = len(state_geo_info)
+        if n > 0:
+            p1x, p1y = state_geo_info[0]
+            for i in range(1, n + 1):
+                p2x, p2y = state_geo_info[i % n]
+                if longitude > min(p1y, p2y):
+                    if longitude <= max(p1y, p2y):
+                        if latitude <= max(p1x, p2x):
+                            if p1y != p2y:
+                                xinters = (longitude - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                            if p1x == p2x or latitude <= xinters:
+                                is_inside = not is_inside
+                p1x, p1y = p2x, p2y
+
+    return is_inside
+
     """
     if compare_geo:
         # commented because of goes package is not supported for python 2.7 on centos 6.5
