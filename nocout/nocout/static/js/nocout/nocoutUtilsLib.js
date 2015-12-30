@@ -718,9 +718,15 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                     var key_name = this.point.series.name ? this.point.series.name : this.key;
                     tooltip_string = '<b>' + key_name+ '</b>';
                 }
+
                 if (this.points && this.points.length > 0) {
                     for(var i=0;i<this.points.length;i++) {
-                        tooltip_string += '<br/><span style="color:' + this.points[i].series.color + '"> \
+                        var color = this.points[i].series.color;
+                        if (color && color == 'transparent') {
+                            color = '#70AFC4';
+                        }
+
+                        tooltip_string += '<br/><span style="color:' + color + '"> \
                                           '+this.points[i].series.name+'</span>: <strong>' +this.points[i].y+'</strong>';
                     }
                 } else {
