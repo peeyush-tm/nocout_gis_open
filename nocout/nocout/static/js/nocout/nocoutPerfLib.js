@@ -172,7 +172,7 @@ function nocoutPerfLib() {
         if (!device_type) {
             device_type = '';
         }
-        console.log(device_type);
+        
         if (!technology) {
             technology = '';
         }
