@@ -2470,12 +2470,12 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             # we receive list instead of queryset
             try:
                 try:
-                    if self.sds_type == 'Numeric':
+                    if self.sds_type == 'Numeric' and sort_using == 'current_value':
                         sorted_device_data = qs.extra(
                             select={sort_using: 'CAST(' + sort_using + ' AS DECIMAL(9,3))'}
                         ).order_by(*order)
                     else:
-                        sorted_device_data = qs.order_by(*order)    
+                        sorted_device_data = qs.order_by(*order)
                 except Exception, e:
                     sorted_device_data = qs.order_by(*order)
             except Exception, e:
