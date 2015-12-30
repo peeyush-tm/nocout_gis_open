@@ -3652,15 +3652,15 @@ class GetServiceTypePerformanceData(View):
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) < abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) < abs(p1) < abs(p3)
-                                      else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                      if abs(p2) <= abs(p1) < abs(p3)
+                                      else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                 )
                         else:
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) > abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) > abs(p1) > abs(p3)
-                                      else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                      if abs(p2) >= abs(p1) > abs(p3)
+                                      else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                 )
 
                         formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
@@ -3913,15 +3913,15 @@ class GetServiceTypePerformanceData(View):
                                     compare_point = lambda p1, p2, p3: chart_color \
                                         if abs(p1) < abs(p2) \
                                         else ('#FFE90D'
-                                              if abs(p2) < abs(p1) < abs(p3)
-                                              else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                              if abs(p2) <= abs(p1) < abs(p3)
+                                              else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                         )
                                 else:
                                     compare_point = lambda p1, p2, p3: chart_color \
                                         if abs(p1) > abs(p2) \
                                         else ('#FFE90D'
-                                              if abs(p2) > abs(p1) > abs(p3)
-                                              else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                              if abs(p2) >= abs(p1) > abs(p3)
+                                              else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                         )
 
                                 formula = SERVICE_DATA_SOURCE[sds_name]["formula"] if sds_name in SERVICE_DATA_SOURCE else None
@@ -5107,15 +5107,15 @@ class CustomDashboardPerformanceData(View):
                                 compare_point = lambda p1, p2, p3: chart_color \
                                     if abs(p1) < abs(p2) \
                                     else ('#FFE90D'
-                                          if abs(p2) < abs(p1) < abs(p3)
-                                          else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                          if abs(p2) <= abs(p1) < abs(p3)
+                                          else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                     )
                             else:
                                 compare_point = lambda p1, p2, p3: chart_color \
                                     if abs(p1) > abs(p2) \
                                     else ('#FFE90D'
-                                          if abs(p2) > abs(p1) > abs(p3)
-                                          else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                          if abs(p2) >= abs(p1) > abs(p3)
+                                          else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                     )
 
                             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] if sds_name in SERVICE_DATA_SOURCE else None
@@ -6126,15 +6126,15 @@ class CustomDashboardPerformanceData(View):
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) < abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) < abs(p1) < abs(p3)
-                                      else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                      if abs(p2) <= abs(p1) < abs(p3)
+                                      else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                 )
                         else:
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) > abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) > abs(p1) > abs(p3)
-                                      else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                      if abs(p2) >= abs(p1) > abs(p3)
+                                      else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                 )
 
                         formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
