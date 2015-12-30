@@ -877,7 +877,7 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
                 if (splitted_chart_name[1].indexOf('PMP1') > -1) {
                     name += ': PMP1'
                 } else if (splitted_chart_name[1].indexOf('PMP2') > -1) {
-                    name += ': PMP1'
+                    name += ': PMP2'
                 }
             }
 
