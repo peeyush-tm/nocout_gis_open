@@ -532,6 +532,28 @@ def gather_sector_status(technology):
     return ret
 
 
+# def get_higher_severity(severity_dict):
+#     """
+#
+#     :param severity_dict:
+#     :return:
+#     """
+#     s, a = None, None
+#     for severity in severity_dict:
+#         s = severity
+#         a = severity_dict[severity]
+#         if severity in ['critical']:
+#             #return severity, age
+#             return severity, severity_dict[severity]
+#         elif severity in ['warning']:
+#             return severity, severity_dict[severity]
+#         elif severity in ['unknown']:
+#             continue
+#         else:
+#             continue
+#
+#     return s, a
+
 def get_higher_severity(severity_dict):
     """
 
@@ -539,18 +561,17 @@ def get_higher_severity(severity_dict):
     :return:
     """
     s, a = None, None
-    for severity in severity_dict:
-        s = severity
-        a = severity_dict[severity]
-        if severity in ['critical']:
-            #return severity, age
-            return severity, severity_dict[severity]
-        elif severity in ['warning']:
-            return severity, severity_dict[severity]
-        elif severity in ['unknown']:
-            continue
-        else:
-            continue
+
+    if 'critical' in severity_dict:
+        return 'critical', severity_dict['critical']
+    elif 'warning' in severity_dict:
+        return 'warning', severity_dict['warning']
+    elif 'unknown' in severity_dict:
+        return 'unknown', severity_dict['unknown']
+    elif 'ok' in severity_dict:
+        return 'ok', severity_dict['ok']
+    else:
+        pass
 
     return s, a
 
@@ -985,7 +1006,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
         )
     count = 0
     for bs in basestations:
-        logger.exception("***************************** {}".format(count))
+        # logger.exception("***************************** {}".format(count))
         count += 1
         # base station device
         bh_device = bs.backhaul.bh_configured_on
@@ -1159,6 +1180,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 }
 
                 severity, age = get_higher_severity(severity_s)
+
             except Exception as e:
                 pass
                 current_in_per = 0
@@ -1234,6 +1256,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             if bhs:
                 # values that would be updated per 5 minutes
                 bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
+                bhs.bh_port_name = bs.bh_port_name
                 bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
                 bhs.severity = severity if severity else 'unknown'
