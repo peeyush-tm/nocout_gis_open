@@ -4422,6 +4422,16 @@ class DeviceServiceDetail(View):
                             alias = 'DL : ' + alias
                         else:
                             alias = alias
+
+                    if is_bh:
+                        try:
+                            ds_name = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['ds_name']
+                            if ds_name:
+                                ds_name = ds_name.replace('_', '/')
+                                alias += ' (' + ds_name.title() + ')'
+                        except Exception, e:
+                            pass
+
                     temp_chart_data[data.service_name, data.data_source] = {
                         'name': alias,
                         'data': [],

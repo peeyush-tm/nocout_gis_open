@@ -878,13 +878,15 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
                     name += ': PMP1'
                 } else if (splitted_chart_name[1].indexOf('PMP2') > -1) {
                     name += ': PMP2'
+                } else if (splitted_chart_name[1].indexOf('(') > -1) {
+                    name += ' (' + splitted_chart_name[1].split('(')[1]
                 }
             }
 
         } catch(e) {
             name = $.trim(chartObj[i].name);
         }
-        data_in_table += '<th><em>Time ('+ name +')</em></th><th><em>Value ('+ name +')</em></th>';
+        data_in_table += '<th><em>Time: '+ name +'</em></th><th><em>Value: '+ name +'</em></th>';
     }
 
     data_in_table += '</tr></thead><tbody>';
