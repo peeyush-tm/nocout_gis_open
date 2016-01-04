@@ -44,22 +44,14 @@
                         <td>{{ object.email }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Role</td>
-                        <td>
-                            {% for role in object.role.all %}
-                                {{ role }}
-                            {% endfor %}
-                        </td>
-                    </tr>
-                    <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> Parent</td>
                         <td>{{ object.parent }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> User Group</td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Role</td>
                         <td>
-                            {% for department in object.department_set.all %}
-                                {{ department.user_group }}
+                            {% for group in object.groups.all %}
+                                {{ group.name }}
                             {% endfor %}
                         </td>
                     </tr>

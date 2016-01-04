@@ -46,6 +46,8 @@ class UserForm(forms.ModelForm):
 
         # Removing help text for role 'select' field
         self.base_fields['groups'].help_text = ''
+        # Update the label text of groups dropdown field
+        self.base_fields['groups'].label = 'Role'
         self.base_fields['user_permissions'].help_text = ''
         # self.base_fields['organization'].queryset = get_user_organizations(self.request.user)
 
