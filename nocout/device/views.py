@@ -2677,10 +2677,7 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView, A
                                     "<span style='margin-left: 5px;'>{0}</span>".
                     format(dct["color_hex_value"]))
 
-                dct.update(frequency_radius="N/A"
-                if not dct['frequency_radius']
-                else dct['frequency_radius']
-                )
+                dct.update(frequency_radius="0.0" if dct['frequency_radius'] in [None, ''] else dct['frequency_radius'])
 
             dct.update(actions='<a href="/frequency/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/frequency/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
