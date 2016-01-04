@@ -1,4 +1,5 @@
 import json
+import ast
 from device.models import DeviceTechnology
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.db.models.query import ValuesQuerySet
@@ -18,6 +19,8 @@ from nocout.utils.util import NocoutUtilsGateway
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
 from nocout.settings import SINGLE_REPORT_EMAIL, REPORT_EMAIL_PERM
+from django.views.decorators.csrf import csrf_exempt
+
 
 from django.http import HttpRequest
 
@@ -698,9 +701,6 @@ class EmailListUpdating(View):
         report_id = self.request.POST.get('report_id',None)
         
         if report_id:
-            print 'report_id', report_id
-            print 'single report mailing'
-            print 'emails', email_list
             # Args: report_id, exist means functionality is being used to send a single report.
             # Additional Functionality where we can send single report to multiple mail id's instantly.
             report_name = ProcessedReportDetails.objects.get(id=report_id).report_name
@@ -727,7 +727,7 @@ class EmailListUpdating(View):
                     'message': 'Report Mailed Successfully.'
                 }
             except Exception, e:
-                print e
+                logger.exception(e)
                 response = {
                     'success': 0,
                     'message': 'Report Mailed not sent.'
@@ -805,5 +805,74 @@ class ResetEmailReport(View):
                 }
         except Exception, e:
             logger.exception(e)
+
+        return HttpResponse(json.dumps(result))
+
+
+class ProcessedReportEmailAPI(View):
+    """
+    ProcessedReportEmailAPI will be called after each daily report generation is complete with input variable
+    'pk' which is primary key of report entry in database ProcessedReportDetails.
+    """
+
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(ProcessedReportEmailAPI, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        pk = request.POST.get('pk')
+        report_email_perm = json.loads(REPORT_EMAIL_PERM)
+        if pk:
+            try:
+                processed_reports = ProcessedReportDetails.objects.get(id=pk)
+            except Exception, e:
+                processed_reports = None
+            if processed_reports:
+                report_name = processed_reports.report_name
+                page_name = ReportSettings.objects.get(report_name=report_name).page_name
+
+                file_path = processed_reports.path
+                file_path = file_path.split()
+
+                email_list = EmailReport.objects.get(
+                    report_name=ReportSettings.objects.get(report_name=report_name)).email_list
+                email_list = email_list.split(",")
+                email_list = [email.strip() for email in email_list]
+
+                result = {
+                    "success": 0,
+                    "message": "Failed to send email.",
+                    "data": {
+                        "subject": report_name,
+                        "message": 'None',
+                        "from_email": settings.DEFAULT_FROM_EMAIL,
+                        "to_email": email_list,
+                        "attachment_path": file_path
+                    }
+                }
+                # Verifying if email Report is enabled for this Report.
+                if report_email_perm.get(page_name):
+                    request_object = HttpRequest()
+                    from alarm_escalation.views import EmailSender
+                    # Generating POST Request for EmailSender API.
+                    email_sender = EmailSender()
+                    email_sender.request = request_object
+
+                    try:
+                        email_sender.request.POST = {
+                            'subject': report_name,
+                            'message': '',
+                            'to_email': email_list,
+                            'attachment_path': file_path
+                        }
+                    except Exception, e:
+                        logger.exception(e)
+                    try:
+                        email_sender.post(email_sender)
+                        result['success'] = 1
+                        result['message'] = 'Mail sent Sucessfully'
+                        result['data']['message'] = 'Here is Your daily Report'
+                    except Exception, e:
+                        logger.exception(e)
 
         return HttpResponse(json.dumps(result))
