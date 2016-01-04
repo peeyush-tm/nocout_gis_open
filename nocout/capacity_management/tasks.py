@@ -532,6 +532,28 @@ def gather_sector_status(technology):
     return ret
 
 
+# def get_higher_severity(severity_dict):
+#     """
+#
+#     :param severity_dict:
+#     :return:
+#     """
+#     s, a = None, None
+#     for severity in severity_dict:
+#         s = severity
+#         a = severity_dict[severity]
+#         if severity in ['critical']:
+#             #return severity, age
+#             return severity, severity_dict[severity]
+#         elif severity in ['warning']:
+#             return severity, severity_dict[severity]
+#         elif severity in ['unknown']:
+#             continue
+#         else:
+#             continue
+#
+#     return s, a
+
 def get_higher_severity(severity_dict):
     """
 
@@ -539,18 +561,17 @@ def get_higher_severity(severity_dict):
     :return:
     """
     s, a = None, None
-    for severity in severity_dict:
-        s = severity
-        a = severity_dict[severity]
-        if severity in ['critical']:
-            #return severity, age
-            return severity, severity_dict[severity]
-        elif severity in ['warning']:
-            return severity, severity_dict[severity]
-        elif severity in ['unknown']:
-            continue
-        else:
-            continue
+
+    if 'critical' in severity_dict:
+        return 'critical', severity_dict['critical']
+    elif 'warning' in severity_dict:
+        return 'warning', severity_dict['warning']
+    elif 'unknown' in severity_dict:
+        return 'unknown', severity_dict['unknown']
+    elif 'ok' in severity_dict:
+        return 'ok', severity_dict['ok']
+    else:
+        pass
 
     return s, a
 
@@ -776,6 +797,9 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
     """
     start_date, end_date = get_time()
 
+    if '_kpi' not in data_source:
+        data_source += '_kpi'
+
     if not max_value:
         return 0, 0
 
@@ -962,7 +986,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
     indexed_val = nocout_utils.indexed_query_set(
         query_set=val,
         indexes=['device_name', 'service_name', 'data_source'],
-        values=['device_name', 'service_name', 'data_source', 'current_value'],
+        values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
     )
 
     indexed_avg_max_val = dict()
@@ -980,8 +1004,10 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
             is_raw=True
         )
-
+    count = 0
     for bs in basestations:
+        # logger.exception("***************************** {}".format(count))
+        count += 1
         # base station device
         bh_device = bs.backhaul.bh_configured_on
 
@@ -1122,7 +1148,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 try:
                     # time of update
                     sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
-                    if time_delta_calculator(sys_timestamp, minutes=8):
+                    if time_delta_calculator(sys_timestamp, minutes=20):
                         # current in/out %
                         current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
                         # current in/out %
@@ -1136,7 +1162,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
 
                 try:
                     val_sys_timestamp = indexed_val[in_val_index][0]['sys_timestamp']
-                    if time_delta_calculator(val_sys_timestamp, minutes=8):
+                    if time_delta_calculator(val_sys_timestamp, minutes=20):
                         # current in/out values
                         current_in_val = float(indexed_val[in_val_index][0]['current_value'])
                         # current in/out values
@@ -1154,6 +1180,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 }
 
                 severity, age = get_higher_severity(severity_s)
+
             except Exception as e:
                 pass
                 current_in_per = 0
@@ -1229,6 +1256,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             if bhs:
                 # values that would be updated per 5 minutes
                 bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
+                bhs.bh_port_name = bs.bh_port_name
                 bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
                 bhs.severity = severity if severity else 'unknown'
@@ -1477,7 +1505,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 # time of update
                 sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
-                if time_delta_calculator(sys_timestamp, minutes=7):
+                if time_delta_calculator(sys_timestamp, minutes=20):
                     # current in/out percentages
                     current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
 
@@ -1675,7 +1703,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 # time of update
                 sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
-                if time_delta_calculator(sys_timestamp, minutes=7):
+                if time_delta_calculator(sys_timestamp, minutes=20):
                     # current in/out percentages
                     current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
 

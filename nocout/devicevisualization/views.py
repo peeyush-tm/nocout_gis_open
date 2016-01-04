@@ -3925,15 +3925,21 @@ class GISStaticInfo(View):
                 if bh_device_ip and bh_device:
                     devices_ip_address_list.append(bh_device_ip)
 
-                for sector in bs_inventory['sectors']:
-                    if sector['ip_address'] and sector['ip_address'] not in devices_ip_address_list:
-                        devices_ip_address_list.append(sector['ip_address'])
+                # Append Sector & SS IP Address to 'devices_ip_address_list' list
+                try:
+                    ips_string = bs_inventory.get('sector_configured_on_devices')
+                    ips_list = filter(None, ips_string.split('|'))
+                    devices_ip_address_list.extend(ips_list)
+                except Exception, e:
+                    for sector in bs_inventory['sectors']:
+                        if sector['ip_address'] and sector['ip_address'] not in devices_ip_address_list:
+                            devices_ip_address_list.append(sector['ip_address'])
 
-                    for sub_station in sector['sub_stations']:
-                        if sub_station['ip_address'] and sub_station['ip_address'] not in devices_ip_address_list:
-                            devices_ip_address_list.append(sub_station['ip_address'])
+                        for sub_station in sector['sub_stations']:
+                            if sub_station['ip_address'] and sub_station['ip_address'] not in devices_ip_address_list:
+                                devices_ip_address_list.append(sub_station['ip_address'])
 
-                bs_devices = Device.objects.filter(
+                bs_devices = list(Device.objects.filter(
                     ip_address__in=devices_ip_address_list
                 ).values(
                     'device_name',
@@ -3941,7 +3947,9 @@ class GISStaticInfo(View):
                     'device_technology',
                     'device_type',
                     'ip_address'
-                )
+                ))
+
+                ip_address_mapped_dict = nocout_utils.create_specific_key_dict(bs_devices, 'ip_address')
 
                 machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
 
@@ -3961,11 +3969,15 @@ class GISStaticInfo(View):
                 for sector in bs_inventory['sectors']:
                     # get sector
                     try:
-                        sector_obj = Sector.objects.get(id=sector['sector_id'])
+                        sector_obj = Sector.objects.get(id=sector['id'])
                     except Exception as e:
                         sector_obj = None
 
-                    sector_device = [d for d in bs_devices if d['ip_address'] == sector['ip_address']][0]
+                    try:
+                        sector_device = ip_address_mapped_dict[sector['ip_address']][0]
+                    except Exception, e:
+                        sector_device = [d for d in bs_devices if d['ip_address'] == sector['ip_address']][0]
+
 
                     try:
                         sector_configured_on_type = DeviceType.objects.get(id=sector_device['device_type'])
@@ -4030,8 +4042,10 @@ class GISStaticInfo(View):
                         sector['polled_frequency'] = sector_extra_info['polled_frequency']
 
                     for sub_station in sector['sub_stations']:
-                            substation_device = [d for d in bs_devices if
-                                                 d['ip_address'] == sub_station['ip_address']][0]
+                            try:
+                                substation_device = ip_address_mapped_dict[sub_station['ip_address']][0]
+                            except Exception, e:
+                                substation_device = [d for d in bs_devices if d['ip_address'] == sub_station['ip_address']][0]
 
                             try:
                                 substation_device_type = DeviceType.objects.get(id=substation_device['device_type'])
@@ -4039,8 +4053,7 @@ class GISStaticInfo(View):
                                 substation_device_type = None
 
                             try:
-                                substation_device_tech = DeviceTechnology.objects.get(
-                                    id=substation_device['device_technology'])
+                                substation_device_tech = DeviceTechnology.objects.get(id=substation_device['device_technology'])
                             except Exception as e:
                                 substation_device_tech = None
 
@@ -4662,54 +4675,53 @@ class GISStaticInfo(View):
         # thematic settings type i.e. 'ping' or 'normal'
         ts_type = self.request.GET.get('ts', 'normal')
 
+        if not device_technology:
+            return user_thematics
+
         # current user
         try:
             current_user = UserProfile.objects.get(id=self.request.user.id)
         except Exception as e:
-            return None
-
-        # device technology
-        device_technology = device_technology
-
-        # device type
-        device_type = device_type
+            return user_thematics
 
         # fetch thematic settings for current user
         if ts_type == "normal":
-            if device_technology:
-                if device_type:
-                    try:
-                        user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                          thematic_technology=device_technology,
-                                                                          thematic_type=device_type)
-                    except Exception as e:
-                        return user_thematics
-                else:
-                    try:
-                        user_thematics = UserThematicSettings.objects.filter(user_profile=current_user,
-                                                                             thematic_technology=device_technology)[0]
-                    except Exception as e:
-                        return user_thematics
+            if device_type:
+                try:
+                    user_thematics = UserThematicSettings.objects.get(
+                        user_profile=current_user,
+                        thematic_technology=device_technology,
+                        thematic_type=device_type
+                    )
+                except Exception as e:
+                    return user_thematics
+            else:
+                try:
+                    user_thematics = UserThematicSettings.objects.filter(
+                        user_profile=current_user,
+                        thematic_technology=device_technology
+                    )[0]
+                except Exception as e:
+                    return user_thematics
 
         elif ts_type == "ping":
-            if device_technology:
-                if device_type:
-                    try:
-                        user_thematics = UserPingThematicSettings.objects.get(
-                            user_profile=current_user,
-                            thematic_technology=device_technology,
-                            thematic_type=device_type
-                        )
-                    except Exception as e:
-                        return user_thematics
-                else:
-                    try:
-                        user_thematics = UserPingThematicSettings.objects.filter(
-                            user_profile=current_user,
-                            thematic_technology=device_technology
-                        )[0]
-                    except Exception as e:
-                        return user_thematics
+            if device_type:
+                try:
+                    user_thematics = UserPingThematicSettings.objects.get(
+                        user_profile=current_user,
+                        thematic_technology=device_technology,
+                        thematic_type=device_type
+                    )
+                except Exception as e:
+                    return user_thematics
+            else:
+                try:
+                    user_thematics = UserPingThematicSettings.objects.filter(
+                        user_profile=current_user,
+                        thematic_technology=device_technology
+                    )[0]
+                except Exception as e:
+                    return user_thematics
 
         return user_thematics
 
@@ -4763,11 +4775,12 @@ class GISStaticInfo(View):
                 if "_invent" in device_service_name:
                     if int(freeze_time):
 
-                        performance_value = PerformanceInventory.objects.filter(device_name=device_name,
-                                                                                service_name=device_service_name,
-                                                                                data_source=device_service_data_source,
-                                                                                sys_timestamp__gte=start_time,
-                                                                                sys_timestamp__lte=end_time
+                        performance_value = PerformanceInventory.objects.filter(
+                            device_name=device_name,
+                            service_name=device_service_name,
+                            data_source=device_service_data_source,
+                            sys_timestamp__gte=start_time,
+                            sys_timestamp__lte=end_time
                         ).values('current_value').order_by().using(alias=machine_name)
 
                     else:
@@ -4789,11 +4802,12 @@ class GISStaticInfo(View):
 
                 elif "_kpi" in device_service_name:
                     if int(freeze_time):
-                        performance_value = Utilization.objects.filter(device_name=device_name,
-                                                                      service_name=device_service_name,
-                                                                      data_source=device_service_data_source,
-                                                                      sys_timestamp__gte=start_time,
-                                                                      sys_timestamp__lte=end_time
+                        performance_value = Utilization.objects.filter(
+                            device_name=device_name,
+                            service_name=device_service_name,
+                            data_source=device_service_data_source,
+                            sys_timestamp__gte=start_time,
+                            sys_timestamp__lte=end_time
                         ).values('current_value').order_by().using(alias=machine_name)
 
                     else:
@@ -4802,11 +4816,12 @@ class GISStaticInfo(View):
                                              d['data_source'] == device_service_data_source]
                 else:
                     if int(freeze_time):
-                        performance_value = PerformanceService.objects.filter(device_name=device_name,
-                                                                              service_name=device_service_name,
-                                                                              data_source=device_service_data_source,
-                                                                              sys_timestamp__gte=start_time,
-                                                                              sys_timestamp__lte=end_time
+                        performance_value = PerformanceService.objects.filter(
+                            device_name=device_name,
+                            service_name=device_service_name,
+                            data_source=device_service_data_source,
+                            sys_timestamp__gte=start_time,
+                            sys_timestamp__lte=end_time
                         ).values('current_value').order_by().using(alias=machine_name)
 
                     else:
@@ -4816,12 +4831,13 @@ class GISStaticInfo(View):
 
             elif ts_type == "ping":
                 if int(freeze_time):
-                    performance_value = PerformanceNetwork.objects.filter(device_name=device_name,
-                                                                          service_name=device_service_name,
-                                                                          data_source=device_service_data_source,
-                                                                          sys_timestamp__gte=start_time,
-                                                                          sys_timestamp__lte=end_time
-                        ).values('current_value').order_by().using(alias=machine_name)
+                    performance_value = PerformanceNetwork.objects.filter(
+                        device_name=device_name,
+                        service_name=device_service_name,
+                        data_source=device_service_data_source,
+                        sys_timestamp__gte=start_time,
+                        sys_timestamp__lte=end_time
+                    ).values('current_value').order_by().using(alias=machine_name)
 
                 else:
                     performance_value = [d for d in network_perf_data if d['device_name'] == device_name and
@@ -5194,7 +5210,7 @@ def get_complete_performance(machine_dict):
             device_name__in=devices_list
         ).values(
             *polled_columns
-        ).order_by().using(alias=machine_name)
+        ).using(alias=machine_name)
 
         network_perf_data.extend(list(device_network_info))
 
@@ -5203,7 +5219,7 @@ def get_complete_performance(machine_dict):
             device_name__in=devices_list
         ).values(
             *polled_columns
-        ).order_by().using(alias=machine_name)
+        ).using(alias=machine_name)
 
         performance_perf_data.extend(list(performance_network_info))
 
@@ -5212,7 +5228,7 @@ def get_complete_performance(machine_dict):
             device_name__in=devices_list
         ).values(
             *polled_columns
-        ).order_by().using(alias=machine_name)
+        ).using(alias=machine_name)
 
         service_perf_data.extend(list(device_service_info))
 
@@ -5221,7 +5237,7 @@ def get_complete_performance(machine_dict):
             device_name__in=devices_list
         ).values(
             *polled_columns
-        ).order_by().using(alias=machine_name)
+        ).using(alias=machine_name)
 
         inventory_perf_data.extend(list(device_inventory_info))
 
@@ -5230,7 +5246,7 @@ def get_complete_performance(machine_dict):
             device_name__in=devices_list
         ).values(
             *polled_columns
-        ).order_by().using(alias=machine_name)
+        ).using(alias=machine_name)
 
         status_perf_data.extend(list(device_status_info))
 
@@ -5239,7 +5255,7 @@ def get_complete_performance(machine_dict):
             device_name__in=devices_list
         ).values(
             *polled_columns
-        ).order_by().using(alias=machine_name)
+        ).using(alias=machine_name)
 
         utilization_perf_data.extend(list(device_utilization_info))
 

@@ -108,7 +108,7 @@ class BaseStation(models.Model):
     bs_site_type = models.CharField('BS Site Type', max_length=100, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
     backhaul = models.ForeignKey(Backhaul, null=True, blank=True, on_delete=models.SET_NULL, default=None)
-    bh_port_name = models.CharField(max_length=40, verbose_name=" BH Port Name", null=True, blank=True)
+    bh_port_name = models.CharField(max_length=64, verbose_name=" BH Port Name", null=True, blank=True)
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
     bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True, help_text='Enter a number.')
     bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True)
@@ -506,6 +506,7 @@ class GISExcelDownload(models.Model):
 
 
 # ********************* Connect Inventory Signals *******************
+pre_save.connect(inventory_signals.update_site_on_bs_bhport_change, sender=BaseStation)
 post_save.connect(inventory_signals.auto_assign_thematic, sender=UserProfile)
 pre_save.connect(inventory_signals.resize_icon_size, sender=IconSettings)
 pre_delete.connect(inventory_signals.delete_antenna_of_sector, sender=Sector)

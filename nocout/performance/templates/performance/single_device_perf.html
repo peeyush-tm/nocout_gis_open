@@ -626,8 +626,14 @@
 
                 // Create nocoutPerfLib instance to access its functions
                 perfInstance = new nocoutPerfLib();
+                var device_type = '';
+                try {
+                    device_type = "{{ device_type }}";
+                } catch(e) {
+                    // console.error(e);
+                }
 
-                perfInstance.togglePerfPageElements(page_type_val, current_device_technology);
+                perfInstance.togglePerfPageElements(page_type_val, current_device_technology, device_type);
 
                 /*To initialize date range picker*/
                 perfInstance.initDateRangePicker(dateRangePicker_domId);

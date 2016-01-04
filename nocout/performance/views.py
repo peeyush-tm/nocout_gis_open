@@ -748,6 +748,7 @@ class GetPerfomance(View):
         page_data = {
             'page_title': page_type.capitalize(),
             'device_technology': device_technology,
+            'device_type': device_type,
             'device': device,
             'realdevice': realdevice,
             'bs_alias' : bs_alias,
@@ -1217,7 +1218,7 @@ class InventoryDeviceStatus(View):
                 # get machine name from fetched info
                 machine_name = list_devices_invent_info[0]['machine_name']
                 # If customer device then fetch the polled frequency from distributed DB's
-                if page_type == 'customer':
+                if (page_type == 'customer') or (page_type == 'network' and lowered_device_tech in ['ptp', 'p2p']):
                     service_name = ''
                     ds_name = ''
                     if lowered_device_tech in ['ptp', 'p2p']:
@@ -1241,11 +1242,18 @@ class InventoryDeviceStatus(View):
                         pass
 
                     if service_name and device_name and machine_name:
-                        freq_data_obj = InventoryStatus.objects.filter(
-                            device_name=device_name,
-                            service_name=service_name,
-                            data_source='frequency'
-                        ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
+                        if lowered_device_tech in ['wimax']:
+                            freq_data_obj = ServiceStatus.objects.filter(
+                                device_name=device_name,
+                                service_name=service_name,
+                                data_source='frequency'
+                            ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
+                        else:
+                            freq_data_obj = InventoryStatus.objects.filter(
+                                device_name=device_name,
+                                service_name=service_name,
+                                data_source='frequency'
+                            ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
 
                         if freq_data_obj and freq_data_obj[0].current_value:
                             list_devices_invent_info[0]['polled_frequency'] = freq_data_obj[0].current_value
@@ -1315,6 +1323,7 @@ class InventoryDeviceStatus(View):
                 header_key = header["name"]
                 if header_key in data:
                     header["value"] = data[header_key]
+                    
                     if header["value"] and header["value"] != 'NA':
                         try:
                             header["url"] = reverse(
@@ -1325,8 +1334,7 @@ class InventoryDeviceStatus(View):
                         except Exception, e:
                             header["url"] = ''
                     else:  # If no value then show NA
-                        header["value"] = 'NA' 
-                       
+                        header["value"] = 'NA'
 
             resultant_data.append(new_headers)
 
@@ -2159,10 +2167,40 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
                         self.sds_type = SERVICE_DATA_SOURCE[sds]['data_source_type']
                 else:
                     break
+            if 'min_value' not in self.columns:
+                self.columns.append('min_value')
 
-            self.columns.append('min_value')
-            self.columns.append('max_value')
+            if 'max_value' not in self.columns:
+                self.columns.append('max_value')
         else:
+            if data_for == 'live' and data_source not in ['rta']:
+                self.columns = [
+                    'sys_timestamp',
+                    'current_value',
+                    'severity',
+                    'warning_threshold',
+                    'critical_threshold',
+                    'service_name',
+                    'min_value',
+                    'max_value',
+                    'avg_value',
+                    'ip_address',
+                    'data_source'
+                ]
+            else:
+                self.columns = [
+                    'sys_timestamp',
+                    'avg_value',
+                    'min_value',
+                    'max_value',
+                    'current_value',
+                    'severity',
+                    'warning_threshold',
+                    'critical_threshold',
+                    'service_name',
+                    'data_source'
+                ]
+
             if self.data_source in SERVICE_DATA_SOURCE and 'data_source_type' in  SERVICE_DATA_SOURCE[self.data_source]:
                 self.sds_type = SERVICE_DATA_SOURCE[self.data_source].get('data_source_type', 'Numeric')
             # check for the formula
@@ -2432,12 +2470,12 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             # we receive list instead of queryset
             try:
                 try:
-                    if self.sds_type == 'Numeric':
+                    if self.sds_type == 'Numeric' and sort_using == 'current_value':
                         sorted_device_data = qs.extra(
-                            select={sort_using: 'CAST(' + sort_using + ' AS DECIMAL)'}
+                            select={sort_using: 'CAST(' + sort_using + ' AS DECIMAL(9,3))'}
                         ).order_by(*order)
                     else:
-                        sorted_device_data = qs.order_by(*order)    
+                        sorted_device_data = qs.order_by(*order)
                 except Exception, e:
                     sorted_device_data = qs.order_by(*order)
             except Exception, e:
@@ -3614,15 +3652,15 @@ class GetServiceTypePerformanceData(View):
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) < abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) < abs(p1) < abs(p3)
-                                      else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                      if abs(p2) <= abs(p1) < abs(p3)
+                                      else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                 )
                         else:
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) > abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) > abs(p1) > abs(p3)
-                                      else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                      if abs(p2) >= abs(p1) > abs(p3)
+                                      else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                 )
 
                         formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
@@ -3875,15 +3913,15 @@ class GetServiceTypePerformanceData(View):
                                     compare_point = lambda p1, p2, p3: chart_color \
                                         if abs(p1) < abs(p2) \
                                         else ('#FFE90D'
-                                              if abs(p2) < abs(p1) < abs(p3)
-                                              else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                              if abs(p2) <= abs(p1) < abs(p3)
+                                              else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                         )
                                 else:
                                     compare_point = lambda p1, p2, p3: chart_color \
                                         if abs(p1) > abs(p2) \
                                         else ('#FFE90D'
-                                              if abs(p2) > abs(p1) > abs(p3)
-                                              else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                              if abs(p2) >= abs(p1) > abs(p3)
+                                              else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                         )
 
                                 formula = SERVICE_DATA_SOURCE[sds_name]["formula"] if sds_name in SERVICE_DATA_SOURCE else None
@@ -4384,6 +4422,16 @@ class DeviceServiceDetail(View):
                             alias = 'DL : ' + alias
                         else:
                             alias = alias
+
+                    if is_bh:
+                        try:
+                            ds_name = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['ds_name']
+                            if ds_name:
+                                ds_name = ds_name.replace('_', '/')
+                                alias += ' (' + ds_name.title() + ')'
+                        except Exception, e:
+                            pass
+
                     temp_chart_data[data.service_name, data.data_source] = {
                         'name': alias,
                         'data': [],
@@ -5069,15 +5117,15 @@ class CustomDashboardPerformanceData(View):
                                 compare_point = lambda p1, p2, p3: chart_color \
                                     if abs(p1) < abs(p2) \
                                     else ('#FFE90D'
-                                          if abs(p2) < abs(p1) < abs(p3)
-                                          else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                          if abs(p2) <= abs(p1) < abs(p3)
+                                          else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                     )
                             else:
                                 compare_point = lambda p1, p2, p3: chart_color \
                                     if abs(p1) > abs(p2) \
                                     else ('#FFE90D'
-                                          if abs(p2) > abs(p1) > abs(p3)
-                                          else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                          if abs(p2) >= abs(p1) > abs(p3)
+                                          else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                     )
 
                             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] if sds_name in SERVICE_DATA_SOURCE else None
@@ -6088,15 +6136,15 @@ class CustomDashboardPerformanceData(View):
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) < abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) < abs(p1) < abs(p3)
-                                      else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                      if abs(p2) <= abs(p1) < abs(p3)
+                                      else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                 )
                         else:
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) > abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) > abs(p1) > abs(p3)
-                                      else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                      if abs(p2) >= abs(p1) > abs(p3)
+                                      else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                 )
 
                         formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \

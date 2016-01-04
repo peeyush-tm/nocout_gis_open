@@ -718,9 +718,15 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                     var key_name = this.point.series.name ? this.point.series.name : this.key;
                     tooltip_string = '<b>' + key_name+ '</b>';
                 }
+
                 if (this.points && this.points.length > 0) {
                     for(var i=0;i<this.points.length;i++) {
-                        tooltip_string += '<br/><span style="color:' + this.points[i].series.color + '"> \
+                        var color = this.points[i].series.color;
+                        if (color && color == 'transparent') {
+                            color = '#70AFC4';
+                        }
+
+                        tooltip_string += '<br/><span style="color:' + color + '"> \
                                           '+this.points[i].series.name+'</span>: <strong>' +this.points[i].y+'</strong>';
                     }
                 } else {
@@ -871,14 +877,16 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
                 if (splitted_chart_name[1].indexOf('PMP1') > -1) {
                     name += ': PMP1'
                 } else if (splitted_chart_name[1].indexOf('PMP2') > -1) {
-                    name += ': PMP1'
+                    name += ': PMP2'
+                } else if (splitted_chart_name[1].indexOf('(') > -1) {
+                    name += ' (' + splitted_chart_name[1].split('(')[1]
                 }
             }
 
         } catch(e) {
             name = $.trim(chartObj[i].name);
         }
-        data_in_table += '<th><em>Time ('+ name +')</em></th><th><em>Value ('+ name +')</em></th>';
+        data_in_table += '<th><em>Time: '+ name +'</em></th><th><em>Value: '+ name +'</em></th>';
     }
 
     data_in_table += '</tr></thead><tbody>';
@@ -1576,6 +1584,14 @@ function nocout_stopPollNow() {
     if($("#" + tab_id + "_block .single_perf_poll_now").hasClass("disabled")) {
         $("#" + tab_id + "_block .single_perf_poll_now").removeClass("disabled");
     }
+
+    try {
+        if (perf_page_live_polling_call) {
+            perf_page_live_polling_call.abort();
+        }
+    } catch(e) {
+        // console.error(e);
+    }
 }
 
 
@@ -1605,7 +1621,16 @@ function nocout_pausePollNow() {
             pollCallingTimeout = "";
         }
         isPollingPaused = 1;
-        $("#" + tab_id + "_block .poll_play_btn").button('complete');        
+        $("#" + tab_id + "_block .poll_play_btn").button('complete');
+
+        try {
+            if (perf_page_live_polling_call) {
+                perf_page_live_polling_call.abort();
+            }
+        } catch(e) {
+            // console.error(e);
+        }
+
     } else {
         bootbox.alert("Please run polling first.");
     }

@@ -465,6 +465,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'performance.tasks.calculate_rf_network_availability',
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=25, hour=0)
+    },
+    'scheduled_email_report_task':{
+        'task': 'download_center.tasks.scheduled_email_report',
+        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
     }
 }
 
@@ -537,9 +541,9 @@ MULTI_PROCESSING_ENABLED = False
 
 # Configuration for 'django-session-security' module.
 # Time (in seconds) before the user should be warned that is session will expire because of inactivity.
-SESSION_SECURITY_WARN_AFTER = 540
+SESSION_SECURITY_WARN_AFTER = 3540
 # Time (in seconds) before the user should be logged out if inactive.
-SESSION_SECURITY_EXPIRE_AFTER = 600
+SESSION_SECURITY_EXPIRE_AFTER = 3600
 # Expire session on closing web browser.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # List of urls that should be ignored by the middleware.
@@ -623,7 +627,8 @@ SERVICE_DATA_SOURCE = {
         "show_gis": 1,
         "show_performance_center": 1,
         "is_inverted": 0,
-        "chart_color": "#70AFC4",
+        # "chart_color": "#70AFC4",
+        "chart_color": "transparent",
         "service_name": 'ping',
         "service_alias": 'Ping',
     },
@@ -699,6 +704,7 @@ REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
+
 
 # Special Calculation Mechanism for capacity management.
 CAPACITY_SPECIFIC_TIME = 0
@@ -785,7 +791,9 @@ SETTINGS_EXPORT = [
     'ENABLE_BIRDEYE_VIEW',
     'ENABLE_CUSTOM_DASHBOARD_VIEW',
     'SHOW_RF_COLUMN',
-    'NO_ONDEMAND_POLL_SDS'
+    'NO_ONDEMAND_POLL_SDS',
+    'SINGLE_REPORT_EMAIL',
+    'SCHEDULED_REPORT_EMAIL'
 ]
 
 # Dashbaord Settings
@@ -955,6 +963,10 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
     'cisco_switch_dl_util_kpi_fa0_6',
     'cisco_switch_dl_util_kpi_fa0_24'
 ])
+
+# Global variable to show/hide single report mail optin in download center listing
+SINGLE_REPORT_EMAIL = True
+SCHEDULED_REPORT_EMAIL = True
 
 # Import the local_settings.py file to override global settings
 try:

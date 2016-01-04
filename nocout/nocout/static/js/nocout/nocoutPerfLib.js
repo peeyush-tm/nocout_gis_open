@@ -167,9 +167,17 @@ function nocoutPerfLib() {
      * @param page_type "String", It contains the page type i.e either the page is of network, customer or other devices
      * @param technology "String", It contains current device technology
      */
-    this.togglePerfPageElements = function(page_type, technology) {
+    this.togglePerfPageElements = function(page_type, technology, device_type) {
 
-        var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p',
+        if (!device_type) {
+            device_type = '';
+        }
+        
+        if (!technology) {
+            technology = '';
+        }
+
+        var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p' || device_type.toLowerCase() == 'radwin2kss',
             condition_2 = page_type == 'other';
 
         // Show/hide parent Tabs

@@ -8,7 +8,7 @@ from user_profile.models import UserProfile
 from nocout.settings import ISOLATED_NODE
 from django.db.models import Max, Q
 from user_profile.permissions import admin_perms, operator_perms, viewer_perms
-from user_profile.utils.auth import get_child_users
+from user_profile.utils.auth import get_child_users, get_user_organizations
 
 
 class UserSoftDeleteDisplayData(APIView):
@@ -401,7 +401,7 @@ class PermissonsOnGroupChange(APIView):
             user_perms = user.user_permissions.all()
             result = [{'id': perm.id,
                        'name': "%s | %s | %s" % (perm.content_type.app_label, perm.content_type, perm.name),
-                       'alias': "%s" % (perm.content_type.name.title() + ' - ' + self.format_permission_txt(perm.name) )}
+                       'alias': "%s" % (perm.content_type.name.title() + ' - ' + self.format_permission_txt(perm.name))}
                       for perm in user_perms]
         else:
             group_name = Group.objects.get(id=gid).name
@@ -464,7 +464,7 @@ class ResetAdminUsersPermissions(APIView):
 
         Returns:
             result (str): Result which needs to be returned.
-                           for e.g. {
+                          For e.g.  {
                                         "message": "Succesfully assigned permissions to users.",
                                         "data": {
                                             "users": "aavshyika, abhay, abhijeet, abhijit"
@@ -529,5 +529,139 @@ class ResetAdminUsersPermissions(APIView):
                 result['success'] = 1
                 result['message'] = "Succesfully assigned permissions to users."
                 result['data']['users'] = ", ".join(response_users)
+
+        return Response(result)
+
+
+class ParentOnOrganizationChange(APIView):
+    """
+    Get child users corresponding to the selected organization.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/parent_on_organization_change/1/"
+    """
+
+    def get(self, request, oid):
+        """
+        Processing API request.
+
+        Returns:
+            result (str): Result which needs to be returned.
+                          For e.g. {
+                                        "message": "Successfully fetched users.",
+                                        "data": {
+                                            "users": [
+                                                {
+                                                    "alias": "priyesh",
+                                                    "id": 64
+                                                },
+                                                {
+                                                    "alias": "test-op1",
+                                                    "id": 315
+                                                }
+                                            ]
+                                        },
+                                        "success": 1
+                                    }
+        """
+        # Response data.
+        data = list()
+
+        # Get edited user.
+        edit_user = None
+        try:
+            edit_user = request.GET.get('user_id')
+        except Exception, e:
+            pass
+
+        # Get user.
+        user = request.user
+        data.append({'id': user.id, 'alias': user.username})
+
+        if user:
+            child_users = user.userprofile.get_children()
+            if oid:
+                # Get child users existing within user's organizations.
+                child_users = child_users.filter(organization__id=oid)
+            if edit_user:
+                child_users = child_users.exclude(id=edit_user)
+
+            for child_user in child_users:
+                data.append({'id': child_user.id, 'alias': child_user.username})
+
+        return Response(data)
+
+
+class GetUserOrganizations(APIView):
+    """
+    Get current user organizations.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_user_organizations/"
+    """
+
+    def get(self, request):
+        """
+        Processing API request.
+
+        Returns:
+            result (str): Result which needs to be returned.
+                          For e.g.   {
+                                        "message": "Successfully fetched organizations.",
+                                        "data": {
+                                            "organizations": [
+                                                {
+                                                    "id": 1,
+                                                    "name": "TCL"
+                                                },
+                                                {
+                                                    "id": 2,
+                                                    "name": "Teramatrix"
+                                                },
+                                                {
+                                                    "id": 3,
+                                                    "name": "Code Cope"
+                                                },
+                                                {
+                                                    "id": 4,
+                                                    "name": "Rajasthan"
+                                                },
+                                                {
+                                                    "id": 6,
+                                                    "name": "madras"
+                                                },
+                                                {
+                                                    "id": 5,
+                                                    "name": "TCL-Mumbai"
+                                                }
+                                            ]
+                                        },
+                                        "success": 1
+                                    }
+        """
+        # Response data.
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to fetch organizations."
+        result['data']['organizations'] = list()
+
+        # Get user.
+        user = request.user.userprofile
+
+        # Get user organizations.
+        organizations = get_user_organizations(user)
+
+        for org in organizations:
+            result['data']['organizations'].append({
+                'id': org.id,
+                'name': org.name
+            })
+
+        if result['data']['organizations']:
+            result['success'] = 1
+            result['message'] = "Successfully fetched organizations."
 
         return Response(result)
