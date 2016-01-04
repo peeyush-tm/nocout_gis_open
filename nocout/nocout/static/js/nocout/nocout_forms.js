@@ -12,7 +12,12 @@ var api_info_dict = {
                 "api_url" : ""
             }
         ]
-    };
+    },
+    blank_val_array = [{
+        'device_alias': 'Select None',
+        'alias': 'Select None',
+        'id': ''
+    }];
 
 /**
  * This event trigger when page loaded

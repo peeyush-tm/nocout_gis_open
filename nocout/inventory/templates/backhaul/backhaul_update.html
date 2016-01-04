@@ -129,7 +129,7 @@
                             data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
-                            });
+                        });
                     }
                 },
                 formatResult: repoFormatResult, // omitted for brevity, see the source of this page
@@ -153,7 +153,7 @@
                     },
                     results: function (data, page) { // parse the results into the format expected by Select2.
                         // since we are using custom formatting functions we do not need to alter the remote JSON data
-                        return { results: data.items };
+                        return { results: blank_val_array.concat(data.items) };
                     },
                     cache: false
                 },
@@ -168,7 +168,7 @@
                             data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
-                            });
+                        });
                     }
                 },
                 formatResult: repoFormatResult, // omitted for brevity, see the source of this page
@@ -192,7 +192,7 @@
                     },
                     results: function (data, page) { // parse the results into the format expected by Select2.
                         // since we are using custom formatting functions we do not need to alter the remote JSON data
-                        return { results: data.items };
+                        return { results: blank_val_array.concat(data.items) };
                     },
                     cache: false
                 },
@@ -207,7 +207,7 @@
                             data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
-                            });
+                        });
                     }
                 },
                 formatResult: repoFormatResult, // omitted for brevity, see the source of this page
@@ -231,7 +231,7 @@
                     },
                     results: function (data, page) { // parse the results into the format expected by Select2.
                         // since we are using custom formatting functions we do not need to alter the remote JSON data
-                        return { results: data.items };
+                        return { results: blank_val_array.concat(data.items) };
                     },
                     cache: false
                 },
@@ -246,7 +246,7 @@
                             data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
-                            });
+                        });
                     }
                 },
                 formatResult: repoFormatResult, // omitted for brevity, see the source of this page
