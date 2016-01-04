@@ -7407,8 +7407,17 @@ def process_file_for_bulk_upload():
     """
     Process inventory files for bulk upload.
     """
-    # Get inventory files in 'uploaded.
-
+    # if directory didn't exist than create one
+    auto_upload_dir = MEDIA_ROOT + 'inventory_files/auto_upload_inventory'
+    if os.path.exists(auto_upload_dir):
+        logger.exception("Present")
+        logger.exception(os.listdir(auto_upload_dir))
+        for file in os.listdir(auto_upload_dir):
+            import shutil
+            src = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/' + file
+            shutil.copy2(, MEDIA_ROOT + 'inventory_files/original')
+    else:
+        logger.exception("Not there.")
 
 def create_device(device_payload):
     """ Create Device object
