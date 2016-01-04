@@ -77,8 +77,8 @@ class UserList(PermissionsRequiredMixin, ListView):
             {'mData': 'first_name', 'sTitle': 'Full Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'email', 'sTitle': 'Email', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'groups__name', 'sTitle': 'Group', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'parent__first_name', 'sTitle': 'Manager', 'sWidth': '10%', 'sClass': 'hidden-xs'},
+            {'mData': 'groups__name', 'sTitle': 'Role', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'parent__first_name', 'sTitle': 'Parent', 'sWidth': '10%', 'sClass': 'hidden-xs'},
             {'mData': 'phone_number', 'sTitle': 'Phone Number', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'last_login', 'sTitle': 'Last Login', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'comment', 'sTitle': 'Comment', 'sWidth': 'auto', 'sClass': 'hidden-xs'}
