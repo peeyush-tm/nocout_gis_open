@@ -1180,10 +1180,6 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 }
 
                 severity, age = get_higher_severity(severity_s)
-
-                if bh_device.ip_address == '10.175.22.190':
-                    logger.exception("###################################### - {}".format(severity_s))
-                    logger.exception("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ - {} | {}".format(severity, age))
             except Exception as e:
                 pass
                 current_in_per = 0
@@ -1259,7 +1255,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             if bhs:
                 # values that would be updated per 5 minutes
                 bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
-                bhs.bh_port_name=bs.bh_port_name
+                bhs.bh_port_name = bs.bh_port_name
                 bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
                 bhs.severity = severity if severity else 'unknown'
