@@ -4087,7 +4087,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
             ss_device_model = 5
 
             # SS device type
-            ss_device_type = 5
+            ss_device_type = 9
 
             if 'Vendor' in row.keys():
                 if row['Vendor'] == 'Radwin5K':
@@ -7400,6 +7400,14 @@ def excel_generator_for_new_column(col_name,
 
     except Exception as e:
         logger.info(e.message)
+
+
+@task
+def process_file_for_bulk_upload():
+    """
+    Process inventory files for bulk upload.
+    """
+    # Get inventory files in 'uploaded.
 
 
 def create_device(device_payload):
