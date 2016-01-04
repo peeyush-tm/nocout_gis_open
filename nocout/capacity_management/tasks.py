@@ -150,6 +150,9 @@ backhaul_tech_model_services = {
     'rici': {
         'device_type': 14
     },
+    'huawei': {
+        'device_type': 19
+    },
     12: {
         'val': {
             'model': None,
@@ -246,6 +249,30 @@ backhaul_tech_model_services = {
             },
         },
     },
+    19: {
+        'val': {
+            'model': None,
+            'dl': {
+                'service_name': 'huawei_switch_dl_utilization',
+                'data_source': None
+            },
+            'ul': {
+                'service_name': 'huawei_switch_ul_utilization',
+                'data_source': None
+            },
+        },
+        'kpi': {
+            'model': None,
+            'dl': {
+                'service_name': 'huawei_switch_dl_util_kpi',
+                'data_source': None
+            },
+            'ul': {
+                'service_name': 'huawei_switch_ul_util_kpi',
+                'data_source': None
+            },
+        },
+    }
 }
 
 
@@ -313,11 +340,11 @@ def gather_backhaul_status():
 
     kpi_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi', 'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
                     'cisco_switch_dl_util_kpi', 'cisco_switch_ul_util_kpi', 'juniper_switch_dl_util_kpi',
-                    'juniper_switch_ul_util_kpi']
+                    'juniper_switch_ul_util_kpi', 'huawei_switch_dl_util_kpi', 'huawei_switch_ul_util_kpi']
 
     val_services = ['rici_dl_utilization', 'rici_ul_utilization', 'mrotek_dl_utilization', 'mrotek_ul_utilization',
                     'cisco_switch_dl_utilization', 'cisco_switch_ul_utilization', 'juniper_switch_dl_utilization',
-                    'juniper_switch_ul_utilization']
+                    'juniper_switch_ul_utilization', 'huawei_switch_dl_utilization', 'huawei_switch_ul_utilization']
 
     g_jobs = list()
     ret = False
@@ -1052,6 +1079,11 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             val_dl_service = 'cisco_switch_dl_utilization'
             kpi_ul_service = 'cisco_switch_ul_util_kpi'
             kpi_dl_service = 'cisco_switch_dl_util_kpi'
+        elif bs_device_type == 19:
+            val_ul_service = 'huawei_switch_ul_utilization'
+            val_dl_service = 'huawei_switch_dl_utilization'
+            kpi_ul_service = 'huawei_switch_ul_util_kpi'
+            kpi_dl_service = 'huawei_switch_dl_util_kpi'
         else:
             # proceed only if there is proper device type mapping
             continue
