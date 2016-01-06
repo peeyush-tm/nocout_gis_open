@@ -1095,6 +1095,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             try:
                 data_sources = device_port.split(',')
                 ds_dict = dict()
+                dp_dict = dict()
                 for ds in data_sources:
                     ds = ds.strip()
                     tmp_port = DevicePort.objects.get(alias=ds).name
@@ -1109,8 +1110,10 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                         util = float(util)
 
                     ds_dict[util] = ds_name
+                    dp_dict[ds_name] = tmp_port
 
                 data_source = ds_dict[max(ds_dict.keys())]
+                device_port = dp_dict[data_source]
             except Exception as e:
                 continue
         else:
@@ -1286,9 +1289,8 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
 
             if bhs:
                 # values that would be updated per 5 minutes
-                backhaul = bs.backhaul
                 bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
-                bhs.bh_port_name = bs.bh_port_name
+                bhs.bh_port_name = device_port.replace("_", "/")
                 bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
                 bhs.severity = severity if severity else 'unknown'
@@ -1324,7 +1326,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     (
                         backhaul=bs.backhaul,
                         basestation=bs,
-                        bh_port_name=bs.bh_port_name,
+                        bh_port_name=device_port.replace("_", "/"),
 
                         backhaul_capacity=float(backhaul_capacity) if backhaul_capacity else 0,
                         current_in_per=float(current_in_per) if current_in_per else 0,
