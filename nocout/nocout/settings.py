@@ -311,6 +311,14 @@ CELERYBEAT_SCHEDULE = {
         'task': 'inventory.tasks.update_topology',
         'schedule': timedelta(seconds=300),
     },
+    'validate-file-for-bulk-upload': {
+        'task': 'inventory.tasks.validate_file_for_bulk_upload',
+        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    },
+    'process-file-for-bulk-upload': {
+        'task': 'inventory.tasks.process_file_for_bulk_upload',
+        'schedule': crontab(minute=50, hour=12),  # Execute daily at 12:50 p.m
+    },
     # END Topology Updates
     # updating the polled sector frequency
     'update-sector-frequency': {
@@ -466,7 +474,7 @@ CELERYBEAT_SCHEDULE = {
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=25, hour=0)
     },
-    'scheduled_email_report_task':{
+    'scheduled_email_report_task': {
         'task': 'download_center.tasks.scheduled_email_report',
         'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
     }

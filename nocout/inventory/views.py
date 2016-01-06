@@ -2943,6 +2943,8 @@ class GISInventoryBulkImportView(FormView):
             gis_bulk_obj.technology = technology
             gis_bulk_obj.description = description
             gis_bulk_obj.uploaded_by = self.request.user
+            gis_bulk_obj.is_auto = 0
+            gis_bulk_obj.is_new = 0
             gis_bulk_obj.save()
             gis_bulk_id = gis_bulk_obj.id
 
