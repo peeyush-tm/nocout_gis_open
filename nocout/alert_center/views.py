@@ -26,6 +26,9 @@ from inventory.models import Sector, BaseStation
 # Import alert_center utils gateway class
 from alert_center.utils.util import AlertCenterUtilsGateway
 
+# Import scheduling_management utils gateway class
+from scheduling_management.utils.util import SchedulingManagementGateway
+
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 
@@ -45,6 +48,9 @@ inventory_utils = InventoryUtilsGateway()
 
 # Create instance of 'AlertCenterUtilsGateway' class
 alert_utils = AlertCenterUtilsGateway()
+
+# Create instance of 'SchedulingManagementGateway' class
+scheduling_utils = SchedulingManagementGateway()
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
@@ -247,9 +253,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         'current_value',
         'min_value',
         'max_value',
-        'avg_value',
-        'age',
-        'sys_timestamp'
+        'avg_value'
     ]
 
     main_qs = []
@@ -413,6 +417,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         :param qs:
         :return queryset
         """
+        
 
         if qs:
             data_unit = "%"
@@ -429,7 +434,100 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 data_unit = ''
                 service_tab = 'service'
 
+            #figure out which scheduling type should be displayed according to the page type
+            if page_type == 'customer':
+                scheduling_type = ['devi', 'dety', 'cust']
+            elif page_type == 'network' and 'backhaul' not in data_source.lower():
+                scheduling_type = ['devi', 'dety', 'netw']
+            elif 'backhaul' in data_source.lower():
+                scheduling_type = ['devi', 'dety', 'back']
+            else:
+                scheduling_type = ['devi', 'dety', 'cust', 'netw', 'back']
+
+            # current_date = datetime.date.today()
+            # current_timestamp = datetime.datetime.now()
+
+            # columns_list = [
+            #     'scheduling_type', 'id', 'start_on', 'start_on_time', 'end_on', 'end_after', 'repeat_by',
+            #     'end_on_time', 'device__device_name', 'device__ip_address', 'repeat_every', 'repeat'
+            # ]
+
+            # scheduling_list = Event.objects.extra(select={
+            #     'start_timestamp': 'concat(start_on," ",start_on_time)',
+            #     'end_timestamp': 'concat(end_on," ",end_on_time)'
+            # }).filter(
+            #     Q(scheduling_type__in=scheduling_type)
+            #     &
+            #     (
+            #         (
+            #             Q(start_timestamp__isnull=False)
+            #             &
+            #             Q(end_timestamp__isnull=False)
+            #             &
+            #             Q(start_timestamp__lte=current_timestamp)
+            #             &
+            #             Q(end_timestamp__gte=current_timestamp)
+            #         )
+            #         |
+            #         (
+            #             Q(start_timestamp__isnull=True)
+            #             &
+            #             Q(end_timestamp__isnull=False)
+            #             &
+            #             Q(end_timestamp__gte=current_timestamp)
+            #         )
+            #         |
+            #         (
+            #             Q(start_timestamp__isnull=False)
+            #             &
+            #             Q(end_timestamp__isnull=True)
+            #             &
+            #             Q(start_timestamp__lte=current_timestamp)
+            #         )
+            #     )
+            # ).values(*columns_list)
+            
+            # print "************type(scheduling_list)***********"
+            # print scheduling_list
+            # print "************type(scheduling_list)***********"
+            # scheduling_list = list(scheduling_list)
+            # refined_scheduling_list = alert_utils.get_onDate_status(scheduling_list)
+            # print "AFTER FUNCTION"
+            # print "************type(scheduling_list)***********"
+            # print type(scheduling_list)
+            # print "************type(scheduling_list)***********"
+
+            # Select scheduling events which are scheduled by device type
+            # device_type_schedules = refined_scheduling_list.filter(scheduling_type__iexact='dety')
+            # device_type_schedules = refined_scheduling_list.extra(select={
+            #     'start_on': 'concat(start_on," ",start_on_time)',
+            #     'end_on': 'concat(end_on," ",end_on_time)'
+            # }).filter(scheduling_type__iexact='dety')
+
+            # Select scheduling events which are scheduled by specific device
+            # device_schedules = refined_scheduling_list.exclude(
+                # id__in=device_type_schedules.values_list('id', flat=True)
+            # )
+
+            # device_type_schedule_down_time = device_type_schedules
+
+            # device_schedule_down_time = device_schedules
+
             for dct in qs:
+                try:                
+                    dct_device_name = dct.get('device_name')
+                    dct_device_type = dct.get('device_type')
+                except Exception, err:
+                    pass
+
+
+                showIconBlue = scheduling_utils.get_onDate_status(dct_device_name, dct_device_type, scheduling_type)   
+                    
+
+                # print schdeuledDownCond1, schdeuledDownCond2
+                if showIconBlue:
+                    dct.update(severity= 'inDownTime')
+                    dct.update(description= 'inDownTime')
                 try:
                     dct.update(current_value=float(dct["current_value"]))
                 except Exception, e:
@@ -462,27 +560,14 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     current_app='device'
                 )
 
-                try:
-                    dct.update(
-                        sys_timestamp=datetime.datetime.fromtimestamp(dct.get('sys_timestamp')).strftime(DATE_TIME_FORMAT) if dct.get('sys_timestamp') else "",
-                        age=datetime.datetime.fromtimestamp(dct.get('age')).strftime(DATE_TIME_FORMAT) if dct.get('age') else "",
-                        action='<a href="' + alert_url + '" title="Device Alerts">\
-                                <i class="fa fa-warning text-warning"></i></a>\
-                                <a href="' + performance_url + '" title="Device Performance">\
-                                <i class="fa fa-bar-chart-o text-info"></i></a>\
-                                <a href="' + inventory_url + '" title="Device Inventory">\
-                                <i class="fa fa-dropbox text-muted"></i></a>'
-                    )
-                except Exception, e:
-                    dct.update(
-                        action='<a href="' + alert_url + '" title="Device Alerts">\
-                                <i class="fa fa-warning text-warning"></i></a>\
-                                <a href="' + performance_url + '" title="Device Performance">\
-                                <i class="fa fa-bar-chart-o text-info"></i></a>\
-                                <a href="' + inventory_url + '" title="Device Inventory">\
-                                <i class="fa fa-dropbox text-muted"></i></a>'
-                    )
-
+                dct.update(
+                    action='<a href="' + alert_url + '" title="Device Alerts">\
+                            <i class="fa fa-warning text-warning"></i></a>\
+                            <a href="' + performance_url + '" title="Device Performance">\
+                            <i class="fa fa-bar-chart-o text-info"></i></a>\
+                            <a href="' + inventory_url + '" title="Device Inventory">\
+                            <i class="fa fa-dropbox text-muted"></i></a>'
+                )
                 dct = alert_utils.common_prepare_results(dct)
 
             return qs
@@ -898,9 +983,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         'min_value',
         'max_value',
         'current_value',
-        'avg_value',
-        'age',
-        'sys_timestamp'
+        'avg_value'
     ]
 
     main_qs = []
@@ -1170,27 +1253,14 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                     current_app='device'
                 )
 
-                try:
-                    dct.update(
-                        sys_timestamp=datetime.datetime.fromtimestamp(dct.get('sys_timestamp')).strftime(DATE_TIME_FORMAT) if dct.get('sys_timestamp') else "",
-                        age=datetime.datetime.fromtimestamp(dct.get('age')).strftime(DATE_TIME_FORMAT) if dct.get('age') else "",
-                        action='<a href="' + alert_url + '" title="Device Alerts">\
-                                <i class="fa fa-warning text-warning"></i></a>\
-                                <a href="' + performance_url + '" title="Device Performance">\
-                                <i class="fa fa-bar-chart-o text-info"></i></a>\
-                                <a href="' + inventory_url + '" title="Device Inventory">\
-                                <i class="fa fa-dropbox text-muted"></i></a>'
-                    )
-                except Exception, e:
-                    dct.update(
-                        action='<a href="' + alert_url + '" title="Device Alerts">\
-                                <i class="fa fa-warning text-warning"></i></a>\
-                                <a href="' + performance_url + '" title="Device Performance">\
-                                <i class="fa fa-bar-chart-o text-info"></i></a>\
-                                <a href="' + inventory_url + '" title="Device Inventory">\
-                                <i class="fa fa-dropbox text-muted"></i>\
-                                </a>'
-                    )
+                dct.update(
+                    action='<a href="' + alert_url + '" title="Device Alerts">\
+                            <i class="fa fa-warning text-warning"></i></a>\
+                            <a href="' + performance_url + '" title="Device Performance">\
+                            <i class="fa fa-bar-chart-o text-info"></i></a>\
+                            <a href="' + inventory_url + '" title="Device Inventory">\
+                            <i class="fa fa-dropbox text-muted"></i></a>'
+                )
 
         return qs
 
@@ -1516,10 +1586,8 @@ class SingleDeviceAlertsInit(ListView):
         is_backhaul_switch = device_obj.backhaul_switch.exists()
         is_backhaul_pop = device_obj.backhaul_pop.exists()
         is_backhaul_aggregator = device_obj.backhaul_aggregator.exists()
-
-        is_ss = device_obj.substation_set.exists()
         # If device is backhaul or backhaul_switch or backhaul_pop or backhaul_aggregator
-        if (is_backhaul or is_backhaul_switch or is_backhaul_pop or is_backhaul_aggregator) and not is_ss:
+        if is_backhaul or is_backhaul_switch or is_backhaul_pop or is_backhaul_aggregator:
             page_type = 'other'
 
         # Create Context Dict
@@ -1758,6 +1826,7 @@ class SingleDeviceAlertsListing(BaseDatatableView, AdvanceFilteringMixin):
         Preparing Final dataset for rendering the data table.
         :param qs:
         """
+
         final_list = list()
         if qs:
             for data in qs:

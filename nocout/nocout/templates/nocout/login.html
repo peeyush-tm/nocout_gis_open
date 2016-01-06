@@ -149,9 +149,6 @@ iframe {
         $.cookie("global_search_criteria", "", {path: '/', secure : true});
         $.cookie("global_search_val", "", {path: '/', secure : true});
 
-        // Single device performance page cookie
-        $.cookie("service_view_type", 'normal', {path: '/', secure : true})
-
       });
 
       /*Triggers when login form is submitted*/
@@ -189,7 +186,7 @@ iframe {
                 if (data.data.objects.dialog) {
                   hideSpinner();
                   bootbox.dialog({
-                    message:
+                    message: 
                     '<div class="row" style="z-index:9999;position:relative;">  ' +
                     '<div class="col-md-12"> ' +
                     '<form id="id_password_from" class="form-horizontal"> ' +
@@ -200,7 +197,7 @@ iframe {
                     'placeholder="New Password" class="form-control input-md"> ' +
                     '<span class="help-block">Should be of minimum 6 length.</span> </div> ' +
                     '</div> ' +
-                    '<div class="form-group"> ' +
+                    '<div class="form-group"> ' + 
                     '<label class="col-md-5 control-label" for="confirm_prs">' +
                     '* Confirm Password</label> ' +
                     '<div class="col-md-5"> ' +
