@@ -1382,7 +1382,7 @@ class GISInventoryBulkImportEditForm(forms.ModelForm):
         Meta Information
         """
         model = GISInventoryBulkImport
-        exclude = ['status', 'uploaded_by', 'added_on', 'modified_on', 'upload_status']
+        exclude = ['status', 'uploaded_by', 'added_on', 'modified_on', 'upload_status', 'is_auto', 'is_new']
 
 
 # **************************** GIS Inventory Excel Download Update ******************************
