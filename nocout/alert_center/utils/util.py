@@ -1,8 +1,6 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 import datetime
-from datetime import timedelta
-from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, YEARLY
 # Import nocout utils gateway(NocoutUtilsGateway) class
 from nocout.utils.util import NocoutUtilsGateway
 
@@ -213,13 +211,6 @@ class AlertCenterUtilsGateway:
         )
 
         return param1
-
-    def get_onDate_status(self, eventList):
-        """
-        :param eventDict:
-        """
-        param1 = get_onDate_status(eventList)
-
 
 # misc utility functions
 def prepare_query(

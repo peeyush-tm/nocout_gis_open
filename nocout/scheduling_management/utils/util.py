@@ -36,16 +36,12 @@ def get_onDate_status(device_name, device_type, scheduling_type):
     Note: in dateutil 0==Monday, while in python datetime 0==Sunday.
 
     :Args:
-        eventList: list of dictionary which are event objects as [{event_obj1},{event_obj2}......]  Note: event is must.
+        device_name: name of the device,
+        device_type: type of the device,
+        scheduling_type: list of scheduling type acoording to specific page.
 
     :return:
-        the dictionary containing the event id, status for today date and the
-        list of execution date of this month. i.e: {  'status': False, 'event_ids': 2,
-                                        'execution_dates': [
-                                            datetime.datetime(2014, 12, 19, 0, 0),
-                                            datetime.datetime(2014, 12, 20, 0, 0),
-                                            ]
-                                        }
+        status(Boolean): if device is in scheduled down time then True else False.
     """
 
     # print "**********device_name - %s", device_name
@@ -105,7 +101,7 @@ def get_onDate_status(device_name, device_type, scheduling_type):
     scheduling_list = list(scheduling_list)
 
     # print schdeuledDownCond1, schdeuledDownCond2
-
+    # if device is specifically scheduled
     if schdeuledDownCond1:
         try:
             refined_list = device_schedules.filter(device__device_name=device_name)
@@ -158,7 +154,7 @@ def get_onDate_status(device_name, device_type, scheduling_type):
                     try:
                         execution_dates = list(rrule(DAILY, dtstart=start, interval=interval, count=count, until=end))
                     except Exception, e:
-                        print e
+                        pass
                     # check whether the event will execute today or not.
                     if today in execution_dates:
                         status = True
@@ -232,8 +228,9 @@ def get_onDate_status(device_name, device_type, scheduling_type):
             return status
 
         except Exception, err:
-            print err
+            pass
 
+    # if device is scheduled because of device type       
     elif schdeuledDownCond2:
         try:
             refined_list = device_type_schedules.filter(device_type__name=device_type)
@@ -286,7 +283,7 @@ def get_onDate_status(device_name, device_type, scheduling_type):
                     try:
                         execution_dates = list(rrule(DAILY, dtstart=start, interval=interval, count=count, until=end))
                     except Exception, e:
-                        print e
+                        pass
                     # check whether the event will execute today or not.
                     if today in execution_dates:
                         status = True
@@ -359,6 +356,6 @@ def get_onDate_status(device_name, device_type, scheduling_type):
             return status
 
         except Exception, err:
-        	print err
+        	pass
 
 
