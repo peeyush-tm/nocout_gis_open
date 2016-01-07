@@ -19,7 +19,6 @@ var tables_info = {},
  * @event click
  */
 $(".nav-tabs li a").click(function (e, isFirst) {
-
     var tab_txt = $.trim($(this).text());
     
     // Update the breadcrumb as per clicked tab
