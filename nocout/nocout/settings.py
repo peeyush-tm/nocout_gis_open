@@ -60,7 +60,7 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/home/'
 LOGIN_EXEMPT_URLS = (
     r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/',
-    'sm/dialog_action/', 'user/change_password/')
+    'sm/dialog_action/', 'user/change_password/','download_center/processedreportemail/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -311,6 +311,14 @@ CELERYBEAT_SCHEDULE = {
         'task': 'inventory.tasks.update_topology',
         'schedule': timedelta(seconds=300),
     },
+    'validate-file-for-bulk-upload': {
+        'task': 'inventory.tasks.validate_file_for_bulk_upload',
+        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    },
+    'process-file-for-bulk-upload': {
+        'task': 'inventory.tasks.process_file_for_bulk_upload',
+        'schedule': crontab(minute=50, hour=12),  # Execute daily at 12:50 p.m
+    },
     # END Topology Updates
     # updating the polled sector frequency
     'update-sector-frequency': {
@@ -466,7 +474,7 @@ CELERYBEAT_SCHEDULE = {
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=25, hour=0)
     },
-    'scheduled_email_report_task':{
+    'scheduled_email_report_task': {
         'task': 'download_center.tasks.scheduled_email_report',
         'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
     }
@@ -705,7 +713,6 @@ DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
 
-
 # Special Calculation Mechanism for capacity management.
 CAPACITY_SPECIFIC_TIME = 0
 
@@ -793,7 +800,9 @@ SETTINGS_EXPORT = [
     'SHOW_RF_COLUMN',
     'NO_ONDEMAND_POLL_SDS',
     'SINGLE_REPORT_EMAIL',
-    'SCHEDULED_REPORT_EMAIL'
+    'SCHEDULED_REPORT_EMAIL',
+    'REPORT_EMAIL_PERM',
+    'SCHEDULED_SINGLE_REPORT_EMAIL'
 ]
 
 # Dashbaord Settings
@@ -1171,10 +1180,25 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
     'huawei_switch_ul_util_kpi_gigabitethernet0_0_28_kpi',
     'huawei_switch_dl_util_kpi_gigabitethernet0_0_28_kpi'
 ])
+# Global variable to show/hide Scheduled report mail option in dowload center listing.
+REPORT_EMAIL_PERM = json.dumps({
+    'bs_dump': 1,
+    'ss_dump': 1,
+    'ptp_dump': 1,
+    'latency_dump': 1,
+    'customer_report': 1,
+    'duplex_report': 1,
+    'modulation': 1,
+    'utilization_tot': 1,
+    'temperature': 1,
+    'rectification_segment': 1,
+    'health_ptp_bh': 1    
+})
 
-# Global variable to show/hide single report mail optin in download center listing
+# Global variable to show/hide single report mail option in download center listing
 SINGLE_REPORT_EMAIL = True
-SCHEDULED_REPORT_EMAIL = True
+SCHEDULED_REPORT_EMAIL = False
+SCHEDULED_SINGLE_REPORT_EMAIL = True
 
 # Import the local_settings.py file to override global settings
 try:

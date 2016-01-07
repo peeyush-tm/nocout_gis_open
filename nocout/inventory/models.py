@@ -381,6 +381,8 @@ class GISInventoryBulkImport(models.Model):
     uploaded_by = models.CharField('Uploaded By', max_length=100, null=True, blank=True)
     added_on = models.DateTimeField('Added On', null=True, blank=True)
     modified_on = models.DateTimeField('Modified On', null=True, blank=True)
+    is_auto = models.IntegerField('Is Auto', null=True, blank=True)
+    is_new = models.IntegerField('Is New', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         """ On save, update timestamps """
