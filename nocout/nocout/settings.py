@@ -1019,6 +1019,8 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
     'juniper_switch_ul_util_kpi_ge-0_0_3_kpi',
     'juniper_switch_dl_util_kpi_ge-0_0_3_kpi',
     'juniper_switch_ul_util_kpi_ge-0_0_4_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_4_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_5_kpi',
     'juniper_switch_dl_util_kpi_ge-0_0_5_kpi',
     'juniper_switch_ul_util_kpi_ge-0_0_6_kpi',
     'juniper_switch_dl_util_kpi_ge-0_0_6_kpi',
