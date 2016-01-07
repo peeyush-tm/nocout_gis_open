@@ -123,7 +123,7 @@ def prepare_hosts_file():
                 'radwin_bs_devices', 'wimax_ss_devices', 
                 'cambium_ss_devices', 'radwin_ss_devices', 
                 'total_radwin_devices', 'mrotek_devices',
-                'rici_devices', 'cisco_switch_devices', 'juniper_switch_devices'
+                'rici_devices', 'cisco_switch_devices', 'juniper_switch_devices','huawei_switch_devices'
                 ])
     all_hosts, ipaddresses, host_attributes = [], {}, {}
     wimax_bs_devices, cambium_bs_devices = [], []
@@ -144,6 +144,10 @@ def prepare_hosts_file():
     # Final Devices
     devices_plus_backhaul = make_Backhaul_data(ss_devices.all_hosts,
             ss_devices.ipaddresses, ss_devices.host_attributes, disabled_services)
+	
+    devices_plus_backhaul_switch = make_switch_data(ss_devices.all_hosts,
+            ss_devices.ipaddresses, ss_devices.host_attributes, disabled_services)
+
     T.wimax_bs_devices, T.cambium_bs_devices = bs_devices.wimax_bs_devices, bs_devices.cambium_bs_devices
     T.radwin_bs_devices, T.radwin_ss_devices = bs_devices.radwin_bs_devices, ss_devices.radwin_ss_devices
     T.total_radwin_devices = bs_devices.radwin_bs_devices + ss_devices.radwin_ss_devices
@@ -151,11 +155,18 @@ def prepare_hosts_file():
     T.cambium_ss_devices = ss_devices.cambium_ss_devices
     T.mrotek_devices = devices_plus_backhaul.mrotek_devices
     T.rici_devices = devices_plus_backhaul.rici_devices
-    T.cisco_switch_devices = devices_plus_backhaul.cisco_switch_devices
-    T.juniper_switch_devices = devices_plus_backhaul.juniper_switch_devices
+    T.cisco_switch_devices = devices_plus_backhaul_switch.cisco_switch_devices
+    T.juniper_switch_devices = devices_plus_backhaul_switch.juniper_switch_devices
+    T.huawei_switch_devices = devices_plus_backhaul_switch.huawei_switch_devices
     write_hosts_file(devices_plus_backhaul.all_hosts, 
             devices_plus_backhaul.ipaddresses, 
             devices_plus_backhaul.host_attributes)
+
+    write_hosts_file(devices_plus_backhaul_switch.all_hosts,
+            devices_plus_backhaul_switch.ipaddresses,
+            devices_plus_backhaul_switch.host_attributes)
+
+
 
     return T
 
@@ -204,7 +215,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     device_device.is_deleted=0 and
     device_device.host_state <> 'Disable'
     and 
-    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE')
+    device_devicetype.name in ('RiCi', 'PINE')
     group by device_device.ip_address
     ;
     """
@@ -226,16 +237,13 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
         db.close()
     # Processing backhaul configured on devices
     mrotek_devices, rici_devices, cisco_switch_devices, juniper_switch_devices = [], [], [],[]
+    huawei_switch_devices = []
     processed = []
-    cisco_juniper = ['cisco','juniper']
+    cisco_juniper = ['cisco','juniper', 'huawei']  # huawei addtion to add port capacity
     hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    
     for device in data:
-        if str(device[2].lower()) == 'cisco':
-        	port_wise_capacities = [0]*26
-	elif str(device[2].lower()) == 'juniper':
-		port_wise_capacities = [0]*52
-        else:
-        	port_wise_capacities = [0]*8
+        port_wise_capacities = [0]*8
         if  str(device[1]) in processed:
             continue
         if '_' in str(device[8]) and str(device[2].lower()) not in cisco_juniper :
@@ -249,47 +257,13 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
                 port_wise_capacities = [0]*8
                 #print err
 
-        if str(device[2].lower()) == 'cisco':
-            try :
-                int_ports = map(lambda x: x.split('/')[-1], device[9].split(','))
-                int_ports = map(lambda x: int(x), int_ports)   #convert int type
-                int_string = map(lambda x: x.split('/')[0], device[9].split(','))
-                for i in xrange(len(int_string)):
-                    #if int_string[i]== 'Gi0':
-                    if 'gi' in int_string[i].lower():
-                        int_ports[i]= int_ports[i]+24
-                capacities = device[10].split(',') if device[10] else device[10]
-                if len(int_string)>1:  # to multiple kpi for ring ports
-                    capacities.append(capacities[0])
-                for p_n, p_cap in zip(int_ports, capacities):
-                    port_wise_capacities[int(p_n)-1] = p_cap
-            except Exception as e:
-                port_wise_capacities = [0]*8
-        if str(device[2].lower()) == 'juniper':
-           try:
-               int_ports = map(lambda x: x.split('/')[-1], device[9].split(','))
-               int_ports = map(lambda x: int(x), int_ports)   #convert int type
-               int_ports_s = map(lambda x: x.split('/')[-2], device[9].split(','))
-               int_ports_s = map(lambda x: int(x), int_ports_s)
-               for i in xrange(len(int_ports_s)):
-                   if int_ports_s[i]== 1:
-                       int_ports[i]=int_ports[i]+48
-               capacities = device[10].split(',') if device[10] else device[10]
-               if len(int_string)>1: # for ring port extra capcity added
-                   capacities.append(capacities[0])
-               for p_n, p_cap in zip(int_ports, capacities):
-                   port_wise_capacities[int(p_n)] = p_cap
-           except Exception as e:
-               port_wise_capacities = [0]*8
-
+                  
         if str(device[2].lower()) == 'pine':
             mrotek_devices.append((device[1], device[5], port_wise_capacities))
         elif str(device[2].lower()) == 'rici':
             rici_devices.append((device[1], device[5], port_wise_capacities))
-        elif str(device[2].lower()) == 'cisco':
-            cisco_switch_devices.append((device[1], device[5], port_wise_capacities))
-        elif str(device[2].lower()) == 'juniper':
-	    juniper_switch_devices.append((device[1], device[5], port_wise_capacities))
+
+
         hosts_only.write(str(device[1]) + '\n')
         processed.append(str(device[1]))
         # get all disabled services on this host, if any
@@ -313,9 +287,173 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     T.all_hosts, T.ipaddresses = all_hosts, ipaddresses
     T.host_attributes = host_attributes
     T.mrotek_devices, T.rici_devices = mrotek_devices, rici_devices
-    T.cisco_switch_devices, T.juniper_switch_devices  = cisco_switch_devices, juniper_switch_devices
+
     return T
 
+# make_switch_data is function to write the 
+def make_switch_data(all_hosts, ipaddresses, host_attributes, disabled_services):
+    # Query for Backhaul entities
+    query = """
+    select 
+    device_device.ip_address,
+    device_device.device_name,
+    device_devicetype.name,
+    device_device.mac_address,
+    device_devicetype.agent_tag,
+    site_instance_siteinstance.name,
+    device_device.device_alias,
+    device_devicetechnology.name as techno_name,
+    group_concat(service_servicedatasource.name separator '$$') as port_name,
+    group_concat(inventory_basestation.bh_port_name separator '$$') as port_alias,
+    group_concat(inventory_basestation.bh_capacity separator '$$') as port_wise_capacity
+    from device_device 
+    inner join
+    (device_devicetechnology, device_devicetype, 
+    machine_machine, site_instance_siteinstance)
+    on 
+    (
+    device_devicetype.id = device_device.device_type and
+    device_devicetechnology.id = device_device.device_technology and
+    machine_machine.id = device_device.machine_id and
+    site_instance_siteinstance.id = device_device.site_instance_id
+    )
+    inner join
+    (inventory_backhaul)
+    on
+    (device_device.id = inventory_backhaul.bh_configured_on_id )
+    left join
+    (inventory_basestation)
+    on
+    (inventory_backhaul.id = inventory_basestation.backhaul_id)
+    left join
+    (service_servicedatasource)
+    on
+    (inventory_basestation.bh_port_name = service_servicedatasource.alias)
+    where 
+    device_device.is_deleted=0 and
+    device_device.host_state <> 'Disable'
+    and 
+    device_devicetype.name in ('Cisco','Juniper','Huawei')
+    group by device_device.ip_address
+    ;
+    """
+
+    T = namedtuple('total_devices',
+            ['all_hosts', 'ipaddresses', 'host_attributes',
+             'switch_devices']
+            )
+    db = mysql_conn()
+    try:
+        cur = db.cursor()
+        cur.execute(query)
+    except Exception, exp:
+        logger.error('Backhaul devices data: ' + pformat(exp))
+    else:
+        data = cur.fetchall()
+    finally:
+        cur.close()
+        db.close()
+    # Processing backhaul configured on devices
+    cisco_switch_devices, juniper_switch_devices = [], []
+    huawei_switch_devices = []
+    processed = []
+    #cisco_juniper = ['cisco','juniper', 'huawei']  # huawei addtion to add port capacity
+    hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+
+    for device in data:
+        if str(device[2].lower()) == 'cisco':
+                port_wise_capacities = [0]*26
+        elif str(device[2].lower()) == 'juniper':
+                port_wise_capacities = [0]*52
+
+        elif str(device[2].lower()) == 'huawei':
+                port_wise_capacities = [0]*28
+
+        else:
+                port_wise_capacities = [0]*8
+        if  str(device[1]) in processed:
+            continue
+
+        if str(device[2].lower()) == 'cisco':
+            try :
+                int_ports = map(lambda x: x.split('/')[-1], device[9].split(','))
+                int_ports = map(lambda x: int(x), int_ports)   #convert int type
+                int_string = map(lambda x: x.split('/')[0], device[9].split(','))
+                for i in xrange(len(int_string)):
+                    #if int_string[i]== 'Gi0':
+                    if 'gi' in int_string[i].lower():
+                        int_ports[i]= int_ports[i]+24
+                capacities = device[10].split(',') if device[10] else device[10]
+                if len(int_string)>1:  # to multiple kpi for ring ports
+                    capacities.append(capacities[0])
+                for p_n, p_cap in zip(int_ports, capacities):
+                    port_wise_capacities[int(p_n)-1] = p_cap
+            except Exception as e:
+                port_wise_capacities = [0]*8
+
+
+        if str(device[2].lower()) == 'juniper':
+           try:
+               int_ports = map(lambda x: x.split('/')[-1], device[9].split(','))
+               int_ports = map(lambda x: int(x), int_ports)   #convert int type
+               int_ports_s = map(lambda x: x.split('/')[-2], device[9].split(','))
+               int_ports_s = map(lambda x: int(x), int_ports_s)
+               for i in xrange(len(int_ports_s)):
+                   if int_ports_s[i]== 1:
+                       int_ports[i]=int_ports[i]+48
+               capacities = device[10].split(',') if device[10] else device[10]
+               if len(int_ports)>1: # for ring port extra capcity added
+                   capacities.append(capacities[0])
+               for p_n, p_cap in zip(int_ports, capacities):
+                   port_wise_capacities[int(p_n)] = p_cap
+           except Exception as e:
+               port_wise_capacities = [0]*8
+
+        # for huawei just add capacity irespectiv to their place
+        if str(device[2].lower()) == 'huawei':
+           try :
+               capacities = device[10].split(',') if device[10] else device[10]
+               for i in xrange(len(capacities)):
+                   port_wise_capacities[i]=capacities[i]
+           except Exception as e:
+               port_wise_capacities = [0]*8
+
+
+
+        if str(device[2].lower()) == 'cisco':
+            cisco_switch_devices.append((device[1], device[5], port_wise_capacities))
+        elif str(device[2].lower()) == 'juniper':
+            juniper_switch_devices.append((device[1], device[5], port_wise_capacities))
+        elif str(device[2].lower()) == 'huawei':
+            huawei_switch_devices.append((device[1], device[5], port_wise_capacities))
+
+
+        hosts_only.write(str(device[1]) + '\n')
+        processed.append(str(device[1]))
+        # get all disabled services on this host, if any
+        disabled_service_tags = disabled_services.get(str(device[1]))
+        disabled_service_tags_entry = ''
+        if disabled_service_tags:
+            disabled_service_tags_entry = '|' +  '|'.join(disabled_service_tags)
+        entry = str(device[1]) + '|' + str(device[2]) + '|' + str(device[3]).lower() + \
+            '|wan|prod|' + str(device[4]) + '|site:' + str(device[5]) + \
+            disabled_service_tags_entry + '|wato|//'
+        all_hosts.append(entry)
+        ipaddresses.update({str(device[1]): str(device[0])})
+        host_attributes.update({ str(device[1]): {
+            'alias': str(device[6]),
+            'contactgroups': (True, ['all']),
+            'site': str(device[5]),
+            'tag_agent': str(device[4])
+            }})
+
+    hosts_only.close()
+    T.all_hosts, T.ipaddresses = all_hosts, ipaddresses
+    T.host_attributes = host_attributes
+    T.cisco_switch_devices, T.juniper_switch_devices  = cisco_switch_devices, juniper_switch_devices
+    T.huawei_switch_devices = huawei_switch_devices
+
+    return T
 
 def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attributes=None):
     all_hosts = []
@@ -538,6 +676,9 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     return T1
 
 
+
+
+
 def get_dr_configured_on_devices(device_ids=[]):
     """
     dr_configured_on_devices would be treaed as
@@ -578,8 +719,7 @@ def get_disabled_services():
     return data
 
 
-def eval_qos(vals, out=None):
-    out = []
+def eval_qos(vals, out=[]):
     for v in vals:
         if v and int(v) > 10:
             v = float(v) / float(1024)
@@ -824,7 +964,7 @@ ON
 	OR
 	lower(sds.alias) = lower(replace(bs.bh_port_name, '/', '_'))
 WHERE
-	lower(dtype.name) in ('juniper', 'cisco')
+	lower(dtype.name) in ('juniper', 'cisco', 'huawei')
 group by
 	bh_device.id;
 """ 
@@ -894,7 +1034,7 @@ group by
             'radwin_ss_provis_kpi',
             'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
             'rici_dl_util_kpi', 'rici_ul_util_kpi',
-            'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi']
+            'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi','huawei_switch_ul_util_kpi','huawei_switch_dl_util_kpi']
     # Following dependent SS checks should not be included in list of passive checks
     # As they are treated as active checks (Dependent in sense they get data from their BS)
     exclude_ss_active_services = ['cambium_ss_ul_issue_kpi', 'cambium_ss_provis_kpi', 'wimax_ss_ul_issue_kpi',
@@ -1158,7 +1298,8 @@ def make_active_check_rows(container, devices, services, active_checks_threshold
 
     qos_based_services = ['radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'mrotek_dl_util_kpi', 
 		'mrotek_ul_util_kpi', 'rici_dl_util_kpi', 'rici_ul_util_kpi',
-		'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi']
+		'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi',
+		'huawei_switch_ul_util_kpi','huawei_switch_dl_util_kpi']
     for service in services:
 
 	######### Code has been Added to facilate addtion/deletion of service from device_typeon UI ,only active checks which 
@@ -1201,7 +1342,18 @@ def util_active_checks(devices, active_checks_thresholds, active_checks_threshol
     rici_util_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi']
     cisco_switch_util_services = ['cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi']
     juniper_switch_util_services= ['juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi']
+    huawei_switch_util_services=['huawei_switch_ul_util_kpi','huawei_switch_dl_util_kpi']  # new KPI checks for huawei addition
     check_dict = {}
+
+    check_dict = make_active_check_rows(check_dict, devices.huawei_switch_devices,
+            huawei_switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
+            def_war=80, def_crit=90)   # huawei switch checks addition
+
+    check_dict = make_active_check_rows(check_dict, devices.cisco_switch_devices,
+            cisco_switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
+            def_war=80, def_crit=90)
+
+
     check_dict = make_active_check_rows(check_dict, devices.wimax_bs_devices,
             wimax_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
@@ -1220,12 +1372,12 @@ def util_active_checks(devices, active_checks_thresholds, active_checks_threshol
             rici_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     # switch utilization active checks
-    check_dict = make_active_check_rows(check_dict, devices.cisco_switch_devices,
-            cisco_switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
-            def_war=80, def_crit=90)
+
     check_dict = make_active_check_rows(check_dict, devices.juniper_switch_devices,
             juniper_switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
+
+
     ########################################################################################
     # These values would be used if we dont find device specific entry
     #S1 = filter(lambda x: 'wimax_pmp1_ul_util_kpi' in x[0], active_checks_thresholds)
