@@ -384,11 +384,13 @@ def prepare_raw_alert_results(performance_data=None):
                 'current_value': data["current_value"],
                 'max_value': data["max_value"],
                 'min_value': data["min_value"],
-                'sys_timestamp': datetime.datetime.fromtimestamp(
-                    float(data["sys_timestamp"])).strftime(DATE_TIME_FORMAT),
-                'age': datetime.datetime.fromtimestamp(
-                    float(data["age"])
-                ).strftime(DATE_TIME_FORMAT) if data["age"] else "",
+                # 'sys_timestamp': datetime.datetime.fromtimestamp(
+                #     float(data["sys_timestamp"])).strftime(DATE_TIME_FORMAT),
+                # 'age': datetime.datetime.fromtimestamp(
+                #     float(data["age"])
+                # ).strftime(DATE_TIME_FORMAT) if data["age"] else "",
+                'sys_timestamp': float(data["sys_timestamp"]) if data["sys_timestamp"] else "",
+                'age': float(data["age"]) if data["age"] else "",
                 'description': '',
                 'refer': data["refer"] if ('refer' in data and data['refer']) else ''
             })
