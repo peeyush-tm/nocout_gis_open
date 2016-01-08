@@ -95,13 +95,21 @@ class EventList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'start_on', 'sTitle': 'Start On', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'created_by__username', 'sTitle': 'Created By', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'scheduling_type', 'sTitle': 'Scheduling Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'device_specification', 'sTitle': 'Device/Device Type', 'sWidth': 'auto', 'bSortable': False}
+            {'mData': 'device_specification', 'sTitle': 'Device/Device Type', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'no_of_devices', 'sTitle': 'No.of devices', 'sWidth': '5%', 'bSortable': False}
         ]
 
         #if the user role is Admin or superuser then the action column will appear on the datatable
-        datatable_headers.append({'mData': 'no_of_devices', 'sTitle': 'No.of devices', 'sWidth': '5%', 'bSortable': False})
-        if in_group(self.request.user, 'admin'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_event')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_event')
+        if is_edit_perm or is_delete_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '5%',
+                'bSortable': False
+            })
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 

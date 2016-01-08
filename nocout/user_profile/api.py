@@ -395,7 +395,6 @@ class PermissonsOnGroupChange(APIView):
             group_id = user.groups.all()[0].id
         except Exception as e:
             pass
-
         # If group is same as the previous one, then return current users permissions.
         if group_id == gid:
             user_perms = user.user_permissions.all()
