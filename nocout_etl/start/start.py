@@ -112,7 +112,15 @@ class Config:
 	     'call_kpi_services':{
 	        'task' : 'call_kpi_services',
 	        'schedule': crontab(minute='*/5'),
+		'kwargs': {
+			'site_name': 'pub'
+			}
 	      },
+            'get_passive_checks': {
+                'task': 'get_passive_checks_output',
+                'schedule': crontab(minute='*/5'),
+	        'kwargs': {'site_name': 'pub'}
+                },
 	     'device_availibility':{
 	        'task' : 'device_availibility',
 	        'schedule': crontab(hour=22,minute=30),
