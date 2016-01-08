@@ -120,8 +120,15 @@ class AntennaList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'azimuth_angle', 'sTitle': 'Azimuth Angle', 'sWidth': '10%', }, ]
 
         # if the user role is Admin or operator or superuser then the action column will appear on the datatable
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_antenna') or in_group(self.request.user, 'operator', 'change_antenna')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_antenna') or in_group(self.request.user, 'operator', 'delete_antenna')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -255,8 +262,16 @@ class BaseStationList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
         # if the user role is Admin or operator then the action column will appear on the datatable
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_basestation') or in_group(self.request.user, 'operator', 'change_basestation')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_basestation') or in_group(self.request.user, 'operator', 'delete_basestation')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -394,9 +409,15 @@ class BackhaulList(PermissionsRequiredMixin, TemplateView):
         ]
 
         # if the user role is Admin or operator then the action column will appear on the datatable
-
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_backhaul') or in_group(self.request.user, 'operator', 'change_backhaul')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_backhaul') or in_group(self.request.user, 'operator', 'delete_backhaul')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -542,8 +563,15 @@ class SectorList(PermissionsRequiredMixin, TemplateView):
         ]
 
         # if the user role is Admin or operator then the action column will appear on the datatable
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_sector') or in_group(self.request.user, 'operator', 'change_sector')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_sector') or in_group(self.request.user, 'operator', 'delete_sector')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -699,9 +727,16 @@ class CustomerList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'bSortable': False},
         ]
         # if the user role is Admin or operator then the action column will appear on the datatable
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_customer') or in_group(self.request.user, 'operator', 'change_customer')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_customer') or in_group(self.request.user, 'operator', 'delete_customer')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -838,9 +873,15 @@ class SubStationList(PermissionsRequiredMixin, TemplateView):
         ]
 
         # if the user role is Admin or operator then the action column will appear on the datatable
-
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_substation') or in_group(self.request.user, 'operator', 'change_substation')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_substation') or in_group(self.request.user, 'operator', 'delete_substation')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -1006,8 +1047,9 @@ class CircuitList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'}
         ]
         # if the user role is Admin or operator then the action column will appear on the datatable
-
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_circuit') or in_group(self.request.user, 'operator', 'change_circuit')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_circuit') or in_group(self.request.user, 'operator', 'delete_circuit')
+        if is_delete_perm or is_edit_perm:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1845,8 +1887,15 @@ class IconSettingsList(PermissionsRequiredMixin, ListView):
             {'mData': 'upload_image', 'sTitle': 'Image', 'sWidth': 'auto'},
         ]
         # if the user is superuser action column can be appeared in datatable.
-        if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_iconsettings')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_iconsettings')
+        if is_edit_perm or is_delete_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -2432,13 +2481,19 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
             {'mData': 'threshold_template__live_polling_template__device_type__name', 'sTitle': 'Type',
              'sWidth': 'auto'},
             {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}, ]
-
-        # user_id = self.request.user.id
+            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}
+        ]
 
         # if user is superadmin or gisadmin
-        if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_thematicsettings')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_thematicsettings')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -2943,6 +2998,8 @@ class GISInventoryBulkImportView(FormView):
             gis_bulk_obj.technology = technology
             gis_bulk_obj.description = description
             gis_bulk_obj.uploaded_by = self.request.user
+            gis_bulk_obj.is_auto = 0
+            gis_bulk_obj.is_new = 0
             gis_bulk_obj.save()
             gis_bulk_id = gis_bulk_obj.id
 
@@ -3494,10 +3551,18 @@ class PingThematicSettingsList(ListView):
             {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
             {'mData': 'type__name', 'sTitle': 'Type', 'sWidth': 'auto'},
             {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}, ]
+            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}
+        ]
 
-        if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_pingthematicsettings')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_pingthematicsettings')
+        if is_edit_perm or is_delete_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 

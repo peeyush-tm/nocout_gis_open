@@ -150,6 +150,9 @@ backhaul_tech_model_services = {
     'rici': {
         'device_type': 14
     },
+    'huawei': {
+        'device_type': 19
+    },
     12: {
         'val': {
             'model': None,
@@ -246,6 +249,30 @@ backhaul_tech_model_services = {
             },
         },
     },
+    19: {
+        'val': {
+            'model': None,
+            'dl': {
+                'service_name': 'huawei_switch_dl_utilization',
+                'data_source': None
+            },
+            'ul': {
+                'service_name': 'huawei_switch_ul_utilization',
+                'data_source': None
+            },
+        },
+        'kpi': {
+            'model': None,
+            'dl': {
+                'service_name': 'huawei_switch_dl_util_kpi',
+                'data_source': None
+            },
+            'ul': {
+                'service_name': 'huawei_switch_ul_util_kpi',
+                'data_source': None
+            },
+        },
+    }
 }
 
 
@@ -313,11 +340,11 @@ def gather_backhaul_status():
 
     kpi_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi', 'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
                     'cisco_switch_dl_util_kpi', 'cisco_switch_ul_util_kpi', 'juniper_switch_dl_util_kpi',
-                    'juniper_switch_ul_util_kpi']
+                    'juniper_switch_ul_util_kpi', 'huawei_switch_dl_util_kpi', 'huawei_switch_ul_util_kpi']
 
     val_services = ['rici_dl_utilization', 'rici_ul_utilization', 'mrotek_dl_utilization', 'mrotek_ul_utilization',
                     'cisco_switch_dl_utilization', 'cisco_switch_ul_utilization', 'juniper_switch_dl_utilization',
-                    'juniper_switch_ul_utilization']
+                    'juniper_switch_ul_utilization', 'huawei_switch_dl_utilization', 'huawei_switch_ul_utilization']
 
     g_jobs = list()
     ret = False
@@ -1052,6 +1079,11 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             val_dl_service = 'cisco_switch_dl_utilization'
             kpi_ul_service = 'cisco_switch_ul_util_kpi'
             kpi_dl_service = 'cisco_switch_dl_util_kpi'
+        elif bs_device_type == 19:
+            val_ul_service = 'huawei_switch_ul_utilization'
+            val_dl_service = 'huawei_switch_dl_utilization'
+            kpi_ul_service = 'huawei_switch_ul_util_kpi'
+            kpi_dl_service = 'huawei_switch_dl_util_kpi'
         else:
             # proceed only if there is proper device type mapping
             continue
@@ -1063,6 +1095,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             try:
                 data_sources = device_port.split(',')
                 ds_dict = dict()
+                dp_dict = dict()
                 for ds in data_sources:
                     ds = ds.strip()
                     tmp_port = DevicePort.objects.get(alias=ds).name
@@ -1077,8 +1110,10 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                         util = float(util)
 
                     ds_dict[util] = ds_name
+                    dp_dict[ds_name] = tmp_port
 
                 data_source = ds_dict[max(ds_dict.keys())]
+                device_port = dp_dict[data_source]
             except Exception as e:
                 continue
         else:
@@ -1180,7 +1215,6 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 }
 
                 severity, age = get_higher_severity(severity_s)
-
             except Exception as e:
                 pass
                 current_in_per = 0
@@ -1256,7 +1290,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             if bhs:
                 # values that would be updated per 5 minutes
                 bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
-                bhs.bh_port_name = bs.bh_port_name
+                bhs.bh_port_name = device_port.replace("_", "/")
                 bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
                 bhs.severity = severity if severity else 'unknown'
@@ -1292,7 +1326,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     (
                         backhaul=bs.backhaul,
                         basestation=bs,
-                        bh_port_name=bs.bh_port_name,
+                        bh_port_name=device_port.replace("_", "/"),
 
                         backhaul_capacity=float(backhaul_capacity) if backhaul_capacity else 0,
                         current_in_per=float(current_in_per) if current_in_per else 0,

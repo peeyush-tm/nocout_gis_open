@@ -39,10 +39,18 @@ class OrganizationList(PermissionsRequiredMixin, ListView):
             {'mData':'city',                'sTitle' : 'City',          'sWidth':'auto'},
             {'mData':'state',               'sTitle' : 'State',         'sWidth':'auto'},
             {'mData':'country',             'sTitle' : 'Country',       'sWidth':'auto'},
-            {'mData':'description',         'sTitle' : 'Description',   'sWidth':'auto','bSortable': False}]
+            {'mData':'description',         'sTitle' : 'Description',   'sWidth':'auto','bSortable': False}
+        ]
 
-        if in_group(self.request.user, 'admin'):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%','bSortable': False })
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_organization')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_organization')
+        if is_edit_perm or is_delete_perm:
+            datatable_headers.append({
+                'mData':'actions',
+                'sTitle':'Actions',
+                'sWidth':'5%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
