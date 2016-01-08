@@ -1,7 +1,7 @@
 from organization.models import Organization
 
 
-def in_group(user=None, group_names=None):
+def in_group(user=None, group_names=None, perm_codename=None):
     """
     Check whether user exists in given group or not.
     :param user: User object
@@ -9,13 +9,21 @@ def in_group(user=None, group_names=None):
     """
     if user and group_names:
         user_groups = set([group.name.lower() for group in user.groups.all()])
+        assigned_perms = list(user.user_permissions.all().values_list('codename', flat=True))
+
         if isinstance(group_names, list):
             if set(user_groups).issubset(set(group_names)):
+                if perm_codename:
+                    if perm_codename not in assigned_perms:
+                        return False
                 return True
             else:
                 return False
         else:
             if group_names.lower() in user_groups:
+                if perm_codename:
+                    if perm_codename not in assigned_perms:
+                        return False
                 return True
             else:
                 return False

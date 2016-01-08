@@ -52,8 +52,16 @@ class LevelList(TemplateView):
         ]
 
         # if the user role is Admin or operator or superuser then the action column will appear on the datatable
-        if in_group(self.request.user, 'admin'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_escalationlevel') or in_group(self.request.user, 'operator', 'change_escalationlevel')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_escalationlevel') or in_group(self.request.user, 'operator', 'delete_escalationlevel')
+        if is_edit_perm or is_delete_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 

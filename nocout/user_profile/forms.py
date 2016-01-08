@@ -81,7 +81,7 @@ class UserForm(forms.ModelForm):
                 self.fields['parent'].widget.attrs['disabled'] = 'disabled'
                 self.fields['groups'].widget.attrs['disabled'] = 'disabled'
                 self.fields['organization'].widget.attrs['readonly'] = True
-                self.fields['parent'].label = 'Manager'
+                # self.fields['parent'].label = 'Manager'
                 # Don't show comment field.
                 self.fields.pop('comment')
 
