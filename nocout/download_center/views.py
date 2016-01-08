@@ -47,6 +47,7 @@ class DownloadCenter(ListView):
         page_type = self.kwargs['page_type']
 
         # get report name & title
+        report_id = ''
         report_name = ''
         report_title = ''
         email_exists = False
