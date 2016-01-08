@@ -47,6 +47,7 @@ class DownloadCenter(ListView):
         page_type = self.kwargs['page_type']
 
         # get report name & title
+        report_id = ''
         report_name = ''
         report_title = ''
         email_exists = False
@@ -694,8 +695,11 @@ class EmailListUpdating(View):
     1. Single report emailing which is in 'if report_id:' case
     2. To update the scheduled email for particular report type.
     """
-    def post(self, request, *args, **kwargs):
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(EmailListUpdating, self).dispatch(*args, **kwargs)
 
+    def post(self, request, *args, **kwargs):
         page_name = self.request.POST.get('page_name',None)
         email_list = self.request.POST.getlist('emails[]', None)
         report_id = self.request.POST.get('report_id',None)
