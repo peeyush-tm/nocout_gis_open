@@ -1887,9 +1887,7 @@ class IconSettingsList(PermissionsRequiredMixin, ListView):
             {'mData': 'upload_image', 'sTitle': 'Image', 'sWidth': 'auto'},
         ]
         # if the user is superuser action column can be appeared in datatable.
-        is_edit_perm = in_group(self.request.user, 'admin', 'change_iconsettings')
-        is_delete_perm = in_group(self.request.user, 'admin', 'delete_iconsettings')
-        if is_edit_perm or is_delete_perm:
+        if self.request.user.is_superuser:
             datatable_headers.append({
                 'mData': 'actions',
                 'sTitle': 'Actions',
@@ -2485,9 +2483,7 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
         ]
 
         # if user is superadmin or gisadmin
-        is_edit_perm = in_group(self.request.user, 'admin', 'change_thematicsettings')
-        is_delete_perm = in_group(self.request.user, 'admin', 'delete_thematicsettings')
-        if is_delete_perm or is_edit_perm:
+        if self.request.user.is_superuser:
             datatable_headers.append({
                 'mData': 'actions',
                 'sTitle': 'Actions',
@@ -3533,12 +3529,13 @@ class GISInventoryBulkImportUpdate(UpdateView):
 
 
 # **************************************** Ping Thematic Settings *********************************************
-class PingThematicSettingsList(ListView):
+class PingThematicSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render PingThematicSettings List Page.
     """
     model = PingThematicSettings
     template_name = 'ping_thematic_settings/ping_thematic_settings_list.html'
+    required_permissions = ('inventory.view_pingthematicsettings',)
 
     def get_context_data(self, **kwargs):
         """
@@ -3554,9 +3551,7 @@ class PingThematicSettingsList(ListView):
             {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}
         ]
 
-        is_edit_perm = in_group(self.request.user, 'admin', 'change_pingthematicsettings')
-        is_delete_perm = in_group(self.request.user, 'admin', 'delete_pingthematicsettings')
-        if is_edit_perm or is_delete_perm:
+        if self.request.user.is_superuser:
             datatable_headers.append({
                 'mData': 'actions',
                 'sTitle': 'Actions',
