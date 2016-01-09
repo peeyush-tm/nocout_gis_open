@@ -39,6 +39,9 @@ class PermissionsRequiredMixin(object):
     def dispatch(self, request, *args, **kwargs):
         has_perm = True
         try:
+            if request.user.is_superuser:
+                return super(PermissionsRequiredMixin, self).dispatch(request, *args, **kwargs)
+                
             if type(self.required_permissions) != type(str()):
                 perm_codename = self.required_permissions[0].split('.')[1]
             else:
