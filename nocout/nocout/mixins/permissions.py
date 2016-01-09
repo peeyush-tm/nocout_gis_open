@@ -46,11 +46,13 @@ class PermissionsRequiredMixin(object):
 
             has_permission = in_group(user=request.user, perm_codename=perm_codename)
 
-            if not has_permission:
+            if has_permission:
+                return super(PermissionsRequiredMixin, self).dispatch(request, *args, **kwargs)
+            else:
                 has_perm = False
-                raise PermissionDenied
-            elif not request.user.has_perms(self.required_permissions):
-                has_perm = False
+                # if not request.user.has_perms(self.required_permissions):
+                #     has_perm = False
+                #     raise PermissionDenied
                 raise PermissionDenied
         except Exception, e:
             if not has_perm:
