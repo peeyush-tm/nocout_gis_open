@@ -26,6 +26,9 @@ from inventory.models import Sector, BaseStation
 # Import alert_center utils gateway class
 from alert_center.utils.util import AlertCenterUtilsGateway
 
+# Import scheduling_management utils gateway class
+from scheduling_management.utils.util import SchedulingManagementGateway
+
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 
@@ -45,6 +48,9 @@ inventory_utils = InventoryUtilsGateway()
 
 # Create instance of 'AlertCenterUtilsGateway' class
 alert_utils = AlertCenterUtilsGateway()
+
+# Create instance of 'SchedulingManagementGateway' class
+scheduling_utils = SchedulingManagementGateway()
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
@@ -413,6 +419,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         :param qs:
         :return queryset
         """
+        
 
         if qs:
             data_unit = "%"
@@ -429,7 +436,31 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 data_unit = ''
                 service_tab = 'service'
 
+            #figure out which scheduling type should be displayed according to the page type
+            if page_type == 'customer':
+                scheduling_type = ['devi', 'dety', 'cust']
+            elif page_type == 'network' and 'backhaul' not in data_source.lower():
+                scheduling_type = ['devi', 'dety', 'netw']
+            elif 'backhaul' in data_source.lower():
+                scheduling_type = ['devi', 'dety', 'back']
+            else:
+                scheduling_type = ['devi', 'dety', 'cust', 'netw', 'back']
+
             for dct in qs:
+                try:                
+                    dct_device_name = dct.get('device_name')
+                    dct_device_type = dct.get('device_type')
+                except Exception, err:
+                    pass
+
+
+                showIconBlue = scheduling_utils.get_onDate_status(dct_device_name, dct_device_type, scheduling_type)   
+                    
+
+                # print schdeuledDownCond1, schdeuledDownCond2
+                if showIconBlue:
+                    dct.update(severity= 'inDownTime')
+                    dct.update(description= 'inDownTime')
                 try:
                     dct.update(current_value=float(dct["current_value"]))
                 except Exception, e:
@@ -1516,11 +1547,12 @@ class SingleDeviceAlertsInit(ListView):
         is_backhaul_switch = device_obj.backhaul_switch.exists()
         is_backhaul_pop = device_obj.backhaul_pop.exists()
         is_backhaul_aggregator = device_obj.backhaul_aggregator.exists()
-
         is_ss = device_obj.substation_set.exists()
+
         # If device is backhaul or backhaul_switch or backhaul_pop or backhaul_aggregator
         if (is_backhaul or is_backhaul_switch or is_backhaul_pop or is_backhaul_aggregator) and not is_ss:
             page_type = 'other'
+
 
         # Create Context Dict
         context['table_headers'] = json.dumps(table_headers)
@@ -1758,6 +1790,7 @@ class SingleDeviceAlertsListing(BaseDatatableView, AdvanceFilteringMixin):
         Preparing Final dataset for rendering the data table.
         :param qs:
         """
+
         final_list = list()
         if qs:
             for data in qs:
