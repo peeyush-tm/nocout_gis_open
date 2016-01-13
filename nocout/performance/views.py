@@ -3670,10 +3670,14 @@ class GetServiceTypePerformanceData(View):
                             val = float(data.current_value) if data.current_value else 0
                             warn_val = float(data.warning_threshold) if data.warning_threshold else val
                             crit_val = float(data.critical_threshold) if data.critical_threshold else val
+                            c_color = chart_color
+
+                            if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                c_color = compare_point(val, warn_val, crit_val)
 
                             formatter_data_point = {
                                 "name": sds_display_name,
-                                "color": compare_point(val, warn_val, crit_val),
+                                "color": c_color,
                                 "y": eval(str(formula) + "(" + str(data.current_value) + ")")
                                 if formula
                                 else float(data.current_value),
@@ -3996,7 +4000,11 @@ class GetServiceTypePerformanceData(View):
                                         warn_val = float(data.warning_threshold) if data.warning_threshold else val
                                         crit_val = float(data.critical_threshold) if data.critical_threshold else val
                                         current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
-                                        current_color = compare_point(val, warn_val, crit_val)
+
+                                        if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                            current_color = compare_point(val, warn_val, crit_val)
+                                        else:
+                                            current_color = chart_color
 
                                     data_list.append({
                                         "name": str(sds_display_name)+"(Current Value)",
@@ -4073,7 +4081,11 @@ class GetServiceTypePerformanceData(View):
                                         warn_val = float(data.warning_threshold) if data.warning_threshold else val
                                         crit_val = float(data.critical_threshold) if data.critical_threshold else val
                                         current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
-                                        current_color = compare_point(val, warn_val, crit_val)
+
+                                        if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                            current_color = compare_point(val, warn_val, crit_val)
+                                        else:
+                                            current_color = chart_color
 
                                     data_list.append({
                                         "name": sds_display_name,
