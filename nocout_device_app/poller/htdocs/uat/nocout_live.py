@@ -406,7 +406,6 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 
 				elif service in juniper_switch:
 					try:
-                                                logger.info('current_states : %s %s' % (util_values,is_first_call))
                                                 ds = data_source_list[0]
                                                 ds = ds.lower()
                                                 cur_values = util_values[0].rstrip().split(' ')
@@ -433,7 +432,6 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				else:
 					key = "".join([old_device,"_",service])
 				key =key.encode('ascii','ignore')
-				#memc = memcache_connection()
 				memc_obj = db_ops_module.MemcacheInterface()
 				memc = memc_obj.memc_conn
 				key_value = ""
@@ -449,8 +447,6 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					try:
 					    if memc:
 						key =key.encode('ascii','ignore')
-						#key = str(key)
-						
 					        util = memc.get(key)
 						logger.debug('util from memc: %s' % (util))
 						if util:
@@ -523,7 +519,3 @@ def alarm_handler(signum, frame):
 	raise Alarm
 
 
-def get_site_name(site=None):
-    site = defaults.omd_site
-
-    return site
