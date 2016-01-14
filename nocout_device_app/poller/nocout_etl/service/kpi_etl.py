@@ -26,9 +26,11 @@ from celery import chord,group
 #from sys import path
 #path.append('/omd/nocout_etl')
 
-from start_pub import app
+#from start_pub import app
+from start.start import app
 from handlers.db_ops import *
-from service_etl import *
+from service.service_etl import *
+#from service_etl import *
 
 logger = get_task_logger(__name__)
 info, warning, error = logger.info, logger.warning, logger.error
@@ -144,7 +146,6 @@ def extract_juniper_util_data(host_params,**args):
 	
 	service_dict = service_dict_for_kpi_services(
 	    perf, state_string, hostname, site, ip_address, age_of_state, **args)
-	error('juniper  service dict$: {0}'.format(service_dict))
 	service_list.append(service_dict)
     if len(service_list) > 0:     
 	build_export.s(args['site_name'], service_list).apply_async()
@@ -193,7 +194,7 @@ def extract_huawei_util_data(host_params,**args):
 			war = float(args['war'])
 			crit = float(args['crit'])
                     except Exception,e:
-                        #error('huawei eerr$$$$$$$$$$$$$$$$$: {0}'.format(e))
+                        #error('huawei eerr$: {0}'.format(e))
                         continue  
                     ul_kpi = kpi
                     ul_kpi = round(ul_kpi,2)
@@ -221,7 +222,6 @@ def extract_huawei_util_data(host_params,**args):
 
         service_dict = service_dict_for_kpi_services(
             perf, state_string, hostname, site, ip_address, age_of_state, **args)
-	error('huawei service dict$: {0}'.format(service_dict))
         service_list.append(service_dict)
     if len(service_list) > 0:
         build_export.s(args['site_name'], service_list).apply_async()
@@ -294,7 +294,6 @@ def extract_cisco_util_data(host_params,**args):
 	
 	service_dict = service_dict_for_kpi_services(
 	    perf, state_string, hostname, site, ip_address, age_of_state, **args)
-	error('cisco service dict$: {0}'.format(service_dict))
 	service_list.append(service_dict)
     if len(service_list) > 0:     
 	build_export.s(args['site_name'], service_list).apply_async()
@@ -895,21 +894,20 @@ def call_kpi_services(**opt):
     rds_cli_invent = RedisInterface(custom_conf={'db': INVENTORY_DB})
     redis_cnx = rds_cli_invent.redis_cnx
     #wimax_bs_key = redis_cnx.keys(pattern="wimax:bs:*")
-    #wimax_bs_key = redis_cnx.keys(pattern="wimax:bs:%s:*" % opts['site_name'])
+    wimax_bs_key = redis_cnx.keys(pattern="wimax:bs:%s:*" % opts['site_name'])
     #wimax_ss_key = redis_cnx.keys(pattern="wimax:ss:*")
     wimax_ss_key = redis_cnx.keys(pattern="wimax:ss:%s:*" % opts['site_name'])
     #warning('wimax_bs_key len: {0}'.format(len(wimax_bs_key)))
     #warning('wimax_ss_key len: {0}'.format(len(wimax_ss_key)))
 
-    #pmp_bs_key = redis_cnx.keys(pattern="pmp:bs:%s:*" % opts['site_name'])
-    #pmp_ss_key = redis_cnx.keys(pattern="pmp:ss:%s:*" % opts['site_name'])
-    #radwin_ss_key = redis_cnx.keys(pattern="p2p:ss:%s:*" % opts['site_name'])
-    #mrotek_bs_key = redis_cnx.keys(pattern="pine:bs:%s:*" % opts['site_name'])
-    #rici_bs_key = redis_cnx.keys(pattern="rici:bs:%s:*" % opts['site_name'])
+    pmp_bs_key = redis_cnx.keys(pattern="pmp:bs:%s:*" % opts['site_name'])
+    pmp_ss_key = redis_cnx.keys(pattern="pmp:ss:%s:*" % opts['site_name'])
+    radwin_ss_key = redis_cnx.keys(pattern="p2p:ss:%s:*" % opts['site_name'])
+    mrotek_bs_key = redis_cnx.keys(pattern="pine:bs:%s:*" % opts['site_name'])
+    rici_bs_key = redis_cnx.keys(pattern="rici:bs:%s:*" % opts['site_name'])
     cisco_bs_key = redis_cnx.keys(pattern="cisco:bs:%s:*" % opts['site_name'])
     juniper_bs_key = redis_cnx.keys(pattern="juniper:bs:%s:*" % opts['site_name'])
     huawei_bs_key = redis_cnx.keys(pattern="huawei:bs:%s:*" % opts['site_name'])
-    error('cisco keyssssssssssss : {0}'.format(cisco_bs_key))
     p = redis_cnx.pipeline()
 
     wimax_util_kpi_services = [
@@ -973,7 +971,6 @@ def call_kpi_services(**opt):
         service_threshold[bs_crit_key]  =  redis_cnx.get(bs_crit_key)
 
     ## calling tasks for wimax services
-    """
     call_tasks(
             wimax_bs_key,
             wimax_util_kpi_services[:5],
@@ -981,7 +978,6 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_wimax_util_data'
             )
-    """
     #for i in izip_longest(*[iter(wimax_bs_key)] * 500):
     #    [p.lrange(k, 0 , -1) for k  in i]
     #    #[p.lrange(k, 0,-1) for k  in ]
@@ -1051,7 +1047,6 @@ def call_kpi_services(**opt):
     #    extract_kpi_services_data.s(**args).apply_async()
 
     ## calling tasks for wimax ss provis data
-    """
     call_tasks(
             wimax_ss_key,
             wimax_util_kpi_services[5],
@@ -1059,7 +1054,6 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_wimax_ss_provis_data'
             )
-    """
     #for i in izip_longest(*[iter(pmp_bs_key)] * 500):    
         #args = {}    
         #args['site_name'] =  opts['site_name']
@@ -1081,7 +1075,6 @@ def call_kpi_services(**opt):
         #extract_kpi_services_data.s(**args).apply_async()
 
     ## calling tasks for cambium bs util services
-    """
     call_tasks(
             pmp_bs_key,
             cambium_util_kpi_services[:3],
@@ -1089,7 +1082,6 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_cambium_util_data'
             )
-    """
         #rds_cli = RedisInterface()
         #args['redis'] = rds_cli
         #args['provis_bw'] = 2.24
@@ -1106,7 +1098,6 @@ def call_kpi_services(**opt):
         #extract_cambium_ul_issue_data.s(**args).apply_async()
 
     ## calling tasks for cambium ss provis services
-    """
     call_tasks(
             pmp_ss_key,
             cambium_util_kpi_services[3],
@@ -1114,7 +1105,6 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_cambium_ss_provis_data'
             )
-    """
     #for i in izip_longest(*[iter(pmp_ss_key)] * 500):    
     #    args = {}    
     #    args['site_name'] =  opts['site_name']
@@ -1129,7 +1119,6 @@ def call_kpi_services(**opt):
     #    extract_kpi_services_data.s(**args).apply_async()    
 
     ## calling tasks for radwin util services
-    """ 
     call_tasks(
             radwin_ss_key,
             radwin_util_kpi_services[:2],
@@ -1144,7 +1133,6 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_radwin_ss_provis_data'
             )
-    """
     #for i in izip_longest(*[iter(radwin_ss_key)] * 500):    
     #    args = {}    
     #    args['site_name'] =  opts['site_name']
@@ -1176,7 +1164,7 @@ def call_kpi_services(**opt):
 
     ## calling tasks for radwin util services
  
-    """
+    
     call_tasks(
             mrotek_bs_key,
             mrotek_util_kpi_services,
@@ -1184,7 +1172,7 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_mrotek_util_data'
             )
-    """
+    
     #for i in izip_longest(*[iter(mrotek_bs_key)] * 500):
     #    args = {}
     #    args['site_name'] =  opts['site_name']
@@ -1216,7 +1204,6 @@ def call_kpi_services(**opt):
 
     ## calling tasks for radwin util services
 
-    """
     call_tasks(
             rici_bs_key,
             rici_util_kpi_services,
@@ -1224,7 +1211,6 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_rici_util_data'
             )
-    """
     call_tasks(
             juniper_bs_key,
             juniper_util_kpi_services,
@@ -1284,7 +1270,6 @@ def call_tasks(hosts, services, services_thresholds, site_name=None, func=None, 
     """ Sends messages for given tasks in celery queue"""
     redis_cnx = RedisInterface(custom_conf={'db': INVENTORY_DB}).redis_cnx
     p = redis_cnx.pipeline()
-    error('in call task : {0}')    
     #warning('Sending kpi tasks for: {0} hosts'.format(len(hosts)))
     if not isinstance(services, list):
 	    services = [services]
