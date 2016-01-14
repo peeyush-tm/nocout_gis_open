@@ -719,8 +719,7 @@ def get_disabled_services():
     return data
 
 
-def eval_qos(vals, out=None):
-    out = []
+def eval_qos(vals, out=[]):
     for v in vals:
         if v and int(v) > 10:
             v = float(v) / float(1024)
