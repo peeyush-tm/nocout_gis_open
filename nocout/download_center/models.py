@@ -2,6 +2,11 @@ from device.models import DeviceTechnology
 from django.db import models
 from django.conf import settings
 import datetime
+from django.db.models.signals import post_save
+from download_center.tasks import scheduled_email_report
+from django.dispatch import receiver
+import signals as dc_signals
+
 
 def uploaded_file_name(instance, filename):
     timestamp = time.time()
@@ -1129,3 +1134,6 @@ class BSOutageMasterMonthly(BSOutageMasterStructure):
 class EmailReport(models.Model):
     report_name= models.ForeignKey(ReportSettings)
     email_list = models.TextField()
+
+# Post Singnal call triggers to initiate email report.
+post_save.connect(dc_signals.send_mail_on_report_generation, sender=ProcessedReportDetails)
