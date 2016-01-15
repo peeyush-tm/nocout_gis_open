@@ -4411,18 +4411,48 @@ class DeviceServiceDetail(View):
 
         chart_data = []
         temp_chart_data = {}
+        temp_bh_color = {
+            'ul': {},
+            'dl': {}
+        }
+
+        bh_ul_colors = ['#B5E51D', '#9BDAEB']
+        bh_dl_colors = ['#23B14D', '#00A3E8']
+
         for data in performance:
             try:
                 if (data.service_name, data.data_source) not in temp_chart_data:
                     c = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['chart_color']
 
-                    if technology and technology.name.lower() in ['ptp', 'p2p', 'switch']:
+                    if technology and technology.name.lower() in ['ptp', 'p2p']:
                         if 'ul' in data.service_name.strip().lower():
                             c = colors[0]
                         elif 'dl' in data.service_name.strip().lower():
                             c = colors[1]
                         else:
                             pass
+                    elif is_bh and device_type.name.lower() in ['huawei', 'juniper', 'cisco']:
+                        if 'ul' in data.service_name.strip().lower():
+                            if data.data_source.strip().lower() not in temp_bh_color['ul']:
+                                try:
+                                    temp_bh_color['ul'][data.data_source.strip().lower()] = bh_ul_colors.pop(0)
+                                    c = temp_bh_color['ul'][data.data_source.strip().lower()]
+                                except Exception, e:
+                                    temp_bh_color['ul'][data.data_source.strip().lower()] = c
+                            else:
+                                c = temp_bh_color['ul'][data.data_source.strip().lower()]
+                        elif 'dl' in data.service_name.strip().lower():
+                            if data.data_source.strip().lower() not in temp_bh_color['dl']:
+                                try:
+                                    temp_bh_color['dl'][data.data_source.strip().lower()] = bh_dl_colors.pop(0)
+                                    c = temp_bh_color['dl'][data.data_source.strip().lower()]
+                                except Exception, e:
+                                    temp_bh_color['dl'][data.data_source.strip().lower()] = c
+                            else:
+                                c = temp_bh_color['dl'][data.data_source.strip().lower()]
+                    else:
+                        pass
+
                     try:
                         alias = service_data_sources[data.service_name.strip().lower(), data.data_source.strip().lower()]
                     except Exception, e:
