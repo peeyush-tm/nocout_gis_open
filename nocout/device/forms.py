@@ -539,8 +539,9 @@ class DeviceTypeForm(forms.ModelForm):
     """
     AGENT_TAG = (
         ('', 'Select'),
-        ('snmp-v2|snmp', 'SNMP-V2'),
         ('snmp-v1|snmp', 'SNMP-V1'),
+        ('snmp-v2|snmp', 'SNMP-V2'),
+        ('snmp-v3|snmp', 'SNMP-V3'),
         ('ping', 'Ping')
     )
     agent_tag = forms.TypedChoiceField(choices=AGENT_TAG, required=True)
