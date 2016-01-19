@@ -802,7 +802,9 @@ SETTINGS_EXPORT = [
     'SINGLE_REPORT_EMAIL',
     'SCHEDULED_REPORT_EMAIL',
     'REPORT_EMAIL_PERM',
-    'SCHEDULED_SINGLE_REPORT_EMAIL'
+    'SCHEDULED_SINGLE_REPORT_EMAIL',
+    'NETWORK_TICKET_URL',
+    'CUSTOMER_TICKET_URL'
 ]
 
 # Dashbaord Settings
@@ -1199,6 +1201,12 @@ REPORT_EMAIL_PERM = json.dumps({
 SINGLE_REPORT_EMAIL = True
 SCHEDULED_REPORT_EMAIL = False
 SCHEDULED_SINGLE_REPORT_EMAIL = True
+
+# Network & customer tickets url
+TICKET_PROTOCOL = 'http'
+TICKET_IP_PORT = '10.133.12.70:8080'
+NETWORK_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/remedy-ebu-dev-app1/MPE4%3ARFNOC300%3ADisplayConsole/RFNOC+310+Display+Console/?mode=New'
+CUSTOMER_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/remedy-ebu-dev-app1/MPE4%3ARFNOC300%3ADisplayConsole/RFNOC+300+Display+Console/?mode=New'
 
 # Import the local_settings.py file to override global settings
 try:
