@@ -63,7 +63,7 @@ class SiteInstanceForm(forms.ModelForm):
         information required to render for the form.
         """
         model = SiteInstance
-        fields = "__all__"
+        exclude = ['is_device_change']
 
     def clean_name(self):
         """
