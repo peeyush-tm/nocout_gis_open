@@ -26,14 +26,29 @@ def update_site_on_bs_bhport_change(sender, instance=None, created=False, **kwar
     from inventory.models import BaseStation
 
     # Old Instance.
-    old_instance = BaseStation.objects.get(id=instance.id)
+    old_instance = None
+    try:
+        old_instance = BaseStation.objects.get(id=instance.id)
+    except Exception as e:
+        pass
 
-    if instance and old_instance:
-        if old_instance.bh_port_name != instance.bh_port_name:
+    if old_instance:
+        # List containing old values of fields.
+        old_values = [old_instance.bh_port_name,
+                      old_instance.bh_capacity]
+        old_values = [x for x in old_values if x is not None]
+
+        # List containing new values of fields.
+        new_values = [instance.bh_port_name,
+                      instance.bh_capacity]
+        new_values = [x for x in new_values if x is not None]
+
+        if (len(new_values) != len(old_values)) or (list(set(old_values) - set(new_values))):
             site = old_instance.backhaul.bh_configured_on.site_instance
             # Modify site bit.
             site.is_device_change = 1
             site.save()
+
 
 @nocout_utils.disable_for_loaddata
 def auto_assign_thematic(sender, instance=None, created=False, **kwargs):

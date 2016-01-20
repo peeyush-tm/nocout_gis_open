@@ -3173,6 +3173,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
                     'alias': alias,
                     'bs_switch': bs_switch,
                     'backhaul': backhaul,
+                    'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                    'bh_port': 0,
                     'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
                     'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
                     'hssu_port': row['HSSU Port'] if 'HSSU Port' in row.keys() else "",
@@ -13807,9 +13809,9 @@ def get_devices(technology='WiMAX', rf_type=None, site_name=None):
     technology = DeviceTechnology.objects.get(name__icontains=technology).id
 
     required_columns = ['id',
-                    'device_name',
-                    'machine__name'
-    ]
+                        'device_name',
+                        'machine__name'
+                        ]
 
     # Create instance of 'InventoryUtilsGateway' class
     inventory_utils = InventoryUtilsGateway()
@@ -14064,14 +14066,14 @@ def bulk_update_create(bulky, action='update', model=None):
     :param model: model object
     :return:
     """
-    logger.debug(bulky)
+    logger.debug("####################################### bulky - {}".format(bulky))
     if bulky and len(bulky):
 
         if action == 'update':
             try:
                 bulk_update_internal_no_save(bulky)
             except Exception as e:
-                logger.exception(e)
+                logger.debug("******************************** Update Error: {}".format(e.message))
                 return False
             # for update_this in bulky:
             #     try:
@@ -14086,7 +14088,7 @@ def bulk_update_create(bulky, action='update', model=None):
                 try:
                     model.objects.bulk_create(bulky)
                 except Exception as e:
-                    logger.exception(e)
+                    logger.debug("******************************** Create Error: {}".format(e.message))
                     return False
             return True
 

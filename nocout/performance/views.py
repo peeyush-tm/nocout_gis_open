@@ -3670,10 +3670,14 @@ class GetServiceTypePerformanceData(View):
                             val = float(data.current_value) if data.current_value else 0
                             warn_val = float(data.warning_threshold) if data.warning_threshold else val
                             crit_val = float(data.critical_threshold) if data.critical_threshold else val
+                            c_color = chart_color
+
+                            if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                c_color = compare_point(val, warn_val, crit_val)
 
                             formatter_data_point = {
                                 "name": sds_display_name,
-                                "color": compare_point(val, warn_val, crit_val),
+                                "color": c_color,
                                 "y": eval(str(formula) + "(" + str(data.current_value) + ")")
                                 if formula
                                 else float(data.current_value),
@@ -3996,7 +4000,11 @@ class GetServiceTypePerformanceData(View):
                                         warn_val = float(data.warning_threshold) if data.warning_threshold else val
                                         crit_val = float(data.critical_threshold) if data.critical_threshold else val
                                         current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
-                                        current_color = compare_point(val, warn_val, crit_val)
+
+                                        if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                            current_color = compare_point(val, warn_val, crit_val)
+                                        else:
+                                            current_color = chart_color
 
                                     data_list.append({
                                         "name": str(sds_display_name)+"(Current Value)",
@@ -4073,7 +4081,11 @@ class GetServiceTypePerformanceData(View):
                                         warn_val = float(data.warning_threshold) if data.warning_threshold else val
                                         crit_val = float(data.critical_threshold) if data.critical_threshold else val
                                         current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
-                                        current_color = compare_point(val, warn_val, crit_val)
+
+                                        if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                            current_color = compare_point(val, warn_val, crit_val)
+                                        else:
+                                            current_color = chart_color
 
                                     data_list.append({
                                         "name": sds_display_name,
@@ -4399,18 +4411,48 @@ class DeviceServiceDetail(View):
 
         chart_data = []
         temp_chart_data = {}
+        temp_bh_color = {
+            'ul': {},
+            'dl': {}
+        }
+
+        bh_ul_colors = ['#B5E51D', '#9BDAEB']
+        bh_dl_colors = ['#23B14D', '#00A3E8']
+
         for data in performance:
             try:
                 if (data.service_name, data.data_source) not in temp_chart_data:
                     c = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['chart_color']
 
-                    if technology and technology.name.lower() in ['ptp', 'p2p', 'switch']:
+                    if technology and technology.name.lower() in ['ptp', 'p2p']:
                         if 'ul' in data.service_name.strip().lower():
                             c = colors[0]
                         elif 'dl' in data.service_name.strip().lower():
                             c = colors[1]
                         else:
                             pass
+                    elif is_bh and device_type.name.lower() in ['huawei', 'juniper', 'cisco']:
+                        if 'ul' in data.service_name.strip().lower():
+                            if data.data_source.strip().lower() not in temp_bh_color['ul']:
+                                try:
+                                    temp_bh_color['ul'][data.data_source.strip().lower()] = bh_ul_colors.pop(0)
+                                    c = temp_bh_color['ul'][data.data_source.strip().lower()]
+                                except Exception, e:
+                                    temp_bh_color['ul'][data.data_source.strip().lower()] = c
+                            else:
+                                c = temp_bh_color['ul'][data.data_source.strip().lower()]
+                        elif 'dl' in data.service_name.strip().lower():
+                            if data.data_source.strip().lower() not in temp_bh_color['dl']:
+                                try:
+                                    temp_bh_color['dl'][data.data_source.strip().lower()] = bh_dl_colors.pop(0)
+                                    c = temp_bh_color['dl'][data.data_source.strip().lower()]
+                                except Exception, e:
+                                    temp_bh_color['dl'][data.data_source.strip().lower()] = c
+                            else:
+                                c = temp_bh_color['dl'][data.data_source.strip().lower()]
+                    else:
+                        pass
+
                     try:
                         alias = service_data_sources[data.service_name.strip().lower(), data.data_source.strip().lower()]
                     except Exception, e:
