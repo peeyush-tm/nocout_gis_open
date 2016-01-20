@@ -1465,7 +1465,10 @@ class InventoryDeviceServiceDataSource(View):
                     try:
                         for port in ports:
                             if ',' in port:
-                                those_ports.extend(port.split(','))
+                                try:
+                                    those_ports.extend(port.replace(' ', '').split(','))
+                                except Exception, e:
+                                    those_ports.extend(port.split(','))
                             else:
                                 those_ports.append(port)
                     except Exception, e:
