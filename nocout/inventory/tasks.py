@@ -4549,10 +4549,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
 
         complete_d.append(d)
 
-    # get machine and associated sites details in dictionary
-    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    machine_and_site_info = get_machine_details('ospf', [2])
-
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
     ospf5_machine_and_site_info = get_machine_details('ospf', [1, 4])
@@ -4653,6 +4649,27 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
 
                     # initialize alias
                     alias = ""
+
+                    # get machine and associated sites details in dictionary
+                    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
+
+                    # Machine Name.
+                    m_name = None
+
+                    # Machine Numbers.
+                    m_numbers = None
+
+                    if row['Machine Name']:
+                        try:
+                            m_name = re.findall('\w+', row['Machine Name'])[0]
+                            m_numbers = map(int, re.findall('\d+', row['Machine Name']))
+                        except Exception as e:
+                            pass
+
+                    machine_and_site_info = get_machine_details(m_name, m_numbers)
+
+                    logger.exception("************************* bs_m_name, bs_m_numbers - {}, {}".format(m_name, m_numbers))
+                    logger.exception("&&&&&&&&&&&&&&&&&&&&&&&&& machine_and_site_info - {}".format(machine_and_site_info))
 
                     # get machine and site
                     machine_and_site = ""
@@ -5432,10 +5449,6 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype, auto=''):
 
         complete_d.append(d)
 
-    # get machine and associated sites details in dictionary
-    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    machine_and_site_info = get_machine_details('ospf', [1, 4])
-
     # id of last inserted row in 'device' model
     device_latest_id = 0
 
@@ -5495,6 +5508,27 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype, auto=''):
 
                     # initialize alias
                     alias = ""
+
+                    # get machine and associated sites details in dictionary
+                    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
+
+                    # Machine Name.
+                    m_name = None
+
+                    # Machine Numbers.
+                    m_numbers = None
+
+                    if row['Machine Name']:
+                        try:
+                            m_name = re.findall('\w+', row['Machine Name'])[0]
+                            m_numbers = map(int, re.findall('\d+', row['Machine Name']))
+                        except Exception as e:
+                            pass
+
+                    machine_and_site_info = get_machine_details(m_name, m_numbers)
+
+                    logger.exception("************************* ss_m_name, ss_m_numbers - {}, {}".format(m_name, m_numbers))
+                    logger.exception("&&&&&&&&&&&&&&&&&&&&&&&&& machine_and_site_info - {}".format(machine_and_site_info))
 
                     # get machine and site
                     machine_and_site = ""
@@ -7124,7 +7158,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
 
 
 @task()
-def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type):
+def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
     # gis object
     gis_obj = None
     try:
@@ -7502,6 +7536,9 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type):
                                        file_path,
                                        workbook_type,
                                        1)
+        if auto:
+            gis_obj.is_new = 0
+            gis_obj.save()
 
     except Exception as e:
         logger.exception(e.message)
@@ -7608,112 +7645,132 @@ def excel_generator_for_new_column(col_name,
 
 
 @task
-def validate_file_for_bulk_upload():
+def validate_file_for_bulk_upload(op_type=''):
     """
     Validate inventory files for bulk upload.
     """
     # if directory didn't exist than create one
-    auto_upload_dir = MEDIA_ROOT + 'inventory_files/auto_upload_inventory'
+    if op_type in ['c', 'd']:
+        if op_type == 'c':
+            auto_upload_dir = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/create'
+            is_new_bit = 1
+        elif op_type == 'd':
+            auto_upload_dir = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/delete'
+            is_new_bit = 2
+        else:
+            return False
 
-    if os.path.exists(auto_upload_dir) and os.listdir(auto_upload_dir):
-        count = 0
-        for ufile in os.listdir(auto_upload_dir):
-            count += 1
-            logger.exception("########################################################## {}".format(count))
-            # File path.
-            filepath = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/' + ufile
+        if os.path.exists(auto_upload_dir) and os.listdir(auto_upload_dir):
+            count = 0
+            for ufile in os.listdir(auto_upload_dir):
+                count += 1
+                logger.exception("########################################################## {}".format(count))
 
-            # Relative file path.
-            relative_filepath = 'inventory_files/auto_upload_inventory/' + ufile
+                if op_type == 'c':
+                    # File path.
+                    filepath = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/create/' + ufile
 
-            # Current timestamp.
-            timestamp = time.time()
+                    # Relative file path.
+                    relative_filepath = 'inventory_files/auto_upload_inventory/create/' + ufile
+                elif op_type == 'd':
+                    # File path.
+                    filepath = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/delete/' + ufile
 
-            # Formatted time.
-            full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+                    # Relative file path.
+                    relative_filepath = 'inventory_files/auto_upload_inventory/delete/' + ufile
+                else:
+                    return False
 
-            # Destination path (Where we need to move files after processing of scheduled inventory.)
-            dest = MEDIA_ROOT + 'inventory_files/original'
+                # Current timestamp.
+                timestamp = time.time()
 
-            # if directory didn't exist than create one
-            if not os.path.exists(dest):
-                os.makedirs(dest)
+                # Formatted time.
+                full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
 
-            # Description for the uploaded inventory.
-            description = "Auto upload inventory on {}".format(full_time)
+                # Destination path (Where we need to move files after processing of scheduled inventory.)
+                dest = MEDIA_ROOT + 'inventory_files/original'
 
-            # Valid sheet names.
-            valid_sheets = ["Wimax BS", "Wimax SS", "PMP BS", "PMP SM", "Converter", "PTP", "PTP BH", "Backhaul"]
+                # if directory didn't exist than create one
+                if not os.path.exists(dest):
+                    os.makedirs(dest)
 
-            # Reading workbook using 'xlrd' module.
-            try:
-                # Open the workbook.
-                book = xlrd.open_workbook(filepath, formatting_info=True)
+                # Description for the uploaded inventory.
+                description = "Auto upload inventory on {}".format(full_time)
 
-                # List sheet names, and pull a sheet by name.
-                sheet_names = book.sheet_names()
+                # Valid sheet names.
+                valid_sheets = ["Wimax BS", "Wimax SS", "PMP BS", "PMP SM", "Converter", "PTP", "PTP BH", "Backhaul"]
 
-                for sheet_name in sheet_names:
+                # Reading workbook using 'xlrd' module.
+                try:
+                    # Open the workbook.
+                    book = xlrd.open_workbook(filepath, formatting_info=True)
 
-                    # Get the technology of uploaded inventory sheet.
-                    if "Wimax" in sheet_name:
-                        technology = "Wimax"
-                    elif "PMP" in sheet_name:
-                        technology = "PMP"
-                    elif "PTP" in sheet_name:
-                        technology = "PTP"
-                    elif "Backhaul" in sheet_name:
-                        technology = "Backhaul"
-                    elif "Converter" in sheet_name:
-                        technology = "Converter"
-                    else:
-                        technology = "Unknown"
+                    # List sheet names, and pull a sheet by name.
+                    sheet_names = book.sheet_names()
 
-                    # execute only if a valid sheet is selected from form
-                    if sheet_name in valid_sheets:
-                        sheet = book.sheet_by_name(sheet_name)
+                    for sheet_name in sheet_names:
 
-                        keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if
-                                sheet.cell(0, col_index).value]
+                        # Get the technology of uploaded inventory sheet.
+                        if "Wimax" in sheet_name:
+                            technology = "Wimax"
+                        elif "PMP" in sheet_name:
+                            technology = "PMP"
+                        elif "PTP" in sheet_name:
+                            technology = "PTP"
+                        elif "Backhaul" in sheet_name:
+                            technology = "Backhaul"
+                        elif "Converter" in sheet_name:
+                            technology = "Converter"
+                        else:
+                            technology = "Unknown"
 
-                        keys_list = [x.encode('utf-8').strip() for x in keys]
+                        # execute only if a valid sheet is selected from form
+                        if sheet_name in valid_sheets:
+                            sheet = book.sheet_by_name(sheet_name)
 
-                        complete_d = list()
-                        for row_index in xrange(1, sheet.nrows):
-                            d = {keys[col_index].encode('utf-8').strip(): sheet.cell(row_index, col_index).value
-                                 for col_index in xrange(len(keys))}
-                            complete_d.append(d)
+                            keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if
+                                    sheet.cell(0, col_index).value]
 
-                        # book_to_upload = xlcopy(book)
-                        try:
-                            shutil.move(filepath, dest)
-                        except Exception as e:
-                            description = e.message
-                            logger.exception(e.message)
+                            keys_list = [x.encode('utf-8').strip() for x in keys]
 
-                        gis_bulk_obj = GISInventoryBulkImport()
-                        gis_bulk_obj.original_filename = relative_filepath.replace('auto_upload_inventory', 'original')
-                        gis_bulk_obj.status = 0
-                        gis_bulk_obj.sheet_name = sheet_name
-                        gis_bulk_obj.technology = technology
-                        gis_bulk_obj.description = description
-                        gis_bulk_obj.uploaded_by = "Auto Upload"
-                        gis_bulk_obj.is_auto = 1
-                        gis_bulk_obj.is_new = 1
-                        gis_bulk_obj.save()
-                        gis_bulk_id = gis_bulk_obj.id
+                            complete_d = list()
+                            for row_index in xrange(1, sheet.nrows):
+                                d = {keys[col_index].encode('utf-8').strip(): sheet.cell(row_index, col_index).value
+                                     for col_index in xrange(len(keys))}
+                                complete_d.append(d)
 
-                        result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id,
-                                                                          complete_d,
-                                                                          sheet_name,
-                                                                          keys_list,
-                                                                          full_time,
-                                                                          ufile)
+                            # book_to_upload = xlcopy(book)
+                            try:
+                                shutil.move(filepath, dest)
+                            except Exception as e:
+                                description = e.message
+                                logger.exception(e.message)
 
-            except Exception as e:
-                logger.info("Workbook not uploaded. Exception: ", e.message)
+                            gis_bulk_obj = GISInventoryBulkImport()
+                            gis_bulk_obj.original_filename = relative_filepath.replace('auto_upload_inventory',
+                                                                                       'original')
+                            gis_bulk_obj.status = 0
+                            gis_bulk_obj.sheet_name = sheet_name
+                            gis_bulk_obj.technology = technology
+                            gis_bulk_obj.description = description
+                            gis_bulk_obj.uploaded_by = "Auto Upload"
+                            gis_bulk_obj.is_auto = 1
+                            gis_bulk_obj.is_new = is_new_bit
+                            gis_bulk_obj.save()
+                            gis_bulk_id = gis_bulk_obj.id
+
+                            result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id,
+                                                                              complete_d,
+                                                                              sheet_name,
+                                                                              keys_list,
+                                                                              full_time,
+                                                                              ufile)
+                except Exception as e:
+                    logger.info("Workbook not uploaded. Exception: ", e.message)
+        else:
+            logger.exception("Not there.")
     else:
-        logger.exception("Not there.")
+        return False
 
 
 @task
@@ -7770,6 +7827,38 @@ def process_file_for_bulk_upload():
                     invalid_result = ""
             except Exception as e:
                 logger.info(e.message)
+
+
+@task
+def process_file_for_bulk_delete():
+    """
+    Background processing of inventories for bulk delete.
+    """
+    # Get inventories which are not processed yet.
+    inventories = GISInventoryBulkImport.objects.filter(is_new=2)
+
+    if inventories:
+        for inventory in inventories:
+            try:
+                # Update data import status in GISInventoryBulkImport model.
+                gis_obj = None
+                sheet_name = ''
+                try:
+                    gis_obj = inventory
+                    sheet_name = gis_obj.sheet_name
+                except Exception as e:
+                    logger.info(e.message)
+
+                if sheet_name in ['PTP', 'PTP BH', 'PMP BS', 'PMP SM', 'Wimax BS', 'Wimax SS', 'Backhaul']:
+                    valid_result = delete_gis_inventory.delay(gis_obj.id, 'valid', sheet_name, 'auto')
+                    invalid_result = delete_gis_inventory.delay(gis_obj.id, 'invalid', sheet_name, 'auto')
+                else:
+                    valid_result = ""
+                    invalid_result = ""
+            except Exception as e:
+                logger.info(e.message)
+    else:
+        return False
 
 
 def create_device(device_payload):
