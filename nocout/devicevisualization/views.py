@@ -3201,7 +3201,6 @@ class GISPerfData(View):
                         corrected_dev_freq = chek_dev_freq
                 except Exception as e:
                     pass
-                    # logger.error("Device frequency not exist. Exception: ", e.message)
 
                 device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
                 device_frequency_color = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)) \
@@ -3221,7 +3220,6 @@ class GISPerfData(View):
         except Exception as e:
             if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
                 device_link_color = 'rgb(0,0,0)'
-            # logger.error("Frequency color not exist. Exception: ", e.message)
 
         return device_link_color, radius
 
@@ -3951,9 +3949,39 @@ class GISStaticInfo(View):
 
                 ip_address_mapped_dict = nocout_utils.create_specific_key_dict(bs_devices, 'ip_address')
 
-                machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
+                # thematic settings type i.e. 'ping' or 'normal'
+                ts_type = self.request.GET.get('ts', 'normal')
 
-                complete_performance = get_complete_performance(machine_dict)
+                tech_list = list(set(bs_inventory.get('tech_str').split('|')))
+
+                # current user
+                try:
+                    current_user = UserProfile.objects.get(id=self.request.user.id)
+                except Exception as e:
+                    current_user = None
+
+                machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
+                
+                complete_performance_obj = get_complete_performance(
+                    machine_dict=machine_dict,
+                    tech_list=tech_list,
+                    current_user=current_user,
+                    ts_type=ts_type
+                )
+
+                if complete_performance_obj:
+                    tech_wise_thematic = complete_performance_obj.get('tech_wise_thematic')
+                    complete_performance = complete_performance_obj.get('complete_performance')
+                else:
+                    tech_wise_thematic = None
+                    complete_performance = {
+                        'network_perf_data': list(),
+                        'performance_perf_data': list(),
+                        'service_perf_data': list(),
+                        'inventory_perf_data': list(),
+                        'status_perf_data': list(),
+                        'utilization_perf_data': list()
+                    }
 
                 # ********************************* BACKHAUL PERF INFO (START) ***********************************
                 if bh_device_ip and bh_device:
@@ -3990,7 +4018,14 @@ class GISStaticInfo(View):
                         sector_configured_on_tech = None
 
                     # thematic settings for current user
-                    user_thematics = self.get_thematic_settings(sector_configured_on_tech, None)
+                    if tech_wise_thematic:
+                        user_thematics = tech_wise_thematic[sector.get('technology')]
+                        if user_thematics:
+                            user_thematics = user_thematics[0]
+                        else:
+                            user_thematics = self.get_thematic_settings(sector_configured_on_tech, None)
+                    else:
+                        user_thematics = self.get_thematic_settings(sector_configured_on_tech, None)
 
                     # service & data source
                     service = ""
@@ -4058,7 +4093,30 @@ class GISStaticInfo(View):
                                 substation_device_tech = None
 
                             # thematic settings for current user
-                            user_thematics = self.get_thematic_settings(substation_device_tech, substation_device_type)
+                            try:
+                                if tech_wise_thematic:
+                                    fetched_thematics = tech_wise_thematic[sub_station.get('device_tech')]
+                                    device_type = sub_station.get('device_tech')
+                                    user_thematics = None
+                                    if fetched_thematics:
+                                        if device_type:
+                                            for thematics in fetched_thematics:
+                                                try:
+                                                    thematic_device_type = thematics.thematic_type.name
+                                                except Exception, e:
+                                                    thematic_device_type = ''
+                                                if device_type == thematic_device_type:
+                                                    user_thematics = thematics
+                                                    break
+
+                                    if user_thematics:
+                                        user_thematics = user_thematics[0]
+                                    else:
+                                        user_thematics = self.get_thematic_settings(substation_device_tech, substation_device_type)
+                                else:
+                                    user_thematics = self.get_thematic_settings(substation_device_tech, substation_device_type)
+                            except Exception, e:
+                                user_thematics = self.get_thematic_settings(substation_device_tech, substation_device_type)
 
                             # service & data source
                             service = ""
@@ -4635,7 +4693,6 @@ class GISStaticInfo(View):
                         corrected_dev_freq = chek_dev_freq
                 except Exception as e:
                     pass
-                    # logger.error("Device frequency not exist. Exception: ", e.message)
 
                 device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
                 device_frequency_color = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)) \
@@ -4655,7 +4712,6 @@ class GISStaticInfo(View):
         except Exception as e:
             if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
                 device_link_color = 'rgb(0,0,0)'
-            # logger.error("Frequency color not exist. Exception: ", e.message)
 
         return device_link_color, radius
 
@@ -4975,7 +5031,7 @@ class GISPerfInfo(View):
 
             machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
 
-            complete_performance = get_complete_performance(machine_dict)
+            complete_performance = get_complete_performance(machine_dict=machine_dict)
 
             # ******************************** GET DEVICE MACHINE MAPPING (END) ********************************
 
@@ -5171,7 +5227,7 @@ class GISPerfInfo(View):
         return False, False, False, 0
 
 
-def get_complete_performance(machine_dict):
+def get_complete_performance(machine_dict={}, tech_list=[], current_user=None, ts_type='normal'):
     """ Get complete performance data
 
         Parameters:
@@ -5186,6 +5242,53 @@ def get_complete_performance(machine_dict):
             - result (dict) - dictionary containing performance data
 
     """
+    ds_list = list()
+    thematic_obj = None
+    where_condition = Q()
+    has_ds = False
+    tech_wise_thematic = {}
+    
+    if tech_list and current_user and ts_type:    
+        if ts_type == "normal":
+           try:
+               thematic_obj = UserThematicSettings.objects.filter(
+                   user_profile=current_user,
+                   thematic_technology__name__in=tech_list
+               )
+               
+               ds_list = list(thematic_obj.values_list(
+                   'thematic_template__threshold_template__live_polling_template__data_source__name',
+                   flat=True
+               ))
+           except Exception as e:
+               pass
+        elif ts_type == "ping":
+            try:
+                thematic_obj = UserPingThematicSettings.objects.filter(
+                    user_profile=current_user,
+                    thematic_technology__name__in=tech_list
+                )
+
+                ds_list = list(thematic_obj.values_list(
+                    'thematic_template__data_source',
+                    flat=True
+                ))
+            except Exception as e:
+                pass
+
+        if ds_list:
+            has_ds = True
+            ds_list.append('frequency')
+            for item in thematic_obj:
+                try:
+                    tech_name = item.thematic_technology.name
+                except Exception, e:
+                    tech_name = ''
+
+                if tech_name:
+                    if tech_name not in tech_wise_thematic:
+                        tech_wise_thematic[tech_name] = list()
+                    tech_wise_thematic[tech_name].append(item)
 
     network_perf_data = list()
     performance_perf_data = list()
@@ -5204,69 +5307,76 @@ def get_complete_performance(machine_dict):
 
     for machine_name in machine_dict:
         devices_list = machine_dict[machine_name]
+        where_condition = Q()
+        if has_ds:
+            where_condition &= Q(data_source__in=ds_list)
+        
+        where_condition &= Q(device_name__in=devices_list)
 
         # device network info
-        device_network_info = NetworkStatus.objects.filter(
-            device_name__in=devices_list
-        ).values(
+        device_network_info = NetworkStatus.objects.filter(where_condition).values(
             *polled_columns
         ).using(alias=machine_name)
 
         network_perf_data.extend(list(device_network_info))
 
         # device performance info
-        performance_network_info = PerformanceStatus.objects.filter(
-            device_name__in=devices_list
-        ).values(
+        performance_network_info = PerformanceStatus.objects.filter(where_condition).values(
             *polled_columns
         ).using(alias=machine_name)
 
         performance_perf_data.extend(list(performance_network_info))
 
         # device service info
-        device_service_info = ServiceStatus.objects.filter(
-            device_name__in=devices_list
-        ).values(
+        device_service_info = ServiceStatus.objects.filter(where_condition).values(
             *polled_columns
         ).using(alias=machine_name)
 
         service_perf_data.extend(list(device_service_info))
-
+    
         # device inventory info
-        device_inventory_info = InventoryStatus.objects.filter(
-            device_name__in=devices_list
-        ).values(
+        device_inventory_info = InventoryStatus.objects.filter(where_condition).values(
             *polled_columns
         ).using(alias=machine_name)
 
         inventory_perf_data.extend(list(device_inventory_info))
+    
 
         # device status info
-        device_status_info = Status.objects.filter(
-            device_name__in=devices_list
-        ).values(
+        device_status_info = Status.objects.filter(where_condition).values(
             *polled_columns
         ).using(alias=machine_name)
 
         status_perf_data.extend(list(device_status_info))
-
         # device utilization info
-        device_utilization_info = UtilizationStatus.objects.filter(
-            device_name__in=devices_list
-        ).values(
+        device_utilization_info = UtilizationStatus.objects.filter(where_condition).values(
             *polled_columns
         ).using(alias=machine_name)
 
         utilization_perf_data.extend(list(device_utilization_info))
 
-    result = {
-        'network_perf_data': network_perf_data,
-        'performance_perf_data': performance_perf_data,
-        'service_perf_data': service_perf_data,
-        'inventory_perf_data': inventory_perf_data,
-        'status_perf_data': status_perf_data,
-        'utilization_perf_data': utilization_perf_data
-    }
+    if tech_list and current_user and ts_type:
+        result = {
+            'complete_performance': {
+                'network_perf_data': network_perf_data,
+                'performance_perf_data': performance_perf_data,
+                'service_perf_data': service_perf_data,
+                'inventory_perf_data': inventory_perf_data,
+                'status_perf_data': status_perf_data,
+                'utilization_perf_data': utilization_perf_data
+            },
+            'tech_wise_thematic': tech_wise_thematic
+        }
+    else:
+        result = {
+            'network_perf_data': network_perf_data,
+            'performance_perf_data': performance_perf_data,
+            'service_perf_data': service_perf_data,
+            'inventory_perf_data': inventory_perf_data,
+            'status_perf_data': status_perf_data,
+            'utilization_perf_data': utilization_perf_data
+        }
+
 
     return result
 
