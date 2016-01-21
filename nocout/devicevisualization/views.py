@@ -136,7 +136,6 @@ class Gis_Map_Performance_Data(View):
                     substations = sector['sub_station']
                     for substation in substations:
                         substation['performance_data'] = self.get_device_performance(substation['device_name'])
-                #logger.debug(request_data)
                 return HttpResponse(json.dumps(request_data))
 
             return HttpResponse(json.dumps({'result': 'No Performance Data'}))
@@ -225,7 +224,6 @@ class Gis_Map_Performance_Data(View):
                     'frequency':device_frequency
                     })
                 except Exception as e:
-                    # logger.info(device)
                     logger.info(e.message)
                     device_frequency=''
                     pass
@@ -254,7 +252,6 @@ class Gis_Map_Performance_Data(View):
                             device_pl = ''
 
                 except Exception as e:
-                    # logger.info(device)
                     logger.info(e.message)
                     device_pl=''
                     pass
@@ -268,8 +265,6 @@ class Gis_Map_Performance_Data(View):
                             if int(chek_dev_freq) > 10:
                                 corrected_dev_freq = chek_dev_freq
                         except Exception as e:
-                            # logger.info(device)
-                            # logger.exception("Frequency is Empty : %s" %(e.message))
                             pass
 
                         device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
@@ -313,7 +308,6 @@ class Gis_Map_Performance_Data(View):
 
                     else:
                         device_link_color=''
-                    # logger.info(device)
                     logger.info(e.message)
                     pass
 
@@ -344,7 +338,6 @@ class Gis_Map_Performance_Data(View):
 
                 except Exception as e:
                     device_performance_value=''
-                    # logger.info(device)
                     logger.info(e.message)
                     pass
 
@@ -368,7 +361,6 @@ class Gis_Map_Performance_Data(View):
                                 if (float(range_start)) <= float(corrected_device_performance_value) <= (float(range_end)):
                                     performance_icon= data.values()[0]
                             except Exception as e:
-                                # logger.info(device)
                                 logger.exception(e.message)
                                 continue
 
@@ -430,7 +422,6 @@ class Gis_Map_Performance_Data(View):
                         device_info.append(perf_info)
 
                 except Exception as e:
-                    # logger.info(device)
                     logger.exception(e.message)
                     pass
 
@@ -446,7 +437,6 @@ class Gis_Map_Performance_Data(View):
                     'device_info' : device_info,
                     'sector_info' : sector_info
                 })
-                #logger.info(performance_data)
             except Exception as e:
                 logger.info(e.message, exc_info=True)
                 pass
@@ -4018,13 +4008,16 @@ class GISStaticInfo(View):
                         sector_configured_on_tech = None
 
                     # thematic settings for current user
-                    if tech_wise_thematic:
-                        user_thematics = tech_wise_thematic[sector.get('technology')]
-                        if user_thematics:
-                            user_thematics = user_thematics[0]
+                    try:
+                        if tech_wise_thematic:
+                            user_thematics = tech_wise_thematic[sector.get('technology')]
+                            if user_thematics:
+                                user_thematics = user_thematics[0]
+                            else:
+                                user_thematics = self.get_thematic_settings(sector_configured_on_tech, None)
                         else:
                             user_thematics = self.get_thematic_settings(sector_configured_on_tech, None)
-                    else:
+                    except Exception, e:
                         user_thematics = self.get_thematic_settings(sector_configured_on_tech, None)
 
                     # service & data source
@@ -4106,7 +4099,7 @@ class GISStaticInfo(View):
                                                 except Exception, e:
                                                     thematic_device_type = ''
                                                 if device_type == thematic_device_type:
-                                                    user_thematics = thematics
+                                                    user_thematics = [thematics]
                                                     break
 
                                     if user_thematics:
@@ -5122,8 +5115,6 @@ class GISPerfInfo(View):
         SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 
         device_info = list()
-
-        # logger.info("************************ {} ".format(performance))
 
         for perf in performance:
             res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
