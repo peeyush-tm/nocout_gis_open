@@ -245,6 +245,28 @@ class Circuit(models.Model):
     def __unicode__(self):
         return self.name
 
+# Circuit id and phone number mapper model
+class CircuitContacts(models.Model):
+    """
+    CircuitContacts table's Columns Declaration.
+    """ 
+    phone_number = models.CharField('Phone No.', max_length=15, null=True, blank=True)
+    circuit = models.ForeignKey(Circuit, null=True, blank=True)
+
+# Model for getting message related to particular circuit id
+class PowerSignals(models.Model):
+    """
+    PowerSignals Model Columns Declaration.
+    """
+    # SIGNAL_TYPE_CHOICES = (
+    #     ('RECEIVED', 'Received'),
+    #     ('SENT', 'Sent'),
+    # )
+
+    circuit_contacts = models.ForeignKey(CircuitContacts, max_length=250, null=True, blank=True)
+    message = models.CharField('Message', max_length=512, null=True, blank=True)
+    created_at = models.DateTimeField('Created at', auto_now_add=True)
+    signal_type = models.CharField('Signal Type', max_length=32, null=True, blank=True, default='Received')
 
 # function to modify name and path of uploaded file
 def uploaded_file_name(instance, filename):

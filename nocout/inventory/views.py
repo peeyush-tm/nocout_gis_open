@@ -48,7 +48,7 @@ from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, St
 
 from inventory.models import (Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit,
                               IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings,
-                              GISInventoryBulkImport,
+                              GISInventoryBulkImport, CircuitContacts, PowerSignals, 
                               UserThematicSettings, CircuitL2Report, PingThematicSettings, UserPingThematicSettings,
                               GISExcelDownload)
 from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm,
@@ -5519,3 +5519,48 @@ def getSearchData(request, search_by="default", pk=0):
 
     # return result dict
     return HttpResponse(json.dumps(result))
+
+
+# **************************************** Power ****************************************#
+
+class GetSms(View):
+    """
+    The Class based View for handling SMS request(related to power).
+
+    """
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(GetSms, self).dispatch(*args, **kwargs)
+
+    def post(self, request):
+
+        result = {
+            'success': 0,
+            'message': 'Data incomplete.',
+            'data': list()
+        }
+
+        # Fetch mobile number from post request
+        mobile_no = request.POST.get('mobileno')
+        # Fetch message from post request
+        message = request.POST.get('text')
+
+        # If mobile no. and message exist in database
+        if mobile_no and message:
+
+            # Getting filtered queryset with respect to mobile number
+            filtered_qs = CircuitContacts.objects.filter(phone_number=mobile_no)
+
+            if filtered_qs.count() == 1:  
+                try:
+                    power_instance = PowerSignals()
+                    power_instance.circuit_contacts = filtered_qs[0]
+                    power_instance.message = message
+                    power_instance.save()
+                    result.update(message= 'Successfully Saved', success=1 )
+                except:
+                    result.update(message= 'Invalid data')
+            else:
+                result['message'] = 'None or Multiple circuit id for the given number'
+        
+        return HttpResponse(json.dumps(result))

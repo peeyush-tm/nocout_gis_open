@@ -178,8 +178,28 @@ function nocoutPerfLib() {
         }
 
         var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p' || device_type.toLowerCase() == 'radwin2kss',
-            condition_2 = page_type == 'other';
+            condition_2 = page_type == 'other',
+            condition_3 = page_type == 'customer' && device_type.toLowerCase() != 'radwin2kbs';
+            
+        // Show power tab only if page type = Customer 
+        if (condition_3) {
+            if ($("#power").hasClass("hide")) {
+                $("#power").removeClass("hide");
+            }
 
+            if ($("#power_tab").hasClass("hide")) {
+                $("#power_tab").removeClass("hide");
+            }
+        } else {
+            if (!$("#power").hasClass("hide")) {
+                $("#power").addClass("hide");
+            }
+
+            if (!$("#power_tab").hasClass("hide")) {
+                $("#power_tab").addClass("hide");
+            }
+        }
+        
         // Show/hide parent Tabs
         if (condition_1 || condition_2) {
             if (!$("#topology").hasClass("hide")) {
@@ -199,6 +219,7 @@ function nocoutPerfLib() {
                 $("#topology_tab").removeClass("hide");
             }
         }
+
 
         // Show/hide live polling button & chart container
         var live_poll_condition1 = ptp_tech_list.indexOf(technology) > -1,
@@ -379,7 +400,6 @@ function nocoutPerfLib() {
                             <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
                             </div>';
         }
-        
         if (tab_content_config.tab_id == 'live_poll_now') {
             content_html += '<div class="col-md-1">\
                                 <button class="btn btn-default btn-sm single_perf_poll_now " title="Poll Now" \
@@ -441,6 +461,30 @@ function nocoutPerfLib() {
                             <div class="custom_legends_block"></div><div class="clearfix"></div> \
                             </div> \
                             <div id="' + bottom_table_id+ '"></div></div></div>';
+        } else if (tab_content_config.unique_key.indexOf('power_content') > -1) {
+            content_html += '<div class="chart_container">\
+                            <div id="' + chart_id+ '" style="width:100%;">\
+                            <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
+                            <button title="Status" class="btn btn-default power-actions" id="power_send_status" data-button-respone="status" \
+                                data-complete-text="<i class=\'fa fa-circle\'></i> Status" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-circle"></i> Status\
+                            </button>\
+                            <button title="Reset" class="btn btn-default power-actions" id="power_send_reset" data-button-respone="reset" \
+                                data-complete-text="<i class=\'fa fa-refresh\'></i> Reset" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-refresh"></i> Reset\
+                            </button>\
+                            <button title="JOJI" class="btn btn-default power-actions" id="power_send_joji" data-button-respone="joji" \
+                                data-complete-text="<i class=\'fa fa-plug\'></i> Joji" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-plug"></i> Joji\
+                            </button>\
+                            <div class="clearfix"></div>\
+                            <div class="divide-20"></div>\
+                            <table id="power_msg_listing" class="datatable table table-striped table-bordered table-hover"> \
+                                <thead></thead> \
+                                <tbody></tbody> \
+                            </table> \
+                            <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
+                            </div></div></div>';
         } else {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\
@@ -575,13 +619,14 @@ function nocoutPerfLib() {
                                         var all_tabs_condition_1 = unique_item_key.indexOf('availability') == -1,
                                             all_tabs_condition_2 = unique_item_key.indexOf('topology') == -1,
                                             all_tabs_condition_3 = unique_item_key.indexOf('utilization') == -1,
+                                            all_tabs_condition_4 = unique_item_key.indexOf('power_content') == -1,
                                             inner_inner_tabs = [],
                                             inner_tab_ids = [];
 
                                         // Create tab content HTML
-                                        if ((show_historical_on_performance && all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) || is_perf_polling_enabled) {
+                                        if ((show_historical_on_performance && all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3 && all_tabs_condition_4) || is_perf_polling_enabled) {
 
-                                            if(all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) {
+                                            if(all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3 && all_tabs_condition_4) {
                                                 
                                                 service_tabs_data += '<div class="tab-pane ' + active_class+ '" id="' + unique_item_key+ '_block">';
                                                 if (show_last_updated) {
@@ -774,6 +819,8 @@ function nocoutPerfLib() {
                                 serviceId.indexOf('utilization_top') > -1
                                 ||
                                 serviceId.indexOf('topology') > -1
+                                ||
+                                serviceId.indexOf('power_content') > -1
                             ) {
                                 perfInstance.initGetServiceData(serviceDataUrl, serviceId, current_device);
                             }
@@ -891,6 +938,8 @@ function nocoutPerfLib() {
                 } else if (updated_url.indexOf("util") > -1) {
                     updated_url = "/performance/servicestatus/utilization/service_data_source/utilization/device/" + device_id + "/";
                 }
+            } else if (updated_url.indexOf('/powerlisting/') > -1) {
+                updated_url = updated_url.replace("/powerlisting/","/powerstatus/");
             } else {
                 // Replace 'service' with 'servicestatus'
                 updated_url = updated_url.replace("/service/","/servicestatus/");
@@ -963,6 +1012,12 @@ function nocoutPerfLib() {
      * @param device_id "INT", It contains the ID of current device.
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
+
+        // If call from "Power tab then initialize datatable & return"
+        if (get_service_data_url.indexOf('/powerlisting/') > -1) {
+            dataTableInstance.createDataTable(power_table_id, power_listing_headers, power_ajax_url, false);
+            return true;
+        }
 
         // Hide custom legends block if exists
         if(!$('#' + service_id + '_legends_block').hasClass('hide')) {
