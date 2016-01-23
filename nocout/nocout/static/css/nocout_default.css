@@ -771,3 +771,11 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
   height: 320px;
   overflow: auto;
 }
+#power_content .btn {
+  border-color: #C7C7CE !important;
+  margin-right: 10px;
+}
+#powerStatusContainer {
+  border-color: #C7C7CE !important;
+  margin-right: 10px;
+}

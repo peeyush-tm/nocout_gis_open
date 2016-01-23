@@ -60,7 +60,7 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/home/'
 LOGIN_EXEMPT_URLS = (
     r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/',
-    'sm/dialog_action/', 'user/change_password/','download_center/processedreportemail/')
+    'sm/dialog_action/', 'user/change_password/','download_center/processedreportemail/', 'power/get_sms/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -795,6 +795,7 @@ SETTINGS_EXPORT = [
     'ENABLE_AGGREGATE_REPORT_DOWNLOAD',
     'ENABLE_WHITE_THEME',
     'ENABLE_TOPO_VIEW',
+    'ENABLE_POWER_TAB',
     'ENABLE_BIRDEYE_VIEW',
     'ENABLE_CUSTOM_DASHBOARD_VIEW',
     'SHOW_RF_COLUMN',
@@ -842,6 +843,12 @@ CACHE_TIME = {
     'DEFAULT': 60
 }
 
+POWER_SMS_DICT = {
+    'status' : 'Status',
+    'reset' : 'Reset',
+    'joji' : 'JOJI'
+}
+
 # Params for advance filters feature.
 MAX_SUGGESTION_COUNT = 40
 DATATABLE_SEARCHTXT_KEY = 'sSearch'
@@ -863,6 +870,9 @@ SHOW_RF_COLUMN = 6
 
 # Flag to enable/disable topology view on single performance page.
 ENABLE_TOPO_VIEW = False
+
+# Flag to enable/disable power on single performance page.
+ENABLE_POWER_TAB = False
 
 # Flag to enable/disable birdeye view on single performance page.
 ENABLE_BIRDEYE_VIEW = False
