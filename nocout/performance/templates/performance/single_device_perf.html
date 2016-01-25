@@ -937,7 +937,10 @@
                 url : base_url + "/performance/send_power_sms/?device_id=" + current_device + "&button_name=" + button_name,
                 type : 'GET',
                 success : function(response){
-                    dataTableInstance.createDataTable(power_table_id, power_listing_headers, power_ajax_url, false);
+                    if (response['success']) {
+                        dataTableInstance.createDataTable(power_table_id, power_listing_headers, power_ajax_url, false);
+                    }
+                    
                     $(button_this).button('complete');
                     $.gritter.add({
                         // (string | mandatory) the heading of the notification
