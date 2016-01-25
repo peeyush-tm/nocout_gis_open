@@ -7796,31 +7796,32 @@ class SendPowerSms(View):
             return HttpResponse(json.dumps(result), content_type="application/json")
         
         # getting the device related phone number from database
-        smsTo = CircuitContacts.objects.filter(
+        circuit_contact_instance = CircuitContacts.objects.filter(
             circuit__sub_station__device__id=device_id
-        ).values()[0]
+        ).values()
 
-        send_to = smsTo['phone_number']
-        
-        # Getting filtered queryset with respect to mobile number
-        filtered_qs = CircuitContacts.objects.filter(phone_number=send_to)
-        
-        # getting suitable response for clicked button from power_sms_dict, defined in settings.py
-        message = settings.POWER_SMS_DICT[button_name]
+        if circuit_contact_instance.exists():
+            send_to = circuit_contact_instance[0]['phone_number']
+            
+            # getting suitable response for clicked button from power_sms_dict, defined in settings.py
+            message = settings.POWER_SMS_DICT[button_name]
 
-        payload['N'] = send_to
-        payload['M'] = message
-        r = requests.get(url, params=payload)
+            payload['N'] = send_to
+            payload['M'] = message
+            r = requests.get(url, params=payload)
 
-        if r.status_code == 200:
-            power_instance = PowerSignals()
-            power_instance.circuit_contacts = filtered_qs[0]
-            power_instance.message = str(message)
-            power_instance.signal_type = 'Sent'
-            power_instance.save()
+            if r.status_code == 200:
+                power_instance = PowerSignals()
+                power_instance.circuit_contacts = circuit_contact_instance[0]
+                power_instance.message = str(message)
+                power_instance.signal_type = 'Sent'
+                power_instance.save()
 
-            result.update(success=1, message='Message sent successfully')
+                result.update(success=1, message='Message sent successfully')
+            else:
+                result.update(success=0, message='Error in accessing gateway')
+
         else:
-            result.update(success=0, message='Error in accessing gateway')
+            result.update(message='Phone number does not exist')
 
         return HttpResponse(json.dumps(result), content_type="application/json")
