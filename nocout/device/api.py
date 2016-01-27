@@ -107,12 +107,10 @@ from device.models import DeviceTechnology
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-#<<<<<<< HEAD
 from sync import tasks
 #======= needed for sync as celery process
 from inventory.utils.util import getDeviceTypeNamedDict, getFrequencyDict
 from django.core.urlresolvers import reverse
-#>>>>>>> S3
 
 logger = logging.getLogger(__name__)
 
