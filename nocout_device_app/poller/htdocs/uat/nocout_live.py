@@ -14,8 +14,16 @@ import re
 from ast import literal_eval
 from nocout import get_parent
 import mysql.connector
-import memcache
+import memcache,imp
 logger = nocout_log()
+
+def get_site_name(site=None):
+    site = defaults.omd_site
+
+    return site
+
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % get_site_name())
+#db_ops_module = imp.load_source('db_ops', '/omd/sites/ospf2_slave_1/lib/python/handlers/db_ops.py' )
 
 
 try:
@@ -122,12 +130,6 @@ def get_current_value_old(current_values, device=None, service=None, data_source
     return current_values
 
 
-def memcache_connection():
-    try:
-	        memc = memcache.Client(['10.133.19.165:11211','10.133.12.163:11211'], debug=1)
-    except:
-	        memc =None
-    return memc
 
 def get_current_value(q,device=None, service_list=None, data_source_list=None, bs_name_ss_mac_mapping=None, ss_name_mac_mapping=None,is_first_call=0):
      #response = []
@@ -147,11 +149,14 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
      util_service_list = ['wimax_pmp1_dl_util_bgp','wimax_pmp1_ul_util_bgp','wimax_pmp2_dl_util_bgp','wimax_pmp2_ul_util_bgp',
 	'radwin_dl_utilization','radwin_ul_utilization','cambium_dl_utilization','cambium_ul_utilization',
 	'cambium_ss_dl_utilization','cambium_ss_ul_utilization','mrotek_dl_utilization','mrotek_ul_utilization','rici_dl_utilization',
-	'rici_ul_utilization','cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization','juniper_switch_ul_utilization']
+	'rici_ul_utilization','cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization','juniper_switch_ul_utilization',
+	'huawei_switch_dl_utilization', 'huawei_switch_ul_utilization']
+
      wimax_ss_util_services = ['wimax_ss_ul_utilization','wimax_ss_dl_utilization']
      wimax_ss_params_services=['wimax_qos_invent','wimax_ss_session_uptime']
-     switch_utilization = ['cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization',
-     'juniper_switch_ul_utilization']
+     switch_utilization = ['cisco_switch_dl_utilization','cisco_switch_ul_utilization','huawei_switch_dl_utilization', 'huawei_switch_ul_utilization']
+     juniper_switch = ['juniper_switch_dl_utilization', 'juniper_switch_ul_utilization']
+     huawei_switch = ['huawei_switch_dl_utilization', 'huawei_switch_ul_utilization']   
      ss_device, ss_mac, bs_device = None, None, None
      old_device = device
      #logger.debug('service_list: ' + pformat(service_list))
@@ -281,7 +286,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 						index = index + 3
 				    except:
 					logger.error('ss_params: ' + pformat(index))
-				#logger.error('ss_params: ' + pformat(index))
+				logger.error('ss_params: ' + pformat(index))
 				for entry in filtered_ss_data:
 					value = entry.split('=')[1].split(',')[index]
 					if str(old_service) not in wimax_ss_params_services:
@@ -384,17 +389,41 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					try:
                  				logger.info('current_states : %s %s' % (util_values,is_first_call))
 						ds = data_source_list[0]
+						logger.info(ds)
+						if 'GigabitEthernet0_0_' not in ds:
+							ds = ds.lower()
 						cur_values = util_values[0].rstrip().split(' ')
 						this_time = cur_values[0].split('=')[1]	
-						port_name = map(lambda x: x.split('=')[0] ,cur_values )	
+						port_name = map(lambda x: x.split('=')[0] ,cur_values )
 						port_value = map(lambda x: x.split('=')[1] ,cur_values )
 						port_index = port_name.index(ds)
 						if port_index:
 							this_value = port_value[port_index]
 						switch_key = "".join([old_device,"_",service,"_",ds])
                  				logger.info('port_value : %s %s' % (this_value,is_first_call))
-					except:
+					except Exception as e :
 						pass  	
+
+				elif service in juniper_switch:
+					try:
+                                                ds = data_source_list[0]
+                                                ds = ds.lower()
+                                                cur_values = util_values[0].rstrip().split(' ')
+                                                this_time = cur_values[0].split('=')[1]
+                                                port_name = map(lambda x: x.split('=')[0] ,cur_values )
+                                                port_value = map(lambda x: x.split('=')[1] ,cur_values )
+                                                port_index = port_name.index(ds)
+                                                if port_index:
+                                                        this_value = eval(port_value[port_index])
+						key_value = "%.2f" % this_value
+						data_dict = {old_device: key_value}
+						logger.debug(data_dict)
+                                                q.put(data_dict)
+						continue
+                                        except:
+                                                pass
+
+		
 				else:
 					this_time = util_values[0].split(' ')[0].split('=')[1]
 					this_value = util_values[0].split(' ')[1].split('=')[1]
@@ -403,7 +432,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				else:
 					key = "".join([old_device,"_",service])
 				key =key.encode('ascii','ignore')
-				memc = memcache_connection()
+				memc_obj = db_ops_module.MemcacheInterface()
+				memc = memc_obj.memc_conn
 				key_value = ""
 				if is_first_call:
 					util_list = [this_time,this_value]
@@ -417,8 +447,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					try:
 					    if memc:
 						key =key.encode('ascii','ignore')
-						#key = str(key)
 					        util = memc.get(key)
+						logger.debug('util from memc: %s' % (util))
 						if util:
 							pre_time = util[0]
 							pre_value = util[1]
@@ -489,7 +519,3 @@ def alarm_handler(signum, frame):
 	raise Alarm
 
 
-def get_site_name(site=None):
-    site = defaults.omd_site
-
-    return site

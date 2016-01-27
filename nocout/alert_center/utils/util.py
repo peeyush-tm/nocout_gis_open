@@ -212,7 +212,6 @@ class AlertCenterUtilsGateway:
 
         return param1
 
-
 # misc utility functions
 def prepare_query(
     table_name=None, 
@@ -385,11 +384,13 @@ def prepare_raw_alert_results(performance_data=None):
                 'current_value': data["current_value"],
                 'max_value': data["max_value"],
                 'min_value': data["min_value"],
-                'sys_timestamp': datetime.datetime.fromtimestamp(
-                    float(data["sys_timestamp"])).strftime(DATE_TIME_FORMAT),
-                'age': datetime.datetime.fromtimestamp(
-                    float(data["age"])
-                ).strftime(DATE_TIME_FORMAT) if data["age"] else "",
+                # 'sys_timestamp': datetime.datetime.fromtimestamp(
+                #     float(data["sys_timestamp"])).strftime(DATE_TIME_FORMAT),
+                # 'age': datetime.datetime.fromtimestamp(
+                #     float(data["age"])
+                # ).strftime(DATE_TIME_FORMAT) if data["age"] else "",
+                'sys_timestamp': float(data["sys_timestamp"]) if data["sys_timestamp"] else "",
+                'age': float(data["age"]) if data["age"] else "",
                 'description': '',
                 'refer': data["refer"] if ('refer' in data and data['refer']) else ''
             })
@@ -499,10 +500,17 @@ def common_prepare_results(dct):
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
 
+    elif dct['severity'].strip().upper() == 'INDOWNTIME':
+        dct[
+            'severity'
+        ] = '<i class="fa fa-circle blue-dot" value="4" title="In Downtime"><span style="display:none">In Downtime</span></i>'
+        dct['current_value'] = current_value
+        dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
+
     else:
         dct[
             'severity'
-        ] = '<i class="fa fa-circle grey-dot" value="4" title="Unknown"><span style="display:none">Unknown</span></i>'
+        ] = '<i class="fa fa-circle grey-dot" value="5" title="Unknown"><span style="display:none">Unknown</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
 
@@ -639,4 +647,5 @@ def get_performance_data(machine_device_list, machine, data_sources, columns, co
         condition=condition
     )
     return prepare_raw_alert_results(nocout_utils.fetch_raw_result(query, machine))
+
 

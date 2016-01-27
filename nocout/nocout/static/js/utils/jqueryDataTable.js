@@ -1,5 +1,6 @@
 var downloader_api_call = "",
     server_side_rendering = true,
+    server_response = "",
     create_advance_filters = true;
     // advance_filters_enabled = false;
 /**
@@ -29,7 +30,6 @@ function ourDataTableWidget() {
         excluded_columns,
         advance_filter
     ) {
-
         if (typeof advance_filter == 'undefined') {
             advance_filter = '[]';
         }
@@ -150,8 +150,6 @@ function ourDataTableWidget() {
             aaSorting:[],
             // bStateSave:true
         });
-
-        
 
         var dtable = $("#"+tableId).dataTable();
 

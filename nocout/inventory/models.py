@@ -108,7 +108,7 @@ class BaseStation(models.Model):
     bs_site_type = models.CharField('BS Site Type', max_length=100, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
     backhaul = models.ForeignKey(Backhaul, null=True, blank=True, on_delete=models.SET_NULL, default=None)
-    bh_port_name = models.CharField(max_length=40, verbose_name=" BH Port Name", null=True, blank=True)
+    bh_port_name = models.CharField(max_length=64, verbose_name=" BH Port Name", null=True, blank=True)
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
     bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True, help_text='Enter a number.')
     bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True)
@@ -245,6 +245,28 @@ class Circuit(models.Model):
     def __unicode__(self):
         return self.name
 
+# Circuit id and phone number mapper model
+class CircuitContacts(models.Model):
+    """
+    CircuitContacts table's Columns Declaration.
+    """ 
+    phone_number = models.CharField('Phone No.', max_length=15, null=True, blank=True)
+    circuit = models.ForeignKey(Circuit, null=True, blank=True)
+
+# Model for getting message related to particular circuit id
+class PowerSignals(models.Model):
+    """
+    PowerSignals Model Columns Declaration.
+    """
+    # SIGNAL_TYPE_CHOICES = (
+    #     ('RECEIVED', 'Received'),
+    #     ('SENT', 'Sent'),
+    # )
+
+    circuit_contacts = models.ForeignKey(CircuitContacts, max_length=250, null=True, blank=True)
+    message = models.CharField('Message', max_length=512, null=True, blank=True)
+    created_at = models.DateTimeField('Created at', auto_now_add=True)
+    signal_type = models.CharField('Signal Type', max_length=32, null=True, blank=True, default='Received')
 
 # function to modify name and path of uploaded file
 def uploaded_file_name(instance, filename):
@@ -381,6 +403,8 @@ class GISInventoryBulkImport(models.Model):
     uploaded_by = models.CharField('Uploaded By', max_length=100, null=True, blank=True)
     added_on = models.DateTimeField('Added On', null=True, blank=True)
     modified_on = models.DateTimeField('Modified On', null=True, blank=True)
+    is_auto = models.IntegerField('Is Auto', null=True, blank=True)
+    is_new = models.IntegerField('Is New', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         """ On save, update timestamps """
@@ -506,6 +530,7 @@ class GISExcelDownload(models.Model):
 
 
 # ********************* Connect Inventory Signals *******************
+pre_save.connect(inventory_signals.update_site_on_bs_bhport_change, sender=BaseStation)
 post_save.connect(inventory_signals.auto_assign_thematic, sender=UserProfile)
 pre_save.connect(inventory_signals.resize_icon_size, sender=IconSettings)
 pre_delete.connect(inventory_signals.delete_antenna_of_sector, sender=Sector)

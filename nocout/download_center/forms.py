@@ -40,3 +40,4 @@ class CityCharterSettingsForm(forms.ModelForm):
         """
         model = CityCharterSettings
         fields = "__all__"
+

@@ -10,6 +10,7 @@ import re
 from django.db.models import Count, Q
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
+from django.conf import settings
 from django.shortcuts import render_to_response, render
 from django.core.urlresolvers import reverse
 from django.views.generic import ListView
@@ -19,7 +20,7 @@ from django.utils.dateformat import format
 
 from device.models import Device, DeviceType, DeviceTechnology, DevicePort
 from service.models import ServiceDataSource,Service
-from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
+from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, PowerSignals, Customer, CircuitContacts
 from performance.models import PerformanceService, PerformanceNetwork, \
     NetworkStatus, \
     ServiceStatus, InventoryStatus, \
@@ -66,6 +67,24 @@ SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 import logging
 
 log = logging.getLogger(__name__)
+
+### SMS Sending
+import requests
+#### SMS GATEWAY SETTINGS
+GATEWAY_SETTINGS = {
+    'URL': 'http://121.244.239.140/csend.dll'
+}
+GATEWAY_PARAMETERS = {
+    'Username': 'wirelessonetool',
+    'Password': '12345vgsmhttp',
+    'Priority': 3,
+    'Commmethod': 'cellent',
+    'Returnseq': 1,
+    'Sender': 'TATACOMM Anil . Now',
+    'N': '',
+    'M': ''
+}
+#### SMS GATEWAY SETTINGS
 
 # Create instance of 'PerformanceUtilsGateway' class
 perf_utils = PerformanceUtilsGateway()
@@ -507,6 +526,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         :param qs:
         :return qs
         """
+        
         page_type = self.request.GET['page_type']
         alert_page_type = page_type
 
@@ -558,6 +578,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                             <i class="fa fa-warning text-warning"></i></a> \
                             <a href="' + inventory_url + '" title="Device Inventory">\
                             <i class="fa fa-dropbox text-muted" ></i></a>'
+                            
+
                 )
 
         return qs
@@ -729,6 +751,14 @@ class GetPerfomance(View):
         )
 
         service_ds_url = ''
+
+        power_listing_headers = []
+        if page_type in ['customer']:
+            power_listing_headers = [
+                {'mData': 'msg', 'sTitle': 'Message'},
+                {'mData': 'created_at', 'sTitle': 'Timestamp'},
+                {'mData': 'status_type', 'sTitle': 'Status Type'}
+            ]
         
         try:
             # Service Data-source url
@@ -745,6 +775,7 @@ class GetPerfomance(View):
         page_data = {
             'page_title': page_type.capitalize(),
             'device_technology': device_technology,
+            'device_type': device_type,
             'device': device,
             'realdevice': realdevice,
             'bs_alias' : bs_alias,
@@ -759,7 +790,8 @@ class GetPerfomance(View):
             'is_dr_device' : is_dr_device,
             'is_radwin5' : is_radwin5,
             'is_viewer_flag': is_viewer_flag,
-            'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id)
+            'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id),
+            'power_listing_headers': json.dumps(power_listing_headers)
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -1214,7 +1246,7 @@ class InventoryDeviceStatus(View):
                 # get machine name from fetched info
                 machine_name = list_devices_invent_info[0]['machine_name']
                 # If customer device then fetch the polled frequency from distributed DB's
-                if page_type == 'customer':
+                if (page_type == 'customer') or (page_type == 'network' and lowered_device_tech in ['ptp', 'p2p']):
                     service_name = ''
                     ds_name = ''
                     if lowered_device_tech in ['ptp', 'p2p']:
@@ -1238,11 +1270,18 @@ class InventoryDeviceStatus(View):
                         pass
 
                     if service_name and device_name and machine_name:
-                        freq_data_obj = InventoryStatus.objects.filter(
-                            device_name=device_name,
-                            service_name=service_name,
-                            data_source='frequency'
-                        ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
+                        if lowered_device_tech in ['wimax']:
+                            freq_data_obj = ServiceStatus.objects.filter(
+                                device_name=device_name,
+                                service_name=service_name,
+                                data_source='frequency'
+                            ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
+                        else:
+                            freq_data_obj = InventoryStatus.objects.filter(
+                                device_name=device_name,
+                                service_name=service_name,
+                                data_source='frequency'
+                            ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
 
                         if freq_data_obj and freq_data_obj[0].current_value:
                             list_devices_invent_info[0]['polled_frequency'] = freq_data_obj[0].current_value
@@ -1312,6 +1351,7 @@ class InventoryDeviceStatus(View):
                 header_key = header["name"]
                 if header_key in data:
                     header["value"] = data[header_key]
+                    
                     if header["value"] and header["value"] != 'NA':
                         try:
                             header["url"] = reverse(
@@ -1322,8 +1362,7 @@ class InventoryDeviceStatus(View):
                         except Exception, e:
                             header["url"] = ''
                     else:  # If no value then show NA
-                        header["value"] = 'NA' 
-                       
+                        header["value"] = 'NA'
 
             resultant_data.append(new_headers)
 
@@ -1391,6 +1430,16 @@ class InventoryDeviceServiceDataSource(View):
                         "info": [],
                         "isActive": 0
 
+                    },
+                    'power_content':{
+                        "info": [{
+                            'name': "power_signal",
+                            'title': "Power Signals",
+                            'url': 'performance/powerlisting/?device_id=' + str(device_id),
+                            'active': 1
+                        }],
+                        "isActive": 0
+
                     }
                 }
             }
@@ -1407,6 +1456,11 @@ class InventoryDeviceServiceDataSource(View):
             'id' : 'ping',
             'title' : 'Ping'
         }]
+
+        is_other_device = False
+
+        if (device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists()) and not device.backhaul.exists():
+            is_other_device = True
 
         if service_view_type == 'normal':
 
@@ -1444,7 +1498,20 @@ class InventoryDeviceServiceDataSource(View):
                 # if the backhaul exists, that means we need to check for the PORT
                 # if there is a port
                 try:
-                    those_ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
+                    ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
+                    those_ports = list()
+                    try:
+                        for port in ports:
+                            if ',' in port:
+                                try:
+                                    those_ports.extend(port.replace(' ', '').split(','))
+                                except Exception, e:
+                                    those_ports.extend(port.split(','))
+                            else:
+                                those_ports.append(port)
+                    except Exception, e:
+
+                        those_ports = ports
 
                     bh_data_sources = ServiceDataSource.objects.filter(
                         name__in=DevicePort.objects.filter(alias__in=those_ports).values_list('name', flat=True)
@@ -1456,8 +1523,10 @@ class InventoryDeviceServiceDataSource(View):
                         name__in=bh_data_sources).values_list('name', flat=True))
 
                     excluded_bh_data_sources_status = [str(x)+"_state" for x in excluded_bh_data_sources]
-
                     excluded_bh_data_sources += excluded_bh_data_sources_status
+
+                    excluded_bh_data_sources_kpi = [str(x)+"_kpi" for x in excluded_bh_data_sources]
+                    excluded_bh_data_sources += excluded_bh_data_sources_kpi
 
                     is_bh = True
                 except Exception as e:
@@ -1503,7 +1572,11 @@ class InventoryDeviceServiceDataSource(View):
                     elif 'topology' in service_name:
                         continue
                     else:
-                        result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                        if is_other_device:
+                            if 'util' not in service_name:
+                                result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                        else:
+                            result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
         else:
             result['data']['objects']['network_perf_tab']["info"].append({
@@ -1538,7 +1611,11 @@ class InventoryDeviceServiceDataSource(View):
                 elif 'topology' in service_name:
                     continue
                 else:
-                    result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                    if is_other_device:
+                        if 'util' not in service_name:
+                            result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+                    else:
+                        result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
         
         result['data']['objects']['availability_tab']["info"].append(
@@ -2033,6 +2110,8 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
 
     parameters = {}
 
+    sds_type = 'Numeric'
+
     inventory_device_machine_name = ""
 
     def get_initial_queryset(self):
@@ -2081,7 +2160,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         # Create instance of "GetServiceTypePerformanceData" class
         self.perf_data_instance = GetServiceTypePerformanceData()
 
-
         if data_for != 'live':
             self.isHistorical = True
             # Device Machine Name required in Query to fetch data.
@@ -2124,9 +2202,48 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
                 else:
                     break
 
-            self.columns.append('min_value')
-            self.columns.append('max_value')
+            for sds in SERVICE_DATA_SOURCE:
+                if self.sds_type != 'String':
+                    if service.strip().lower() in sds and 'data_source_type' in SERVICE_DATA_SOURCE[sds]:
+                        self.sds_type = SERVICE_DATA_SOURCE[sds]['data_source_type']
+                else:
+                    break
+            if 'min_value' not in self.columns:
+                self.columns.append('min_value')
+
+            if 'max_value' not in self.columns:
+                self.columns.append('max_value')
         else:
+            if data_for == 'live' and data_source not in ['rta']:
+                self.columns = [
+                    'sys_timestamp',
+                    'current_value',
+                    'severity',
+                    'warning_threshold',
+                    'critical_threshold',
+                    'service_name',
+                    'min_value',
+                    'max_value',
+                    'avg_value',
+                    'ip_address',
+                    'data_source'
+                ]
+            else:
+                self.columns = [
+                    'sys_timestamp',
+                    'avg_value',
+                    'min_value',
+                    'max_value',
+                    'current_value',
+                    'severity',
+                    'warning_threshold',
+                    'critical_threshold',
+                    'service_name',
+                    'data_source'
+                ]
+
+            if self.data_source in SERVICE_DATA_SOURCE and 'data_source_type' in  SERVICE_DATA_SOURCE[self.data_source]:
+                self.sds_type = SERVICE_DATA_SOURCE[self.data_source].get('data_source_type', 'Numeric')
             # check for the formula
             if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['formula']:
                 self.formula = SERVICE_DATA_SOURCE[self.data_source]['formula']
@@ -2138,7 +2255,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
                 if 'max_value' not in self.columns:
                     self.columns.append('max_value')
-
 
         if data_for == 'bihourly':
             self.model = PerformanceServiceBiHourly
@@ -2223,9 +2339,11 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             'start_time': start_date,
             'end_time': end_date,
             'devices': [inventory_device_name],
-            'services': [service],
-            'sds': [data_source]
+            'services': [str(service)],
+            'sds': [str(data_source)]
         }
+
+        self.order_columns = self.columns
 
         return True
 
@@ -2264,7 +2382,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             if item['data_source'] in ['pl', 'rta', 'availability']:
                 sds_key = item['data_source']
             else:
-                sds_key = str(item['service_name']) + '_' + str(item['data_source'])
+                sds_key = str(item['service_name']).strip().lower() + '_' + str(item['data_source']).strip().lower()
             try:
                 if SERVICE_DATA_SOURCE.get(sds_key):
                     display_name = SERVICE_DATA_SOURCE.get(sds_key).get('display_name')
@@ -2345,7 +2463,76 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         """ Get parameters from the request and prepare order by clause
         :param qs:
         """
-        return nocout_utils.nocout_datatable_ordering(self, qs, self.columns)
+        # Number of columns that are used in sorting
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
+            try:
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
+            except ValueError:
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
+
+        order = []
+        sort_using = ''
+        reverse = ''
+        order_columns = self.order_columns
+
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+            sort_using = order_columns[sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+            else:
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+        if order:
+            # Try catch is added because in some cases 
+            # we receive list instead of queryset
+            try:
+                try:
+                    if self.sds_type == 'Numeric' and sort_using == 'current_value':
+                        sorted_device_data = qs.extra(
+                            select={sort_using: 'CAST(' + sort_using + ' AS DECIMAL(9,3))'}
+                        ).order_by(*order)
+                    else:
+                        sorted_device_data = qs.order_by(*order)
+                except Exception, e:
+                    sorted_device_data = qs.order_by(*order)
+            except Exception, e:
+                try:
+                    sorted_device_data = sorted(
+                        qs, 
+                        key=itemgetter(sort_using),
+                        reverse=True if '-' in order[0] else False
+                    )
+                except Exception, e:
+                    sorted_device_data = qs
+
+            return sorted_device_data
+        return qs 
+
+        # return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -2360,20 +2547,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         # If params not initialized the init them by calling initialize_params
         if not self.perf_data_instance or not self.parameters:
             self.initialize_params()
-
-        try:
-            # Create Ordering columns from GET request
-            total_columns_count = int(self.request.GET.get('iColumns', len(self.columns)))
-            new_ordering_columns = list()
-            
-            for i in range(total_columns_count):
-                if self.request.GET.get('mDataProp_%s' % i) not in new_ordering_columns:
-                    new_ordering_columns.append(self.request.GET.get('mDataProp_%s' % i))
-
-            # Update new ordering columns in global variable
-            self.order_columns = new_ordering_columns
-        except Exception, e:
-            pass
 
         qs = self.get_initial_queryset()
         
@@ -2466,7 +2639,7 @@ class GetServiceTypePerformanceData(View):
             start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
 
         if service_data_source_type.strip() not in ['topology', 'rta', 'pl', 'availability', 'rf']:
-            sds_name = service_name.strip() + "_" + service_data_source_type.strip()
+            sds_name = service_name.strip().lower() + "_" + service_data_source_type.strip().lower()
         else:
             sds_name = service_data_source_type.strip()
 
@@ -3468,7 +3641,7 @@ class GetServiceTypePerformanceData(View):
                     sds_name = str(data.data_source).strip()
                     if sds_name not in ['availability']:
                         if sds_name not in ['pl', 'rta']:
-                            sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
+                            sds_name = str(data.service_name).strip().lower() + "_" + str(data.data_source).strip().lower()
 
                     sds_display_name = SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                         if sds_name in SERVICE_DATA_SOURCE  else str(data.data_source).upper()
@@ -3520,15 +3693,15 @@ class GetServiceTypePerformanceData(View):
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) < abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) < abs(p1) < abs(p3)
-                                      else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                      if abs(p2) <= abs(p1) < abs(p3)
+                                      else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                 )
                         else:
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) > abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) > abs(p1) > abs(p3)
-                                      else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                      if abs(p2) >= abs(p1) > abs(p3)
+                                      else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                 )
 
                         formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
@@ -3538,10 +3711,14 @@ class GetServiceTypePerformanceData(View):
                             val = float(data.current_value) if data.current_value else 0
                             warn_val = float(data.warning_threshold) if data.warning_threshold else val
                             crit_val = float(data.critical_threshold) if data.critical_threshold else val
+                            c_color = chart_color
+
+                            if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                c_color = compare_point(val, warn_val, crit_val)
 
                             formatter_data_point = {
                                 "name": sds_display_name,
-                                "color": compare_point(val, warn_val, crit_val),
+                                "color": c_color,
                                 "y": eval(str(formula) + "(" + str(data.current_value) + ")")
                                 if formula
                                 else float(data.current_value),
@@ -3686,429 +3863,446 @@ class GetServiceTypePerformanceData(View):
             is_unified_view = service_view_type and service_view_type == 'unified'
             counter = -1
             for ds in ds_list:
-                # Variables used for HISTORICAL data
-                data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
-                data_list_min, data_list_max, data_list_avg =  list(), list(), list()
-                min_data_list = list()
-                max_data_list = list()
-                is_dual_axis = False
-                counter += 1
-                # If data source is PL/RTA then enable 'is_dual_axis' flag
-                if ds in ['pl', 'rta'] and is_unified_view:
-                    is_dual_axis = True
+                try:
+                    # Variables used for HISTORICAL data
+                    data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
+                    data_list_min, data_list_max, data_list_avg =  list(), list(), list()
+                    min_data_list = list()
+                    max_data_list = list()
+                    is_dual_axis = False
+                    counter += 1
+                    # If data source is PL/RTA then enable 'is_dual_axis' flag
+                    if ds in ['pl', 'rta'] and is_unified_view:
+                        is_dual_axis = True
 
-                x = performance_data.filter(data_source=ds)
-                for data in x:
-                    temp_time = data.sys_timestamp
+                    x = performance_data.filter(data_source=ds)
+                    for data in x:
+                        temp_time = data.sys_timestamp
 
-                    if temp_time in aggregate_data:
-                        continue
-                    else:
-                        aggregate_data[temp_time] = data.sys_timestamp
-
-                        #time in javascript format
-                        js_time = data.sys_timestamp * 1000
-                        #time in javascript format
-
-                        sds_name = str(data.data_source).strip()
-
-                        if sds_name not in ['availability']:
-                            if sds_name not in ['pl', 'rta']:
-                                sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
-
-                        sds_display_name = SERVICE_DATA_SOURCE[sds_name]["display_name"] \
-                            if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
-
-                        if 'chart_display_name' not in self.result['data']['objects']:
-                            self.result['data']['objects']['chart_display_name'] = ''
-
-                        if sds_display_name not in self.result['data']['objects']['chart_display_name']:
-                            if self.result['data']['objects']['chart_display_name']:
-                                self.result['data']['objects']['chart_display_name'] += ' & ' + sds_display_name
-                            else:
-                                self.result['data']['objects']['chart_display_name'] += sds_display_name
-
-                        self.result['data']['objects']['display_name'] = sds_display_name
-
-                        display_name = sds_display_name
-
-                        self.result['data']['objects']['type'] = SERVICE_DATA_SOURCE[sds_name]["type"] \
-                            if sds_name in SERVICE_DATA_SOURCE else "area"
-                        
-                        if is_dual_axis:
-                            self.result['data']['objects']['is_single'] = 0
+                        if temp_time in aggregate_data:
+                            continue
                         else:
-                            self.result['data']['objects']['is_single'] = 1
+                            aggregate_data[temp_time] = data.sys_timestamp
+
+                            #time in javascript format
+                            js_time = data.sys_timestamp * 1000
+                            #time in javascript format
+
+                            sds_name = str(data.data_source).strip()
+
+                            if sds_name not in ['availability']:
+                                if sds_name not in ['pl', 'rta']:
+                                    sds_name = str(data.service_name).strip().lower() + "_" + str(data.data_source).strip().lower()
+
+                            sds_display_name = SERVICE_DATA_SOURCE[sds_name]["display_name"] \
+                                if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
+
+                            if 'chart_display_name' not in self.result['data']['objects']:
+                                self.result['data']['objects']['chart_display_name'] = ''
+
+                            if sds_display_name not in self.result['data']['objects']['chart_display_name']:
+                                if self.result['data']['objects']['chart_display_name']:
+                                    self.result['data']['objects']['chart_display_name'] += ' & ' + sds_display_name
+                                else:
+                                    self.result['data']['objects']['chart_display_name'] += sds_display_name
+
+                            self.result['data']['objects']['display_name'] = sds_display_name
+
+                            display_name = sds_display_name
+
+                            self.result['data']['objects']['type'] = SERVICE_DATA_SOURCE[sds_name]["type"] \
+                                if sds_name in SERVICE_DATA_SOURCE else "area"
                             
-                        if 'valuesuffix' not in self.result['data']['objects']:
-                            self.result['data']['objects']['valuesuffix'] = list()
-                        if 'valuetext' not in self.result['data']['objects']:
-                            self.result['data']['objects']['valuetext'] = list()
+                            if is_dual_axis:
+                                self.result['data']['objects']['is_single'] = 0
+                            else:
+                                self.result['data']['objects']['is_single'] = 1
+                                
+                            if 'valuesuffix' not in self.result['data']['objects']:
+                                self.result['data']['objects']['valuesuffix'] = list()
+                            if 'valuetext' not in self.result['data']['objects']:
+                                self.result['data']['objects']['valuetext'] = list()
 
-                        ds_suffix = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] if sds_name in SERVICE_DATA_SOURCE else ""
-                        ds_txt = SERVICE_DATA_SOURCE[sds_name]["valuetext"] if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
-                        
-                        if ds_suffix not in self.result['data']['objects']['valuesuffix']:
-                            self.result['data']['objects']['valuesuffix'].append(ds_suffix)
+                            ds_suffix = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] if sds_name in SERVICE_DATA_SOURCE else ""
+                            ds_txt = SERVICE_DATA_SOURCE[sds_name]["valuetext"] if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
+                            
+                            if ds_suffix not in self.result['data']['objects']['valuesuffix']:
+                                self.result['data']['objects']['valuesuffix'].append(ds_suffix)
 
-                        if ds_txt not in self.result['data']['objects']['valuetext']:
-                            self.result['data']['objects']['valuetext'].append(ds_txt)
-                        # else:
-                        #     self.result['data']['objects']['valuesuffix'] = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] \
-                        #         if sds_name in SERVICE_DATA_SOURCE else ""
+                            if ds_txt not in self.result['data']['objects']['valuetext']:
+                                self.result['data']['objects']['valuetext'].append(ds_txt)
+                            # else:
+                            #     self.result['data']['objects']['valuesuffix'] = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] \
+                            #         if sds_name in SERVICE_DATA_SOURCE else ""
 
-                        #     self.result['data']['objects']['valuetext'] = SERVICE_DATA_SOURCE[sds_name]["valuetext"] \
-                        #         if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
+                            #     self.result['data']['objects']['valuetext'] = SERVICE_DATA_SOURCE[sds_name]["valuetext"] \
+                            #         if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
 
-                        self.result['data']['objects']['plot_type'] = 'charts'
+                            self.result['data']['objects']['plot_type'] = 'charts'
 
-                        chart_color = SERVICE_DATA_SOURCE[sds_name]["chart_color"] \
-                            if sds_name in SERVICE_DATA_SOURCE else '#70AFC4'
+                            chart_color = SERVICE_DATA_SOURCE[sds_name]["chart_color"] \
+                                if sds_name in SERVICE_DATA_SOURCE else '#70AFC4'
 
-                        sds_inverted = False
-                        self.result['data']['objects']['is_inverted'] = sds_inverted
-
-                        if sds_name not in ["availability"]:
-
+                            sds_inverted = False
                             self.result['data']['objects']['is_inverted'] = sds_inverted
 
-                            if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["is_inverted"]:
-                                sds_inverted = SERVICE_DATA_SOURCE[sds_name]["is_inverted"]
+                            if sds_name not in ["availability"]:
+
                                 self.result['data']['objects']['is_inverted'] = sds_inverted
 
-                            if not sds_inverted:
-                                compare_point = lambda p1, p2, p3: chart_color \
-                                    if abs(p1) < abs(p2) \
-                                    else ('#FFE90D'
-                                          if abs(p2) < abs(p1) < abs(p3)
-                                          else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
-                                    )
+                                if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["is_inverted"]:
+                                    sds_inverted = SERVICE_DATA_SOURCE[sds_name]["is_inverted"]
+                                    self.result['data']['objects']['is_inverted'] = sds_inverted
+
+                                if not sds_inverted:
+                                    compare_point = lambda p1, p2, p3: chart_color \
+                                        if abs(p1) < abs(p2) \
+                                        else ('#FFE90D'
+                                              if abs(p2) <= abs(p1) < abs(p3)
+                                              else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
+                                        )
+                                else:
+                                    compare_point = lambda p1, p2, p3: chart_color \
+                                        if abs(p1) > abs(p2) \
+                                        else ('#FFE90D'
+                                              if abs(p2) >= abs(p1) > abs(p3)
+                                              else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
+                                        )
+
+                                formula = SERVICE_DATA_SOURCE[sds_name]["formula"] if sds_name in SERVICE_DATA_SOURCE else None
+
+                                #only display warning if there exists a warning
+                                if data.warning_threshold:
+                                    try:
+                                        warn_data_list.append([js_time, float(data.warning_threshold)])
+                                    except Exception, e:
+                                        warn_data_list.append([js_time, data.warning_threshold])
+
+                                #only display critical if there exists a critical
+                                if data.critical_threshold:
+                                    try:
+                                        crit_data_list.append([js_time, float(data.critical_threshold)])
+                                    except Exception, e:
+                                        crit_data_list.append([js_time, data.critical_threshold])
+
+                                no_val_color = '#70AFC4'
+                                # FOR HISTORICAL DATA
+                                if is_historical_data:
+                                    # MIN VAL
+                                    min_value = None
+                                    min_color = no_val_color
+                                    if data.min_value:
+                                        val = float(data.min_value) if data.min_value else 0
+                                        min_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.min_value)
+                                        min_color = MIN_CHART_COLOR
+
+                                    data_list_min.append({
+                                        "name": str(sds_display_name)+"(Min Value)",
+                                        "color": min_color,
+                                        "y": min_value,
+                                        "x": js_time
+                                    })
+
+                                    # MAX VAL
+                                    max_value = None
+                                    max_color = no_val_color
+                                    if data.max_value:
+                                        val = float(data.max_value) if data.max_value else 0
+                                        max_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.max_value)
+                                        max_color = MAX_CHART_COLOR
+
+                                    data_list_max.append({
+                                        "name": str(sds_display_name)+"(Max Value)",
+                                        "color": max_color,
+                                        "y": max_value,
+                                        "x": js_time
+                                    })
+                                    
+                                    # AVG VAL
+                                    avg_value = None
+                                    avg_color = no_val_color
+                                    if data.avg_value:
+                                        val = float(data.avg_value) if data.avg_value else 0
+                                        avg_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.avg_value)
+                                        avg_color = AVG_CHART_COLOR
+                                    
+                                    data_list_avg.append({
+                                        "name": str(sds_display_name)+"(Avg Value)",
+                                        "color": avg_color,
+                                        "y": avg_value,
+                                        "x": js_time
+                                    })
+
+                                    # CURRENT VAL
+                                    current_value = None
+                                    current_color = no_val_color
+                                    if data.current_value:
+                                        val = float(data.current_value) if data.current_value else 0
+                                        warn_val = float(data.warning_threshold) if data.warning_threshold else val
+                                        crit_val = float(data.critical_threshold) if data.critical_threshold else val
+                                        current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
+
+                                        if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                            current_color = compare_point(val, warn_val, crit_val)
+                                        else:
+                                            current_color = chart_color
+
+                                    data_list.append({
+                                        "name": str(sds_display_name)+"(Current Value)",
+                                        "color": current_color,
+                                        "y": current_value,
+                                        "x": js_time
+                                    })
+
+                                    chart_data = [
+                                        {  # Min Value
+                                            'name': self.result['data']['objects']['display_name']+"(Min Value)",
+                                            'data': data_list_min,
+                                            'type': MIN_CHART_TYPE,
+                                            'color': MIN_CHART_COLOR,
+                                            'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                            'valuetext': self.result['data']['objects']['valuetext'],
+                                            'is_inverted': self.result['data']['objects']['is_inverted'],
+                                            'marker': {
+                                                'enabled': False
+                                            }
+                                        },
+                                        {  # Max Value
+                                            'name': self.result['data']['objects']['display_name']+"(Max Value)",
+                                            'data': data_list_max,
+                                            'type': MAX_CHART_TYPE,
+                                            'color': MAX_CHART_COLOR,
+                                            'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                            'valuetext': self.result['data']['objects']['valuetext'],
+                                            'is_inverted': self.result['data']['objects']['is_inverted'],
+                                            'marker': {
+                                                'enabled': False
+                                            }
+                                        },
+                                        {  # Avg Value
+                                            'name': self.result['data']['objects']['display_name']+"(Avg Value)",
+                                            'data': data_list_avg,
+                                            'type': AVG_CHART_TYPE,
+                                            'color': AVG_CHART_COLOR,
+                                            'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                            'valuetext': self.result['data']['objects']['valuetext'],
+                                            'is_inverted': self.result['data']['objects']['is_inverted'],
+                                            'marker': {
+                                                'enabled': False
+                                            }
+                                        }#,
+                                        # {  # Current Value
+                                        #     'name': self.result['data']['objects']['display_name']+"(Current Value)",
+                                        #     'data': data_list,
+                                        #     'type': self.result['data']['objects']['type'],
+                                        #     'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                        #     'valuetext': self.result['data']['objects']['valuetext'],
+                                        #     'is_inverted': self.result['data']['objects']['is_inverted']
+                                        # }
+                                    ]
+
+                                else:
+                                    ###to draw each data point w.r.t threshold we would need to use the following
+                                    if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_min"]:
+                                        min_data_list.append([
+                                            js_time,
+                                            float(data.min_value) if data.min_value else None
+                                        ])
+
+                                    if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_max"]:
+                                        max_data_list.append([
+                                            js_time,
+                                            float(data.max_value) if data.max_value else None
+                                        ])
+
+                                    current_value = None
+                                    current_color = no_val_color
+                                    if data.current_value:
+                                        val = float(data.current_value) if data.current_value else 0
+                                        warn_val = float(data.warning_threshold) if data.warning_threshold else val
+                                        crit_val = float(data.critical_threshold) if data.critical_threshold else val
+                                        current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
+
+                                        if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                            current_color = compare_point(val, warn_val, crit_val)
+                                        else:
+                                            current_color = chart_color
+
+                                    data_list.append({
+                                        "name": sds_display_name,
+                                        "color": current_color,
+                                        "y": current_value,
+                                        "x": js_time
+                                    })
                             else:
-                                compare_point = lambda p1, p2, p3: chart_color \
-                                    if abs(p1) > abs(p2) \
-                                    else ('#FFE90D'
-                                          if abs(p2) > abs(p1) > abs(p3)
-                                          else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
-                                    )
+                                y_value = None
+                                y_down_value = None
+                                y_color = '#70AFC4'
+                                y_down_color = '#FF193B'
+                                y_title = str(data.data_source).upper()
 
-                            formula = SERVICE_DATA_SOURCE[sds_name]["formula"] if sds_name in SERVICE_DATA_SOURCE else None
-
-                            #only display warning if there exists a warning
-                            if data.warning_threshold:
-                                warn_data_list.append([js_time, float(data.warning_threshold)])
-
-                            #only display critical if there exists a critical
-                            if data.critical_threshold:
-                                crit_data_list.append([js_time, float(data.critical_threshold)])
-
-                            no_val_color = '#70AFC4'
-                            # FOR HISTORICAL DATA
-                            if is_historical_data:
-                                # MIN VAL
-                                min_value = None
-                                min_color = no_val_color
-                                if data.min_value:
-                                    val = float(data.min_value) if data.min_value else 0
-                                    min_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.min_value)
-                                    min_color = MIN_CHART_COLOR
-
-                                data_list_min.append({
-                                    "name": str(sds_display_name)+"(Min Value)",
-                                    "color": min_color,
-                                    "y": min_value,
-                                    "x": js_time
-                                })
-
-                                # MAX VAL
-                                max_value = None
-                                max_color = no_val_color
-                                if data.max_value:
-                                    val = float(data.max_value) if data.max_value else 0
-                                    max_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.max_value)
-                                    max_color = MAX_CHART_COLOR
-
-                                data_list_max.append({
-                                    "name": str(sds_display_name)+"(Max Value)",
-                                    "color": max_color,
-                                    "y": max_value,
-                                    "x": js_time
-                                })
-                                
-                                # AVG VAL
-                                avg_value = None
-                                avg_color = no_val_color
-                                if data.avg_value:
-                                    val = float(data.avg_value) if data.avg_value else 0
-                                    avg_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.avg_value)
-                                    avg_color = AVG_CHART_COLOR
-                                
-                                data_list_avg.append({
-                                    "name": str(sds_display_name)+"(Avg Value)",
-                                    "color": avg_color,
-                                    "y": avg_value,
-                                    "x": js_time
-                                })
-
-                                # CURRENT VAL
-                                current_value = None
-                                current_color = no_val_color
                                 if data.current_value:
-                                    val = float(data.current_value) if data.current_value else 0
-                                    warn_val = float(data.warning_threshold) if data.warning_threshold else val
-                                    crit_val = float(data.critical_threshold) if data.critical_threshold else val
-                                    current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
-                                    current_color = compare_point(val, warn_val, crit_val)
+                                    # title for availability
+                                    y_title = "Availability"
+
+                                    # Value for availability & unavailability
+                                    y_value = float(data.current_value)
+                                    y_down_value = 100.00 - float(data.current_value)
+                                    
+                                    # Color for availability & unavailability
+                                    y_color = '#90ee7e'
+                                    y_down_color = '#FF193B'
 
                                 data_list.append({
-                                    "name": str(sds_display_name)+"(Current Value)",
-                                    "color": current_color,
-                                    "y": current_value,
+                                    "name": y_title,
+                                    "color": y_color,
+                                    "y": y_value,
+                                    "x": js_time
+                                })
+
+                                warn_data_list.append({
+                                    "name": "UnAvailability",
+                                    "color": y_down_color,
+                                    "y": y_down_value,
                                     "x": js_time
                                 })
 
                                 chart_data = [
-                                    {  # Min Value
-                                        'name': self.result['data']['objects']['display_name']+"(Min Value)",
-                                        'data': data_list_min,
-                                        'type': MIN_CHART_TYPE,
-                                        'color': MIN_CHART_COLOR,
+                                    {
+                                        'name': 'Availability',
+                                        'color': y_color,
+                                        'data': data_list,
+                                        'type': self.result['data']['objects']['type'],
                                         'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                                        'valuetext': self.result['data']['objects']['valuetext'],
-                                        'is_inverted': self.result['data']['objects']['is_inverted'],
-                                        'marker': {
-                                            'enabled': False
-                                        }
+                                        'valuetext': self.result['data']['objects']['valuetext']
                                     },
-                                    {  # Max Value
-                                        'name': self.result['data']['objects']['display_name']+"(Max Value)",
-                                        'data': data_list_max,
-                                        'type': MAX_CHART_TYPE,
-                                        'color': MAX_CHART_COLOR,
-                                        'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                                        'valuetext': self.result['data']['objects']['valuetext'],
-                                        'is_inverted': self.result['data']['objects']['is_inverted'],
+                                    {
+                                        'name': 'UnAvailability',
+                                        'color': y_down_color,
+                                        'data': warn_data_list,
+                                        'type': 'column',
                                         'marker': {
                                             'enabled': False
                                         }
-                                    },
-                                    {  # Avg Value
-                                        'name': self.result['data']['objects']['display_name']+"(Avg Value)",
-                                        'data': data_list_avg,
-                                        'type': AVG_CHART_TYPE,
-                                        'color': AVG_CHART_COLOR,
-                                        'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                                        'valuetext': self.result['data']['objects']['valuetext'],
-                                        'is_inverted': self.result['data']['objects']['is_inverted'],
-                                        'marker': {
-                                            'enabled': False
-                                        }
-                                    }#,
-                                    # {  # Current Value
-                                    #     'name': self.result['data']['objects']['display_name']+"(Current Value)",
-                                    #     'data': data_list,
-                                    #     'type': self.result['data']['objects']['type'],
-                                    #     'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                                    #     'valuetext': self.result['data']['objects']['valuetext'],
-                                    #     'is_inverted': self.result['data']['objects']['is_inverted']
-                                    # }
+                                    }
                                 ]
 
-                            else:
-                                ###to draw each data point w.r.t threshold we would need to use the following
-                                if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_min"]:
-                                    min_data_list.append([
-                                        js_time,
-                                        float(data.min_value) if data.min_value else None
-                                    ])
-
-                                if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_max"]:
-                                    max_data_list.append([
-                                        js_time,
-                                        float(data.max_value) if data.max_value else None
-                                    ])
-
-                                current_value = None
-                                current_color = no_val_color
-                                if data.current_value:
-                                    val = float(data.current_value) if data.current_value else 0
-                                    warn_val = float(data.warning_threshold) if data.warning_threshold else val
-                                    crit_val = float(data.critical_threshold) if data.critical_threshold else val
-                                    current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
-                                    current_color = compare_point(val, warn_val, crit_val)
-
-                                data_list.append({
-                                    "name": sds_display_name,
-                                    "color": current_color,
-                                    "y": current_value,
-                                    "x": js_time
-                                })
+                    if data_list and len(data_list) > 0 and sds_name not in ["availability"]:
+                        if is_dual_axis:
+                            chart_data.append({
+                                'name': self.result['data']['objects']['display_name'],
+                                'data': data_list,
+                                'yAxis' : counter,
+                                'color' : data_list[0]['color'],
+                                'type': self.result['data']['objects']['type'],
+                                'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                'valuetext': self.result['data']['objects']['valuetext'],
+                                'is_inverted': self.result['data']['objects']['is_inverted']
+                            })
                         else:
-                            y_value = None
-                            y_down_value = None
-                            y_color = '#70AFC4'
-                            y_down_color = '#FF193B'
-                            y_title = str(data.data_source).upper()
-
-                            if data.current_value:
-                                # title for availability
-                                y_title = "Availability"
-
-                                # Value for availability & unavailability
-                                y_value = float(data.current_value)
-                                y_down_value = 100.00 - float(data.current_value)
-                                
-                                # Color for availability & unavailability
-                                y_color = '#90ee7e'
-                                y_down_color = '#FF193B'
-
-                            data_list.append({
-                                "name": y_title,
-                                "color": y_color,
-                                "y": y_value,
-                                "x": js_time
+                            chart_data.append({
+                                'name': self.result['data']['objects']['display_name'],
+                                'data': data_list,
+                                'color' : data_list[0]['color'],
+                                'type': self.result['data']['objects']['type'],
+                                'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                'valuetext': self.result['data']['objects']['valuetext'],
+                                'is_inverted': self.result['data']['objects']['is_inverted']
                             })
 
-                            warn_data_list.append({
-                                "name": "UnAvailability",
-                                "color": y_down_color,
-                                "y": y_down_value,
-                                "x": js_time
-                            })
-
-                            chart_data = [
-                                {
-                                    'name': 'Availability',
-                                    'color': y_color,
-                                    'data': data_list,
-                                    'type': self.result['data']['objects']['type'],
-                                    'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                                    'valuetext': self.result['data']['objects']['valuetext']
-                                },
-                                {
-                                    'name': 'UnAvailability',
-                                    'color': y_down_color,
-                                    'data': warn_data_list,
-                                    'type': 'column',
+                        if len(min_data_list):
+                            if is_dual_axis:
+                                chart_data.append({
+                                    'name': str("min value").title() + '(' + str(display_name) + ')' if is_unified_view else str("min value").title(),
+                                    'color': '#01CC14',
+                                    'data': min_data_list,
+                                    'yAxis' : counter,
+                                    'type': 'line',
                                     'marker': {
                                         'enabled': False
                                     }
-                                }
-                            ]
+                                })
+                            else:
+                                chart_data.append({
+                                    'name': str("min value").title() + '(' + str(display_name) + ')' if is_unified_view else str("min value").title(),
+                                    'color': '#01CC14',
+                                    'data': min_data_list,
+                                    'type': 'line',
+                                    'marker': {
+                                        'enabled': False
+                                    }
+                                })
 
-                if data_list and len(data_list) > 0 and sds_name not in ["availability"]:
-                    if is_dual_axis:
-                        chart_data.append({
-                            'name': self.result['data']['objects']['display_name'],
-                            'data': data_list,
-                            'yAxis' : counter,
-                            'color' : data_list[0]['color'],
-                            'type': self.result['data']['objects']['type'],
-                            'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                            'valuetext': self.result['data']['objects']['valuetext'],
-                            'is_inverted': self.result['data']['objects']['is_inverted']
-                        })
-                    else:
-                        chart_data.append({
-                            'name': self.result['data']['objects']['display_name'],
-                            'data': data_list,
-                            'color' : data_list[0]['color'],
-                            'type': self.result['data']['objects']['type'],
-                            'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                            'valuetext': self.result['data']['objects']['valuetext'],
-                            'is_inverted': self.result['data']['objects']['is_inverted']
-                        })
+                        if len(max_data_list):
+                            if is_dual_axis:
+                                chart_data.append({
+                                    'name': str("max value").title() + '(' + str(display_name) + ')' if is_unified_view else str("max value").title(),
+                                    'color': '#FF8716',
+                                    'yAxis' : counter,
+                                    'data': max_data_list,
+                                    'type': 'line',
+                                    'marker': {
+                                        'enabled': False
+                                    }
+                                })
+                            else:
+                                chart_data.append({
+                                    'name': str("max value").title() + '(' + str(display_name) + ')' if is_unified_view else str("max value").title(),
+                                    'color': '#FF8716',
+                                    'data': max_data_list,
+                                    'type': 'line',
+                                    'marker': {
+                                        'enabled': False
+                                    }
+                                })
 
-                    if len(min_data_list):
-                        if is_dual_axis:
-                            chart_data.append({
-                                'name': str("min value").title() + '(' + str(display_name) + ')' if is_unified_view else str("min value").title(),
-                                'color': '#01CC14',
-                                'data': min_data_list,
-                                'yAxis' : counter,
-                                'type': 'line',
-                                'marker': {
-                                    'enabled': False
-                                }
-                            })
-                        else:
-                            chart_data.append({
-                                'name': str("min value").title() + '(' + str(display_name) + ')' if is_unified_view else str("min value").title(),
-                                'color': '#01CC14',
-                                'data': min_data_list,
-                                'type': 'line',
-                                'marker': {
-                                    'enabled': False
-                                }
-                            })
-
-                    if len(max_data_list):
-                        if is_dual_axis:
-                            chart_data.append({
-                                'name': str("max value").title() + '(' + str(display_name) + ')' if is_unified_view else str("max value").title(),
-                                'color': '#FF8716',
-                                'yAxis' : counter,
-                                'data': max_data_list,
-                                'type': 'line',
-                                'marker': {
-                                    'enabled': False
-                                }
-                            })
-                        else:
-                            chart_data.append({
-                                'name': str("max value").title() + '(' + str(display_name) + ')' if is_unified_view else str("max value").title(),
-                                'color': '#FF8716',
-                                'data': max_data_list,
-                                'type': 'line',
-                                'marker': {
-                                    'enabled': False
-                                }
-                            })
-
-                    if len(warn_data_list):
-                        if is_dual_axis:
-                            chart_data.append({
-                                'name': str("warning threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("warning threshold").title(),
-                                'color': WARN_COLOR,
-                                'data': warn_data_list,
-                                'yAxis' : counter,
-                                'type': WARN_TYPE,
-                                'marker': {
-                                    'enabled': False
-                                }
-                            })
-                        else:
-                            chart_data.append({
-                                'name': str("warning threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("warning threshold").title(),
-                                'color': WARN_COLOR,
-                                'data': warn_data_list,
-                                'type': WARN_TYPE,
-                                'marker': {
-                                    'enabled': False
-                                }
-                            })
-                    # Condition of length of warning list  
-                    if len(crit_data_list):
-                        if is_dual_axis:
-                            chart_data.append({
-                                'name': str("critical threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("critical threshold").title(),
-                                'color': CRIT_COLOR,
-                                'data': crit_data_list,
-                                'yAxis' : counter,
-                                'type': CRIT_TYPE,
-                                'marker': {
-                                    'enabled': False
-                                }
-                            })
-                        else:
-                            chart_data.append({
-                                'name': str("critical threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("critical threshold").title(),
-                                'color': CRIT_COLOR,
-                                'data': crit_data_list,
-                                'type': CRIT_TYPE,
-                                'marker': {
-                                    'enabled': False
-                                }
-                            })
+                        if len(warn_data_list):
+                            if is_dual_axis:
+                                chart_data.append({
+                                    'name': str("warning threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("warning threshold").title(),
+                                    'color': WARN_COLOR,
+                                    'data': warn_data_list,
+                                    'yAxis' : counter,
+                                    'type': WARN_TYPE,
+                                    'marker': {
+                                        'enabled': False
+                                    }
+                                })
+                            else:
+                                chart_data.append({
+                                    'name': str("warning threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("warning threshold").title(),
+                                    'color': WARN_COLOR,
+                                    'data': warn_data_list,
+                                    'type': WARN_TYPE,
+                                    'marker': {
+                                        'enabled': False
+                                    }
+                                })
+                        # Condition of length of warning list  
+                        if len(crit_data_list):
+                            if is_dual_axis:
+                                chart_data.append({
+                                    'name': str("critical threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("critical threshold").title(),
+                                    'color': CRIT_COLOR,
+                                    'data': crit_data_list,
+                                    'yAxis' : counter,
+                                    'type': CRIT_TYPE,
+                                    'marker': {
+                                        'enabled': False
+                                    }
+                                })
+                            else:
+                                chart_data.append({
+                                    'name': str("critical threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("critical threshold").title(),
+                                    'color': CRIT_COLOR,
+                                    'data': crit_data_list,
+                                    'type': CRIT_TYPE,
+                                    'marker': {
+                                        'enabled': False
+                                    }
+                                })
+                except Exception, e:
+                    pass
 
             #this ensures a further good presentation of data w.r.t thresholds
             self.result['success'] = 1
@@ -4258,10 +4452,18 @@ class DeviceServiceDetail(View):
 
         chart_data = []
         temp_chart_data = {}
+        temp_bh_color = {
+            'ul': {},
+            'dl': {}
+        }
+
+        bh_ul_colors = ['#B5E51D', '#9BDAEB']
+        bh_dl_colors = ['#23B14D', '#00A3E8']
+
         for data in performance:
             try:
                 if (data.service_name, data.data_source) not in temp_chart_data:
-                    c = SERVICE_DATA_SOURCE[data.service_name.strip() + "_" +data.data_source.strip()]['chart_color']
+                    c = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['chart_color']
 
                     if technology and technology.name.lower() in ['ptp', 'p2p']:
                         if 'ul' in data.service_name.strip().lower():
@@ -4270,6 +4472,28 @@ class DeviceServiceDetail(View):
                             c = colors[1]
                         else:
                             pass
+                    elif is_bh and device_type.name.lower() in ['huawei', 'juniper', 'cisco']:
+                        if 'ul' in data.service_name.strip().lower():
+                            if data.data_source.strip().lower() not in temp_bh_color['ul']:
+                                try:
+                                    temp_bh_color['ul'][data.data_source.strip().lower()] = bh_ul_colors.pop(0)
+                                    c = temp_bh_color['ul'][data.data_source.strip().lower()]
+                                except Exception, e:
+                                    temp_bh_color['ul'][data.data_source.strip().lower()] = c
+                            else:
+                                c = temp_bh_color['ul'][data.data_source.strip().lower()]
+                        elif 'dl' in data.service_name.strip().lower():
+                            if data.data_source.strip().lower() not in temp_bh_color['dl']:
+                                try:
+                                    temp_bh_color['dl'][data.data_source.strip().lower()] = bh_dl_colors.pop(0)
+                                    c = temp_bh_color['dl'][data.data_source.strip().lower()]
+                                except Exception, e:
+                                    temp_bh_color['dl'][data.data_source.strip().lower()] = c
+                            else:
+                                c = temp_bh_color['dl'][data.data_source.strip().lower()]
+                    else:
+                        pass
+
                     try:
                         alias = service_data_sources[data.service_name.strip().lower(), data.data_source.strip().lower()]
                     except Exception, e:
@@ -4281,11 +4505,21 @@ class DeviceServiceDetail(View):
                             alias = 'DL : ' + alias
                         else:
                             alias = alias
+
+                    if is_bh:
+                        try:
+                            ds_name = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['ds_name']
+                            if ds_name:
+                                ds_name = ds_name.replace('_', '/')
+                                alias += ' (' + ds_name.title() + ')'
+                        except Exception, e:
+                            pass
+
                     temp_chart_data[data.service_name, data.data_source] = {
                         'name': alias,
                         'data': [],
                         'color': c,
-                        'type': SERVICE_DATA_SOURCE[data.service_name.strip() + "_" +data.data_source.strip()]['type']
+                        'type': SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['type']
                     }
                 js_time = data.sys_timestamp*1000
                 value = float(data.current_value)
@@ -4407,7 +4641,7 @@ class CustomDashboardPerformanceData(View):
                         
             if data_source_type.strip() not in ['topology', 'rta', 'pl', 'availability', 'rf']:
                 # for service in service_name:
-                sds_name = service_name.strip() + "_" + data_source_type.strip()        
+                sds_name = service_name.strip().lower() + "_" + data_source_type.strip().lower()        
             else:
                 sds_name = data_source_type.strip()            
 
@@ -4905,7 +5139,7 @@ class CustomDashboardPerformanceData(View):
 
                         if sds_name not in ['availability']:
                             if sds_name not in ['pl', 'rta']:
-                                sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
+                                sds_name = str(data.service_name).strip().lower() + "_" + str(data.data_source).strip().lower()
 
                         sds_display_name = SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                             if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
@@ -4966,15 +5200,15 @@ class CustomDashboardPerformanceData(View):
                                 compare_point = lambda p1, p2, p3: chart_color \
                                     if abs(p1) < abs(p2) \
                                     else ('#FFE90D'
-                                          if abs(p2) < abs(p1) < abs(p3)
-                                          else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                          if abs(p2) <= abs(p1) < abs(p3)
+                                          else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                     )
                             else:
                                 compare_point = lambda p1, p2, p3: chart_color \
                                     if abs(p1) > abs(p2) \
                                     else ('#FFE90D'
-                                          if abs(p2) > abs(p1) > abs(p3)
-                                          else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                          if abs(p2) >= abs(p1) > abs(p3)
+                                          else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                     )
 
                             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] if sds_name in SERVICE_DATA_SOURCE else None
@@ -5933,7 +6167,7 @@ class CustomDashboardPerformanceData(View):
                     sds_name = str(data.data_source).strip()
                     if sds_name not in ['availability']:
                         if sds_name not in ['pl', 'rta']:
-                            sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
+                            sds_name = str(data.service_name).strip().lower() + "_" + str(data.data_source).strip().lower()
 
                     sds_display_name = SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                         if sds_name in SERVICE_DATA_SOURCE  else str(data.data_source).upper()
@@ -5985,15 +6219,15 @@ class CustomDashboardPerformanceData(View):
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) < abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) < abs(p1) < abs(p3)
-                                      else ('#FF193B' if abs(p3) < abs(p1) else chart_color)
+                                      if abs(p2) <= abs(p1) < abs(p3)
+                                      else ('#FF193B' if abs(p3) <= abs(p1) else chart_color)
                                 )
                         else:
                             compare_point = lambda p1, p2, p3: chart_color \
                                 if abs(p1) > abs(p2) \
                                 else ('#FFE90D'
-                                      if abs(p2) > abs(p1) > abs(p3)
-                                      else ('#FF193B' if abs(p3) > abs(p1) else chart_color)
+                                      if abs(p2) >= abs(p1) > abs(p3)
+                                      else ('#FF193B' if abs(p3) >= abs(p1) else chart_color)
                                 )
 
                         formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
@@ -6507,39 +6741,41 @@ class CustomDashboardPerformanceListing(BaseDatatableView,AdvanceFilteringMixin)
         """ Filter datatable as per requested value
         :param qs:
         """
-
-        # sSearch = self.request.GET.get('sSearch', None)
+       
         sSearch = self.request.GET.get('search[value]', None)
+        updated_resultset = list()
 
         if sSearch:
-
             try:
-                main_resultset = self.custom_data_instance.get_performance_data(
-                    **self.parameters
-                ).using(alias=self.inventory_device_machine_name)
+                for params in self.parameters:
+                    main_resultset = self.custom_data_instance.get_performance_data(
+                    **params
+                    ).using(alias=self.inventory_device_machine_name)                  
 
-                qs = main_resultset.filter(
-                    Q(data_source__icontains=sSearch)
-                    |
-                    Q(max_value__icontains=sSearch)
-                    |
-                    Q(min_value__icontains=sSearch)
-                    |
-                    Q(current_value__icontains=sSearch)
-                    |
-                    Q(ip_address__icontains=sSearch)
-                    |
-                    Q(severity__icontains=sSearch)
-                    |
-                    Q(warning_threshold__icontains=sSearch)
-                    |
-                    Q(critical_threshold__icontains=sSearch)
-                ).values(*self.columns).order_by('-sys_timestamp')
+                    qs = main_resultset.filter(
+                        Q(data_source__icontains=sSearch)
+                        |
+                        Q(max_value__icontains=sSearch)
+                        |
+                        Q(min_value__icontains=sSearch)
+                        |
+                        Q(current_value__icontains=sSearch)
+                        |
+                        Q(ip_address__icontains=sSearch)
+                        |
+                        Q(severity__icontains=sSearch)
+                        |
+                        Q(warning_threshold__icontains=sSearch)
+                        |
+                        Q(critical_threshold__icontains=sSearch)
+                    ).values(*self.columns).order_by('-sys_timestamp')
 
+                    updated_resultset.append(qs)
+                # Merge all querysets present in 'updated_resultset' list
+                qs = MultiQuerySet(*updated_resultset)
             except Exception, e:
                 pass
-
-        return self.advance_filter_queryset(qs)
+        return qs
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
@@ -6970,7 +7206,7 @@ def device_current_status(device_object):
 
     if device_nms_uptime:
         for data in device_nms_uptime:
-            severity[data['severity']] = {'age': data['age'], 'down': data['refer']}
+            severity[data['severity']] = {'age': data['age'], 'down': data['refer'], 'c_val' : data['current_value']}
             if data['data_source'].strip().lower() == 'pl':
                 pl_value = data['current_value']
                 pl_age['age'] = data['age']  # refer field holds the last down time
@@ -7236,7 +7472,7 @@ class GetTopology(View):
                         severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
                         bh_pl_info = {
                             "severity" : severity if severity else 'NA',
-                            "value": "NA"
+                            "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
                         }
                     except Exception, e:
                         bh_pl_info = {
@@ -7275,15 +7511,15 @@ class GetTopology(View):
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('sect_device_id')))
                             sect_pl_info = {
                                 "severity" : severity if severity else 'NA',
-                                "value": "NA"
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
                             }
                         except Exception, e:
                             sect_pl_info = {
                                 "severity" : "NA",
                                 "value": "NA"
                             }
-                    print 'before'
-                    print sector_dict
+                    
+
                     sector_dict[str(bs.get('sect_id'))] = {
                         "id": str(bs.get('sect_id')),
                         "device_name": bs.get('sect_device_name'),
@@ -7296,8 +7532,6 @@ class GetTopology(View):
                         "pl_info": sect_pl_info,
                         "sub_station": list()
                     }
-                    print 'after'
-                    print sector_dict
 
                 try:
                     if bs.get('ss_device_id'):
@@ -7305,7 +7539,7 @@ class GetTopology(View):
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('ss_device_id')))
                             ss_pl_info = {
                                 "severity" : severity if severity else 'NA',
-                                "value": "NA"
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
                             }
                         except Exception, e:
                             ss_pl_info = {
@@ -7402,3 +7636,192 @@ class GetTopologyToolTip(View):
             formatted_result.append(temp_dict)
 
         return formatted_result
+
+
+class PowerStatusListing(BaseDatatableView):
+
+    model = PowerSignals
+    columns = [
+        'id',
+        'message',
+        'created_at',
+        'signal_type',
+        'circuit_contacts__circuit__sub_station__device__device_name'
+    ]
+
+    order_columns = [
+        'message',
+        'created_at',
+        'signal_type'
+    ]
+
+    def get_initial_queryset(self):
+        device_id = self.request.GET.get('device_id', None)
+        if device_id:
+            qs = self.model.objects.filter(
+                circuit_contacts__circuit__sub_station__device__id=device_id
+            ).values(*self.columns).order_by('-created_at')
+        else:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+        latest_timestamp = ''
+        resultset = list()
+        for data in qs:
+            # print type(data.get('created_at'))
+            # current_timestamp = data.get('created_at') 
+            temp_dict = {
+                'msg': data.get('message'),
+                'created_at': data.get('created_at'),
+                'status_type': data.get('signal_type')
+            }
+
+            if data.get('created_at'):
+                try:
+                    temp_dict.update(
+                        created_at=data.get('created_at').strftime(DATE_TIME_FORMAT)
+                    )
+                except Exception, e:
+                    pass
+
+            resultset.append(temp_dict)
+
+        return resultset
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+class PowerStatus(View):
+    """
+    The Class based View to get the last updated power status for single device.
+    """
+    def get(self, request):
+
+        self.result = {
+                'success': 0,
+                'message': 'No Data.',
+                'data': {
+                    'meta': {},
+                    'objects': {
+                        'perf': None,
+                        'last_updated': None,
+                        'pl_status' : None,
+                        'status': None,
+                        'age': None,
+                        'last_down_time': None,
+                        'severity': None
+                    }
+                }
+            }
+
+        date_format = "%d-%m-%Y %H:%M:%S"
+        device_id = int(self.request.GET.get('device_id'))
+        
+        if device_id:
+            # getting latest updated value from dataset
+            qs_dict = PowerSignals.objects.filter(
+                circuit_contacts__circuit__sub_station__device__id=device_id, signal_type='Received'
+            ).values().order_by('-created_at')
+            
+
+            if qs_dict.exists():
+                qs_dict = qs_dict[0]
+
+                # updating resultset
+                self.result.update(success= 1, message= 'Current status fetched successfully')
+                self.result['data']['objects']['perf'] = qs_dict['message']
+                self.result['data']['objects']['status'] = qs_dict['message']
+                self.result['data']['objects']['last_updated'] = qs_dict['created_at'].strftime(date_format)
+            else :
+                self.result.update(message= 'Data not fetched successfully')
+
+
+        else:
+            qs_dict = PowerSignals.objects.filter(id=0)
+
+        return HttpResponse(json.dumps(self.result), content_type="application/json")
+
+class SendPowerSms(View):
+    """
+    The Class based View to send button specific sms .
+    """
+
+    def get(self, request):
+        result = {
+            'success': 0,
+            'message': 'No Data.',
+        }
+
+        device_id = self.request.GET.get('device_id')
+        button_name = self.request.GET.get('button_name').strip().lower()
+        message = ''
+        send_to = ''
+
+        # variables for sending sms using provided sms gateway
+        payload =  GATEWAY_PARAMETERS
+        url = GATEWAY_SETTINGS['URL']
+
+        if not device_id:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+        
+        # getting the device related phone number from database
+        circuit_contact_instance = CircuitContacts.objects.filter(
+            circuit__sub_station__device__id=device_id
+        ).values()
+
+        if circuit_contact_instance.exists():
+            send_to = circuit_contact_instance[0]['phone_number']
+            
+            # getting suitable response for clicked button from power_sms_dict, defined in settings.py
+            message = settings.POWER_SMS_DICT[button_name]
+
+            payload['N'] = send_to
+            payload['M'] = message
+            r = requests.get(url, params=payload)
+
+            if r.status_code == 200:
+                power_instance = PowerSignals()
+                power_instance.circuit_contacts = circuit_contact_instance[0]
+                power_instance.message = str(message)
+                power_instance.signal_type = 'Sent'
+                power_instance.save()
+
+                result.update(success=1, message='Message sent successfully')
+            else:
+                result.update(success=0, message='Error in accessing gateway')
+
+        else:
+            result.update(message='Phone number does not exist')
+
+        return HttpResponse(json.dumps(result), content_type="application/json")

@@ -16,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import re
 import os.path
+import ast
 
 import logging
 
@@ -51,8 +52,16 @@ class LevelList(TemplateView):
         ]
 
         # if the user role is Admin or operator or superuser then the action column will appear on the datatable
-        if in_group(self.request.user, 'admin'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_escalationlevel') or in_group(self.request.user, 'operator', 'change_escalationlevel')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_escalationlevel') or in_group(self.request.user, 'operator', 'delete_escalationlevel')
+        if is_edit_perm or is_delete_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -184,30 +193,30 @@ class EmailSender(View):
 
     def post(self, request, *args, **kwargs):
         # From email id.
-        from_email = self.request.POST.get('from_email', None)
+        from_email = self.request.POST.get('from_email')
+
         # To email id.
         to_email = self.request.POST.get('to_email')
-        # If multiple values then by using eval converting into list.
+
         if to_email:
-            if "," in to_email:
-                to_email = eval(to_email)
-            else:
-                to_email = to_email.split(",")
+            if isinstance(to_email, unicode):
+                to_email = ast.literal_eval(to_email)
+            to_email = map(lambda x: x.strip(), to_email)
+
         # Subject.
         subject = self.request.POST.get('subject', None)
         # Message.
         message = self.request.POST.get('message', None)
         # Path of File attachments.
         attachment_path = self.request.POST.get('attachment_path')
+
         if attachment_path:
-            if "," in attachment_path:
-                attachment_path = eval(attachment_path)
-            else:
-                attachment_path = attachment_path.split(",")
+            if isinstance(attachment_path, unicode):
+                attachment_path = ast.literal_eval(attachment_path)
 
         attachments = None
         try:
-            attachments = request.FILES.values()
+            attachments = self.request.FILES.values()
         except Exception as e:
             logger.exception(e.message)
 
@@ -245,7 +254,7 @@ class EmailSender(View):
                 else:
                     # If file exist in system
                     if not os.path.isfile(x):
-                        error_messages = "file: '%s' doesn't exist \n" % (x)
+                        error_messages = "file: '%s' doesn't exist \n" % x
         else:
             result['data']['attachment_path'] = []
 
@@ -257,8 +266,8 @@ class EmailSender(View):
             result['message'] = "Successfully send the email."
             # Sending email as a backend task.
             mail_send.delay(result)
-
-        attachments_name = [x.name for x in result['data']['attachments']]
-        result['data']['attachments'] = attachments_name
+        if result['data']['attachments']:
+            attachments_name = [x.name for x in result['data']['attachments']]
+            result['data']['attachments'] = attachments_name
 
         return HttpResponse(json.dumps(result))

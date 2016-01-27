@@ -9,9 +9,9 @@ from django.core.urlresolvers import reverse
 from django.views.generic import ListView, View
 from django.http import HttpResponse
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device.models import Device, DeviceTechnology
+from device.models import Device, DeviceTechnology,DeviceType
 # For SIA Listing
-from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
+from alert_center.models import StatusAlarms, HistoryAlarms
 
 from performance.models import EventNetwork, EventService
 
@@ -25,6 +25,9 @@ from inventory.models import Sector, BaseStation
 
 # Import alert_center utils gateway class
 from alert_center.utils.util import AlertCenterUtilsGateway
+
+# Import scheduling_management utils gateway class
+from scheduling_management.utils.util import SchedulingManagementGateway
 
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
@@ -46,9 +49,17 @@ inventory_utils = InventoryUtilsGateway()
 # Create instance of 'AlertCenterUtilsGateway' class
 alert_utils = AlertCenterUtilsGateway()
 
+# Create instance of 'SchedulingManagementGateway' class
+scheduling_utils = SchedulingManagementGateway()
+
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
+device_technology_dict = {}
+device_type_dict = {}
+device_type_dict.update(DeviceType.objects.values_list('id', 'name'))
+device_technology_list = DeviceTechnology.objects.extra(select={'name' : 'LOWER(name)', 'id':'id'}).values_list('name','id')
+device_technology_dict.update(device_technology_list)
 
 class AlertCenterListing(ListView):
     """
@@ -242,7 +253,9 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         'current_value',
         'min_value',
         'max_value',
-        'avg_value'
+        'avg_value',
+        'age',
+        'sys_timestamp'
     ]
 
     main_qs = []
@@ -406,6 +419,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         :param qs:
         :return queryset
         """
+        
 
         if qs:
             data_unit = "%"
@@ -422,7 +436,31 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 data_unit = ''
                 service_tab = 'service'
 
+            #figure out which scheduling type should be displayed according to the page type
+            if page_type == 'customer':
+                scheduling_type = ['devi', 'dety', 'cust']
+            elif page_type == 'network' and 'backhaul' not in data_source.lower():
+                scheduling_type = ['devi', 'dety', 'netw']
+            elif 'backhaul' in data_source.lower():
+                scheduling_type = ['devi', 'dety', 'back']
+            else:
+                scheduling_type = ['devi', 'dety', 'cust', 'netw', 'back']
+
             for dct in qs:
+                try:                
+                    dct_device_name = dct.get('device_name')
+                    dct_device_type = dct.get('device_type')
+                except Exception, err:
+                    pass
+
+
+                showIconBlue = scheduling_utils.get_onDate_status(dct_device_name, dct_device_type, scheduling_type)   
+                    
+
+                # print schdeuledDownCond1, schdeuledDownCond2
+                if showIconBlue:
+                    dct.update(severity= 'inDownTime')
+                    dct.update(description= 'inDownTime')
                 try:
                     dct.update(current_value=float(dct["current_value"]))
                 except Exception, e:
@@ -455,14 +493,26 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     current_app='device'
                 )
 
-                dct.update(
-                    action='<a href="' + alert_url + '" title="Device Alerts">\
-                            <i class="fa fa-warning text-warning"></i></a>\
-                            <a href="' + performance_url + '" title="Device Performance">\
-                            <i class="fa fa-bar-chart-o text-info"></i></a>\
-                            <a href="' + inventory_url + '" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted"></i></a>'
-                )
+                try:
+                    dct.update(
+                        sys_timestamp=datetime.datetime.fromtimestamp(dct.get('sys_timestamp')).strftime(DATE_TIME_FORMAT) if dct.get('sys_timestamp') else "",
+                        age=datetime.datetime.fromtimestamp(dct.get('age')).strftime(DATE_TIME_FORMAT) if dct.get('age') else "",
+                        action='<a href="' + alert_url + '" title="Device Alerts">\
+                                <i class="fa fa-warning text-warning"></i></a>\
+                                <a href="' + performance_url + '" title="Device Performance">\
+                                <i class="fa fa-bar-chart-o text-info"></i></a>\
+                                <a href="' + inventory_url + '" title="Device Inventory">\
+                                <i class="fa fa-dropbox text-muted"></i></a>'
+                    )
+                except Exception, e:
+                    dct.update(
+                        action='<a href="' + alert_url + '" title="Device Alerts">\
+                                <i class="fa fa-warning text-warning"></i></a>\
+                                <a href="' + performance_url + '" title="Device Performance">\
+                                <i class="fa fa-bar-chart-o text-info"></i></a>\
+                                <a href="' + inventory_url + '" title="Device Inventory">\
+                                <i class="fa fa-dropbox text-muted"></i></a>'
+                    )
 
                 dct = alert_utils.common_prepare_results(dct)
 
@@ -879,7 +929,9 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         'min_value',
         'max_value',
         'current_value',
-        'avg_value'
+        'avg_value',
+        'age',
+        'sys_timestamp'
     ]
 
     main_qs = []
@@ -1149,15 +1201,27 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                     current_app='device'
                 )
 
-                dct.update(
-                    action='<a href="' + alert_url + '" title="Device Alerts">\
-                            <i class="fa fa-warning text-warning"></i></a>\
-                            <a href="' + performance_url + '" title="Device Performance">\
-                            <i class="fa fa-bar-chart-o text-info"></i></a>\
-                            <a href="' + inventory_url + '" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted"></i>\
-                            </a>'
-                )
+                try:
+                    dct.update(
+                        sys_timestamp=datetime.datetime.fromtimestamp(dct.get('sys_timestamp')).strftime(DATE_TIME_FORMAT) if dct.get('sys_timestamp') else "",
+                        age=datetime.datetime.fromtimestamp(dct.get('age')).strftime(DATE_TIME_FORMAT) if dct.get('age') else "",
+                        action='<a href="' + alert_url + '" title="Device Alerts">\
+                                <i class="fa fa-warning text-warning"></i></a>\
+                                <a href="' + performance_url + '" title="Device Performance">\
+                                <i class="fa fa-bar-chart-o text-info"></i></a>\
+                                <a href="' + inventory_url + '" title="Device Inventory">\
+                                <i class="fa fa-dropbox text-muted"></i></a>'
+                    )
+                except Exception, e:
+                    dct.update(
+                        action='<a href="' + alert_url + '" title="Device Alerts">\
+                                <i class="fa fa-warning text-warning"></i></a>\
+                                <a href="' + performance_url + '" title="Device Performance">\
+                                <i class="fa fa-bar-chart-o text-info"></i></a>\
+                                <a href="' + inventory_url + '" title="Device Inventory">\
+                                <i class="fa fa-dropbox text-muted"></i>\
+                                </a>'
+                    )
 
         return qs
 
@@ -1483,9 +1547,12 @@ class SingleDeviceAlertsInit(ListView):
         is_backhaul_switch = device_obj.backhaul_switch.exists()
         is_backhaul_pop = device_obj.backhaul_pop.exists()
         is_backhaul_aggregator = device_obj.backhaul_aggregator.exists()
+        is_ss = device_obj.substation_set.exists()
+
         # If device is backhaul or backhaul_switch or backhaul_pop or backhaul_aggregator
-        if is_backhaul or is_backhaul_switch or is_backhaul_pop or is_backhaul_aggregator:
+        if (is_backhaul or is_backhaul_switch or is_backhaul_pop or is_backhaul_aggregator) and not is_ss:
             page_type = 'other'
+
 
         # Create Context Dict
         context['table_headers'] = json.dumps(table_headers)
@@ -1723,6 +1790,7 @@ class SingleDeviceAlertsListing(BaseDatatableView, AdvanceFilteringMixin):
         Preparing Final dataset for rendering the data table.
         :param qs:
         """
+
         final_list = list()
         if qs:
             for data in qs:
@@ -1864,7 +1932,7 @@ class SIAListing(ListView):
     """
 
     # need to associate ListView class with a model here
-    model = CurrentAlarms
+    model = StatusAlarms
     template_name = 'alert_center/current_list.html'
 
     def get_context_data(self, **kwargs):
@@ -1888,11 +1956,12 @@ class SIAListing(ListView):
 
         common_columns = [
             {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'component_id', 'sTitle': 'Component ID', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'component_name', 'sTitle': 'Component Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'uptime', 'sTitle': 'Up Since', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         specific_invent_columns = [
@@ -1927,17 +1996,17 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     alarm_type = None
     tech_name = None
     columns = [
-        'severity', 'ip_address', 'device_type', 'component_id',
-        'component_name', 'eventname', 'traptime', 'uptime'
+        'severity', 'ip_address', 'eventname',
+        'traptime', 'alarm_count','first_occurred','last_occurred'
     ]
     
     order_columns = [
         'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state', 
-        'device_type', 'component_id', 'component_name', 'eventname', 
-        'traptime', 'uptime'
+        'eventname','traptime','uptime', 'alarm_count',
+        'first_occurred','last_occurred'
     ]
 
-    other_columns = ['bs_alias', 'bs_city', 'bs_state', 'sector_id']
+    other_columns = ['bs_alias', 'bs_city', 'bs_state', 'sector_id','device_type']
 
     is_ordered = False
     is_searched = False
@@ -1969,46 +2038,94 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         # model_columns = self.model._meta.get_all_field_names()
         model_columns = self.columns
 
-        if self.tech_name == 'all':
+        if self.tech_name == 'all':            
             if filter_condition:
-                query = "queryset = self.model.objects.filter(\
-                                {0}\
+                if self.alarm_type in ['clear']:
+                    query = "queryset = self.model.objects.filter( \
+                                {0},Q(severity__in = ['informational']) \
                             ).using(TRAPS_DATABASE).values(*{1})".format(
                                 filter_condition,
                                 model_columns
                             )
-                exec query
-            else:
-                queryset = self.model.objects.using(
-                    TRAPS_DATABASE
-                ).values(*model_columns).all()
-        else:
-            tech_name_list = [self.tech_name]
-            not_condition_sign = ''
-            if self.tech_name not in ['pmp', 'wimax']:
-                tech_name_list = ['pmp', 'wimax']
-                not_condition_sign = '~'
+                else:
 
-            if filter_condition:
-                query = "queryset = self.model.objects.filter( \
-                                {0}Q(device_technology__in={1}), \
-                                ({2}) \
-                            ).using(TRAPS_DATABASE).values(*{3})".format(
-                                not_condition_sign,
-                                tech_name_list,
+                    query = "queryset = self.model.objects.filter( \
+                                {0} \
+                            ).using(TRAPS_DATABASE).values(*{1})".format(
                                 filter_condition,
                                 model_columns
                             )
+
+                exec query
             else:
-                query = "queryset = self.model.objects.filter( \
-                            {0}Q(device_technology__in={1}) \
+                if self.alarm_type in ['clear']:                                        
+                    queryset = self.model.objects.filter(
+                        severity__in =['informational'] 
+                        ).using(
+                        TRAPS_DATABASE
+                    ).values(*model_columns).all()
+                else:
+                    queryset = self.model.objects.using(
+                        TRAPS_DATABASE
+                    ).values(*model_columns).all()           
+        else:
+            tech_name_list = [self.tech_name]
+            tech_name_id= list()
+
+            for tech_name in tech_name_list:                
+                if tech_name in device_technology_dict:
+                    tech_name_id.append(device_technology_dict.get(tech_name))
+
+            not_condition_sign = ''
+            if self.tech_name not in ['pmp', 'wimax']:                
+                tech_name_list = ['pmp', 'wimax']
+                not_condition_sign = '~'
+
+                for tech_name in tech_name_list:                             
+                    if tech_name in device_technology_dict:
+                        tech_name_id.append(device_technology_dict.get(tech_name))
+                # print tech_name_id
+            if filter_condition:
+                if self.alarm_type in ['clear']:            
+                    query = "queryset = self.model.objects.filter( \
+                                    {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), \
+                                    ({2}),Q(severity__in = ['informational']) \
+                                ).using(TRAPS_DATABASE).values(*{3})".format(
+                                    not_condition_sign,
+                                    tech_name_id,
+                                    filter_condition,
+                                    model_columns
+                                )
+                else:
+                    query = "queryset = self.model.objects.filter( \
+                                    {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), \
+                                    ({2}) \
+                                ).using(TRAPS_DATABASE).values(*{3})".format(
+                                    not_condition_sign,
+                                    tech_name_id,
+                                    filter_condition,
+                                    model_columns
+                                )
+
+            else:
+                if self.alarm_type in ['clear']:
+                    query = "queryset = self.model.objects.filter( \
+                            {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))),Q(severity__in = ['informational'])\
                         ).using(TRAPS_DATABASE).values(*{2})".format(
                             not_condition_sign,
-                            tech_name_list,
+                            tech_name_id,
                             model_columns
                         )
+                else:
+                    query = "queryset = self.model.objects.filter( \
+                            {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address')))\
+                        ).using(TRAPS_DATABASE).values(*{2})".format(
+                            not_condition_sign,
+                            tech_name_id,
+                            model_columns
+                        )                   
+            
             exec query
-
         return queryset
 
     def filter_queryset(self, qs):
@@ -2024,7 +2141,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             if type(qs) == type(list()):
                 result = qs
             else:
-                result = self.prepare_device_inventory(qs)
+                result = self.prepare_devices(qs)
 
             result_list = list()
             for search_data in result:
@@ -2041,7 +2158,15 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             # advance filtering the query set
             return self.advance_filter_queryset(result_list)
         else:
-            self.is_searched = False
+            if self.request.GET.get('advance_filter', None):
+                self.is_searched = True
+                if type(qs) == type(list()):
+                    qs = qs
+                else:
+                    qs = self.prepare_devices(qs)
+            else:
+                self.is_searched = False
+
         return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
@@ -2051,8 +2176,8 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         if self.tech_name in ['pmp', 'wimax', 'all']:
             self.order_columns = [
                 'severity', 'ip_address', 'sector_id', 'bs_alias',
-                'bs_city', 'bs_state', 'device_type', 'component_id',
-                'component_name', 'eventname', 'traptime', 'uptime'
+                'bs_city', 'bs_state', 'device_type',
+                'eventname', 'traptime', 'uptime','alarm_count','first_occurred','last_occurred'
             ]
 
         # Number of columns that are used in sorting
@@ -2108,13 +2233,13 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 if self.is_searched or type(qs) == type(list()):
                     prepared_result = qs
                 else:
-                    prepared_result = self.prepare_device_inventory(qs)
+                    prepared_result = self.prepare_devices(qs)
 
                 try:
                     # Sort the prepared result list
                     sorted_qs = sorted(
                         prepared_result,
-                        key=itemgetter(sort_using),
+                        key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
                         reverse=reverse
                     )
                 except Exception, e:
@@ -2153,25 +2278,25 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             else:
                 filtering_condition += ' Q(eventname__in={0}) '.format(eventname_list)
 
-        # component id filtering
-        component_id = self.request.GET.get('component_id', False)
-        component_id_list = component_id.split('|') if component_id else False
+        # # component id filtering
+        # component_id = self.request.GET.get('component_id', False)
+        # component_id_list = component_id.split('|') if component_id else False
 
-        if component_id_list:
-            if filtering_condition:
-                filtering_condition += ' | Q(component_id__in={0}) '.format(component_id_list)
-            else:
-                filtering_condition += ' Q(component_id__in={0}) '.format(component_id_list)
+        # if component_id_list:
+        #     if filtering_condition:
+        #         filtering_condition += ' | Q(component_id__in={0}) '.format(component_id_list)
+        #     else:
+        #         filtering_condition += ' Q(component_id__in={0}) '.format(component_id_list)
 
-        # component name filtering
-        component_name = self.request.GET.get('component_name', False)
-        component_name_list = component_name.split('|') if component_name else False
+        # # component name filtering
+        # component_name = self.request.GET.get('component_name', False)
+        # component_name_list = component_name.split('|') if component_name else False
 
-        if component_name_list:
-            if filtering_condition:
-                filtering_condition += ' | Q(component_name__in={0}) '.format(component_name_list)
-            else:
-                filtering_condition += ' Q(component_name__in={0}) '.format(component_name_list)
+        # if component_name_list:
+        #     if filtering_condition:
+        #         filtering_condition += ' | Q(component_name__in={0}) '.format(component_name_list)
+        #     else:
+        #         filtering_condition += ' Q(component_name__in={0}) '.format(component_name_list)
 
         # trap start_date & end_date filtering
         start_date = self.request.GET.get('start_date', False)
@@ -2202,16 +2327,13 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         self.alarm_type = self.request.GET.get('alarm_type', 'current')
         self.tech_name = self.request.GET.get('tech_name', 'all')
         # set model as per alarm type
-        if self.alarm_type in ['clear']:
-            self.model = ClearAlarms
-        elif self.alarm_type in ['history']:
-            self.model = HistoryAlarms
+        if self.alarm_type in ['clear','current']:
+            self.model = StatusAlarms
         else:
-            self.model = CurrentAlarms
-
+            self.model = HistoryAlarms
         return True
 
-    def prepare_device_inventory(self, qs):
+    def prepare_devices(self, qs):
         """
         """
         return prepare_snmp_gis_data(qs, self.tech_name)
@@ -2240,19 +2362,27 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             for dct in  qs:
                 severity = dct.get('severity')
                 severity_icon = alert_utils.common_get_severity_icon(severity)
-                component_id = dct.get('component_id','NA')
                 uptime = dct.get('uptime')
                 formatted_uptime = uptime
+
+                try:
+                    first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                except Exception, e:
+                    first_occurred = dct.get('first_occurred')
+
+                try:
+                    last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                except Exception, e:
+                    last_occurred = dct.get('last_occurred')
+
                 if uptime:
                     formatted_uptime = self.format_uptime_value(uptime)
 
-                if component_id == '':
-                    component_id = 'NA'
-
                 dct.update(
                     severity=severity_icon,
-                    component_id=component_id,
-                    uptime=formatted_uptime
+                    uptime=formatted_uptime,
+                    first_occurred=first_occurred,
+                    last_occurred=last_occurred
                 )
 
             return qs
@@ -2285,9 +2415,8 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-
         if not (self.is_ordered or self.is_searched):
-            qs = self.prepare_device_inventory(qs)
+            qs = self.prepare_devices(qs)
         
         aaData = self.prepare_results(qs)
 
@@ -2322,12 +2451,12 @@ class GetSiaFiltersData(View):
 
         if item_type and search_txt:
             # Select model as per the alarm type
-            if alarm_type in 'clear':
-                model = ClearAlarms
-            elif alarm_type in 'history':
-                model = HistoryAlarms
+            if alarm_type in ['clear','current']:
+                model = StatusAlarms
             else:
-                model = CurrentAlarms
+                model = HistoryAlarms
+            # else:
+            #     model = StatusAlarms
 
             try:
                 column_alias = {
@@ -2337,18 +2466,39 @@ class GetSiaFiltersData(View):
                 if tab_id and tab_id != 'all':
                     not_condition_sign = ''
                     tech_name_list = [tab_id]
+                    tech_name_id = list()
+
+                    for tech_name in tech_name_list:
+                        if tech_name in device_technology_dict:
+                            tech_name_id.append(device_technology_dict.get(tech_name))
+
                     if tab_id not in ['pmp', 'wimax']:
                         not_condition_sign = '~'
                         tech_name_list = ['pmp', 'wimax']
 
-                    where_condition = "{0}Q(device_technology__in={1}), Q({2}__istartswith='{3}')".format(
-                        not_condition_sign,
-                        tech_name_list,
-                        item_type,
-                        search_txt
-                    )
+                    for tech_name in tech_name_list:
+                        if tech_name in device_technology_dict:
+                            tech_name_id.append(device_technology_dict.get(tech_name))
+
+                    if alarm_type in ['clear']:
+                        where_condition = "{0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), Q({2}__istartswith='{3}'),Q(severity__in = ['informational'])".format(
+                            not_condition_sign,
+                            tech_name_id,
+                            item_type,
+                            search_txt
+                        )
+                    else:
+                        where_condition = "{0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), Q({2}__istartswith='{3}')".format(
+                            not_condition_sign,
+                            tech_name_id,
+                            item_type,
+                            search_txt
+                        )
                 else:
-                    where_condition = "Q({0}__istartswith='{1}')".format(item_type, search_txt)
+                    if alarm_type in ['clear']:
+                        where_condition = "Q({0}__istartswith='{1}'),Q(severity__in = ['informational'])".format(item_type, search_txt)
+                    else:
+                        where_condition = "Q({0}__istartswith='{1}')".format(item_type, search_txt)                    
 
                 # Django ORM query as per the GET params
                 query = "resultset = {0}.objects.extra(select={1}).filter({2}).values(*{3}).distinct()[:40]".format(
@@ -2383,7 +2533,6 @@ def prepare_snmp_gis_data(qs, tech_name):
     else:
         qs_list = list(qs.values())
 
-
     # Get IP address list from qs
     ip_address_list = [x['ip_address'] for x in qs_list]
 
@@ -2392,33 +2541,41 @@ def prepare_snmp_gis_data(qs, tech_name):
     if tech_name in ['pmp', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
+        ).extra(
+            select={'device_type' : 'device_device.device_type'}
         ).values(
             'sector_id',
             'base_station__alias',
             'base_station__city__city_name',
             'base_station__state__state_name',
-            'sector_configured_on__ip_address'
+            'sector_configured_on__ip_address',
+            'device_type'
         ).distinct()
 
         # If wimax only then check for DR device
         if tech_name in ['wimax', 'all']:
             dr_data_qs =  Sector.objects.filter(
                 dr_configured_on__ip_address__in=ip_address_list
+            ).extra(
+                select={'device_type' : 'device_device.device_type'}
             ).values(
                 'sector_id',
                 'base_station__alias',
                 'base_station__city__city_name',
                 'base_station__state__state_name',
-                'dr_configured_on__ip_address'
+                'dr_configured_on__ip_address',
+                'device_type'
             ).distinct()
 
     # If requert from converter or all tab only then check Backhaul model
     if tech_name in ['switch', 'converter', 'all']:
+
         bh_conf_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name'
+                'base_station__state__state_name' : 'device_state.state_name',
+                'device_type': 'device_device.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__ip_address__in=ip_address_list
@@ -2428,14 +2585,16 @@ def prepare_snmp_gis_data(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
-            'backhaul__bh_configured_on__ip_address'
+            'backhaul__bh_configured_on__ip_address',
+            'device_type'
         ).distinct()
 
         bh_switch_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name'
+                'base_station__state__state_name' : 'device_state.state_name',
+                'device_type': 'T4.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__isnull=False,
@@ -2446,14 +2605,16 @@ def prepare_snmp_gis_data(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
-            'backhaul__bh_switch__ip_address'
+            'backhaul__bh_switch__ip_address',
+            'device_type'
         ).distinct()
 
         pop_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name'
+                'base_station__state__state_name' : 'device_state.state_name',
+                'device_type': 'device_device.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__isnull=False,
@@ -2464,14 +2625,16 @@ def prepare_snmp_gis_data(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
-            'backhaul__pop__ip_address'
+            'backhaul__pop__ip_address',
+            'device_type'
         ).distinct()
 
         aggr_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name'
+                'base_station__state__state_name' : 'device_state.state_name',
+                'device_type': 'T4.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__isnull=False,
@@ -2482,7 +2645,8 @@ def prepare_snmp_gis_data(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
-            'backhaul__aggregator__ip_address'
+            'backhaul__aggregator__ip_address',
+            'device_type'
         ).distinct()
 
         mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
@@ -2523,13 +2687,15 @@ def prepare_snmp_gis_data(qs, tech_name):
     mapped_result = mapped_sector_result.copy()
     mapped_result.update(mapped_dr_result)
     mapped_result.update(converter_mapped_data)
+   
     for data in qs_list:
         ip_address = data.get('ip_address')
         data.update(
             bs_alias='NA',
             bs_city='NA',
             bs_state='NA',
-            sector_id='NA'
+            sector_id='NA',
+            device_type='NA'
         )
         if not ip_address:
             continue
@@ -2539,13 +2705,13 @@ def prepare_snmp_gis_data(qs, tech_name):
         except Exception, e:
             sector_dct = None
             pass
-
         if sector_dct:
             data.update(
                 sector_id=sector_dct.get('sector_id', 'NA'),
                 bs_alias=sector_dct.get('base_station__alias', 'NA'),
                 bs_city=sector_dct.get('base_station__city__city_name', 'NA'),
-                bs_state=sector_dct.get('base_station__state__state_name', 'NA')
+                bs_state=sector_dct.get('base_station__state__state_name', 'NA'),
+                device_type=device_type_dict.get(sector_dct.get('device_type'))
             )
 
     return qs_list

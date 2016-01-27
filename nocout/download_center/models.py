@@ -2,6 +2,11 @@ from device.models import DeviceTechnology
 from django.db import models
 from django.conf import settings
 import datetime
+from django.db.models.signals import post_save
+from download_center.tasks import scheduled_email_report
+from django.dispatch import receiver
+import signals as dc_signals
+
 
 def uploaded_file_name(instance, filename):
     timestamp = time.time()
@@ -991,6 +996,7 @@ class BSOutageMasterStructure(models.Model):
     """
     # report_id = models.ForeignKey(BSOutageReports)
     # organization = models.CharField('Organization', max_length=128)
+    s_no = models.CharField('S. No.', max_length=128, null=True, blank=True)
     processed_report = models.ForeignKey(ProcessedReportDetails, null=True, blank=True)
     week_number = models.CharField('Week of the Year', max_length=128)
     ticket_number = models.CharField('Trouble Ticket Number', max_length=128)
@@ -1124,3 +1130,10 @@ class BSOutageMasterMonthly(BSOutageMasterStructure):
 #     bs_uptime = models.CharField('BS Uptime', max_length=128)
 #     total_uptime_min = models.CharField('Total Uptime(Min.)', max_length=128)
 #     total_uptime_percent = models.CharField('Uptime in %', max_length=128)
+
+class EmailReport(models.Model):
+    report_name= models.ForeignKey(ReportSettings)
+    email_list = models.TextField()
+
+# Post Singnal call triggers to initiate email report.
+post_save.connect(dc_signals.send_mail_on_report_generation, sender=ProcessedReportDetails)

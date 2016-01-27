@@ -1,13 +1,19 @@
+/**
+ * This file contains the script to populate charts on RF performance dashboards
+ * @uses Highcharts
+ * @class rfDashboardLib
+ */
+
 var base_url = "",
     create_chunks = [],
     total_calls_count = 0;
+
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
     base_url = window.location.origin;
 } else {
     base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
 }
-
 
 /**
  * This function initiates RF performance dashboard
@@ -39,6 +45,12 @@ function initRfDashboard() {
     }
 }
 
+
+/**
+ * This function call function to make ajax call as per the given param
+ * @method startNextChunkCall
+ * @param counter {Number}
+ */
 function startNextChunkCall(counter) {
     var current_chunk = JSON.parse(JSON.stringify(create_chunks[counter]));
 
@@ -46,12 +58,10 @@ function startNextChunkCall(counter) {
         var ds_name = current_chunk.splice(0,1)[0];
         if(ds_name) {
             //Call waitAndSend function with BS Json Data and counter value
-            rf_getChartData(ds_name,counter);
+            rf_getChartData(ds_name, counter);
         }
     }
-
 }
-
 
 
 /**

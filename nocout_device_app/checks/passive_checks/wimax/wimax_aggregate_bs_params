@@ -201,6 +201,7 @@ def check_wimax_aggregate_bs_params(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
+    params_list = []
     try:
         if info[0][0]:
             bs_ip = info[0][0]
@@ -219,6 +220,13 @@ def check_wimax_aggregate_bs_params(item, _no_params, info):
                         "pmp1_mrc=%s pmp1_stc=%s " % (pmp1_mrc, pmp1_stc) +\
                        "pmp2_mrc=%s pmp2_stc=%s " % (pmp2_mrc, pmp2_stc)
                 state = 0
+		params_list.extend([pmp1_prefix, pmp2_prefix, idu_serial_1, idu_serial_2, pmp1_fr_len, pmp2_fr_len, odu_serial_1,
+				odu_serial_2,idu_type, p1_rx_pwr, p2_rx_pwr, pmp1_bw, pmp2_bw,pmp1_mrc, pmp1_stc, pmp2_mrc, pmp2_stc])
+		try:
+			if memc:
+				memc.set("%s_bs_params" % g_hostname, str(params_list))
+		except:
+			pass
     except:
         infotext = "unknown_value"
 

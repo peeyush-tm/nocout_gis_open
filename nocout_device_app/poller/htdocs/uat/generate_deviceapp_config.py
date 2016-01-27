@@ -6,6 +6,10 @@ from datetime import datetime
 import memcache
 import imp
 
+from celery import Celery
+from celery.utils.celery_sentinel import register_celery_alias
+register_celery_alias('redis-sentinel')
+
 nocout_site_name= 'master_UA'
 db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
@@ -68,6 +72,46 @@ t_interval_s_type = {
         }
 
 wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
+
+
+def send_task_message(sentinels):
+    """ Sends task message on appropriate broker"""
+    class CeleryConfig(object):
+        #BROKER_URL = 'redis://10.133.19.165:6381/15'
+	SERVICE_NAME = 'mymaster'
+	# options needed for celery broker connection
+	BROKER_TRANSPORT_OPTIONS = {
+		'service_name': 'mymaster',
+		'sentinels': sentinels,
+		'min_other_sentinels': 2,
+		'db': 15
+	}
+        BROKER_URL = 'redis-sentinel://'
+    celery = Celery()
+    try:
+	    celery.config_from_object(CeleryConfig)
+	    celery.send_task('load-inventory')
+    except Exception as exc:
+	print 'Error in calling task load-inventory'
+	print exc
+
+
+def call_load_inventory():
+    # machines we need to send tasks to
+    machines = ['dev']
+    for m in machines:
+        sentinels = get_sentinels_for_machine(m)
+        send_task_message(sentinels)
+
+
+def get_sentinels_for_machine(m):
+	mapping = {
+		'dev': [
+			('10.133.19.165', 26379),
+			('10.133.19.165', 26380)
+		]
+	}
+	return mapping.get(m)
 
 
 def prepare_hosts_file():
@@ -157,7 +201,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     device_device.is_deleted=0 and
     device_device.host_state <> 'Disable'
     and 
-    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE')
+    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE','Huawei')
     group by device_device.ip_address
     ;
     """
@@ -208,9 +252,12 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
                 int_ports = map(lambda x: int(x), int_ports)   #convert int type
                 int_string = map(lambda x: x.split('/')[0], device[9].split(','))
                 for i in xrange(len(int_string)):
-                    if int_string[i]== 'Gi0':
+                    #if int_string[i]== 'Gi0':
+                    if 'gi' in int_string[i].lower():
                         int_ports[i]= int_ports[i]+24
                 capacities = device[10].split(',') if device[10] else device[10]
+                if len(int_string)>1:  # to multiple kpi for ring ports
+                    capacities.append(capacities[0])
                 for p_n, p_cap in zip(int_ports, capacities):
                     port_wise_capacities[int(p_n)-1] = p_cap
             except Exception as e:
@@ -225,6 +272,8 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
                    if int_ports_s[i]== 1:
                        int_ports[i]=int_ports[i]+48
                capacities = device[10].split(',') if device[10] else device[10]
+               if len(int_ports)>1: # for ring port extra capcity added
+                   capacities.append(capacities[0])
                for p_n, p_cap in zip(int_ports, capacities):
                    port_wise_capacities[int(p_n)] = p_cap
            except Exception as e:
@@ -263,7 +312,6 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     T.mrotek_devices, T.rici_devices = mrotek_devices, rici_devices
     T.cisco_switch_devices, T.juniper_switch_devices  = cisco_switch_devices, juniper_switch_devices
     return T
-
 
 def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attributes=None):
     all_hosts = []
@@ -733,9 +781,49 @@ def dict_to_redis_hset(r, hkey, dict_to_store):
     return all([r.hset(hkey, k, v) for k, v in dict_to_store.items()])
 
 def get_settings():
-    query1 = """
-     select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as device left join (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  )  where device.device_type IN (12,18) and backhaul.bh_port_name <> 'NULL';
-    """ 
+
+    #query1 = """
+    # select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as device left join
+    # (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  )  where device.device_type IN (12,18) 
+    #and backhaul.bh_port_name <> 'NULL';
+    #"""
+
+
+    query2 = """
+select
+	bh_device.device_name,
+	
+	GROUP_CONCAT(bs.bh_port_name separator ',') as bh_ports
+	
+from
+	inventory_basestation as bs
+left join
+	inventory_backhaul as bh
+on
+	bs.backhaul_id = bh.id
+left join
+	device_device as bh_device
+ON
+	bh_device.id = bh.bh_configured_on_id
+left join
+	device_devicetype as dtype
+ON
+	dtype.id = bh_device.device_type
+left join
+	service_servicedatasource as sds
+ON
+	lower(sds.name) = lower(bs.bh_port_name)
+	OR
+	lower(sds.alias) = lower(bs.bh_port_name)
+	OR
+	lower(sds.name) = lower(replace(bs.bh_port_name, '/', '_'))
+	OR
+	lower(sds.alias) = lower(replace(bs.bh_port_name, '/', '_'))
+WHERE
+	lower(dtype.name) in ('juniper', 'cisco', 'huawei')
+group by
+	bh_device.id;
+""" 
     global snmp_check_interval
     snmp_communities_db, snmp_ports_db = [], []
     data = []
@@ -753,14 +841,19 @@ def get_settings():
         cur = db.cursor()
         cur.execute(query)
         data = dict_rows(cur)
-        cur.execute(query1)
-        data1 = cur.fetchall()
+	#print "data", data
+        #cur.execute(query1)
+        #data1 = cur.fetchall()  # from back_haul
+	#print "data ", data1
+	cur.execute(query2)
+	data2 = cur.fetchall()  # from basestation
         # print "data1 is ", data1
         cur.close()
         #logger.error('data in get_settings: ' + pformat(data))
     except Exception, exp:
         logger.error('Exception in get_settings: ' + pformat(exp))
         db.close()
+	print exp
     finally:
         db.close()
     memc_obj1=db_ops_module.MemcacheInterface()
@@ -768,9 +861,14 @@ def get_settings():
     #memc_obj= MemcacheInterface()
     #redis_obj=db_ops_module.RedisInterface()
     #rds_cnx=redis_obj.redis_cnx
-    dict2 = [(key,value.replace("/", "_")) for key, value in data1] # conversion of "/" into "_"
-    dict_switch = dict(dict2)
-    #print dict_switch
+    #dict2 = [(key,value.replace("/", "_")) for key, value in data1 if value] # conversion of "/" into "_"  from backhual
+    #dict_switch = dict(dict2)  # back_hual dict
+    #print "back_hual", dict_switch    
+    dict3 = [(key,value.replace("/", "_")) for key, value in data2 if value] # for basestation
+    dict_switch = dict(dict3) # for basestation 
+    #dict_switch.update(dict_switch2) # back_haul dict updated with basestation dict
+    #print "dict is_bas ", dict_switch2
+    #print "dict is ", dict_switch
     key = "master_ua" + "_switch"
     #print  [rds_cnx.hset(key, k, v) for k, v in dict_switch.items()]
     #print rds_cnx.hgetall(key)
@@ -794,7 +892,7 @@ def get_settings():
             'radwin_ss_provis_kpi',
             'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
             'rici_dl_util_kpi', 'rici_ul_util_kpi',
-            'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi']
+            'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi','huawei_switch_dl_util_kpi','huawei_switch_ul_util_kpi']
     # Following dependent SS checks should not be included in list of passive checks
     # As they are treated as active checks (Dependent in sense they get data from their BS)
     exclude_ss_active_services = ['cambium_ss_ul_issue_kpi', 'cambium_ss_provis_kpi', 'wimax_ss_ul_issue_kpi',
@@ -869,10 +967,16 @@ def get_settings():
             d_ports = service['port'], [service['devicetype']], ['@all']
             if d_ports not in snmp_ports_db:
                 snmp_ports_db.append(d_ports)
-
-            d_community = str(service['community']), [str(service['devicetype'])], ['@all']
+            
+            if service['version'] == 'v3':
+                 snmp_v3_parameter = (str(service['security_level']), str(service['auth_protocol']), str(service['security_name']), 
+                 str(service['auth_password']), str(service['private_phase']), str(service['private_pass_phase']))
+                 d_community = snmp_v3_parameter, [str(service['devicetype'])], ['@all']
+            else :
+            	d_community = str(service['community']), [str(service['devicetype'])], ['@all']
             if d_community not in snmp_communities_db:
                 snmp_communities_db.append(d_community)
+		print d_community
     T.ping_levels_db, T.default_checks, T.snmp_ports_db = ping_levels_db, default_checks, snmp_ports_db
     T.snmp_communities_db, T.active_checks_thresholds = snmp_communities_db, active_checks_thresholds
     T.active_checks_thresholds_per_device = active_checks_thresholds_per_device
@@ -905,7 +1009,13 @@ def prepare_query():
     devicetype.timeout as ping_timeout,
     protocol.port as port,
     protocol.version as version,
-    protocol.read_community as community
+    protocol.read_community as community,
+    protocol.auth_password as auth_password,
+    protocol.auth_protocol as auth_protocol,
+    protocol.security_name as security_name,
+    protocol.security_level as security_level,
+    protocol.private_phase as private_phase,
+    protocol.private_pass_phase as private_pass_phase
     from device_devicetype as devicetype
     left join (
         service_service as service,
@@ -1120,12 +1230,12 @@ def util_active_checks(devices, active_checks_thresholds, active_checks_threshol
             rici_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     # switch utilization active checks
-    check_dict = make_active_check_rows(check_dict, devices.cisco_switch_devices,
-            cisco_switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
-            def_war=80, def_crit=90)
+
     check_dict = make_active_check_rows(check_dict, devices.juniper_switch_devices,
             juniper_switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
+
+
     ########################################################################################
     # These values would be used if we dont find device specific entry
     #S1 = filter(lambda x: 'wimax_pmp1_ul_util_kpi' in x[0], active_checks_thresholds)
@@ -1273,10 +1383,10 @@ def write_rules_file(settings_out, final_active_checks):
         f.write("ping_levels += %s" % pformat(settings_out.ping_levels_db))
         f.write("\n\n\n\n")
 
-        for service in final_active_checks.keys():
-            f.write("active_checks.setdefault('" + service + "', [])\n")
-        for service, check_list in final_active_checks.iteritems():
-            f.write("active_checks['" + service + "'] += %s\n\n" % pformat(check_list))
+        #for service in final_active_checks.keys():
+        #    f.write("active_checks.setdefault('" + service + "', [])\n")
+        #for service, check_list in final_active_checks.iteritems():
+        #    f.write("active_checks['" + service + "'] += %s\n\n" % pformat(check_list))
 
         f.write("checks += %s" % pformat(settings_out.default_checks))
         f.write("\n\n\n")
@@ -1305,3 +1415,5 @@ def main():
 if __name__ == '__main__':
    
     main()
+    # call load inventory tasks by sending message to brokers on Prd servers
+    call_load_inventory()

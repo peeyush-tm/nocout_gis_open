@@ -11,6 +11,10 @@ urlpatterns = [
     url(r'^reset_user_permissions/(?P<value>\d+)/$', api.ResetUserPermissions.as_view(), name='reset_user_permissions'),
     url(r'^permissions_on_group_change/(?P<gid>\d+)/$', api.PermissonsOnGroupChange.as_view(),
         name='permissions_on_group_change'),
+    url(r'^parent_on_organization_change/(?P<oid>\d+)/$', api.ParentOnOrganizationChange.as_view(),
+        name='parent_on_organization_change'),
     url(r'^reset_admin_users_permissions/$', api.ResetAdminUsersPermissions.as_view(),
         name='reset_admin_users_permissions'),
+    url(r'^get_user_organizations/$', api.GetUserOrganizations.as_view(),
+        name='get_user_organizations'),
 ]

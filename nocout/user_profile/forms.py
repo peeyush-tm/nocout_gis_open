@@ -21,7 +21,7 @@ from nocout.widgets import MultipleToSingleSelectionWidget
 from organization.models import Organization
 from user_profile.models import UserProfile, UserPasswordRecord
 from fields import PasswordField
-from user_profile.utils.auth import can_edit_permissions
+from user_profile.utils.auth import can_edit_permissions, get_user_organizations
 import logging
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,10 @@ class UserForm(forms.ModelForm):
 
         # Removing help text for role 'select' field
         self.base_fields['groups'].help_text = ''
+        # Update the label text of groups dropdown field
+        self.base_fields['groups'].label = 'Role'
         self.base_fields['user_permissions'].help_text = ''
+        # self.base_fields['organization'].queryset = get_user_organizations(self.request.user)
 
         # If request is for updating user then initialize role, parent, organization.
         if kwargs['instance']:
@@ -59,24 +62,18 @@ class UserForm(forms.ModelForm):
 
         super(UserForm, self).__init__(*args, **kwargs)
 
-        # Show permission field to only those who are allowed to edit permissions.
-        if not can_edit_permissions(self.request.user, kwargs['instance']):
-            del self.fields['user_permissions']
-
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
-
-        if not self.request.user.is_superuser:
-            logged_in_user_organization_list = self.request.user.userprofile.organization.get_descendants(
-                include_self=True)
-            self.fields['organization'].queryset = logged_in_user_organization_list
-        else:
-            self.fields['organization'].queryset = Organization.objects.all()
+        logged_in_user_organization_list = get_user_organizations(self.request.user)
+        self.fields['organization'].queryset = logged_in_user_organization_list
 
         # If request is for updating user then make password non mandatory fields.
         if self.instance.pk:
             self.fields['password1'].required = False
             self.fields['password2'].required = False
+            # Show permission field to only those who are allowed to edit permissions.
+            if not can_edit_permissions(self.request.user, kwargs['instance']):
+                del self.fields['user_permissions']
             # If user is modifying his own profile then don't allow user to modify
             # his username, parent/manager, role, organization.
             if self.instance.pk == self.request.user.pk:
@@ -84,7 +81,7 @@ class UserForm(forms.ModelForm):
                 self.fields['parent'].widget.attrs['disabled'] = 'disabled'
                 self.fields['groups'].widget.attrs['disabled'] = 'disabled'
                 self.fields['organization'].widget.attrs['readonly'] = True
-                self.fields['parent'].label = 'Manager'
+                # self.fields['parent'].label = 'Manager'
                 # Don't show comment field.
                 self.fields.pop('comment')
 

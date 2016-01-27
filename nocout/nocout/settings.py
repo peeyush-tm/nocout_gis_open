@@ -60,7 +60,7 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/home/'
 LOGIN_EXEMPT_URLS = (
     r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/',
-    'sm/dialog_action/', 'user/change_password/')
+    'sm/dialog_action/', 'user/change_password/','download_center/processedreportemail/', 'power/get_sms/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -310,9 +310,35 @@ CELERYBEAT_SCHEDULE = {
     #     'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
     #     'args': ['WiMAX']
     # },
+    'validate_file_for_bulk_upload_create': {
+        'task': 'inventory.tasks.validate_file_for_bulk_upload',
+        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+        'args': ['c']
+    },
+    'validate_file_for_bulk_upload_delete': {
+        'task': 'inventory.tasks.validate_file_for_bulk_upload',
+        'schedule': crontab(minute=15, hour=12),  # Execute daily at 12:15 p.m
+        'args': ['d']
+    },
+    'process_file_for_bulk_upload': {
+        'task': 'inventory.tasks.process_file_for_bulk_upload',
+        'schedule': crontab(minute=30, hour=12),  # Execute daily at 12:30 p.m
+    },
+    'process_file_for_bulk_delete': {
+        'task': 'inventory.tasks.process_file_for_bulk_delete',
+        'schedule': crontab(minute=15, hour=12),  # Execute daily at 12:45 p.m
+    },
     'update-inventory-topology': {
         'task': 'inventory.tasks.update_topology',
         'schedule': timedelta(seconds=300),
+    },
+    'validate-file-for-bulk-upload': {
+        'task': 'inventory.tasks.validate_file_for_bulk_upload',
+        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    },
+    'process-file-for-bulk-upload': {
+        'task': 'inventory.tasks.process_file_for_bulk_upload',
+        'schedule': crontab(minute=50, hour=12),  # Execute daily at 12:50 p.m
     },
     # END Topology Updates
     # updating the polled sector frequency
@@ -468,6 +494,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'performance.tasks.calculate_rf_network_availability',
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=25, hour=0)
+    },
+    'scheduled_email_report_task': {
+        'task': 'download_center.tasks.scheduled_email_report',
+        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
     }
 }
 
@@ -540,9 +570,9 @@ MULTI_PROCESSING_ENABLED = False
 
 # Configuration for 'django-session-security' module.
 # Time (in seconds) before the user should be warned that is session will expire because of inactivity.
-SESSION_SECURITY_WARN_AFTER = 540
+SESSION_SECURITY_WARN_AFTER = 3540
 # Time (in seconds) before the user should be logged out if inactive.
-SESSION_SECURITY_EXPIRE_AFTER = 600
+SESSION_SECURITY_EXPIRE_AFTER = 3600
 # Expire session on closing web browser.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # List of urls that should be ignored by the middleware.
@@ -626,7 +656,8 @@ SERVICE_DATA_SOURCE = {
         "show_gis": 1,
         "show_performance_center": 1,
         "is_inverted": 0,
-        "chart_color": "#70AFC4",
+        # "chart_color": "#70AFC4",
+        "chart_color": "transparent",
         "service_name": 'ping',
         "service_alias": 'Ping',
     },
@@ -761,7 +792,7 @@ DISPLAY_SEVERITY_PIE_CHART = False
 
 # #### Enable Disable Service Impacting Alarms from GUI.
 # Version 1 : 25th March 2015
-SIA_ENABLED = False
+SIA_ENABLED = True
 TRAPS_DATABASE = 'default'
 # #### Enable Disable Service Impacting Alarms from GUI.
 
@@ -785,10 +816,17 @@ SETTINGS_EXPORT = [
     'ENABLE_AGGREGATE_REPORT_DOWNLOAD',
     'ENABLE_WHITE_THEME',
     'ENABLE_TOPO_VIEW',
+    'ENABLE_POWER_TAB',
     'ENABLE_BIRDEYE_VIEW',
     'ENABLE_CUSTOM_DASHBOARD_VIEW',
     'SHOW_RF_COLUMN',
-    'NO_ONDEMAND_POLL_SDS'
+    'NO_ONDEMAND_POLL_SDS',
+    'SINGLE_REPORT_EMAIL',
+    'SCHEDULED_REPORT_EMAIL',
+    'REPORT_EMAIL_PERM',
+    'SCHEDULED_SINGLE_REPORT_EMAIL',
+    'NETWORK_TICKET_URL',
+    'CUSTOMER_TICKET_URL'
 ]
 
 # Dashbaord Settings
@@ -826,12 +864,18 @@ CACHE_TIME = {
     'DEFAULT': 60
 }
 
+POWER_SMS_DICT = {
+    'status' : 'Status',
+    'reset' : 'Reset',
+    'joji' : 'JOJI'
+}
+
 # Params for advance filters feature.
 MAX_SUGGESTION_COUNT = 40
 DATATABLE_SEARCHTXT_KEY = 'sSearch'
 
 # Flag to enable/disable advance filters feature for datatables.
-ENABLE_ADVANCE_FILTERS = True
+ENABLE_ADVANCE_FILTERS = False
 
 # Flag to enable/disable unified service view on single performance page.
 ENABLE_UNIFIED_SERVICE_VIEW = True
@@ -846,13 +890,16 @@ ENABLE_WHITE_THEME = True
 SHOW_RF_COLUMN = 6
 
 # Flag to enable/disable topology view on single performance page.
-ENABLE_TOPO_VIEW = True
+ENABLE_TOPO_VIEW = False
+
+# Flag to enable/disable power on single performance page.
+ENABLE_POWER_TAB = False
 
 # Flag to enable/disable birdeye view on single performance page.
-ENABLE_BIRDEYE_VIEW = True
+ENABLE_BIRDEYE_VIEW = False
 
 # Flag to enable/disable custom dashboards on single performance page.
-ENABLE_CUSTOM_DASHBOARD_VIEW = True
+ENABLE_CUSTOM_DASHBOARD_VIEW = False
 
 # Password complexity settings.
 # ===============================
@@ -952,8 +999,245 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
     'wimax_ss_vlan_invent_ss_vlan',
     'wimax_transmit_power_pmp1_invent_transmit_power_pmp1',
     'wimax_transmit_power_pmp2_invent_transmit_power_pmp2',
-    'wimax_ul_intrf_ul_intrf'
+    'wimax_ul_intrf_ul_intrf',
+    'cisco_switch_ul_util_kpi_fa0_1_kpi',
+    'cisco_switch_dl_util_kpi_fa0_1_kpi',
+    'cisco_switch_ul_util_kpi_fa0_2_kpi',
+    'cisco_switch_dl_util_kpi_fa0_2_kpi',
+    'cisco_switch_ul_util_kpi_fa0_3_kpi',
+    'cisco_switch_dl_util_kpi_fa0_3_kpi',
+    'cisco_switch_ul_util_kpi_fa0_4_kpi',
+    'cisco_switch_dl_util_kpi_fa0_4_kpi',
+    'cisco_switch_ul_util_kpi_fa0_5_kpi',
+    'cisco_switch_dl_util_kpi_fa0_5_kpi',
+    'cisco_switch_ul_util_kpi_fa0_6_kpi',
+    'cisco_switch_dl_util_kpi_fa0_6_kpi',
+    'cisco_switch_ul_util_kpi_fa0_7_kpi',
+    'cisco_switch_dl_util_kpi_fa0_7_kpi',
+    'cisco_switch_ul_util_kpi_fa0_8_kpi',
+    'cisco_switch_dl_util_kpi_fa0_8_kpi',
+    'cisco_switch_ul_util_kpi_fa0_9_kpi',
+    'cisco_switch_dl_util_kpi_fa0_9_kpi',
+    'cisco_switch_ul_util_kpi_fa0_10_kpi',
+    'cisco_switch_dl_util_kpi_fa0_10_kpi',
+    'cisco_switch_ul_util_kpi_fa0_11_kpi',
+    'cisco_switch_dl_util_kpi_fa0_11_kpi',
+    'cisco_switch_ul_util_kpi_fa0_12_kpi',
+    'cisco_switch_dl_util_kpi_fa0_12_kpi',
+    'cisco_switch_ul_util_kpi_fa0_13_kpi',
+    'cisco_switch_dl_util_kpi_fa0_13_kpi',
+    'cisco_switch_ul_util_kpi_fa0_14_kpi',
+    'cisco_switch_dl_util_kpi_fa0_14_kpi',
+    'cisco_switch_ul_util_kpi_fa0_15_kpi',
+    'cisco_switch_dl_util_kpi_fa0_15_kpi',
+    'cisco_switch_ul_util_kpi_fa0_16_kpi',
+    'cisco_switch_dl_util_kpi_fa0_16_kpi',
+    'cisco_switch_ul_util_kpi_fa0_17_kpi',
+    'cisco_switch_dl_util_kpi_fa0_17_kpi',
+    'cisco_switch_ul_util_kpi_fa0_18_kpi',
+    'cisco_switch_dl_util_kpi_fa0_18_kpi',
+    'cisco_switch_ul_util_kpi_fa0_19_kpi',
+    'cisco_switch_dl_util_kpi_fa0_19_kpi',
+    'cisco_switch_ul_util_kpi_fa0_20_kpi',
+    'cisco_switch_dl_util_kpi_fa0_20_kpi',
+    'cisco_switch_ul_util_kpi_fa0_21_kpi',
+    'cisco_switch_dl_util_kpi_fa0_21_kpi',
+    'cisco_switch_ul_util_kpi_fa0_22_kpi',
+    'cisco_switch_dl_util_kpi_fa0_22_kpi',
+    'cisco_switch_ul_util_kpi_fa0_23_kpi',
+    'cisco_switch_dl_util_kpi_fa0_23_kpi',
+    'cisco_switch_ul_util_kpi_fa0_24_kpi',
+    'cisco_switch_dl_util_kpi_fa0_24_kpi',
+    'cisco_switch_ul_util_kpi_gi0_1_kpi',
+    'cisco_switch_dl_util_kpi_gi0_1_kpi',
+    'cisco_switch_ul_util_kpi_gi0_2_kpi',
+    'cisco_switch_dl_util_kpi_gi0_2_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_0_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_0_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_1_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_1_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_2_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_2_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_3_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_3_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_4_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_4_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_5_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_5_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_6_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_6_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_7_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_7_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_8_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_8_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_9_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_9_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_10_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_10_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_11_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_11_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_12_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_12_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_13_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_13_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_14_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_14_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_15_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_15_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_16_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_16_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_17_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_17_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_18_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_18_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_19_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_19_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_20_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_20_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_21_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_21_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_22_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_22_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_23_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_23_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_24_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_24_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_25_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_25_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_26_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_26_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_27_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_27_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_28_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_28_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_29_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_29_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_30_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_30_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_31_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_31_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_32_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_32_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_33_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_33_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_34_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_34_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_35_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_35_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_36_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_36_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_37_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_37_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_38_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_38_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_39_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_39_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_40_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_40_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_41_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_41_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_42_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_42_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_43_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_43_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_44_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_44_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_45_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_45_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_46_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_46_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_0_47_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_0_47_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_1_0_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_1_0_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_1_1_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_1_1_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_1_2_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_1_2_kpi',
+    'juniper_switch_ul_util_kpi_ge-0_1_3_kpi',
+    'juniper_switch_dl_util_kpi_ge-0_1_3_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_1_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_1_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_2_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_2_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_3_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_3_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_4_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_4_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_5_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_5_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_6_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_6_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_7_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_7_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_8_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_8_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_9_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_9_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_10_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_10_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_11_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_11_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_12_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_12_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_13_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_13_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_14_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_14_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_15_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_15_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_16_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_16_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_17_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_17_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_18_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_18_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_19_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_19_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_20_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_20_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_21_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_21_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_22_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_22_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_23_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_23_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_24_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_24_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_25_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_25_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_26_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_26_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_27_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_27_kpi',
+    'huawei_switch_ul_util_kpi_gigabitethernet0_0_28_kpi',
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_28_kpi'
 ])
+# Global variable to show/hide Scheduled report mail option in dowload center listing.
+REPORT_EMAIL_PERM = json.dumps({
+    'bs_dump': 1,
+    'ss_dump': 1,
+    'ptp_dump': 1,
+    'latency_dump': 1,
+    'customer_report': 1,
+    'duplex_report': 1,
+    'modulation': 1,
+    'utilization_tot': 1,
+    'temperature': 1,
+    'rectification_segment': 1,
+    'health_ptp_bh': 1    
+})
+
+# Global variable to show/hide single report mail option in download center listing
+SINGLE_REPORT_EMAIL = True
+SCHEDULED_REPORT_EMAIL = False
+SCHEDULED_SINGLE_REPORT_EMAIL = True
+
+# Network & customer tickets url
+TICKET_PROTOCOL = 'http'
+TICKET_IP_PORT = '10.133.12.70:8080'
+NETWORK_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/remedy-ebu-dev-app1/MPE4%3ARFNOC300%3ADisplayConsole/RFNOC+310+Display+Console/?mode=New'
+CUSTOMER_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/remedy-ebu-dev-app1/MPE4%3ARFNOC300%3ADisplayConsole/RFNOC+300+Display+Console/?mode=New'
 
 # Import the local_settings.py file to override global settings
 try:

@@ -137,6 +137,16 @@
                             </li>
                         </ul>
                     </li>
+                    <li>
+                        <a href="{{ settings.NETWORK_TICKET_URL}}" target="_blank">
+                            <span class="sub-menu-text">Open Network Ticket</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ settings.CUSTOMER_TICKET_URL}}" target="_blank">
+                            <span class="sub-menu-text">Open Customer Ticket</span>
+                        </a>
+                    </li>
                     {% if settings.SIA_ENABLED %}
                     <li>
                         <a href="/alarms/sia/">
@@ -664,13 +674,15 @@
                         </a>
                     </li>
                     {% endif %}
+                    
                     {% if perms.user_profile.view_userprofile %}
-                    <li>
-                        <a href="{% url 'permissions_list' %}">
-                            <span class="sub-menu-text">Permission</span>
-                        </a>
-                    </li>
+                        <li>
+                            <a href="{% url 'permissions_list' %}">
+                                <span class="sub-menu-text">Permission</span>
+                            </a>
+                        </li>
                     {% endif %}
+
                     {% if perms.activity_stream.view_useraction %}
                         <li>
                             <a href="{% url 'actionlist' %}">

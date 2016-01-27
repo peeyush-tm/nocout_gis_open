@@ -37,7 +37,7 @@
 
             // Add 'Create Item' link on top header bar.
             {% for group in user.groups.all %}
-                {% if group.name == 'group_admin' %}
+                {% if group.name == 'Admin' %}
                     var create_link_html = '<a href="/permission/new" title="Create Permission" \
                                             class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
 
@@ -56,7 +56,7 @@
 
             var common_extra_param = "'download_excel': 'yes'",
                 table_title = "Permissions Listing",
-                app_name = "permission",
+                app_name = "user_profile",
                 header_class_name = "PermissionList",
                 data_class_name = "PermissionListingTable",
                 extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}",

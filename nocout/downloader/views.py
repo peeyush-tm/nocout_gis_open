@@ -522,7 +522,8 @@ class DownloaderCompleteHeaders(ListView):
             {'mData': 'requested_on', 'sTitle': 'Requested On', 'sWidth': 'auto'},
             {'mData': 'request_completion_on', 'sTitle': 'Request Completion Date', 'sWidth': 'auto'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+
+        if in_group(self.request.user, 'admin'):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)

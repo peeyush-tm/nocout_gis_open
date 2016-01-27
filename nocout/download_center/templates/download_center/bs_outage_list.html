@@ -176,13 +176,15 @@
 			$('#download_outage_report').click(function(e) {
 				
 				if (custom_startdate && custom_enddate) {
-
 					var data_class_name = 'BSOutageCustomReportListing',
 						header_class_name = 'BSOutageCustomReportHeaders',
 						startdate_obj = custom_startdate.toDate(),
 						enddate_obj = custom_enddate.toDate(),
-						startdate_title = startdate_obj.getDate() + '-' + startdate_obj.getMonth() + '-' + startdate_obj.getFullYear(),
-						enddate_title = enddate_obj.getDate() + '-' + enddate_obj.getMonth() + '-' + enddate_obj.getFullYear(),
+						start_day = startdate_obj.getDate() > 9 ? startdate_obj.getDate() : '0' + String(startdate_obj.getDate()),
+						start_month = startdate_obj.getMonth() > 9 ? (Number(startdate_obj.getMonth()) + 1) : '0' + String(Number(startdate_obj.getMonth()) + 1),
+						start_year = startdate_obj.getFullYear(),
+						startdate_title = start_day + '-' + start_month + '-' + start_year,
+						enddate_title = enddate_obj.getDate() + '-' + (Number(enddate_obj.getMonth()) + 1) + '-' + enddate_obj.getFullYear(),
 						epoch_startdate = startdate_obj.getTime() / 1000,
 						epoch_enddate = custom_enddate.toDate().getTime() / 1000,
 						main_url = base_url+"/downloader/datatable/?",
@@ -234,13 +236,6 @@
 				                // Time in ms after which the gritter will dissappear.
 				                time : 1000
 				            });
-				        },
-				        complete: function() {
-				        	// Reset daterange picker
-				        	$('#bsoutage_daterange').val('');
-				        	// Reset global variables
-				        	custom_startdate = '';
-	            			custom_enddate = '';
 				        }
 				    });
 

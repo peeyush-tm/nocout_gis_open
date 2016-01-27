@@ -17,6 +17,7 @@ var perf_that = "",
     chart_instance = "",
     old_table = "",
     base_url = "",
+    timeInterval = "",
     live_data_tab = [
         {"id": "live", "title": "Live"}
     ],
@@ -104,34 +105,10 @@ if (window.location.origin) {
 date_range_picker_html = '<input type="text" name="reservation" id="reservationtime" \
                           class="form-control input-large search-query" value="" readonly/>';
 
-
-$.urlParam = function (name) {
-    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href),
-        url_param = "";
-    if (results == null) {
-        url_param = null;
-    } else {
-        url_param = results[1] || 0;
-    }
-    return url_param;
-};
-
-function updateQueryStringParameter(uri, key, value) {
-    var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i"),
-        separator = uri.indexOf('?') !== -1 ? "&" : "?",
-        query_str = "";
-    if (uri.match(re)) {
-        query_str = uri.replace(re, '$1' + key + "=" + value + '$2');
-    } else {
-        query_str = uri + separator + key + "=" + value;
-    }
-
-    return query_str;
-}
-
-var timeInterval = "";
-
-
+/**
+ * This class(function) contains function to handle single device performance page functionality
+ * @method nocoutPerfLib
+ */
 function nocoutPerfLib() {
 
     /*Save reference of current pointer to the global variable*/
@@ -166,7 +143,7 @@ function nocoutPerfLib() {
                 'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
             },
             buttonClasses: ['btn btn-sm'],
-            applyClass: 'btn-primary',
+            applyClass: 'btn-default',
             cancelClass: 'btn-default',
             format: "DD-MM-YYYY HH:mm:ss",
             separator: ' to ',
@@ -190,11 +167,39 @@ function nocoutPerfLib() {
      * @param page_type "String", It contains the page type i.e either the page is of network, customer or other devices
      * @param technology "String", It contains current device technology
      */
-    this.togglePerfPageElements = function(page_type, technology) {
+    this.togglePerfPageElements = function(page_type, technology, device_type) {
 
-        var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p',
-            condition_2 = page_type == 'other';
+        if (!device_type) {
+            device_type = '';
+        }
+        
+        if (!technology) {
+            technology = '';
+        }
 
+        var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p' || device_type.toLowerCase() == 'radwin2kss',
+            condition_2 = page_type == 'other',
+            condition_3 = page_type == 'customer' && device_type.toLowerCase() != 'radwin2kbs';
+            
+        // Show power tab only if page type = Customer 
+        if (condition_3) {
+            if ($("#power").hasClass("hide")) {
+                $("#power").removeClass("hide");
+            }
+
+            if ($("#power_tab").hasClass("hide")) {
+                $("#power_tab").removeClass("hide");
+            }
+        } else {
+            if (!$("#power").hasClass("hide")) {
+                $("#power").addClass("hide");
+            }
+
+            if (!$("#power_tab").hasClass("hide")) {
+                $("#power_tab").addClass("hide");
+            }
+        }
+        
         // Show/hide parent Tabs
         if (condition_1 || condition_2) {
             if (!$("#topology").hasClass("hide")) {
@@ -214,6 +219,7 @@ function nocoutPerfLib() {
                 $("#topology_tab").removeClass("hide");
             }
         }
+
 
         // Show/hide live polling button & chart container
         var live_poll_condition1 = ptp_tech_list.indexOf(technology) > -1,
@@ -394,7 +400,6 @@ function nocoutPerfLib() {
                             <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
                             </div>';
         }
-        
         if (tab_content_config.tab_id == 'live_poll_now') {
             content_html += '<div class="col-md-1">\
                                 <button class="btn btn-default btn-sm single_perf_poll_now " title="Poll Now" \
@@ -456,6 +461,30 @@ function nocoutPerfLib() {
                             <div class="custom_legends_block"></div><div class="clearfix"></div> \
                             </div> \
                             <div id="' + bottom_table_id+ '"></div></div></div>';
+        } else if (tab_content_config.unique_key.indexOf('power_content') > -1) {
+            content_html += '<div class="chart_container">\
+                            <div id="' + chart_id+ '" style="width:100%;">\
+                            <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
+                            <button title="Status" class="btn btn-default power-actions" id="power_send_status" data-button-respone="status" \
+                                data-complete-text="<i class=\'fa fa-circle\'></i> Status" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-circle"></i> Status\
+                            </button>\
+                            <button title="Reset" class="btn btn-default power-actions" id="power_send_reset" data-button-respone="reset" \
+                                data-complete-text="<i class=\'fa fa-refresh\'></i> Reset" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-refresh"></i> Reset\
+                            </button>\
+                            <button title="JOJI" class="btn btn-default power-actions" id="power_send_joji" data-button-respone="joji" \
+                                data-complete-text="<i class=\'fa fa-plug\'></i> Joji" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-plug"></i> Joji\
+                            </button>\
+                            <div class="clearfix"></div>\
+                            <div class="divide-20"></div>\
+                            <table id="power_msg_listing" class="datatable table table-striped table-bordered table-hover"> \
+                                <thead></thead> \
+                                <tbody></tbody> \
+                            </table> \
+                            <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
+                            </div></div></div>';
         } else {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\
@@ -590,13 +619,14 @@ function nocoutPerfLib() {
                                         var all_tabs_condition_1 = unique_item_key.indexOf('availability') == -1,
                                             all_tabs_condition_2 = unique_item_key.indexOf('topology') == -1,
                                             all_tabs_condition_3 = unique_item_key.indexOf('utilization') == -1,
+                                            all_tabs_condition_4 = unique_item_key.indexOf('power_content') == -1,
                                             inner_inner_tabs = [],
                                             inner_tab_ids = [];
 
                                         // Create tab content HTML
-                                        if ((show_historical_on_performance && all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) || is_perf_polling_enabled) {
+                                        if ((show_historical_on_performance && all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3 && all_tabs_condition_4) || is_perf_polling_enabled) {
 
-                                            if(all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) {
+                                            if(all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3 && all_tabs_condition_4) {
                                                 
                                                 service_tabs_data += '<div class="tab-pane ' + active_class+ '" id="' + unique_item_key+ '_block">';
                                                 if (show_last_updated) {
@@ -789,6 +819,8 @@ function nocoutPerfLib() {
                                 serviceId.indexOf('utilization_top') > -1
                                 ||
                                 serviceId.indexOf('topology') > -1
+                                ||
+                                serviceId.indexOf('power_content') > -1
                             ) {
                                 perfInstance.initGetServiceData(serviceDataUrl, serviceId, current_device);
                             }
@@ -834,9 +866,12 @@ function nocoutPerfLib() {
                     nocout_destroyDataTable('perf_data_table');
 
                     perf_that.resetLivePolling(active_tab_content_dom_id);
-
                     /*Get Last opened tab id from cookie*/
                     var parent_tab_id = $.cookie('parent_tab_id');
+                    
+                    if(is_util_tab) {
+                        parent_tab_id = 'utilization_top'
+                    }
 
                     //If parent Tab id is there & parent tab element exist in the dom.
                     if (parent_tab_id && $('#' + parent_tab_id).length && $('#' + parent_tab_id)[0].className.indexOf('hide') == -1) {
@@ -903,6 +938,8 @@ function nocoutPerfLib() {
                 } else if (updated_url.indexOf("util") > -1) {
                     updated_url = "/performance/servicestatus/utilization/service_data_source/utilization/device/" + device_id + "/";
                 }
+            } else if (updated_url.indexOf('/powerlisting/') > -1) {
+                updated_url = updated_url.replace("/powerlisting/","/powerstatus/");
             } else {
                 // Replace 'service' with 'servicestatus'
                 updated_url = updated_url.replace("/service/","/servicestatus/");
@@ -975,6 +1012,12 @@ function nocoutPerfLib() {
      * @param device_id "INT", It contains the ID of current device.
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
+
+        // If call from "Power tab then initialize datatable & return"
+        if (get_service_data_url.indexOf('/powerlisting/') > -1) {
+            dataTableInstance.createDataTable(power_table_id, power_listing_headers, power_ajax_url, false);
+            return true;
+        }
 
         // Hide custom legends block if exists
         if(!$('#' + service_id + '_legends_block').hasClass('hide')) {
@@ -1625,6 +1668,71 @@ function nocoutPerfLib() {
 }
 
 
+/** 
+ * This function updates service/datasource dropdown HTML on change of its value
+ * @method updateServiceTypeDropdownHtml
+ */
+function updateServiceTypeDropdownHtml() {
+
+    var view_type = $("input[name='service_view_type']:checked").val(),
+        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i>';
+
+    if (view_type == 'normal') {
+        icon_html += ' Datasource View';
+    } else {
+        icon_html += ' Service View';
+    }
+
+    // Create button new html
+    var caret_html = ' <span class="caret"></span> ',
+        btn_html = icon_html + caret_html,
+        radioId = $("input[name='service_view_type']:checked").attr('id');
+
+    // Remove active class from all li
+    $('#service_view_type_ul li').removeClass('active');
+
+    // Add active class of current parent li
+    $('a[radioId="' + radioId + '"]').parent().addClass('active');
+
+    // Update dropdown button html
+    $('#service_view_type_btn').html(btn_html);
+}
+
+
+/** 
+ * This function updates display table/chart dropdown HTML on change of its value
+ * @method updateDropdownHtml
+ */
+function updateDropdownHtml() {
+    var draw_type = $("input[name='item_type']:checked").val(),
+        icon_html = '';
+
+    if (draw_type == 'chart') {
+        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i> Display Chart';
+    } else {
+        icon_html = '<i class="text-primary fa fa-table"> </i> Display Table';
+    }
+
+    // Create button new html
+    var caret_html = ' <span class="caret"></span> ',
+        btn_html = icon_html + caret_html,
+        radioId = $("input[name='item_type']:checked").attr('id');
+
+    // Remove active class from all li
+    $('#item_type_ul li').removeClass('active');
+
+    // Add active class of current parent li
+    $('a[radioId="' + radioId + '"]').parent().addClass('active');
+
+    // Update dropdown button html
+    $('#item_type_btn').html(btn_html);
+}
+
+
+/**
+ * This event trigger when innermost tabs (historical + live) clicked
+ * @event click(with delegate)
+ */
 $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e) {
     var current_target = e.currentTarget,
         current_attr = current_target.attributes,
@@ -1655,7 +1763,11 @@ $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e
     last_active_tab = tab_service_id;
 });
 
-// Change event on display type radio buttons
+
+/**
+ * This event trigger when display type radio buttons changed
+ * @event Change
+ */
 $('input[name="item_type"]').change(function(e) {
 
     var active_tab_obj = nocout_getPerfTabDomId(),
@@ -1685,6 +1797,11 @@ $('input[name="item_type"]').change(function(e) {
     }
 });
 
+
+/**
+ * This event trigger when one time poll button under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.single_perf_poll_now', 'click', function(e) {
 
     var active_tab_obj = nocout_getPerfTabDomId(),
@@ -1706,6 +1823,11 @@ $(".perfContainerBlock").delegate('.single_perf_poll_now', 'click', function(e) 
     });
 });
 
+
+/**
+ * This event trigger when recursive poll button(Play Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.poll_play_btn', 'click', function(e) {
     // Update the flag
     is_polling_active = true;
@@ -1745,14 +1867,29 @@ $(".perfContainerBlock").delegate('.poll_play_btn', 'click', function(e) {
     }
 });
 
+
+/**
+ * This event trigger when recursive poll pause button(Pause Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.poll_pause_btn', 'click', function(e) {
     nocout_pausePollNow();
 });
 
+
+/**
+ * This event trigger when recursive poll stop button(Stop Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
     nocout_stopPollNow();
 });
 
+
+/**
+ * This event trigger when reset live polled data button(Reset Button) under onDemand Polling tab clicked
+ * @event click(with delegate)
+ */
 $(".perfContainerBlock").delegate('.reset_live_polling', 'click', function(e) {
     var active_tab_obj = nocout_getPerfTabDomId(),
         tab_id = active_tab_obj["active_dom_id"];
@@ -1793,6 +1930,11 @@ $(".perfContainerBlock").delegate('.reset_live_polling', 'click', function(e) {
     }
 });
 
+
+/**
+ * This event trigger when service/datasource view radio buttons changed
+ * @event Change
+ */
 $('input[name="service_view_type"]').change(function(e) {
 
     // selected value of 'service_view_type'
@@ -1806,6 +1948,10 @@ $('input[name="service_view_type"]').change(function(e) {
 });
 
 
+/**
+ * This event trigger when display type value clicked from display type dropdown
+ * @event Click
+ */
 $('#item_type_ul li a').click(function(e) {
 
     // Prevent default functionality
@@ -1818,32 +1964,10 @@ $('#item_type_ul li a').click(function(e) {
 });
 
 
-function updateDropdownHtml() {
-    var draw_type = $("input[name='item_type']:checked").val(),
-        icon_html = '';
-
-    if (draw_type == 'chart') {
-        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i> Display Chart';
-    } else {
-        icon_html = '<i class="text-primary fa fa-table"> </i> Display Table';
-    }
-
-    // Create button new html
-    var caret_html = ' <span class="caret"></span> ',
-        btn_html = icon_html + caret_html,
-        radioId = $("input[name='item_type']:checked").attr('id');
-
-    // Remove active class from all li
-    $('#item_type_ul li').removeClass('active');
-
-    // Add active class of current parent li
-    $('a[radioId="' + radioId + '"]').parent().addClass('active');
-
-    // Update dropdown button html
-    $('#item_type_btn').html(btn_html);
-}
-
-
+/**
+ * This event trigger when service/datasource view value clicked from service/datasource view dropdown
+ * @event Click
+ */
 $('#service_view_type_ul li a').click(function(e) {
 
     // Prevent default functionality
@@ -1865,33 +1989,11 @@ $('#service_view_type_ul li a').click(function(e) {
     initPerformancePage();
 });
 
-function updateServiceTypeDropdownHtml() {
 
-    var view_type = $("input[name='service_view_type']:checked").val(),
-        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i>';
-
-    if (view_type == 'normal') {
-        icon_html += ' Datasource View';
-    } else {
-        icon_html += ' Service View';
-    }
-
-    // Create button new html
-    var caret_html = ' <span class="caret"></span> ',
-        btn_html = icon_html + caret_html,
-        radioId = $("input[name='service_view_type']:checked").attr('id');
-
-    // Remove active class from all li
-    $('#service_view_type_ul li').removeClass('active');
-
-    // Add active class of current parent li
-    $('a[radioId="' + radioId + '"]').parent().addClass('active');
-
-    // Update dropdown button html
-    $('#service_view_type_btn').html(btn_html);
-}
-
-
+/**
+ * This event trigger all service report download button clicked
+ * @event Click
+ */
 $('#all_serv_live_report_btn').click(function(e) {
     
     // prevent default functionality
@@ -1975,7 +2077,10 @@ $('#all_serv_live_report_btn').click(function(e) {
 });
 
 
-
+/**
+ * This event trigger when live+hist report download button clicked.
+ * @event Click
+ */
 $('#live_hist_report_btn').click(function(e) {
     
     // prevent default functionality
@@ -2064,3 +2169,29 @@ $('#live_hist_report_btn').click(function(e) {
         }
     });
 });
+
+
+$.urlParam = function (name) {
+    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href),
+        url_param = "";
+    if (results == null) {
+        url_param = null;
+    } else {
+        url_param = results[1] || 0;
+    }
+    return url_param;
+};
+
+
+function updateQueryStringParameter(uri, key, value) {
+    var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i"),
+        separator = uri.indexOf('?') !== -1 ? "&" : "?",
+        query_str = "";
+    if (uri.match(re)) {
+        query_str = uri.replace(re, '$1' + key + "=" + value + '$2');
+    } else {
+        query_str = uri + separator + key + "=" + value;
+    }
+
+    return query_str;
+}

@@ -77,15 +77,17 @@ class UserList(PermissionsRequiredMixin, ListView):
             {'mData': 'first_name', 'sTitle': 'Full Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'email', 'sTitle': 'Email', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'groups__name', 'sTitle': 'Group', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'parent__first_name', 'sTitle': 'Manager', 'sWidth': '10%', 'sClass': 'hidden-xs'},
+            {'mData': 'groups__name', 'sTitle': 'Role', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'parent__first_name', 'sTitle': 'Parent', 'sWidth': '10%', 'sClass': 'hidden-xs'},
             {'mData': 'phone_number', 'sTitle': 'Phone Number', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'last_login', 'sTitle': 'Last Login', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'comment', 'sTitle': 'Comment', 'sWidth': 'auto', 'sClass': 'hidden-xs'}
         ]
 
-        # If the user role is 'admin' then the action column will appear on the datatable.
-        if in_group(self.request.user, 'admin'):
+        # Show 'actions' column only if user has the desired permissions
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_userprofile')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_userprofile')
+        if is_edit_perm or is_delete_perm:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '7%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -149,39 +151,42 @@ class UserListingTable(PermissionsRequiredMixin,
 
         if json_data:
             json_data, qs_headers = Datatable_Generation(json_data, sanity_dicts_list).main()
-            # Show 'actions' column only if user role is 'admin'.
-            if in_group(self.request.user, 'admin'):
-                datatable_headers = self.request.GET.get('datatable_headers', '').replace('false', "\"False\"")
-                # Create instance of 'NocoutUtilsGateway' class
-                nocout_utils = NocoutUtilsGateway()
-                for dct in json_data:
-                    # Last login field timezone conversion from 'utc' to 'local'.
-                    try:
-                        dct['last_login'] = nocout_utils.convert_utc_to_local_timezone(dct['last_login'])
-                    except Exception as e:
-                        pass
-                    if dct['id'] == self.request.user.id:
-                        actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-                                   <a href="/user/myprofile/"><i class="fa fa-pencil text-dark"></i></a>'.format(
-                            dct['id'])
-                    else:
-                        if can_edit_permissions(self.request.user, user_mapper[dct['id']]):
-                            actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-                                       <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                                       <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o\
-                                        text-danger" title="Archive user."></i></a> \
-                                      <a href="javascript:;" class="reset_perm_btn" pk="{0}"><i class="fa fa-level-down \
-                                      text-danger" title="Reset permissions to default."></i></a>'.format(
-                                dct['id'], datatable_headers
-                            )
-                        else:
-                            actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-                                       <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                                       <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o\
-                                        text-danger" title="Archive user."></i></a>'.format(
-                                dct['id'], datatable_headers
-                            )
-                    dct.update(actions=actions)
+            
+            # Show 'actions' column only if user has the desired permissions
+            is_edit_perm = in_group(self.request.user, 'admin', 'change_userprofile')
+            is_delete_perm = in_group(self.request.user, 'admin', 'delete_userprofile')
+
+            datatable_headers = self.request.GET.get('datatable_headers', '').replace('false', "\"False\"")
+            # Create instance of 'NocoutUtilsGateway' class
+            nocout_utils = NocoutUtilsGateway()
+            for dct in json_data:
+                # Last login field timezone conversion from 'utc' to 'local'.
+                try:
+                    dct['last_login'] = nocout_utils.convert_utc_to_local_timezone(dct['last_login'])
+                except Exception as e:
+                    pass
+                actions = ''
+                if dct['id'] == self.request.user.id:
+                    actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+                               <a href="/user/myprofile/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                        dct['id'])
+                else:
+                    actions += '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'
+
+                    if is_edit_perm:
+                        actions += '<a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>'
+
+                    if is_delete_perm:
+                        actions += '<a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o\
+                                    text-danger" title="Archive user."></i></a>'
+
+                    if can_edit_permissions(self.request.user, user_mapper[dct['id']]):
+                        actions += '<a href="javascript:;" class="reset_perm_btn" pk="{0}"><i class="fa fa-level-down \
+                                  text-danger" title="Reset permissions to default."></i></a>'
+
+                    actions = actions.format(dct['id'])
+
+                dct.update(actions=actions)
 
         return json_data
 
@@ -224,22 +229,33 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
         if json_data:
             json_data, qs_headers = Datatable_Generation(json_data, sanity_dicts_list).main()
 
-            # Show 'actions' column only if user role is 'admin'.
-            if in_group(self.request.user, 'admin'):
-                # Create instance of 'NocoutUtilsGateway' class
-                nocout_utils = NocoutUtilsGateway()
-                for dct in json_data:
-                    # Last login field timezone conversion from 'utc' to 'local'.
-                    try:
-                        dct['last_login'] = nocout_utils.convert_utc_to_local_timezone(dct['last_login'])
-                    except Exception as e:
-                        pass
+            # Create instance of 'NocoutUtilsGateway' class
+            nocout_utils = NocoutUtilsGateway()
 
-                    dct.update(
-                        actions='<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-                                 <a href="#UserArchivedListing" onclick= "add_confirmation(id={0})"><i class="fa fa-plus text-success"></i></a> \
-                                 <a href="#UserArchivedListing" onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'])
-                    )
+            # Show 'actions' column only if user role is 'admin'.
+            is_add_perm = in_group(self.request.user, 'admin', 'add_userprofile')
+            is_delete_perm = in_group(self.request.user, 'admin', 'delete_userprofile')
+
+            for dct in json_data:
+                # Last login field timezone conversion from 'utc' to 'local'.
+                try:
+                    dct['last_login'] = nocout_utils.convert_utc_to_local_timezone(dct['last_login'])
+                except Exception as e:
+                    pass
+
+                actions_str = ''
+
+                actions_str += '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'
+
+                if is_add_perm:
+                    actions_str += '<a href="#UserArchivedListing" onclick= "add_confirmation(id={0})"><i class="fa fa-plus text-success"></i></a>'
+
+                if is_delete_perm:
+                    actions_str += '<a href="#UserArchivedListing" onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger"></i></a>'
+
+                dct.update(
+                    actions=actions_str.format(dct['id'])
+                )
 
         return json_data
 

@@ -257,13 +257,15 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         """
         if self.technology == 'ALL':
             sectors = self.model.objects.filter(
-                Q(organization__in=kwargs['organizations'])
+                sector__sector_configured_on__isnull=False,
+                organization__in=kwargs['organizations']
             ).prefetch_related(*self.related_columns).values(*self.columns)
         else:
             tech_id = DeviceTechnology.objects.get(name=self.technology).id
             sectors = self.model.objects.filter(
-                    Q(organization__in=kwargs['organizations']),
-                    Q(sector__sector_configured_on__device_technology=tech_id)
+                    sector__sector_configured_on__isnull=False,
+                    organization__in=kwargs['organizations'],
+                    sector__sector_configured_on__device_technology=tech_id
                 ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
@@ -564,7 +566,12 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             try:
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
                 item['sector__sector_configured_on__device_technology'] = techno_name
-                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                
+                if item['sys_timestamp'] and item['age']:
+                    item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                else:
+                    item['age'] = str(item['age']) + ' second'
+
                 if item['severity'].strip().lower() == 'warning':
                     item['severity'] = "Needs Augmentation"
                 elif item['severity'].strip().lower() == 'critical':
@@ -1179,62 +1186,101 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         :param qs:
         """
         request = self.request
+        is_alert_page = request.GET.get('is_alert_page', 0)
 
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
+        if int(is_alert_page):
+            self.order_columns = [
+                'id',
+                'organization__alias',
+                'backhaul__bh_configured_on__ip_address',
+                'basestation__alias',
+                'bh_port_name',
+                'backhaul__bh_configured_on__device_technology',
+                'basestation__city__city_name',
+                'basestation__state__state_name',
+                'severity',
+                'age'
+            ]
+
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
+            try:
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
+            except ValueError:
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
         order = []
+        sort_using = ''
+        reverse = ''
 
-        for i in range(i_sorting_cols):
+        for i in range(sorting_cols):
             # sorting column
+            sort_dir = 'asc'
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
 
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = self.order_columns[i_sort_col]
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = self.order_columns[sort_col]
+            sort_using = self.order_columns[sort_col]
 
             if isinstance(sortcol, list):
                 for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
             else:
-                order.append('%s%s' % (sdir, sortcol))
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+
         if order:
-            key_name = order[0][1:] if '-' in order[0] else order[0]
-            if key_name == 'backhaul__bh_configured_on__device_technology':
+            # sort_using = order[0][1:] if '-' in order[0] else order[0]
+            if sort_using == 'backhaul__bh_configured_on__device_technology':
                 self.is_technology_ordered = True
                 prepared_data = self.prepare_results(qs)
-                filtered_result = list()
-                for data in prepared_data:
-                    filtered_result.append(data)
+                # filtered_result = list()
+                # for data in prepared_data:
+                #     filtered_result.append(data)
                 sorted_device_data = sorted(
-                    filtered_result,
-                    key=itemgetter(key_name),
-                    reverse=True if '-' in order[0] else False
+                    prepared_data,
+                    key=itemgetter(sort_using),
+                    reverse=reverse
                 )
                 return sorted_device_data
 
             # Try catch is added because in some cases
             # we receive instead of queryset
             try:
-                sorted_device_data = qs.order_by(*order)
+                if sort_using == 'age':
+                    updated_sort_column = 'difference'
+                    if reverse:
+                        updated_sort_column = '-difference'
+                    sorted_device_data = qs.extra({
+                        'difference': 'IF(age != 0 and sys_timestamp != 0, sys_timestamp - age, age)'
+                    }).order_by(updated_sort_column)
+                else:
+                    sorted_device_data = qs.order_by(*order)
             except Exception, e:
                 try:
                     sorted_device_data = sorted(
                         qs,
-                        key=itemgetter(key_name),
-                        reverse=True if '-' in order[0] else False
+                        key=itemgetter(sort_using),
+                        reverse=reverse
                     )
                 except Exception, e:
                     sorted_device_data = qs
-                    logger.info(e.message)
+                    logger.error(e.message)
             return sorted_device_data
         return qs
 
@@ -1262,7 +1308,6 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         # current_epoch_timestamp = datetime.datetime.now().strftime('%s')
 
         max_timestamp = self.model.objects.filter(
-
             Q(organization__in=kwargs['organizations']),
             Q(severity__in=['warning', 'critical'])
         ).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
@@ -1277,22 +1322,27 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
                 # Q(age__lte=F('sys_timestamp') - 600)
             ).prefetch_related(*self.related_columns).values(*self.columns)
 
-
         return backhauls
 
     def prepare_results(self, qs):
         """
         """
         # data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        json_data = [{key: val if val not in ['', 'undefined', 'None'] else "" for key, val in dct.items()} for dct in
-                     qs]
+        json_data = [{key: val if val not in ['', 'undefined', 'None'] else "" for key, val in dct.items()} for dct in qs]
         technology_object = DeviceTechnology.objects.all()
 
         for item in json_data:
             try:
-                techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
-                item['backhaul__bh_configured_on__device_technology'] = techno_name
-                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                try:
+                    techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
+                    item['backhaul__bh_configured_on__device_technology'] = techno_name
+                except Exception, e:
+                    pass
+
+                if item['sys_timestamp'] and item['age']:
+                    item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                else:
+                    item['age'] = str(item['age']) + ' second'
 
                 if item['severity'].strip().lower() == 'warning':
                     item['severity'] = "Needs Augmentation"

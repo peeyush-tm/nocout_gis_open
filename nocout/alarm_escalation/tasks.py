@@ -659,7 +659,6 @@ def prepare_service_data_sources(service_name_list):
     )
 
 
-
 @task
 def mail_send(result):
     """
@@ -693,14 +692,15 @@ def mail_send(result):
                         result['data']['from_email'],
                         result['data']['to_email'])
     # Handling mail without an attachment.
+    if result['data']['attachments']:
+        for attachment in result['data']['attachments']:
+            mail.attach(attachment.name, attachment.read(), attachment.content_type)
 
-
-    for attachment in result['data']['attachments']:
-        mail.attach(attachment.name, attachment.read(), attachment.content_type)
-    for files in result['data']['attachment_path']:
-        if re.search('^http.*', files):
-            pass
-        else:
-            mail.attach_file(files)
+    if result['data']['attachment_path']:
+        for files in result['data']['attachment_path']:
+            if re.search('^http.*', files):
+                pass
+            else:
+                mail.attach_file(files)
 
     mail.send()
