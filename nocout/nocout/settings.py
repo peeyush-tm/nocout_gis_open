@@ -307,6 +307,24 @@ CELERYBEAT_SCHEDULE = {
     #     'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
     #     'args': ['WiMAX']
     # },
+    'validate_file_for_bulk_upload_create': {
+        'task': 'inventory.tasks.validate_file_for_bulk_upload',
+        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+        'args': ['c']
+    },
+    'validate_file_for_bulk_upload_delete': {
+        'task': 'inventory.tasks.validate_file_for_bulk_upload',
+        'schedule': crontab(minute=15, hour=12),  # Execute daily at 12:15 p.m
+        'args': ['d']
+    },
+    'process_file_for_bulk_upload': {
+        'task': 'inventory.tasks.process_file_for_bulk_upload',
+        'schedule': crontab(minute=30, hour=12),  # Execute daily at 12:30 p.m
+    },
+    'process_file_for_bulk_delete': {
+        'task': 'inventory.tasks.process_file_for_bulk_delete',
+        'schedule': crontab(minute=15, hour=12),  # Execute daily at 12:45 p.m
+    },
     'update-inventory-topology': {
         'task': 'inventory.tasks.update_topology',
         'schedule': timedelta(seconds=300),
