@@ -18,5 +18,6 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^get_tech_services/(?P<pk>\d+)/$', api.GetServicesForTechnology.as_view(), name='get_tech_services'),
     url(r'^get_service_data_sources/(?P<pk>\d+)/$', api.GetDSForService.as_view(), name='get_service_data_sources'),
-    url(r'^get_device_type_services/(?P<pk>\d+)/$', api.GetServiceForDeviceType.as_view(), name='get_device_type_services')
+    url(r'^get_device_type_services/(?P<pk>\d+)/$', api.GetServiceForDeviceType.as_view(), name='get_device_type_services'),
+    url(r'^get_bulk_upload_files_info/$', api.GetBulkUploadFilesInfo.as_view(), name='get_bulk_upload_files_info')
 ]
