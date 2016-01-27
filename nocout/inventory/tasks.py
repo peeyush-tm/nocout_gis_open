@@ -1,3 +1,4 @@
+from string import digits
 import types
 from celery import task, group
 from dateutil.parser import *
@@ -4654,22 +4655,19 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
 
                     # Machine Name.
-                    m_name = None
+                    m_name = ''
 
                     # Machine Numbers.
-                    m_numbers = None
+                    m_numbers = []
 
                     if row['Machine Name']:
                         try:
-                            m_name = re.findall('\w+', row['Machine Name'])[0]
+                            m_name = str(row['Machine Name']).translate(None, digits)
                             m_numbers = map(int, re.findall('\d+', row['Machine Name']))
                         except Exception as e:
                             pass
 
                     machine_and_site_info = get_machine_details(m_name, m_numbers)
-
-                    logger.exception("************************* bs_m_name, bs_m_numbers - {}, {}".format(m_name, m_numbers))
-                    logger.exception("&&&&&&&&&&&&&&&&&&&&&&&&& machine_and_site_info - {}".format(machine_and_site_info))
 
                     # get machine and site
                     machine_and_site = ""
@@ -5520,15 +5518,12 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype, auto=''):
 
                     if row['Machine Name']:
                         try:
-                            m_name = re.findall('\w+', row['Machine Name'])[0]
+                            m_name = str(row['Machine Name']).translate(None, digits)
                             m_numbers = map(int, re.findall('\d+', row['Machine Name']))
                         except Exception as e:
                             pass
 
                     machine_and_site_info = get_machine_details(m_name, m_numbers)
-
-                    logger.exception("************************* ss_m_name, ss_m_numbers - {}, {}".format(m_name, m_numbers))
-                    logger.exception("&&&&&&&&&&&&&&&&&&&&&&&&& machine_and_site_info - {}".format(machine_and_site_info))
 
                     # get machine and site
                     machine_and_site = ""
@@ -7220,7 +7215,11 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
     deleted_list = []
 
     try:
+        count = 0
         for row in complete_d:
+            count += 1
+            logger.exception("************************************* Row deleted: {}".format(count))
+
             # current delta
             deleted_rows = list()
 
@@ -7654,9 +7653,11 @@ def validate_file_for_bulk_upload(op_type=''):
         if op_type == 'c':
             auto_upload_dir = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/create'
             is_new_bit = 1
+            uploaded_by = "Auto Upload"
         elif op_type == 'd':
             auto_upload_dir = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/delete'
             is_new_bit = 2
+            uploaded_by = "Auto Delete"
         else:
             return False
 
@@ -7753,7 +7754,7 @@ def validate_file_for_bulk_upload(op_type=''):
                             gis_bulk_obj.sheet_name = sheet_name
                             gis_bulk_obj.technology = technology
                             gis_bulk_obj.description = description
-                            gis_bulk_obj.uploaded_by = "Auto Upload"
+                            gis_bulk_obj.uploaded_by = uploaded_by
                             gis_bulk_obj.is_auto = 1
                             gis_bulk_obj.is_new = is_new_bit
                             gis_bulk_obj.save()
