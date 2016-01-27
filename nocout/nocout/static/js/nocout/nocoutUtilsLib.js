@@ -163,7 +163,22 @@ function populateServiceStatus_nocout(domElement,info) {
                                   </tr>\
                                   </table><div class="clearfix"></div>';
         } else {
-            inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+            if (domElement.indexOf('power_content') > -1){
+                if (perf.toLowerCase().indexOf('up') == -1){
+                    $('#power_send_reset').addClass('disabled')
+                    $('#power_send_joji').addClass('disabled')
+                }
+                inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+                                  <tr style="color:'+txt_color+';"><td>\
+                                  <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
+                                  style="vertical-align: middle;"> </i> \
+                                  <strong>Last Received Status: </strong> ' + perf + '</td>\
+                                  <td><strong>Updated At: </strong> ' + last_updated + '</td>\
+                                  </tr>\
+                                  </table><div class="clearfix"></div>';  
+            }
+            else{
+                inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
                                   <tr style="color:'+txt_color+';"><td>\
                                   <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
                                   style="vertical-align: middle;"> </i> \
@@ -171,6 +186,7 @@ function populateServiceStatus_nocout(domElement,info) {
                                   <td><strong>Updated At: </strong> ' + last_updated + '</td>\
                                   </tr>\
                                   </table><div class="clearfix"></div>';
+            }
         }
 
         $("#" + domElement).html(inner_status_html);

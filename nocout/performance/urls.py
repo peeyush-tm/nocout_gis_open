@@ -79,5 +79,16 @@ urlpatterns = patterns('',
                            views.GetSeverityWiseStatus.as_view(),
                            name='get_severity_wise_status'
                        ),
-                        
+                       url(r'^powerlisting/$',
+                           views.PowerStatusListing.as_view(),
+                           name='power_status_listing'
+                       ),
+                       url(r'^powerstatus/$',
+                           views.PowerStatus.as_view(),
+                           name='power_status'
+                       ),
+                       url(r'^send_power_sms/$',
+                           views.SendPowerSms.as_view(),
+                           name='power_sms'
+                       ), 
 )
