@@ -23,6 +23,7 @@ from user_profile.models import UserProfile, UserPasswordRecord
 from fields import PasswordField
 from user_profile.utils.auth import can_edit_permissions, get_user_organizations
 import logging
+from nocout.settings import PERMISSIONS_MODULE_ENABLED
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ class UserForm(forms.ModelForm):
             self.fields['password1'].required = False
             self.fields['password2'].required = False
             # Show permission field to only those who are allowed to edit permissions.
-            if not can_edit_permissions(self.request.user, kwargs['instance']):
+            if not can_edit_permissions(self.request.user, kwargs['instance']) or not PERMISSIONS_MODULE_ENABLED:
                 del self.fields['user_permissions']
             # If user is modifying his own profile then don't allow user to modify
             # his username, parent/manager, role, organization.
