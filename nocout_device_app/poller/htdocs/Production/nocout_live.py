@@ -411,12 +411,12 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
                                                 port_value = map(lambda x: x.split('=')[1] ,cur_values )
                                                 port_index = port_name.index(ds)
                                                 if port_index:
-                                                        this_value = eval(port_value[port_index])
-						key_value = "%.2f" % this_value
-						data_dict = {old_device: key_value}
-						logger.debug(data_dict)
+                                                    this_value = eval(port_value[port_index])
+                                                key_value = "%.2f" % this_value
+                                                data_dict = {old_device: key_value}
+                                                logger.debug(data_dict)
                                                 q.put(data_dict)
-						continue
+                                                continue
                                         except:
                                                 pass
 
