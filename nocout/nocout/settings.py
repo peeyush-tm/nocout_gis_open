@@ -822,8 +822,11 @@ SETTINGS_EXPORT = [
     'SCHEDULED_REPORT_EMAIL',
     'REPORT_EMAIL_PERM',
     'SCHEDULED_SINGLE_REPORT_EMAIL',
+    'TICKETS_LINK_ENABLED',
     'NETWORK_TICKET_URL',
-    'CUSTOMER_TICKET_URL'
+    'CUSTOMER_TICKET_URL',
+    'PERMISSIONS_MODULE_ENABLED',
+    'FAULT_REPORT_ENABLED'
 ]
 
 # Dashbaord Settings
@@ -1231,10 +1234,17 @@ SCHEDULED_REPORT_EMAIL = False
 SCHEDULED_SINGLE_REPORT_EMAIL = True
 
 # Network & customer tickets url
+TICKETS_LINK_ENABLED = False
 TICKET_PROTOCOL = 'http'
 TICKET_IP_PORT = '10.133.12.70:8080'
 NETWORK_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/remedy-ebu-dev-app1/MPE4%3ARFNOC300%3ADisplayConsole/RFNOC+310+Display+Console/?mode=New'
 CUSTOMER_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/remedy-ebu-dev-app1/MPE4%3ARFNOC300%3ADisplayConsole/RFNOC+300+Display+Console/?mode=New'
+
+# Enable/Disable permissions link from side menu
+PERMISSIONS_MODULE_ENABLED = False
+
+# Enable/Disable fault reports from download center
+FAULT_REPORT_ENABLED = False
 
 # Import the local_settings.py file to override global settings
 try:
