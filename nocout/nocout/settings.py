@@ -1236,7 +1236,8 @@ SCHEDULED_SINGLE_REPORT_EMAIL = True
 # Network & customer tickets url
 TICKETS_LINK_ENABLED = False
 TICKET_PROTOCOL = 'http'
-TICKET_IP_PORT = '10.133.12.70:8080'
+TICKET_IP_PORT = '10.133.12.73:8080'
+
 NETWORK_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/remedy-ebu-dev-app1/MPE4%3ARFNOC300%3ADisplayConsole/RFNOC+310+Display+Console/?mode=New'
 CUSTOMER_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/remedy-ebu-dev-app1/MPE4%3ARFNOC300%3ADisplayConsole/RFNOC+300+Display+Console/?mode=New'
 
