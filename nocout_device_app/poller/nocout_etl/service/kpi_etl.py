@@ -1120,7 +1120,7 @@ def call_kpi_services(**opt):
 
     ## calling tasks for radwin util services
     call_tasks(
-            radwin_bs_key,
+            radwin_ss_key,
             radwin_util_kpi_services[:2],
             service_threshold,
             site_name=opt.get('site_name'),
