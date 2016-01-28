@@ -664,7 +664,7 @@ def calc_util_last_day():
     # if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
     #     return True
     # return False
-
+    #
     return True
 
 
@@ -1289,43 +1289,11 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     # bh_port_name=bs.bh_port_name
                 )
                 bhs_count = bhs.count()
+                bhs = bhs[0]
             except Exception as e:
                 pass
 
-            if bhs_count == 1:
-                logger.exception("******************************* Update - {}".format(bhs_count))
-                # values that would be updated per 5 minutes
-                bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
-                bhs.bh_port_name = device_port.replace("_", "/")
-                bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
-                bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
-                bhs.severity = severity if severity else 'unknown'
-                bhs.age = float(age) if age else 0
-
-                bhs.current_in_per = round(float(current_in_per), 2) if current_in_per else 0
-                bhs.current_in_val = round(float(current_in_val), 2) if current_in_val else 0
-
-                bhs.current_out_per = round(float(current_out_per), 2) if current_out_per else 0
-                bhs.current_out_val = round(float(current_out_val), 2) if current_out_val else 0
-
-                if calc_util_last_day():  # values that would be updated once in a day
-                    bhs.avg_in_per = round(float(avg_in_per), 2) if avg_in_per else 0
-                    bhs.avg_in_val = round(float(avg_in_val), 2) if avg_in_val else 0
-                    bhs.peak_in_per = round(float(peak_in_per), 2) if peak_in_per else 0
-                    bhs.peak_in_val = round(float(peak_in_val), 2) if peak_in_val else 0
-
-                    bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
-
-                    bhs.avg_out_per = round(float(avg_out_per), 2) if avg_out_per else 0
-                    bhs.avg_out_val = round(float(avg_out_val), 2) if avg_out_val else 0
-                    bhs.peak_out_per = round(float(peak_out_per), 2) if peak_out_per else 0
-                    bhs.peak_out_val = round(float(peak_out_val), 2) if peak_out_val else 0
-
-                    bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
-
-                bulk_update_bhs.append(bhs)
-
-            elif bhs_count < 1:
+            if bhs_count < 1:
                 logger.exception("******************************* Create - {}".format(bhs_count))
 
                 bulk_create_bhs.append(
@@ -1357,7 +1325,37 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     )
                 )
             else:
-                pass
+                logger.exception("******************************* Update - {}".format(bhs_count))
+                # values that would be updated per 5 minutes
+                bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
+                bhs.bh_port_name = device_port.replace("_", "/")
+                bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
+                bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
+                bhs.severity = severity if severity else 'unknown'
+                bhs.age = float(age) if age else 0
+
+                bhs.current_in_per = round(float(current_in_per), 2) if current_in_per else 0
+                bhs.current_in_val = round(float(current_in_val), 2) if current_in_val else 0
+
+                bhs.current_out_per = round(float(current_out_per), 2) if current_out_per else 0
+                bhs.current_out_val = round(float(current_out_val), 2) if current_out_val else 0
+
+                if calc_util_last_day():  # values that would be updated once in a day
+                    bhs.avg_in_per = round(float(avg_in_per), 2) if avg_in_per else 0
+                    bhs.avg_in_val = round(float(avg_in_val), 2) if avg_in_val else 0
+                    bhs.peak_in_per = round(float(peak_in_per), 2) if peak_in_per else 0
+                    bhs.peak_in_val = round(float(peak_in_val), 2) if peak_in_val else 0
+
+                    bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
+
+                    bhs.avg_out_per = round(float(avg_out_per), 2) if avg_out_per else 0
+                    bhs.avg_out_val = round(float(avg_out_val), 2) if avg_out_val else 0
+                    bhs.peak_out_per = round(float(peak_out_per), 2) if peak_out_per else 0
+                    bhs.peak_out_val = round(float(peak_out_val), 2) if peak_out_val else 0
+
+                    bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
+
+                bulk_update_bhs.append(bhs)
 
     g_jobs = list()
 
