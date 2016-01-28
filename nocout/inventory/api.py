@@ -1,4 +1,6 @@
+import os
 from device.models import DeviceTechnology, VendorModel, ModelType, DeviceType
+from nocout.settings import MEDIA_ROOT
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -281,5 +283,28 @@ class GetServiceForDeviceType(APIView):
                     result.append(svc_dict)
             except Exception as e:
                 logger.info(e)
+
+        return Response(result)
+
+
+class GetBulkUploadFilesInfo(APIView):
+    def get(self, request):
+        result = {
+            'create': [],
+            'delete': []
+        }
+        # Create/Update inventory files location.
+        create_dir = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/create'
+
+        # Delete inventory files location.
+        delete_dir = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/delete'
+
+        if os.path.exists(create_dir) and os.listdir(create_dir):
+            for inventory in os.listdir(create_dir):
+                result['create'].append(inventory)
+
+        if os.path.exists(delete_dir) and os.listdir(delete_dir):
+            for inventory in os.listdir(delete_dir):
+                result['delete'].append(inventory)
 
         return Response(result)
