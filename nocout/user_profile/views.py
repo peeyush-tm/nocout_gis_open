@@ -55,6 +55,7 @@ from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationF
     ValuesQuerySetMixin
 from nocout.mixins.generics import FormRequestMixin
 from user_profile.utils.auth import in_group, can_edit_permissions
+from nocout.settings import PERMISSIONS_MODULE_ENABLED
 
 
 class UserList(PermissionsRequiredMixin, ListView):
@@ -180,9 +181,10 @@ class UserListingTable(PermissionsRequiredMixin,
                         actions += '<a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o\
                                     text-danger" title="Archive user."></i></a>'
 
-                    if can_edit_permissions(self.request.user, user_mapper[dct['id']]):
-                        actions += '<a href="javascript:;" class="reset_perm_btn" pk="{0}"><i class="fa fa-level-down \
-                                  text-danger" title="Reset permissions to default."></i></a>'
+                    if PERMISSIONS_MODULE_ENABLED:
+                        if can_edit_permissions(self.request.user, user_mapper[dct['id']]):
+                            actions += '<a href="javascript:;" class="reset_perm_btn" pk="{0}"><i class="fa fa-level-down \
+                                      text-danger" title="Reset permissions to default."></i></a>'
 
                     actions = actions.format(dct['id'])
 

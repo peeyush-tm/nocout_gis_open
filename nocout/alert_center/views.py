@@ -11,7 +11,7 @@ from django.http import HttpResponse
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceTechnology,DeviceType
 # For SIA Listing
-from alert_center.models import StatusAlarms, HistoryAlarms
+from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
 
 from performance.models import EventNetwork, EventService
 
@@ -1932,7 +1932,7 @@ class SIAListing(ListView):
     """
 
     # need to associate ListView class with a model here
-    model = StatusAlarms
+    model = CurrentAlarms
     template_name = 'alert_center/current_list.html'
 
     def get_context_data(self, **kwargs):
@@ -2040,34 +2040,18 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
         if self.tech_name == 'all':            
             if filter_condition:
-                if self.alarm_type in ['clear']:
-                    query = "queryset = self.model.objects.filter( \
-                                {0},Q(severity__in = ['informational']) \
-                            ).using(TRAPS_DATABASE).values(*{1})".format(
-                                filter_condition,
-                                model_columns
-                            )
-                else:
-
-                    query = "queryset = self.model.objects.filter( \
-                                {0} \
-                            ).using(TRAPS_DATABASE).values(*{1})".format(
-                                filter_condition,
-                                model_columns
-                            )
+                query = "queryset = self.model.objects.filter( \
+                            {0} \
+                        ).using(TRAPS_DATABASE).values(*{1})".format(
+                            filter_condition,
+                            model_columns
+                        )
 
                 exec query
             else:
-                if self.alarm_type in ['clear']:                                        
-                    queryset = self.model.objects.filter(
-                        severity__in =['informational'] 
-                        ).using(
-                        TRAPS_DATABASE
-                    ).values(*model_columns).all()
-                else:
-                    queryset = self.model.objects.using(
-                        TRAPS_DATABASE
-                    ).values(*model_columns).all()           
+                queryset = self.model.objects.using(
+                    TRAPS_DATABASE
+                ).values(*model_columns).all()
         else:
             tech_name_list = [self.tech_name]
             tech_name_id= list()
@@ -2084,46 +2068,28 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 for tech_name in tech_name_list:                             
                     if tech_name in device_technology_dict:
                         tech_name_id.append(device_technology_dict.get(tech_name))
-                # print tech_name_id
+            
+            ip_address_list = list(Device.objects.filter(
+                device_technology__in=tech_name_id
+            ).values_list('ip_address', flat=True))
+
             if filter_condition:
-                if self.alarm_type in ['clear']:            
-                    query = "queryset = self.model.objects.filter( \
-                                    {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), \
-                                    ({2}),Q(severity__in = ['informational']) \
-                                ).using(TRAPS_DATABASE).values(*{3})".format(
-                                    not_condition_sign,
-                                    tech_name_id,
-                                    filter_condition,
-                                    model_columns
-                                )
-                else:
-                    query = "queryset = self.model.objects.filter( \
-                                    {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), \
-                                    ({2}) \
-                                ).using(TRAPS_DATABASE).values(*{3})".format(
-                                    not_condition_sign,
-                                    tech_name_id,
-                                    filter_condition,
-                                    model_columns
-                                )
+                query = "queryset = self.model.objects.filter( \
+                                {0}Q(ip_address__in=ip_address_list), \
+                                ({1}) \
+                            ).using(TRAPS_DATABASE).values(*{2})".format(
+                                not_condition_sign,
+                                filter_condition,
+                                model_columns
+                            )
 
             else:
-                if self.alarm_type in ['clear']:
-                    query = "queryset = self.model.objects.filter( \
-                            {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))),Q(severity__in = ['informational'])\
-                        ).using(TRAPS_DATABASE).values(*{2})".format(
-                            not_condition_sign,
-                            tech_name_id,
-                            model_columns
-                        )
-                else:
-                    query = "queryset = self.model.objects.filter( \
-                            {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address')))\
-                        ).using(TRAPS_DATABASE).values(*{2})".format(
-                            not_condition_sign,
-                            tech_name_id,
-                            model_columns
-                        )                   
+                query = "queryset = self.model.objects.filter( \
+                        {0}Q(ip_address__in=ip_address_list)\
+                    ).using(TRAPS_DATABASE).values(*{1})".format(
+                        not_condition_sign,
+                        model_columns
+                    )                   
             
             exec query
         return queryset
@@ -2278,26 +2244,6 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             else:
                 filtering_condition += ' Q(eventname__in={0}) '.format(eventname_list)
 
-        # # component id filtering
-        # component_id = self.request.GET.get('component_id', False)
-        # component_id_list = component_id.split('|') if component_id else False
-
-        # if component_id_list:
-        #     if filtering_condition:
-        #         filtering_condition += ' | Q(component_id__in={0}) '.format(component_id_list)
-        #     else:
-        #         filtering_condition += ' Q(component_id__in={0}) '.format(component_id_list)
-
-        # # component name filtering
-        # component_name = self.request.GET.get('component_name', False)
-        # component_name_list = component_name.split('|') if component_name else False
-
-        # if component_name_list:
-        #     if filtering_condition:
-        #         filtering_condition += ' | Q(component_name__in={0}) '.format(component_name_list)
-        #     else:
-        #         filtering_condition += ' Q(component_name__in={0}) '.format(component_name_list)
-
         # trap start_date & end_date filtering
         start_date = self.request.GET.get('start_date', False)
         end_date = self.request.GET.get('end_date', False)
@@ -2327,8 +2273,10 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         self.alarm_type = self.request.GET.get('alarm_type', 'current')
         self.tech_name = self.request.GET.get('tech_name', 'all')
         # set model as per alarm type
-        if self.alarm_type in ['clear','current']:
-            self.model = StatusAlarms
+        if self.alarm_type in ['current']:
+            self.model = CurrentAlarms
+        elif self.alarm_type in ['clear']:
+            self.model = ClearAlarms
         else:
             self.model = HistoryAlarms
         return True
@@ -2452,11 +2400,11 @@ class GetSiaFiltersData(View):
         if item_type and search_txt:
             # Select model as per the alarm type
             if alarm_type in ['clear','current']:
-                model = StatusAlarms
+                model = CurrentAlarms
             else:
                 model = HistoryAlarms
             # else:
-            #     model = StatusAlarms
+            #     model = CurrentAlarms
 
             try:
                 column_alias = {
