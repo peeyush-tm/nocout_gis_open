@@ -3154,8 +3154,7 @@ class GISInventoryBulkImportList(ListView):
         return context
 
 
-class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView,
-                                         AdvanceFilteringMixin):
+class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 
@@ -3169,6 +3168,16 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                      'invalid_deleted_filename', 'status', 'sheet_name', 'technology', 'upload_status',
                      'description', 'uploaded_by', 'added_on', 'modified_on']
     search_columns = ['sheet_name', 'technology', 'description', 'uploaded_by']
+
+    def get_initial_queryset(self):
+        """
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        qs = self.model.objects.values(*self.columns + ['id']).order_by('-added_on')
+
+        return qs
 
     def prepare_results(self, qs):
         """
