@@ -3675,7 +3675,7 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         # queryset
-        queryset = DeviceSyncHistory.objects.all().values(*self.columns + ['id'])
+        queryset = DeviceSyncHistory.objects.all().values(*self.columns + ['id']).order_by('-added_on')
 
         return queryset
 

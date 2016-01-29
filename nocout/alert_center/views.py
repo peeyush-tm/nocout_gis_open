@@ -1944,7 +1944,7 @@ class SIAListing(ListView):
         context = super(SIAListing, self).get_context_data(**kwargs)
 
         starting_columns = [
-            {'mData': 'severity', 'sTitle': '', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
         ]
 
