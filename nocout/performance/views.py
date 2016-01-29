@@ -7808,9 +7808,12 @@ class SendPowerSms(View):
 
             payload['N'] = send_to
             payload['M'] = message
-            r = requests.get(url, params=payload)
+            try:
+                r = requests.get(url, params=payload, timeout=(60, 60))
+            except Exception, e:
+                r = None
 
-            if r.status_code == 200:
+            if r and r.status_code == 200:
                 power_instance = PowerSignals()
                 power_instance.circuit_contacts = circuit_contact_instance[0]
                 power_instance.message = str(message)
