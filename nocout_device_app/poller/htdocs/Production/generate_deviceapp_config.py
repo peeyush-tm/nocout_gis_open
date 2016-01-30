@@ -255,7 +255,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     device_device.is_deleted=0 and
     device_device.host_state <> 'Disable'
     and 
-    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE')
+    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE','Huawei')
     group by device_device.ip_address
     ;
     """
@@ -326,7 +326,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
                    if int_ports_s[i]== 1:
                        int_ports[i]=int_ports[i]+48
                capacities = device[10].split(',') if device[10] else device[10]
-               if len(int_string)>1: # for ring port extra capcity added
+               if len(int_ports)>1: # for ring port extra capcity added
                    capacities.append(capacities[0])
                for p_n, p_cap in zip(int_ports, capacities):
                    port_wise_capacities[int(p_n)] = p_cap
@@ -877,7 +877,7 @@ ON
 	OR
 	lower(sds.alias) = lower(replace(bs.bh_port_name, '/', '_'))
 WHERE
-	lower(dtype.name) in ('juniper', 'cisco')
+	lower(dtype.name) in ('juniper', 'cisco', 'huawei')
 group by
 	bh_device.id;
 """ 
@@ -936,7 +936,7 @@ group by
             'radwin_ss_provis_kpi',
             'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
             'rici_dl_util_kpi', 'rici_ul_util_kpi',
-            'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi']
+            'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi','huawei_switch_dl_util_kpi','huawei_switch_ul_util_kpi']
     # Following dependent SS checks should not be included in list of passive checks
     # As they are treated as active checks (Dependent in sense they get data from their BS)
     exclude_ss_active_services = ['cambium_ss_ul_issue_kpi', 'cambium_ss_provis_kpi', 'wimax_ss_ul_issue_kpi',
@@ -1011,8 +1011,13 @@ group by
             d_ports = service['port'], [service['devicetype']], ['@all']
             if d_ports not in snmp_ports_db:
                 snmp_ports_db.append(d_ports)
-
-            d_community = str(service['community']), [str(service['devicetype'])], ['@all']
+            
+            if service['version'] == 'v3':
+                 snmp_v3_parameter = (str(service['security_level']), str(service['auth_protocol']), str(service['security_name']), 
+                 str(service['auth_password']), str(service['private_phase']), str(service['private_pass_phase']))
+                 d_community = snmp_v3_parameter, [str(service['devicetype'])], ['@all']
+            else :
+            	d_community = str(service['community']), [str(service['devicetype'])], ['@all']
             if d_community not in snmp_communities_db:
                 snmp_communities_db.append(d_community)
     T.ping_levels_db, T.default_checks, T.snmp_ports_db = ping_levels_db, default_checks, snmp_ports_db
@@ -1047,7 +1052,13 @@ def prepare_query():
     devicetype.timeout as ping_timeout,
     protocol.port as port,
     protocol.version as version,
-    protocol.read_community as community
+    protocol.read_community as community,
+    protocol.auth_password as auth_password,
+    protocol.auth_protocol as auth_protocol,
+    protocol.security_name as security_name,
+    protocol.security_level as security_level,
+    protocol.private_phase as private_phase,
+    protocol.private_pass_phase as private_pass_phase
     from device_devicetype as devicetype
     left join (
         service_service as service,
@@ -1415,10 +1426,10 @@ def write_rules_file(settings_out, final_active_checks):
         f.write("ping_levels += %s" % pformat(settings_out.ping_levels_db))
         f.write("\n\n\n\n")
 
-        for service in final_active_checks.keys():
-            f.write("active_checks.setdefault('" + service + "', [])\n")
-        for service, check_list in final_active_checks.iteritems():
-            f.write("active_checks['" + service + "'] += %s\n\n" % pformat(check_list))
+        #for service in final_active_checks.keys():
+        #    f.write("active_checks.setdefault('" + service + "', [])\n")
+        #for service, check_list in final_active_checks.iteritems():
+        #    f.write("active_checks['" + service + "'] += %s\n\n" % pformat(check_list))
 
         f.write("checks += %s" % pformat(settings_out.default_checks))
         f.write("\n\n\n")

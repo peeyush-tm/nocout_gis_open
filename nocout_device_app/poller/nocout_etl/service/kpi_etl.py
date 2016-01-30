@@ -1127,7 +1127,7 @@ def call_kpi_services(**opt):
             func='extract_radwin_util_data'
             )
     call_tasks(
-            pmp_ss_key,
+            radwin_ss_key,
             radwin_util_kpi_services[2],
             service_threshold,
             site_name=opt.get('site_name'),
@@ -1339,7 +1339,7 @@ def extract_radwin_ss_provis_data(host_params,**args):
 	ss_state = ''
         state_string = 'unknown'
         if entry:
-            host ,site,ip = literal_eval(entry[0])
+            host ,site,ip,_,_,_ = literal_eval(entry[0])
         else:
             break
         try:

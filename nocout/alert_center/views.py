@@ -1944,7 +1944,7 @@ class SIAListing(ListView):
         context = super(SIAListing, self).get_context_data(**kwargs)
 
         starting_columns = [
-            {'mData': 'severity', 'sTitle': '', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
         ]
 
@@ -2068,24 +2068,26 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 for tech_name in tech_name_list:                             
                     if tech_name in device_technology_dict:
                         tech_name_id.append(device_technology_dict.get(tech_name))
-                # print tech_name_id
+            
+            ip_address_list = list(Device.objects.filter(
+                device_technology__in=tech_name_id
+            ).values_list('ip_address', flat=True))
+
             if filter_condition:
                 query = "queryset = self.model.objects.filter( \
-                                {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), \
-                                ({2}) \
-                            ).using(TRAPS_DATABASE).values(*{3})".format(
+                                {0}Q(ip_address__in=ip_address_list), \
+                                ({1}) \
+                            ).using(TRAPS_DATABASE).values(*{2})".format(
                                 not_condition_sign,
-                                tech_name_id,
                                 filter_condition,
                                 model_columns
                             )
 
             else:
                 query = "queryset = self.model.objects.filter( \
-                        {0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address')))\
-                    ).using(TRAPS_DATABASE).values(*{2})".format(
+                        {0}Q(ip_address__in=ip_address_list)\
+                    ).using(TRAPS_DATABASE).values(*{1})".format(
                         not_condition_sign,
-                        tech_name_id,
                         model_columns
                     )                   
             

@@ -66,6 +66,7 @@ def calculate_refer_field_for_host(device_first_down, host_name, ds_values,
 	refer = ''
 	try:
 		if not device_first_down and ds_values['cur'] == '100':
+			device_first_down = {}
 			device_first_down['host'] = host_name
 			device_first_down['severity'] = "down"
 			device_first_down['time'] = local_timestamp
@@ -82,7 +83,7 @@ def calculate_refer_field_for_host(device_first_down, host_name, ds_values,
 			device_first_down['time'] = local_timestamp
 			#device_first_down_map[host_name]['severity'] = "down"
 			#device_first_down_map[host_name]['time'] = local_timestamp
-		if len(device_first_down) > 0:
+		if device_first_down:
 			refer = device_first_down['time']
 	except Exception as exc:
 		# printing the exc for now
@@ -143,10 +144,11 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		device_first_down_list=rds_cnx.get(key)
 		device_first_down_list =literal_eval(device_first_down_list)
 		for down_device_dict in device_first_down_list:
-			if down_device_dict.get('host'):
+			if down_device_dict and down_device_dict.get('host'):
 				device_first_down_map[down_device_dict['host']] = down_device_dict
 	except Exception,e:
 		print e
+	#print device_first_down_map
 	for entry in nw_qry_output:
                 try:
 		    threshold_values = get_threshold(entry[-1])
@@ -196,11 +198,12 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					else:
 						host_severity = "down"
 				try:
-					if device_first_down_map:
-						device_first_down = device_first_down_map.get(str(entry[0]))
-						refer,device_first_down = calculate_refer_field_for_host(device_first_down, 
-							str(entry[0]), ds_values, local_timestamp)
-						device_first_down_map[str(entry[0])] = device_first_down
+					#if device_first_down_map:
+					device_first_down = device_first_down_map.get(str(entry[0]))
+					#print device_first_down
+					refer,device_first_down = calculate_refer_field_for_host(device_first_down, 
+						str(entry[0]), ds_values, local_timestamp)
+					device_first_down_map[str(entry[0])] = device_first_down
 				except Exception,e:
 					refer = ''
 			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
@@ -308,8 +311,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			continue
 		if not len(entry[-1]) and not dr_flag:
 			continue
+			   	
 		threshold_values = get_threshold(entry[-1])
-
 		severity = calculate_severity(entry[3])
 		# Age of last service state change
 		last_state_change = entry[-3]
@@ -472,8 +475,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		except:
 			continue
 	elap = int(time.time()) - current1
-	#print 'service_data_values'
-	#print len(service_data_values)
+	print 'service_data_values'
+	print len(service_data_values)
 	# Bulk insert the values into Mongodb
 	#try:
 	#	mongo_module.mongo_db_insert(db, service_data_values, 'serv_perf_data')
@@ -673,7 +676,7 @@ def get_host_services_name(site_name=None, db=None):
 	    #print '............................................'
             #print unknwn_state_svc_data
 	    #print '............................................'
-	    #print len(serv_qry_output)
+	    print len(serv_qry_output)
 	    frequency_based_service_list =['wimax_ss_ip','wimax_modulation_dl_fec','wimax_modulation_ul_fec','wimax_dl_intrf',
 		'wimax_ul_intrf','wimax_ss_sector_id','wimax_ss_mac','wimax_ss_frequency','mrotek_e1_interface_alarm',
 		'mrotek_fe_port_state','mrotek_line1_port_state','mrotek_device_type','rici_device_type','rici_e1_interface_alarm',
@@ -978,35 +981,7 @@ def get_threshold(perf_data):
                         }
 
     return threshold_values
-# old function where for filter to get data for configured ports
-def get_threshold_switch(perf_data,host_name ):
-    threshold_values = get_threshold(perf_data) #threshold value dict from checks
-    threshold_values = dict((k.lower(), v) for k, v in threshold_values.iteritems())
-    #print type(host_name)
-    #host_name = int(host_name)
-    switch_ports = memcache_switch.get(host_name)
-    #if switch_ports:
-    #switch_ports = switch_ports.lower()
-    #print "host", host_name  
-    try :
-       switch_ports = switch_ports.lower()
-       if "," in switch_ports:  #string like 'Gi0/1,Gi0/2'
-            switch_ports = switch_ports.split(",")
-            #print "ring case", switch_ports
-            dict1 = {}
-            for each in switch_ports :
-                t =threshold_values.get(each)
-                dict1[each]= t
-            #print dict1
-            return dict1
-       else:
-            t =threshold_values.get(switch_ports)
-            dict1 = {}
-            dict1[switch_ports]= t
-            #print "non ring", dict1
-            return  dict1
-    except:
-    	pass       
+
 
 def pivot_timestamp(timestamp):
     """
@@ -1265,26 +1240,18 @@ if __name__ == '__main__':
     and extracts data
 
     """
-    try:
-        memc_obj1=db_ops_module.MemcacheInterface()
-        memc_obj =memc_obj1.memc_conn
-    except:
-        print "Memcache Error",
-    key = "master_ua" + "_switch"
-    memcache_switch= memc_obj.get(key)
-    #print memcache_switch
     configs = config_module.parse_config_obj()
     desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
     desired_config = configs.get(desired_site)
     site = desired_config.get('site')
-    #print "site is ", site
-    switch_checks_list = ['juniper_switch_ul_utilization','juniper_switch_dl_utilization','cisco_switch_ul_utilization','cisco_switch_dl_utilization']
     db= None
     #db = mongo_module.mongo_conn(
     #	    host=desired_config.get('host'),
     #	    port = int(desired_config.get('port')),
     #	    db_name= desired_config.get('nosql_db')
     #)
-    get_host_services_name(site_name=site )
+    get_host_services_name(
+    site_name=site
+    )
     insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,device_first_down_map,db)
 
