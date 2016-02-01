@@ -7809,10 +7809,10 @@ class SendPowerSms(View):
         # getting the device related phone number from database
         circuit_contact_instance = CircuitContacts.objects.filter(
             circuit__sub_station__device__id=device_id
-        ).values()
+        )
 
         if circuit_contact_instance.exists():
-            send_to = circuit_contact_instance[0]['phone_number']
+            send_to = circuit_contact_instance[0].phone_number
             
             # getting suitable response for clicked button from power_sms_dict, defined in settings.py
             message = settings.POWER_SMS_DICT[button_name]
