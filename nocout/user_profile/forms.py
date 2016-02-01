@@ -78,7 +78,10 @@ class UserForm(forms.ModelForm):
             self.fields['password2'].required = False
             # Show permission field to only those who are allowed to edit permissions.
             if not can_edit_permissions(self.request.user, kwargs['instance']):
-                del self.fields['user_permissions']
+                try:
+                    del self.fields['user_permissions']
+                except Exception, e:
+                    pass
             # If user is modifying his own profile then don't allow user to modify
             # his username, parent/manager, role, organization.
             if self.instance.pk == self.request.user.pk:
