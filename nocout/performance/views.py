@@ -487,7 +487,6 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         except Exception, e:
             # logger.info(e.message)
             pass
-
         return perf_utils.prepare_gis_devices_optimized(
             qs,
             page_type=page_type,
@@ -571,7 +570,19 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                     current_app='device'
                 )
 
+                try:
+                    latency = round(float(dct.get('latency')), 3)
+                except Exception, e:
+                    latency = dct.get('latency')
+
+                try:
+                    packet_loss = round(float(dct.get('packet_loss')), 3)
+                except Exception, e:
+                    packet_loss = dct.get('packet_loss')
+
                 dct.update(
+                    latency=latency,
+                    packet_loss=packet_loss,
                     actions='<a href="' + performance_url + '" title="Device Performance">\
                             <i class="fa fa-bar-chart-o text-info"></i></a>\
                             <a href="' + alert_url + '" title="Device Alert">\
