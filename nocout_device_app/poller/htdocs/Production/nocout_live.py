@@ -128,7 +128,7 @@ def get_current_value_old(current_values, device=None, service=None, data_source
     return current_values
 
 
-def get_current_value(q,device=None, service_list=None, data_source_list=None, bs_name_ss_mac_mapping=None, ss_name_mac_mapping=None):
+def get_current_value(q,device=None, service_list=None, data_source_list=None, bs_name_ss_mac_mapping=None, ss_name_mac_mapping=None,is_first_call=0):
      #response = []
      # Teramatrix poller on which this device is being monitored
      site_name = get_site_name()
