@@ -1,3 +1,4 @@
+from string import digits
 import types
 from celery import task, group
 from dateutil.parser import *
@@ -7,7 +8,7 @@ from machine.models import Machine
 import requests
 from site_instance.models import SiteInstance
 from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency, DeviceType, ModelType, VendorModel, \
-    Country, TechnologyVendor, DeviceVendor
+    Country, TechnologyVendor, DeviceVendor, DeviceModel
 from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
@@ -18,6 +19,7 @@ from django.http import HttpRequest
 from django.db.models import Q
 from IPy import IP
 import ipaddr
+import shutil
 from decimal import *
 import os
 import re
@@ -1434,7 +1436,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
 
 
 @task()
-def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
+def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
     """ Uploading PTP inventory from excel sheet to database
 
         Parameters:
@@ -1539,6 +1541,44 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
         for row in complete_d:
             # increment device latest id by 1
             device_latest_id += 1
+
+            bs_switch_tech = 7
+            bs_switch_vendor = 9
+            bs_switch_model = 12
+            bs_switch_type = 12
+            if 'BS Switch Vendor' in row:
+                bs_switch_tech = 2
+                try:
+                    bs_switch_vendor = DeviceVendor.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    bs_switch_model = DeviceModel.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    bs_switch_type = DeviceType.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+
+            aggregation_switch_tech = 7
+            aggregation_switch_vendor = 9
+            aggregation_switch_model = 12
+            aggregation_switch_type = 12
+            if 'Aggregation Switch Vendor' in row:
+                aggregation_switch_tech = 2
+                try:
+                    aggregation_switch_vendor = DeviceVendor.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    aggregation_switch_model = DeviceModel.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    aggregation_switch_type = DeviceType.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
 
             # increment counter by 1
             counter += 1
@@ -1877,10 +1917,10 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 7,
-                        'device_vendor': 9,
-                        'device_model': 12,
-                        'device_type': 12,
+                        'device_technology': bs_switch_tech,
+                        'device_vendor': bs_switch_vendor,
+                        'device_model': bs_switch_model,
+                        'device_type': bs_switch_type,
                         'ip': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -1943,10 +1983,10 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 7,
-                        'device_vendor': 9,
-                        'device_model': 12,
-                        'device_type': 12,
+                        'device_technology': aggregation_switch_tech,
+                        'device_vendor': aggregation_switch_vendor,
+                        'device_model': aggregation_switch_model,
+                        'device_type': aggregation_switch_type,
                         'ip': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -2403,10 +2443,11 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                                        file_path,
                                        sheettype)
 
-
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
+        if auto:
+            gis_obj.is_new = 0
         gis_obj.save()
     except Exception as e:
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -2416,7 +2457,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
 
 @task()
-def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
+def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
     """ Uploading PTP BH (PTP Backhaul) inventory from excel sheet to database
 
         Parameters:
@@ -2518,6 +2559,44 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
             counter += 1
 
             logger.info("********************* PTP BH - Row: {}".format(counter))
+
+            bs_switch_tech = 7
+            bs_switch_vendor = 9
+            bs_switch_model = 12
+            bs_switch_type = 12
+            if 'BS Switch Vendor' in row:
+                bs_switch_tech = 2
+                try:
+                    bs_switch_vendor = DeviceVendor.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    bs_switch_model = DeviceModel.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    bs_switch_type = DeviceType.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+
+            aggregation_switch_tech = 7
+            aggregation_switch_vendor = 9
+            aggregation_switch_model = 12
+            aggregation_switch_type = 12
+            if 'Aggregation Switch Vendor' in row:
+                aggregation_switch_tech = 2
+                try:
+                    aggregation_switch_vendor = DeviceVendor.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    aggregation_switch_model = DeviceModel.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    aggregation_switch_type = DeviceType.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
 
             # errors in this row
             errors = ""
@@ -2745,10 +2824,10 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 7,
-                        'device_vendor': 9,
-                        'device_model': 12,
-                        'device_type': 12,
+                        'device_technology': bs_switch_tech,
+                        'device_vendor': bs_switch_vendor,
+                        'device_model': bs_switch_model,
+                        'device_type': bs_switch_type,
                         'ip': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -2811,10 +2890,10 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 7,
-                        'device_vendor': 9,
-                        'device_model': 12,
-                        'device_type': 12,
+                        'device_technology': aggregation_switch_tech,
+                        'device_vendor': aggregation_switch_vendor,
+                        'device_model': aggregation_switch_model,
+                        'device_type': aggregation_switch_type,
                         'ip': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -3095,6 +3174,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     'alias': alias,
                     'bs_switch': bs_switch,
                     'backhaul': backhaul,
+                    'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                    'bh_port': 0,
                     'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
                     'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
                     'hssu_port': row['HSSU Port'] if 'HSSU Port' in row.keys() else "",
@@ -3280,6 +3361,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
+        if auto:
+            gis_obj.is_new = 0
         gis_obj.save()
     except Exception as e:
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -3288,7 +3371,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
 
 @task()
-def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
+def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
     """ Uploading PMP BS inventory from excel sheet to database
 
         Parameters:
@@ -3385,6 +3468,44 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
             counter += 1
 
             logger.info("********************* PMP BS - Row: {}".format(counter))
+
+            bs_switch_tech = 7
+            bs_switch_vendor = 9
+            bs_switch_model = 12
+            bs_switch_type = 12
+            if 'BS Switch Vendor' in row:
+                bs_switch_tech = 4
+                try:
+                    bs_switch_vendor = DeviceVendor.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    bs_switch_model = DeviceModel.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    bs_switch_type = DeviceType.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+
+            aggregation_switch_tech = 7
+            aggregation_switch_vendor = 9
+            aggregation_switch_model = 12
+            aggregation_switch_type = 12
+            if 'Aggregation Switch Vendor' in row:
+                aggregation_switch_tech = 4
+                try:
+                    aggregation_switch_vendor = DeviceVendor.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    aggregation_switch_model = DeviceModel.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    aggregation_switch_type = DeviceType.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
 
             # errors in this row
             errors = ""
@@ -3550,10 +3671,10 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 7,
-                        'device_vendor': 9,
-                        'device_model': 12,
-                        'device_type': 12,
+                        'device_technology': bs_switch_tech,
+                        'device_vendor': bs_switch_vendor,
+                        'device_model': bs_switch_model,
+                        'device_type': bs_switch_type,
                         'ip': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -3616,10 +3737,10 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 7,
-                        'device_vendor': 9,
-                        'device_model': 12,
-                        'device_type': 12,
+                        'device_technology': aggregation_switch_tech,
+                        'device_vendor': aggregation_switch_vendor,
+                        'device_model': aggregation_switch_model,
+                        'device_type': aggregation_switch_type,
                         'ip': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -3960,6 +4081,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
+        if auto:
+            gis_obj.is_new = 0
         gis_obj.save()
     except Exception as e:
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -3968,7 +4091,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
 
 @task()
-def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
+def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto=''):
     """ Uploading PMP SM inventory from excel sheet to database
 
         Parameters:
@@ -4087,7 +4210,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
             ss_device_model = 5
 
             # SS device type
-            ss_device_type = 5
+            ss_device_type = 9
 
             if 'Vendor' in row.keys():
                 if row['Vendor'] == 'Radwin5K':
@@ -4353,6 +4476,8 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
+        if auto:
+            gis_obj.is_new = 0
         gis_obj.save()
     except Exception as e:
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -4361,7 +4486,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
 
 @task()
-def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
+def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
     """ Uploading WiMAX BS inventory from excel sheet to database
 
         Parameters:
@@ -4425,10 +4550,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
         complete_d.append(d)
 
-    # get machine and associated sites details in dictionary
-    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    machine_and_site_info = get_machine_details('ospf', [2])
-
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
     ospf5_machine_and_site_info = get_machine_details('ospf', [1, 4])
@@ -4457,6 +4578,44 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
             counter += 1
 
             logger.info("********************* Wimax BS - Row: {}".format(counter))
+
+            bs_switch_tech = 7
+            bs_switch_vendor = 9
+            bs_switch_model = 12
+            bs_switch_type = 12
+            if 'BS Switch Vendor' in row:
+                bs_switch_tech = 3
+                try:
+                    bs_switch_vendor = DeviceVendor.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    bs_switch_model = DeviceModel.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    bs_switch_type = DeviceType.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+
+            aggregation_switch_tech = 7
+            aggregation_switch_vendor = 9
+            aggregation_switch_model = 12
+            aggregation_switch_type = 12
+            if 'Aggregation Switch Vendor' in row:
+                aggregation_switch_tech = 3
+                try:
+                    aggregation_switch_vendor = DeviceVendor.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    aggregation_switch_model = DeviceModel.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    aggregation_switch_type = DeviceType.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
 
             # errors in this row
             errors = ""
@@ -4491,6 +4650,24 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
                     # initialize alias
                     alias = ""
+
+                    # get machine and associated sites details in dictionary
+                    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
+
+                    # Machine Name.
+                    m_name = ''
+
+                    # Machine Numbers.
+                    m_numbers = []
+
+                    if row['Machine Name']:
+                        try:
+                            m_name = str(row['Machine Name']).translate(None, digits)
+                            m_numbers = map(int, re.findall('\d+', row['Machine Name']))
+                        except Exception as e:
+                            pass
+
+                    machine_and_site_info = get_machine_details(m_name, m_numbers)
 
                     # get machine and site
                     machine_and_site = ""
@@ -4646,10 +4823,10 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 7,
-                        'device_vendor': 9,
-                        'device_model': 12,
-                        'device_type': 12,
+                        'device_technology': bs_switch_tech,
+                        'device_vendor': bs_switch_vendor,
+                        'device_model': bs_switch_model,
+                        'device_type': bs_switch_type,
                         'ip': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -4713,10 +4890,10 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 7,
-                        'device_vendor': 9,
-                        'device_model': 12,
-                        'device_type': 12,
+                        'device_technology': aggregation_switch_tech,
+                        'device_vendor': aggregation_switch_vendor,
+                        'device_model': aggregation_switch_model,
+                        'device_type': aggregation_switch_type,
                         'ip': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -5188,6 +5365,8 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
+        if auto:
+            gis_obj.is_new = 0
         gis_obj.save()
     except Exception as e:
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -5196,7 +5375,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
 
 @task()
-def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
+def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype, auto=''):
     """ Uploading WiMAX SS inventory from excel sheet to database
 
         Parameters:
@@ -5268,10 +5447,6 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
 
         complete_d.append(d)
 
-    # get machine and associated sites details in dictionary
-    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    machine_and_site_info = get_machine_details('ospf', [1, 4])
-
     # id of last inserted row in 'device' model
     device_latest_id = 0
 
@@ -5331,6 +5506,24 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
 
                     # initialize alias
                     alias = ""
+
+                    # get machine and associated sites details in dictionary
+                    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
+
+                    # Machine Name.
+                    m_name = None
+
+                    # Machine Numbers.
+                    m_numbers = None
+
+                    if row['Machine Name']:
+                        try:
+                            m_name = str(row['Machine Name']).translate(None, digits)
+                            m_numbers = map(int, re.findall('\d+', row['Machine Name']))
+                        except Exception as e:
+                            pass
+
+                    machine_and_site_info = get_machine_details(m_name, m_numbers)
 
                     # get machine and site
                     machine_and_site = ""
@@ -5564,6 +5757,8 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
+        if auto:
+            gis_obj.is_new = 0
         gis_obj.save()
     except Exception as e:
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -5571,7 +5766,7 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
         gis_obj.save()
 
 @task()
-def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
+def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
     """ Uploading Backhaul inventory from excel sheet to database
 
         Parameters:
@@ -5717,6 +5912,44 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
             except Exception as e:
                 logger.info("Backhaul device technology not exist.")
 
+            bs_switch_tech = 7
+            bs_switch_vendor = 9
+            bs_switch_model = 12
+            bs_switch_type = 12
+            if 'BS Switch Vendor' in row:
+                bs_switch_tech = bh_device_technology.id if bh_device_technology else None
+                try:
+                    bs_switch_vendor = DeviceVendor.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    bs_switch_model = DeviceModel.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    bs_switch_type = DeviceType.objects.get(name=row['BS Switch Vendor']).id
+                except Exception as e:
+                    pass
+
+            aggregation_switch_tech = 7
+            aggregation_switch_vendor = 9
+            aggregation_switch_model = 12
+            aggregation_switch_type = 12
+            if 'Aggregation Switch Vendor' in row:
+                aggregation_switch_tech = bh_device_technology.id if bh_device_technology else None
+                try:
+                    aggregation_switch_vendor = DeviceVendor.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    aggregation_switch_model = DeviceModel.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+                try:
+                    aggregation_switch_type = DeviceType.objects.get(name=row['Aggregation Switch Vendor']).id
+                except Exception as e:
+                    pass
+
             # dummy exception class to skip all loops when maching model is found
             class FoundModel(Exception):
                 pass
@@ -5814,10 +6047,10 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 7,
-                        'device_vendor': 9,
-                        'device_model': 12,
-                        'device_type': 12,
+                        'device_technology': bs_switch_tech,
+                        'device_vendor': bs_switch_vendor,
+                        'device_model': bs_switch_model,
+                        'device_type': bs_switch_type,
                         'ip': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -5881,10 +6114,10 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 7,
-                        'device_vendor': 9,
-                        'device_model': 12,
-                        'device_type': 12,
+                        'device_technology': aggregation_switch_tech,
+                        'device_vendor': aggregation_switch_vendor,
+                        'device_model': aggregation_switch_model,
+                        'device_type': aggregation_switch_type,
                         'ip': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -6162,6 +6395,8 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
+        if auto:
+            gis_obj.is_new = 0
         gis_obj.save()
     except Exception as e:
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -6918,7 +7153,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
 
 
 @task()
-def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type):
+def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
     # gis object
     gis_obj = None
     try:
@@ -6980,7 +7215,11 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type):
     deleted_list = []
 
     try:
+        count = 0
         for row in complete_d:
+            count += 1
+            logger.exception("************************************* Row deleted: {}".format(count))
+
             # current delta
             deleted_rows = list()
 
@@ -7296,6 +7535,9 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type):
                                        file_path,
                                        workbook_type,
                                        1)
+        if auto:
+            gis_obj.is_new = 0
+            gis_obj.save()
 
     except Exception as e:
         logger.exception(e.message)
@@ -7330,7 +7572,6 @@ def excel_generator_for_new_column(col_name,
 
     # column name
     column_name = col_name
-
 
     # headers for excel sheet
     headers = keys_list
@@ -7402,11 +7643,230 @@ def excel_generator_for_new_column(col_name,
         logger.info(e.message)
 
 
+@task
+def validate_file_for_bulk_upload(op_type=''):
+    """
+    Validate inventory files for bulk upload.
+    """
+    # if directory didn't exist than create one
+    if op_type in ['c', 'd']:
+        if op_type == 'c':
+            auto_upload_dir = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/create'
+            is_new_bit = 1
+            uploaded_by = "Auto Upload"
+        elif op_type == 'd':
+            auto_upload_dir = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/delete'
+            is_new_bit = 2
+            uploaded_by = "Auto Delete"
+        else:
+            return False
+
+        if os.path.exists(auto_upload_dir) and os.listdir(auto_upload_dir):
+            count = 0
+            for ufile in os.listdir(auto_upload_dir):
+                count += 1
+                logger.exception("########################################################## {}".format(count))
+
+                if op_type == 'c':
+                    # File path.
+                    filepath = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/create/' + ufile
+
+                    # Relative file path.
+                    relative_filepath = 'inventory_files/auto_upload_inventory/create/' + ufile
+                elif op_type == 'd':
+                    # File path.
+                    filepath = MEDIA_ROOT + 'inventory_files/auto_upload_inventory/delete/' + ufile
+
+                    # Relative file path.
+                    relative_filepath = 'inventory_files/auto_upload_inventory/delete/' + ufile
+                else:
+                    return False
+
+                # Current timestamp.
+                timestamp = time.time()
+
+                # Formatted time.
+                full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+
+                # Destination path (Where we need to move files after processing of scheduled inventory.)
+                dest = MEDIA_ROOT + 'inventory_files/original'
+
+                # if directory didn't exist than create one
+                if not os.path.exists(dest):
+                    os.makedirs(dest)
+
+                # Description for the uploaded inventory.
+                description = "Auto upload inventory on {}".format(full_time)
+
+                # Valid sheet names.
+                valid_sheets = ["Wimax BS", "Wimax SS", "PMP BS", "PMP SM", "Converter", "PTP", "PTP BH", "Backhaul"]
+
+                # Reading workbook using 'xlrd' module.
+                try:
+                    # Open the workbook.
+                    book = xlrd.open_workbook(filepath, formatting_info=True)
+
+                    # List sheet names, and pull a sheet by name.
+                    sheet_names = book.sheet_names()
+
+                    for sheet_name in sheet_names:
+
+                        # Get the technology of uploaded inventory sheet.
+                        if "Wimax" in sheet_name:
+                            technology = "Wimax"
+                        elif "PMP" in sheet_name:
+                            technology = "PMP"
+                        elif "PTP" in sheet_name:
+                            technology = "PTP"
+                        elif "Backhaul" in sheet_name:
+                            technology = "Backhaul"
+                        elif "Converter" in sheet_name:
+                            technology = "Converter"
+                        else:
+                            technology = "Unknown"
+
+                        # execute only if a valid sheet is selected from form
+                        if sheet_name in valid_sheets:
+                            sheet = book.sheet_by_name(sheet_name)
+
+                            keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if
+                                    sheet.cell(0, col_index).value]
+
+                            keys_list = [x.encode('utf-8').strip() for x in keys]
+
+                            complete_d = list()
+                            for row_index in xrange(1, sheet.nrows):
+                                d = {keys[col_index].encode('utf-8').strip(): sheet.cell(row_index, col_index).value
+                                     for col_index in xrange(len(keys))}
+                                complete_d.append(d)
+
+                            # book_to_upload = xlcopy(book)
+                            try:
+                                shutil.move(filepath, dest)
+                            except Exception as e:
+                                description = e.message
+                                logger.exception(e.message)
+
+                            gis_bulk_obj = GISInventoryBulkImport()
+                            gis_bulk_obj.original_filename = relative_filepath.replace('auto_upload_inventory',
+                                                                                       'original')
+                            gis_bulk_obj.status = 0
+                            gis_bulk_obj.sheet_name = sheet_name
+                            gis_bulk_obj.technology = technology
+                            gis_bulk_obj.description = description
+                            gis_bulk_obj.uploaded_by = uploaded_by
+                            gis_bulk_obj.is_auto = 1
+                            gis_bulk_obj.is_new = is_new_bit
+                            gis_bulk_obj.save()
+                            gis_bulk_id = gis_bulk_obj.id
+
+                            result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id,
+                                                                              complete_d,
+                                                                              sheet_name,
+                                                                              keys_list,
+                                                                              full_time,
+                                                                              ufile)
+                except Exception as e:
+                    logger.info("Workbook not uploaded. Exception: ", e.message)
+        else:
+            logger.exception("Not there.")
+    else:
+        return False
+
+
+@task
+def process_file_for_bulk_upload():
+    """
+    Background processing of inventories for bulk upload.
+    """
+    # Get inventories which are not processed yet.
+    inventories = GISInventoryBulkImport.objects.filter(is_new=1)
+
+    if inventories:
+        for inventory in inventories:
+            # user organization
+            organization = ''
+
+            try:
+                # Organization.
+                organization = Organization.objects.get(name="TCL")
+
+                # Update data import status in GISInventoryBulkImport model.
+                gis_obj = None
+                sheet_name = ''
+                try:
+                    gis_obj = inventory
+                    gis_obj.upload_status = 1
+                    gis_obj.save()
+                    sheet_name = gis_obj.sheet_name
+                except Exception as e:
+                    logger.info(e.message)
+                    
+                if sheet_name == 'PTP':
+                    valid_result = bulk_upload_ptp_inventory.delay(gis_obj.id, organization, 'valid', 'auto')
+                    invalid_result = bulk_upload_ptp_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
+                elif sheet_name == 'PTP BH':
+                    valid_result = bulk_upload_ptp_bh_inventory.delay(gis_obj.id, organization, 'valid' 'auto')
+                    invalid_result = bulk_upload_ptp_bh_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
+                elif sheet_name == 'PMP BS':
+                    valid_result = bulk_upload_pmp_bs_inventory.delay(gis_obj.id, organization, 'valid', 'auto')
+                    invalid_result = bulk_upload_pmp_bs_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
+                elif sheet_name == 'PMP SM':
+                    valid_result = bulk_upload_pmp_sm_inventory.delay(gis_obj.id, organization, 'valid', 'auto')
+                    invalid_result = bulk_upload_pmp_sm_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
+                elif sheet_name == 'Wimax BS':
+                    valid_result = bulk_upload_wimax_bs_inventory.delay(gis_obj.id, organization, 'valid', 'auto')
+                    invalid_result = bulk_upload_wimax_bs_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
+                elif sheet_name == 'Wimax SS':
+                    valid_result = bulk_upload_wimax_ss_inventory.delay(gis_obj.id, organization, 'valid', 'auto')
+                    invalid_result = bulk_upload_wimax_ss_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
+                elif sheet_name == 'Backhaul':
+                    valid_result = bulk_upload_backhaul_inventory.delay(gis_obj.id, organization, 'valid', 'auto')
+                    invalid_result = bulk_upload_backhaul_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
+                else:
+                    valid_result = ""
+                    invalid_result = ""
+            except Exception as e:
+                logger.info(e.message)
+
+
+@task
+def process_file_for_bulk_delete():
+    """
+    Background processing of inventories for bulk delete.
+    """
+    # Get inventories which are not processed yet.
+    inventories = GISInventoryBulkImport.objects.filter(is_new=2)
+
+    if inventories:
+        for inventory in inventories:
+            try:
+                # Update data import status in GISInventoryBulkImport model.
+                gis_obj = None
+                sheet_name = ''
+                try:
+                    gis_obj = inventory
+                    sheet_name = gis_obj.sheet_name
+                except Exception as e:
+                    logger.info(e.message)
+
+                if sheet_name in ['PTP', 'PTP BH', 'PMP BS', 'PMP SM', 'Wimax BS', 'Wimax SS', 'Backhaul']:
+                    valid_result = delete_gis_inventory.delay(gis_obj.id, 'valid', sheet_name, 'auto')
+                    invalid_result = delete_gis_inventory.delay(gis_obj.id, 'invalid', sheet_name, 'auto')
+                else:
+                    valid_result = ""
+                    invalid_result = ""
+            except Exception as e:
+                logger.info(e.message)
+    else:
+        return False
+
+
 def create_device(device_payload):
     """ Create Device object
 
     Args:
-        device_payload (dict): {
+        device_payload (dict):  {
                                     'city': u'Delhi(NewDelhi)',
                                     'description': 'BaseStationcreatedon28-Sep-2014at22: 55: 03.',
                                     'state': u'Delhi',
@@ -13439,9 +13899,9 @@ def get_devices(technology='WiMAX', rf_type=None, site_name=None):
     technology = DeviceTechnology.objects.get(name__icontains=technology).id
 
     required_columns = ['id',
-                    'device_name',
-                    'machine__name'
-    ]
+                        'device_name',
+                        'machine__name'
+                        ]
 
     # Create instance of 'InventoryUtilsGateway' class
     inventory_utils = InventoryUtilsGateway()
@@ -13696,14 +14156,14 @@ def bulk_update_create(bulky, action='update', model=None):
     :param model: model object
     :return:
     """
-    logger.debug(bulky)
+    logger.debug("####################################### bulky - {}".format(bulky))
     if bulky and len(bulky):
 
         if action == 'update':
             try:
                 bulk_update_internal_no_save(bulky)
             except Exception as e:
-                logger.exception(e)
+                logger.debug("******************************** Update Error: {}".format(e.message))
                 return False
             # for update_this in bulky:
             #     try:
@@ -13718,7 +14178,7 @@ def bulk_update_create(bulky, action='update', model=None):
                 try:
                     model.objects.bulk_create(bulky)
                 except Exception as e:
-                    logger.exception(e)
+                    logger.debug("******************************** Create Error: {}".format(e.message))
                     return False
             return True
 

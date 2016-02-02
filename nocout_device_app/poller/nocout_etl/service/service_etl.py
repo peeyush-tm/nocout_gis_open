@@ -208,7 +208,8 @@ def build_export(site, perf_data):
 def make_dicts_from_perf(outs, ins, name_ip_mapping,site, multi=False):
 	li = []
 	retval = {}
-        rici_services = ['wimax_bs_ul_issue_kpi','rici_dl_util_kpi','rici_ul_util_kpi']
+	rici_services = ['wimax_bs_ul_issue_kpi','rici_dl_util_kpi','rici_ul_util_kpi','juniper_switch_dl_util_kpi',
+                        'juniper_switch_ul_util_kpi', 'cisco_switch_dl_util_kpi','cisco_switch_ul_util_kpi','huawei_switch_dl_util_kpi','huawei_switch_ul_util_kpi']
 	#info('name_ip_mapping: {0}'.format(name_ip_mapping))
 	if not multi:
 		li.append(ins)
@@ -230,7 +231,7 @@ def make_dicts_from_perf(outs, ins, name_ip_mapping,site, multi=False):
 		# Age of last service state change
 		age = chk_val['last_state_change']
 		try:
-			threshold_values = get_threshold(chk_val.get('perf_data'))
+			threshold_values = get_threshold(chk_val.get('perf_data').strip())
 		except Exception as exc:
 			error('Error in threshold_values: {0}'.format(exc))
 
@@ -245,7 +246,7 @@ def make_dicts_from_perf(outs, ins, name_ip_mapping,site, multi=False):
 					else:
 						severity = 'warning' 	
 			except Exception as exc:
-				error('Error in Rici kpi services {0}'.format(exc))
+				#error('Error in Rici kpi services {0}'.format(exc))
 				pass
 			# since we are processing data every minute,
 			# so pivot the time stamp to next minute time frame

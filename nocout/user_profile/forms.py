@@ -23,6 +23,7 @@ from user_profile.models import UserProfile, UserPasswordRecord
 from fields import PasswordField
 from user_profile.utils.auth import can_edit_permissions, get_user_organizations
 import logging
+from nocout.settings import PERMISSIONS_MODULE_ENABLED
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,8 @@ class UserForm(forms.ModelForm):
 
         # Removing help text for role 'select' field
         self.base_fields['groups'].help_text = ''
+        # Update the label text of groups dropdown field
+        self.base_fields['groups'].label = 'Role'
         self.base_fields['user_permissions'].help_text = ''
         # self.base_fields['organization'].queryset = get_user_organizations(self.request.user)
 
@@ -65,13 +68,20 @@ class UserForm(forms.ModelForm):
         logged_in_user_organization_list = get_user_organizations(self.request.user)
         self.fields['organization'].queryset = logged_in_user_organization_list
 
+        # If permission module is disabled then remove user_permissions field
+        if not PERMISSIONS_MODULE_ENABLED:
+            del self.fields['user_permissions']
+
         # If request is for updating user then make password non mandatory fields.
         if self.instance.pk:
             self.fields['password1'].required = False
             self.fields['password2'].required = False
             # Show permission field to only those who are allowed to edit permissions.
             if not can_edit_permissions(self.request.user, kwargs['instance']):
-                del self.fields['user_permissions']
+                try:
+                    del self.fields['user_permissions']
+                except Exception, e:
+                    pass
             # If user is modifying his own profile then don't allow user to modify
             # his username, parent/manager, role, organization.
             if self.instance.pk == self.request.user.pk:
@@ -79,7 +89,7 @@ class UserForm(forms.ModelForm):
                 self.fields['parent'].widget.attrs['disabled'] = 'disabled'
                 self.fields['groups'].widget.attrs['disabled'] = 'disabled'
                 self.fields['organization'].widget.attrs['readonly'] = True
-                self.fields['parent'].label = 'Manager'
+                # self.fields['parent'].label = 'Manager'
                 # Don't show comment field.
                 self.fields.pop('comment')
 

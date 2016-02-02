@@ -1,4 +1,5 @@
 import json
+import ast
 from device.models import DeviceTechnology
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.db.models.query import ValuesQuerySet
@@ -17,7 +18,9 @@ from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.utils.util import NocoutUtilsGateway
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
-from nocout.settings import SINGLE_REPORT_EMAIL
+from nocout.settings import SINGLE_REPORT_EMAIL, REPORT_EMAIL_PERM
+from django.views.decorators.csrf import csrf_exempt
+
 
 from django.http import HttpRequest
 
@@ -44,6 +47,7 @@ class DownloadCenter(ListView):
         page_type = self.kwargs['page_type']
 
         # get report name & title
+        report_id = ''
         report_name = ''
         report_title = ''
         email_exists = False
@@ -200,22 +204,24 @@ class DownloadCenterListing(BaseDatatableView):
             dct.update(
                 path='<a href="{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
                     report_path, excel_green))
-            dct.update(
-                actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                    dct.get('id'))
-            )
+            
+            actions_data = '<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id'))
 
-            if SINGLE_REPORT_EMAIL:
-                dct.update(
-                    actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a> &nbsp; \
-                             <span style="cursor: pointer;" class="send_report_btn" title="Email Report" report_id="{0}"> \
-                             <i class="fa fa-envelope text-primary"></i></span>'.format(dct.pop('id'))
-                )
-            else:
-                dct.update(
-                    actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                        dct.pop('id'))
-                )
+            try:
+                if SINGLE_REPORT_EMAIL:
+                    report_email_perm = json.loads(REPORT_EMAIL_PERM)
+                else:
+                    report_email_perm = {}
+            except Exception as e:
+                logger.exception(e)
+            
+            page_type = self.request.GET.get('page_type')
+
+            if report_email_perm.get(page_type):
+                actions_data += '&nbsp; <span style="cursor: pointer;" class="send_report_btn" title="Email Report" report_id="{0}"> \
+                                <i class="fa fa-envelope text-primary"></i></span>'.format(dct.pop('id'))
+
+            dct.update(actions=actions_data)
 
         return qs
 
@@ -689,8 +695,11 @@ class EmailListUpdating(View):
     1. Single report emailing which is in 'if report_id:' case
     2. To update the scheduled email for particular report type.
     """
-    def post(self, request, *args, **kwargs):
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(EmailListUpdating, self).dispatch(*args, **kwargs)
 
+    def post(self, request, *args, **kwargs):
         page_name = self.request.POST.get('page_name',None)
         email_list = self.request.POST.getlist('emails[]', None)
         report_id = self.request.POST.get('report_id',None)
@@ -700,6 +709,7 @@ class EmailListUpdating(View):
             # Additional Functionality where we can send single report to multiple mail id's instantly.
             report_name = ProcessedReportDetails.objects.get(id=report_id).report_name
             file_path = ProcessedReportDetails.objects.get(id=report_id).path
+            file_path = file_path.split()
             request_object = HttpRequest()
             from alarm_escalation.views import EmailSender
             email_sender = EmailSender()
@@ -713,19 +723,21 @@ class EmailListUpdating(View):
                 }
             except Exception,e:
                 pass
-            email_sender.POST = {
-                'subject': report_name,
-                'message': '',
-                'to_email': email_list,
-                'attachment_path': file_path
-            }
 
-            email_sender.post(email_sender)
+            try:
+                email_sender.post(email_sender)
+                response = {
+                    'success': 1,
+                    'message': 'Report Mailed Successfully.'
+                }
+            except Exception, e:
+                logger.exception(e)
+                response = {
+                    'success': 0,
+                    'message': 'Report Mailed not sent.'
+                }
+                pass
 
-            response = {
-                'success': 1,
-                'message': 'Report Mailed Successfully.'
-            }
         else:
             # Comma seperated string of emails.
             email_list = ", ".join(email_list)
@@ -797,5 +809,74 @@ class ResetEmailReport(View):
                 }
         except Exception, e:
             logger.exception(e)
+
+        return HttpResponse(json.dumps(result))
+
+
+class ProcessedReportEmailAPI(View):
+    """
+    ProcessedReportEmailAPI will be called after each daily report generation is complete with input variable
+    'pk' which is primary key of report entry in database ProcessedReportDetails.
+    """
+
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(ProcessedReportEmailAPI, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        pk = request.POST.get('pk')
+        report_email_perm = json.loads(REPORT_EMAIL_PERM)
+        if pk:
+            try:
+                processed_reports = ProcessedReportDetails.objects.get(id=pk)
+            except Exception, e:
+                processed_reports = None
+            if processed_reports:
+                report_name = processed_reports.report_name
+                page_name = ReportSettings.objects.get(report_name=report_name).page_name
+
+                file_path = processed_reports.path
+                file_path = file_path.split()
+
+                email_list = EmailReport.objects.get(
+                    report_name=ReportSettings.objects.get(report_name=report_name)).email_list
+                email_list = email_list.split(",")
+                email_list = [email.strip() for email in email_list]
+
+                result = {
+                    "success": 0,
+                    "message": "Failed to send email.",
+                    "data": {
+                        "subject": report_name,
+                        "message": 'None',
+                        "from_email": settings.DEFAULT_FROM_EMAIL,
+                        "to_email": email_list,
+                        "attachment_path": file_path
+                    }
+                }
+                # Verifying if email Report is enabled for this Report.
+                if report_email_perm.get(page_name):
+                    request_object = HttpRequest()
+                    from alarm_escalation.views import EmailSender
+                    # Generating POST Request for EmailSender API.
+                    email_sender = EmailSender()
+                    email_sender.request = request_object
+
+                    try:
+                        email_sender.request.POST = {
+                            'subject': report_name,
+                            'message': '',
+                            'to_email': email_list,
+                            'attachment_path': file_path
+                        }
+                    except Exception, e:
+                        logger.exception(e)
+                    try:
+                        email_sender.post(email_sender)
+                        result['success'] = 1
+                        result['message'] = 'Mail sent Sucessfully'
+                        result['data']['message'] = 'Here is Your daily Report'
+                    except Exception, e:
+                        logger.exception(e)
 
         return HttpResponse(json.dumps(result))

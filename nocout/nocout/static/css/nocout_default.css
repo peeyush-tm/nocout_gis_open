@@ -41,6 +41,9 @@
 .topUserInfo li ul.dropdown-menu
 {
   width:100% !important;
+  border: 1px solid #ca1e25 !important;
+  border-top: 0px none !important;
+  top: 102%
 }
 
 /* forms style */
@@ -770,4 +773,12 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
 .add_custom_container {
   height: 320px;
   overflow: auto;
+}
+#power_content .btn {
+  border-color: #C7C7CE !important;
+  margin-right: 10px;
+}
+#powerStatusContainer {
+  border-color: #C7C7CE !important;
+  margin-right: 10px;
 }

@@ -48,7 +48,7 @@ from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, St
 
 from inventory.models import (Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit,
                               IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings,
-                              GISInventoryBulkImport,
+                              GISInventoryBulkImport, CircuitContacts, PowerSignals, 
                               UserThematicSettings, CircuitL2Report, PingThematicSettings, UserPingThematicSettings,
                               GISExcelDownload)
 from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm,
@@ -120,8 +120,15 @@ class AntennaList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'azimuth_angle', 'sTitle': 'Azimuth Angle', 'sWidth': '10%', }, ]
 
         # if the user role is Admin or operator or superuser then the action column will appear on the datatable
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_antenna') or in_group(self.request.user, 'operator', 'change_antenna')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_antenna') or in_group(self.request.user, 'operator', 'delete_antenna')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -255,8 +262,16 @@ class BaseStationList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
         # if the user role is Admin or operator then the action column will appear on the datatable
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_basestation') or in_group(self.request.user, 'operator', 'change_basestation')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_basestation') or in_group(self.request.user, 'operator', 'delete_basestation')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -394,9 +409,15 @@ class BackhaulList(PermissionsRequiredMixin, TemplateView):
         ]
 
         # if the user role is Admin or operator then the action column will appear on the datatable
-
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_backhaul') or in_group(self.request.user, 'operator', 'change_backhaul')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_backhaul') or in_group(self.request.user, 'operator', 'delete_backhaul')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -542,8 +563,15 @@ class SectorList(PermissionsRequiredMixin, TemplateView):
         ]
 
         # if the user role is Admin or operator then the action column will appear on the datatable
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_sector') or in_group(self.request.user, 'operator', 'change_sector')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_sector') or in_group(self.request.user, 'operator', 'delete_sector')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -699,9 +727,16 @@ class CustomerList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'bSortable': False},
         ]
         # if the user role is Admin or operator then the action column will appear on the datatable
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_customer') or in_group(self.request.user, 'operator', 'change_customer')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_customer') or in_group(self.request.user, 'operator', 'delete_customer')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -838,9 +873,15 @@ class SubStationList(PermissionsRequiredMixin, TemplateView):
         ]
 
         # if the user role is Admin or operator then the action column will appear on the datatable
-
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_substation') or in_group(self.request.user, 'operator', 'change_substation')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_substation') or in_group(self.request.user, 'operator', 'delete_substation')
+        if is_delete_perm or is_edit_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -1006,8 +1047,9 @@ class CircuitList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'}
         ]
         # if the user role is Admin or operator then the action column will appear on the datatable
-
-        if in_group(self.request.user, 'admin') or in_group(self.request.user, 'operator'):
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_circuit') or in_group(self.request.user, 'operator', 'change_circuit')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_circuit') or in_group(self.request.user, 'operator', 'delete_circuit')
+        if is_delete_perm or is_edit_perm:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1846,7 +1888,12 @@ class IconSettingsList(PermissionsRequiredMixin, ListView):
         ]
         # if the user is superuser action column can be appeared in datatable.
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -2432,13 +2479,17 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
             {'mData': 'threshold_template__live_polling_template__device_type__name', 'sTitle': 'Type',
              'sWidth': 'auto'},
             {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}, ]
-
-        # user_id = self.request.user.id
+            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}
+        ]
 
         # if user is superadmin or gisadmin
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -2943,6 +2994,8 @@ class GISInventoryBulkImportView(FormView):
             gis_bulk_obj.technology = technology
             gis_bulk_obj.description = description
             gis_bulk_obj.uploaded_by = self.request.user
+            gis_bulk_obj.is_auto = 0
+            gis_bulk_obj.is_new = 0
             gis_bulk_obj.save()
             gis_bulk_id = gis_bulk_obj.id
 
@@ -3101,8 +3154,7 @@ class GISInventoryBulkImportList(ListView):
         return context
 
 
-class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView,
-                                         AdvanceFilteringMixin):
+class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 
@@ -3116,6 +3168,16 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                      'invalid_deleted_filename', 'status', 'sheet_name', 'technology', 'upload_status',
                      'description', 'uploaded_by', 'added_on', 'modified_on']
     search_columns = ['sheet_name', 'technology', 'description', 'uploaded_by']
+
+    def get_initial_queryset(self):
+        """
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        qs = self.model.objects.values(*self.columns + ['id']).order_by('-added_on')
+
+        return qs
 
     def prepare_results(self, qs):
         """
@@ -3476,12 +3538,13 @@ class GISInventoryBulkImportUpdate(UpdateView):
 
 
 # **************************************** Ping Thematic Settings *********************************************
-class PingThematicSettingsList(ListView):
+class PingThematicSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render PingThematicSettings List Page.
     """
     model = PingThematicSettings
     template_name = 'ping_thematic_settings/ping_thematic_settings_list.html'
+    required_permissions = ('inventory.view_pingthematicsettings',)
 
     def get_context_data(self, **kwargs):
         """
@@ -3494,10 +3557,16 @@ class PingThematicSettingsList(ListView):
             {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
             {'mData': 'type__name', 'sTitle': 'Type', 'sWidth': 'auto'},
             {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}, ]
+            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto', 'bSortable': False}
+        ]
 
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '10%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -5459,3 +5528,48 @@ def getSearchData(request, search_by="default", pk=0):
 
     # return result dict
     return HttpResponse(json.dumps(result))
+
+
+# **************************************** Power ****************************************#
+
+class GetSms(View):
+    """
+    The Class based View for handling SMS request(related to power).
+
+    """
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(GetSms, self).dispatch(*args, **kwargs)
+
+    def post(self, request):
+
+        result = {
+            'success': 0,
+            'message': 'Data incomplete.',
+            'data': list()
+        }
+
+        # Fetch mobile number from post request
+        mobile_no = request.POST.get('mobileno')
+        # Fetch message from post request
+        message = request.POST.get('text')
+
+        # If mobile no. and message exist in database
+        if mobile_no and message:
+
+            # Getting filtered queryset with respect to mobile number
+            filtered_qs = CircuitContacts.objects.filter(phone_number=mobile_no)
+
+            if filtered_qs.count() == 1:  
+                try:
+                    power_instance = PowerSignals()
+                    power_instance.circuit_contacts = filtered_qs[0]
+                    power_instance.message = message
+                    power_instance.save()
+                    result.update(message= 'Successfully Saved', success=1 )
+                except:
+                    result.update(message= 'Invalid data')
+            else:
+                result['message'] = 'None or Multiple circuit id for the given number'
+        
+        return HttpResponse(json.dumps(result))

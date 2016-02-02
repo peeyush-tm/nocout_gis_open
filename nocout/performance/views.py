@@ -10,6 +10,7 @@ import re
 from django.db.models import Count, Q
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
+from django.conf import settings
 from django.shortcuts import render_to_response, render
 from django.core.urlresolvers import reverse
 from django.views.generic import ListView
@@ -19,7 +20,7 @@ from django.utils.dateformat import format
 
 from device.models import Device, DeviceType, DeviceTechnology, DevicePort
 from service.models import ServiceDataSource,Service
-from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
+from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, PowerSignals, Customer, CircuitContacts
 from performance.models import PerformanceService, PerformanceNetwork, \
     NetworkStatus, \
     ServiceStatus, InventoryStatus, \
@@ -66,6 +67,24 @@ SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 import logging
 
 log = logging.getLogger(__name__)
+
+### SMS Sending
+import requests
+#### SMS GATEWAY SETTINGS
+GATEWAY_SETTINGS = {
+    'URL': 'http://121.244.239.140/csend.dll'
+}
+GATEWAY_PARAMETERS = {
+    'Username': 'wirelessonetool',
+    'Password': '12345vgsmhttp',
+    'Priority': 3,
+    'Commmethod': 'cellent',
+    'Returnseq': 1,
+    'Sender': 'TATACOMM Anil . Now',
+    'N': '',
+    'M': ''
+}
+#### SMS GATEWAY SETTINGS
 
 # Create instance of 'PerformanceUtilsGateway' class
 perf_utils = PerformanceUtilsGateway()
@@ -468,7 +487,6 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         except Exception, e:
             # logger.info(e.message)
             pass
-
         return perf_utils.prepare_gis_devices_optimized(
             qs,
             page_type=page_type,
@@ -552,7 +570,19 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                     current_app='device'
                 )
 
+                try:
+                    latency = round(float(dct.get('latency')), 3)
+                except Exception, e:
+                    latency = dct.get('latency')
+
+                try:
+                    packet_loss = round(float(dct.get('packet_loss')), 3)
+                except Exception, e:
+                    packet_loss = dct.get('packet_loss')
+
                 dct.update(
+                    latency=latency,
+                    packet_loss=packet_loss,
                     actions='<a href="' + performance_url + '" title="Device Performance">\
                             <i class="fa fa-bar-chart-o text-info"></i></a>\
                             <a href="' + alert_url + '" title="Device Alert">\
@@ -732,6 +762,14 @@ class GetPerfomance(View):
         )
 
         service_ds_url = ''
+
+        power_listing_headers = []
+        if page_type in ['customer']:
+            power_listing_headers = [
+                {'mData': 'msg', 'sTitle': 'Message'},
+                {'mData': 'created_at', 'sTitle': 'Timestamp'},
+                {'mData': 'status_type', 'sTitle': 'Status Type'}
+            ]
         
         try:
             # Service Data-source url
@@ -763,7 +801,8 @@ class GetPerfomance(View):
             'is_dr_device' : is_dr_device,
             'is_radwin5' : is_radwin5,
             'is_viewer_flag': is_viewer_flag,
-            'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id)
+            'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id),
+            'power_listing_headers': json.dumps(power_listing_headers)
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -1402,6 +1441,16 @@ class InventoryDeviceServiceDataSource(View):
                         "info": [],
                         "isActive": 0
 
+                    },
+                    'power_content':{
+                        "info": [{
+                            'name': "power_signal",
+                            'title': "Power Signals",
+                            'url': 'performance/powerlisting/?device_id=' + str(device_id),
+                            'active': 1
+                        }],
+                        "isActive": 0
+
                     }
                 }
             }
@@ -1465,7 +1514,10 @@ class InventoryDeviceServiceDataSource(View):
                     try:
                         for port in ports:
                             if ',' in port:
-                                those_ports.extend(port.split(','))
+                                try:
+                                    those_ports.extend(port.replace(' ', '').split(','))
+                                except Exception, e:
+                                    those_ports.extend(port.split(','))
                             else:
                                 those_ports.append(port)
                     except Exception, e:
@@ -3670,10 +3722,14 @@ class GetServiceTypePerformanceData(View):
                             val = float(data.current_value) if data.current_value else 0
                             warn_val = float(data.warning_threshold) if data.warning_threshold else val
                             crit_val = float(data.critical_threshold) if data.critical_threshold else val
+                            c_color = chart_color
+
+                            if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                c_color = compare_point(val, warn_val, crit_val)
 
                             formatter_data_point = {
                                 "name": sds_display_name,
-                                "color": compare_point(val, warn_val, crit_val),
+                                "color": c_color,
                                 "y": eval(str(formula) + "(" + str(data.current_value) + ")")
                                 if formula
                                 else float(data.current_value),
@@ -3996,7 +4052,11 @@ class GetServiceTypePerformanceData(View):
                                         warn_val = float(data.warning_threshold) if data.warning_threshold else val
                                         crit_val = float(data.critical_threshold) if data.critical_threshold else val
                                         current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
-                                        current_color = compare_point(val, warn_val, crit_val)
+
+                                        if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                            current_color = compare_point(val, warn_val, crit_val)
+                                        else:
+                                            current_color = chart_color
 
                                     data_list.append({
                                         "name": str(sds_display_name)+"(Current Value)",
@@ -4073,7 +4133,11 @@ class GetServiceTypePerformanceData(View):
                                         warn_val = float(data.warning_threshold) if data.warning_threshold else val
                                         crit_val = float(data.critical_threshold) if data.critical_threshold else val
                                         current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
-                                        current_color = compare_point(val, warn_val, crit_val)
+
+                                        if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                            current_color = compare_point(val, warn_val, crit_val)
+                                        else:
+                                            current_color = chart_color
 
                                     data_list.append({
                                         "name": sds_display_name,
@@ -4399,18 +4463,48 @@ class DeviceServiceDetail(View):
 
         chart_data = []
         temp_chart_data = {}
+        temp_bh_color = {
+            'ul': {},
+            'dl': {}
+        }
+
+        bh_ul_colors = ['#B5E51D', '#9BDAEB']
+        bh_dl_colors = ['#23B14D', '#00A3E8']
+
         for data in performance:
             try:
                 if (data.service_name, data.data_source) not in temp_chart_data:
                     c = SERVICE_DATA_SOURCE[data.service_name.strip().lower() + "_" +data.data_source.strip().lower()]['chart_color']
 
-                    if technology and technology.name.lower() in ['ptp', 'p2p', 'switch']:
+                    if technology and technology.name.lower() in ['ptp', 'p2p']:
                         if 'ul' in data.service_name.strip().lower():
                             c = colors[0]
                         elif 'dl' in data.service_name.strip().lower():
                             c = colors[1]
                         else:
                             pass
+                    elif is_bh and device_type.name.lower() in ['huawei', 'juniper', 'cisco']:
+                        if 'ul' in data.service_name.strip().lower():
+                            if data.data_source.strip().lower() not in temp_bh_color['ul']:
+                                try:
+                                    temp_bh_color['ul'][data.data_source.strip().lower()] = bh_ul_colors.pop(0)
+                                    c = temp_bh_color['ul'][data.data_source.strip().lower()]
+                                except Exception, e:
+                                    temp_bh_color['ul'][data.data_source.strip().lower()] = c
+                            else:
+                                c = temp_bh_color['ul'][data.data_source.strip().lower()]
+                        elif 'dl' in data.service_name.strip().lower():
+                            if data.data_source.strip().lower() not in temp_bh_color['dl']:
+                                try:
+                                    temp_bh_color['dl'][data.data_source.strip().lower()] = bh_dl_colors.pop(0)
+                                    c = temp_bh_color['dl'][data.data_source.strip().lower()]
+                                except Exception, e:
+                                    temp_bh_color['dl'][data.data_source.strip().lower()] = c
+                            else:
+                                c = temp_bh_color['dl'][data.data_source.strip().lower()]
+                    else:
+                        pass
+
                     try:
                         alias = service_data_sources[data.service_name.strip().lower(), data.data_source.strip().lower()]
                     except Exception, e:
@@ -7553,3 +7647,195 @@ class GetTopologyToolTip(View):
             formatted_result.append(temp_dict)
 
         return formatted_result
+
+
+class PowerStatusListing(BaseDatatableView):
+
+    model = PowerSignals
+    columns = [
+        'id',
+        'message',
+        'created_at',
+        'signal_type',
+        'circuit_contacts__circuit__sub_station__device__device_name'
+    ]
+
+    order_columns = [
+        'message',
+        'created_at',
+        'signal_type'
+    ]
+
+    def get_initial_queryset(self):
+        device_id = self.request.GET.get('device_id', None)
+        if device_id:
+            qs = self.model.objects.filter(
+                circuit_contacts__circuit__sub_station__device__id=device_id
+            ).values(*self.columns).order_by('-created_at')
+        else:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+        latest_timestamp = ''
+        resultset = list()
+        for data in qs:
+            # print type(data.get('created_at'))
+            # current_timestamp = data.get('created_at') 
+            temp_dict = {
+                'msg': data.get('message'),
+                'created_at': data.get('created_at'),
+                'status_type': data.get('signal_type')
+            }
+
+            if data.get('created_at'):
+                try:
+                    temp_dict.update(
+                        created_at=data.get('created_at').strftime(DATE_TIME_FORMAT)
+                    )
+                except Exception, e:
+                    pass
+
+            resultset.append(temp_dict)
+
+        return resultset
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+class PowerStatus(View):
+    """
+    The Class based View to get the last updated power status for single device.
+    """
+    def get(self, request):
+
+        self.result = {
+                'success': 0,
+                'message': 'No Data.',
+                'data': {
+                    'meta': {},
+                    'objects': {
+                        'perf': None,
+                        'last_updated': None,
+                        'pl_status' : None,
+                        'status': None,
+                        'age': None,
+                        'last_down_time': None,
+                        'severity': None
+                    }
+                }
+            }
+
+        date_format = "%d-%m-%Y %H:%M:%S"
+        device_id = int(self.request.GET.get('device_id'))
+        
+        if device_id:
+            # getting latest updated value from dataset
+            qs_dict = PowerSignals.objects.filter(
+                circuit_contacts__circuit__sub_station__device__id=device_id, signal_type='Received'
+            ).values().order_by('-created_at')
+            
+
+            if qs_dict.exists():
+                qs_dict = qs_dict[0]
+
+                # updating resultset
+                self.result.update(success= 1, message= 'Current status fetched successfully')
+                self.result['data']['objects']['perf'] = qs_dict['message']
+                self.result['data']['objects']['status'] = qs_dict['message']
+                self.result['data']['objects']['last_updated'] = qs_dict['created_at'].strftime(date_format)
+            else :
+                self.result.update(message= 'Data not fetched successfully')
+
+
+        else:
+            qs_dict = PowerSignals.objects.filter(id=0)
+
+        return HttpResponse(json.dumps(self.result), content_type="application/json")
+
+class SendPowerSms(View):
+    """
+    The Class based View to send button specific sms .
+    """
+
+    def get(self, request):
+        result = {
+            'success': 0,
+            'message': 'No Data.',
+        }
+
+        device_id = self.request.GET.get('device_id')
+        button_name = self.request.GET.get('button_name').strip().lower()
+        message = ''
+        send_to = ''
+
+        # variables for sending sms using provided sms gateway
+        payload =  GATEWAY_PARAMETERS
+        url = GATEWAY_SETTINGS['URL']
+
+        if not device_id:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+        
+        # getting the device related phone number from database
+        circuit_contact_instance = CircuitContacts.objects.filter(
+            circuit__sub_station__device__id=device_id
+        )
+
+        if circuit_contact_instance.exists():
+            send_to = circuit_contact_instance[0].phone_number
+            
+            # getting suitable response for clicked button from power_sms_dict, defined in settings.py
+            message = settings.POWER_SMS_DICT[button_name]
+
+            payload['N'] = send_to
+            payload['M'] = message
+            try:
+                r = requests.get(url, params=payload, timeout=(60, 60))
+            except Exception, e:
+                r = None
+
+            if r and r.status_code == 200:
+                power_instance = PowerSignals()
+                power_instance.circuit_contacts = circuit_contact_instance[0]
+                power_instance.message = str(message)
+                power_instance.signal_type = 'Sent'
+                power_instance.save()
+
+                result.update(success=1, message='Message sent successfully')
+            else:
+                result.update(success=0, message='Error in accessing gateway')
+
+        else:
+            result.update(message='Phone number does not exist')
+
+        return HttpResponse(json.dumps(result), content_type="application/json")

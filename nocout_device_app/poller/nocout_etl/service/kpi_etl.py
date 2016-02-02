@@ -26,9 +26,11 @@ from celery import chord,group
 #from sys import path
 #path.append('/omd/nocout_etl')
 
+#from start_pub import app
 from start.start import app
 from handlers.db_ops import *
 from service.service_etl import *
+#from service_etl import *
 
 logger = get_task_logger(__name__)
 info, warning, error = logger.info, logger.warning, logger.error
@@ -100,52 +102,131 @@ def extract_juniper_util_data(host_params,**args):
 	if 'ul_util' in args['service']:
 		util_type = 'ul'
 	try:
-		dl_util_dict= fetch_juni_util_from_memc(hostname,site,util_type,memc)
+		dl_util_dict= fetch_juni_util_from_memc(hostname,site,util_type,args['memc'])
 		for entry in dl_util_dict.keys():
 			each, inc , index = entry.split("_") #['ge-0', '1', '12'],['ge-0', '0', '12']
 			index =int(index)	
 			if inc == '1':
-				index = index+47
+				index = index+48
 			if index in kpi_list_index:
 				kpi =  dl_util_dict[entry]
 				try:
 					kpi = (float(kpi)/float(qos_value[index])) *100
 					entry = entry+"_kpi"
-					tup1 = (entry,kpi, index )
-					dict1_kpi.append(tup1)
+					war = float(args['war'])
+					crit = float(args['crit'])
+
+					#tup1 = (entry,kpi, index )
+					#dict1_kpi.append(tup1)
 				except Exception,e:
 					continue
-		max_tuple = max(dict1_kpi, key = lambda x:x[1])
-		kpi = max_tuple[1]
-		kpi = round(dl_kpi,2)
-		if kpi or kpi == 0:
-			perf += str(max_tuple[0]) + "=%s;%s;%s;%s " % (kpi,war,crit,qos_value[max_tuple[2]])
-			if kpi >= crit:
-				crit_flag = 1
-			elif kpi >= war and kpi < crit:
-				warn_flag = 1
-			else:
-				normal_flag = 1
-		if crit_flag:
-			state =2
-			state_string = "critical"
-		elif warn_flag:
-			state =1
-			state_string = "warning"
-		elif normal_flag:
-			state = 0
-			state_string = "ok"
+			kpi = round(kpi,2)
+			if kpi or kpi == 0:
+				perf += str(entry) + "=%s;%s;%s;%s " % (kpi,war,crit,qos_value[index])
+				if kpi >= crit:
+					crit_flag = 1
+				elif kpi >= war and kpi < crit:
+					warn_flag = 1
+				else:
+					normal_flag = 1
+			if crit_flag:
+				state =2
+				state_string = "critical"
+			elif warn_flag:
+				state =1
+				state_string = "warning"
+			elif normal_flag:
+				state = 0
+				state_string = "ok"
 			
 	except Exception ,e:
-	    perf = ''	 
+	    perf = ''	
+	    error('Juniper excetiom*****: {0}'.format(e)) 
     	age_of_state = age_since_last_state(hostname, args['service'], state_string)
-
+	
 	service_dict = service_dict_for_kpi_services(
 	    perf, state_string, hostname, site, ip_address, age_of_state, **args)
 	service_list.append(service_dict)
     if len(service_list) > 0:     
 	build_export.s(args['site_name'], service_list).apply_async()
-		
+	
+def fetch_huawei_util_from_memc(hostname,site,util_type,memc):
+        try:
+                key1 = str(hostname)+"switch_%s_utilization" % util_type
+                dict2 = memc.get(key1)
+                mro_dl_dict=dict(dict2)
+        except Exception ,e:
+                mro_dl_dict = {}
+        return mro_dl_dict
+
+def extract_huawei_util_data(host_params,**args):
+    service_list = []
+    for entry in host_params:
+        crit_flag = warn_flag = normal_flag = 0
+        kpi = perf = ''
+        dict1_kpi = []
+        kpi_list_index = []
+        state_string = "unknown"
+        if entry and len(eval(entry[0])) == 4:
+            hostname, site, ip_address,qos_value = eval(entry[0])
+        else:
+            break
+        try:
+                kpi_list = [x for i,x in enumerate(qos_value) if int(x) >0]
+        except:
+                continue
+        if 'dl_util' in args['service']:
+                util_type = 'dl'
+        if 'ul_util' in args['service']:
+                util_type = 'ul'
+        try:
+                ul_util_dict= fetch_huawei_util_from_memc(hostname,site,util_type,args['memc'])
+		#error('huawei dictionary: {0}'.format(ul_util_dict))
+                if len(ul_util_dict) >1:   # if 2 port are there 
+                    if len(kpi_list)==1: # but capacity only one given 
+                          kpi_list.append(kpi_list[0])  # add one more value
+                for x in xrange(len(ul_util_dict)):
+                    entry = ul_util_dict.keys()[x]  #entry = Gi0/1
+                    kpi =  ul_util_dict[entry] # kpi = utilization like 7.4
+                    try:
+                        kpi = (float(kpi)/float(kpi_list[x])) *100
+                        entry = entry+"_kpi"
+			war = float(args['war'])
+			crit = float(args['crit'])
+                    except Exception,e:
+                        #error('huawei eerr$: {0}'.format(e))
+                        continue  
+                    ul_kpi = kpi
+                    ul_kpi = round(ul_kpi,2)
+                    if ul_kpi or ul_kpi ==0:
+                    	perf += str(entry) + "=%s;%s;%s;%s " % (ul_kpi,war,crit,kpi_list[x])
+                   	if ul_kpi >= crit:
+                        	crit_flag = 1
+                    	elif ul_kpi >= war and ul_kpi < crit:
+                        	warn_flag = 1
+                    	else:
+                        	normal_flag = 1
+                	if crit_flag:
+                    		state =2
+                    		state_string = "critical"
+                	elif warn_flag:
+                    		state =1
+                    		state_string = "warning"
+                	elif normal_flag:
+                    		state = 0
+                    		state_string = "ok"
+
+        except Exception ,e:
+            perf = ''
+        age_of_state = age_since_last_state(hostname, args['service'], state_string)
+
+        service_dict = service_dict_for_kpi_services(
+            perf, state_string, hostname, site, ip_address, age_of_state, **args)
+        service_list.append(service_dict)
+    if len(service_list) > 0:
+        build_export.s(args['site_name'], service_list).apply_async()
+
+	
 def extract_cisco_util_data(host_params,**args):
     service_list = []
     for entry in host_params:
@@ -178,37 +259,39 @@ def extract_cisco_util_data(host_params,**args):
 				try:
 					kpi = (float(kpi)/float(qos_value[index-1])) *100
 					entry = entry+"_kpi"
-					tup1 = (entry,kpi, index )
-					dict1_kpi.append(tup1)
+					war = float(args['war'])
+		                        crit = float(args['crit'])
+
+					#tup1 = (entry,kpi, index )
+					#dict1_kpi.append(tup1)
 					#max_tuple = max(dict1_kpi, key = lambda x:x[1])
 					#print "max ", max_tuple
 				except Exception,e:
 					continue
-		max_tuple = max(dict1_kpi, key = lambda x:x[1])
-		kpi = max_tuple[1]
-		kpi = round(kpi,2)
-		if kpi or kpi ==0:
-			perf += str(max_tuple[0]) + "=%s;%s;%s;%s " % (kpi,war,crit,qos_value[max_tuple[2]-1])
-			if kpi >= crit:
-				crit_flag = 1
-			elif kpi >= war and kpi < crit:
-				warn_flag = 1
-			else:
-				normal_flag = 1
-		if crit_flag:
-			state =2
-			state_string = "critical"
-		elif warn_flag:
-			state =1
-			state_string = "warning"
-		elif normal_flag:
-			state = 0
-			state_string = "ok"
+			kpi = round(kpi,2)
+			if kpi or kpi ==0:
+				perf += str(entry) + "=%s;%s;%s;%s " % (kpi,war,crit,qos_value[index-1])
+				if kpi >= crit:
+					crit_flag = 1
+				elif kpi >= war and kpi < crit:
+					warn_flag = 1
+				else:
+					normal_flag = 1
+			if crit_flag:
+				state =2
+				state_string = "critical"
+			elif warn_flag:
+				state =1
+				state_string = "warning"
+			elif normal_flag:
+				state = 0
+				state_string = "ok"
 			
 	except Exception ,e:
+		warning('cisco: {0}'.format(e))
 		perf = ''
     	age_of_state = age_since_last_state(hostname, args['service'], state_string)
-
+	
 	service_dict = service_dict_for_kpi_services(
 	    perf, state_string, hostname, site, ip_address, age_of_state, **args)
 	service_list.append(service_dict)
@@ -814,7 +897,6 @@ def call_kpi_services(**opt):
     wimax_bs_key = redis_cnx.keys(pattern="wimax:bs:%s:*" % opts['site_name'])
     #wimax_ss_key = redis_cnx.keys(pattern="wimax:ss:*")
     wimax_ss_key = redis_cnx.keys(pattern="wimax:ss:%s:*" % opts['site_name'])
-
     #warning('wimax_bs_key len: {0}'.format(len(wimax_bs_key)))
     #warning('wimax_ss_key len: {0}'.format(len(wimax_ss_key)))
 
@@ -825,7 +907,7 @@ def call_kpi_services(**opt):
     rici_bs_key = redis_cnx.keys(pattern="rici:bs:%s:*" % opts['site_name'])
     cisco_bs_key = redis_cnx.keys(pattern="cisco:bs:%s:*" % opts['site_name'])
     juniper_bs_key = redis_cnx.keys(pattern="juniper:bs:%s:*" % opts['site_name'])
-
+    huawei_bs_key = redis_cnx.keys(pattern="huawei:bs:%s:*" % opts['site_name'])
     p = redis_cnx.pipeline()
 
     wimax_util_kpi_services = [
@@ -844,7 +926,7 @@ def call_kpi_services(**opt):
             ]
     radwin_util_kpi_services = [
             'radwin_dl_util_kpi',
-            'radwin_ul_util_kpi',
+           'radwin_ul_util_kpi',
 	    'radwin_ss_provis_kpi'
             ]
     mrotek_util_kpi_services = [
@@ -863,6 +945,12 @@ def call_kpi_services(**opt):
             'juniper_switch_dl_util_kpi',
             'juniper_switch_ul_util_kpi'
             ]
+    huawei_util_kpi_services = [
+            'huawei_switch_dl_util_kpi',
+            'huawei_switch_ul_util_kpi'
+            ]
+
+
 
     service_threshold = {}
     total_services = []
@@ -873,6 +961,7 @@ def call_kpi_services(**opt):
     total_services.extend(rici_util_kpi_services)
     total_services.extend(cisco_util_kpi_services)
     total_services.extend(juniper_util_kpi_services)
+    total_services.extend(huawei_util_kpi_services)
     total_services.extend(['wimax_bs_ul_issue_kpi', 'cambium_bs_ul_issue_kpi'])
 
     for service_name in total_services:
@@ -882,7 +971,6 @@ def call_kpi_services(**opt):
         service_threshold[bs_crit_key]  =  redis_cnx.get(bs_crit_key)
 
     ## calling tasks for wimax services
-
     call_tasks(
             wimax_bs_key,
             wimax_util_kpi_services[:5],
@@ -966,7 +1054,6 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_wimax_ss_provis_data'
             )
-    
     #for i in izip_longest(*[iter(pmp_bs_key)] * 500):    
         #args = {}    
         #args['site_name'] =  opts['site_name']
@@ -1032,7 +1119,6 @@ def call_kpi_services(**opt):
     #    extract_kpi_services_data.s(**args).apply_async()    
 
     ## calling tasks for radwin util services
-   
     call_tasks(
             radwin_ss_key,
             radwin_util_kpi_services[:2],
@@ -1041,7 +1127,7 @@ def call_kpi_services(**opt):
             func='extract_radwin_util_data'
             )
     call_tasks(
-            pmp_ss_key,
+            radwin_ss_key,
             radwin_util_kpi_services[2],
             service_threshold,
             site_name=opt.get('site_name'),
@@ -1078,6 +1164,7 @@ def call_kpi_services(**opt):
 
     ## calling tasks for radwin util services
  
+    
     call_tasks(
             mrotek_bs_key,
             mrotek_util_kpi_services,
@@ -1085,6 +1172,7 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_mrotek_util_data'
             )
+    
     #for i in izip_longest(*[iter(mrotek_bs_key)] * 500):
     #    args = {}
     #    args['site_name'] =  opts['site_name']
@@ -1116,7 +1204,6 @@ def call_kpi_services(**opt):
 
     ## calling tasks for radwin util services
 
-
     call_tasks(
             rici_bs_key,
             rici_util_kpi_services,
@@ -1131,6 +1218,7 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_juniper_util_data'
             )
+    
     call_tasks(
             cisco_bs_key,
             cisco_util_kpi_services,
@@ -1138,6 +1226,15 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_cisco_util_data'
             )
+    
+    call_tasks(
+            huawei_bs_key,
+            huawei_util_kpi_services,
+            service_threshold,
+            site_name=opt.get('site_name'),
+            func='extract_huawei_util_data'
+            )
+
     #for i in izip_longest(*[iter(rici_bs_key)] * 500):
     #    args = {}
     #    args['site_name'] =  opts['site_name']
@@ -1176,6 +1273,7 @@ def call_tasks(hosts, services, services_thresholds, site_name=None, func=None, 
     #warning('Sending kpi tasks for: {0} hosts'.format(len(hosts)))
     if not isinstance(services, list):
 	    services = [services]
+
     while  hosts:
         [p.lrange(k, 0 ,-1) for k in hosts[:batch]]
         host_params = p.execute()
@@ -1241,7 +1339,7 @@ def extract_radwin_ss_provis_data(host_params,**args):
 	ss_state = ''
         state_string = 'unknown'
         if entry:
-            host ,site,ip = literal_eval(entry[0])
+            host ,site,ip,_,_,_ = literal_eval(entry[0])
         else:
             break
         try:

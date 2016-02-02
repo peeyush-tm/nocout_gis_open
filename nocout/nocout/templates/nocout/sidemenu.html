@@ -137,6 +137,19 @@
                             </li>
                         </ul>
                     </li>
+                    {% if settings.TICKETS_LINK_ENABLED %}
+                    <li>
+                        <a href="{{ settings.NETWORK_TICKET_URL}}" target="_blank">
+                            <span class="sub-menu-text">Open Network Ticket</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ settings.CUSTOMER_TICKET_URL}}" target="_blank">
+                            <span class="sub-menu-text">Open Customer Ticket</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
                     {% if settings.SIA_ENABLED %}
                     <li>
                         <a href="/alarms/sia/">
@@ -347,6 +360,7 @@
                                     <span class="sub-menu-text">MFR</span>
                                 </a>
                             </li>
+                            {% if settings.FAULT_REPORT_ENABLED %}
                             <li class="has-sub-sub-sub">
                                 <a href="javascript:;">
                                     <span class="sub-menu-text">Fault Reports</span>
@@ -370,6 +384,7 @@
                                     </li>
                                 </ul>
                             </li>
+                            {% endif %}
                         </ul>
                     </li>
                     <li>
@@ -665,12 +680,14 @@
                     </li>
                     {% endif %}
                     
-                    {% if perms.user_profile.view_userprofile %}
-                        <li>
-                            <a href="{% url 'permissions_list' %}">
-                                <span class="sub-menu-text">Permission</span>
-                            </a>
-                        </li>
+                    {% if settings.PERMISSIONS_MODULE_ENABLED %}
+                        {% if perms.user_profile.view_userprofile %}
+                            <li>
+                                <a href="{% url 'permissions_list' %}">
+                                    <span class="sub-menu-text">Permission</span>
+                                </a>
+                            </li>
+                        {% endif %}
                     {% endif %}
 
                     {% if perms.activity_stream.view_useraction %}

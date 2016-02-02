@@ -80,12 +80,23 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
-        # if the user role is Admin or superadmin then the action column will appear on the datatable
-        if in_group(self.request.user, 'admin'):
-            datatable_headers.append(
-                {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '9%', 'bSortable': False})
-            datatable_headers.append(
-                {'mData': 'nms_actions', 'sTitle': 'NMS Actions', 'sWidth': '8%', 'bSortable': False})
+        # Show 'actions' column only if user has the desired permissions
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
+        if is_edit_perm or is_delete_perm:
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Device Actions',
+                'sWidth': '9%',
+                'bSortable': False
+            })
+
+            datatable_headers.append({
+                'mData': 'nms_actions',
+                'sTitle': 'NMS Actions',
+                'sWidth': '8%',
+                'bSortable': False
+            })
 
         datatable_headers_no_nms_actions = [
             {'mData': 'status_icon', 'sTitle': '', 'sWidth': 'auto', },
@@ -103,9 +114,13 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         # if the user role is Admin then the action column will appear on the datatable
-        if in_group(self.request.user, 'admin'):
-            datatable_headers_no_nms_actions.append(
-                {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '15%', 'bSortable': False})
+        if is_edit_perm or is_delete_perm:
+            datatable_headers_no_nms_actions.append({
+                'mData': 'actions',
+                'sTitle': 'Device Actions',
+                'sWidth': '15%',
+                'bSortable': False
+            })
 
         # get deadlock status
         deadlock_status = ""
@@ -282,24 +297,26 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             #                       c. sub-station configured on (from model SubStation)
             #                       d. others (any device, may be out of inventory)
 
+            is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+            is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
+            is_sync_perm = in_group(self.request.user, 'admin', 'sync_devices')
+
+            device_actions = ''
+            device_nms_actions = ''
+
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
+            device_actions += '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'
 
             # view device edit action only if user has permissions
-            if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
-                    dct['id'])
-            else:
-                edit_action = ''
+            if is_edit_perm:
+                device_actions += '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'
 
             # view device delete action only if user has permissions
-            if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
-            else:
-                delete_action = ''
+            if is_delete_perm:
+                device_actions += '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'
 
-            if edit_action or delete_action:
-                dct.update(actions=detail_action + edit_action + delete_action)
+            if device_actions:
+                dct.update(actions=device_actions.format(dct['id']))
 
             dct.update(nms_actions='')
 
@@ -332,7 +349,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 logger.exception("Device is not a substation. %s" % e.message)
 
             # show sync button only if user is superuser or admin
-            if in_group(self.request.user, 'admin'):
+            if is_sync_perm:
                 try:
                     dct['nms_actions'] += '<a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh {1}" title="Sync Device"></i></a>'.format(
                         dct['id'], text_color)
@@ -471,24 +488,25 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             #                       c. sub-station configured on (from model SubStation)
             #                       d. others (any device, may be out of inventory)
 
+            is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+            is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
+
+            device_actions = ''
+            device_nms_actions = ''
+
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
+            device_actions += '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'
 
             # view device edit action only if user has permissions
-            if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
-                    dct['id'])
-            else:
-                edit_action = ''
+            if is_edit_perm:
+                device_actions += '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'
 
             # view device delete action only if user has permissions
-            if in_group(self.request.user, 'admin'):
-                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
-            else:
-                delete_action = ''
+            if is_delete_perm:
+                device_actions += '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'
 
-            if edit_action or delete_action:
-                dct.update(actions=detail_action + edit_action + delete_action)
+            if device_actions:
+                dct.update(actions=device_actions.format(dct['id']))
 
             dct.update(nms_actions='')
 
@@ -647,24 +665,25 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             #                       c. sub-station configured on (from model SubStation)
             #                       d. others (any device, may be out of inventory)
 
+            is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+            is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
+
+            device_actions = ''
+            device_nms_actions = ''
+
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
+            device_actions += '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'
 
             # view device edit action only if user has permissions
-            if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
-                    dct['id'])
-            else:
-                edit_action = ''
+            if is_edit_perm:
+                device_actions += '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'
 
             # view device delete action only if user has permissions
-            if in_group(self.request.user, 'admin'):
-                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
-            else:
-                delete_action = ''
+            if is_delete_perm:
+                device_actions += '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'
 
-            if edit_action or delete_action:
-                dct.update(actions=detail_action + edit_action + delete_action)
+            if device_actions:
+                dct.update(actions=device_actions.format(dct['id']))
 
             dct.update(nms_actions='')
 
@@ -813,30 +832,29 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             # update status icon
             dct.update(status_icon='<i class="fa fa-circle red-dot"></i>')
 
-            if in_group(self.request.user, 'admin'):
-                add_action = '<a href="javascript:;" pk="{0}" class="nms_action restore"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
-            else:
-                add_action = ''
+            is_add_perm = in_group(self.request.user, 'admin', 'add_device')
+            is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+            is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
 
-            # device detail
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
+            device_actions = ''
+            device_nms_actions = ''
+
+            if is_add_perm:
+                device_actions += '<a href="javascript:;" pk="{0}" class="nms_action restore"><i class="fa fa-plus green-dot" title="Restore"></i></a>'
+
+            # device detail action
+            device_actions += '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'
 
             # view device edit action only if user has permissions
-            if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
-                    dct['id'])
-            else:
-                edit_action = ''
+            if is_edit_perm:
+                device_actions += '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'
 
             # view device delete action only if user has permissions
-            if in_group(self.request.user, 'admin')\
-                    and device.device_name != 'default':
-                delete_action = '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i></a>'.format(dct['id'])
-            else:
-                delete_action = ''
+            if is_delete_perm:
+                device_actions += '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i></a>'
 
-            if edit_action or delete_action:
-                dct.update(actions=detail_action + edit_action + delete_action + add_action)
+            if device_actions:
+                dct.update(actions=device_actions.format(dct['id']))
 
         return json_data
 
@@ -972,24 +990,24 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
             except Exception as e:
                 dct.update(status_icon='<img src="">')
 
+            is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+            is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
+
+            device_actions = ''
+
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
+            device_actions += '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'
 
             # view device edit action only if user has permissions
-            if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
-                    dct['id'])
-            else:
-                edit_action = ''
+            if is_edit_perm:
+                device_actions += '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'
 
             # view device delete action only if user has permissions
-            if self.request.user.is_superuser:
-                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
-            else:
-                delete_action = ''
+            if is_delete_perm:
+                device_actions += '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'
 
-            if edit_action or delete_action:
-                dct.update(actions=detail_action + edit_action + delete_action)
+            if device_actions:
+                dct.update(actions=device_actions.format(dct['id']))
 
             dct.update(nms_actions='')
 
@@ -3657,7 +3675,7 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         # queryset
-        queryset = DeviceSyncHistory.objects.all().values(*self.columns + ['id'])
+        queryset = DeviceSyncHistory.objects.all().values(*self.columns + ['id']).order_by('-added_on')
 
         return queryset
 

@@ -51,5 +51,10 @@ urlpatterns = patterns('',
       r'^resetemails/$',
       views.ResetEmailReport.as_view(),
       name='reset_emails'
+    ),
+    url(
+      r'^processedreportemail/$',
+      views.ProcessedReportEmailAPI.as_view(),
+      name='ProcessedReprotEmail'
     )
 )

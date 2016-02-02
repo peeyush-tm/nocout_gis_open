@@ -43,23 +43,33 @@
             reset_emails_btn_html = '<li><button title="Reset Existing Emails" id="reset_email_btn"\
                                      class="btn btn-default btn-sm"><i class="fa fa-times text-danger"></i></button></li>';
         $(document).ready(function (e) {
-            {% if settings.SCHEDULED_REPORT_EMAIL %}
-                // Add configure email btn
-                // Add 'Create Item' link on top header bar.
-                var create_link_html = '<li><button title="Configure Emails List" id="scheduled_email_btn"\
-                                        class="btn btn-default btn-sm"><i class="fa fa-envelope"></i></button></li>';
-
-                {% if email_exists %}
-                    create_link_html += reset_emails_btn_html;
-                {% endif %}
-
-                $('.controls_container ul').prepend(create_link_html);
-            {% endif %}
-
+            
+            var report_mail_perms = '{{ settings.REPORT_EMAIL_PERM|safe }}' ? JSON.parse('{{ settings.REPORT_EMAIL_PERM|safe }}') : {};
 
             page_type = '{{ page_type }}';
             report_id = '{{ report_id}}';
             reset_emails_url = "{% url 'reset_emails' %}" + '?id='+report_id;
+
+            {% for group in user.groups.all %}
+                {% if group.name == 'Admin' %}
+                    {% if settings.SCHEDULED_REPORT_EMAIL or settings.SCHEDULED_SINGLE_REPORT_EMAIL %}
+                        if (report_mail_perms[page_type]) {
+                            // Add configure email btn
+                            // Add 'Create Item' link on top header bar.
+                            var create_link_html = '<li><button title="Configure Emails List" id="scheduled_email_btn"\
+                                                    class="btn btn-default btn-sm"><i class="fa fa-envelope"></i></button></li>';
+
+                            {% if email_exists %}
+                                create_link_html += reset_emails_btn_html;
+                            {% endif %}
+
+                            $('.controls_container ul').prepend(create_link_html);
+                        }
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
+
             // Disable advance filtering
             create_advance_filters = false;
             /*Make a instance of ourDataTableWidget class */
@@ -145,7 +155,7 @@
         function getExisitingEmails(callback) {
 
             $.ajax({
-                url: base_url +'/download_center/getemails/'+ page_type,
+                url: base_url +'/download_center/getemails/'+ page_type + "/",
                 type: 'GET',
                 success: function(response) {
                     var result = response,
