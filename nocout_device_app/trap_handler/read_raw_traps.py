@@ -1,8 +1,8 @@
 """ Module to read and prcoss raw traps from snmptt databse"""
 
-from db_ops import ConnectionBase
-from process_traps import ProcessTraps
-
+from db_conn import ConnectionBase
+#from process_traps import ProcessTraps
+from mapper import Eventmapper 
 
 class RawTraps(object):
 
@@ -22,7 +22,6 @@ class RawTraps(object):
 			data = cur.fetchall()
 		except Exception as exc:
 			data = []
-			print 'qry: {0}'.format(qry)
 			print 'Error executing qry: {0}'.format(exc)
 		finally:
 			cur.close()
@@ -48,10 +47,12 @@ class RawTraps(object):
 		""".format(self.get_start_id())
 
 		data = self.exec_qry(qry, 'snmptt_db')
+		#print data
 		if data:
 			# TODO: move this functionality to init()
-			worker = ProcessTraps()
-			worker.do_work(data)
+			#worker = ProcessTraps()
+			worker = Eventmapper()
+			worker.filter_traps(data)
 
 	def export_invent_into_redis(self):
 		""" Load inventory info (ip, device name etc.) present in 
@@ -78,4 +79,3 @@ class RawTraps(object):
 if __name__ == '__main__':
 	worker = RawTraps()
 	worker.do_work()
-	print 'Done..'
