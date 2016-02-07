@@ -128,7 +128,7 @@ def get_current_value_old(current_values, device=None, service=None, data_source
     return current_values
 
 
-def get_current_value(q,device=None, service_list=None, data_source_list=None, bs_name_ss_mac_mapping=None, ss_name_mac_mapping=None):
+def get_current_value(q,device=None, service_list=None, data_source_list=None, bs_name_ss_mac_mapping=None, ss_name_mac_mapping=None,is_first_call=0):
      #response = []
      # Teramatrix poller on which this device is being monitored
      site_name = get_site_name()
@@ -146,11 +146,14 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
      util_service_list = ['wimax_pmp1_dl_util_bgp','wimax_pmp1_ul_util_bgp','wimax_pmp2_dl_util_bgp','wimax_pmp2_ul_util_bgp',
 	'radwin_dl_utilization','radwin_ul_utilization','cambium_dl_utilization','cambium_ul_utilization',
 	'cambium_ss_dl_utilization','cambium_ss_ul_utilization','mrotek_dl_utilization','mrotek_ul_utilization','rici_dl_utilization',
-	'rici_ul_utilization','cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization','juniper_switch_ul_utilization']
+	'rici_ul_utilization','cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization','juniper_switch_ul_utilization',
+	'huawei_switch_dl_utilization', 'huawei_switch_ul_utilization']
+
      wimax_ss_util_services = ['wimax_ss_ul_utilization','wimax_ss_dl_utilization']
      wimax_ss_params_services=['wimax_qos_invent','wimax_ss_session_uptime']
-     switch_utilization = ['cisco_switch_dl_utilization','cisco_switch_ul_utilization','juniper_switch_dl_utilization',
-     'juniper_switch_ul_utilization']
+     switch_utilization = ['cisco_switch_dl_utilization','cisco_switch_ul_utilization','huawei_switch_dl_utilization', 'huawei_switch_ul_utilization']
+     juniper_switch = ['juniper_switch_dl_utilization', 'juniper_switch_ul_utilization']
+     huawei_switch = ['huawei_switch_dl_utilization', 'huawei_switch_ul_utilization']   
      ss_device, ss_mac, bs_device = None, None, None
      old_device = device
      #logger.debug('service_list: ' + pformat(service_list))
@@ -383,6 +386,9 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					try:
                  				logger.info('current_states : %s %s' % (util_values,is_first_call))
 						ds = data_source_list[0]
+						
+						if 'GigabitEthernet0_0_' not in ds:
+							ds = ds.lower()
 						cur_values = util_values[0].rstrip().split(' ')
 						this_time = cur_values[0].split('=')[1]	
 						port_name = map(lambda x: x.split('=')[0] ,cur_values )	
@@ -394,6 +400,27 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
                  				logger.info('port_value : %s %s' % (this_value,is_first_call))
 					except:
 						pass  	
+
+				elif service in juniper_switch:
+					try:
+                                                ds = data_source_list[0]
+                                                ds = ds.lower()
+                                                cur_values = util_values[0].rstrip().split(' ')
+                                                this_time = cur_values[0].split('=')[1]
+                                                port_name = map(lambda x: x.split('=')[0] ,cur_values )
+                                                port_value = map(lambda x: x.split('=')[1] ,cur_values )
+                                                port_index = port_name.index(ds)
+                                                if port_index:
+                                                    this_value = eval(port_value[port_index])
+                                                key_value = "%.2f" % this_value
+                                                data_dict = {old_device: key_value}
+                                                logger.debug(data_dict)
+                                                q.put(data_dict)
+                                                continue
+                                        except:
+                                                pass
+
+		
 				else:
 					this_time = util_values[0].split(' ')[0].split('=')[1]
 					this_value = util_values[0].split(' ')[1].split('=')[1]
