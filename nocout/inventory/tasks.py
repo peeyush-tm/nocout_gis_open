@@ -10,6 +10,7 @@ from site_instance.models import SiteInstance
 from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency, DeviceType, ModelType, VendorModel, \
     Country, TechnologyVendor, DeviceVendor, DeviceModel
 from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload
+from organization.models import Organization
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
 from nocout.tasks import cache_clear_task
@@ -104,6 +105,23 @@ def update_sector_frequency_per_day():
 
     return True
 
+
+def get_organization_from_sheet(organization_str):
+    """
+    This function generates the Organization class object as per the row value
+    """
+    organization = ''
+    try:
+        organization = Organization.objects.get(name__iexact=str(organization_str))
+    except Exception, e:
+        try:
+            organization = Organization.objects.get(name__iexact='tcl')
+        except Exception, e:
+            total_organization = Organization.objects.all().count()
+            if total_organization:
+                organization = Organization.objects.all()[0]
+
+    return organization
 
 
 @task()
@@ -1539,6 +1557,18 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
         row_number = 2
 
         for row in complete_d:
+            # Create organization object
+            try:
+                organization = get_organization_from_sheet(row.get('Organization'))
+            except Exception, e:
+                try:
+                    organization = Organization.objects.get(name__iexact='tcl')
+                except Exception, e:
+                    organization = ''
+                    total_organization = Organization.objects.all().count()
+                    if total_organization:
+                        organization = Organization.objects.all()[0]
+
             # increment device latest id by 1
             device_latest_id += 1
 
@@ -2552,6 +2582,19 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
         row_number = 2
 
         for row in complete_d:
+
+            # Create organization object
+            try:
+                organization = get_organization_from_sheet(row.get('Organization'))
+            except Exception, e:
+                try:
+                    organization = Organization.objects.get(name__iexact='tcl')
+                except Exception, e:
+                    organization = ''
+                    total_organization = Organization.objects.all().count()
+                    if total_organization:
+                        organization = Organization.objects.all()[0]
+
             # increment device latest id by 1
             device_latest_id += 1
 
@@ -3461,6 +3504,19 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
         row_number = 2
 
         for row in complete_d:
+
+            # Create organization object
+            try:
+                organization = get_organization_from_sheet(row.get('Organization'))
+            except Exception, e:
+                try:
+                    organization = Organization.objects.get(name__iexact='tcl')
+                except Exception, e:
+                    organization = ''
+                    total_organization = Organization.objects.all().count()
+                    if total_organization:
+                        organization = Organization.objects.all()[0]
+
             # increment device latest id by 1
             device_latest_id += 1
 
@@ -4185,6 +4241,19 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto=''):
         row_number = 2
 
         for row in complete_d:
+
+            # Create organization object
+            try:
+                organization = get_organization_from_sheet(row.get('Organization'))
+            except Exception, e:
+                try:
+                    organization = Organization.objects.get(name__iexact='tcl')
+                except Exception, e:
+                    organization = ''
+                    total_organization = Organization.objects.all().count()
+                    if total_organization:
+                        organization = Organization.objects.all()[0]
+
             # increment device latest id by 1
             device_latest_id += 1
 
@@ -4571,6 +4640,19 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
         row_number = 2
 
         for row in complete_d:
+
+            # Create organization object
+            try:
+                organization = get_organization_from_sheet(row.get('Organization'))
+            except Exception, e:
+                try:
+                    organization = Organization.objects.get(name__iexact='tcl')
+                except Exception, e:
+                    organization = ''
+                    total_organization = Organization.objects.all().count()
+                    if total_organization:
+                        organization = Organization.objects.all()[0]
+
             # increment device latest id by 1
             device_latest_id += 1
 
@@ -5465,6 +5547,19 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype, auto=''):
         row_number = 2
 
         for row in complete_d:
+
+            # Create organization object
+            try:
+                organization = get_organization_from_sheet(row.get('Organization'))
+            except Exception, e:
+                try:
+                    organization = Organization.objects.get(name__iexact='tcl')
+                except Exception, e:
+                    organization = ''
+                    total_organization = Organization.objects.all().count()
+                    if total_organization:
+                        organization = Organization.objects.all()[0]
+
             # increment device latest id by 1
             device_latest_id += 1
 
@@ -5860,6 +5955,19 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
         row_number = 2
 
         for row in complete_d:
+
+            # Create organization object
+            try:
+                organization = get_organization_from_sheet(row.get('Organization'))
+            except Exception, e:
+                try:
+                    organization = Organization.objects.get(name__iexact='tcl')
+                except Exception, e:
+                    organization = ''
+                    total_organization = Organization.objects.all().count()
+                    if total_organization:
+                        organization = Organization.objects.all()[0]
+
             # increment device latest id by 1
             device_latest_id += 1
 
