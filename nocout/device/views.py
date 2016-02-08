@@ -851,7 +851,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
             # view device delete action only if user has permissions
             if is_delete_perm:
-                device_actions += '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'
+                device_actions += '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i></a>'
 
             if device_actions:
                 dct.update(actions=device_actions.format(dct['id']))
@@ -3675,7 +3675,7 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         # queryset
-        queryset = DeviceSyncHistory.objects.all().values(*self.columns + ['id'])
+        queryset = DeviceSyncHistory.objects.all().values(*self.columns + ['id']).order_by('-added_on')
 
         return queryset
 

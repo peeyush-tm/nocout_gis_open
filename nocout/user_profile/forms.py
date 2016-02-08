@@ -68,13 +68,20 @@ class UserForm(forms.ModelForm):
         logged_in_user_organization_list = get_user_organizations(self.request.user)
         self.fields['organization'].queryset = logged_in_user_organization_list
 
+        # If permission module is disabled then remove user_permissions field
+        if not PERMISSIONS_MODULE_ENABLED:
+            del self.fields['user_permissions']
+
         # If request is for updating user then make password non mandatory fields.
         if self.instance.pk:
             self.fields['password1'].required = False
             self.fields['password2'].required = False
             # Show permission field to only those who are allowed to edit permissions.
-            if not can_edit_permissions(self.request.user, kwargs['instance']) or not PERMISSIONS_MODULE_ENABLED:
-                del self.fields['user_permissions']
+            if not can_edit_permissions(self.request.user, kwargs['instance']):
+                try:
+                    del self.fields['user_permissions']
+                except Exception, e:
+                    pass
             # If user is modifying his own profile then don't allow user to modify
             # his username, parent/manager, role, organization.
             if self.instance.pk == self.request.user.pk:
