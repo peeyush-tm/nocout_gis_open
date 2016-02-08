@@ -56,13 +56,16 @@ class DeviceForm(forms.ModelForm):
         if not self.request is None:
             # Create instance of 'NocoutUtilsGateway' class
             nocout_utils = NocoutUtilsGateway()
+            # print "**********self.fields**********"
+            # print self.fields
+            # print "**********self.fields**********"
             self.fields['organization'].queryset = nocout_utils.logged_in_user_organizations(self)
         else:
             self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].empty_label = "Select"
         # self.fields['parent'].empty_label = "Select"
-        # self.fields['parent'].widget.choices = self.fields['parent'].choices
+        self.fields['parent'].widget = forms.HiddenInput()
         self.fields['site_instance'].empty_label = "Select"
         self.fields['site_instance'].widget.choices = self.fields['site_instance'].choices
         self.fields['machine'].empty_label = "Select"
@@ -77,6 +80,8 @@ class DeviceForm(forms.ModelForm):
         self.fields['device_type'].widget.choices = self.fields['device_type'].choices
         self.fields['ports'].empty_label = "Select"
         self.fields['ports'].widget.choices = self.fields['ports'].choices
+        self.fields['parent_port'].empty_label = "Select"
+        self.fields['parent_port'].widget.choices = self.fields['parent_port'].choices
         self.fields['site_instance'].required = True
         self.fields['machine'].required = True
         self.fields['latitude'].required = True
@@ -125,7 +130,7 @@ class DeviceForm(forms.ModelForm):
         Meta Information
         """
         model = Device
-        exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms', 'parent']
+        exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms']
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }
