@@ -1,3 +1,4 @@
+from inventory.tasks import validate_file_for_bulk_upload
 import os
 from device.models import DeviceTechnology, VendorModel, ModelType, DeviceType
 from nocout.settings import MEDIA_ROOT
@@ -306,5 +307,22 @@ class GetBulkUploadFilesInfo(APIView):
         if os.path.exists(delete_dir) and os.listdir(delete_dir):
             for inventory in os.listdir(delete_dir):
                 result['delete'].append(inventory)
+
+        return Response(result)
+
+
+class ValidateAutoUploadInventories(APIView):
+    def get(self, request, op_type):
+        # Result.
+        result = {
+            'success': 0,
+            'message': "Inventory validation request failed."
+        }
+
+        if op_type in ['c', 'd']:
+            # Validate files for bulk upload.
+            validate_file_for_bulk_upload.delay(op_type)
+            result['success'] = 1
+            result['message'] = "Inventory validation request send."
 
         return Response(result)
