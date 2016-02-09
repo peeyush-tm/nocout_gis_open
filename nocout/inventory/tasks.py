@@ -2297,6 +2297,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
                 basestation_data = {
                     'name': name,
                     'alias': alias,
+                    'organization': organization,
                     'bs_switch': bs_switch,
                     'backhaul': backhaul,
                     'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
@@ -3215,6 +3216,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
                 basestation_data = {
                     'name': name,
                     'alias': alias,
+                    'organization': organization,
                     'bs_switch': bs_switch,
                     'backhaul': backhaul,
                     'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
@@ -4045,6 +4047,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
                 basestation_data = {
                     'name': name,
                     'alias': alias,
+                    'organization': organization,
                     'bs_switch': bs_switch,
                     'bs_site_id': row['Site ID'] if 'Site ID' in row.keys() else "",
                     'bs_site_type': row['Site Type'] if 'Site Type' in row.keys() else "",
@@ -5221,6 +5224,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                 basestation_data = {
                     'name': name,
                     'alias': alias,
+                    'organization': organization,
                     'bs_switch': bs_switch,
                     'bs_site_id': row['Site ID'] if 'Site ID' in row.keys() else "",
                     'bs_site_type': row['Site Type'] if 'Site Type' in row.keys() else "",
@@ -6462,6 +6466,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
                 basestation_data = {
                     'name': name,
                     'alias': alias,
+                    'organization': organization,
                     'bs_switch': bs_switch,
                     'backhaul': backhaul,
                     'bh_port_name': bh_port,
@@ -9035,6 +9040,8 @@ def create_basestation(basestation_payload):
         name = basestation_payload['name'] if basestation_payload['name'] else ""
     if 'alias' in basestation_payload.keys():
         alias = basestation_payload['alias'] if basestation_payload['alias'] else ""
+    if 'organization' in basestation_payload.keys():
+        organization = basestation_payload['organization'] if basestation_payload['organization'] else ""
     if 'bs_site_id' in basestation_payload.keys():
         bs_site_id = basestation_payload['bs_site_id'] if basestation_payload['bs_site_id'] else ""
     if 'bs_site_type' in basestation_payload.keys():
@@ -9108,6 +9115,11 @@ def create_basestation(basestation_payload):
                             basestation.bs_site_id = bs_site_id
                     except Exception as e:
                         logger.info("BS Site ID: ({} - {})".format(bs_site_id, e.message))
+                
+                # Organization
+                if organization:
+                    basestation.organization = organization
+
                 # bs site type
                 if bs_site_type:
                     try:
@@ -9301,6 +9313,11 @@ def create_basestation(basestation_payload):
                         basestation.alias = alias
                     except Exception as e:
                         logger.info("BH Alias: ({} - {})".format(alias, e.message))
+
+                # Organization
+                if organization:
+                    basestation.organization = organization
+                    
                 # bs site id
                 if bs_site_id:
                     try:
