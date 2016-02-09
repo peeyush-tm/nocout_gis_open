@@ -10987,7 +10987,7 @@ def get_machine_and_site(machines_dict):
                 current_machine = Machine.objects.get(name=machine)
                 for site in sites:
                     for name, number_of_devices in site.iteritems():
-                        if number_of_devices < 1000:
+                        if number_of_devices < 1200:
                             current_site = SiteInstance.objects.get(name=name)
                             return {'machine': current_machine, 'site': current_site}
             except Exception as e:
