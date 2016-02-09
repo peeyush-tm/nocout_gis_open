@@ -80,8 +80,6 @@ class DeviceForm(forms.ModelForm):
         self.fields['device_type'].widget.choices = self.fields['device_type'].choices
         self.fields['ports'].empty_label = "Select"
         self.fields['ports'].widget.choices = self.fields['ports'].choices
-        self.fields['parent_port'].empty_label = "Select"
-        self.fields['parent_port'].widget.choices = self.fields['parent_port'].choices
         self.fields['site_instance'].required = True
         self.fields['machine'].required = True
         self.fields['latitude'].required = True
