@@ -219,7 +219,11 @@
                             dataType: "json",
                             data: {'obj_id': id}
                         }).done(function(data) {
-                            callback({id: id, device_alias: data[0]});
+                            try {
+                                callback({id: id, device_alias: data[0], ip_address: data[1]});
+                            } catch(e) {
+                                callback({id: id, device_alias: data[0]});
+                            }
                         });
                     }
                 },
@@ -236,11 +240,19 @@
             }
 
             function repoFormatResult(device) {
-              return device.device_alias;
+                if (device['ip_address']) {
+                    return device['ip_address']
+                } else {
+                    return device.device_alias;
+                }
             }
 
             function repoFormatSelection(device) {
-              return device.device_alias;
+                if (device['ip_address']) {
+                    return device['ip_address']
+                } else {
+                    return device.device_alias;
+                }
             }
         });
     </script>
