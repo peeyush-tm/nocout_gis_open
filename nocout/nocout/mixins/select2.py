@@ -35,6 +35,8 @@ class Select2Mixin(object):
         if str(qs.model.__name__).strip().lower() == 'sector':
             sector_required_list = ['id', self.obj_alias, 'name', 'sector_configured_on__ip_address', 'sector_id']
             required_values = sector_required_list
+        elif str(qs.model.__name__).strip().lower() == 'device':
+            required_values = required_values = ['id', self.obj_alias, 'ip_address']
 
         if sSearch:
             #specific cases to handle
@@ -83,7 +85,10 @@ class Select2Mixin(object):
                 }
         else:
             if 'obj_id' in self.request.GET:
-                response = [qs.get(id=self.request.GET['obj_id'])[self.obj_alias]]
+                if str(qs.model.__name__).strip().lower() == 'device':
+                    response = [qs.get(id=self.request.GET['obj_id'])[self.obj_alias], qs.get(id=self.request.GET['obj_id'])['ip_address']]
+                else:
+                    response = [qs.get(id=self.request.GET['obj_id'])[self.obj_alias]]
             else:
                 qs = qs[:50] # Limit result upto 50
                 response = {

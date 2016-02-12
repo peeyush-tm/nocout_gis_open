@@ -42,6 +42,7 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
         self.base_fields['device_type'].label = 'Device Type'
+        self.base_fields['parent'].label = 'Parent IP'
         # self.base_fields['service'].label = 'Services'
         try:
             if 'instance' in kwargs:
