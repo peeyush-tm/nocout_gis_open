@@ -138,15 +138,23 @@
                         </ul>
                     </li>
                     {% if settings.TICKETS_LINK_ENABLED %}
-                    <li>
-                        <a href="{{ settings.NETWORK_TICKET_URL}}" target="_blank">
-                            <span class="sub-menu-text">Open Network Ticket</span>
+                    <li class="has-sub-sub">
+                        <a href="javascript:;">
+                            <span class="sub-menu-text">TT Management</span>
+                            <span class="arrow"></span>
                         </a>
-                    </li>
-                    <li>
-                        <a href="{{ settings.CUSTOMER_TICKET_URL}}" target="_blank">
-                            <span class="sub-menu-text">Open Customer Ticket</span>
-                        </a>
+                        <ul class="sub-sub">
+                            <li>
+                                <a href="{{ settings.CUSTOMER_TICKET_URL}}" target="_blank">
+                                    <span class="sub-menu-text">INC: Customer</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ settings.NETWORK_TICKET_URL}}" target="_blank">
+                                    <span class="sub-menu-text">PB: Network</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     {% endif %}
 
