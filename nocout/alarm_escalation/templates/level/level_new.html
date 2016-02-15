@@ -130,6 +130,10 @@
             return re.test(email);
         }
 
+        /**
+         * This function validates given mobile number
+         * @method validate_mobile_number
+         */
         function validate_mobile_number(mobile_number) {
             var re = /^([0|\+[0-9]{1,5})?([7-9][0-9]{9})$/;
             return re.test(mobile_number);
@@ -173,16 +177,26 @@
                 if (is_valid_mails && is_valid_phones) {
                     return true;
                 } else {
-                    var error_msg = '<ul class="list-unstyled">';
+                    var error_msg = '<ul class="list-unstyled">',
+                        highlight_txtbox = '';
 
                     if (is_valid_mails && !is_valid_phones) {
                         error_msg += '<li><i class="fa fa-bug text-danger"></i> <a href="#id_phones">Phones: Please enter valid mobile numbers.</a></li>';
+
+                        highlight_txtbox += "$('#id_phones').closest('.col-sm-9').addClass('has-error');";
+                        highlight_txtbox += "$('#id_emails').closest('.col-sm-9').removeClass('has-error');";
                     } else if (!is_valid_mails && is_valid_phones) {
                         error_msg += '<li><i class="fa fa-bug text-danger"></i> <a href="#id_emails">Emails: Please enter valid email ids.</a></li>';
+
+                        highlight_txtbox += "$('#id_emails').closest('.col-sm-9').addClass('has-error');";
+                        highlight_txtbox += "$('#id_phones').closest('.col-sm-9').removeClass('has-error');";
                     } else {
                         error_msg += '<li><i class="fa fa-bug text-danger"></i> <a href="#id_phones">Phones: Please enter valid mobile numbers.</a></li>';
 
                         error_msg += '<li><i class="fa fa-bug text-danger"></i> <a href="#id_emails">Emails: Please enter valid email ids.</a></li>';
+
+                        highlight_txtbox += "$('#id_emails').closest('.col-sm-9').addClass('has-error');";
+                        highlight_txtbox += "$('#id_phones').closest('.col-sm-9').addClass('has-error');";
                     }
 
                     error_msg +=  '</ul>';
@@ -195,6 +209,12 @@
                         // (bool | optional) if you want it to fade out on its own or just sit there
                         sticky: true
                     });
+
+                    try {
+                        eval(highlight_txtbox);
+                    } catch(e) {
+                        // console.error(e);
+                    }
 
                     return false;
                 }
