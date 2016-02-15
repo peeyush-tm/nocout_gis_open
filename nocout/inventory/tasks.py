@@ -8349,11 +8349,6 @@ def create_device(device_payload):
                         device.device_type = device_type
                     except Exception as e:
                         logger.info("Device Type: ({} - {})".format(device_type, e.message))
-                # parent
-                try:
-                    device.parent = Device.objects.all()[0]
-                except Exception as e:
-                    logger.info("Parent: ({})".format(e.message))
                 # ip address
                 if ip_address:
                     try:
