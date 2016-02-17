@@ -113,5 +113,109 @@
             });
         });
 
+        /**
+         * This function validates given email id
+         * @method validate_email
+         */
+        function validate_email(email) {
+            var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            
+            return re.test(email);
+        }
+
+        /**
+         * This function validates given mobile number
+         * @method validate_mobile_number
+         */
+        function validate_mobile_number(mobile_number) {
+            var re = /^([0|\+[0-9]{1,5})?([7-9][0-9]{9})$/;
+            return re.test(mobile_number);
+        }
+
+        /**
+         * This event trigger when form submit button clicked. It validates email ids & phone numbers & proceed accordingly.
+         * @event click
+         */
+        $('button[type="submit"]').click(function(e) {
+            var emails = $('#id_emails').val(),
+                phone_numbers = $('#id_phones').val();
+
+            if (emails || phone_numbers) {
+                var is_valid_mails = true
+                    is_valid_phones = true;
+                if (emails) {
+                    emails = emails.split(',');
+
+                    for (var i=0;i<emails.length;i++) {
+                        if (is_valid_mails) {
+                            is_valid_mails = validate_email(emails[i]);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
+                if (phone_numbers) {
+                    phone_numbers = phone_numbers.split(',');
+
+                    for (var i=0;i<phone_numbers.length;i++) {
+                        if (is_valid_phones) {
+                            is_valid_phones = validate_mobile_number(phone_numbers[i]);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
+                if (is_valid_mails && is_valid_phones) {
+                    return true;
+                } else {
+                    var error_msg = '<ul class="list-unstyled">',
+                        highlight_txtbox = '';
+
+                    if (is_valid_mails && !is_valid_phones) {
+                        error_msg += '<li><i class="fa fa-bug text-danger"></i> <a href="#id_phones">Phones: Please enter valid mobile numbers.</a></li>';
+
+                        highlight_txtbox += "$('#id_phones').closest('.col-sm-9').addClass('has-error');";
+                        highlight_txtbox += "$('#id_emails').closest('.col-sm-9').removeClass('has-error');";
+                    } else if (!is_valid_mails && is_valid_phones) {
+                        error_msg += '<li><i class="fa fa-bug text-danger"></i> <a href="#id_emails">Emails: Please enter valid email ids.</a></li>';
+
+                        highlight_txtbox += "$('#id_emails').closest('.col-sm-9').addClass('has-error');";
+                        highlight_txtbox += "$('#id_phones').closest('.col-sm-9').removeClass('has-error');";
+                    } else {
+                        error_msg += '<li><i class="fa fa-bug text-danger"></i> <a href="#id_phones">Phones: Please enter valid mobile numbers.</a></li>';
+
+                        error_msg += '<li><i class="fa fa-bug text-danger"></i> <a href="#id_emails">Emails: Please enter valid email ids.</a></li>';
+
+                        highlight_txtbox += "$('#id_emails').closest('.col-sm-9').addClass('has-error');";
+                        highlight_txtbox += "$('#id_phones').closest('.col-sm-9').addClass('has-error');";
+                    }
+
+                    error_msg +=  '</ul>';
+
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Validation Error',
+                        // (string | mandatory) the text inside the notification
+                        text: error_msg,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: true
+                    });
+
+                    try {
+                        eval(highlight_txtbox);
+                    } catch(e) {
+                        // console.error(e);
+                    }
+
+                    return false;
+                }
+
+            } else {
+                return true;
+            }
+        });
+
     </script>
 {% endblock %}

@@ -1470,8 +1470,9 @@ class InventoryDeviceServiceDataSource(View):
 
         is_other_device = False
 
-        if (device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists()) and not device.backhaul.exists():
-            is_other_device = True
+        if not device.backhaul.exists():
+            if device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists():
+                is_other_device = True
 
         if service_view_type == 'normal':
 
