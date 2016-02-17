@@ -6,13 +6,55 @@
 function convertToVis(response, required_dom_id) {
 	// checking size of BS_ID_LIST
 	bs_list_len = typeof bs_id != 'undefined' ? (JSON.parse(bs_id)).length : 0;
-	updatedSize = 80;
+	updatedSize = 75;
 	backhaul_exist = true
+	pe_exist = false
+	aggr_switch_exist = false
+	pop_convertor_exist = false
+	bs_convertor_exist = false
+	severity_check = ['down']
+
+
+	var pe_edge_color = '#468847',
+		aggr_sw_edge_color = '#468847',
+		pop_edge_color = '#468847',
+		bs_conv_edge_color = '#468847',
+		bs_sw_edge_color = '#468847',
+		bs_edge_color = '#468847',
+		sec_edge_color = '#468847'
+
+	var sector_up_image_url = '/static/green.png',
+		sector_down_image_url = '/static/red.png'
+		sector_image_url = sector_up_image_url
 
 	// In case of Multiple BaseStation updating size to avoid overlapping of images.
 	if (bs_list_len > 1) {
 		updatedSize  = 25
 	}
+
+	// Changing the color of connecting edges //
+	/* This is a requirement from client side that if any median device goes down
+	   then all the devices connected next to it will be connected with a red line otherwise green line
+	   device connection anatomy is :-> 
+	   PE -> Aggr_Switch -> Pop_Convertor -> Bs_Convertor -> Bs_Switch -> BS -> Sectors -> Sub-stations */
+
+	if (severity_check.indexOf(bh_aggr_switch_severity.toLowerCase()) > -1){
+		aggr_sw_edge_color = pop_edge_color = bs_conv_edge_color = bs_sw_edge_color =
+		bs_edge_color = sec_edge_color = '#b94a48';
+	}
+	else if (severity_check.indexOf(bh_pop_severity.toLowerCase()) > -1){
+		pop_edge_color = bs_conv_edge_color = bs_sw_edge_color =
+		bs_edge_color = sec_edge_color = '#b94a48';
+	}
+	else if (severity_check.indexOf(bs_convertor_severity.toLowerCase()) > -1){
+		bs_conv_edge_color = bs_sw_edge_color =
+		bs_edge_color = sec_edge_color = '#b94a48';
+	}
+	else if (severity_check.indexOf(bs_switch_severity.toLowerCase()) > -1){
+		bs_sw_edge_color = bs_edge_color = sec_edge_color = '#b94a48';
+	}
+
+
 
 	// Options for vis network object
 	var options = {
@@ -21,7 +63,7 @@ function convertToVis(response, required_dom_id) {
 	    layout: {
 	        hierarchical: {
 	          enabled:true,
-	          levelSeparation: 1300,
+	          levelSeparation: 400,
 	          direction: 'LR',   // UD, DU, LR, RL
 	          sortMethod: 'directed' // hubsize, directed
 	      }
@@ -32,16 +74,16 @@ function convertToVis(response, required_dom_id) {
 	        size : 30
 	    },
 	    edges: {
-	        width : 3,
-	        selectionWidth : 5,
+	        width : 2,
+	        selectionWidth : 3,
 	        arrows : {
 	            middle : true,
 	        },
-	        smooth: {
-				type: 'cubicBezier',
-				forceDirection: 'vertical',
-				roundness : 0.3
-				},
+	  //       smooth: {
+			// 	type: 'cubicBezier',
+			// 	forceDirection: 'horizontal',
+			// 	roundness : 0.5
+			// },
 	    },
 
 	    interaction : {
@@ -64,28 +106,210 @@ function convertToVis(response, required_dom_id) {
 	// create a network
 	var container = document.getElementById(required_dom_id);
 
-	var severity = response_data.pl_info.severity ? response_data.pl_info.severity.toUpperCase() : 'NA';
-	var bh_color_info_object = nocout_getSeverityColorIcon(severity),
-		polled_val = response_data.pl_info.value;
+	// severity and color info for bs_switch
+	var bs_switch_severity = response_data.bs_switch_pl_info.severity ? response_data.bs_switch_pl_info.severity.toUpperCase() : 'NA';
+	var bs_switch_color_info_object = nocout_getSeverityColorIcon(bs_switch_severity),
+		bs_switch_polled_val = response_data.bs_switch_pl_info.value;
+
+	// severity and color info for bh_pop_convertor
+	var bh_pop_severity = response_data.bh_pop_pl_info.severity ? response_data.bh_pop_pl_info.severity.toUpperCase() : 'NA';
+	var bh_pop_color_info_object = nocout_getSeverityColorIcon(bh_pop_severity),
+		bh_pop_polled_val = response_data.bh_pop_pl_info.value;
+
+	// severity and color info for bs_convertor
+	var bs_convertor_severity = response_data.bs_convertor_pl_info.severity ? response_data.bs_convertor_pl_info.severity.toUpperCase() : 'NA';
+	var bs_convertor_color_info_object = nocout_getSeverityColorIcon(bs_convertor_severity),
+		bs_convertor_polled_val = response_data.bs_convertor_pl_info.value;
+
+	// severity and color info for bh_aggr_switch
+	var bh_aggr_switch_severity = response_data.bh_aggr_pl_info.severity ? response_data.bh_aggr_pl_info.severity.toUpperCase() : 'NA';
+	var bh_aggr_switch_color_info_object = nocout_getSeverityColorIcon(bh_aggr_switch_severity),
+		bh_aggr_switch_polled_val = response_data.bh_aggr_pl_info.value;	
 	
 	if (typeof polled_val == 'undefined' || polled_val == '') {
 		polled_val = 'NA';
 	}
 
+	// Adding PE Host only if it exists 
+	if (response_data.pe_ip != 'NA'){
+		nodes.add({
+		    id: 'PE',
+		    label: response_data.pe_ip + 'PE',
+		    image: response_data.bh_icon,
+		    shape: 'image',
+		    // title: '<span style="color:'+bh_color_info_object.color+'"><i class="fa '+bh_color_info_object.icon+'""></i> ' +severity + ' - ' + polled_val + '</span>'
+		});
+		pe_exist = true
+	}
+
+	// Adding Aggregation Switch only if it exists
+	if (response_data.aggregation_switch_ip != 'NA'){
+		nodes.add({
+		    id: 'aggr_switch',
+		    label: response_data.aggregation_switch_ip + 'aggr_switch',
+		    image: response_data.bh_icon,
+		    shape: 'image',
+		    title: '<span style="color:'+bh_aggr_switch_color_info_object.color+'"><i class="fa '+bh_aggr_switch_color_info_object.icon+'""></i> ' + bh_aggr_switch_severity + ' - ' + bh_aggr_switch_polled_val + '</span>'
+		});
+		aggr_switch_exist = true
+	}
+
+	// Adding Pop Convertor only if it exists
+	if (response_data.pop_convertor_ip != 'NA'){
+		nodes.add({
+		    id: 'pop_convertor',
+		    label: response_data.pop_convertor_ip + 'pop_convertor',
+		    image: response_data.bh_icon,
+		    shape: 'image',
+		    title: '<span style="color:'+bh_pop_color_info_object.color+'"><i class="fa '+bh_pop_color_info_object.icon+'""></i> ' + bh_pop_severity + ' - ' + bh_pop_polled_val + '</span>'
+		});
+		pop_convertor_exist = true
+	}
+
+	// Adding BS Convertor only if it exists
+	if (response_data.bs_convertor_ip != 'NA'){
+		nodes.add({
+		    id: 'bs_convertor',
+		    label: response_data.bs_convertor_ip + 'bs_convertor',
+		    image: response_data.bh_icon,
+		    shape: 'image',
+		    title: '<span style="color:'+bs_convertor_color_info_object.color+'"><i class="fa '+bs_convertor_color_info_object.icon+'""></i> ' + bs_convertor_severity + ' - ' + bs_convertor_polled_val + '</span>'
+		});
+		bs_convertor_exist = true
+	}
+	// Here BACKHAUL refers to BS Switch
 	if (response_data.bh_ip != 'NA'){
 		nodes.add({
 		    id: 'BACKHAUL',
-		    label: response_data.bh_ip,
+		    label: response_data.bh_ip + 'bs_switch',
 		    image: response_data.bh_icon,
 		    shape: 'image',
-		    borderWidth : 0,
-		    borderWidthSelected : 0,
-		    title: '<span style="color:'+bh_color_info_object.color+'"><i class="fa '+bh_color_info_object.icon+'""></i> ' +severity + ' - ' + polled_val + '</span>'
+		    title: '<span style="color:'+bs_switch_color_info_object.color+'"><i class="fa '+bs_switch_color_info_object.icon+'""></i> ' + bs_switch_severity + ' - ' + bs_switch_polled_val + '</span>'
 		});
 		backhaul_exist = true
 	}
 	if(current_device_ip == response_data.bh_ip){
 	    highlight_id = 'BACKHAUL'
+	}
+
+	if(backhaul_exist){ //if backhaul exists
+		if(bs_convertor_exist){ //if backhaul and bs_convertor exists
+			edges.add({from: 'bs_convertor', to: 'BACKHAUL', color: bs_conv_edge_color})
+			if(pop_convertor_exist){ //if backhaul and bs_convertor and pop_convertor exists
+				edges.add({from: 'pop_convertor', to: 'bs_convertor', color: pop_edge_color})
+				if(aggr_switch_exist){ //if backhaul, bs_convertor, pop_convertor and aggr_switch exists
+					edges.add({from: 'aggr_switch', to: 'pop_convertor', color: aggr_sw_edge_color})
+					if(pe_exist){ //if backhaul, bs_convertor, pop_convertor, aggr_switch and PE exists
+						edges.add({from: 'PE', to: 'aggr_switch', color: pe_edge_color})
+					}
+				}
+				else{  //if backhaul, bs_convertor, pop_convertor exists but aggr_switch doesn't exist
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'pop_convertor', color: pe_edge_color})
+					}
+				}
+			}
+			else{ //if backhaul, bs_convertor exists but pop_convertor doesn't exist
+				if(aggr_switch_exist){ //if backhaul, bs_convertor exists , pop_convertor doesn't exist but aggr_switch exists 
+					edges.add({from: 'aggr_switch', to: 'bs_convertor', color: aggr_sw_edge_color})
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'aggr_switch', color: pe_edge_color})
+					}
+				}
+				else{
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'bs_convertor', color: pe_edge_color})
+					}
+				}
+
+			}
+		} else { //if backhaul exists but bs_convertor doesn't
+			if(pop_convertor_exist){ //if bs_convertor doesn't exists butbackhaul and pop_convertor exists
+				edges.add({from: 'pop_convertor', to: 'BACKHAUL', color: pop_edge_color})
+				if(aggr_switch_exist){ //if bs_convertor doesn't exists butbackhaul, pop_convertor, aggr_switch exists
+					edges.add({from: 'aggr_switch', to: 'pop_convertor', color: aggr_sw_edge_color})
+					if(pe_exist){ //if bs_convertor doesn't exists butbackhaul, pop_convertor, aggr_switch, PE exists
+						edges.add({from: 'PE', to: 'aggr_switch', color: pe_edge_color})
+					}
+				}
+				else{  //if backhaul, pop_convertor exists but bs_convertor, aggr_switch doesn't exist
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'pop_convertor', color: pe_edge_color})
+					}
+				}
+			} else { //if backhaul exists but pop_convertor, bs_convertor doesn't exist
+				if(aggr_switch_exist){ //if backhaul, bs_convertor exists , pop_convertor doesn't exist but aggr_switch exists 
+					edges.add({from: 'aggr_switch', to: 'BACKHAUL', color: aggr_sw_edge_color})
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'aggr_switch', color: pe_edge_color})
+					}
+				}
+				else{
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'BACKHAUL', color: pe_edge_color})
+					}
+				}
+			}
+		}
+	} else { //if backhaul doesn't exist
+		if(bs_convertor_exist){ //if backhaul doesn't exist and bs_convertor exists
+			if(pop_convertor_exist){ //if backhaul doesn't exist and bs_convertor and pop_convertor exists
+				edges.add({from: 'pop_convertor', to: 'bs_convertor', color: pop_edge_color})
+				if(aggr_switch_exist){ //if backhaul doesn't exist and bs_convertor, pop_convertor and aggr_switch exists
+					edges.add({from: 'aggr_switch', to: 'pop_convertor', color: aggr_sw_edge_color})
+					if(pe_exist){ //if backhaul doesn't exist and bs_convertor, pop_convertor, aggr_switch and PE exists
+						edges.add({from: 'PE', to: 'aggr_switch', color: pe_edge_color})
+					}
+				}
+				else{  //if bs_convertor, pop_convertor exists but backhaul, aggr_switch doesn't exist
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'pop_convertor', color: pe_edge_color})
+					}
+				}
+			}
+			else{ //if bs_convertor exists but pop_convertor, backhaul doesn't exist
+				if(aggr_switch_exist){ //if  bs_convertor exists, aggr_switch exists but backhaul, pop_convertor doesn't exist 
+					edges.add({from: 'aggr_switch', to: 'bs_convertor', color: aggr_sw_edge_color})
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'aggr_switch', color: pe_edge_color})
+					}
+				}
+				else{
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'bs_convertor', color: pe_edge_color})
+					}
+				}
+
+			}
+		}
+		else{ //backhaul, bs_convertor doesn't exist
+			if(pop_convertor_exist){ //if backhaul, bs_convertor doesn't exists but pop_convertor exists
+				if(aggr_switch_exist){ //if backhaul, bs_convertor doesn't exists but pop_convertor, aggr_switch exists
+					edges.add({from: 'aggr_switch', to: 'pop_convertor', color: aggr_sw_edge_color})
+					if(pe_exist){ //if backhaul, bs_convertor doesn't exists but pop_convertor, aggr_switch, PE exists
+						edges.add({from: 'PE', to: 'aggr_switch', color: pe_edge_color})
+					}
+				}
+				else{  //if pop_convertor exists but bs_convertor, backhaul, aggr_switch doesn't exist
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'pop_convertor', color: pe_edge_color})
+					}
+				}
+			}
+			else{ //if backhaul, pop_convertor, bs_convertor doesn't exist
+				if(aggr_switch_exist){ //if bs_convertor exists , backhaul, pop_convertor doesn't exist but aggr_switch exists 
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'aggr_switch', color: pe_edge_color})
+					}
+				}
+				else{
+					if(pe_exist){
+						edges.add({from: 'PE', to: 'BASESTATION_'+i, color: pe_edge_color})
+					}
+				}
+
+			}
+		}
 	}
 
 	for (var i=0;i<base_station_list.length;i++) {
@@ -102,8 +326,25 @@ function convertToVis(response, required_dom_id) {
 		    borderWidthSelected : 0
 		});
 
-		if(backhaul_exist){
-			edges.add({from: 'BACKHAUL', to: 'BASESTATION_'+i, color: 'black'})
+		if(backhaul_exist){ //if backhaul exists
+			edges.add({from: 'BACKHAUL', to: 'BASESTATION_'+i, color: bs_sw_edge_color});
+		} else { //if backhaul doesn't exist
+			if(bs_convertor_exist){ //if backhaul doesn't exist and bs_convertor exists
+				edges.add({from: 'bs_convertor', to: 'BASESTATION_'+i, color: bs_conv_edge_color});
+			} else { //backhaul, bs_convertor doesn't exist
+				if(pop_convertor_exist){ //if backhaul, bs_convertor doesn't exists but pop_convertor exists
+					edges.add({from: 'pop_convertor', to: 'BASESTATION_'+i, color: pop_edge_color});
+				} else { //if backhaul, pop_convertor, bs_convertor doesn't exist
+					if(aggr_switch_exist){ //if bs_convertor exists , backhaul, pop_convertor doesn't exist but aggr_switch exists 
+						edges.add({from: 'aggr_switch', to: 'BASESTATION_'+i, color: aggr_sw_edge_color});
+					} else {
+						if(pe_exist){
+							edges.add({from: 'PE', to: 'BASESTATION_'+i, color: pe_edge_color})
+						}
+					}
+
+				}
+			}
 		}
 
 		var sectors = base_station_list[i].sectors;
@@ -113,19 +354,38 @@ function convertToVis(response, required_dom_id) {
 		    sect_color_info_object = nocout_getSeverityColorIcon(sector_severity),
 		    sector_polled_val = sectors[j].pl_info.value
 
+		    // if sector's severity is down then change edge color to red.
+		    if (severity_check.indexOf(sector_severity.toLowerCase()) > -1) {
+		    	sec_edge_color = '#b94a48';
+		    	sector_image_url = sector_down_image_url
+		    }
+
 
 			if (typeof sector_polled_val == 'undefined' || sector_polled_val == '') {
 				sector_polled_val = 'NA';
 			}
 
-		    nodes.add({id: 'SECTOR'+"_"+(i+1)+'_'+(j+1), label: sectors[j].sect_ip_id_title,
-				        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' +
-				        sector_severity + ' - ' + sector_polled_val + '</span>', image: sectors[j].icon})
+		    nodes.add({
+		    	id: 'SECTOR'+"_"+(i+1)+'_'+(j+1),
+		    	label: sectors[j].sect_ip_id_title,
+		        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
+		        shape: 'image',
+		        image: sector_image_url
+		    })
 
 		    if(current_device_ip == sectors[j].ip_address){
 			    highlight_id = 'SECTOR'+"_"+(i+1)+'_'+(j+1)
 			}
-		    edges.add({from: 'BASESTATION_'+i, to: 'SECTOR'+"_"+(i+1)+'_'+(j+1), color: 'black'})
+		    edges.add({
+		    	from: 'BASESTATION_'+i,
+		    	to: 'SECTOR'+"_"+(i+1)+'_'+(j+1),
+		    	color: bs_edge_color,
+		    	smooth: {
+					type: 'cubicBezier',
+					forceDirection: 'horizontal',
+					roundness : 0.5
+				}
+		    })
 
 
 		    for(k=0; k<sectors[j].sub_station.length; k++) {
@@ -145,7 +405,7 @@ function convertToVis(response, required_dom_id) {
 		        	highlight_id = 'SUBSTATION'+'_'+(i+1)+"_"+(j+1)+"_"+(k+1)
 				}
 
-		        edges.add({from: 'SECTOR'+"_"+(i+1)+'_'+(j+1), to: 'SUBSTATION'+'_'+(i+1)+"_"+(j+1)+"_"+(k+1), color: sectors[j].sub_station[k].link_color})
+		        edges.add({from: 'SECTOR'+"_"+(i+1)+'_'+(j+1), to: 'SUBSTATION'+'_'+(i+1)+"_"+(j+1)+"_"+(k+1), color: sec_edge_color})
 		    }
 		}
 	}
@@ -160,24 +420,24 @@ function convertToVis(response, required_dom_id) {
 	};
 
 	// Highlighting selected device
-	nodes.update({
-		id: highlight_id,
-		color : {
-			border : '#444',
-			background : '#ffffff',
-			highlight : {
-				border : '#444'
-			}
-		},
-		shadow : {
-			size : 2
-		},
-		shapeProperties : {
-			useBorderWithImage : true
-		},
-		borderWidth: 2,
-		borderWidthSelected: 2
-	});
+	// nodes.update({
+	// 	id: highlight_id,
+	// 	color : {
+	// 		border : '#444',
+	// 		background : '#ffffff',
+	// 		highlight : {
+	// 			border : '#444'
+	// 		}
+	// 	},
+	// 	shadow : {
+	// 		size : 2
+	// 	},
+	// 	shapeProperties : {
+	// 		useBorderWithImage : true
+	// 	},
+	// 	borderWidth: 2,
+	// 	borderWidthSelected: 2
+	// });
 
 	// initialize your network
 	network = new vis.Network(container, data, options);
