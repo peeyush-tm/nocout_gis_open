@@ -32,27 +32,6 @@ function convertToVis(response, required_dom_id) {
 		updatedSize  = 25
 	}
 
-	// Changing the color of connecting edges //
-	/* This is a requirement from client side that if any median device goes down
-	   then all the devices connected next to it will be connected with a red line otherwise green line
-	   device connection anatomy is :-> 
-	   PE -> Aggr_Switch -> Pop_Convertor -> Bs_Convertor -> Bs_Switch -> BS -> Sectors -> Sub-stations */
-
-	if (severity_check.indexOf(bh_aggr_switch_severity.toLowerCase()) > -1){
-		aggr_sw_edge_color = pop_edge_color = bs_conv_edge_color = bs_sw_edge_color =
-		bs_edge_color = sec_edge_color = '#b94a48';
-	}
-	else if (severity_check.indexOf(bh_pop_severity.toLowerCase()) > -1){
-		pop_edge_color = bs_conv_edge_color = bs_sw_edge_color =
-		bs_edge_color = sec_edge_color = '#b94a48';
-	}
-	else if (severity_check.indexOf(bs_convertor_severity.toLowerCase()) > -1){
-		bs_conv_edge_color = bs_sw_edge_color =
-		bs_edge_color = sec_edge_color = '#b94a48';
-	}
-	else if (severity_check.indexOf(bs_switch_severity.toLowerCase()) > -1){
-		bs_sw_edge_color = bs_edge_color = sec_edge_color = '#b94a48';
-	}
 
 
 
@@ -125,6 +104,28 @@ function convertToVis(response, required_dom_id) {
 	var bh_aggr_switch_severity = response_data.bh_aggr_pl_info.severity ? response_data.bh_aggr_pl_info.severity.toUpperCase() : 'NA';
 	var bh_aggr_switch_color_info_object = nocout_getSeverityColorIcon(bh_aggr_switch_severity),
 		bh_aggr_switch_polled_val = response_data.bh_aggr_pl_info.value;	
+	
+	// Changing the color of connecting edges //
+	/* This is a requirement from client side that if any median device goes down
+	   then all the devices connected next to it will be connected with a red line otherwise green line
+	   device connection anatomy is :-> 
+	   PE -> Aggr_Switch -> Pop_Convertor -> Bs_Convertor -> Bs_Switch -> BS -> Sectors -> Sub-stations */
+
+	if (severity_check.indexOf(bh_aggr_switch_severity.toLowerCase()) > -1){
+		aggr_sw_edge_color = pop_edge_color = bs_conv_edge_color = bs_sw_edge_color =
+		bs_edge_color = sec_edge_color = '#b94a48';
+	}
+	else if (severity_check.indexOf(bh_pop_severity.toLowerCase()) > -1){
+		pop_edge_color = bs_conv_edge_color = bs_sw_edge_color =
+		bs_edge_color = sec_edge_color = '#b94a48';
+	}
+	else if (severity_check.indexOf(bs_convertor_severity.toLowerCase()) > -1){
+		bs_conv_edge_color = bs_sw_edge_color =
+		bs_edge_color = sec_edge_color = '#b94a48';
+	}
+	else if (severity_check.indexOf(bs_switch_severity.toLowerCase()) > -1){
+		bs_sw_edge_color = bs_edge_color = sec_edge_color = '#b94a48';
+	}
 	
 	if (typeof polled_val == 'undefined' || polled_val == '') {
 		polled_val = 'NA';
