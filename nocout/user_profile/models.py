@@ -60,7 +60,7 @@ class PowerLogs(models.Model):
     """
     user_id = models.IntegerField()
     reason = models.TextField()
-    module = models.CharField(max_length=256)
+    action = models.CharField(max_length=256)
     ss_ip = models.GenericIPAddressField(null=True, blank=True)
     circuit_id = models.CharField(max_length=256, null=True, blank=True)
     customer_alias = models.CharField(max_length=250)
