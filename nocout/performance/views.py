@@ -7355,6 +7355,7 @@ class GetTopology(View):
         page_type = self.request.GET.get('page_type').lower()
         current_device_id = self.request.GET.get('device_id')
 
+
         try:
             bs_id = json.loads(str(bs_id))
         except Exception, e:
@@ -7365,11 +7366,21 @@ class GetTopology(View):
 
         multiple_bs = False
 
+        try:
+            device = Device.objects.get(id=current_device_id)
+        except Exception, e:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+
+        try:
+            device_type = DeviceType.objects.get(id=device.device_type)
+        except Exception, e:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+
         if len(bs_id) > 1:
             multiple_bs = True
         
         # Query for getting topology info of selected device 
-        if page_type == 'other' or page_type == 'network':
+        if page_type == 'network':
             topology_query = ''' 
                 SELECT
                     IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
@@ -7456,6 +7467,10 @@ class GetTopology(View):
                 ON
                     device.device_technology = sect_device_tech.id
                 LEFT JOIN
+                    device_device as sect_device
+                ON
+                    sect.sector_configured_on_id = sect_device.id
+                LEFT JOIN
                     inventory_circuit AS ckt
                 ON
                     sect.id = ckt.sector_id
@@ -7475,10 +7490,20 @@ class GetTopology(View):
                     device.is_added_to_nms > 0
                     AND
                     bs.id in ({0})
+                    AND
+                    sect_device.id = {1}
                 GROUP by(sect_sector_id)
-            '''.format(', '.join(bs_id))
+            '''.format(', '.join(bs_id), current_device_id)
         
-        else:
+        elif page_type == 'customer':
+            current_sector_device_id = 0
+            if 'SS' in device_type.name:
+                queryset = list(Circuit.objects.filter(sub_station__device=device).values('sector__sector_configured_on__id'))
+                if len(queryset):
+                    current_sector_device_id = queryset[0]['sector__sector_configured_on__id']
+            else:
+                current_sector_device_id = current_device_id
+
             topology_query = ''' 
                 SELECT
                     IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
@@ -7565,6 +7590,10 @@ class GetTopology(View):
                 ON
                     device.device_technology = sect_device_tech.id
                 LEFT JOIN
+                    device_device as sect_device
+                ON
+                    sect.sector_configured_on_id = sect_device.id
+                LEFT JOIN
                     inventory_circuit AS ckt
                 ON
                     sect.id = ckt.sector_id
@@ -7600,7 +7629,122 @@ class GetTopology(View):
                     device.is_added_to_nms > 0
                     AND
                     bs.id in ({0})
-            '''.format(', '.join(bs_id))
+                    AND
+                    sect_device.id = {1}
+            '''.format(', '.join(bs_id), current_sector_device_id)
+
+        elif page_type == 'other':
+            topology_query = ''' 
+                SELECT
+                    IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
+                    IF(isnull(bs.name), 'NA', bs.name) AS bs_name,
+                    IF(isnull(bs.alias), 'NA', bs.alias) AS bs_alias,
+                    IF(isnull(bs_switch.id), 'NA', bs_switch.id) AS bs_switch_id, 
+                    IF(isnull(backhaul.bh_switch_id), 'NA', backhaul.bh_switch_id) AS bs_convertor_id,
+                    IF(isnull(backhaul.aggregator_id), 'NA', backhaul.aggregator_id) AS bh_aggregator_id,
+                    IF(isnull(backhaul.pop_id), 'NA', backhaul.pop_id) AS bh_pop_id,
+                    IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
+                    IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
+                    IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
+                    IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                    IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
+                    IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
+                    IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
+                    IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
+                    IF(isnull(backhaul.pop_port_name), 'NA', backhaul.pop_port_name) AS bh_pop_port,
+                    IF(isnull(bh_aggregator_device.ip_address), 'NA', bh_aggregator_device.ip_address) AS bh_aggregator_ip,
+                    IF(isnull(backhaul.aggregator_port_name), 'NA', backhaul.aggregator_port_name) AS bh_aggregator_port,
+                    IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
+                    IF(isnull(bh_device_type.name), 'NA', bh_device_type.name) AS bh_device_type,
+                    IF(isnull(bh_device_tech.name), 'NA', bh_device_tech.name) AS bh_device_tech,   
+                    IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS bh_ip,
+                    IF(isnull(sect.id), 'NA', sect.id) AS sect_id,
+                    IF(isnull(sect.sector_id), 'NA', sect.sector_id) AS sect_sector_id,
+                    IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
+                    IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
+                    IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
+                    IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
+                    IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
+                    IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
+                    'NA' AS ss_circuit_id,
+                    'NA' AS ss_id,
+                    'NA' AS ss_device_id,
+                    'NA' AS ss_device_tech,
+                    'NA' AS ss_device_type,
+                    'NA' AS ss_device_name,
+                    'NA' AS ss_device_ip,
+                    sect_device_type.device_icon as sect_icon,
+                    bh_device_type.device_icon as bh_icon,
+                    sect_freq.color_hex_value as sect_color
+
+                FROM
+                    inventory_basestation AS bs
+                LEFT JOIN
+                    device_device AS bs_switch
+                ON
+                    bs.bs_switch_id = bs_switch.id
+                LEFT JOIN
+                    inventory_backhaul AS backhaul
+                ON
+                    bs.backhaul_id = backhaul.id
+                LEFT JOIN
+                    device_device AS bs_convertor_device
+                ON
+                    backhaul.bh_switch_id = bs_convertor_device.id
+                LEFT JOIN
+                    device_device AS bh_aggregator_device
+                ON
+                    backhaul.aggregator_id = bh_aggregator_device.id
+                LEFT JOIN
+                    device_device AS bh_pop_device
+                ON
+                    backhaul.pop_id = bh_pop_device.id
+                LEFT JOIN
+                    device_device AS bh_device
+                ON
+                    backhaul.bh_configured_on_id = bh_device.id
+                LEFT JOIN 
+                    device_devicetechnology AS bh_device_tech
+                ON
+                    bh_device.device_technology = bh_device_tech.id
+                LEFT JOIN
+                    inventory_sector AS sect
+                ON
+                    bs.id = sect.base_station_id
+                LEFT JOIN
+                    device_device AS device
+                ON
+                    sect.sector_configured_on_id = device.id
+                LEFT JOIN 
+                    device_devicetechnology AS sect_device_tech
+                ON
+                    device.device_technology = sect_device_tech.id
+                LEFT JOIN
+                    device_device as sect_device
+                ON
+                    sect.sector_configured_on_id = sect_device.id
+                LEFT JOIN
+                    inventory_circuit AS ckt
+                ON
+                    sect.id = ckt.sector_id
+                LEFT JOIN
+                    device_devicetype as sect_device_type
+                ON
+                    sect_device_type.id = device.device_type
+                LEFT JOIN
+                    device_devicetype as bh_device_type
+                ON
+                    bh_device_type.id = bh_device.device_type
+                LEFT JOIN
+                    device_devicefrequency as sect_freq
+                ON
+                    sect_freq.id = sect.frequency_id
+                where
+                    device.is_added_to_nms > 0
+                    AND
+                    bs.id in ({0})
+                GROUP by(sect_sector_id)
+            '''.format(', '.join(bs_id), current_device_id)
 
         # calling global method for executing query
         result_of_query = nocout_utils.fetch_raw_result(topology_query)
