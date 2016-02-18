@@ -945,16 +945,18 @@
             // Show popup to take reason message from user & save it to user logs
             bootbox.confirm(msg_box_html, function(action) {
 
-                // Show loading on button
-                $(button_this).button('loading');
 
                 if(action) {
+
                     var reason_str = $.trim($('#power_msg_txt').val());
 
                     if (!reason_str) {
                         $('#power_error_msg').html('*Reason required.');
                         return false;
                     }
+
+                    // Show loading on button
+                    $(button_this).button('loading');
 
                     // If send message button clicked
                     if (button_name != 'reboot') {
@@ -967,9 +969,10 @@
                         // Add the reboot code here(Shellinabox)
                         console.log('Reboot Request.')
                     }
+
+                    // Complete button loading
+                    $(button_this).button('complete');
                 }
-                // Complete button loading
-                $(button_this).button('complete');
             });
         });
 
