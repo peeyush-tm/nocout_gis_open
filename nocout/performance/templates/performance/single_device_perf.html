@@ -510,7 +510,8 @@
             active_left_tab_icon = 'fa-dot-circle-o',
             topo_dom_id = 'topo_network',
             non_poll_sds = [],
-            power_listing_headers = '';
+            power_listing_headers = '',
+            save_power_log_url = '';
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -556,6 +557,8 @@
             {% if not settings.ENABLE_UNIFIED_SERVICE_VIEW %}
                 $.cookie("service_view_type", 'normal', {path: '/'});
             {% endif %}
+
+            save_power_log_url = "{% url 'save_power_log' %}";
 
             initPerformancePage(true);
         });
@@ -929,22 +932,96 @@
          */
         $("#content").delegate(".power-actions", 'click', function(){
 
-            button_name = this.getAttribute('data-button-respone');
-            button_this = this
+            var button_this = this,
+                button_name = $(button_this).attr('data-button-respone'),
+                button_title = $(button_this).attr('title'),
+                msg_box_html = '';
 
-            $(button_this).button('loading');
+            
+            msg_box_html = '<textarea id="power_msg_txt" placeholder="Please enter the reason for your action." \
+                            class="form-control" rows="5"></textarea> \
+                            <span id="power_error_msg" class="text-danger"></span>';
+
+            // Show popup to take reason message from user & save it to user logs
+            bootbox.confirm(msg_box_html, function(action) {
+
+                // Show loading on button
+                $(button_this).button('loading');
+
+                if(action) {
+                    var reason_str = $.trim($('#power_msg_txt').val());
+
+                    if (!reason_str) {
+                        $('#power_error_msg').html('*Reason required.');
+                        return false;
+                    }
+
+                    // If send message button clicked
+                    if (button_name != 'reboot') {
+                        initSendSMS(button_name, button_this, function(succeeded) {
+                            if (succeeded) {
+                                savePowerLog(reason_str, button_title);
+                            }
+                        });
+                    } else {
+                        // Add the reboot code here(Shellinabox)
+                        console.log('Reboot Request.')
+                    }
+                }
+                // Complete button loading
+                $(button_this).button('complete');
+            });
+        });
+
+        /**
+         * This function makes ajax call to save power logs
+         * @method savePowerLog
+         * @param reason_str {}
+         */
+        function savePowerLog(reason_str, action) {
+            // Make ajax call
+            $.ajax({
+                url: base_url+save_power_log_url,
+                type: 'POST',
+                data: {
+                    'device_id': current_device,
+                    'reason_str': reason_str,
+                    'action': action
+                },
+                success: function(response) {
+                    console.log(response);
+                },
+                error: function(err) {
+
+                }
+            });
+        }
+
+        /**
+         * This function makes ajax call to send sms as per the user actions.
+         * @method initSendSMS
+         * @param button_name {String}, It contains name of clicked button.
+         * @param clicked_button_instance {Object}, It contains the clicked button instance.
+         */
+        function initSendSMS(button_name, clicked_button_instance, callback) {
+            // Make ajax call to send message
             $.ajax({
                 url : base_url + "/performance/send_power_sms/?device_id=" + current_device + "&button_name=" + button_name,
                 type : 'GET',
-                success : function(response){
+                success : function(response) {
+                    var is_success = response['success'];
                     if (response['success']) {
-                        dataTableInstance.createDataTable(power_table_id, power_listing_headers, power_ajax_url, false);
+                        dataTableInstance.createDataTable(
+                            power_table_id,
+                            power_listing_headers,
+                            power_ajax_url,
+                            false
+                        );
                     }
-                    
-                    $(button_this).button('complete');
+
                     $.gritter.add({
                         // (string | mandatory) the heading of the notification
-                        title: 'Power - ' + $.trim($(button_this).attr('title')),
+                        title: 'Power - ' + $.trim($(clicked_button_instance).attr('title')),
                         // (string | mandatory) the text inside the notification
                         text: response['message'],
                         // (bool | optional) if you want it to fade out on its own or just sit there
@@ -952,11 +1029,12 @@
                         // Time in ms after which the gritter will dissappear.
                         time : 2000
                     });
+                    callback(is_success);
                 },
-                error : function(e){
+                error : function(e) {
                     $.gritter.add({
                         // (string | mandatory) the heading of the notification
-                        title: 'Power - ' + $.trim($(button_this).attr('title')),
+                        title: 'Power - ' + $.trim($(clicked_button_instance).attr('title')),
                         // (string | mandatory) the text inside the notification
                         text: e.message,
                         // (bool | optional) if you want it to fade out on its own or just sit there
@@ -964,10 +1042,14 @@
                         // Time in ms after which the gritter will dissappear.
                         time : 2000
                     });
+                    callback(false);
+                },
+                complete: function() {
+                    // Complete button loading
+                    $(clicked_button_instance).button('complete');
                 }
-            })
-
-        })
+            });
+        }
 
         /**
          * This function load the first inner tab content when any parent tab is clicked.

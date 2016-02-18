@@ -59,6 +59,9 @@ from performance.formulae import display_time, rta_null
 # Create instance of 'ServiceUtilsGateway' class
 from user_profile.utils.auth import in_group
 
+from user_profile.models import PowerLogs
+from django.views.decorators.csrf import csrf_exempt
+
 service_utils = ServiceUtilsGateway()
 
 ##execute this globally
@@ -7840,3 +7843,53 @@ class SendPowerSms(View):
             result.update(message='Phone number does not exist')
 
         return HttpResponse(json.dumps(result), content_type="application/json")
+
+
+class SavePowerLog(View):
+    """
+    This class saves power logs as per the given POST params
+    """
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(SavePowerLog, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+
+        result = {
+            'success': 0,
+            'message': 'Power logs not saved',
+        }
+
+        try:
+            # POST Params
+            device_id = self.request.POST.get('device_id')
+            reason_str = self.request.POST.get('reason_str')
+            action = self.request.POST.get('action')
+
+            # Fetch circuit instance for given SS device
+            circuit_instance = Circuit.objects.get(sub_station__device__id=device_id)
+            customer_alias = circuit_instance.customer.alias
+            circuit_id = circuit_instance.circuit_id
+            ss_ip = circuit_instance.sub_station.device.ip_address
+
+            # Create PowerLogs instance
+            logs_instance = PowerLogs()
+            logs_instance.user_id = self.request.user.id
+            logs_instance.reason = reason_str
+            logs_instance.action = action
+            logs_instance.ss_ip = ss_ip
+            logs_instance.circuit_id = circuit_id
+            logs_instance.customer_alias = customer_alias
+
+            # Save log
+            logs_instance.save()
+
+            # Update response dict
+            result.update(
+                success=1,
+                message='Log saved successfully.'
+            )
+        except Exception, e:
+            pass
+
+        return HttpResponse(json.dumps(result))
