@@ -61,6 +61,8 @@ from user_profile.utils.auth import in_group
 
 from user_profile.models import PowerLogs
 from django.views.decorators.csrf import csrf_exempt
+import os
+from nocout.settings import BASE_DIR
 
 service_utils = ServiceUtilsGateway()
 
@@ -73,6 +75,7 @@ log = logging.getLogger(__name__)
 
 ### SMS Sending
 import requests
+
 #### SMS GATEWAY SETTINGS
 GATEWAY_SETTINGS = {
     'URL': 'http://121.244.239.140/csend.dll'
@@ -7889,6 +7892,38 @@ class SavePowerLog(View):
                 success=1,
                 message='Log saved successfully.'
             )
+        except Exception, e:
+            pass
+
+        return HttpResponse(json.dumps(result))
+
+
+class InitDeviceReboot(View):
+    """
+    This function reboot given device by executing the shell script
+    """
+    def get(self, request, *args, **kwargs):
+        
+        result = {
+            'success': 0,
+            'message': 'Device reboot not successful.',
+        }
+
+        try:
+            device_id = self.request.GET.get('device_id')
+            device = Device.objects.get(id=device_id)
+            machine_name = device.machine.name
+            ip_address = device.ip_address
+            device_type = DeviceType.objects.get(id=device.device_type).name
+            params = machine_name + ' ' + ip_address + ' ' + device_type
+            # Execute the shell script
+            reboot_response = os.popen('bash ' + BASE_DIR + '/performance/script/ss_reboot.sh '+ params).read()
+
+            if 'yes' in reboot_response:
+                result.update(
+                    success=1,
+                    message='Device successfully reboot.'
+                )
         except Exception, e:
             pass
 
