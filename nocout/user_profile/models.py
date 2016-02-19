@@ -54,6 +54,18 @@ class UserPasswordRecord(models.Model):
     password_used_on = models.DateTimeField('Password Used On', auto_now_add=True)
 
 
+class PowerLogs(models.Model):
+    """
+    This model contains the power signal logs
+    """
+    user_id = models.IntegerField()
+    reason = models.TextField()
+    action = models.CharField(max_length=256)
+    ss_ip = models.GenericIPAddressField(null=True, blank=True)
+    circuit_id = models.CharField(max_length=256, null=True, blank=True)
+    customer_alias = models.CharField(max_length=250)
+    logged_at = models.DateTimeField(auto_now_add=True)
+
 # ************************************ USER PROFILE SIGNALS ************************************
 
 # Set site instance 'is_device_change' bit on device type 'service' field modification or creation.

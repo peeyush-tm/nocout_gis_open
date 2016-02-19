@@ -270,6 +270,15 @@
                         </a>
                     </li>
 
+                    {% if settings.ENABLE_POWER_TAB %}
+                    <li>
+                        <a href="#power_content" title="Power" id="power_tab" class="hide" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Power &nbsp;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
                     {% if settings.ENABLE_BIRDEYE_VIEW %}
                     <li>
                         <a href="#birdeye_view_tab" title="Birdeye View" id="birdeye_view" data-toggle="tab">
@@ -368,6 +377,18 @@
                         </div>
                     </div>
                 </div>
+
+                {% if settings.ENABLE_POWER_TAB %}
+                <div class="tab-pane" id="power_content" class="hide">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Power Signals"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
                 {% if settings.ENABLE_BIRDEYE_VIEW %}
                 <div class="tab-pane" id="birdeye_view_tab">
@@ -488,7 +509,9 @@
             default_left_tab_icon = 'fa-circle-o',
             active_left_tab_icon = 'fa-dot-circle-o',
             topo_dom_id = 'topo_network',
-            non_poll_sds = [];
+            non_poll_sds = [],
+            power_listing_headers = '',
+            save_power_log_url = '';
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -504,10 +527,15 @@
             perf_base_url = "{{ perf_base_url }}" ? $.trim("{{ perf_base_url }}") : "";
             non_poll_sds = '{{ settings.NO_ONDEMAND_POLL_SDS|safe }}' ? JSON.parse('{{ settings.NO_ONDEMAND_POLL_SDS|safe }}') : [];
             current_device_technology = "";
+            device_type = "";
             statusUrl = "";
             serviceUrl = "";
             inventory_url = "";
-            alert_url = "";
+            alert_url = "",
+            power_table_id = 'power_msg_listing',
+            power_ajax_url = "";
+
+            power_listing_headers = '{{ power_listing_headers }}' ? $.parseJSON('{{ power_listing_headers|safe }}') : [];
 
             // Hide topo view tab if no bs id exists in context
             if ((typeof(bs_id) == 'string' && bs_id == '[]') || typeof(bs_id) != 'str' && bs_id.length == 0) {
@@ -529,6 +557,8 @@
             {% if not settings.ENABLE_UNIFIED_SERVICE_VIEW %}
                 $.cookie("service_view_type", 'normal', {path: '/'});
             {% endif %}
+
+            save_power_log_url = "{% url 'save_power_log' %}";
 
             initPerformancePage(true);
         });
@@ -571,6 +601,7 @@
                 warn_type = "{{ settings.WARN_TYPE}}";
                 crit_color = "{{ settings.CRIT_COLOR}}";
                 crit_type = "{{ settings.CRIT_TYPE}}";
+                power_ajax_url = "{% url 'power_status_listing' %}"+"?device_id=" + current_device;
                 // Update global variable as per context data
                 {% if is_dr_device %}
                     is_dr_device = true;
@@ -626,7 +657,7 @@
 
                 // Create nocoutPerfLib instance to access its functions
                 perfInstance = new nocoutPerfLib();
-                var device_type = '';
+                device_type = '';
                 try {
                     device_type = "{{ device_type }}";
                 } catch(e) {
@@ -816,6 +847,7 @@
            #availability,\
            #topology,\
            #utilization_top,\
+           #power_tab,\
            #custom_dashboard"
         ).click(function (e) {
             // Show li panel
@@ -892,6 +924,132 @@
                 }
             });
         });
+        
+        /**
+         * This function binds the click event on 'STATUS, RESET, JOJI' buttons on power tab
+         * on single performance page
+         * @event click
+         */
+        $("#content").delegate(".power-actions", 'click', function(){
+
+            var button_this = this,
+                button_name = $(button_this).attr('data-button-respone'),
+                button_title = $(button_this).attr('title'),
+                msg_box_html = '';
+
+            
+            msg_box_html = '<textarea id="power_msg_txt" placeholder="Please enter the reason for your action." \
+                            class="form-control" rows="5"></textarea> \
+                            <span id="power_error_msg" class="text-danger"></span>';
+
+            // Show popup to take reason message from user & save it to user logs
+            bootbox.confirm(msg_box_html, function(action) {
+
+                // Show loading on button
+                $(button_this).button('loading');
+
+                if(action) {
+                    var reason_str = $.trim($('#power_msg_txt').val());
+
+                    if (!reason_str) {
+                        $('#power_error_msg').html('*Reason required.');
+                        return false;
+                    }
+
+                    // If send message button clicked
+                    if (button_name != 'reboot') {
+                        initSendSMS(button_name, button_this, function(succeeded) {
+                            if (succeeded) {
+                                savePowerLog(reason_str, button_title);
+                            }
+                        });
+                    } else {
+                        // Add the reboot code here(Shellinabox)
+                        console.log('Reboot Request.')
+                    }
+                }
+                // Complete button loading
+                $(button_this).button('complete');
+            });
+        });
+
+        /**
+         * This function makes ajax call to save power logs
+         * @method savePowerLog
+         * @param reason_str {}
+         */
+        function savePowerLog(reason_str, action) {
+            // Make ajax call
+            $.ajax({
+                url: base_url+save_power_log_url,
+                type: 'POST',
+                data: {
+                    'device_id': current_device,
+                    'reason_str': reason_str,
+                    'action': action
+                },
+                success: function(response) {
+                    console.log(response);
+                },
+                error: function(err) {
+
+                }
+            });
+        }
+
+        /**
+         * This function makes ajax call to send sms as per the user actions.
+         * @method initSendSMS
+         * @param button_name {String}, It contains name of clicked button.
+         * @param clicked_button_instance {Object}, It contains the clicked button instance.
+         */
+        function initSendSMS(button_name, clicked_button_instance, callback) {
+            // Make ajax call to send message
+            $.ajax({
+                url : base_url + "/performance/send_power_sms/?device_id=" + current_device + "&button_name=" + button_name,
+                type : 'GET',
+                success : function(response) {
+                    var is_success = response['success'];
+                    if (response['success']) {
+                        dataTableInstance.createDataTable(
+                            power_table_id,
+                            power_listing_headers,
+                            power_ajax_url,
+                            false
+                        );
+                    }
+
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Power - ' + $.trim($(clicked_button_instance).attr('title')),
+                        // (string | mandatory) the text inside the notification
+                        text: response['message'],
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false,
+                        // Time in ms after which the gritter will dissappear.
+                        time : 2000
+                    });
+                    callback(is_success);
+                },
+                error : function(e) {
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Power - ' + $.trim($(clicked_button_instance).attr('title')),
+                        // (string | mandatory) the text inside the notification
+                        text: e.message,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false,
+                        // Time in ms after which the gritter will dissappear.
+                        time : 2000
+                    });
+                    callback(false);
+                },
+                complete: function() {
+                    // Complete button loading
+                    $(clicked_button_instance).button('complete');
+                }
+            });
+        }
 
         /**
          * This function load the first inner tab content when any parent tab is clicked.
@@ -929,8 +1087,8 @@
          * @event click
          */
         $("body").delegate('.left_tabs_container li','click',function(e) {
+            
             var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
-
             if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
                 // remove the 'active_left_tab_icon' class from all link (if exists)
                 $('.left_tabs_container li a i').removeClass(active_left_tab_icon);                

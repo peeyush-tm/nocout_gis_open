@@ -851,7 +851,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
             # view device delete action only if user has permissions
             if is_delete_perm:
-                device_actions += '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'
+                device_actions += '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i></a>'
 
             if device_actions:
                 dct.update(actions=device_actions.format(dct['id']))
@@ -1184,7 +1184,7 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         self.object.device_vendor = form.cleaned_data['device_vendor']
         self.object.device_model = form.cleaned_data['device_model']
         self.object.device_type = form.cleaned_data['device_type']
-        # self.object.parent = form.cleaned_data['parent']
+        self.object.parent = form.cleaned_data['parent']
         self.object.ip_address = form.cleaned_data['ip_address']
         self.object.mac_address = form.cleaned_data['mac_address']
         self.object.netmask = form.cleaned_data['netmask']
@@ -1303,8 +1303,8 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
                     pk=initial_field_dict['device_technology']).name \
                     if initial_field_dict['device_technology'] else str(None)
 
-                # cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent']).device_name \
-                #     if cleaned_data_field_dict['parent'] else str(None)
+                cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent']).device_name \
+                    if cleaned_data_field_dict['parent'] else str(None)
                 cleaned_data_field_dict['organization'] = Organization.objects.get(
                     pk=cleaned_data_field_dict['organization']).name \
                     if cleaned_data_field_dict['organization'] else str(None)
@@ -3675,7 +3675,7 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         # queryset
-        queryset = DeviceSyncHistory.objects.all().values(*self.columns + ['id'])
+        queryset = DeviceSyncHistory.objects.all().values(*self.columns + ['id']).order_by('-added_on')
 
         return queryset
 

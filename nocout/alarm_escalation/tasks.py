@@ -395,18 +395,14 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     message = render_to_string('alarm_message/bad_message.html', context_dict)
     msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails)
     msg.content_subtype = "html"  # Main content is now text/html
-    # If the mail is for temperature then attach the chart image as per current status
+    # Attach chart image as per current service & datasource with default timestamp
     try:
-        # if 'temperature' in level.service.name:
         device_name = alarm.device.device_name
         service = level.service.name
         data_source = level.service_data_source.name
 
         chart_img_dict = perf_utils.create_perf_chart_img(device_name, service, data_source)
         img_path = chart_img_dict.get('chart_url')
-        print ' -- img_path -- '
-        print img_path
-        print ' -- img_path -- '
         if img_path:
             msg.attach_file(img_path)
 
@@ -487,6 +483,19 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails)
     #send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
     msg.content_subtype = "html"  # Main content is now text/html
+    # Attach chart image as per current service & datasource with default timestamp
+    try:
+        device_name = alarm.device.device_name
+        service = level.service.name
+        data_source = level.service_data_source.name
+
+        chart_img_dict = perf_utils.create_perf_chart_img(device_name, service, data_source)
+        img_path = chart_img_dict.get('chart_url')
+        if img_path:
+            msg.attach_file(img_path)
+
+    except Exception, e:
+        pass
     msg.send()
     return True
 

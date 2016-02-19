@@ -187,11 +187,73 @@
             // Initialize the select2 selectbox.
             $(".select2select").select2();
 
+            $("#id_parent").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/device/select2/elements/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        if (!org_id){
+                            org_id = 1
+                        }
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
+                        }).done(function(data) {
+                            try {
+                                callback({id: id, device_alias: data[0], ip_address: data[1]});
+                            } catch(e) {
+                                callback({id: id, device_alias: data[0]});
+                            }
+                        });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
             // Loop to trigger change event on select boxes if value exists
             for (var i=0;i<change_event_dom_ids.length;i++) {
                 if (element_relation_dict[change_event_dom_ids[i]]['old_value']) {
                     // trigger change event
                     $(change_event_dom_ids[i]).trigger('change', true);
+                }
+            }
+
+            function repoFormatResult(device) {
+                if (device['ip_address']) {
+                    return device['ip_address']
+                } else {
+                    return device.device_alias;
+                }
+            }
+
+            function repoFormatSelection(device) {
+                if (device['ip_address']) {
+                    return device['ip_address']
+                } else {
+                    return device.device_alias;
                 }
             }
         });

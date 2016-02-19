@@ -2047,7 +2047,7 @@ def get_inventory_sector_query(
     if grouped_query:
         grouping_condition = " GROUP BY sector_info.SECTOR_CONF_ON_IP "
         concat_values = " CONCAT(' {0} ', group_concat(IF( \
-                            not isnull(device_port.name), \
+                            not isnull(device_port.name) and not isnull(sector_info.SECTOR_SECTOR_ID) and sector_info.SECTOR_SECTOR_ID != '', \
                             concat( \
                                 '(', upper(device_port.name), ') ', sector_info.SECTOR_SECTOR_ID \
                             ), \

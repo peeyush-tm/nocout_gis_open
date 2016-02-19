@@ -25,8 +25,8 @@ from celery import Task
 from celery.contrib.methods import task_method
 from celery.utils.log import get_task_logger
 
+#from start_pub import app
 from start.start import app
-
 logger = get_task_logger(__name__)
 info , warning, error = logger.info, logger.warning, logger.error
 
@@ -239,6 +239,8 @@ class RedisInterface(object):
 
 @app.task(base=DatabaseTask, name='threshold-kpi-services', bind=True)
 def store_threshold_for_kpi_services(self):
+        topology_services = ('wimax_dl_rssi','wimax_ul_rssi','wimax_dl_cinr','wimax_ul_cinr','wimax_dl_intrf','wimax_ul_intrf',
+	'wimax_modulation_dl_fec','wimax_modulation_ul_fec')
 	memc = store_threshold_for_kpi_services.memc_cnx
 	query = (
 	"select devicetype.name as devicetype, "
@@ -274,7 +276,7 @@ def store_threshold_for_kpi_services(self):
 	"and "
 	"devicetype_svc_ds.service_data_sources_id = datasource.id "
 	")"
-	"where devicetype.name <> 'Default' and service.name like '%_kpi'; "
+	"where devicetype.name <> 'Default' and service.name like '%_kpi' or service.name in " + str(topology_services) +";"
 	)
 	#info('sample {0}'.format('Testing'))
 	cur = store_threshold_for_kpi_services.mysql_cnx('historical').cursor()
@@ -345,11 +347,11 @@ def load_inventory(self):
 	)
 	dr_query = (
 		"SELECT "
-		"inner_device.Sector_IP AS primary_ip, "
-		"outer_device.ip_address AS dr_ip "
+		"inner_device.Sector_name AS primary_dn, "
+		"outer_device.device_name AS dr_dn "
 		"FROM ( "
 			"SELECT "
-				"ds.ip_address AS Sector_IP, "
+				"ds.device_name AS Sector_name, "
 				"sector.dr_configured_on_id as dr_id "
 		"FROM "
 			"inventory_sector AS sector "
@@ -455,7 +457,7 @@ def load_inventory(self):
 	 machine_machine.id = bh_device.machine_id and site_instance_siteinstance.id = bh_device.site_instance_id
 	)
 	WHERE
-		lower(dtype.name) in ('juniper', 'cisco')
+		lower(dtype.name) in ('juniper', 'cisco','huawei')
 	group by
 		bh_device.id;
 	"""
@@ -475,7 +477,7 @@ def load_inventory(self):
 		ping_threshold_dict[d1[0]] = []
 		ping_threshold_dict[d1[0]].extend([d1[1],d1[2],d1[3],d1[4]])
 
-	warning('out: {0}'.format(ping_threshold_dict))
+	#warning('out: {0},{1}'.format(ping_threshold_dict,ping_threshold_out))
 	
 	# e.g. keeping invent data in database number 3
 	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
@@ -568,6 +570,11 @@ def load_switch_data(data_values, p, extra=None):
 			port_wise_capacities = [0]*26
 		elif str(device[3].lower()) == 'juniper':
 			port_wise_capacities = [0]*52
+		elif str(device[3].lower()) == 'huawei':
+                        port_wise_capacities = [0]*28
+
+
+
 		if  str(device[0]) in processed:
 		    continue
 		if str(device[3].lower()) == 'cisco':
@@ -580,8 +587,8 @@ def load_switch_data(data_values, p, extra=None):
 			    if 'gi' in int_string[i].lower():
 				int_ports[i]= int_ports[i]+24
 			capacities = device[6].split(',') if device[6] else device[6]
-			#if len(int_string)>1:  # to multiple kpi for ring ports
-			#    capacities.append(capacities[0])
+			if len(int_string)>1:  # to multiple kpi for ring ports
+                            capacities.append(capacities[0])
 			for p_n, p_cap in zip(int_ports, capacities):
 			    port_wise_capacities[int(p_n)-1] = p_cap
 
@@ -597,12 +604,22 @@ def load_switch_data(data_values, p, extra=None):
 			   if int_ports_s[i]== 1:
 			       int_ports[i]=int_ports[i]+48
 		       capacities = device[6].split(',') if device[6] else device[6]
-		       #if len(int_string)>1: # for ring port extra capcity added
-		       #	    capacities.append(capacities[0])
-		       for p_n, p_cap in zip(int_ports, capacities):
-			   port_wise_capacities[int(p_n)] = p_cap
+                       if len(int_ports)>1: # for ring port extra capcity added
+                           capacities.append(capacities[0])
+                       for p_n, p_cap in zip(int_ports, capacities):
+                           port_wise_capacities[int(p_n)] = p_cap
 		   except Exception as e:
-		       port_wise_capacities = [0]*8
+			port_wise_capacities = [0]*8
+
+		if str(device[3].lower()) == 'huawei':
+                        try:
+                           capacities = device[6].split(',') if device[6] else device[6]
+                           for i in xrange(len(capacities)):
+                               port_wise_capacities[i]=capacities[i]
+                        except Exception as e:
+                            port_wise_capacities = [0]*8
+
+
 		p.set(invent_key % device[0], device[2])
 		device_attr.extend([device[0],device[1],device[2]])
 		device_attr.append(port_wise_capacities)
@@ -616,7 +633,7 @@ def load_switch_data(data_values, p, extra=None):
 def load_backhaul_data(data_values, p, extra=None):
 	t = data_values[0]
 	processed = []
-	error('PORT-Data: {0}'.format(data_values))
+	#error('PORT-Data: {0}'.format(data_values))
 	# key:: <device-tech>:<device-type>:<site-name>:<ip>
 	key = '%s:%s:%s:%s' % (str(t[3]).lower(),
 					'ss' if t[3].endswith('SS') else 'bs',
@@ -677,8 +694,10 @@ def load_devicetechno_wise(data_values, p, extra=None):
 		for outer in data_values:
 			del outer[3:]
 			for inner in extra:
-				if inner[0] == outer[2]:
+				if inner[0] == outer[0]:
 					matched_dr = inner[1]
+				elif inner[1] == outer[0]:
+					matched_dr = inner[0]
 					break
 			if matched_dr:
 				outer.append(matched_dr)
@@ -771,6 +790,7 @@ def mysql_update(self, table, data_values, site, columns=None):
 		cur.executemany(updt_qry, data_values)
 		lcl_cnx.commit()
 		cur.close()
+		lcl_cnx.close()
 	except Exception as exc:
 		# rollback transaction
 		lcl_cnx.rollback()
@@ -803,6 +823,7 @@ def mysql_insert(self, table, data_values, mongo_col, site, columns=None):
 		cur.executemany(query, data_values)
 		lcl_cnx.commit()
 		cur.close()
+		lcl_cnx.close()
 	except (OperationalError, InterfaceError) as db_exc:
 		lcl_cnx.rollback()
 		error('Error in mysql_insert task, {0}'.format(db_exc))
@@ -880,6 +901,7 @@ def delete_old_topology(cnx, old_topology):
 		cur.execute(q)
 		cnx.commit()
 		cur.close()
+		cnx.close()
 	except Exception as exc:
 		error('Error in removing old topology data: {0}'.format(exc))
 

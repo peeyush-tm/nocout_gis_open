@@ -60,7 +60,7 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/home/'
 LOGIN_EXEMPT_URLS = (
     r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/',
-    'sm/dialog_action/', 'user/change_password/','download_center/processedreportemail/')
+    'sm/dialog_action/', 'user/change_password/','download_center/processedreportemail/', 'power/get_sms/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -307,6 +307,24 @@ CELERYBEAT_SCHEDULE = {
     #     'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
     #     'args': ['WiMAX']
     # },
+    'validate_file_for_bulk_upload_create': {
+        'task': 'inventory.tasks.validate_file_for_bulk_upload',
+        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+        'args': ['c']
+    },
+    'validate_file_for_bulk_upload_delete': {
+        'task': 'inventory.tasks.validate_file_for_bulk_upload',
+        'schedule': crontab(minute=15, hour=12),  # Execute daily at 12:15 p.m
+        'args': ['d']
+    },
+    'process_file_for_bulk_upload': {
+        'task': 'inventory.tasks.process_file_for_bulk_upload',
+        'schedule': crontab(minute=30, hour=12),  # Execute daily at 12:30 p.m
+    },
+    'process_file_for_bulk_delete': {
+        'task': 'inventory.tasks.process_file_for_bulk_delete',
+        'schedule': crontab(minute=15, hour=12),  # Execute daily at 12:45 p.m
+    },
     'update-inventory-topology': {
         'task': 'inventory.tasks.update_topology',
         'schedule': timedelta(seconds=300),
@@ -795,6 +813,7 @@ SETTINGS_EXPORT = [
     'ENABLE_AGGREGATE_REPORT_DOWNLOAD',
     'ENABLE_WHITE_THEME',
     'ENABLE_TOPO_VIEW',
+    'ENABLE_POWER_TAB',
     'ENABLE_BIRDEYE_VIEW',
     'ENABLE_CUSTOM_DASHBOARD_VIEW',
     'SHOW_RF_COLUMN',
@@ -802,7 +821,12 @@ SETTINGS_EXPORT = [
     'SINGLE_REPORT_EMAIL',
     'SCHEDULED_REPORT_EMAIL',
     'REPORT_EMAIL_PERM',
-    'SCHEDULED_SINGLE_REPORT_EMAIL'
+    'SCHEDULED_SINGLE_REPORT_EMAIL',
+    'TICKETS_LINK_ENABLED',
+    'NETWORK_TICKET_URL',
+    'CUSTOMER_TICKET_URL',
+    'PERMISSIONS_MODULE_ENABLED',
+    'FAULT_REPORT_ENABLED'
 ]
 
 # Dashbaord Settings
@@ -840,6 +864,12 @@ CACHE_TIME = {
     'DEFAULT': 60
 }
 
+POWER_SMS_DICT = {
+    'status' : 'Status',
+    'reset' : 'Reset',
+    'joji' : 'JOJI'
+}
+
 # Params for advance filters feature.
 MAX_SUGGESTION_COUNT = 40
 DATATABLE_SEARCHTXT_KEY = 'sSearch'
@@ -861,6 +891,9 @@ SHOW_RF_COLUMN = 6
 
 # Flag to enable/disable topology view on single performance page.
 ENABLE_TOPO_VIEW = False
+
+# Flag to enable/disable power on single performance page.
+ENABLE_POWER_TAB = False
 
 # Flag to enable/disable birdeye view on single performance page.
 ENABLE_BIRDEYE_VIEW = False
@@ -1199,6 +1232,20 @@ REPORT_EMAIL_PERM = json.dumps({
 SINGLE_REPORT_EMAIL = True
 SCHEDULED_REPORT_EMAIL = False
 SCHEDULED_SINGLE_REPORT_EMAIL = True
+
+# Network & customer tickets url
+TICKETS_LINK_ENABLED = False
+TICKET_PROTOCOL = 'http'
+TICKET_IP_PORT = '10.133.12.73:8080'
+
+NETWORK_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/remedy-ebu-dev-app1/MPE4%3ARFNOC300%3ADisplayConsole/RFNOC+310+Display+Console/?mode=New'
+CUSTOMER_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/remedy-ebu-dev-app1/MPE4%3ARFNOC300%3ADisplayConsole/RFNOC+300+Display+Console/?mode=New'
+
+# Enable/Disable permissions link from side menu
+PERMISSIONS_MODULE_ENABLED = False
+
+# Enable/Disable fault reports from download center
+FAULT_REPORT_ENABLED = False
 
 # Import the local_settings.py file to override global settings
 try:

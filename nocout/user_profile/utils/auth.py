@@ -27,6 +27,12 @@ def in_group(user=None, group_names=None, perm_codename=None):
                 return True
             else:
                 return False
+    elif user and perm_codename:
+        assigned_perms = list(user.user_permissions.all().values_list('codename', flat=True))
+        if perm_codename not in assigned_perms:
+            return False
+        else:
+            return True
     else:
         return False
 
