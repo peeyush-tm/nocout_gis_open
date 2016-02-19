@@ -479,7 +479,7 @@ function nocoutPerfLib() {
                             </button>\
                             <button title="Soft Reboot" class="btn btn-default power-actions" id="power_send_reboot" data-button-respone="reboot" \
                                 data-complete-text="<i class=\'fa fa-refresh\'></i> Soft Reboot" \
-                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-refresh"></i> Soft Reboot\
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Please Wait..."> <i class="fa fa-refresh"></i> Soft Reboot\
                             </button>\
                             <div class="clearfix"></div>\
                             <div class="divide-20"></div>\

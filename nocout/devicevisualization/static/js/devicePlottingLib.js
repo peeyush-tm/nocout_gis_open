@@ -3266,6 +3266,13 @@ function devicePlottingClass_gmap() {
 										  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
 										  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'\
 										  device_type='"+device_type+"'><i class='fa fa-flash'></i> Poll Now</button>\
+										  <button title='Soft Reboot' class='btn btn-default power-actions btn-xs pull-right ' \
+										  style='margin-right: 10px;' id='power_send_reboot' \
+										  device_id='"+device_id+"' data-button-respone='reboot' \
+			                              data-complete-text='<i class=\"fa fa-refresh\"></i> Soft Reboot' \
+			                              data-loading-text='<i class=\"fa fa-spinner fa-spin\"></i> Please Wait...'> \
+			                              <i class='fa fa-refresh'></i> Soft Reboot\
+			                              </button>\
 										  <div class='clearfix'></div><div class='divide-10'></div>";
 						}
 
