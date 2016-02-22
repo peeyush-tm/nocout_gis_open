@@ -28,6 +28,8 @@ from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
 
 from django.http import HttpRequest
 
+from device.models import Device
+
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
@@ -1448,11 +1450,11 @@ def create_perf_chart_img(device_name, service, data_source):
     :param service:
     :param device_name:
     """
-
+    device_id = Device.objects.get(device_name=device_name).id
     kwargs_dict = {
         'service_name': service,
         'service_data_source_type': data_source,
-        'device_id': device_name
+        'device_id': device_id
     }
 
     # create http request for getting rows data (for accessing list view classes)
@@ -1474,7 +1476,7 @@ def create_perf_chart_img(device_name, service, data_source):
     perf_data_class.kwargs = kwargs_dict
 
     # Make 'GET' request to 'initGetServiceTypePerformanceData' class
-    fetched_result = perf_data_class.get(request_object, service, data_source, device_name)
+    fetched_result = perf_data_class.get(request_object, service, data_source, device_id)
 
     # convert the fetched content to json format
     perf_data = json.loads(fetched_result.content)
