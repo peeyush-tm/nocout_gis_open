@@ -1540,6 +1540,7 @@ def create_perf_chart_img(device_name, service, data_source):
     infile_str = {
         'infile': json.dumps(data_json),
         'options': json.dumps(data_json),
+        'globaloptions': json.dumps({'global': {'useUTC': False}}),
         'type': CHART_IMG_TYPE,
         'constr': 'Chart',
         'scale': '1'
