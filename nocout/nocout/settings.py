@@ -1221,6 +1221,7 @@ REPORT_EMAIL_PERM = json.dumps({
     'latency_dump': 1,
     'customer_report': 1,
     'duplex_report': 1,
+    'ul_issue': 1,
     'modulation': 1,
     'utilization_tot': 1,
     'temperature': 1,

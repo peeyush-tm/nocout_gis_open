@@ -1540,6 +1540,7 @@ def create_perf_chart_img(device_name, service, data_source):
     infile_str = {
         'infile': json.dumps(data_json),
         'options': json.dumps(data_json),
+        'globaloptions': json.dumps({'global': {'useUTC': False}}),
         'type': CHART_IMG_TYPE,
         'constr': 'Chart',
         'scale': '1'
@@ -1563,7 +1564,7 @@ def create_perf_chart_img(device_name, service, data_source):
     full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
 
     # created filename
-    filename = "{}_{}".format("chart", full_time)
+    filename = "{}_{}_{}".format("chart", full_time, device_id)
 
     fh = open(chart_img_path + "/" + filename + "." + infile_str['type'], "wb")
     fh.write(chart_img_request.content.decode('base64'))

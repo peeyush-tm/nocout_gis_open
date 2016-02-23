@@ -72,8 +72,9 @@ status_dict = {
         'old': 0,
         'new': 0
     },
-
 }
+
+EMAIL_DATE_FORMAT = '%a, %d %b %Y %H:%M:%S' # Tue, 23 Feb 2016 09:43:15
 
 
 def status_change(old_status, new_status):
@@ -393,7 +394,10 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/bad_message.html', context_dict)
-    msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails)
+    header_info = {
+        'date': datetime.datetime.now().strftime(EMAIL_DATE_FORMAT)
+    }
+    msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails, headers=header_info)
     msg.content_subtype = "html"  # Main content is now text/html
     # Attach chart image as per current service & datasource with default timestamp
     try:
@@ -466,9 +470,6 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     :return:
         True/False
     """
-    #msg = EmailMessage(subject, html_content, from_email, [to])
-    #msg.content_subtype = "html"  # Main content is now text/html
-    #msg.send()
     context_dict = dict()
     # Calling function for getting all emails in particular level
     emails = level.get_emails()
@@ -480,8 +481,10 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/good_message.html', context_dict)
-    msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails)
-    #send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
+    header_info = {
+        'date': datetime.datetime.now().strftime(EMAIL_DATE_FORMAT)
+    }
+    msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails, headers=header_info)
     msg.content_subtype = "html"  # Main content is now text/html
     # Attach chart image as per current service & datasource with default timestamp
     try:
