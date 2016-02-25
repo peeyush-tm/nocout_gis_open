@@ -730,6 +730,7 @@ REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
+SMS_LOG_FILE_PATH = '/nocout/tmp/app-messages/sms'   # Change this to a proper location.
 
 # Special Calculation Mechanism for capacity management.
 CAPACITY_SPECIFIC_TIME = 0
