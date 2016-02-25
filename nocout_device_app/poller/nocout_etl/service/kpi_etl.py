@@ -845,7 +845,7 @@ def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,
         else:
             break
         try:
-            service_state_out = []
+	    service_state_out = []
 	    if 'wimax' in args['service']:
 		ul_intrf_serv_key = local_cnx.keys(pattern="ul_issue:%s:wimax_ul_intrf" % host_name)
 		[p.lrange(k, 0 , -1) for k  in ul_intrf_serv_key]
