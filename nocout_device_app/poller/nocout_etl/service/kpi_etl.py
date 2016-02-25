@@ -422,13 +422,13 @@ def extract_wimax_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,sec_t
 
 def insert_bs_ul_issue_data_to_redis(bs_service_dict):
     try :
-	print "BS Dict Here",bs_service_dict
+	#print "BS Dict Here",bs_service_dict
 	#bs_service_dict = self.bs_service_dict
         rds_cli = RedisInterface()
-        print "BS UL issue record state : %s \n" %str(bs_service_dict['state'])
+        #print "BS UL issue record state : %s \n" %str(bs_service_dict['state'])
 	if bs_service_dict['state'] in ['ok','warning','critical'] :
 	    rds_cli.redis_cnx.rpush('q:bs_ul_issue_event', bs_service_dict)
-            print "BS UL issue record inserted in Redis : ",rds_cli.redis_cnx.lrange('q:bs_ul_issue_event',0, -1),"\n"
+            #print "BS UL issue record inserted in Redis : ",rds_cli.redis_cnx.lrange('q:bs_ul_issue_event',0, -1),"\n"
     except Exception ,exp :
         print "Error in Redis DB Data Insertion Cambium BS UL Issue : %s \n" % str(exp)
 
@@ -846,23 +846,52 @@ def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,
             break
         try:
             service_state_out = []
-            ss_serv_key = local_cnx.keys(pattern="ul_issue:%s:*" % host_name)
-            [p.lrange(k, 0 , -1) for k  in ss_serv_key]
-            service_values = p.execute()
-            #warning('service values: {0}'.format(service_values))
-            for entry in service_values:
-                service_state_out.extend(entry)
+	    if 'wimax' in args['service']:
+		ul_intrf_serv_key = local_cnx.keys(pattern="ul_issue:%s:wimax_ul_intrf" % host_name)
+		[p.lrange(k, 0 , -1) for k  in ul_intrf_serv_key]
+	        ul_intrf_values = p.execute()
+		dl_intrf_serv_key = local_cnx.keys(pattern="ul_issue:%s:wimax_dl_intrf" % host_name)
+		[p.lrange(k, 0 , -1) for k  in dl_intrf_serv_key]
+		dl_intrf_values = p.execute()
+		if len(dl_intrf_values[0]) == 2 and dl_intrf_values[0][0].lower() == 'critical' and \
+		    dl_intrf_values[0][1].lower() == 'critical':
+	            ul_issue = 0 
+		    state_string = "ok"
+		elif len(ul_intrf_values[0]) == 2 and ul_intrf_values[0][0].lower() in service_state_type and \
+		    ul_intrf_values[0][1].lower() in service_state_type:
+	            ul_issue = 1
+		    state_string = "ok"
+		elif len(ul_intrf_values[0]) == 2  and len(dl_intrf_values[0]) == 2:
+		    ul_issue = 0
+		    state_string = "ok"
+	    else:
+	        ul_jitter_count = 0
+		rereg_count = 0
+		ul_jitter_key = local_cnx.keys(pattern="ul_issue:%s:cambium_ul_jitter" % host_name)
+		rereg_count_key = local_cnx.keys(pattern="ul_issue:%s:cambium_rereg_count" % host_name)
+		[p.lrange(k, 0 , -1) for k  in ul_jitter_key]
+		ul_jitter_values = p.execute()
+		[p.lrange(k, 0 , -1) for k  in rereg_count_key]
+		rereg_values = p.execute()
+                #error('ss ul issue: {0} {1} {2}'.format(ul_jitter_values,rereg_values,host_name))
+		try:
+                    for entry in ul_jitter_values[0]:
+                        if entry in service_state_type:
+			    ul_jitter_count = ul_jitter_count +1
+	        except:
+		    ul_jitter_count = 0
+                for entry in rereg_values[0]:
+                    if entry in service_state_type:
+			rereg_count = rereg_count + 1
+
                 
-            if len(service_state_out) == 4:
-                state_string = "ok"
-                state = 0
-                for entry in service_state_out:
-                    if str(entry).lower() in service_state_type:
-                        ul_issue=1
-                        continue
-                    else:
-                        ul_issue = 0
-                        break
+                if ul_jitter_count == 2 or rereg_count == 2 :
+                    state_string = "ok"
+                    state = 0
+		    ul_issue = 1
+                else:
+                    state_string = "ok"
+                    ul_issue = 0
             perf = 'ul_issue' + "=%s;;;" % (ul_issue)
         except Exception ,e:
             warning('error: {0}'.format(e))
