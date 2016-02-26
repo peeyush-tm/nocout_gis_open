@@ -513,7 +513,8 @@
             power_listing_headers = '',
             power_sms_url = '',
             save_power_log_url = '',
-            device_reboot_url = '';
+            device_reboot_url = '',
+            enable_reboot_btn = false;
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -558,6 +559,10 @@
 
             {% if not settings.ENABLE_UNIFIED_SERVICE_VIEW %}
                 $.cookie("service_view_type", 'normal', {path: '/'});
+            {% endif %}
+
+            {% if settings.ENABLE_DEVICE_REBOOT_BTN %}
+                enable_reboot_btn = true;
             {% endif %}
 
             power_sms_url = "{% url 'power_sms' %}";

@@ -282,7 +282,7 @@
                                     <span class="sub-menu-text">PTP Dump</span>
                                 </a>
                             </li>
-                            <li>
+                            <!-- <li>
                                 <a href="javascript:;">
                                     <span class="sub-menu-text">Network Synopsis</span>
                                 </a>
@@ -291,7 +291,7 @@
                                 <a href="javascript:;">
                                     <span class="sub-menu-text">Daily Updates</span>
                                 </a>
-                            </li>
+                            </li> -->
                         </ul>
                     </li>
                     <li class="has-sub-sub">
@@ -325,11 +325,11 @@
                                     <span class="sub-menu-text">Duplex Report</span>
                                 </a>
                             </li>
-                            <li>
+                            <!-- <li>
                                 <a href="javascript:;">
                                     <span class="sub-menu-text">PMP Rogue SM</span>
                                 </a>
-                            </li>
+                            </li> -->
                         </ul>
                     </li>
                     <li class="has-sub-sub">
@@ -709,11 +709,13 @@
                                 <span class="sub-menu-text">User Logs</span>
                             </a>
                         </li>
-                        <li>
-                            <a href="{% url 'power_logs_init' %}">
-                                <span class="sub-menu-text">Power Logs</span>
-                            </a>
-                        </li>
+                        {% if settings.SHOW_POWER_LOGS %}
+                            <li>
+                                <a href="{% url 'power_logs_init' %}">
+                                    <span class="sub-menu-text">Power Logs</span>
+                                </a>
+                            </li>
+                        {% endif %}
                     {% endif %}
                 </ul>
             </li>
