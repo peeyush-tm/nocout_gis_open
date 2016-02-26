@@ -316,13 +316,18 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="javascript:;">
-                                    <span class="sub-menu-text">PMP Rogue SM</span>
+                                <a href="{% url 'InventoryDownloadCenter' 'latency_dump' %}">
+                                    <span class="sub-menu-text">Latency Report</span>
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'InventoryDownloadCenter' 'latency_dump' %}">
-                                    <span class="sub-menu-text">Latency Report</span>
+                                <a href="{% url 'InventoryDownloadCenter' 'duplex_report' %}">
+                                    <span class="sub-menu-text">Duplex Report</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;">
+                                    <span class="sub-menu-text">PMP Rogue SM</span>
                                 </a>
                             </li>
                         </ul>
@@ -336,11 +341,6 @@
                             <li>
                                 <a href="{% url 'InventoryDownloadCenter' 'utilization_tot' %}">
                                     <span class="sub-menu-text">BS Utilisation(TOT)</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'InventoryDownloadCenter' 'duplex_report' %}">
-                                    <span class="sub-menu-text">Duplex Report</span>
                                 </a>
                             </li>
                             <li>
