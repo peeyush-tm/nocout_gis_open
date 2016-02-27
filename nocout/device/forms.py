@@ -42,6 +42,7 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
         self.base_fields['device_type'].label = 'Device Type'
+        self.base_fields['parent'].label = 'Parent IP'
         # self.base_fields['service'].label = 'Services'
         try:
             if 'instance' in kwargs:
@@ -56,13 +57,16 @@ class DeviceForm(forms.ModelForm):
         if not self.request is None:
             # Create instance of 'NocoutUtilsGateway' class
             nocout_utils = NocoutUtilsGateway()
+            # print "**********self.fields**********"
+            # print self.fields
+            # print "**********self.fields**********"
             self.fields['organization'].queryset = nocout_utils.logged_in_user_organizations(self)
         else:
             self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].empty_label = "Select"
         # self.fields['parent'].empty_label = "Select"
-        # self.fields['parent'].widget.choices = self.fields['parent'].choices
+        self.fields['parent'].widget = forms.HiddenInput()
         self.fields['site_instance'].empty_label = "Select"
         self.fields['site_instance'].widget.choices = self.fields['site_instance'].choices
         self.fields['machine'].empty_label = "Select"
@@ -125,7 +129,7 @@ class DeviceForm(forms.ModelForm):
         Meta Information
         """
         model = Device
-        exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms', 'parent']
+        exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms']
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }

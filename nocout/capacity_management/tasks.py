@@ -1882,22 +1882,22 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         sector_capacity_in=sector_capacity_in,
                         sector_capacity_out=sector_capacity_out,
 
-                        current_in_per=float(current_in_per) if current_in_per else 0,
-                        current_in_val=float(current_in_val) if current_in_val else 0,
+                        current_in_per=round(float(current_in_per), 2) if current_in_per else 0,
+                        current_in_val=round(float(current_in_val), 2) if current_in_val else 0,
 
-                        avg_in_per=float(avg_in_per) if avg_in_per else 0,
-                        avg_in_val=float(avg_in_val) if avg_in_val else 0,
-                        peak_in_per=float(peak_in_per) if peak_in_per else 0,
-                        peak_in_val=float(peak_in_val) if peak_in_val else 0,
+                        avg_in_per=round(float(avg_in_per), 2) if avg_in_per else 0,
+                        avg_in_val=round(float(avg_in_val), 2) if avg_in_val else 0,
+                        peak_in_per=round(float(peak_in_per), 2) if peak_in_per else 0,
+                        peak_in_val=round(float(peak_in_val), 2) if peak_in_val else 0,
                         peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else 0,
 
-                        current_out_per=float(current_out_per) if current_out_per else 0,
-                        current_out_val=float(current_out_val) if current_out_val else 0,
+                        current_out_per=round(float(current_out_per), 2) if current_out_per else 0,
+                        current_out_val=round(float(current_out_val), 2) if current_out_val else 0,
 
-                        avg_out_per=float(avg_out_per) if avg_out_per else 0,
-                        avg_out_val=float(avg_out_val) if avg_out_val else 0,
-                        peak_out_per=float(peak_out_per) if peak_out_per else 0,
-                        peak_out_val=float(peak_out_val) if peak_out_val else 0,
+                        avg_out_per=round(float(avg_out_per), 2) if avg_out_per else 0,
+                        avg_out_val=round(float(avg_out_val), 2) if avg_out_val else 0,
+                        peak_out_per=round(float(peak_out_per), 2) if peak_out_per else 0,
+                        peak_out_val=round(float(peak_out_val), 2) if peak_out_val else 0,
                         peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
 
                         sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
@@ -1906,7 +1906,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         age=float(age) if age else 0
                     )
                 )
-
         else:
             return False
 

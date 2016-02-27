@@ -730,6 +730,7 @@ REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
+SMS_LOG_FILE_PATH = '/nocout/tmp/app-messages/sms'   # Change this to a proper location.
 
 # Special Calculation Mechanism for capacity management.
 CAPACITY_SPECIFIC_TIME = 0
@@ -814,6 +815,8 @@ SETTINGS_EXPORT = [
     'ENABLE_WHITE_THEME',
     'ENABLE_TOPO_VIEW',
     'ENABLE_POWER_TAB',
+    'ENABLE_DEVICE_REBOOT_BTN',
+    'SHOW_POWER_LOGS',
     'ENABLE_BIRDEYE_VIEW',
     'ENABLE_CUSTOM_DASHBOARD_VIEW',
     'SHOW_RF_COLUMN',
@@ -894,6 +897,12 @@ ENABLE_TOPO_VIEW = False
 
 # Flag to enable/disable power on single performance page.
 ENABLE_POWER_TAB = False
+
+# Flag to show/hide "Soft Reboot" button from power tab
+ENABLE_DEVICE_REBOOT_BTN = False
+
+# Flag to show/hide power logs menu
+SHOW_POWER_LOGS = False
 
 # Flag to enable/disable birdeye view on single performance page.
 ENABLE_BIRDEYE_VIEW = False
@@ -1221,6 +1230,7 @@ REPORT_EMAIL_PERM = json.dumps({
     'latency_dump': 1,
     'customer_report': 1,
     'duplex_report': 1,
+    'ul_issue': 1,
     'modulation': 1,
     'utilization_tot': 1,
     'temperature': 1,
@@ -1229,9 +1239,9 @@ REPORT_EMAIL_PERM = json.dumps({
 })
 
 # Global variable to show/hide single report mail option in download center listing
-SINGLE_REPORT_EMAIL = True
+SINGLE_REPORT_EMAIL = False
 SCHEDULED_REPORT_EMAIL = False
-SCHEDULED_SINGLE_REPORT_EMAIL = True
+SCHEDULED_SINGLE_REPORT_EMAIL = False
 
 # Network & customer tickets url
 TICKETS_LINK_ENABLED = False

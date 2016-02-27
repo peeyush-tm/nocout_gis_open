@@ -510,7 +510,11 @@
             active_left_tab_icon = 'fa-dot-circle-o',
             topo_dom_id = 'topo_network',
             non_poll_sds = [],
-            power_listing_headers = '';
+            power_listing_headers = '',
+            power_sms_url = '',
+            save_power_log_url = '',
+            device_reboot_url = '',
+            enable_reboot_btn = false;
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -556,6 +560,14 @@
             {% if not settings.ENABLE_UNIFIED_SERVICE_VIEW %}
                 $.cookie("service_view_type", 'normal', {path: '/'});
             {% endif %}
+
+            {% if settings.ENABLE_DEVICE_REBOOT_BTN %}
+                enable_reboot_btn = true;
+            {% endif %}
+
+            power_sms_url = "{% url 'power_sms' %}";
+            save_power_log_url = "{% url 'save_power_log' %}";
+            device_reboot_url = "{% url 'init_device_reboot' %}";
 
             initPerformancePage(true);
         });
@@ -921,53 +933,6 @@
                 }
             });
         });
-        
-        /**
-         * This function binds the click event on 'STATUS, RESET, JOJI' buttons on power tab
-         * on single performance page
-         * @event click
-         */
-        $("#content").delegate(".power-actions", 'click', function(){
-
-            button_name = this.getAttribute('data-button-respone');
-            button_this = this
-
-            $(button_this).button('loading');
-            $.ajax({
-                url : base_url + "/performance/send_power_sms/?device_id=" + current_device + "&button_name=" + button_name,
-                type : 'GET',
-                success : function(response){
-                    if (response['success']) {
-                        dataTableInstance.createDataTable(power_table_id, power_listing_headers, power_ajax_url, false);
-                    }
-                    
-                    $(button_this).button('complete');
-                    $.gritter.add({
-                        // (string | mandatory) the heading of the notification
-                        title: 'Power - ' + $.trim($(button_this).attr('title')),
-                        // (string | mandatory) the text inside the notification
-                        text: response['message'],
-                        // (bool | optional) if you want it to fade out on its own or just sit there
-                        sticky: false,
-                        // Time in ms after which the gritter will dissappear.
-                        time : 2000
-                    });
-                },
-                error : function(e){
-                    $.gritter.add({
-                        // (string | mandatory) the heading of the notification
-                        title: 'Power - ' + $.trim($(button_this).attr('title')),
-                        // (string | mandatory) the text inside the notification
-                        text: e.message,
-                        // (bool | optional) if you want it to fade out on its own or just sit there
-                        sticky: false,
-                        // Time in ms after which the gritter will dissappear.
-                        time : 2000
-                    });
-                }
-            })
-
-        })
 
         /**
          * This function load the first inner tab content when any parent tab is clicked.

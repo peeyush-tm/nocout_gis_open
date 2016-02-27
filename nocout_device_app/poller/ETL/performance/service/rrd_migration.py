@@ -296,7 +296,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					'cambium_dl_jitter', 'cambium_ul_jitter',
 					'cambium_rereg_count', 'wimax_ul_rssi',
 					'wimax_dl_rssi', 'wimax_dl_cinr', 'wimax_ss_ptx_invent','radwin_rssi','radwin_uas']
-	kpi_helper_services =['wimax_ul_cinr', 'wimax_ul_intrf', 'cambium_ul_jitter',
+	kpi_helper_services =['wimax_dl_intrf', 'wimax_ul_intrf', 'cambium_ul_jitter',
                         'cambium_rereg_count']
 
 	#ss_provis_helper_serv_data = []	

@@ -465,18 +465,19 @@ function nocoutPerfLib() {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\
                             <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
-                            <button title="Status" class="btn btn-default power-actions" id="power_send_status" data-button-respone="status" \
-                                data-complete-text="<i class=\'fa fa-circle\'></i> Status" \
-                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-circle"></i> Status\
+                            <button title="Power Status" class="btn btn-default power-actions" id="power_send_status" data-button-respone="status" \
+                                data-complete-text="<i class=\'fa fa-circle\'></i> Power Status" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-circle"></i> Power Status\
                             </button>\
-                            <button title="Reset" class="btn btn-default power-actions" id="power_send_reset" data-button-respone="reset" \
-                                data-complete-text="<i class=\'fa fa-refresh\'></i> Reset" \
-                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-refresh"></i> Reset\
+                            <button title="Power Reboot" class="btn btn-default power-actions" id="power_send_reset" data-button-respone="reset" \
+                                data-complete-text="<i class=\'fa fa-refresh\'></i> Power Reboot" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-refresh"></i> Power Reboot\
                             </button>\
                             <button title="JOJI" class="btn btn-default power-actions" id="power_send_joji" data-button-respone="joji" \
-                                data-complete-text="<i class=\'fa fa-plug\'></i> Joji" \
-                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-plug"></i> Joji\
+                                data-complete-text="<i class=\'fa fa-plug\'></i> JOJI" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-plug"></i> JOJI\
                             </button>\
+                            {0}\
                             <div class="clearfix"></div>\
                             <div class="divide-20"></div>\
                             <table id="power_msg_listing" class="datatable table table-striped table-bordered table-hover"> \
@@ -485,6 +486,17 @@ function nocoutPerfLib() {
                             </table> \
                             <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
                             </div></div></div>';
+            
+            var reboot_btn_html = '';
+            if (enable_reboot_btn) {
+                reboot_btn_html = '<button title="Soft Reboot" class="btn btn-default power-actions" \
+                                       id="power_send_reboot" data-button-respone="reboot" \
+                                       data-complete-text="<i class=\'fa fa-refresh\'></i> Soft Reboot" \
+                                       data-loading-text="<i class=\'fa fa-spinner fa-spin\'> \
+                                       </i> Please Wait..."> <i class="fa fa-refresh"></i> Soft Reboot\
+                                       </button>';
+            }
+            content_html = content_html.replace('{0}', reboot_btn_html);
         } else {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\
