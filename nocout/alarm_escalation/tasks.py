@@ -420,6 +420,22 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
     context_dict['level'] = level
+    context_dict['city'] = ''
+    context_dict['state'] = ''
+    try:
+        context_dict['city'] = alarm.device.city.city_name
+    except Exception, e:
+        logger.error('Error in fetching device city --')
+        logger.error(e)
+        pass
+
+    try:
+        context_dict['state'] = alarm.device.state.state_name
+    except Exception, e:
+        logger.error('Error in fetching device state --')
+        logger.error(e)
+        pass
+
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/bad_message.html', context_dict)
@@ -518,6 +534,22 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
     context_dict['level'] = level
+    context_dict['city'] = ''
+    context_dict['state'] = ''
+    try:
+        context_dict['city'] = alarm.device.city.city_name
+    except Exception, e:
+        logger.error('Error in fetching device city --')
+        logger.error(e)
+        pass
+
+    try:
+        context_dict['state'] = alarm.device.state.state_name
+    except Exception, e:
+        logger.error('Error in fetching device state --')
+        logger.error(e)
+        pass
+        
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/good_message.html', context_dict)
