@@ -16,6 +16,7 @@ from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.conf import settings
 from django.template.loader import render_to_string
 import datetime
+import time
 
 from organization.models import Organization
 from device.models import Device, DeviceType, DeviceTypeService, DeviceTypeServiceDataSource, DeviceTechnology
@@ -29,6 +30,7 @@ from inventory.utils.util import InventoryUtilsGateway
 # Import inventory utils gateway class
 from scheduling_management.views import SchedulingViewsGateway
 from inventory.tasks import bulk_update_create
+from nocout.settings import SMS_LOG_FILE_PATH
 import re
 import logging
 logger = logging.getLogger(__name__)
@@ -72,8 +74,36 @@ status_dict = {
         'old': 0,
         'new': 0
     },
-
 }
+
+EMAIL_DATE_FORMAT = '%a, %d %b %Y %H:%M:%S' # Tue, 23 Feb 2016 09:43:15
+
+
+def generate_sms_log(msg=None, phone_numbers=None, alarm=None):
+    """
+    This function generates SMS logs in 'SMS_LOG_FILE_PATH' directory
+    """
+    if msg and phone_numbers:
+        try:
+            device_name = alarm.device.device_name
+        except Exception, e:
+            device_name = ''
+
+        timestamp = time.time()
+        full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y%m%d-%H%M%S-%f')
+        file_name = full_time
+        if device_name:
+            file_name = '{0}_{1}'.format(full_time, device_name)
+
+        try:
+            log_file = open(SMS_LOG_FILE_PATH + "/" + file_name + ".log", "w")
+            log_file.write('Sent To: ' + str(phone_numbers) + '\n')
+            log_file.write('Message: ' + str(msg))
+            log_file.close()
+        except Exception, e:
+            logger.error(e)
+            logger.error('SMS Log File Not Created')
+    return True
 
 
 def status_change(old_status, new_status):
@@ -390,10 +420,29 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
     context_dict['level'] = level
+    context_dict['city'] = ''
+    context_dict['state'] = ''
+    try:
+        context_dict['city'] = alarm.device.city.city_name
+    except Exception, e:
+        logger.error('Error in fetching device city --')
+        logger.error(e)
+        pass
+
+    try:
+        context_dict['state'] = alarm.device.state.state_name
+    except Exception, e:
+        logger.error('Error in fetching device state --')
+        logger.error(e)
+        pass
+
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/bad_message.html', context_dict)
-    msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails)
+    header_info = {
+        'date': datetime.datetime.now().strftime(EMAIL_DATE_FORMAT)
+    }
+    msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails, headers=header_info)
     msg.content_subtype = "html"  # Main content is now text/html
     # Attach chart image as per current service & datasource with default timestamp
     try:
@@ -445,6 +494,17 @@ def alert_phones_for_bad_performance(alarm, alarm_invent, level):
         #render_to_string('alarm_message/good_message.html', context_dict)
         payload['N'] = send_to
         payload['M'] = message
+        
+        try:
+            generate_sms_log(
+                msg=message,
+                phone_numbers=send_to,
+                alarm=alarm
+            )
+        except Exception, e:
+            logger.error(e)
+            logger.error('SMS Log not created')
+
         r = requests.get(url, params=payload)
     else:
         return False
@@ -466,9 +526,6 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     :return:
         True/False
     """
-    #msg = EmailMessage(subject, html_content, from_email, [to])
-    #msg.content_subtype = "html"  # Main content is now text/html
-    #msg.send()
     context_dict = dict()
     # Calling function for getting all emails in particular level
     emails = level.get_emails()
@@ -477,11 +534,29 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
     context_dict['level'] = level
+    context_dict['city'] = ''
+    context_dict['state'] = ''
+    try:
+        context_dict['city'] = alarm.device.city.city_name
+    except Exception, e:
+        logger.error('Error in fetching device city --')
+        logger.error(e)
+        pass
+
+    try:
+        context_dict['state'] = alarm.device.state.state_name
+    except Exception, e:
+        logger.error('Error in fetching device state --')
+        logger.error(e)
+        pass
+        
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/good_message.html', context_dict)
-    msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails)
-    #send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
+    header_info = {
+        'date': datetime.datetime.now().strftime(EMAIL_DATE_FORMAT)
+    }
+    msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails, headers=header_info)
     msg.content_subtype = "html"  # Main content is now text/html
     # Attach chart image as per current service & datasource with default timestamp
     try:
@@ -528,6 +603,14 @@ def alert_phones_for_good_performance(alarm, alarm_invent, level ):
         #render_to_string('alarm_message/good_message.html', context_dict)
         payload['N'] = send_to
         payload['M'] = message
+        try:
+            generate_sms_log(
+                msg=message,
+                phone_numbers=send_to,
+                alarm=alarm
+            )
+        except Exception, e:
+            logger.error('SMS Log not created')
         r = requests.get(url, params=payload)
     else:
         return False

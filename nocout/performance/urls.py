@@ -90,5 +90,15 @@ urlpatterns = patterns('',
                        url(r'^send_power_sms/$',
                            views.SendPowerSms.as_view(),
                            name='power_sms'
-                       ), 
+                       ),
+                       url(
+                          r'^save_power_log/$',
+                          views.SavePowerLog.as_view(),
+                          name='save_power_log'
+                        ),
+                       url(
+                          r'^init_device_reboot/$',
+                          views.InitDeviceReboot.as_view(),
+                          name='init_device_reboot'
+                        )
 )
