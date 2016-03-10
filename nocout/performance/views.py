@@ -51,7 +51,7 @@ from nocout.mixins.datatable import AdvanceFilteringMixin
 
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
-    AVG_CHART_COLOR, CACHE_TIME, \
+    AVG_CHART_COLOR, CACHE_TIME, ENV_NAME, \
     WARN_COLOR, CRIT_COLOR, WARN_TYPE, CRIT_TYPE, MULTI_PROCESSING_ENABLED
 
 from performance.formulae import display_time, rta_null
@@ -7910,21 +7910,41 @@ class InitDeviceReboot(View):
         }
 
         try:
+            import subprocess
             device_id = self.request.GET.get('device_id')
             device = Device.objects.get(id=device_id)
             machine_name = device.machine.name
             ip_address = device.ip_address
             device_type = DeviceType.objects.get(id=device.device_type).name
-            params = machine_name + ' ' + ip_address + ' ' + device_type
-            # Execute the shell script
-            reboot_response = os.popen('bash ' + BASE_DIR + '/performance/script/ss_reboot.sh '+ params).read()
+            
+            env_name = 'omd'
+            if ENV_NAME != 'uat':
+                env_name = 'apps'
 
-            if 'yes' in reboot_response:
+            # params = machine_name + ' ' + ip_address + ' ' + device_type
+            # Execute the shell script
+            # reboot_response = os.popen('bash ' + BASE_DIR + '/performance/script/ss_reboot.sh '+ params).read()
+            reboot_response = subprocess.Popen(
+                [
+                    'bash', 
+                    '/' +str(env_name)+ '/nocout/nocout/nocout/performance/script/ss_reboot.sh', 
+                    machine_name, 
+                    ip_address, 
+                    device_type, 
+                    env_name
+                ], 
+                stdout=subprocess.PIPE
+            )
+
+            response = reboot_response.stdout.read()
+            if 'yes' in response:
                 result.update(
                     success=1,
                     message='Device successfully reboot.'
                 )
         except Exception, e:
+            log.error('Device Reboot Exception ---')
+            log.error(e)
             pass
 
         return HttpResponse(json.dumps(result))
