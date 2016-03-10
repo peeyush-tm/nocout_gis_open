@@ -7921,27 +7921,42 @@ class InitDeviceReboot(View):
             if ENV_NAME != 'uat':
                 env_name = 'apps'
 
-            # params = machine_name + ' ' + ip_address + ' ' + device_type
-            # Execute the shell script
-            # reboot_response = os.popen('bash ' + BASE_DIR + '/performance/script/ss_reboot.sh '+ params).read()
+            cmd_list = [
+                'bash', 
+                '/' +str(env_name)+ '/nocout/nocout/nocout/performance/script/ss_reboot.sh', 
+                machine_name, 
+                ip_address, 
+                device_type, 
+                env_name
+            ]
+
+            log.error('Excecuted Command -- ')
+            log.error(' '.join(cmd_list))
+
             reboot_response = subprocess.Popen(
-                [
-                    'bash', 
-                    '/' +str(env_name)+ '/nocout/nocout/nocout/performance/script/ss_reboot.sh', 
-                    machine_name, 
-                    ip_address, 
-                    device_type, 
-                    env_name
-                ], 
+                cmd_list, 
                 stdout=subprocess.PIPE
             )
 
             response = reboot_response.stdout.read()
+            log.error('Response --> %s' % response)
             if 'yes' in response:
                 result.update(
                     success=1,
                     message='Device successfully reboot.'
                 )
+            elif 'no' in response:
+                result.update(
+                    success=1,
+                    message='Connection not established or Authentication Error.'
+                )
+            elif 'nr' in response:
+                result.update(
+                    success=1,
+                    message='Device Not Reachable.'
+                )
+            else:
+                pass
         except Exception, e:
             log.error('Device Reboot Exception ---')
             log.error(e)
