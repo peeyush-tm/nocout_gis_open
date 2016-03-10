@@ -17,6 +17,10 @@ urlpatterns = patterns('',
                            views.GetTopology.as_view(),
                            name='DeviceTopology'
                        ),
+                       url(r'^EveryFiveMinDeviceStatus/$',
+                           views.EveryFiveMinDeviceStatus.as_view(),
+                           name='FiveMinuteStatus'
+                       ),
                        url(r'^get_topology/tool_tip/$',
                            views.GetTopologyToolTip.as_view(),
                            name='DeviceTopologyToolTip'

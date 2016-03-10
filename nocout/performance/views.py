@@ -7446,10 +7446,14 @@ class GetTopology(View):
                     near_end_bs = str(splitted_circuit_id_list[1]).lower()
 
                     far_bs_queryset = list(BaseStation.objects.filter(alias__iexact = far_end_bs).values('id'))
-                    far_end_bs_id = far_bs_queryset[0]['id']
+                    far_end_bs_id = 0
+                    if len(far_bs_queryset):
+                        far_end_bs_id = far_bs_queryset[0]['id']
 
                     near_bs_queryset = list(BaseStation.objects.filter(alias__iexact = near_end_bs).values('id'))
-                    near_end_bs_id = near_bs_queryset[0]['id']
+                    near_end_bs_id = 0
+                    if len(near_bs_queryset):
+                        near_end_bs_id = near_bs_queryset[0]['id']
 
             
             if str(device_type).lower() == 'radwin2kss':
@@ -7535,6 +7539,15 @@ class GetTopology(View):
                         'NA' AS far_end_ss_device_type,
                         'NA' AS far_end_ss_device_name,
                         'NA' AS far_end_ss_device_ip,
+                        IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
+                        IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
+                        IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
+                        IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
+                        IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
+                        IF(isnull(far_end_bs_switch.device_name), 'NA', far_end_bs_switch.device_name) AS far_end_bs_switch_name,
+                        IF(isnull(near_end_device.device_name), 'NA', near_end_device.device_name) AS near_end_device_name,
+                        IF(isnull(far_end_device.device_name), 'NA', far_end_device.device_name) AS far_end_device_name,
+                        IF(isnull(far_end_sect_device.device_name), 'NA', far_end_sect_device.device_name) AS far_end_sect_device_name,
                         sect_device_type.device_icon as sect_icon,
                         bh_device_type.device_icon as bh_icon,
                         sect_freq.color_hex_value as sect_color
@@ -7669,9 +7682,12 @@ class GetTopology(View):
                         device_device AS far_end_ss_device
                     ON
                         far_end_ss.device_id = far_end_ss_device.id
-
+                    LEFT JOIN
+                        device_device as current_device
+                    ON
+                        current_device.id = {4}
                     where
-                        device.is_added_to_nms > 0
+                        current_device.is_added_to_nms > 0
                         AND
                         bs.id = {2}
                         AND
@@ -7719,6 +7735,11 @@ class GetTopology(View):
                         'NA' AS ss_device_type,
                         'NA' AS ss_device_name,
                         'NA' AS ss_device_ip,
+                        IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
+                        IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
+                        IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
+                        IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
+                        IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
                         sect_device_type.device_icon as sect_icon,
                         bh_device_type.device_icon as bh_icon,
                         sect_freq.color_hex_value as sect_color
@@ -7793,8 +7814,12 @@ class GetTopology(View):
                         device_device AS ss_device
                     ON
                         ss.device_id = ss_device.id
+                    LEFT JOIN
+                        device_device as current_device
+                    ON
+                        current_device.id = {2}
                     where
-                        device.is_added_to_nms > 0
+                        current_device.is_added_to_nms > 0
                         AND
                         bs.id in ({0})
                         AND
@@ -7850,6 +7875,11 @@ class GetTopology(View):
                     IF(isnull(ss_device_type.name), 'NA', ss_device_type.name) AS ss_device_type,
                     IF(isnull(ss_device.device_name), 'NA', ss_device.device_name) AS ss_device_name,
                     IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address) AS ss_device_ip,
+                    IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
+                    IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
+                    IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
+                    IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
+                    IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
                     ss_device_type.device_icon as ss_icon,
                     sect_device_type.device_icon as sect_icon,
                     bh_device_type.device_icon as bh_icon,
@@ -7933,13 +7963,17 @@ class GetTopology(View):
                     device_devicefrequency as sect_freq
                 ON
                     sect_freq.id = sect.frequency_id
+                LEFT JOIN
+                    device_device as current_device
+                ON
+                    current_device.id = {2}
                 where
-                    device.is_added_to_nms > 0
+                    current_device.is_added_to_nms > 0
                     AND
                     bs.id in ({0})
                     AND
                     sect_device.id = {1}
-            '''.format(', '.join(bs_id), current_sector_device_id)
+            '''.format(', '.join(bs_id), current_sector_device_id, current_device_id)
 
         elif page_type == 'other':
             topology_query = ''' 
@@ -7981,6 +8015,11 @@ class GetTopology(View):
                     'NA' AS ss_device_type,
                     'NA' AS ss_device_name,
                     'NA' AS ss_device_ip,
+                    IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
+                    IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
+                    IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
+                    IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
+                    IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
                     sect_device_type.device_icon as sect_icon,
                     bh_device_type.device_icon as bh_icon,
                     sect_freq.color_hex_value as sect_color
@@ -8047,8 +8086,12 @@ class GetTopology(View):
                     device_devicefrequency as sect_freq
                 ON
                     sect_freq.id = sect.frequency_id
+                LEFT JOIN
+                    device_device as current_device
+                ON
+                    current_device.id = {1}
                 where
-                    device.is_added_to_nms > 0
+                    current_device.is_added_to_nms > 0
                     AND
                     bs.id in ({0})
                 GROUP by(sect_sector_id)
@@ -8075,6 +8118,11 @@ class GetTopology(View):
 
         if have_ptp_bh:
             for bs in result_of_query:
+                bs_id = ''
+                bs_alias = ''
+                far_end_bs_id = ''
+                far_end_bs_alias = ''
+                bs_icon = ''
                 if bs.get('bs_id') not in bs_ids:
                     bs_ids.append(bs.get('bs_id'))
                     if bs.get('bh_device_id'):
@@ -8223,6 +8271,14 @@ class GetTopology(View):
                             "far_end_bs_switch_pl_info" : far_end_bs_switch_pl_info,
                             "near_end_pl_info" : near_end_pl_info,
                             "far_end_pl_info" : far_end_pl_info,
+                            "bs_switch_name" : bs.get('bs_switch_name'),
+                            "bs_convertor_device_name" : bs.get('bs_convertor_device_name'),
+                            "bh_aggregator_device_name" : bs.get('bh_aggregator_device_name'),
+                            "bh_pop_device_name" : bs.get('bh_pop_device_name'),
+                            "bh_device_name" : bs.get('bh_device_name'),
+                            "far_end_bs_switch_name" : bs.get('far_end_bs_switch_name'),
+                            "near_end_device_name" : bs.get('near_end_device_name'),
+                            "far_end_device_name" : bs.get('far_end_device_name'),
                             "far_end_base_station" : list(),
                             "base_station" : list()
                         }
@@ -8320,6 +8376,9 @@ class GetTopology(View):
             else:
                 if not resultant_dict['far_end_base_station']:
                     resultant_dict['far_end_base_station'] = list()
+
+                if not resultant_dict['base_station']:
+                    resultant_dict['base_station'] = list()
 
                 resultant_dict['base_station'].append({
                     'bs_id': bs_id,
@@ -8425,6 +8484,14 @@ class GetTopology(View):
                             "bh_aggr_pl_info": bh_aggr_pl_info,
                             "bh_pop_pl_info": bh_pop_pl_info,
                             "bs_convertor_pl_info": bs_convertor_pl_info,
+                            "bs_switch_name" : bs.get('bs_switch_name'),
+                            "bs_convertor_device_name" : bs.get('bs_convertor_device_name'),
+                            "bh_aggregator_device_name" : bs.get('bh_aggregator_device_name'),
+                            "bh_pop_device_name" : bs.get('bh_pop_device_name'),
+                            "bh_device_name" : bs.get('bh_device_name'),
+                            "far_end_bs_switch_name" : bs.get('far_end_bs_switch_name'),
+                            "near_end_device_name" : bs.get('near_end_device_name'),
+                            "far_end_device_name" : bs.get('far_end_device_name'),
                             "base_station" : list()
                         }
 
@@ -8442,7 +8509,7 @@ class GetTopology(View):
                     is_init = True
 
                 if not multiple_bs:
-                    if str(bs.get('sect_id')) not in sector_dict:
+                    if bs.get('sect_id') and str(bs.get('sect_id')) not in sector_dict:
                         if bs.get('sect_device_id'):
                             try:
                                 severity, other_detail = device_current_status(Device.objects.get(id=bs.get('sect_device_id')))
@@ -8470,7 +8537,7 @@ class GetTopology(View):
                             "device_type": bs.get('sect_device_type'),
                             "ip_address": bs.get('sect_device_ip'),
                             "sect_ip_id_title": bs.get('sect_ip_id_title'),
-                            "icon": "/media/" + bs.get('sect_icon'),
+                            "icon": "/media/" + str(bs.get('sect_icon', '')),
                             "pl_info": sect_pl_info,
                             "sub_station": list()
                         }
@@ -8510,12 +8577,15 @@ class GetTopology(View):
                     except Exception, e:
                         pass
                 
-                    bs_ids_dict[str(bs.get('bs_id'))]['sectors'].append(sector_dict[str(bs.get('sect_id'))])
+                    try:
+                        bs_ids_dict[str(bs.get('bs_id'))]['sectors'].append(sector_dict[str(bs.get('sect_id'))])
+                    except Exception, e:
+                        pass
 
             if multiple_bs:
                 resultant_dict['base_station'] = bs_ids_dict.values()
             else:
-                if not resultant_dict['base_station']:
+                if 'base_station' not in resultant_dict:
                     resultant_dict['base_station'] = list()
 
                 resultant_dict['base_station'].append({
@@ -8531,6 +8601,54 @@ class GetTopology(View):
         result['have_ptp_bh'] = have_ptp_bh
         result['limit_till_bs'] = limit_till_bs
 
+        return HttpResponse(json.dumps(result), content_type="application/json")
+
+class EveryFiveMinDeviceStatus(View):
+    """
+    The Class based View to get pl info in every 5 min. for each device in topo-view.
+    """
+    def get(self, request):
+
+        result = {
+            'success': 0,
+            'message': 'Device pl info not fetched successfully.',
+            'data': []
+        }
+
+        try:
+            pl_device_list = json.loads(self.request.GET.get('data'))
+        except Exception, e:
+            pl_device_list = list()
+        
+        pl_info_list = list()
+        for pl_device in pl_device_list:
+
+            try:
+                severity, other_detail = device_current_status(Device.objects.get(device_name=pl_device))
+                pack_loss, latency = device_pl_latency_values(Device.objects.get(device_name=pl_device))
+                current_pl_info = {
+                    "id" : pl_device,
+                    "severity" : severity if severity else 'NA',
+                    "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                    "packet_loss" : pack_loss if pack_loss else 'NA',
+                    "latency" : latency if latency else 'NA'
+                }
+            except Exception, e:
+                current_pl_info = {
+                    "id" : pl_device,
+                    "severity" : "",
+                    "value": "",
+                    "packet_loss": "",
+                    "latency": ""
+                }
+            pl_info_list.append(current_pl_info)
+
+
+        result = {
+            'success': 1,
+            'message': 'Device pl info fetched successfully.',
+            'data': pl_info_list
+        }
         return HttpResponse(json.dumps(result), content_type="application/json")
 
 
