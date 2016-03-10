@@ -1425,7 +1425,7 @@ class PingThematicSettingsForm(forms.ModelForm):
     # icon choices fetched from 'IconSettings' model
     ICON_CHOICES = [('', 'Select')]
     try:
-        ICON_CHOICES = [('', 'Select')] + [(icon.upload_image, icon.alias) for icon in IconSettings.objects.all()]
+        ICON_CHOICES = [('', 'Select')] + [(icon.upload_image.name, icon.alias) for icon in IconSettings.objects.all()]
     except Exception as e:
         logger.info("No choices for icon. Exception: {}".format(e.message))
 
