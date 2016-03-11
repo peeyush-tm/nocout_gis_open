@@ -179,7 +179,7 @@ function nocoutPerfLib() {
 
         var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p' || device_type.toLowerCase() == 'radwin2kss',
             condition_2 = page_type == 'other',
-            condition_3 = page_type == 'customer' && device_type.toLowerCase() != 'radwin2kbs';
+            condition_3 = page_type == 'customer'; //&& device_type.toLowerCase() != 'radwin2kbs';
             
         // Show power tab only if page type = Customer 
         if (condition_3) {
