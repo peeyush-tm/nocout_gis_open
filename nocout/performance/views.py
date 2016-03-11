@@ -7507,9 +7507,7 @@ class GetTopology(View):
                         IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                         IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
-                        IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
                         IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
-                        IF(isnull(backhaul.pop_port_name), 'NA', backhaul.pop_port_name) AS bh_pop_port,
                         IF(isnull(bh_aggregator_device.ip_address), 'NA', bh_aggregator_device.ip_address) AS bh_aggregator_ip,
                         IF(isnull(backhaul.aggregator_port_name), 'NA', backhaul.aggregator_port_name) AS bh_aggregator_port,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
@@ -7529,6 +7527,8 @@ class GetTopology(View):
                         IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
                         IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
                         IF(isnull(far_end_sect_device_tech.name), 'NA', far_end_sect_device_tech.name) AS far_end_sect_device_tech,
+                        IF(isnull(far_end_sector_port.alias), 'NA', far_end_sector_port.alias) AS far_end_sect_port,
+                        IF(isnull(far_end_bs.bh_port_name), 'NA', far_end_bs.bh_port_name) AS far_end_bs_switch_port ,
                         IF(isnull(far_end_sect_device_type.name), 'NA', far_end_sect_device_type.name) AS far_end_sect_device_type,
                         IF(isnull(far_end_sect_device.ip_address), 'NA', far_end_sect_device.ip_address) AS far_end_sect_device_ip,
                         IF(far_end_sect_device_tech.name = 'WiMAX', CONCAT(far_end_sect_device.ip_address, ' - ', far_end_sect.sector_id), far_end_sect_device.ip_address) AS far_end_sect_ip_id_title,
@@ -7550,7 +7550,10 @@ class GetTopology(View):
                         IF(isnull(far_end_sect_device.device_name), 'NA', far_end_sect_device.device_name) AS far_end_sect_device_name,
                         sect_device_type.device_icon as sect_icon,
                         bh_device_type.device_icon as bh_icon,
-                        sect_freq.color_hex_value as sect_color
+                        sect_freq.color_hex_value as sect_color,
+                        IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
+                        IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
+                        IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port
 
                     FROM
                         inventory_basestation AS bs
@@ -7655,6 +7658,10 @@ class GetTopology(View):
                     ON
                         far_end_bs.id = far_end_sect.base_station_id
                     LEFT JOIN
+                        device_deviceport AS far_end_sector_port
+                    ON
+                        far_end_sect.sector_configured_on_port_id = far_end_sector_port.id
+                    LEFT JOIN
                         device_device as far_end_sect_device
                     ON
                         far_end_sect.sector_configured_on_id = far_end_sect_device.id
@@ -7711,9 +7718,7 @@ class GetTopology(View):
                         IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                         IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
-                        IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
                         IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
-                        IF(isnull(backhaul.pop_port_name), 'NA', backhaul.pop_port_name) AS bh_pop_port,
                         IF(isnull(bh_aggregator_device.ip_address), 'NA', bh_aggregator_device.ip_address) AS bh_aggregator_ip,
                         IF(isnull(backhaul.aggregator_port_name), 'NA', backhaul.aggregator_port_name) AS bh_aggregator_port,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
@@ -7742,7 +7747,10 @@ class GetTopology(View):
                         IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
                         sect_device_type.device_icon as sect_icon,
                         bh_device_type.device_icon as bh_icon,
-                        sect_freq.color_hex_value as sect_color
+                        sect_freq.color_hex_value as sect_color,
+                        IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
+                        IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
+                        IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port
 
                     FROM
                         inventory_basestation AS bs
@@ -7865,6 +7873,7 @@ class GetTopology(View):
                     IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
                     IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
                     IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
+                    IF(isnull(sector_port.alias), 'NA', sector_port.alias) AS sect_port,
                     IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
                     IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
                     IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
@@ -7883,7 +7892,10 @@ class GetTopology(View):
                     ss_device_type.device_icon as ss_icon,
                     sect_device_type.device_icon as sect_icon,
                     bh_device_type.device_icon as bh_icon,
-                    sect_freq.color_hex_value as sect_color
+                    sect_freq.color_hex_value as sect_color,
+                    IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
+                    IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
+                    IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port
 
                 FROM
                     inventory_basestation AS bs
@@ -7919,6 +7931,10 @@ class GetTopology(View):
                     inventory_sector AS sect
                 ON
                     bs.id = sect.base_station_id
+                LEFT JOIN
+                    device_deviceport AS sector_port
+                ON
+                    sect.sector_configured_on_port_id = sector_port.id
                 LEFT JOIN
                     device_device AS device
                 ON
@@ -7976,6 +7992,38 @@ class GetTopology(View):
             '''.format(', '.join(bs_id), current_sector_device_id, current_device_id)
 
         elif page_type == 'other':
+            case_of_ptp_bh = False
+            bs_alias_qs = BaseStation.objects.filter(id=bs_id[0]).values('alias')
+            bs_alias = str(bs_alias_qs[0]['alias']).lower()
+
+            queryset = list(Circuit.objects.filter(circuit_id__icontains = bs_alias + '#').values())
+            
+            if len(queryset):
+                case_of_ptp_bh = True
+
+                circuit_id = queryset[0]['circuit_id']
+                # spliiting current circuit in case of having PTP-BH, because there we have Far-end and Near-End
+                splitted_circuit_id_list = circuit_id.split('#')
+                
+
+                if len(splitted_circuit_id_list) > 1:
+                    # far_end_bs = str(splitted_circuit_id_list[0]).lower()
+                    near_end_bs = str(splitted_circuit_id_list[1]).lower()
+
+                    # far_bs_queryset = list(BaseStation.objects.filter(alias__iexact = far_end_bs).values('id'))
+                    # far_end_bs_id = 0
+                    # if len(far_bs_queryset):
+                    #     far_end_bs_id = far_bs_queryset[0]['id']
+
+                    near_bs_queryset = list(BaseStation.objects.filter(alias__iexact = near_end_bs).values('id'))
+                    near_end_bs_id = 0
+                    if len(near_bs_queryset):
+                        near_end_bs_id = near_bs_queryset[0]['id']
+            if case_of_ptp_bh : 
+                query_filter = near_end_bs_id
+            else :
+                query_filter = bs_id[0]
+
             topology_query = ''' 
                 SELECT
                     IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
@@ -8005,6 +8053,7 @@ class GetTopology(View):
                     IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
                     IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
                     IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
+                    IF(isnull(sector_port.alias), 'NA', sector_port.alias) AS sect_port,
                     IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
                     IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
                     IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
@@ -8022,7 +8071,10 @@ class GetTopology(View):
                     IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
                     sect_device_type.device_icon as sect_icon,
                     bh_device_type.device_icon as bh_icon,
-                    sect_freq.color_hex_value as sect_color
+                    sect_freq.color_hex_value as sect_color,
+                    IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
+                    IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
+                    IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port
 
                 FROM
                     inventory_basestation AS bs
@@ -8057,7 +8109,11 @@ class GetTopology(View):
                 LEFT JOIN
                     inventory_sector AS sect
                 ON
-                    bs.id = sect.base_station_id
+                    sect.base_station_id = {2}
+                LEFT JOIN
+                    device_deviceport AS sector_port
+                ON
+                    sect.sector_configured_on_port_id = sector_port.id
                 LEFT JOIN
                     device_device AS device
                 ON
@@ -8095,7 +8151,7 @@ class GetTopology(View):
                     AND
                     bs.id in ({0})
                 GROUP by(sect_sector_id)
-            '''.format(', '.join(bs_id), current_device_id)
+            '''.format(', '.join(bs_id), current_device_id, query_filter)
 
         # calling global method for executing query
         result_of_query = nocout_utils.fetch_raw_result(topology_query)
@@ -8117,12 +8173,12 @@ class GetTopology(View):
         # converting query result in required format 
 
         if have_ptp_bh:
+            bs_id = ''
+            bs_alias = ''
+            far_end_bs_id = ''
+            far_end_bs_alias = ''
+            bs_icon = ''
             for bs in result_of_query:
-                bs_id = ''
-                bs_alias = ''
-                far_end_bs_id = ''
-                far_end_bs_alias = ''
-                bs_icon = ''
                 if bs.get('bs_id') not in bs_ids:
                     bs_ids.append(bs.get('bs_id'))
                     if bs.get('bh_device_id'):
@@ -8255,7 +8311,9 @@ class GetTopology(View):
                             "pe_ip" : bs.get('pe_ip'),
                             "pe_hostname" : bs.get('pe_hostname'),
                             "bs_switch_ip" : bs.get('bs_switch_ip'),
-                            "far_end_bs_switch_ip" : bs.get('far_end_bs_switch_ip'),
+                            "bs_switch_port" : bs.get('bs_switch_port'),
+                            "far_end_bs_switch_port" : bs.get('far_end_bs_switch_port'),
+                            "far_end_bs_switch_ip" : bs.get('bs_switch_ip'),
                             "aggregation_switch_ip" : bs.get('bh_aggregator_ip'),
                             "aggregation_switch_port" : bs.get('bh_aggregator_port'),
                             "pop_convertor_ip" : bs.get('bh_pop_ip'),
@@ -8327,6 +8385,7 @@ class GetTopology(View):
                             "device_id": bs.get('far_end_sect_device_id'),
                             "device_tech": bs.get('far_end_sect_device_tech'),
                             "device_type": bs.get('far_end_sect_device_type'),
+                            "sect_port" : bs.get('far_end_sect_port'),
                             "ip_address": bs.get('far_end_sect_device_ip'),
                             "sect_ip_id_title": bs.get('far_end_sect_ip_id_title'),
                             "icon": "/media/" + bs.get('sect_icon'),
@@ -8480,6 +8539,8 @@ class GetTopology(View):
                             "pop_convertor_port" : bs.get('bh_pop_port'),
                             "bs_convertor_ip" : bs.get('bs_convertor_ip'),
                             "bs_convertor_port" : bs.get('bs_convertor_port'),
+                            "bs_switch_port" : bs.get('bs_switch_port'),
+                            "far_end_bs_switch_port" : bs.get('far_end_bs_switch_port'),
                             "bs_switch_pl_info": bh_pl_info,
                             "bh_aggr_pl_info": bh_aggr_pl_info,
                             "bh_pop_pl_info": bh_pop_pl_info,
@@ -8535,6 +8596,7 @@ class GetTopology(View):
                             "device_id": bs.get('sect_device_id'),
                             "device_tech": bs.get('sect_device_tech'),
                             "device_type": bs.get('sect_device_type'),
+                            "sect_port" : bs.get('sect_port'),
                             "ip_address": bs.get('sect_device_ip'),
                             "sect_ip_id_title": bs.get('sect_ip_id_title'),
                             "icon": "/media/" + str(bs.get('sect_icon', '')),

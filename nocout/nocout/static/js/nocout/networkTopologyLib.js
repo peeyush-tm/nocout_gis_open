@@ -7,7 +7,7 @@ function convertToVis(response, required_dom_id) {
 
 	// checking size of BS_ID_LIST
 	bs_list_len = typeof bs_id != 'undefined' ? (JSON.parse(bs_id)).length : 0;
-	updatedSize = 75;
+	updatedSize = 50;
 	backhaul_exist = true
 	pe_exist = false
 	aggr_switch_exist = false
@@ -38,15 +38,15 @@ function convertToVis(response, required_dom_id) {
 	fe_bs_edge_color = '#468847', //edge originating from Far End Base Station
 	sec_edge_color = '#468847'
 
-	var sector_up_image_url = '/static/green.png',
-		sector_down_image_url = '/static/red.png'
+	var sector_up_image_url = '/static/img/icons/green.png',
+		sector_down_image_url = '/static/img/icons/red.png'
 		sector_image_url = sector_up_image_url,
-		converter_image = '/static/converter.png',
-		switch_image = '/static/switch.png',
-		router_image = '/static/router.png',
-		far_end_image = '/static/far_end.png',
-		near_end_image = '/static/near_end.png',
-		ss_image = '/static/ss.png'
+		converter_image = '/static/img/icons/converter.png',
+		switch_image = '/static/img/icons/switch.png',
+		router_image = '/static/img/icons/router.png',
+		far_end_image = '/static/img/icons/far_end.png',
+		near_end_image = '/static/img/icons/near_end.png',
+		ss_image = '/static/img/icons/ss.png'
 
 	// In case of Multiple BaseStation updating size to avoid overlapping of images.
 	if (bs_list_len > 1) {
@@ -58,7 +58,7 @@ function convertToVis(response, required_dom_id) {
 
 	// Options for vis network object
 	var options = {
-	    height: '480px',
+	    height: '100%',
 
 	    layout: {
 	        hierarchical: {
@@ -282,7 +282,7 @@ function convertToVis(response, required_dom_id) {
 	if (response_data.bh_ip != 'NA'){
 		nodes.add({
 		    id: 'ne_sw_' + response_data.bs_switch_name,
-		    label: createNodeLabel(response_data.bh_ip, response_data.bh_port, bs_switch_pl, bs_switch_latency, 'BS Switch'),
+		    label: createNodeLabel(response_data.bh_ip, response_data.bs_switch_port, bs_switch_pl, bs_switch_latency, 'BS Switch'),
 		    image: switch_image,
 		    shape: 'image',
 		    title: '<span style="color:'+bs_switch_color_info_object.color+'"><i class="fa '+bs_switch_color_info_object.icon+'""></i> ' + bs_switch_severity + ' - ' + bs_switch_polled_val + '</span>'
@@ -292,7 +292,7 @@ function convertToVis(response, required_dom_id) {
 		device_nodeId_mapping[response_data.bs_switch_name] = 'ne_sw_' + response_data.bs_switch_name
 		ip_port_dict['ne_sw_' + response_data.bs_switch_name] = {
 																	'ip_address' : response_data.bh_ip,
-																	'port' : response_data.bh_port,
+																	'port' : response_data.bs_switch_port,
 																	'node_name' : 'BS Switch'
 																}
 	}
@@ -492,7 +492,7 @@ function convertToVis(response, required_dom_id) {
 			if (response_data.far_end_bs_switch_ip != 'NA'){
 				nodes.add({
 				    id: 'fe_sw_' + response_data.far_end_bs_switch_name,
-				    label: createNodeLabel(response_data.far_end_bs_switch_ip, '', far_end_bs_switch_pl, far_end_bs_switch_latency, 'BS Switch'),
+				    label: createNodeLabel(response_data.far_end_bs_switch_ip, response_data.far_end_bs_switch_port, far_end_bs_switch_pl, far_end_bs_switch_latency, 'BS Switch'),
 				    image: switch_image,
 				    shape: 'image',
 				    title: '<span style="color:'+far_end_bs_switch_color_info_object.color+'"><i class="fa '+far_end_bs_switch_color_info_object.icon+'""></i> ' + far_end_bs_switch_severity + ' - ' + far_end_bs_switch_polled_val + '</span>'
@@ -503,7 +503,7 @@ function convertToVis(response, required_dom_id) {
 				device_nodeId_mapping[response_data.far_end_bs_switch_name] = 'fe_sw_' + response_data.far_end_bs_switch_name
 				ip_port_dict['fe_sw_' + response_data.far_end_bs_switch_name] = {
 																			'ip_address' : response_data.far_end_bs_switch_ip,
-																			'port' : '',
+																			'port' : response_data.far_end_bs_switch_port,
 																			'node_name' : 'BS Switch'
 																		}
 			}
@@ -555,7 +555,7 @@ function convertToVis(response, required_dom_id) {
 
 				    nodes.add({
 				    	id: 'sec_' + sectors[j].sect_ip_id_title,
-				    	label: createNodeLabel(sectors[j].sect_ip_id_title, '', sector_pl, sector_latency),
+				    	label: createNodeLabel(sectors[j].sect_ip_id_title, sectors[j].sect_port, sector_pl, sector_latency),
 				        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
 				        shape: 'image',
 				        image: sector_image_url
@@ -570,7 +570,7 @@ function convertToVis(response, required_dom_id) {
 			    	device_nodeId_mapping[sectors[j].device_name] = unique_sec_list
 			    	ip_port_dict['sec_' + sectors[j].sect_ip_id_title] = {
 																			'ip_address' : sectors[j].sect_ip_id_title,
-																			'port' : '',
+																			'port' : sectors[j].sect_port,
 																			'node_name' : ''
 																		}
 
@@ -690,7 +690,7 @@ function convertToVis(response, required_dom_id) {
 
 			    nodes.add({
 			    	id: 'sec_' + sectors[j].sect_ip_id_title,
-			    	label: createNodeLabel(sectors[j].sect_ip_id_title, '', sector_pl, sector_latency),
+			    	label: createNodeLabel(sectors[j].sect_ip_id_title, sectors[j].sect_port, sector_pl, sector_latency),
 			        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
 			        shape: 'image',
 			        image: sector_image_url
@@ -704,7 +704,7 @@ function convertToVis(response, required_dom_id) {
 			    device_nodeId_mapping[sectors[j].device_name] = unique_sec_list
 			    ip_port_dict['sec_' + sectors[j].sect_ip_id_title] = {
 																		'ip_address' : sectors[j].sect_ip_id_title,
-																		'port' : '',
+																		'port' : sectors[j].sect_port,
 																		'node_name' : ''
 																	}
 
