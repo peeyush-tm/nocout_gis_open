@@ -288,5 +288,5 @@ class RFOAnalysis(models.Model):
     master_causecode = models.CharField('Master Cause Code', max_length=256, null=True, blank=True)
     sub_causecode = models.CharField('Sub Cause Code', max_length=256, null=True, blank=True)
     outage_in_minutes = models.CharField('Outage In Minutes', max_length=256, null=True, blank=True)
-    timestamp = models.DateField('Report Month', blank=True, null=True)
+    timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
