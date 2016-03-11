@@ -514,6 +514,7 @@
             power_sms_url = '',
             save_power_log_url = '',
             device_reboot_url = '',
+            is_topo_tab_clicked = false,
             enable_reboot_btn = false;
 
         $(document).ready(function (e) {
@@ -859,6 +860,7 @@
            #power_tab,\
            #custom_dashboard"
         ).click(function (e) {
+            is_topo_tab_clicked = false
             // Show li panel
             $('.perfContainerBlock .box-title ul li:not(.pull-right)').removeClass('hide');
 
@@ -882,13 +884,14 @@
 
         // Fetch & Draw Topology view on tab click
         $("#topo_view").click(function(e) {
+            is_topo_tab_clicked = true
             // Show loading Spinner
             showSpinner();
 
             var single_bs_id = bs_id;
 
             $.ajax({
-                url: base_url +  "/performance/get_topology/?bs_id=" + bs_id,
+                url: base_url +  "/performance/get_topology/?bs_id="+bs_id+"&page_type="+page_type_val+"&device_id="+current_device+'&device_tech='+device_technology,
                 type: 'GET',
                 success: function(response) {
                     var result = response;
@@ -901,6 +904,34 @@
                         topo_api_data = result['data'];
                         // Calling function to convert JSON response to VIS lib format
                         convertToVis(result, topo_dom_id);
+
+                        // sending request for pl_info in given time period.
+                        refresh_id = setInterval(function() {
+
+                            // if topo_tab is not clicked than cancelling the request
+                            if (!is_topo_tab_clicked){
+                                clearInterval(refresh_id)
+                            }
+                            
+                            if (is_topo_tab_clicked) {
+                                $.ajax({
+                                    url : base_url + "/performance/EveryFiveMinDeviceStatus/?data=" + JSON.stringify(pl_device_list),
+                                    type : 'GET',
+                                    // data : JSON.stringify(pl_device_list),
+                                    success : function(response){
+                                        var result = response;
+                                        if (typeof result == 'string') {
+                                            result = JSON.parse(result);
+                                        }
+                                        // update network pl info in given time interval
+                                        updateNetworkPeriodically(result);
+                                    } 
+                                })    
+                            }
+                            
+
+                        }, 300000) //refreshing in every 5 Minutes = 5 * 60 * 1000
+
                     } else {
                         $.gritter.add({
                             // (string | mandatory) the heading of the notification
