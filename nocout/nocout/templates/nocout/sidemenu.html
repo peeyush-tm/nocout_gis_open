@@ -28,6 +28,13 @@
                             <span class="sub-menu-text">Sector Spot Dashboard</span>
                         </a>
                     </li>
+                    {% if settings.SHOW_RFO_DASHBOARD %}
+                    <li>
+                        <a href="{% url 'dashboard-rfo-analysis' %}">
+                            <span class="sub-menu-text">PB TT RFO Analysis</span>
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
             </li>
             
