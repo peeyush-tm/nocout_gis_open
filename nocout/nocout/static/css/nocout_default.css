@@ -782,3 +782,6 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
   border-color: #C7C7CE !important;
   margin-right: 10px;
 }
+#topo_network {
+  height: 500px;
+}
