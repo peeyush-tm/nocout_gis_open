@@ -829,7 +829,8 @@ SETTINGS_EXPORT = [
     'NETWORK_TICKET_URL',
     'CUSTOMER_TICKET_URL',
     'PERMISSIONS_MODULE_ENABLED',
-    'FAULT_REPORT_ENABLED'
+    'FAULT_REPORT_ENABLED',
+    'SHOW_RFO_DASHBOARD'
 ]
 
 # Dashbaord Settings
@@ -1256,6 +1257,8 @@ PERMISSIONS_MODULE_ENABLED = False
 
 # Enable/Disable fault reports from download center
 FAULT_REPORT_ENABLED = False
+
+SHOW_RFO_DASHBOARD = False
 
 # Import the local_settings.py file to override global settings
 try:
