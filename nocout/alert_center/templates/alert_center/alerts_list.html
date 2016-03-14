@@ -43,7 +43,11 @@
                             <span class="hidden-inline-mobile">PMP</span>
                         </a>
                     </li>
-                    <li class="active">
+                    {% if settings.SHOW_ALL_TAB_IN_ALERTS %}
+                        <li>
+                    {% else %}
+                        <li class="active">
+                    {% endif %}
                         <a href="#network_ptp_block" id="network_ptp_tab" data-toggle="tab">
                             <span class="hidden-inline-mobile">
                                 {% if page_type == 'customer' %}
@@ -54,6 +58,13 @@
                             </span>
                         </a>
                     </li>
+                    {% if settings.SHOW_ALL_TAB_IN_ALERTS %}
+                    <li class="active">
+                        <a href="#network_all_block" id="network_all_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">All (PMP/WiMAX)</span>
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
                     
@@ -81,6 +92,15 @@
                     {% if page_type|lower == 'network' %}
                     <div class="tab-pane" id="network_bh_block">
                         <table id="network_bh_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+
+                    {% if settings.SHOW_ALL_TAB_IN_ALERTS %}
+                    <div class="tab-pane active in " id="network_all_block">
+                        <table id="network_all_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -144,15 +164,18 @@
                 ptp_report_title = report_title_base+" - "+ptp_tech_txt,
                 pmp_report_title = report_title_base+" - PMP",
                 wimax_report_title = report_title_base+" - WiMAX",
+                all_report_title = report_title_base+" - All (PMP/WiMAX)",
                 converter_report_title = report_title_base+" - Backhaul",
                 common_hidden_columns = "'circuit_id', 'customer_name'";
 
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 
-            var ajax_url_wifi = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX' + '&page_type={{ page_type }}';
+            var ajax_url_wifi = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=WiMAX' + '&page_type={{ page_type }}';
 
-            var ajax_url_pmp = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'PMP' + '&page_type={{ page_type }}';
+            var ajax_url_pmp = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=PMP' + '&page_type={{ page_type }}';
+
+            var ajax_url_all = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=all' + '&page_type={{ page_type }}';
 
             var ajax_url_p2p = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'P2P' + '&page_type={{ page_type }}';
 
@@ -163,6 +186,8 @@
             var wimax_extra_param = "{'headers_data_key' : 'pmp_wimax_datatable_headers', 'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'WiMAX', 'page_type' : '{{ page_type }}', 'report_title' : '"+wimax_report_title+"', "+common_extra_param+" }";
             // PMP tab extra params
             var pmp_extra_param = "{'headers_data_key' : 'pmp_wimax_datatable_headers', 'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'PMP', 'page_type' : '{{ page_type }}', 'report_title' : '"+pmp_report_title+"', "+common_extra_param+" }";
+            // All (PMP/WiMAX) tab extra params
+            var all_extra_param = "{'headers_data_key' : 'pmp_wimax_datatable_headers', 'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'all', 'page_type' : '{{ page_type }}', 'report_title' : '"+all_report_title+"', "+common_extra_param+" }";
             // PTP tab extra params
             var ptp_extra_param = "{'headers_data_key' : 'ptp_datatable_headers', 'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'P2P', 'page_type' : '{{ page_type }}', 'report_title' : '"+ptp_report_title+"', "+common_extra_param+" }";
 
@@ -216,6 +241,15 @@
                     "data_extra_param" : pmp_extra_param,
                     "excluded" : "["+pmp_wimax_excluded_network+"]",
                 },
+                "network_all_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : all_report_title,
+                    "header_class_name" : "AlertCenterListing",
+                    "data_class_name" : "AlertListingTable",
+                    "header_extra_param" : all_extra_param,
+                    "data_extra_param" : all_extra_param,
+                    "excluded" : "["+pmp_wimax_excluded_network+"]",
+                },
                 "network_bh_tab" : {
                     "app_name" : "alert_center",
                     "table_title" : converter_report_title,
@@ -236,6 +270,9 @@
             $("#network_pmp_tab").attr("data_url", ajax_url_pmp);
             $("#network_pmp_tab").attr("data_header", '{{ pmp_wimax_datatable_headers|safe }}');
 
+            $("#network_all_tab").attr("data_url", ajax_url_all);
+            $("#network_all_tab").attr("data_header", '{{ pmp_wimax_datatable_headers|safe }}');
+
             $("#network_ptp_tab").attr("data_url", ajax_url_p2p);
             $("#network_ptp_tab").attr("data_header", '{{ ptp_datatable_headers|safe }}');
 
@@ -246,7 +283,11 @@
 
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
                 /*Trigger click event on PTP tab to load its data*/
-                $("#network_ptp_tab").trigger('click');
+                if ($('#network_all_tab').length > 0) {
+                    $("#network_all_tab").trigger('click');
+                } else {
+                    $("#network_ptp_tab").trigger('click');
+                }
             }
         });
     </script>
