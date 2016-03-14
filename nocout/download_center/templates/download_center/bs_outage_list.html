@@ -30,11 +30,11 @@
         <div id="tableContainer" class="box-body">
         	<div class="tabbable header-tabs">
 	            <ul class="nav nav-tabs">
-	                <li>
+	                <!-- <li>
 	                    <a href="#custom_outage_block" id="custom_outage_tab" data-toggle="tab">
 	                        <span class="hidden-inline-mobile">Custom Range</span>
 	                    </a>
-	                </li>
+	                </li> -->
 	                <li>
 	                    <a href="#monthly_outage_block" id="monthly_outage_tab" data-toggle="tab">
 	                        <span class="hidden-inline-mobile">Monthly</span>
@@ -70,7 +70,7 @@
 			                <tbody></tbody>
 			            </table>
 	                </div>
-	                <div class="tab-pane" id="custom_outage_block">
+	                <!-- <div class="tab-pane" id="custom_outage_block">
 	                	<div class="col-md-2">
 	                		<label style="vertical-align: sub;">Select Date Range: </label>
 	                	</div>
@@ -88,7 +88,7 @@
 			                <thead></thead>
 			                <tbody></tbody>
 			            </table>
-	                </div>
+	                </div> -->
 	            </div>
 	        </div>
         </div>
@@ -100,8 +100,8 @@
     <!-- Library to load tab content on tab click-->
     <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <!-- Bootstrap daterange picker -->
-    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
-    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
+    <!-- <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script> -->
+    <!-- <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script> -->
     <script type="text/javascript">
         var dataTableInstance = '',
         	custom_startdate = '',
@@ -146,103 +146,103 @@
             	maxDate = new Date();
 
             // Initialize daterangepicker
-            $('#bsoutage_daterange').daterangepicker({
-	            timePicker: true,
-	            timePickerIncrement: 1,
-	            opens: "right",
-	            showDropdowns: true,
-	            ranges: {
-	                'Last 7 Days': [moment().subtract('days', 7), moment().subtract('days', 1)],
-	                'Last 30 Days': [moment().subtract('days', 30), moment().subtract('days', 1)],
-	                'This Month': [moment().startOf('month'), moment().endOf('month')],
-	                'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
-	            },
-	            buttonClasses: ['btn btn-sm'],
-	            applyClass: 'btn-primary',
-	            cancelClass: 'btn-default',
-	            format: "DD-MM-YYYY HH:mm:ss",
-	            separator: ' to ',
-	            minDate: minDate,
-       			maxDate: maxDate,
-	        }, function (start, end) {
-	            custom_startdate = start;
-	            custom_enddate = end;
-	        });
+         //    $('#bsoutage_daterange').daterangepicker({
+	        //     timePicker: true,
+	        //     timePickerIncrement: 1,
+	        //     opens: "right",
+	        //     showDropdowns: true,
+	        //     ranges: {
+	        //         'Last 7 Days': [moment().subtract('days', 7), moment().subtract('days', 1)],
+	        //         'Last 30 Days': [moment().subtract('days', 30), moment().subtract('days', 1)],
+	        //         'This Month': [moment().startOf('month'), moment().endOf('month')],
+	        //         'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
+	        //     },
+	        //     buttonClasses: ['btn btn-sm'],
+	        //     applyClass: 'btn-primary',
+	        //     cancelClass: 'btn-default',
+	        //     format: "DD-MM-YYYY HH:mm:ss",
+	        //     separator: ' to ',
+	        //     minDate: minDate,
+       		// 	maxDate: maxDate,
+	        // }, function (start, end) {
+	        //     custom_startdate = start;
+	        //     custom_enddate = end;
+	        // });
 
             /**
              * This event trigger when download report button clicked
              * @event click
              */
-			$('#download_outage_report').click(function(e) {
+			// $('#download_outage_report').click(function(e) {
 				
-				if (custom_startdate && custom_enddate) {
-					var data_class_name = 'BSOutageCustomReportListing',
-						header_class_name = 'BSOutageCustomReportHeaders',
-						startdate_obj = custom_startdate.toDate(),
-						enddate_obj = custom_enddate.toDate(),
-						start_day = startdate_obj.getDate() > 9 ? startdate_obj.getDate() : '0' + String(startdate_obj.getDate()),
-						start_month = startdate_obj.getMonth() > 9 ? (Number(startdate_obj.getMonth()) + 1) : '0' + String(Number(startdate_obj.getMonth()) + 1),
-						start_year = startdate_obj.getFullYear(),
-						startdate_title = start_day + '-' + start_month + '-' + start_year,
-						enddate_title = enddate_obj.getDate() + '-' + (Number(enddate_obj.getMonth()) + 1) + '-' + enddate_obj.getFullYear(),
-						epoch_startdate = startdate_obj.getTime() / 1000,
-						epoch_enddate = custom_enddate.toDate().getTime() / 1000,
-						main_url = base_url+"/downloader/datatable/?",
-						report_title = 'Custom Date Raw Base Station Outage('+ startdate_title +' To '+ enddate_title +')',
-						datetime_filter_param = "'start_date' : '" + epoch_startdate + "', 'end_date' : '" + epoch_enddate + "'",
-				        common_param = "'download_excel' : 'yes', 'report_title' : '" + report_title + "'",
-				        row_data_param = datetime_filter_param + ',' + common_param,
-				        url_get_param = '';
+			// 	if (custom_startdate && custom_enddate) {
+			// 		var data_class_name = 'BSOutageCustomReportListing',
+			// 			header_class_name = 'BSOutageCustomReportHeaders',
+			// 			startdate_obj = custom_startdate.toDate(),
+			// 			enddate_obj = custom_enddate.toDate(),
+			// 			start_day = startdate_obj.getDate() > 9 ? startdate_obj.getDate() : '0' + String(startdate_obj.getDate()),
+			// 			start_month = startdate_obj.getMonth() > 9 ? (Number(startdate_obj.getMonth()) + 1) : '0' + String(Number(startdate_obj.getMonth()) + 1),
+			// 			start_year = startdate_obj.getFullYear(),
+			// 			startdate_title = start_day + '-' + start_month + '-' + start_year,
+			// 			enddate_title = enddate_obj.getDate() + '-' + (Number(enddate_obj.getMonth()) + 1) + '-' + enddate_obj.getFullYear(),
+			// 			epoch_startdate = startdate_obj.getTime() / 1000,
+			// 			epoch_enddate = custom_enddate.toDate().getTime() / 1000,
+			// 			main_url = base_url+"/downloader/datatable/?",
+			// 			report_title = 'Custom Date Raw Base Station Outage('+ startdate_title +' To '+ enddate_title +')',
+			// 			datetime_filter_param = "'start_date' : '" + epoch_startdate + "', 'end_date' : '" + epoch_enddate + "'",
+			// 	        common_param = "'download_excel' : 'yes', 'report_title' : '" + report_title + "'",
+			// 	        row_data_param = datetime_filter_param + ',' + common_param,
+			// 	        url_get_param = '';
 
-				    // prepare get params
-				    url_get_param += "app=download_center";
-				    url_get_param += "&rows="+data_class_name;
-				    url_get_param += "&rows_data={" + row_data_param + "}"
-				    url_get_param += "&headers="+header_class_name;
-				    url_get_param += "&headers_data={" + common_param + "}";
+			// 	    // prepare get params
+			// 	    url_get_param += "app=download_center";
+			// 	    url_get_param += "&rows="+data_class_name;
+			// 	    url_get_param += "&rows_data={" + row_data_param + "}"
+			// 	    url_get_param += "&headers="+header_class_name;
+			// 	    url_get_param += "&headers_data={" + common_param + "}";
 
-				    var api_url = main_url + url_get_param;
+			// 	    var api_url = main_url + url_get_param;
 
-				    // Make Ajax Call
-				    $.ajax({
-				        url : api_url,
-				        type : 'GET',
-				        success : function(response) {
-				            var result = response;
-				            // parse response if stringified.
-				            if(typeof response == 'string') {
-				                result = JSON.parse(response);
-				            }
+			// 	    // Make Ajax Call
+			// 	    $.ajax({
+			// 	        url : api_url,
+			// 	        type : 'GET',
+			// 	        success : function(response) {
+			// 	            var result = response;
+			// 	            // parse response if stringified.
+			// 	            if(typeof response == 'string') {
+			// 	                result = JSON.parse(response);
+			// 	            }
 
-				            $.gritter.add({
-				                // (string | mandatory) the heading of the notification
-				                title: report_title,
-				                // (string | mandatory) the text inside the notification
-				                text: result.message,
-				                // (bool | optional) if you want it to fade out on its own or just sit there
-				                sticky: false,
-				                // Time in ms after which the gritter will dissappear.
-				                time : 1000
-				            });
-				        },
-				        error : function(err) {
-				            $.gritter.add({
-				                // (string | mandatory) the heading of the notification
-				                title: report_title,
-				                // (string | mandatory) the text inside the notification
-				                text: err.statusText,
-				                // (bool | optional) if you want it to fade out on its own or just sit there
-				                sticky: false,
-				                // Time in ms after which the gritter will dissappear.
-				                time : 1000
-				            });
-				        }
-				    });
+			// 	            $.gritter.add({
+			// 	                // (string | mandatory) the heading of the notification
+			// 	                title: report_title,
+			// 	                // (string | mandatory) the text inside the notification
+			// 	                text: result.message,
+			// 	                // (bool | optional) if you want it to fade out on its own or just sit there
+			// 	                sticky: false,
+			// 	                // Time in ms after which the gritter will dissappear.
+			// 	                time : 1000
+			// 	            });
+			// 	        },
+			// 	        error : function(err) {
+			// 	            $.gritter.add({
+			// 	                // (string | mandatory) the heading of the notification
+			// 	                title: report_title,
+			// 	                // (string | mandatory) the text inside the notification
+			// 	                text: err.statusText,
+			// 	                // (bool | optional) if you want it to fade out on its own or just sit there
+			// 	                sticky: false,
+			// 	                // Time in ms after which the gritter will dissappear.
+			// 	                time : 1000
+			// 	            });
+			// 	        }
+			// 	    });
 
-				} else {
-					bootbox.alert('Please select start & end date.')
-				}
-			});
+			// 	} else {
+			// 		bootbox.alert('Please select start & end date.')
+			// 	}
+			// });
         });
     </script>
 {% endblock %}
