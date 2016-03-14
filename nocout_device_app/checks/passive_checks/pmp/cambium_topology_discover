@@ -43,12 +43,12 @@ def check_cambium_topology_discover(item, params, info):
     state = 3
     infotext = "unknown"
     ss_list= []
-    ss_value =[]
+    #ss_value =[]
     try:
         if info:
 	    infotext = ""
 	    for i in range(len(info)):
-		
+		ss_value =[]
 		if i == 0:
 			ap_ip = info[i][1]
 			ap_mac = info[i][0]
