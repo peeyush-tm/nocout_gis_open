@@ -57,8 +57,9 @@ $('input[name="alarm_type"]').change(function(e) {
         updated_url_all = "";
 
     // Update converter url
-    var array1 = converter_url.split("?"),
-        array2 = array1[1].split("&");
+    var array1 = converter_url ? converter_url.split("?") : [],
+        array2 = array1 && array1.length > 1 ? array1[1].split("&") : [];
+
     array2[0] = new_get_param
     array1[1] = array2.join('&');
     updated_url_converter = array1.join('?')
