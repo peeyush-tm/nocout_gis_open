@@ -830,7 +830,8 @@ SETTINGS_EXPORT = [
     'CUSTOMER_TICKET_URL',
     'PERMISSIONS_MODULE_ENABLED',
     'FAULT_REPORT_ENABLED',
-    'SHOW_RFO_DASHBOARD'
+    'SHOW_RFO_DASHBOARD',
+    'SHOW_ALL_TAB_IN_ALERTS'
 ]
 
 # Dashbaord Settings
@@ -1259,6 +1260,8 @@ PERMISSIONS_MODULE_ENABLED = False
 FAULT_REPORT_ENABLED = False
 
 SHOW_RFO_DASHBOARD = False
+
+SHOW_ALL_TAB_IN_ALERTS = False
 
 # Import the local_settings.py file to override global settings
 try:
