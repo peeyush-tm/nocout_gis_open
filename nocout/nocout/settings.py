@@ -831,7 +831,9 @@ SETTINGS_EXPORT = [
     'PERMISSIONS_MODULE_ENABLED',
     'FAULT_REPORT_ENABLED',
     'SHOW_RFO_DASHBOARD',
-    'SHOW_ALL_TAB_IN_ALERTS'
+    'SHOW_ALL_TAB_IN_ALERTS',
+    'GLOBAL_SEARCH_BY_BS_NAME',
+    'IDU_SEC_COMMON_UTIL_TAB'
 ]
 
 # Dashbaord Settings
@@ -911,6 +913,12 @@ ENABLE_BIRDEYE_VIEW = False
 
 # Flag to enable/disable custom dashboards on single performance page.
 ENABLE_CUSTOM_DASHBOARD_VIEW = False
+
+# Flag to enable global search by Base station name
+GLOBAL_SEARCH_BY_BS_NAME = False
+
+# Flag to enable common utilization tab for IDU Ip and Sector ID global search
+IDU_SEC_COMMON_UTIL_TAB = False
 
 # Password complexity settings.
 # ===============================

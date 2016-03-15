@@ -26,6 +26,9 @@
                                         <option value="circuit_id">Circuit ID</option>
                                         <option value="mac_address">MAC Address</option>
                                         <option value="sector_id">Sector ID</option>
+                                        {% if settings.GLOBAL_SEARCH_BY_BS_NAME %}
+                                        <option value="alias">BS Name</option>
+                                        {% endif %}
                                     </select>
                                 </li>
                                 <li>
