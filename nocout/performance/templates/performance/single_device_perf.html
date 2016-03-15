@@ -96,6 +96,14 @@
         #birdeye_container table tbody tr td {
             font-size: 12px !important;
         }
+        .perf_device_settings {
+            margin-bottom: 0px;
+        }
+        .perf_device_settings li:not(:nth-child(1)) {
+            padding-left: 0px;
+            padding-right: 0px;
+            margin-top: 2px;
+        }
     </style>
     <!--Device Status Block Start-->
     <div id="status_container" style="overflow:auto;">
@@ -115,7 +123,7 @@
         <div class='box-title'>
             <h4 class="hide">{{ realdevice.device_alias }} ({{ realdevice.ip_address }})</h4>
             <!-- Filters Block - Start-->
-            <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
+            <ul class="list-unstyled list-inline perf_device_settings">
                 <li class="date_range_filter_container">
                     <div class="input-group">
                         <span class="input-group-addon">
@@ -147,7 +155,7 @@
                     </label>
 
                     <div class="btn-group dropdown">
-                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="item_type_btn" title="Display Chart/Table">
+                        <button class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown" id="item_type_btn" title="Display Chart/Table">
                             <i class="text-primary fa fa-bar-chart-o"> </i>  Display Chart
                             <span class="caret"></span>
                         </button>
@@ -176,7 +184,7 @@
                     </label>
 
                     <div class="btn-group dropdown">
-                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="service_view_type_btn" title="Datasource/Service View">
+                        <button class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown" id="service_view_type_btn" title="Datasource/Service View">
                             <i class="text-primary fa fa-bar-chart-o"> </i> Datasource View
                             <span class="caret"></span>
                         </button>
@@ -188,11 +196,27 @@
                             </li>
                             <li>
                                 <a href="javascript:;" radioId="unified_view">
-                                    <i class="fa fa-bar-chart-o"> </i> Service View
+                                    <i class="fa fa-bar-chart-o"> </i> Service View 
                                 </a>
                             </li>
                         </ul>
                     </div>
+                </li>
+                {% endif %}
+
+                {% if settings.SHOW_SECTOR_LINK_ON_SS and sector_perf_url %}
+                <li>
+                    <a href="{{ sector_perf_url }}" target="_blank" class="btn btn-default btn-sm" title="Redirect to Sector Utilization">
+                        <i class="fa fa-bar-chart-o"></i> Sector UL
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if settings.SHOW_BH_LINK_ON_SS and sector_perf_url %}
+                <li>
+                    <a href="{{ bh_perf_url }}" target="_blank" class="btn btn-default btn-sm" title="Redirect to Backhaul Utilization">
+                        <i class="fa fa-bar-chart-o"></i> BH UL
+                    </a>
                 </li>
                 {% endif %}
 

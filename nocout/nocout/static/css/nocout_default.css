@@ -313,7 +313,7 @@ iframe {
   margin-bottom:5px;
 }
 .date_range_filter_container .form-control {
-  height:31px !important;
+  height: 30px !important;
 }
 #main_dashboard_container .box-body h5, #main_dashboard_container .box-body h4 {
   margin-top: 0px !important;

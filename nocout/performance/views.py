@@ -679,6 +679,8 @@ class GetPerfomance(View):
         except Exception, e:
             is_viewer_flag = 0       
 
+        sector_perf_url = None
+        bh_perf_url = None
         try:
             if device.sector_configured_on.exists():
                 bs_obj = device.sector_configured_on.filter()[0].base_station
@@ -689,13 +691,32 @@ class GetPerfomance(View):
                 bs_alias = bs_obj.alias
                 bs_id = [str(bs_obj.id)]
             elif device.substation_set.exists():
-                bs_obj = Sector.objects.get(
+                sector_obj = Sector.objects.get(
                     id=Circuit.objects.get(
                         sub_station=device.substation_set.get().id
                     ).sector_id
-                ).base_station
+                )
+                bs_obj = sector_obj.base_station
                 bs_alias = bs_obj.alias
                 bs_id = [str(bs_obj.id)]
+
+                try:
+                    sector_perf_url  = reverse(
+                        'SingleDevicePerf',
+                        kwargs={'page_type': 'network', 'device_id': sector_obj.sector_configured_on.id},
+                        current_app='performance'
+                    )
+                except Exception, e:
+                    pass
+
+                try:
+                    bh_perf_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={'page_type': 'other', 'device_id': bs_obj.backhaul.bh_configured_on.id},
+                        current_app='performance'
+                    )
+                except Exception, e:
+                    pass
             elif device.backhaul.exists() or device.backhaul_switch.exists() or device.backhaul_pop.exists() \
                 or device.backhaul_aggregator.exists():
                 bh_id = None
@@ -789,6 +810,12 @@ class GetPerfomance(View):
             service_ds_url = 'performance/get_inventory_service_data_sources\
                             /device/'+str(device_id)+'/?is_util='+str(is_util_tab)
 
+        if sector_perf_url:
+            sector_perf_url += '?is_util=1'
+
+        if bh_perf_url:
+            bh_perf_url += '?is_util=1'
+
         page_data = {
             'page_title': page_type.capitalize(),
             'device_technology': device_technology,
@@ -808,7 +835,9 @@ class GetPerfomance(View):
             'is_radwin5' : is_radwin5,
             'is_viewer_flag': is_viewer_flag,
             'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id),
-            'power_listing_headers': json.dumps(power_listing_headers)
+            'power_listing_headers': json.dumps(power_listing_headers),
+            'sector_perf_url': sector_perf_url,
+            'bh_perf_url': bh_perf_url
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
