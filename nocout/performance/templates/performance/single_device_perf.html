@@ -671,6 +671,26 @@
                 $('.controls_container ul').prepend('<li>' + inventory_link_html + '</li>');
                 $('.controls_container ul').prepend('<li>' + alert_link_html + '</li>');
 
+                {% if settings.TICKETS_LINK_ON_PERF_PAGE %}
+                if (page_type_val == 'customer') {
+                    var li_placeholder = '<li><a href="{0}" class="btn btn-sm text-dark" \
+                                          target="_blank"><i class="fa fa-link"></i> {1}</a></li>',
+                        pb_html = '',
+                        inc_html = '';
+
+                    inc_html = li_placeholder;
+                    inc_html = inc_html.replace('{0}', "{{ settings.CUSTOMER_TICKET_URL }}");
+                    inc_html = inc_html.replace('{1}', 'INC Ticket');
+
+                    pb_html = li_placeholder;
+                    pb_html = pb_html.replace('{0}', "{{ settings.NETWORK_TICKET_URL }}");
+                    pb_html = pb_html.replace('{1}', 'PB Ticket');
+                    // Append PB & INC ticket link on page
+                    $('.controls_container ul').prepend(inc_html);
+                    $('.controls_container ul').prepend(pb_html);
+                }
+                {% endif %}
+
 
                 if(inventory_url) {
                     $("#inventory_link_tag").attr("href",inventory_url);
