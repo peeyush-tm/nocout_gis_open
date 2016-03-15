@@ -3298,6 +3298,20 @@ class GetServiceTypePerformanceData(View):
                 if dr_ip and dr_ip == show_ip_address:
                     show_ip_address += " (DR)"
 
+                action_html = 'NA'
+                try:
+                    if data.connected_device_ip:
+                        device_instance = Device.objects.get(ip_address=data.connected_device_ip)
+                        perf_page_url = reverse(
+                            'SingleDevicePerf',
+                            kwargs={'page_type': 'customer', 'device_id': device_instance.id},
+                            current_app='performance'
+                        )
+                        action_html = '<a href="{0}" title="Device Performance" target="_blank"> \
+                                       <i class="fa fa-bar-chart-o text-info"></i></a>'.format(perf_page_url)
+                except Exception, e:
+                    pass
+
                 result_data.append({
                     #'device_name': data.device_name,
                     'ip_address': show_ip_address,
@@ -3313,6 +3327,7 @@ class GetServiceTypePerformanceData(View):
                     # 'up_down_since': status_since,
                     'last_down_time': last_down,
                     'last_updated': last_updated,
+                    'action': action_html
                 })
 
         #here we will append the rest of the SS
@@ -3355,6 +3370,21 @@ class GetServiceTypePerformanceData(View):
                     continue
 
                 if sector_id:
+
+                    action_html = 'NA'
+                    try:
+                        if device_ip:
+                            device_instance = Device.objects.get(ip_address=device_ip)
+                            perf_page_url = reverse(
+                                'SingleDevicePerf',
+                                kwargs={'page_type': 'customer', 'device_id': device_instance.id},
+                                current_app='performance'
+                            )
+                            action_html = '<a href="{0}" title="Device Performance" target="_blank"> \
+                                           <i class="fa fa-bar-chart-o text-info"></i></a>'.format(perf_page_url)
+                    except Exception, e:
+                        pass
+
                     result_data.append({
                         #'device_name': data.device_name,
                         'ip_address': sector_ip,
@@ -3370,6 +3400,7 @@ class GetServiceTypePerformanceData(View):
                         # 'up_down_since': status_since,
                         'last_down_time': last_down,
                         'last_updated': last_updated,
+                        'action': action_html
                     })
 
         self.result['success'] = 1
@@ -3387,7 +3418,8 @@ class GetServiceTypePerformanceData(View):
             'packet_loss',
             'latency',
             'last_down_time',
-            'last_updated'
+            'last_updated',
+            'action'
         ]
 
         return self.result
