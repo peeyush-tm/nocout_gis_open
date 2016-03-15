@@ -291,3 +291,13 @@ class RFOAnalysis(models.Model):
     mttr = models.CharField('MTTR', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
+
+class CustomerFaultAnalysis(models.Model):
+    """
+    This model contains data for INC Ticket Rate
+    """
+    serial_no = models.CharField('Serial No.', max_length=256, null=True, blank=True)
+    docket_id = models.CharField('Docket ID', max_length=256, null=True, blank=True)
+    severity = models.CharField('Severity', max_length=256, null=True, blank=True)
+    downtime_slab = models.CharField('Downtime Slab', max_length=256, null=True, blank=True)
+    timestamp = models.DateTimeField('Report Month', blank=True, null=True)
