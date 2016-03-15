@@ -317,5 +317,20 @@ urlpatterns = patterns('',
         r'^rfo_analysis/summation_listing/$',
         views.RFOAnalysisSummationList.as_view(),
         name='rfo-analysis-summation-data'
+    ),
+    url(
+        r'^mttr_summary/$',
+        views.LoadMTTRSummaryTemplate.as_view(),
+        name='rfo-analysis-mttr-summary'
+    ),
+    url(
+        r'^mttr/summary/$',
+        views.MTTRSummaryData.as_view(),
+        name='rfo-analysis-mttr-summary-data'
+    ),
+    url(
+        r'^mttr/detail/$',
+        views.MTTRDetailData.as_view(),
+        name='rfo-analysis-mttr-detail-data'
     )
 )

@@ -288,5 +288,16 @@ class RFOAnalysis(models.Model):
     master_causecode = models.CharField('Master Cause Code', max_length=256, null=True, blank=True)
     sub_causecode = models.CharField('Sub Cause Code', max_length=256, null=True, blank=True)
     outage_in_minutes = models.CharField('Outage In Minutes', max_length=256, null=True, blank=True)
+    mttr = models.CharField('MTTR', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
+
+class CustomerFaultAnalysis(models.Model):
+    """
+    This model contains data for INC Ticket Rate
+    """
+    serial_no = models.CharField('Serial No.', max_length=256, null=True, blank=True)
+    docket_id = models.CharField('Docket ID', max_length=256, null=True, blank=True)
+    severity = models.CharField('Severity', max_length=256, null=True, blank=True)
+    downtime_slab = models.CharField('Downtime Slab', max_length=256, null=True, blank=True)
+    timestamp = models.DateTimeField('Report Month', blank=True, null=True)
