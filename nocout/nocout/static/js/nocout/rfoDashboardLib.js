@@ -19,77 +19,32 @@ var chart_colors_list = [
         '#e1ac96', '#3c2e28', '#53856d', '#b24747', '#a5e79b',
         '#77e180', '#488864', '#8e92a2', '#ff0033', '#9bc7ae',
         '#528969', '#ffdeed', '#b296a2', '#fb6547', '#e58e7c'
-    ];
-
-/**
- * This event trigger when any filter control selectbox value changed
- * @event Change
- */
-$('.filter_controls').change(function(e) {
-    
-    // When state select then show cities of that state only
-    if ($(this).attr('name').indexOf('state') > -1) {
-        var selected_val = $(this).val();
-        $('select[name="city_selector"] option').show();
-        if (selected_val) {
-            $('select[name="city_selector"]').val('');
-            $('select[name="city_selector"] option:not([parent_id="'+selected_val+'"])').hide();
-            $('select[parent_id="'+selected_val+'"] option').show();
+    ],
+    middle_legends = {
+        itemDistance : 15,
+        itemMarginBottom : 5,
+        borderColor : "#CCCCCC",
+        borderWidth : "1",
+        borderRadius : "8",
+        itemStyle: {
+            color: '#555555',
+            fontSize : '10px'
         }
-    }
-
-    initRfoDashboard();
-});
-
-/**
- * This function updates given filter selectbox values as per given data
- * @method updateFiltersContent
- * @param dataset {Array}, It contains the data which has to be populate in respective selectbox
- * @param filter_name {String}, It contains the prefix name(unique) of selectbox
- * @param filter_title {String}, It contains the filter title which shown in blank value of selectbox
- */
-function updateFiltersContent(dataset, filter_name, filter_title) {
-    var selector_id = 'select[name="' + filter_name + '_selector"]';
-    if ($(selector_id).length) {
-        
-        var selectbox_html = '<option value="">Select '+filter_title+'</option>';
-        if (filter_name == 'month') {
-            var selectbox_html = '';
-        }
-
-        for (var i=0; i<dataset.length; i++) {
-            if (filter_name == 'month') {
-                try {
-                    var id = dataset[i]['id'],
-                        timestamp_obj = new Date(Number(id));
-
-                    var value = month_dict[timestamp_obj.getMonth()] + ' - ' + timestamp_obj.getFullYear(),
-                        selected_item = '';
-                    
-                    if (i == dataset.length - 1) {
-                        selected_item = 'SELECTED="SELECTED"';
-                    }
-
-                    selectbox_html += '<option value="' + id + '" ' + selected_item + '>' + value + '</option>';
-                } catch(e) {
-                    // console.error(e);
-                }
-            } else {
-                var parent_id = '';
-                if (filter_name == 'city') {
-                    parent_id = dataset[i]['state_id'];
-                }
-                try {
-                    selectbox_html += '<option parent_id="' + parent_id + '" value="' + dataset[i]['id'] + '">' + dataset[i]['value'] + '</option>';
-                } catch(e) {
-                    // console.error(e);
-                }
-            }
-        }
-
-        $(selector_id).html(selectbox_html);
-    }
-}
+    },
+    side_legends = {
+        itemDistance : 15,
+        itemMarginBottom : 5,
+        borderColor : "#CCCCCC",
+        borderWidth : "1",
+        borderRadius : "8",
+        itemStyle: {
+            color: '#555555',
+            fontSize : '10px'
+        },
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'middle'
+    };;
 
 /**
  * This function initializes RFO dashboard. It calls function to poplates charts/tables.
@@ -171,6 +126,98 @@ function initRfoDashboard() {
     // Hide Loading Spinner
     hideSpinner();
 }
+
+function initMTTRDashboard() {
+
+    var selected_month = $('select[name="month_selector"]').val(),
+        selected_state = $('select[name="state_selector"]').val(),
+        selected_city = $('select[name="city_selector"]').val();
+
+    if (selected_month) {
+        selected_month = Number(selected_month) / 1000;
+    }
+
+    loadMTTRSummaryChart(mttr_summary_url,String(selected_month), selected_state, selected_city, {'is_normal': true});
+    // Hide Loading Spinner
+    hideSpinner();
+}
+
+/**
+ * This event trigger when any filter control selectbox value changed
+ * @event Change
+ */
+$('.filter_controls').change(function(e) {
+    
+    // When state select then show cities of that state only
+    if ($(this).attr('name').indexOf('state') > -1) {
+        var selected_val = $(this).val();
+        $('select[name="city_selector"] option').show();
+        if (selected_val) {
+            $('select[name="city_selector"]').val('');
+            $('select[name="city_selector"] option:not([parent_id="'+selected_val+'"])').hide();
+            $('select[parent_id="'+selected_val+'"] option').show();
+        }
+    }
+
+    if (window.location.pathname.indexOf('/mttr_summary/') > -1) {
+        initMTTRDashboard()
+    } else if (window.location.pathname.indexOf('/rfo_analysis/') > -1) {
+        initRfoDashboard();
+    }
+});
+
+/**
+ * This function updates given filter selectbox values as per given data
+ * @method updateFiltersContent
+ * @param dataset {Array}, It contains the data which has to be populate in respective selectbox
+ * @param filter_name {String}, It contains the prefix name(unique) of selectbox
+ * @param filter_title {String}, It contains the filter title which shown in blank value of selectbox
+ */
+function updateFiltersContent(dataset, filter_name, filter_title) {
+    var selector_id = 'select[name="' + filter_name + '_selector"]';
+    if ($(selector_id).length) {
+        
+        var selectbox_html = '<option value="">Select '+filter_title+'</option>';
+        if (filter_name == 'month') {
+            var selectbox_html = '';
+        }
+
+        for (var i=0; i<dataset.length; i++) {
+            if (filter_name == 'month') {
+                try {
+                    var id = dataset[i]['id'],
+                        timestamp_obj = new Date(Number(id));
+
+                    var value = month_dict[timestamp_obj.getMonth()] + ' - ' + timestamp_obj.getFullYear(),
+                        selected_item = '';
+                    
+                    if (i == dataset.length - 1) {
+                        selected_item = 'SELECTED="SELECTED"';
+                    }
+
+                    selectbox_html += '<option value="' + id + '" ' + selected_item + '>' + value + '</option>';
+                } catch(e) {
+                    // console.error(e);
+                }
+            } else {
+                if (dataset[i]['value'] && dataset[i]['id']) {
+                    var parent_id = '';
+                    if (filter_name == 'city') {
+                        parent_id = dataset[i]['state_id'];
+                    }
+                    try {
+                        selectbox_html += '<option parent_id="' + parent_id + '" value="' + dataset[i]['id'] + '">' + dataset[i]['value'] + '</option>';
+                    } catch(e) {
+                        // console.error(e);
+                    }
+                }
+            }
+        }
+
+        $(selector_id).html(selectbox_html);
+    }
+}
+
 
 /**
  * This function fetch data & loads master cause code column chart
@@ -317,32 +364,6 @@ function loadRFOColumnChart(ajax_url, month, selected_state, selected_city) {
  */
 function createFaultPieChart(api_url, master_causecode_name) {
 
-    var middle_legends = {
-            itemDistance : 15,
-            itemMarginBottom : 5,
-            borderColor : "#CCCCCC",
-            borderWidth : "1",
-            borderRadius : "8",
-            itemStyle: {
-                color: '#555555',
-                fontSize : '10px'
-            }
-        },
-        side_legends = {
-            itemDistance : 15,
-            itemMarginBottom : 5,
-            borderColor : "#CCCCCC",
-            borderWidth : "1",
-            borderRadius : "8",
-            itemStyle: {
-                color: '#555555',
-                fontSize : '10px'
-            },
-            layout: 'vertical',
-            align: 'right',
-            verticalAlign: 'middle'
-        };
-
     $.ajax({
         url: api_url,
         type: 'GET',
@@ -464,6 +485,148 @@ function createFaultPieChart(api_url, master_causecode_name) {
             // console.log(err.statusText);
             // Hide Loading Spinner
             hideSpinner();
+        }
+    });
+}
+
+
+/**
+ *
+ */
+function loadMTTRSummaryChart(ajax_url, month, selected_state, selected_city, extra_info) {
+    if (ajax_url.indexOf('?') > -1) {
+        ajax_url +='&month='+month+'&state_name=' + selected_state + '&city_name='+ selected_city;
+    } else {
+        ajax_url +='?month='+month+'&state_name=' + selected_state + '&city_name='+ selected_city;
+    }
+     
+    $.ajax({
+        url: ajax_url,
+        type: 'GET',
+        success: function(response) {
+
+            if (typeof(response) == 'string') {
+                response = JSON.parse(response);
+            }
+
+            if (response['success']) {
+                var current_dateobj = new Date(Number(month) * 1000),
+                    month_txt = month_dict[current_dateobj.getMonth()],
+                    year_txt = current_dateobj.getFullYear(),
+                    year_month_str = month_txt && year_txt ? month_txt + ' ' + year_txt : '',
+                    column_series_data = [],
+                    categories = [],
+                    chart_dom_id = '';
+
+                var chart_legends = middle_legends;
+
+                if (extra_info['is_normal']) {
+                    chart_dom_id = 'mttr_summary_chart_container';
+                } else {
+                    chart_dom_id = 'mttr_detail_chart_container';
+
+                    var bootbox_html = '';
+
+                    bootbox_html += '<div id="' + chart_dom_id + '" align="center">\
+                                        <div id="fault_pie_chart"></div>\
+                                    </div>';
+
+                    bootbox.dialog({
+                        message: bootbox_html,
+                        title: '<i class="fa fa-bar-chart">&nbsp;</i> MTTR - ' + extra_info['series_name']
+                    });
+
+                    // Update Modal width to 90%;
+                    $(".modal-dialog").css("width","90%");
+
+                    // If more items in chart then show legends in right side(vertically)
+                    if (response['data'].length > 5) {
+                        chart_legends = side_legends;
+                    }
+                }
+
+                // Initialize column chart for master cause code
+                $('#'+ chart_dom_id).highcharts({
+                    chart: {
+                        type: 'pie'
+                    },
+                    colors: chart_colors_list,
+                    title: {
+                        text: '',
+                        align: 'left'
+                    },
+                    tooltip: {
+                        formatter: function () {
+                            var series_name = this.point.name ? $.trim(this.point.name) : "Value",
+                                tooltip_html = "";
+
+                            if (extra_info['is_normal']) {
+                                tooltip_html += '<ul><li><b>MTTR Summary</b></li><br/>';
+                            } else {
+                                tooltip_html += '<ul><li><b>' + extra_info['series_name'] + '</b></li><br/>';
+                            }
+                            tooltip_html += '<li>'+series_name+' : '+this.point.y+'%</li><br/></ul>';
+
+                            return tooltip_html;
+                        }
+                    },
+                    legend: chart_legends,
+                    credits: {
+                        enabled: false
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: false
+                            },
+                            showInLegend: true
+                        },
+                        series: {
+                            point: {
+                                events: {
+                                    click: function(e) {
+                                        if (extra_info['is_normal']) {
+                                            // Show Loading Spinner
+                                            showSpinner();
+                                            var series_name = this.name;
+
+                                            // Call "createFaultPieChart" to show pie chart in popup
+                                            loadMTTRSummaryChart(
+                                                detailed_mttr_data_url + '?mttr_param='+series_name,
+                                                month,
+                                                selected_state,
+                                                selected_city,
+                                                {
+                                                    'series_name': series_name
+                                                }
+                                            );
+
+                                            // Hide Loading Spinner
+                                            hideSpinner();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    series: [{
+                        // 'name': ,
+                        'data': response['data']
+                    }],
+                    noData: {
+                        style: {
+                            fontWeight: 'bold',
+                            fontSize: '20px',
+                            color: '#539fb8',
+                        }
+                    }
+                });
+            }
+        },
+        error: function(err) {
+            console.log(err.statusText);
         }
     });
 }

@@ -28,11 +28,53 @@
                             <span class="sub-menu-text">Sector Spot Dashboard</span>
                         </a>
                     </li>
-                    {% if settings.SHOW_RFO_DASHBOARD %}
-                    <li>
-                        <a href="{% url 'dashboard-rfo-analysis' %}">
-                            <span class="sub-menu-text">PB TT RFO Analysis</span>
+                    {% if settings.SHOW_RFO_DASHBOARD or settings.SHOW_MTTR_DASHBOARD %}
+                    <li class="has-sub-sub">
+                        <a href="javascript:;">
+                            <span class="sub-menu-text">Problem Ticket Analysis</span>
+                            <span class="arrow"></span>
                         </a>
+                        <ul class="sub-sub">
+                            {% if settings.SHOW_RFO_DASHBOARD %}
+                            <li>
+                                <a href="{% url 'dashboard-rfo-analysis' %}">
+                                    <span class="sub-menu-text">PB TT RFO Analysis</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if settings.SHOW_MTTR_DASHBOARD %}
+                            <li>
+                                <a href="{% url 'rfo-analysis-mttr-summary' %}">
+                                    <span class="sub-menu-text">MTTR Analysis</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+
+                    {% if settings.SHOW_INC_TICKET_DASHBOARD or settings.SHOW_RESOLUTION_EFFCIENCY_DASHBOARD %}
+                    <li class="has-sub-sub">
+                        <a href="javascript:;">
+                            <span class="sub-menu-text">Customer Fault Analysis</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            {% if settings.SHOW_INC_TICKET_DASHBOARD %}
+                            <li>
+                                <a href="javascript:;">
+                                    <span class="sub-menu-text">INC Ticket Rate</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if settings.SHOW_RESOLUTION_EFFCIENCY_DASHBOARD %}
+                            <li>
+                                <a href="javascript:;">
+                                    <span class="sub-menu-text">Resolution Efficieny</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
                     </li>
                     {% endif %}
                 </ul>
