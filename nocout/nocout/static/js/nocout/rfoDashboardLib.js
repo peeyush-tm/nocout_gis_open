@@ -142,6 +142,79 @@ function initMTTRDashboard() {
     hideSpinner();
 }
 
+function initINCTicketDashboard() {
+    var display_type = $('select[name="display_selector"]').val(),
+        selected_month = $('select[name="month_selector"]').val(),
+        selected_severity = $('select[name="severity_selector"]').val(),
+        selected_target = $('input[name="target_selector"]').val()
+        load_table = true,
+        load_chart = false;
+
+    if (selected_month) {
+        selected_month = Number(selected_month) / 1000;
+    }
+
+    if (!selected_target) {
+        selected_target = 0.6;
+    }
+
+    if (display_type == 'both') {
+        load_chart = true;
+        load_table = true;
+        if ($('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').removeClass('hide');
+        }
+        if ($('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').removeClass('hide');
+        }
+        if ($('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').removeClass('hide');
+        }
+
+    } else if (display_type == 'chart') {
+        load_chart = true;
+        load_table = false;
+        if ($('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').removeClass('hide');
+        }
+        if (!$('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').addClass('hide');
+        }
+        if (!$('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').addClass('hide');
+        }
+    } else {
+        load_chart = false;
+        load_table = true;
+        if (!$('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').addClass('hide');
+        }
+        if (!$('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').addClass('hide');
+        }
+        if ($('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').removeClass('hide');
+        }
+    }
+
+    if (load_table) {
+        // Load INC Ticket Rate Table
+        dataTableInstance.createDataTable(
+            'inc_ticket_datatable',
+            inc_ticket_headers,
+            inc_ticket_url + '?month=' + String(selected_month)+'&severity=' + selected_severity+'&target='+ selected_target,
+            false
+        );
+    }
+
+    if (load_chart) {
+        loadINCTicketChart(inc_ticket_url,String(selected_month), selected_severity, selected_target);
+    }
+
+    // Hide Loading Spinner
+    hideSpinner();
+}
+
 /**
  * This event trigger when any filter control selectbox value changed
  * @event Change

@@ -32,7 +32,7 @@ from nocout.utils.util import NocoutUtilsGateway
 # Import Dashboard Models
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, \
     MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, \
-    DashboardSeverityStatusDaily, DashboardRangeStatusDaily, RFOAnalysis
+    DashboardSeverityStatusDaily, DashboardRangeStatusDaily, RFOAnalysis, CustomerFaultAnalysis
 
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, \
@@ -2852,3 +2852,122 @@ class MTTRDetailData(View):
             )
 
         return HttpResponse(json.dumps(result))
+
+
+class INCTicketRateInit(View):
+    """
+    This class loads the INC ticket rate template
+    """
+    def get(self, request, *args, **kwargs):
+        
+        template_name = 'rfo_dashboard/inc_ticket_dashboard.html'
+        # Fetch month data from RFOAnalysis model
+        months_data = list(CustomerFaultAnalysis.objects.extra({
+            'id': 'CONCAT(unix_timestamp(timestamp), "000")'
+        }).values('id').distinct().order_by('id'))
+
+        severity_data = list(CustomerFaultAnalysis.objects.extra({
+            'id': 'REPLACE(severity, " ", "_")',
+            'value': 'severity'
+        }).values('value', 'id').distinct().order_by('value'))
+
+        inc_ticket_headers = [
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': 'tt_percent', 'sTitle': 'TT %'},
+            {'mData': 'targer_percent', 'sTitle': 'Target %'},
+            {'mData': 'tt_count', 'sTitle': 'TT Count'}
+        ]
+
+        context = {
+            'months_data': json.dumps(months_data),
+            'severity_data': json.dumps(severity_data),
+            'inc_ticket_headers': json.dumps(inc_ticket_headers)
+        }
+
+        return render(self.request, template_name, context)
+
+
+class INCTicketRateListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = CustomerFaultAnalysis
+    columns = [
+        'timestamp',
+        'id',
+        'severity',
+        'city'
+    ]
+    order_columns = [
+        'timestamp',
+        'tt_count',
+        'total_count'
+    ]
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        severity = self.request.GET.get('severity')
+
+        try:
+            # If month present in GET params then filter by it else return last 6 months data
+            if month:
+                qs = self.model.objects.filter(
+                    severity__iexact=severity,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('severity', 'timestamp').annotate(tt_count=Count('id'))
+            else:
+                current_timestamp = datetime.datetime.now()
+                qs = self.model.objects.filter(
+                    severity__iexact=severity,
+                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
+                    timestamp__lte=current_timestamp
+                ).values('timestamp').annotate(tt_count=Count('id'))
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = [{
+            key: val for key, val in dct.items()
+        } for dct in qs]
+
+        return json_data
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
