@@ -676,7 +676,9 @@
                     var li_placeholder = '<li><a href="{0}" class="btn btn-sm text-dark" \
                                           target="_blank"><i class="fa fa-link"></i> {1}</a></li>',
                         pb_html = '',
-                        inc_html = '';
+                        inc_html = '',
+                        telnet_ss_html = '',
+                        telnet_bs_html = '';
 
                     inc_html = li_placeholder;
                     inc_html = inc_html.replace('{0}', "{{ settings.CUSTOMER_TICKET_URL }}");
@@ -685,9 +687,21 @@
                     pb_html = li_placeholder;
                     pb_html = pb_html.replace('{0}', "{{ settings.NETWORK_TICKET_URL }}");
                     pb_html = pb_html.replace('{1}', 'PB Ticket');
+
+                    telnet_ss_html = li_placeholder;
+                    telnet_ss_html = telnet_ss_html.replace('{0}', "{{ settings.NETWORK_TICKET_URL }}");
+                    telnet_ss_html = telnet_ss_html.replace('{1}', 'Telnet SS');
+
+                    telnet_bs_html = li_placeholder;
+                    telnet_bs_html = telnet_bs_html.replace('{0}', "{{ settings.NETWORK_TICKET_URL }}");
+                    telnet_bs_html = telnet_bs_html.replace('{1}', 'Telnet BS');
+
+
                     // Append PB & INC ticket link on page
                     $('.controls_container ul').prepend(inc_html);
                     $('.controls_container ul').prepend(pb_html);
+                    $('.controls_container ul').prepend(telnet_bs_html);
+                    $('.controls_container ul').prepend(telnet_ss_html);
                 }
                 {% endif %}
 
