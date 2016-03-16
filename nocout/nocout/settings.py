@@ -21,6 +21,15 @@ DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 PROFILE = DEBUG
 PROFILE_TYPE = 'line'
+SSH_PROTOCOL = 'http'
+SSH_HOST = '127.0.0.1'
+SSH_PORT = '8888'
+SSH_URL = SSH_PROTOCOL + '://' + SSH_HOST + ':' + SSH_PORT + '/'  #'http://127.0.0.1:8888/'
+SSH_USERNAME = 'achal'
+SSH_PASSWORD = 'ttpl@123'
+COMMON_SSH_SCRIPT_PATH = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
+TELNET_SS_SCRIPT = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
+TELNET_BS_SCRIPT = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
