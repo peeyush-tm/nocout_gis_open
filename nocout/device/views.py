@@ -1181,7 +1181,8 @@ class DeviceCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
         device.device_vendor = form.cleaned_data['device_vendor']
         device.device_model = form.cleaned_data['device_model']
         device.device_type = form.cleaned_data['device_type']
-        # device.parent = form.cleaned_data['parent']
+        if 'parent' in form.cleaned_data:
+            device.parent = form.cleaned_data['parent']
         device.ip_address = form.cleaned_data['ip_address']
         device.mac_address = form.cleaned_data['mac_address']
         device.netmask = form.cleaned_data['netmask']
@@ -1274,7 +1275,8 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         self.object.device_vendor = form.cleaned_data['device_vendor']
         self.object.device_model = form.cleaned_data['device_model']
         self.object.device_type = form.cleaned_data['device_type']
-        self.object.parent = form.cleaned_data['parent']
+        if 'parent' in form.cleaned_data:
+            self.object.parent = form.cleaned_data['parent']
         self.object.ip_address = form.cleaned_data['ip_address']
         self.object.mac_address = form.cleaned_data['mac_address']
         self.object.netmask = form.cleaned_data['netmask']

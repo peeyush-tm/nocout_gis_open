@@ -42,7 +42,8 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
         self.base_fields['device_type'].label = 'Device Type'
-        self.base_fields['parent'].label = 'Parent IP'
+        if 'parent' in self.base_fields:
+            self.base_fields['parent'].label = 'Parent IP'
         # self.base_fields['service'].label = 'Services'
         try:
             if 'instance' in kwargs:
@@ -66,7 +67,8 @@ class DeviceForm(forms.ModelForm):
         self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].empty_label = "Select"
         # self.fields['parent'].empty_label = "Select"
-        self.fields['parent'].widget = forms.HiddenInput()
+        if 'parent' in self.fields:
+            self.fields['parent'].widget = forms.HiddenInput()
         self.fields['site_instance'].empty_label = "Select"
         self.fields['site_instance'].widget.choices = self.fields['site_instance'].choices
         self.fields['machine'].empty_label = "Select"
