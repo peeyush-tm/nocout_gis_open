@@ -155,7 +155,7 @@ function initINCTicketDashboard() {
     }
 
     if (!selected_target) {
-        selected_target = 0.6;
+        selected_target = 60;
     }
 
     if (display_type == 'both') {
@@ -197,18 +197,24 @@ function initINCTicketDashboard() {
         }
     }
 
+    var api_get_params = '';
+    api_get_params += '?month=' + String(selected_month);
+    api_get_params += '&severity=' + selected_severity;
+    api_get_params += '&current_target='+ selected_target;
+    api_get_params += '&request_for_chart=1';
+
     if (load_table) {
         // Load INC Ticket Rate Table
         dataTableInstance.createDataTable(
             'inc_ticket_datatable',
             inc_ticket_headers,
-            inc_ticket_url + '?month=' + String(selected_month)+'&severity=' + selected_severity+'&target='+ selected_target,
+            inc_ticket_url + api_get_params,
             false
         );
     }
 
     if (load_chart) {
-        loadINCTicketChart(inc_ticket_url,String(selected_month), selected_severity, selected_target);
+        loadINCTicketChart(inc_ticket_url + api_get_params, selected_severity);
     }
 
     // Hide Loading Spinner
@@ -236,6 +242,8 @@ $('.filter_controls').change(function(e) {
         initMTTRDashboard()
     } else if (window.location.pathname.indexOf('/rfo_analysis/') > -1) {
         initRfoDashboard();
+    } else if (window.location.pathname.indexOf('/inc_ticket_rate/') > -1) {
+        initINCTicketDashboard();
     }
 });
 
@@ -249,9 +257,10 @@ $('.filter_controls').change(function(e) {
 function updateFiltersContent(dataset, filter_name, filter_title) {
     var selector_id = 'select[name="' + filter_name + '_selector"]';
     if ($(selector_id).length) {
+        var direct_values_filter = ['severity'];
         
         var selectbox_html = '<option value="">Select '+filter_title+'</option>';
-        if (filter_name == 'month') {
+        if (direct_values_filter.indexOf(filter_name) > -1) {
             var selectbox_html = '';
         }
 
@@ -702,4 +711,156 @@ function loadMTTRSummaryChart(ajax_url, month, selected_state, selected_city, ex
             console.log(err.statusText);
         }
     });
+}
+
+/**
+ *
+ */
+$('input[name="target_selector"]').keyup(function(e) {
+    if(e.keyCode == 13) {
+        initINCTicketDashboard();
+    }
+});
+
+/**
+ *
+ */
+function loadINCTicketChart(api_url, selected_severity) {
+
+    $.ajax({
+        url: api_url,
+        type: 'GET',
+        success: function(all_data_response) {
+            if (typeof(all_data_response) == 'string') {
+                all_data_response = JSON.parse(all_data_response);
+            }
+
+            if (all_data_response['result'] == 'ok') {
+                var data_list = all_data_response['aaData'],
+                    target_data = [],
+                    sev_data = [];
+                for(var j=0; j<data_list.length; j++) {
+                    var timestamp = Number(data_list[j]['timestamp']) * 1000;
+                    sev_data.push([
+                        timestamp,
+                        data_list[j]['tt_percent']
+                    ]);
+
+                    target_data.push([
+                        timestamp,
+                        data_list[j]['target_percent']
+                    ]);
+                }
+
+                $('#inc_line_chart_container').highcharts({
+                    chart: {
+                        type: 'spline'
+                    },
+                    colors: chart_colors_list,
+                    title: {
+                        text: 'RF Network: '+ selected_severity
+                    },
+                    xAxis: {
+                        title: {
+                            text: 'Month'
+                        },
+                        type: 'datetime',
+                        dateTimeLabelFormats: {
+                            month: '%e. %b',
+                            year: '%b'
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: '%'
+                        },
+                        labels: {
+                            overflow: 'justify'
+                        }
+                    },
+                    plotOptions: {
+                        spline: {
+                            dataLabels: {
+                                enabled: false
+                            },
+                            showInLegend: true,
+                            marker: {
+                                enabled: true
+                            }
+                        }
+                    },
+                    legend: middle_legends,
+                    tooltip: {
+                        formatter: function (e) {
+                            var tooltip_html = "";
+                            tooltip_html += '<ul><li><b>'+selected_severity+' ('+getFormattedDate(this.x)+')</b></li><br/>';
+
+                            if (this.points && this.points.length > 0) {
+                                for(var i=0;i<this.points.length;i++) {
+                                    var color = this.points[i].series.color;
+
+                                    tooltip_html += '<li><br/><span style="color:' + color + '"> \
+                                                    '+this.points[i].series.name+'</span>: <strong> \
+                                                    ' +this.points[i].y+'</strong></li>';
+                                }
+                            } else {
+                                tooltip_html += '<li><br/><span style="color:' + this.point.color + '">\
+                                                ' + this.point.name + '</span>: <strong>' + this.point.y + '</strong></li>';
+                            }
+
+                            tooltip_html += '</ul>';
+
+                            return tooltip_html;
+                        },
+                        crosshairs: true,
+                        shared: true,
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    series: [{
+                        "data": sev_data,
+                        "name": 'TT %',
+                        "type": 'spline'
+                    }, {
+                        "data": target_data,
+                        "name": 'Target %',
+                        "type": 'spline'
+                    }],
+                    noData: {
+                        style: {
+                            fontWeight: 'bold',
+                            fontSize: '20px',
+                            color: '#539fb8',
+                        }
+                    }
+                });
+                
+                // Hide Loading Spinner
+                hideSpinner();
+            }
+        },
+        error: function(err) {
+            // console.log(err.statusText);
+            // Hide Loading Spinner
+            hideSpinner();
+        }
+    });
+}
+
+function getFormattedDate(input_date) {
+    var formatted_date = '';
+
+    try {
+        var fetched_datetime = new Date(input_date),
+            fetched_month = fetched_datetime.getMonth(),
+            fetched_year = fetched_datetime.getFullYear();
+
+        formatted_date = month_dict[fetched_month] + '-' + fetched_year;
+    } catch(e) {
+        // console.error(e);
+    }
+
+    return formatted_date;
 }

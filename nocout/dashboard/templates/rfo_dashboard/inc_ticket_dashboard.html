@@ -42,7 +42,7 @@
                 </select>
             </li>
             <li>
-                <input name="target_selector" class="form-control input-sm filter_controls" placeholder="Target %" />
+                <input name="target_selector" class="form-control input-sm" type="number" placeholder="Target %" value="60" />
             </li>
         </ul>
         <div class="clearfix"></div>
@@ -57,7 +57,7 @@
         </div>
         <div class="both_view_seperator" style="height: 1px; margin-bottom: 10px; width: 100%; background: #DDD;"></div>
         <div class="chart_view_container">
-            <div id="rfo_column_chart_container"></div>
+            <div id="inc_line_chart_container"></div>
             <div class="clearfix"></div>
         </div>
     </div>
@@ -139,9 +139,6 @@
 
             // call initINCTicketDashboard function to populate RFO dashboard data as per the selected filters
             initINCTicketDashboard();
-
-            // Hide Loading Spinner
-            // hideSpinner();
         });
     </script>
 {% endblock %}

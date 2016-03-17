@@ -2874,7 +2874,7 @@ class INCTicketRateInit(View):
         inc_ticket_headers = [
             {'mData': 'month', 'sTitle': 'Month'},
             {'mData': 'tt_percent', 'sTitle': 'TT %'},
-            {'mData': 'targer_percent', 'sTitle': 'Target %'},
+            {'mData': 'target_percent', 'sTitle': 'Target %'},
             {'mData': 'tt_count', 'sTitle': 'TT Count'}
         ]
 
@@ -2901,28 +2901,38 @@ class INCTicketRateListing(BaseDatatableView):
     order_columns = [
         'timestamp',
         'tt_count',
-        'total_count'
+        'severity',
+        'tt_count'
     ]
 
     def get_initial_queryset(self):
 
         month = self.request.GET.get('month')
         severity = self.request.GET.get('severity')
-
+        target = 10
         try:
             # If month present in GET params then filter by it else return last 6 months data
             if month:
-                qs = self.model.objects.filter(
+                qs = self.model.objects.extra({
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }).filter(
                     severity__iexact=severity,
                     timestamp=datetime.datetime.fromtimestamp(float(month))
                 ).values('severity', 'timestamp').annotate(tt_count=Count('id'))
             else:
                 current_timestamp = datetime.datetime.now()
-                qs = self.model.objects.filter(
+                qs = self.model.objects.extra({
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }).filter(
                     severity__iexact=severity,
                     timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
                     timestamp__lte=current_timestamp
-                ).values('timestamp').annotate(tt_count=Count('id'))
+                ).values(
+                    'severity',
+                    'timestamp'
+                ).annotate(tt_count=Count('id'))
+            if self.request.GET.get('request_for_chart'):
+                qs.order_by('tt_count')
         except Exception, e:
             qs = self.model.objects.filter(id=0)
 
@@ -2933,6 +2943,41 @@ class INCTicketRateListing(BaseDatatableView):
         json_data = [{
             key: val for key, val in dct.items()
         } for dct in qs]
+
+        current_target = self.request.GET.get('current_target', 60)
+        severity_wise_count = {}
+        current_timestamp = datetime.datetime.now()
+
+        for data in json_data:
+            data['tt_percent'] = ''
+            try:
+                unique_id = '{0}_{1}'.format(
+                    data['severity'].replace(' ', '_'),
+                    str(data['timestamp'])
+                ).lower()
+                if unique_id not in severity_wise_count:
+                    # Calculate the total count per severity
+                    severity_wise_count[unique_id] = self.model.objects.filter(
+                        timestamp=datetime.datetime.fromtimestamp(data['timestamp'])
+                    ).count()
+
+                total_count = severity_wise_count[unique_id]
+                # Calculate % as per the total count & sererity wise total count
+                data['tt_percent'] = round((float(data['tt_count'])/float(total_count)) * 100, 2)
+            except Exception, e:
+                pass
+
+            # Format timestamp to 'Month'
+            try:
+                data['month'] = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
+            except Exception, e:
+                data['month'] = datetime.datetime.fromtimestamp(data['timestamp'])
+            try:
+                data['target_percent'] = round(float(current_target), 2)
+            except Exception, e:
+                data['target_percent'] = current_target
+
+        print severity_wise_count
 
         return json_data
 
