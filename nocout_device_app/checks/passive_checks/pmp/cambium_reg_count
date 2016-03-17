@@ -39,7 +39,7 @@ def live_query_reg_count(mac):
 		value_list = memc.get(mac)
 		if value_list:
 			try:
-				reg_count = int(value_list[2])
+				reg_count = int(value_list[4])
 			except:
 				reg_count = None
 		if not reg_count:
