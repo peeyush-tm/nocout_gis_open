@@ -642,7 +642,7 @@ def load_backhaul_data(data_values, p, extra=None):
 	invent_key = 'device_inventory:%s'
 	for device in data_values:
 		device_attr = []
-		port_wise_capacities = [0]*8
+		port_wise_capacities = [0]*9
 		if  str(device[0]) in processed:
 		    continue
 		if '_' in str(device[5]):
