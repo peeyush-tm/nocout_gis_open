@@ -379,15 +379,18 @@ class BaseStationForm(forms.ModelForm):
         """
         Validations for base station form
         """
-        latitude = self.cleaned_data.get('latitude')
-        longitude = self.cleaned_data.get('longitude')
+        latitude = self.request.POST.get('latitude') #self.cleaned_data.get('latitude')
+        longitude = self.request.POST.get('longitude') #self.cleaned_data.get('longitude')
         state = self.cleaned_data.get('state')
         name = self.cleaned_data.get('name')
 
         # Create instance of 'NocoutUtilsGateway' class
         nocout_utils = NocoutUtilsGateway()
 
-        is_lat_long_valid = nocout_utils.is_lat_long_in_state(latitude, longitude, state)
+        try:
+            is_lat_long_valid = nocout_utils.is_lat_long_in_state(float(latitude), float(longitude), state)
+        except Exception, e:
+            is_lat_long_valid = False
 
         if not is_lat_long_valid:
             self._errors["latitude"] = ErrorList(
@@ -692,15 +695,18 @@ class SubStationForm(forms.ModelForm):
         """
         Validations for sub station form
         """
-        latitude = self.cleaned_data.get('latitude')
-        longitude = self.cleaned_data.get('longitude')
+        latitude = self.request.POST.get('latitude') #self.cleaned_data.get('latitude')
+        longitude = self.request.POST.get('longitude') #self.cleaned_data.get('longitude')
         state = self.cleaned_data.get('state')
         name = self.cleaned_data.get('name')
 
         # Create instance of 'NocoutUtilsGateway' class
         nocout_utils = NocoutUtilsGateway()
 
-        is_lat_long_valid = nocout_utils.is_lat_long_in_state(latitude, longitude, state)
+        try:
+            is_lat_long_valid = nocout_utils.is_lat_long_in_state(float(latitude), float(longitude), state)
+        except Exception, e:
+            is_lat_long_valid = False
 
         if not is_lat_long_valid:
             self._errors["latitude"] = ErrorList(
@@ -1571,8 +1577,8 @@ class WizardBaseStationForm(BaseStationForm):
         """
         Validations for base station form
         """
-        latitude = self.cleaned_data.get('latitude')
-        longitude = self.cleaned_data.get('longitude')
+        latitude = self.request.POST.get('latitude') #self.cleaned_data.get('latitude')
+        longitude = self.request.POST.get('longitude') #self.cleaned_data.get('longitude')
         state = self.cleaned_data.get('state')
 
         state_id = None
@@ -1602,7 +1608,10 @@ class WizardBaseStationForm(BaseStationForm):
         # Create instance of 'NocoutUtilsGateway' class
         nocout_utils = NocoutUtilsGateway()
 
-        is_lat_long_valid = nocout_utils.is_lat_long_in_state(latitude, longitude, state)
+        try:
+            is_lat_long_valid = nocout_utils.is_lat_long_in_state(float(latitude), float(longitude), state)
+        except Exception, e:
+            is_lat_long_valid = False
 
         if not is_lat_long_valid:
             self._errors["latitude"] = ErrorList(
@@ -1795,8 +1804,8 @@ class WizardSubStationForm(SubStationForm):
         """
         Validations for base station form
         """
-        latitude = self.cleaned_data.get('latitude')
-        longitude = self.cleaned_data.get('longitude')
+        latitude = self.request.POST.get('latitude') #self.cleaned_data.get('latitude')
+        longitude = self.request.POST.get('longitude') #self.cleaned_data.get('longitude')
         state = self.cleaned_data.get('state')
 
         state_id = None
@@ -1808,7 +1817,10 @@ class WizardSubStationForm(SubStationForm):
         # Create instance of 'NocoutUtilsGateway' class
         nocout_utils = NocoutUtilsGateway()
 
-        is_lat_long_valid = nocout_utils.is_lat_long_in_state(latitude, longitude, state)
+        try:
+            is_lat_long_valid = nocout_utils.is_lat_long_in_state(float(latitude), float(longitude), state)
+        except Exception, e:
+            is_lat_long_valid = False
 
         if not is_lat_long_valid:
             self._errors["latitude"] = ErrorList(
