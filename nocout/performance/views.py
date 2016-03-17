@@ -51,7 +51,7 @@ from nocout.mixins.datatable import AdvanceFilteringMixin
 
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
-    AVG_CHART_COLOR, CACHE_TIME, \
+    AVG_CHART_COLOR, CACHE_TIME, ENV_NAME, \
     WARN_COLOR, CRIT_COLOR, WARN_TYPE, CRIT_TYPE, MULTI_PROCESSING_ENABLED
 
 from performance.formulae import display_time, rta_null
@@ -61,6 +61,8 @@ from user_profile.utils.auth import in_group
 
 from user_profile.models import PowerLogs
 from django.views.decorators.csrf import csrf_exempt
+import os
+from nocout.settings import BASE_DIR
 
 service_utils = ServiceUtilsGateway()
 
@@ -73,6 +75,7 @@ log = logging.getLogger(__name__)
 
 ### SMS Sending
 import requests
+
 #### SMS GATEWAY SETTINGS
 GATEWAY_SETTINGS = {
     'URL': 'http://121.244.239.140/csend.dll'
@@ -676,6 +679,8 @@ class GetPerfomance(View):
         except Exception, e:
             is_viewer_flag = 0       
 
+        sector_perf_url = None
+        bh_perf_url = None
         try:
             if device.sector_configured_on.exists():
                 bs_obj = device.sector_configured_on.filter()[0].base_station
@@ -686,13 +691,32 @@ class GetPerfomance(View):
                 bs_alias = bs_obj.alias
                 bs_id = [str(bs_obj.id)]
             elif device.substation_set.exists():
-                bs_obj = Sector.objects.get(
+                sector_obj = Sector.objects.get(
                     id=Circuit.objects.get(
                         sub_station=device.substation_set.get().id
                     ).sector_id
-                ).base_station
+                )
+                bs_obj = sector_obj.base_station
                 bs_alias = bs_obj.alias
                 bs_id = [str(bs_obj.id)]
+
+                try:
+                    sector_perf_url  = reverse(
+                        'SingleDevicePerf',
+                        kwargs={'page_type': 'network', 'device_id': sector_obj.sector_configured_on.id},
+                        current_app='performance'
+                    )
+                except Exception, e:
+                    pass
+
+                try:
+                    bh_perf_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={'page_type': 'other', 'device_id': bs_obj.backhaul.bh_configured_on.id},
+                        current_app='performance'
+                    )
+                except Exception, e:
+                    pass
             elif device.backhaul.exists() or device.backhaul_switch.exists() or device.backhaul_pop.exists() \
                 or device.backhaul_aggregator.exists():
                 bh_id = None
@@ -786,6 +810,12 @@ class GetPerfomance(View):
             service_ds_url = 'performance/get_inventory_service_data_sources\
                             /device/'+str(device_id)+'/?is_util='+str(is_util_tab)
 
+        if sector_perf_url:
+            sector_perf_url += '?is_util=1'
+
+        if bh_perf_url:
+            bh_perf_url += '?is_util=1'
+
         page_data = {
             'page_title': page_type.capitalize(),
             'device_technology': device_technology,
@@ -805,7 +835,9 @@ class GetPerfomance(View):
             'is_radwin5' : is_radwin5,
             'is_viewer_flag': is_viewer_flag,
             'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id),
-            'power_listing_headers': json.dumps(power_listing_headers)
+            'power_listing_headers': json.dumps(power_listing_headers),
+            'sector_perf_url': sector_perf_url,
+            'bh_perf_url': bh_perf_url
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -3295,6 +3327,20 @@ class GetServiceTypePerformanceData(View):
                 if dr_ip and dr_ip == show_ip_address:
                     show_ip_address += " (DR)"
 
+                action_html = 'NA'
+                try:
+                    if data.connected_device_ip:
+                        device_instance = Device.objects.get(ip_address=data.connected_device_ip)
+                        perf_page_url = reverse(
+                            'SingleDevicePerf',
+                            kwargs={'page_type': 'customer', 'device_id': device_instance.id},
+                            current_app='performance'
+                        )
+                        action_html = '<a href="{0}" title="Device Performance" target="_blank"> \
+                                       <i class="fa fa-bar-chart-o text-info"></i></a>'.format(perf_page_url)
+                except Exception, e:
+                    pass
+
                 result_data.append({
                     #'device_name': data.device_name,
                     'ip_address': show_ip_address,
@@ -3310,6 +3356,7 @@ class GetServiceTypePerformanceData(View):
                     # 'up_down_since': status_since,
                     'last_down_time': last_down,
                     'last_updated': last_updated,
+                    'action': action_html
                 })
 
         #here we will append the rest of the SS
@@ -3352,6 +3399,21 @@ class GetServiceTypePerformanceData(View):
                     continue
 
                 if sector_id:
+
+                    action_html = 'NA'
+                    try:
+                        if device_ip:
+                            device_instance = Device.objects.get(ip_address=device_ip)
+                            perf_page_url = reverse(
+                                'SingleDevicePerf',
+                                kwargs={'page_type': 'customer', 'device_id': device_instance.id},
+                                current_app='performance'
+                            )
+                            action_html = '<a href="{0}" title="Device Performance" target="_blank"> \
+                                           <i class="fa fa-bar-chart-o text-info"></i></a>'.format(perf_page_url)
+                    except Exception, e:
+                        pass
+
                     result_data.append({
                         #'device_name': data.device_name,
                         'ip_address': sector_ip,
@@ -3367,6 +3429,7 @@ class GetServiceTypePerformanceData(View):
                         # 'up_down_since': status_since,
                         'last_down_time': last_down,
                         'last_updated': last_updated,
+                        'action': action_html
                     })
 
         self.result['success'] = 1
@@ -3384,7 +3447,8 @@ class GetServiceTypePerformanceData(View):
             'packet_loss',
             'latency',
             'last_down_time',
-            'last_updated'
+            'last_updated',
+            'action'
         ]
 
         return self.result
@@ -7241,6 +7305,39 @@ def device_current_status(device_object):
         else:
             return get_higher_severity(severity_dict=severity)
 
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))  # just for 2 minutes cache this. short running query
+def device_pl_latency_values(device_object):
+    """
+    Device pl_latency Status
+    :param device_object:
+    """
+
+    required_fields = ['data_source', 'current_value']
+
+    inventory_device_name = device_object.device_name
+    inventory_device_machine_name = device_object.machine.name
+
+    device_nms_uptime_query_set = NetworkStatus.objects.filter(
+        device_name=inventory_device_name,
+        service_name='ping',
+        data_source__in=['rta', 'pl']# ['pl', 'rta']
+    ).using(alias=inventory_device_machine_name).values(*required_fields)
+
+    device_nms_uptime = device_nms_uptime_query_set
+
+    if device_nms_uptime:
+        for data in device_nms_uptime:
+            if data['data_source'].strip().lower() == 'pl':
+                pl_value = data['current_value']
+
+            if data['data_source'].strip().lower() == 'rta': 
+                latency = data['current_value']
+        return pl_value, latency
+    else:
+        return None, None
+    
+
+
 
 @nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))  #for 5 minutes cache this. long running query
 def device_last_down_time(device_object):
@@ -7355,6 +7452,12 @@ class GetTopology(View):
         }
 
         bs_id = self.request.GET.get('bs_id')
+        page_type = self.request.GET.get('page_type').lower()
+        current_device_id = self.request.GET.get('device_id')
+        device_technology = self.request.GET.get('device_tech')
+        have_ptp_bh = False
+        limit_till_bs = False
+
 
         try:
             bs_id = json.loads(str(bs_id))
@@ -7366,17 +7469,463 @@ class GetTopology(View):
 
         multiple_bs = False
 
+        try:
+            device = Device.objects.get(id=current_device_id)
+        except Exception, e:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+
+        try:
+            device_type = DeviceType.objects.get(id=device.device_type)
+        except Exception, e:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+
         if len(bs_id) > 1:
             multiple_bs = True
-         
+        
         # Query for getting topology info of selected device 
-        topology_query = ''' 
+        if page_type == 'network':
+
+            bs_alias_qs = BaseStation.objects.filter(id=bs_id[0]).values('alias')
+            bs_alias = str(bs_alias_qs[0]['alias']).lower()
+
+            if device_technology.lower() == 'p2p' :
+                queryset = list(Circuit.objects.filter(circuit_id__icontains = '#'+ bs_alias).values())
+                limit_till_bs = True    
+            else :
+                queryset = list(Circuit.objects.filter(circuit_id__icontains = bs_alias + '#').values())
+            
+            if len(queryset):
+                have_ptp_bh = True
+
+                circuit_id = queryset[0]['circuit_id']
+                # spliiting current circuit in case of having PTP-BH, because there we have Far-end and Near-End
+                splitted_circuit_id_list = circuit_id.split('#')
+                
+
+                if len(splitted_circuit_id_list) > 1:
+                    far_end_bs = str(splitted_circuit_id_list[0]).lower()
+                    near_end_bs = str(splitted_circuit_id_list[1]).lower()
+
+                    far_bs_queryset = list(BaseStation.objects.filter(alias__iexact = far_end_bs).values('id'))
+                    far_end_bs_id = 0
+                    if len(far_bs_queryset):
+                        far_end_bs_id = far_bs_queryset[0]['id']
+
+                    near_bs_queryset = list(BaseStation.objects.filter(alias__iexact = near_end_bs).values('id'))
+                    near_end_bs_id = 0
+                    if len(near_bs_queryset):
+                        near_end_bs_id = near_bs_queryset[0]['id']
+
+            
+            if str(device_type).lower() == 'radwin2kss':
+                if have_ptp_bh:
+                    if device_technology.lower() == 'p2p':
+                        query_filter_condition1 = 'ss_device.id'    
+                    else :
+                        query_filter_condition1 = 'far_end_ss_device.id'
+                    
+                    query_filter_condition2 = 'far_end_sect_sector_id'
+                else:    
+                    # in case of radwin2kss we have to filter according to substation device
+                    query_filter_condition1 = 'ss_device.id'
+                    query_filter_condition2 = 'sect_sector_id'
+            else :
+                if have_ptp_bh:
+                    if device_technology.lower() == 'p2p':
+                        query_filter_condition1 = 'sect_device.id'    
+                    else :
+                        query_filter_condition1 = 'far_end_sect_device.id'
+                    
+                    query_filter_condition2 = 'far_end_sect_sector_id'
+                else:
+                    query_filter_condition1 = 'sect_device.id'
+                    query_filter_condition2 = 'sect_sector_id'
+            
+
+            if have_ptp_bh:
+
+                topology_query = '''
+                    SELECT
+                        IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
+                        IF(isnull(bs.name), 'NA', bs.name) AS bs_name,
+                        IF(isnull(bs.alias), 'NA', bs.alias) AS bs_alias,
+                        IF(isnull(bs_switch.id), 'NA', bs_switch.id) AS bs_switch_id, 
+                        IF(isnull(far_end_bs.id), 'NA', far_end_bs.id) AS far_end_bs_id,
+                        IF(isnull(far_end_device.ip_address), 'NA', far_end_device.ip_address) AS far_end_ip,
+                        IF(isnull(far_end_device.id), 'NA', far_end_device.id) AS far_end_id,
+                        IF(isnull(near_end_device.ip_address), 'NA', near_end_device.ip_address) AS near_end_ip,
+                        IF(isnull(near_end_device.id), 'NA', near_end_device.id) AS near_end_id,
+                        IF(isnull(far_end_bs.name), 'NA', far_end_bs.name) AS far_end_bs_name,
+                        IF(isnull(far_end_bs.alias), 'NA', far_end_bs.alias) AS far_end_bs_alias,
+                        IF(isnull(far_end_bs_switch.id), 'NA', far_end_bs_switch.id) AS far_end_bs_switch_id, 
+                        IF(isnull(far_end_bs_switch.ip_address), 'NA', far_end_bs_switch.ip_address) AS far_end_bs_switch_ip,
+                        IF(isnull(backhaul.bh_switch_id), 'NA', backhaul.bh_switch_id) AS bs_convertor_id,
+                        IF(isnull(backhaul.aggregator_id), 'NA', backhaul.aggregator_id) AS bh_aggregator_id,
+                        IF(isnull(backhaul.pop_id), 'NA', backhaul.pop_id) AS bh_pop_id,
+                        IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
+                        IF(isnull(bs.backhaul_id), 'NA', bs.backhaul_id) AS bh_id,
+                        IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
+                        IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                        IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
+                        IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
+                        IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
+                        IF(isnull(bh_aggregator_device.ip_address), 'NA', bh_aggregator_device.ip_address) AS bh_aggregator_ip,
+                        IF(isnull(backhaul.aggregator_port_name), 'NA', backhaul.aggregator_port_name) AS bh_aggregator_port,
+                        IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
+                        IF(isnull(bh_device_type.name), 'NA', bh_device_type.name) AS bh_device_type,
+                        IF(isnull(bh_device_tech.name), 'NA', bh_device_tech.name) AS bh_device_tech,   
+                        IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS bh_ip,
+                        IF(isnull(sect.id), 'NA', sect.id) AS sect_id,
+                        IF(isnull(far_end_sect.id), 'NA', far_end_sect.id) AS far_end_sect_id,
+                        IF(isnull(sect.sector_id), 'NA', sect.sector_id) AS sect_sector_id,
+                        IF(isnull(far_end_sect.sector_id), 'NA', far_end_sect.sector_id) AS far_end_sect_sector_id,
+                        IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
+                        IF(isnull(far_end_sect.sector_configured_on_id), 'NA', far_end_sect.sector_configured_on_id) AS far_end_sect_device_id,
+                        IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
+                        IF(isnull(far_end_sect_device.device_name), 'NA', far_end_sect_device.device_name) AS far_end_sect_device_name,
+                        IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
+                        IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
+                        IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
+                        IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
+                        IF(isnull(far_end_sect_device_tech.name), 'NA', far_end_sect_device_tech.name) AS far_end_sect_device_tech,
+                        IF(isnull(far_end_sector_port.alias), 'NA', far_end_sector_port.alias) AS far_end_sect_port,
+                        IF(isnull(far_end_bs.bh_port_name), 'NA', far_end_bs.bh_port_name) AS far_end_bs_switch_port ,
+                        IF(isnull(far_end_sect_device_type.name), 'NA', far_end_sect_device_type.name) AS far_end_sect_device_type,
+                        IF(isnull(far_end_sect_device.ip_address), 'NA', far_end_sect_device.ip_address) AS far_end_sect_device_ip,
+                        IF(far_end_sect_device_tech.name = 'WiMAX', CONCAT(far_end_sect_device.ip_address, ' - ', far_end_sect.sector_id), far_end_sect_device.ip_address) AS far_end_sect_ip_id_title,
+                        'NA' AS far_end_ss_circuit_id,
+                        'NA' AS far_end_ss_id,
+                        'NA' AS far_end_ss_device_id,
+                        'NA' AS far_end_ss_device_tech,
+                        'NA' AS far_end_ss_device_type,
+                        'NA' AS far_end_ss_device_name,
+                        'NA' AS far_end_ss_device_ip,
+                        IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
+                        IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
+                        IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
+                        IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
+                        IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
+                        IF(isnull(far_end_bs_switch.device_name), 'NA', far_end_bs_switch.device_name) AS far_end_bs_switch_name,
+                        IF(isnull(near_end_device.device_name), 'NA', near_end_device.device_name) AS near_end_device_name,
+                        IF(isnull(far_end_device.device_name), 'NA', far_end_device.device_name) AS far_end_device_name,
+                        IF(isnull(far_end_sect_device.device_name), 'NA', far_end_sect_device.device_name) AS far_end_sect_device_name,
+                        sect_device_type.device_icon as sect_icon,
+                        bh_device_type.device_icon as bh_icon,
+                        sect_freq.color_hex_value as sect_color,
+                        IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
+                        IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
+                        IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port
+
+                    FROM
+                        inventory_basestation AS bs
+                    LEFT JOIN
+                        device_device AS bs_switch
+                    ON
+                        bs.bs_switch_id = bs_switch.id
+                    LEFT JOIN
+                        inventory_backhaul AS backhaul
+                    ON
+                        bs.backhaul_id = backhaul.id
+                    LEFT JOIN
+                        device_device AS bs_convertor_device
+                    ON
+                        backhaul.bh_switch_id = bs_convertor_device.id
+                    LEFT JOIN
+                        device_device AS bh_aggregator_device
+                    ON
+                        backhaul.aggregator_id = bh_aggregator_device.id
+                    LEFT JOIN
+                        device_device AS bh_pop_device
+                    ON
+                        backhaul.pop_id = bh_pop_device.id
+                    LEFT JOIN
+                        device_device AS bh_device
+                    ON
+                        backhaul.bh_configured_on_id = bh_device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS bh_device_tech
+                    ON
+                        bh_device.device_technology = bh_device_tech.id
+                    LEFT JOIN
+                        inventory_sector AS sect
+                    ON
+                        bs.id = sect.base_station_id
+                    LEFT JOIN
+                        device_device AS device
+                    ON
+                        sect.sector_configured_on_id = device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS sect_device_tech
+                    ON
+                        device.device_technology = sect_device_tech.id
+                    LEFT JOIN
+                        device_device as sect_device
+                    ON
+                        sect.sector_configured_on_id = sect_device.id
+                    LEFT JOIN
+                        inventory_circuit AS ckt
+                    ON
+                        sect.id = ckt.sector_id
+                    LEFT JOIN
+                        device_devicetype as sect_device_type
+                    ON
+                        sect_device_type.id = device.device_type
+                    LEFT JOIN
+                        device_devicetype as bh_device_type
+                    ON
+                        bh_device_type.id = bh_device.device_type
+                    LEFT JOIN
+                        device_devicefrequency as sect_freq
+                    ON
+                        sect_freq.id = sect.frequency_id
+                    LEFT join
+                        inventory_substation as ss
+                    ON
+                        ckt.sub_station_id = ss.id
+                    LEFT JOIN
+                        device_device AS ss_device
+                    ON
+                        ss.device_id = ss_device.id
+                    LEFT JOIN
+                        inventory_basestation as far_end_bs
+                    ON
+                        far_end_bs.id = {0}
+                    LEFT JOIN
+                        device_device as far_end_bs_switch
+                    ON
+                        far_end_bs_switch.id = far_end_bs.bs_switch_id
+                    LEFT JOIN
+                        inventory_circuit as far_near_circuit
+                    ON 
+                        far_near_circuit.circuit_id = '{1}'
+                    LEFT JOIN
+                        inventory_sector as near_end
+                    ON
+                        near_end.id = far_near_circuit.sector_id
+                    LEFT JOIN
+                        device_device as near_end_device
+                    ON
+                        near_end.sector_configured_on_id = near_end_device.id
+                    LEFT JOIN
+                        inventory_substation as far_end
+                    ON
+                        far_end.id = far_near_circuit.sub_station_id
+                    LEFT JOIN
+                        device_device as far_end_device
+                    ON
+                        far_end.device_id = far_end_device.id
+                    LEFT JOIN
+                        inventory_sector AS far_end_sect
+                    ON
+                        far_end_bs.id = far_end_sect.base_station_id
+                    LEFT JOIN
+                        device_deviceport AS far_end_sector_port
+                    ON
+                        far_end_sect.sector_configured_on_port_id = far_end_sector_port.id
+                    LEFT JOIN
+                        device_device as far_end_sect_device
+                    ON
+                        far_end_sect.sector_configured_on_id = far_end_sect_device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS far_end_sect_device_tech
+                    ON
+                        far_end_sect_device.device_technology = far_end_sect_device_tech.id
+                    LEFT JOIN
+                        inventory_circuit AS far_end_ckt
+                    ON
+                        far_end_sect.id = far_end_ckt.sector_id
+                    LEFT JOIN
+                        device_devicetype as far_end_sect_device_type
+                    ON
+                        far_end_sect_device_type.id = far_end_sect_device.device_type
+                    LEFT JOIN
+                        device_devicefrequency as far_end_sect_freq
+                    ON
+                        far_end_sect_freq.id = far_end_sect.frequency_id
+                    LEFT join
+                        inventory_substation as far_end_ss
+                    ON
+                        far_end_ckt.sub_station_id = far_end_ss.id
+                    LEFT JOIN
+                        device_device AS far_end_ss_device
+                    ON
+                        far_end_ss.device_id = far_end_ss_device.id
+                    LEFT JOIN
+                        device_device as current_device
+                    ON
+                        current_device.id = {4}
+                    where
+                        current_device.is_added_to_nms > 0
+                        AND
+                        bs.id = {2}
+                        AND
+                        {3} = {4}
+                    GROUP by({5})
+            '''.format(far_end_bs_id, circuit_id, near_end_bs_id, query_filter_condition1 , current_device_id, query_filter_condition2)                
+
+            else:
+                topology_query = ''' 
+                    SELECT
+                        IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
+                        IF(isnull(bs.name), 'NA', bs.name) AS bs_name,
+                        IF(isnull(bs.alias), 'NA', bs.alias) AS bs_alias,
+                        IF(isnull(bs_switch.id), 'NA', bs_switch.id) AS bs_switch_id, 
+                        IF(isnull(backhaul.bh_switch_id), 'NA', backhaul.bh_switch_id) AS bs_convertor_id,
+                        IF(isnull(backhaul.aggregator_id), 'NA', backhaul.aggregator_id) AS bh_aggregator_id,
+                        IF(isnull(backhaul.pop_id), 'NA', backhaul.pop_id) AS bh_pop_id,
+                        IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
+                        IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
+                        IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
+                        IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                        IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
+                        IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
+                        IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
+                        IF(isnull(bh_aggregator_device.ip_address), 'NA', bh_aggregator_device.ip_address) AS bh_aggregator_ip,
+                        IF(isnull(backhaul.aggregator_port_name), 'NA', backhaul.aggregator_port_name) AS bh_aggregator_port,
+                        IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
+                        IF(isnull(bh_device_type.name), 'NA', bh_device_type.name) AS bh_device_type,
+                        IF(isnull(bh_device_tech.name), 'NA', bh_device_tech.name) AS bh_device_tech,   
+                        IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS bh_ip,
+                        IF(isnull(sect.id), 'NA', sect.id) AS sect_id,
+                        IF(isnull(sect.sector_id), 'NA', sect.sector_id) AS sect_sector_id,
+                        IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
+                        IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
+                        IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
+                        IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
+                        IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
+                        IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
+                        'NA' AS ss_circuit_id,
+                        'NA' AS ss_id,
+                        'NA' AS ss_device_id,
+                        'NA' AS ss_device_tech,
+                        'NA' AS ss_device_type,
+                        'NA' AS ss_device_name,
+                        'NA' AS ss_device_ip,
+                        IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
+                        IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
+                        IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
+                        IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
+                        IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
+                        sect_device_type.device_icon as sect_icon,
+                        bh_device_type.device_icon as bh_icon,
+                        sect_freq.color_hex_value as sect_color,
+                        IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
+                        IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
+                        IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port
+
+                    FROM
+                        inventory_basestation AS bs
+                    LEFT JOIN
+                        device_device AS bs_switch
+                    ON
+                        bs.bs_switch_id = bs_switch.id
+                    LEFT JOIN
+                        inventory_backhaul AS backhaul
+                    ON
+                        bs.backhaul_id = backhaul.id
+                    LEFT JOIN
+                        device_device AS bs_convertor_device
+                    ON
+                        backhaul.bh_switch_id = bs_convertor_device.id
+                    LEFT JOIN
+                        device_device AS bh_aggregator_device
+                    ON
+                        backhaul.aggregator_id = bh_aggregator_device.id
+                    LEFT JOIN
+                        device_device AS bh_pop_device
+                    ON
+                        backhaul.pop_id = bh_pop_device.id
+                    LEFT JOIN
+                        device_device AS bh_device
+                    ON
+                        backhaul.bh_configured_on_id = bh_device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS bh_device_tech
+                    ON
+                        bh_device.device_technology = bh_device_tech.id
+                    LEFT JOIN
+                        inventory_sector AS sect
+                    ON
+                        bs.id = sect.base_station_id
+                    LEFT JOIN
+                        device_device AS device
+                    ON
+                        sect.sector_configured_on_id = device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS sect_device_tech
+                    ON
+                        device.device_technology = sect_device_tech.id
+                    LEFT JOIN
+                        device_device as sect_device
+                    ON
+                        sect.sector_configured_on_id = sect_device.id
+                    LEFT JOIN
+                        inventory_circuit AS ckt
+                    ON
+                        sect.id = ckt.sector_id
+                    LEFT JOIN
+                        device_devicetype as sect_device_type
+                    ON
+                        sect_device_type.id = device.device_type
+                    LEFT JOIN
+                        device_devicetype as bh_device_type
+                    ON
+                        bh_device_type.id = bh_device.device_type
+                    LEFT JOIN
+                        device_devicefrequency as sect_freq
+                    ON
+                        sect_freq.id = sect.frequency_id
+                    LEFT join
+                        inventory_substation as ss
+                    ON
+                        ckt.sub_station_id = ss.id
+                    LEFT JOIN
+                        device_device AS ss_device
+                    ON
+                        ss.device_id = ss_device.id
+                    LEFT JOIN
+                        device_device as current_device
+                    ON
+                        current_device.id = {2}
+                    where
+                        current_device.is_added_to_nms > 0
+                        AND
+                        bs.id in ({0})
+                        AND
+                        {1} = {2}
+                    GROUP by(sect_sector_id)
+                '''.format(', '.join(bs_id), query_filter_condition1 , current_device_id)
+
+        
+        elif page_type == 'customer':
+            current_sector_device_id = 0
+            if 'SS' in device_type.name:
+                queryset = list(Circuit.objects.filter(sub_station__device=device).values('sector__sector_configured_on__id'))
+                if len(queryset):
+                    current_sector_device_id = queryset[0]['sector__sector_configured_on__id']
+            else:
+                current_sector_device_id = current_device_id
+
+            topology_query = ''' 
                 SELECT
                     IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
                     IF(isnull(bs.name), 'NA', bs.name) AS bs_name,
                     IF(isnull(bs.alias), 'NA', bs.alias) AS bs_alias,
+                    IF(isnull(bs_switch.id), 'NA', bs_switch.id) AS bs_switch_id, 
+                    IF(isnull(backhaul.bh_switch_id), 'NA', backhaul.bh_switch_id) AS bs_convertor_id,
+                    IF(isnull(backhaul.aggregator_id), 'NA', backhaul.aggregator_id) AS bh_aggregator_id,
+                    IF(isnull(backhaul.pop_id), 'NA', backhaul.pop_id) AS bh_pop_id,
+                    IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                     IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
+                    IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
+                    IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
                     IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
+                    IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
+                    IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
+                    IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
+                    IF(isnull(backhaul.pop_port_name), 'NA', backhaul.pop_port_name) AS bh_pop_port,
+                    IF(isnull(bh_aggregator_device.ip_address), 'NA', bh_aggregator_device.ip_address) AS bh_aggregator_ip,
+                    IF(isnull(backhaul.aggregator_port_name), 'NA', backhaul.aggregator_port_name) AS bh_aggregator_port,
                     IF(isnull(bh_device_type.name), 'NA', bh_device_type.name) AS bh_device_type,
                     IF(isnull(bh_device_tech.name), 'NA', bh_device_tech.name) AS bh_device_tech,   
                     IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS bh_ip,
@@ -7385,6 +7934,7 @@ class GetTopology(View):
                     IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
                     IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
                     IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
+                    IF(isnull(sector_port.alias), 'NA', sector_port.alias) AS sect_port,
                     IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
                     IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
                     IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
@@ -7395,17 +7945,41 @@ class GetTopology(View):
                     IF(isnull(ss_device_type.name), 'NA', ss_device_type.name) AS ss_device_type,
                     IF(isnull(ss_device.device_name), 'NA', ss_device.device_name) AS ss_device_name,
                     IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address) AS ss_device_ip,
+                    IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
+                    IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
+                    IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
+                    IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
+                    IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
                     ss_device_type.device_icon as ss_icon,
                     sect_device_type.device_icon as sect_icon,
                     bh_device_type.device_icon as bh_icon,
-                    sect_freq.color_hex_value as sect_color
+                    sect_freq.color_hex_value as sect_color,
+                    IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
+                    IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
+                    IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port
 
                 FROM
                     inventory_basestation AS bs
                 LEFT JOIN
+                    device_device AS bs_switch
+                ON
+                    bs.bs_switch_id = bs_switch.id
+                LEFT JOIN
                     inventory_backhaul AS backhaul
                 ON
                     bs.backhaul_id = backhaul.id
+                LEFT JOIN
+                    device_device AS bs_convertor_device
+                ON
+                    backhaul.bh_switch_id = bs_convertor_device.id
+                LEFT JOIN
+                    device_device AS bh_aggregator_device
+                ON
+                    backhaul.aggregator_id = bh_aggregator_device.id
+                LEFT JOIN
+                    device_device AS bh_pop_device
+                ON
+                    backhaul.pop_id = bh_pop_device.id
                 LEFT JOIN
                     device_device AS bh_device
                 ON
@@ -7419,6 +7993,10 @@ class GetTopology(View):
                 ON
                     bs.id = sect.base_station_id
                 LEFT JOIN
+                    device_deviceport AS sector_port
+                ON
+                    sect.sector_configured_on_port_id = sector_port.id
+                LEFT JOIN
                     device_device AS device
                 ON
                     sect.sector_configured_on_id = device.id
@@ -7426,6 +8004,10 @@ class GetTopology(View):
                     device_devicetechnology AS sect_device_tech
                 ON
                     device.device_technology = sect_device_tech.id
+                LEFT JOIN
+                    device_device as sect_device
+                ON
+                    sect.sector_configured_on_id = sect_device.id
                 LEFT JOIN
                     inventory_circuit AS ckt
                 ON
@@ -7458,11 +8040,179 @@ class GetTopology(View):
                     device_devicefrequency as sect_freq
                 ON
                     sect_freq.id = sect.frequency_id
+                LEFT JOIN
+                    device_device as current_device
+                ON
+                    current_device.id = {2}
                 where
-                    device.is_added_to_nms > 0
+                    current_device.is_added_to_nms > 0
                     AND
                     bs.id in ({0})
-            '''.format(', '.join(bs_id))
+                    AND
+                    sect_device.id = {1}
+            '''.format(', '.join(bs_id), current_sector_device_id, current_device_id)
+
+        elif page_type == 'other':
+            case_of_ptp_bh = False
+            bs_alias_qs = BaseStation.objects.filter(id=bs_id[0]).values('alias')
+            bs_alias = str(bs_alias_qs[0]['alias']).lower()
+
+            queryset = list(Circuit.objects.filter(circuit_id__icontains = bs_alias + '#').values())
+            
+            if len(queryset):
+                case_of_ptp_bh = True
+
+                circuit_id = queryset[0]['circuit_id']
+                # spliiting current circuit in case of having PTP-BH, because there we have Far-end and Near-End
+                splitted_circuit_id_list = circuit_id.split('#')
+                
+
+                if len(splitted_circuit_id_list) > 1:
+                    # far_end_bs = str(splitted_circuit_id_list[0]).lower()
+                    near_end_bs = str(splitted_circuit_id_list[1]).lower()
+
+                    # far_bs_queryset = list(BaseStation.objects.filter(alias__iexact = far_end_bs).values('id'))
+                    # far_end_bs_id = 0
+                    # if len(far_bs_queryset):
+                    #     far_end_bs_id = far_bs_queryset[0]['id']
+
+                    near_bs_queryset = list(BaseStation.objects.filter(alias__iexact = near_end_bs).values('id'))
+                    near_end_bs_id = 0
+                    if len(near_bs_queryset):
+                        near_end_bs_id = near_bs_queryset[0]['id']
+            if case_of_ptp_bh : 
+                query_filter = near_end_bs_id
+            else :
+                query_filter = bs_id[0]
+
+            topology_query = ''' 
+                SELECT
+                    IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
+                    IF(isnull(bs.name), 'NA', bs.name) AS bs_name,
+                    IF(isnull(bs.alias), 'NA', bs.alias) AS bs_alias,
+                    IF(isnull(bs_switch.id), 'NA', bs_switch.id) AS bs_switch_id, 
+                    IF(isnull(backhaul.bh_switch_id), 'NA', backhaul.bh_switch_id) AS bs_convertor_id,
+                    IF(isnull(backhaul.aggregator_id), 'NA', backhaul.aggregator_id) AS bh_aggregator_id,
+                    IF(isnull(backhaul.pop_id), 'NA', backhaul.pop_id) AS bh_pop_id,
+                    IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
+                    IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
+                    IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
+                    IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                    IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
+                    IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
+                    IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
+                    IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
+                    IF(isnull(backhaul.pop_port_name), 'NA', backhaul.pop_port_name) AS bh_pop_port,
+                    IF(isnull(bh_aggregator_device.ip_address), 'NA', bh_aggregator_device.ip_address) AS bh_aggregator_ip,
+                    IF(isnull(backhaul.aggregator_port_name), 'NA', backhaul.aggregator_port_name) AS bh_aggregator_port,
+                    IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
+                    IF(isnull(bh_device_type.name), 'NA', bh_device_type.name) AS bh_device_type,
+                    IF(isnull(bh_device_tech.name), 'NA', bh_device_tech.name) AS bh_device_tech,   
+                    IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS bh_ip,
+                    IF(isnull(sect.id), 'NA', sect.id) AS sect_id,
+                    IF(isnull(sect.sector_id), 'NA', sect.sector_id) AS sect_sector_id,
+                    IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
+                    IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
+                    IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
+                    IF(isnull(sector_port.alias), 'NA', sector_port.alias) AS sect_port,
+                    IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
+                    IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
+                    IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
+                    'NA' AS ss_circuit_id,
+                    'NA' AS ss_id,
+                    'NA' AS ss_device_id,
+                    'NA' AS ss_device_tech,
+                    'NA' AS ss_device_type,
+                    'NA' AS ss_device_name,
+                    'NA' AS ss_device_ip,
+                    IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
+                    IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
+                    IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
+                    IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
+                    IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
+                    sect_device_type.device_icon as sect_icon,
+                    bh_device_type.device_icon as bh_icon,
+                    sect_freq.color_hex_value as sect_color,
+                    IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
+                    IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
+                    IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port
+
+                FROM
+                    inventory_basestation AS bs
+                LEFT JOIN
+                    device_device AS bs_switch
+                ON
+                    bs.bs_switch_id = bs_switch.id
+                LEFT JOIN
+                    inventory_backhaul AS backhaul
+                ON
+                    bs.backhaul_id = backhaul.id
+                LEFT JOIN
+                    device_device AS bs_convertor_device
+                ON
+                    backhaul.bh_switch_id = bs_convertor_device.id
+                LEFT JOIN
+                    device_device AS bh_aggregator_device
+                ON
+                    backhaul.aggregator_id = bh_aggregator_device.id
+                LEFT JOIN
+                    device_device AS bh_pop_device
+                ON
+                    backhaul.pop_id = bh_pop_device.id
+                LEFT JOIN
+                    device_device AS bh_device
+                ON
+                    backhaul.bh_configured_on_id = bh_device.id
+                LEFT JOIN 
+                    device_devicetechnology AS bh_device_tech
+                ON
+                    bh_device.device_technology = bh_device_tech.id
+                LEFT JOIN
+                    inventory_sector AS sect
+                ON
+                    sect.base_station_id = {2}
+                LEFT JOIN
+                    device_deviceport AS sector_port
+                ON
+                    sect.sector_configured_on_port_id = sector_port.id
+                LEFT JOIN
+                    device_device AS device
+                ON
+                    sect.sector_configured_on_id = device.id
+                LEFT JOIN 
+                    device_devicetechnology AS sect_device_tech
+                ON
+                    device.device_technology = sect_device_tech.id
+                LEFT JOIN
+                    device_device as sect_device
+                ON
+                    sect.sector_configured_on_id = sect_device.id
+                LEFT JOIN
+                    inventory_circuit AS ckt
+                ON
+                    sect.id = ckt.sector_id
+                LEFT JOIN
+                    device_devicetype as sect_device_type
+                ON
+                    sect_device_type.id = device.device_type
+                LEFT JOIN
+                    device_devicetype as bh_device_type
+                ON
+                    bh_device_type.id = bh_device.device_type
+                LEFT JOIN
+                    device_devicefrequency as sect_freq
+                ON
+                    sect_freq.id = sect.frequency_id
+                LEFT JOIN
+                    device_device as current_device
+                ON
+                    current_device.id = {1}
+                where
+                    current_device.is_added_to_nms > 0
+                    AND
+                    bs.id in ({0})
+                GROUP by(sect_sector_id)
+            '''.format(', '.join(bs_id), current_device_id, query_filter)
 
         # calling global method for executing query
         result_of_query = nocout_utils.fetch_raw_result(topology_query)
@@ -7473,128 +8223,555 @@ class GetTopology(View):
         ss_ids = list()
         sector_dict = dict()
         bs_ids_dict = dict()
-        bs_id = ''
+        bh_aggregator_id = ''
+        bh_pop_id = ''
+        bs_convertor_id = ''
         bs_alias = ''
         bs_icon = ''
 
         is_init = False
+
         # converting query result in required format 
-        for bs in result_of_query:
-            if bs.get('bs_id') not in bs_ids:
-                bs_ids.append(bs.get('bs_id'))
-                if bs.get('bh_device_id'):
+
+        if have_ptp_bh:
+            bs_id = ''
+            bs_alias = ''
+            far_end_bs_id = ''
+            far_end_bs_alias = ''
+            bs_icon = ''
+            for bs in result_of_query:
+                if bs.get('bs_id') not in bs_ids:
+                    bs_ids.append(bs.get('bs_id'))
+                    if bs.get('bh_device_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('bh_device_id')))
+                            bh_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            bh_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if bs.get('bh_aggregator_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_aggregator_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('bh_aggregator_id')))
+                            bh_aggr_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            bh_aggr_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if bs.get('bh_pop_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_pop_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('bh_pop_id')))
+                            bh_pop_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            bh_pop_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if bs.get('bs_convertor_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bs_convertor_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('bs_convertor_id')))
+                            bs_convertor_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            bs_convertor_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if bs.get('far_end_bs_switch_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('far_end_bs_switch_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('far_end_bs_switch_id')))
+                            far_end_bs_switch_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            far_end_bs_switch_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if bs.get('near_end_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('near_end_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('near_end_id')))
+                            near_end_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            near_end_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if bs.get('far_end_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('far_end_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('far_end_id')))
+                            far_end_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            far_end_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if not is_init:
+                        resultant_dict = {
+                            "bh_id": bs.get('bh_id'),
+                            "bh_icon": "/static/img/icons/mobile_blackhaul_icon_small.png" if not bs.get('bh_icon') else "/media/" + bs.get('bh_icon'),
+                            "bh_device_id": bs.get('bh_device_id'),
+                            "bh_device_tech": bs.get('bh_device_tech'),
+                            "bh_device_type": bs.get('bh_device_type'),
+                            "bh_ip": bs.get('bh_ip'),
+                            "pe_ip" : bs.get('pe_ip'),
+                            "pe_hostname" : bs.get('pe_hostname'),
+                            "bs_switch_ip" : bs.get('bs_switch_ip'),
+                            "bs_switch_port" : bs.get('bs_switch_port'),
+                            "far_end_bs_switch_port" : bs.get('far_end_bs_switch_port'),
+                            "far_end_bs_switch_ip" : bs.get('bs_switch_ip'),
+                            "aggregation_switch_ip" : bs.get('bh_aggregator_ip'),
+                            "aggregation_switch_port" : bs.get('bh_aggregator_port'),
+                            "pop_convertor_ip" : bs.get('bh_pop_ip'),
+                            "pop_convertor_port" : bs.get('bh_pop_port'),
+                            "bs_convertor_ip" : bs.get('bs_convertor_ip'),
+                            "bs_convertor_port" : bs.get('bs_convertor_port'),
+                            "far_end_ip" : bs.get('far_end_ip'),
+                            "near_end_ip" : bs.get('near_end_ip'),
+                            "bs_switch_pl_info": bh_pl_info,
+                            "bh_aggr_pl_info": bh_aggr_pl_info,
+                            "bh_pop_pl_info": bh_pop_pl_info,
+                            "bs_convertor_pl_info": bs_convertor_pl_info,
+                            "far_end_bs_switch_pl_info" : far_end_bs_switch_pl_info,
+                            "near_end_pl_info" : near_end_pl_info,
+                            "far_end_pl_info" : far_end_pl_info,
+                            "bs_switch_name" : bs.get('bs_switch_name'),
+                            "bs_convertor_device_name" : bs.get('bs_convertor_device_name'),
+                            "bh_aggregator_device_name" : bs.get('bh_aggregator_device_name'),
+                            "bh_pop_device_name" : bs.get('bh_pop_device_name'),
+                            "bh_device_name" : bs.get('bh_device_name'),
+                            "far_end_bs_switch_name" : bs.get('far_end_bs_switch_name'),
+                            "near_end_device_name" : bs.get('near_end_device_name'),
+                            "far_end_device_name" : bs.get('far_end_device_name'),
+                            "far_end_base_station" : list(),
+                            "base_station" : list()
+                        }
+
+                    bs_ids_dict[bs.get('far_end_bs_id')] = {
+                        "sectors": list(),
+                        "bs_id": bs.get('bs_id'),
+                        "bs_alias": bs.get('bs_alias'),
+                        "far_end_bs_id": bs.get('far_end_bs_id'),
+                        "far_end_bs_alias": bs.get('far_end_bs_alias'),
+                        "bs_icon": "/static/img/icons/bs-big.png",
+
+                    }
+                    bs_id = bs.get('bs_id')
+                    bs_alias = bs.get('bs_alias')
+                    far_end_bs_id = bs.get('far_end_bs_id')
+                    far_end_bs_alias = bs.get('far_end_bs_alias')
+                    bs_icon = "/static/img/icons/bs-big.png"
+
+                    is_init = True
+
+                if not multiple_bs:
+                    if str(bs.get('far_end_sect_id')) not in sector_dict:
+                        if bs.get('far_end_sect_device_id'):
+                            try:
+                                severity, other_detail = device_current_status(Device.objects.get(id=bs.get('far_end_sect_device_id')))
+                                pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('far_end_sect_device_id')))
+                                far_end_sect_pl_info = {
+                                    "severity" : severity if severity else 'NA',
+                                    "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                    "packet_loss" : pack_loss if pack_loss else 'NA',
+                                    "latency" : latency if latency else 'NA'
+                                }
+                            except Exception, e:
+                                far_end_sect_pl_info = {
+                                    "severity" : "",
+                                    "value": "",
+                                    "packet_loss": "",
+                                    "latency": ""
+                                }
+                        
+
+                        sector_dict[str(bs.get('far_end_sect_id'))] = {
+                            "id": str(bs.get('far_end_sect_id')),
+                            "device_name": bs.get('far_end_sect_device_name'),
+                            "device_id": bs.get('far_end_sect_device_id'),
+                            "device_tech": bs.get('far_end_sect_device_tech'),
+                            "device_type": bs.get('far_end_sect_device_type'),
+                            "sect_port" : bs.get('far_end_sect_port'),
+                            "ip_address": bs.get('far_end_sect_device_ip'),
+                            "sect_ip_id_title": bs.get('far_end_sect_ip_id_title'),
+                            "icon": "/media/" + bs.get('sect_icon'),
+                            "pl_info": far_end_sect_pl_info,
+                            "sub_station": list()
+                        }
+
                     try:
-                        severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
-                        bh_pl_info = {
-                            "severity" : severity if severity else 'NA',
-                            "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
-                        }
+                        if bs.get('far_end_ss_device_id'):
+                            try:
+                                severity, other_detail = device_current_status(Device.objects.get(id=bs.get('far_end_ss_device_id')))
+                                pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('far_end_ss_device_id')))
+                                far_end_ss_pl_info = {
+                                    "severity" : severity if severity else 'NA',
+                                    "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                    "packet_loss" : pack_loss if pack_loss else 'NA',
+                                    "latency" : latency if latency else 'NA'
+                                }
+                            except Exception, e:
+                                far_end_ss_pl_info = {
+                                    "severity" : "",
+                                    "value": "",
+                                    "packet_loss": "",
+                                    "latency": ""
+                                }
+                        # Only appending the selected substaion
+                        if bs.get('far_end_ss_device_id') == current_device_id:
+                            sector_dict[str(bs.get('far_end_sect_id'))]['sub_station'].append({
+                                "id": bs.get('far_end_ss_id'),
+                                "device_name": bs.get('far_end_ss_device_name'),
+                                "device_id": bs.get('far_end_ss_device_id'),
+                                "device_tech": bs.get('far_end_ss_device_tech'),
+                                "device_type": bs.get('far_end_ss_device_type'),
+                                "ip_address": bs.get('far_end_ss_device_ip'),
+                                "ckt_id": bs.get('far_end_ss_circuit_id'),
+                                "link_color": bs.get('sect_color'),
+                                "icon": "/media/" + bs.get('ss_icon'),
+                                "pl_info": far_end_ss_pl_info
+                            })
                     except Exception, e:
-                        bh_pl_info = {
-                            "severity" : "",
-                            "value": ""
-                        }
-                if not is_init:
-                    resultant_dict = {
-                        "bh_id": bs.get('bh_id'),
-                        "bh_icon": "/static/img/icons/mobile_blackhaul_icon_small.png" if not bs.get('bh_icon') else "/media/" + bs.get('bh_icon'),
-                        "bh_device_id": bs.get('bh_device_id'),
-                        "bh_device_tech": bs.get('bh_device_tech'),
-                        "bh_device_type": bs.get('bh_device_type'),
-                        "bh_ip": bs.get('bh_ip'),
-                        "pl_info": bh_pl_info,
-                        "base_station" : list()
-                    }
-
-                bs_ids_dict[bs.get('bs_id')] = {
-                    "sectors": list(),
-                    "bs_id": bs.get('bs_id'),
-                    "bs_alias": bs.get('bs_alias'),
-                    "bs_icon": "/static/img/icons/bs-big.png",
-
-                }
-                bs_id = bs.get('bs_id')
-                bs_alias = bs.get('bs_alias')
-                bs_icon = "/static/img/icons/bs-big.png"
-
-                is_init = True
-
-            if not multiple_bs:
-                if str(bs.get('sect_id')) not in sector_dict:
-                    if bs.get('sect_device_id'):
-                        try:
-                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('sect_device_id')))
-                            sect_pl_info = {
-                                "severity" : severity if severity else 'NA',
-                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
-                            }
-                        except Exception, e:
-                            sect_pl_info = {
-                                "severity" : "NA",
-                                "value": "NA"
-                            }
-                    
-
-                    sector_dict[str(bs.get('sect_id'))] = {
-                        "id": str(bs.get('sect_id')),
-                        "device_name": bs.get('sect_device_name'),
-                        "device_id": bs.get('sect_device_id'),
-                        "device_tech": bs.get('sect_device_tech'),
-                        "device_type": bs.get('sect_device_type'),
-                        "ip_address": bs.get('sect_device_ip'),
-                        "sect_ip_id_title": bs.get('sect_ip_id_title'),
-                        "icon": "/media/" + bs.get('sect_icon'),
-                        "pl_info": sect_pl_info,
-                        "sub_station": list()
-                    }
-
-                try:
-                    if bs.get('ss_device_id'):
-                        try:
-                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('ss_device_id')))
-                            ss_pl_info = {
-                                "severity" : severity if severity else 'NA',
-                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA'
-                            }
-                        except Exception, e:
-                            ss_pl_info = {
-                                "severity" : "NA",
-                                "value": "NA"
-                            }
-                    sector_dict[str(bs.get('sect_id'))]['sub_station'].append({
-                        "id": bs.get('ss_id'),
-                        "device_name": bs.get('ss_device_name'),
-                        "device_id": bs.get('ss_device_id'),
-                        "device_tech": bs.get('ss_device_tech'),
-                        "device_type": bs.get('ss_device_type'),
-                        "ip_address": bs.get('ss_device_ip'),
-                        "ckt_id": bs.get('ss_circuit_id'),
-                        "link_color": bs.get('sect_color'),
-                        "icon": "/media/" + bs.get('ss_icon'),
-                        "pl_info": ss_pl_info
-                    })
-                except Exception, e:
-                    pass
+                        pass
+                
+                    bs_ids_dict[str(bs.get('far_end_bs_id'))]['sectors'].append(sector_dict[str(bs.get('far_end_sect_id'))])
             
-                bs_ids_dict[str(bs.get('bs_id'))]['sectors'].append(sector_dict[str(bs.get('sect_id'))])
+            if multiple_bs:
+                resultant_dict['far_end_base_station'] = bs_ids_dict.values()
+            else:
+                if not resultant_dict['far_end_base_station']:
+                    resultant_dict['far_end_base_station'] = list()
 
-        if multiple_bs:
-            resultant_dict['base_station'] = bs_ids_dict.values()
+                if not resultant_dict['base_station']:
+                    resultant_dict['base_station'] = list()
+
+                resultant_dict['base_station'].append({
+                    'bs_id': bs_id,
+                    'bs_alias': bs_alias
+                })
+
+                resultant_dict['far_end_base_station'].append({
+                    "sectors": sector_dict.values(),
+                    'far_end_bs_id': far_end_bs_id,
+                    'far_end_bs_alias': far_end_bs_alias,
+                    'bs_icon': bs_icon
+                })            
+
         else:
-            if not resultant_dict['base_station']:
-                resultant_dict['base_station'] = list()
+            for bs in result_of_query:
+                if bs.get('bs_id') not in bs_ids:
+                    bs_ids.append(bs.get('bs_id'))
+                    if bs.get('bh_device_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('bh_device_id')))
+                            bh_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            bh_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if bs.get('bh_aggregator_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_aggregator_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('bh_aggregator_id')))
+                            bh_aggr_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            bh_aggr_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if bs.get('bh_pop_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_pop_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('bh_pop_id')))
+                            bh_pop_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            bh_pop_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if bs.get('bs_convertor_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bs_convertor_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('bs_convertor_id')))
+                            bs_convertor_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            bs_convertor_pl_info = {
+                                "severity" : "",
+                                "value": "",
+                                "packet_loss": "",
+                                "latency": ""
+                            }
+                    if not is_init:
+                        resultant_dict = {
+                            "bh_id": bs.get('bh_id'),
+                            "bh_icon": "/static/img/icons/mobile_blackhaul_icon_small.png" if not bs.get('bh_icon') else "/media/" + bs.get('bh_icon'),
+                            "bh_device_id": bs.get('bh_device_id'),
+                            "bh_device_tech": bs.get('bh_device_tech'),
+                            "bh_device_type": bs.get('bh_device_type'),
+                            "bh_ip": bs.get('bh_ip'),
+                            "pe_ip" : bs.get('pe_ip'),
+                            "pe_hostname" : bs.get('pe_hostname'),
+                            "aggregation_switch_ip" : bs.get('bh_aggregator_ip'),
+                            "aggregation_switch_port" : bs.get('bh_aggregator_port'),
+                            "pop_convertor_ip" : bs.get('bh_pop_ip'),
+                            "pop_convertor_port" : bs.get('bh_pop_port'),
+                            "bs_convertor_ip" : bs.get('bs_convertor_ip'),
+                            "bs_convertor_port" : bs.get('bs_convertor_port'),
+                            "bs_switch_port" : bs.get('bs_switch_port'),
+                            "far_end_bs_switch_port" : bs.get('far_end_bs_switch_port'),
+                            "bs_switch_pl_info": bh_pl_info,
+                            "bh_aggr_pl_info": bh_aggr_pl_info,
+                            "bh_pop_pl_info": bh_pop_pl_info,
+                            "bs_convertor_pl_info": bs_convertor_pl_info,
+                            "bs_switch_name" : bs.get('bs_switch_name'),
+                            "bs_convertor_device_name" : bs.get('bs_convertor_device_name'),
+                            "bh_aggregator_device_name" : bs.get('bh_aggregator_device_name'),
+                            "bh_pop_device_name" : bs.get('bh_pop_device_name'),
+                            "bh_device_name" : bs.get('bh_device_name'),
+                            "far_end_bs_switch_name" : bs.get('far_end_bs_switch_name'),
+                            "near_end_device_name" : bs.get('near_end_device_name'),
+                            "far_end_device_name" : bs.get('far_end_device_name'),
+                            "base_station" : list()
+                        }
 
-            resultant_dict['base_station'].append({
-                "sectors": sector_dict.values(),
-                'bs_id': bs_id,
-                'bs_alias': bs_alias,
-                'bs_icon': bs_icon
-            })
+                    bs_ids_dict[bs.get('bs_id')] = {
+                        "sectors": list(),
+                        "bs_id": bs.get('bs_id'),
+                        "bs_alias": bs.get('bs_alias'),
+                        "bs_icon": "/static/img/icons/bs-big.png",
+
+                    }
+                    bs_id = bs.get('bs_id')
+                    bs_alias = bs.get('bs_alias')
+                    bs_icon = "/static/img/icons/bs-big.png"
+
+                    is_init = True
+
+                if not multiple_bs:
+                    if bs.get('sect_id') and str(bs.get('sect_id')) not in sector_dict:
+                        if bs.get('sect_device_id'):
+                            try:
+                                severity, other_detail = device_current_status(Device.objects.get(id=bs.get('sect_device_id')))
+                                pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('sect_device_id')))
+                                sect_pl_info = {
+                                    "severity" : severity if severity else 'NA',
+                                    "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                    "packet_loss" : pack_loss if pack_loss else 'NA',
+                                    "latency" : latency if latency else 'NA'
+                                }
+                            except Exception, e:
+                                sect_pl_info = {
+                                    "severity" : "",
+                                    "value": "",
+                                    "packet_loss": "",
+                                    "latency": ""
+                                }
+                        
+
+                        sector_dict[str(bs.get('sect_id'))] = {
+                            "id": str(bs.get('sect_id')),
+                            "device_name": bs.get('sect_device_name'),
+                            "device_id": bs.get('sect_device_id'),
+                            "device_tech": bs.get('sect_device_tech'),
+                            "device_type": bs.get('sect_device_type'),
+                            "sect_port" : bs.get('sect_port'),
+                            "ip_address": bs.get('sect_device_ip'),
+                            "sect_ip_id_title": bs.get('sect_ip_id_title'),
+                            "icon": "/media/" + str(bs.get('sect_icon', '')),
+                            "pl_info": sect_pl_info,
+                            "sub_station": list()
+                        }
+
+                    try:
+                        if bs.get('ss_device_id'):
+                            try:
+                                severity, other_detail = device_current_status(Device.objects.get(id=bs.get('ss_device_id')))
+                                pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('ss_device_id')))
+                                ss_pl_info = {
+                                    "severity" : severity if severity else 'NA',
+                                    "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                    "packet_loss" : pack_loss if pack_loss else 'NA',
+                                    "latency" : latency if latency else 'NA'
+                                }
+                            except Exception, e:
+                                ss_pl_info = {
+                                    "severity" : "",
+                                    "value": "",
+                                    "packet_loss": "",
+                                    "latency": ""
+                                }
+                        # Only appending the selected substaion
+                        if bs.get('ss_device_id') == current_device_id:
+                            sector_dict[str(bs.get('sect_id'))]['sub_station'].append({
+                                "id": bs.get('ss_id'),
+                                "device_name": bs.get('ss_device_name'),
+                                "device_id": bs.get('ss_device_id'),
+                                "device_tech": bs.get('ss_device_tech'),
+                                "device_type": bs.get('ss_device_type'),
+                                "ip_address": bs.get('ss_device_ip'),
+                                "ckt_id": bs.get('ss_circuit_id'),
+                                "link_color": bs.get('sect_color'),
+                                "icon": "/media/" + bs.get('ss_icon'),
+                                "pl_info": ss_pl_info
+                            })
+                    except Exception, e:
+                        pass
+                
+                    try:
+                        bs_ids_dict[str(bs.get('bs_id'))]['sectors'].append(sector_dict[str(bs.get('sect_id'))])
+                    except Exception, e:
+                        pass
+
+            if multiple_bs:
+                resultant_dict['base_station'] = bs_ids_dict.values()
+            else:
+                if 'base_station' not in resultant_dict:
+                    resultant_dict['base_station'] = list()
+
+                resultant_dict['base_station'].append({
+                    "sectors": sector_dict.values(),
+                    'bs_id': bs_id,
+                    'bs_alias': bs_alias,
+                    'bs_icon': bs_icon
+                })
 
         result['data'].append(resultant_dict)
         result['message'] = 'Device Topology Details Fetched Successfully.'
         result['success'] = 1
+        result['have_ptp_bh'] = have_ptp_bh
+        result['limit_till_bs'] = limit_till_bs
 
+        return HttpResponse(json.dumps(result), content_type="application/json")
+
+class EveryFiveMinDeviceStatus(View):
+    """
+    The Class based View to get pl info in every 5 min. for each device in topo-view.
+    """
+    def get(self, request):
+
+        result = {
+            'success': 0,
+            'message': 'Device pl info not fetched successfully.',
+            'data': []
+        }
+
+        try:
+            pl_device_list = json.loads(self.request.GET.get('data'))
+        except Exception, e:
+            pl_device_list = list()
+        
+        pl_info_list = list()
+        for pl_device in pl_device_list:
+
+            try:
+                severity, other_detail = device_current_status(Device.objects.get(device_name=pl_device))
+                pack_loss, latency = device_pl_latency_values(Device.objects.get(device_name=pl_device))
+                current_pl_info = {
+                    "id" : pl_device,
+                    "severity" : severity if severity else 'NA',
+                    "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                    "packet_loss" : pack_loss if pack_loss else 'NA',
+                    "latency" : latency if latency else 'NA'
+                }
+            except Exception, e:
+                current_pl_info = {
+                    "id" : pl_device,
+                    "severity" : "",
+                    "value": "",
+                    "packet_loss": "",
+                    "latency": ""
+                }
+            pl_info_list.append(current_pl_info)
+
+
+        result = {
+            'success': 1,
+            'message': 'Device pl info fetched successfully.',
+            'data': pl_info_list
+        }
         return HttpResponse(json.dumps(result), content_type="application/json")
 
 
@@ -7890,6 +9067,73 @@ class SavePowerLog(View):
                 message='Log saved successfully.'
             )
         except Exception, e:
+            pass
+
+        return HttpResponse(json.dumps(result))
+
+
+class InitDeviceReboot(View):
+    """
+    This function reboot given device by executing the shell script
+    """
+    def get(self, request, *args, **kwargs):
+        
+        result = {
+            'success': 0,
+            'message': 'Device reboot not successful.',
+        }
+
+        try:
+            import subprocess
+            device_id = self.request.GET.get('device_id')
+            device = Device.objects.get(id=device_id)
+            machine_name = device.machine.name
+            ip_address = device.ip_address
+            device_type = DeviceType.objects.get(id=device.device_type).name
+            
+            env_name = 'omd'
+            if ENV_NAME != 'uat':
+                env_name = 'apps'
+
+            cmd_list = [
+                'bash', 
+                '/' +str(env_name)+ '/nocout/nocout/nocout/performance/script/ss_reboot.sh', 
+                machine_name, 
+                ip_address, 
+                device_type, 
+                env_name
+            ]
+
+            log.error('Excecuted Command -- ')
+            log.error(' '.join(cmd_list))
+
+            reboot_response = subprocess.Popen(
+                cmd_list, 
+                stdout=subprocess.PIPE
+            )
+
+            response = reboot_response.stdout.read()
+            log.error('Response --> %s' % response)
+            if 'yes' in response:
+                result.update(
+                    success=1,
+                    message='Device successfully reboot.'
+                )
+            elif 'no' in response:
+                result.update(
+                    success=1,
+                    message='Connection not established or Authentication Error.'
+                )
+            elif 'nr' in response:
+                result.update(
+                    success=1,
+                    message='Device Not Reachable.'
+                )
+            else:
+                pass
+        except Exception, e:
+            log.error('Device Reboot Exception ---')
+            log.error(e)
             pass
 
         return HttpResponse(json.dumps(result))

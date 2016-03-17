@@ -24,7 +24,7 @@ from fields import PasswordField
 from user_profile.utils.auth import can_edit_permissions, get_user_organizations
 import logging
 from nocout.settings import PERMISSIONS_MODULE_ENABLED
-
+import re
 logger = logging.getLogger(__name__)
 
 
@@ -192,6 +192,34 @@ class UserForm(forms.ModelForm):
                 return groups
         else:
             return groups
+
+    def clean_first_name(self):
+        """
+        Restrict the user other than super user to create the admin.
+        """
+        first_name = self.cleaned_data['first_name']
+
+        if first_name:
+            if not re.match(r'^[A-Za-z\s]+$', first_name):
+                raise forms.ValidationError("Firstname must contains only alphabets.")
+            else:
+                return first_name
+        else:
+            return first_name
+
+    def clean_last_name(self):
+        """
+        Restrict the user other than super user to create the admin.
+        """
+        last_name = self.cleaned_data['last_name']
+
+        if last_name:
+            if not re.match(r'^[A-Za-z\s]+$', last_name):
+                raise forms.ValidationError("Lastname must contains only alphabets.")
+            else:
+                return last_name
+        else:
+            return last_name
 
     def clean_password1(self):
         """

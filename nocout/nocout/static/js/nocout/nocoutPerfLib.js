@@ -179,7 +179,7 @@ function nocoutPerfLib() {
 
         var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p' || device_type.toLowerCase() == 'radwin2kss',
             condition_2 = page_type == 'other',
-            condition_3 = page_type == 'customer' && device_type.toLowerCase() != 'radwin2kbs';
+            condition_3 = page_type == 'customer'; //&& device_type.toLowerCase() != 'radwin2kbs';
             
         // Show power tab only if page type = Customer 
         if (condition_3) {
@@ -477,10 +477,7 @@ function nocoutPerfLib() {
                                 data-complete-text="<i class=\'fa fa-plug\'></i> JOJI" \
                                 data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-plug"></i> JOJI\
                             </button>\
-                            <button title="Soft Reboot" class="btn btn-default power-actions" id="power_send_reboot" data-button-respone="reboot" \
-                                data-complete-text="<i class=\'fa fa-refresh\'></i> Soft Reboot" \
-                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-refresh"></i> Soft Reboot\
-                            </button>\
+                            {0}\
                             <div class="clearfix"></div>\
                             <div class="divide-20"></div>\
                             <table id="power_msg_listing" class="datatable table table-striped table-bordered table-hover"> \
@@ -489,6 +486,17 @@ function nocoutPerfLib() {
                             </table> \
                             <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
                             </div></div></div>';
+            
+            var reboot_btn_html = '';
+            if (enable_reboot_btn) {
+                reboot_btn_html = '<button title="Soft Reboot" class="btn btn-default power-actions" \
+                                       id="power_send_reboot" data-button-respone="reboot" \
+                                       data-complete-text="<i class=\'fa fa-refresh\'></i> Soft Reboot" \
+                                       data-loading-text="<i class=\'fa fa-spinner fa-spin\'> \
+                                       </i> Please Wait..."> <i class="fa fa-refresh"></i> Soft Reboot\
+                                       </button>';
+            }
+            content_html = content_html.replace('{0}', reboot_btn_html);
         } else {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\

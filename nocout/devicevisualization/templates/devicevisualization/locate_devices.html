@@ -194,14 +194,21 @@
         deviceName = "",
         default_polling = true,
         dataTableInstance = "",
-        tech_type_api = '';
+        tech_type_api = '',
+        device_reboot_url = '',
+        save_power_log_url = '',
+        enable_reboot_btn = false;
 
     $(document).ready(function (e) {
         
         // Set 'isMapsPage' flag to true
         isMapsPage = true;
         tech_type_api = "{% url 'get_types_for_tech' 123 %}";
-
+        device_reboot_url = "{% url 'init_device_reboot' %}";
+        save_power_log_url = "{% url 'save_power_log' %}";
+        {% if settings.ENABLE_DEVICE_REBOOT_BTN %}
+            enable_reboot_btn = true;
+        {% endif %}
         try {
             // Is user super admin or admin
             is_super_admin = '{{ is_admin }}';

@@ -175,7 +175,9 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         'ip_address', 
         'mac_address', 
         'state__state_name', 
-        'city__city_name'
+        'city__city_name',
+        'device_alias',
+        'is_monitored_on_nms'
     ]
 
     # order_columns is used for list of fields which is used for sorting the data table.
@@ -254,13 +256,18 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        
+        device_type_data = list()
+        device_tech_data = list()
+        if len(json_data):
+            device_type_data = list(DeviceType.objects.all().values('id', 'name'))
+            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
-                    device_alias = Device.objects.get(pk=dct['id']).device_alias
-                    device_ip = Device.objects.get(pk=dct['id']).ip_address
-                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+                    dct['device_name'] = "{} ({})".format(dct.get('device_alias'), dct.get('ip_address'))
             except Exception as e:
                 logger.exception("Device not present. Exception: ", e.message)
 
@@ -269,18 +276,26 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             current_device = Device.objects.get(pk=dct['id'])
 
             try:
-                dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
-                    'device_type'] else ''
+                # dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+                dtype = filter(
+                    lambda dtype: dtype if dtype.get('id') == int(dct['device_type']) else '',
+                    device_type_data
+                )[0].get('name')
+                dct['device_type__name'] = dtype
             except Exception as e:
                 dct['device_type__name'] = ""
 
             try:
-                dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
-                    if dct['device_technology'] else ''
+                # dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name if dct['device_technology'] else ''
+                dtech = filter(
+                    lambda dtech: dtech if dtech.get('id') == int(dct['device_technology']) else '',
+                    device_tech_data
+                )[0].get('name')
+                dct['device_technology__name'] = dtech
             except Exception as e:
                 dct['device_technology__name'] = ""
 
-            if current_device.is_monitored_on_nms == 1:
+            if dct.get('is_monitored_on_nms') == 1:
                 status_icon_color = "green-dot"
                 dct.update(status_icon='<i class="fa fa-circle {0}"></i>'.format(status_icon_color))
             else:
@@ -337,11 +352,16 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
 
             try:
                 dct.update(
-                    nms_actions='<a href="javascript:;" class="nms_action view" pk="{0}"><i class="fa fa-list-alt {1}" title="Services Status"></i></a>\
-                                 <a href="javascript:;" class="nms_action disable" pk="{0}"><i class="fa fa-ban {1}" title="Disable Device"></i></a>\
-                                 <a href="javascript:;" class="nms_action add" pk="{0}"><i class="fa fa-plus {1}" title="Add Services"></i></a>\
-                                 <a href="javascript:;" class="nms_action edit" pk="{0}"><i class="fa fa-pencil {1}" title="Edit Services"></i></a>\
-                                 <a href="javascript:;" class="nms_action delete" pk="{0}"><i class="fa fa-minus {1}" title="Delete Services"></i></a>'.format(
+                    nms_actions='<a href="javascript:;" class="nms_action view" pk="{0}"> \
+                                 <i class="fa fa-list-alt {1}" title="Services Status"></i></a>\
+                                 <a href="javascript:;" class="nms_action disable" pk="{0}"> \
+                                 <i class="fa fa-ban {1}" title="Disable Device"></i></a>\
+                                 <a href="javascript:;" class="nms_action add" pk="{0}"> \
+                                 <i class="fa fa-plus {1}" title="Add Services"></i></a>\
+                                 <a href="javascript:;" class="nms_action edit" pk="{0}"> \
+                                 <i class="fa fa-pencil {1}" title="Edit Services"></i></a>\
+                                 <a href="javascript:;" class="nms_action delete" pk="{0}"> \
+                                 <i class="fa fa-minus {1}" title="Delete Services"></i></a>'.format(
                                     dct['id'], text_color
                                 )
                 )
@@ -351,8 +371,9 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             # show sync button only if user is superuser or admin
             if is_sync_perm:
                 try:
-                    dct['nms_actions'] += '<a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh {1}" title="Sync Device"></i></a>'.format(
-                        dct['id'], text_color)
+                    dct['nms_actions'] += '<a href="javascript:;" onclick="sync_devices();"> \
+                                           <i class="fa fa-refresh {1}" title="Sync Device"></i> \
+                                           </a>'.format(dct['id'], text_color)
                 except Exception as e:
                     logger.exception("Device is not a substation. %s" % e.message)
         return json_data
@@ -375,7 +396,9 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
         'ip_address', 
         'mac_address', 
         'state__state_name', 
-        'city__city_name'
+        'city__city_name',
+        'device_alias',
+        'is_monitored_on_nms'
     ]
 
     # order_columns is used for list of fields which is used for sorting the data table.
@@ -449,13 +472,20 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        device_type_data = list()
+        device_tech_data = list()
+        if len(json_data):
+            device_type_data = list(DeviceType.objects.all().values('id', 'name'))
+            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
-                    device_alias = Device.objects.get(pk=dct['id']).device_alias
-                    device_ip = Device.objects.get(pk=dct['id']).ip_address
-                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+                    # device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    # device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(dct.get('device_alias'), dct.get('ip_address'))
             except Exception as e:
                 logger.exception("Device not present. Exception: ", e.message)
 
@@ -464,15 +494,23 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
 
             # device type name
             try:
-                dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
-                    'device_type'] else ''
+                # dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+                dtype = filter(
+                    lambda dtype: dtype.get('name') if dtype.get('id') == int(dct['device_type']) else '',
+                    device_type_data
+                )[0].get('name')
+                dct['device_type__name'] = dtype
             except Exception as e:
                 dct['device_type__name'] = ""
 
             # device technology name
             try:
-                dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
-                    if dct['device_technology'] else ''
+                # dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name if dct['device_technology'] else ''
+                dtech = filter(
+                    lambda dtech: dtech.get('name') if dtech.get('id') == int(dct['device_technology']) else '',
+                    device_tech_data
+                )[0].get('name')
+                dct['device_technology__name'] = dtech
             except Exception as e:
                 dct['device_technology__name'] = ""
 
@@ -554,7 +592,9 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         'ip_address', 
         'mac_address', 
         'state__state_name', 
-        'city__city_name'
+        'city__city_name',
+        'device_alias',
+        'is_monitored_on_nms'
     ]
 
     # order_columns is used for list of fields which is used for sorting the data table.
@@ -626,13 +666,20 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        device_type_data = list()
+        device_tech_data = list()
+        if len(json_data):
+            device_type_data = list(DeviceType.objects.all().values('id', 'name'))
+            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
-                    device_alias = Device.objects.get(pk=dct['id']).device_alias
-                    device_ip = Device.objects.get(pk=dct['id']).ip_address
-                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+                    # device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    # device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(dct.get('device_alias'), dct.get('ip_address'))
             except Exception as e:
                 logger.exception("Device not present. Exception: ", e.message)
 
@@ -641,16 +688,24 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
             # device type name
             try:
-                dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
-                    'device_type'] else ''
-            except Exception as device_type_exp:
+                # dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+                dtype = filter(
+                    lambda dtype: dtype.get('name') if dtype.get('id') == int(dct['device_type']) else '',
+                    device_type_data
+                )[0].get('name')
+                dct['device_type__name'] = dtype
+            except Exception as e:
                 dct['device_type__name'] = ""
 
             # device technology name
             try:
-                dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
-                    if dct['device_technology'] else ''
-            except Exception as device_tech_exp:
+                # dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name if dct['device_technology'] else ''
+                dtech = filter(
+                    lambda dtech: dtech.get('name') if dtech.get('id') == int(dct['device_technology']) else '',
+                    device_tech_data
+                )[0].get('name')
+                dct['device_technology__name'] = dtech
+            except Exception as e:
                 dct['device_technology__name'] = ""
 
             dct.update(status_icon='<i class="fa fa-circle orange-dot"></i>')
@@ -731,7 +786,9 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         'ip_address', 
         'mac_address', 
         'state__state_name', 
-        'city__city_name'
+        'city__city_name',
+        'device_alias',
+        'is_monitored_on_nms'
     ]
 
     # order_columns is used for list of fields which is used for sorting the data table.
@@ -803,6 +860,12 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
+        device_type_data = list()
+        device_tech_data = list()
+        if len(json_data):
+            device_type_data = list(DeviceType.objects.all().values('id', 'name'))
+            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+
         # device object
         device = None
 
@@ -810,23 +873,32 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
-                    device = Device.objects.get(pk=dct['id'])
-                    dct['device_name'] = "{} ({})".format(device.device_alias, device.ip_address)
+                    # device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    # device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(dct.get('device_alias'), dct.get('ip_address'))
             except Exception as e:
                 logger.exception("Device not present. Exception: ", e.message)
 
             # device type name
             try:
-                dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
-                    'device_type'] else ''
-            except Exception as device_type_exp:
+                # dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+                dtype = filter(
+                    lambda dtype: dtype.get('name') if dtype.get('id') == int(dct['device_type']) else '',
+                    device_type_data
+                )[0].get('name')
+                dct['device_type__name'] = dtype
+            except Exception as e:
                 dct['device_type__name'] = ""
 
             # device technology name
             try:
-                dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
-                    if dct['device_technology'] else ''
-            except Exception as device_tech_exp:
+                # dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name if dct['device_technology'] else ''
+                dtech = filter(
+                    lambda dtech: dtech.get('name') if dtech.get('id') == int(dct['device_technology']) else '',
+                    device_tech_data
+                )[0].get('name')
+                dct['device_technology__name'] = dtech
+            except Exception as e:
                 dct['device_technology__name'] = ""
 
             # update status icon
@@ -877,7 +949,9 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
         'ip_address', 
         'mac_address', 
         'state__state_name', 
-        'city__city_name'
+        'city__city_name',
+        'device_alias',
+        'is_monitored_on_nms'
     ]
 
     # order_columns is used for list of fields which is used for sorting the data table.
@@ -948,13 +1022,20 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        
+        device_type_data = list()
+        device_tech_data = list()
+        if len(json_data):
+            device_type_data = list(DeviceType.objects.all().values('id', 'name'))
+            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
-                    device_alias = Device.objects.get(pk=dct['id']).device_alias
-                    device_ip = Device.objects.get(pk=dct['id']).ip_address
-                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+                    # device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    # device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(dct.get('device_alias'), dct.get('ip_address'))
             except Exception as e:
                 logger.exception("Device not present. Exception: ", e.message)
 
@@ -963,16 +1044,24 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
 
             # device type name
             try:
-                dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
-                    'device_type'] else ''
-            except Exception as device_type_exp:
+                # dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+                dtype = filter(
+                    lambda dtype: dtype if dtype.get('id') == int(dct['device_type']) else '',
+                    device_type_data
+                )[0].get('name')
+                dct['device_type__name'] = dtype
+            except Exception as e:
                 dct['device_type__name'] = ""
 
             # device technology name
             try:
-                dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
-                    if dct['device_technology'] else ''
-            except Exception as device_tech_exp:
+                # dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name if dct['device_technology'] else ''
+                dtech = filter(
+                    lambda dtech: dtech if dtech.get('id') == int(dct['device_technology']) else '',
+                    device_tech_data
+                )[0].get('name')
+                dct['device_technology__name'] = dtech
+            except Exception as e:
                 dct['device_technology__name'] = ""
 
             # if device is already added to nms core than show icon in device table
@@ -1004,7 +1093,8 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
 
             # view device delete action only if user has permissions
             if is_delete_perm:
-                device_actions += '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'
+                device_actions += '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"> \
+                                   <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'
 
             if device_actions:
                 dct.update(actions=device_actions.format(dct['id']))

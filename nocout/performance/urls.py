@@ -17,6 +17,10 @@ urlpatterns = patterns('',
                            views.GetTopology.as_view(),
                            name='DeviceTopology'
                        ),
+                       url(r'^EveryFiveMinDeviceStatus/$',
+                           views.EveryFiveMinDeviceStatus.as_view(),
+                           name='FiveMinuteStatus'
+                       ),
                        url(r'^get_topology/tool_tip/$',
                            views.GetTopologyToolTip.as_view(),
                            name='DeviceTopologyToolTip'
@@ -95,5 +99,10 @@ urlpatterns = patterns('',
                           r'^save_power_log/$',
                           views.SavePowerLog.as_view(),
                           name='save_power_log'
+                        ),
+                       url(
+                          r'^init_device_reboot/$',
+                          views.InitDeviceReboot.as_view(),
+                          name='init_device_reboot'
                         )
 )

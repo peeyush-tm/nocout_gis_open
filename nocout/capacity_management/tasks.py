@@ -807,7 +807,7 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
         perf = nocout_utils.fetch_raw_result(query=query, machine=machine)
 
     except Exception as e:
-        logger.exception(e)
+        logger.error(e)
         return None
 
     return perf
@@ -848,7 +848,7 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
             # current_value=max_value
         ).using(alias=machine).values('current_value', 'sys_timestamp')
     except Exception as e:
-        logger.exception(e)
+        logger.error(e)
         return 0, 0
 
     if perf and perf.exists():
@@ -1034,9 +1034,9 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             is_raw=True
         )
     count = 0
-    logger.exception("********************************** count - {}".format(basestations.count()))
+    logger.error("********************************** count - {}".format(basestations.count()))
     for bs in basestations:
-        # logger.exception("***************************** {}".format(count))
+        # logger.error("***************************** {}".format(count))
         count += 1
         # base station device
         bh_device = bs.backhaul.bh_configured_on
@@ -1103,29 +1103,43 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     ds = ds.strip()
                     tmp_port = DevicePort.objects.get(alias=ds).name
                     ds_name = ServiceDataSource.objects.get(name__iexact=tmp_port).name.lower()
-                    util = ServiceStatus.objects.filter(
-                        device_name=bh_device.device_name,
-                        service_name=val_dl_service,
-                        data_source__iexact=ds_name
-                    ).using(device_machine)[0].current_value
+                    try:
+                        util = ServiceStatus.objects.filter(
+                            device_name=bh_device.device_name,
+                            service_name=val_dl_service,
+                            data_source__iexact=ds_name
+                        ).using(device_machine)[0].current_value
 
-                    if util not in ['', None]:
-                        util = float(util)
+                        if util not in ['', None]:
+                            util = float(util)
 
-                    ds_dict[util] = ds_name
-                    dp_dict[ds_name] = tmp_port
+                        ds_dict[util] = ds_name
+                        dp_dict[ds_name] = tmp_port
+                    except Exception, e:
+                        if not data_source:
+                            data_source = ds_name
 
-                data_source = ds_dict[max(ds_dict.keys())]
-                device_port = dp_dict[data_source]
+                        device_port = tmp_port
+
+                if ds_dict:
+                    data_source = ds_dict[max(ds_dict.keys())]
+
+                if dp_dict:
+                    device_port = dp_dict[data_source]
             except Exception as e:
+                logger.error('Utilization Error ---- ')
+                logger.error(e)
                 continue
         else:
             try:
                 # we don't care about port, till it actually is mapped to a data source
                 data_source = ServiceDataSource.objects.get(
-                    name=DevicePort.objects.get(alias=bs.bh_port_name).name).name.lower()
+                    name=DevicePort.objects.get(
+                        alias=bs.bh_port_name
+                    ).name
+                ).name.lower()
             except Exception as e:
-                # logger.debug('Back-hual Port {0}'.format(bs.bh_port_name))
+                logger.debug('Back-hual Port {0}'.format(bs.bh_port_name))
                 # logger.debug('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
                 pass
                 # if we don't have a port mapping
@@ -1168,7 +1182,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             if bs.bh_capacity:
                 backhaul_capacity = bs.bh_capacity
             else:
-                logger.exception('No Base-Station - Back-haul Capacity Not Possible')
+                logger.error('No Base-Station - Back-haul Capacity Not Possible')
                 continue
 
             severity_s = dict()
@@ -1289,20 +1303,29 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     # bh_port_name=bs.bh_port_name
                 )
                 bhs_count = bhs.count()
-                bhs = bhs[0]
+                temp_bhs = bhs[0]
+
+                # If their are more then 1 entries for BH+BS pair then delete all entries except 1
+                if bhs_count > 1:
+                    try:
+                        deleted_bh = bhs.exclude(id=temp_bhs.id)
+                        deleted_bh.delete()
+                    except Exception, e:
+                        pass
+
+                bhs = temp_bhs
             except Exception as e:
                 pass
 
             if bhs_count < 1:
-                logger.exception("******************************* Create - {}".format(bhs_count))
+                logger.error("******************************* Create - {}".format(bhs_count))
 
                 bulk_create_bhs.append(
                     BackhaulCapacityStatus
                     (
                         backhaul=bs.backhaul,
                         basestation=bs,
-                        bh_port_name=device_port.replace("_", "/"),
-
+                        bh_port_name=device_port.replace("_", "/") if device_port else '',
                         backhaul_capacity=round(float(backhaul_capacity), 2) if backhaul_capacity else 0,
                         current_in_per=round(float(current_in_per), 2) if current_in_per else 0,
                         current_in_val=round(float(current_in_val), 2) if current_in_val else 0,
@@ -1325,10 +1348,10 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     )
                 )
             else:
-                logger.exception("******************************* Update - {}".format(bhs_count))
+                logger.error("******************************* Update - {}".format(bhs_count))
                 # values that would be updated per 5 minutes
                 bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
-                bhs.bh_port_name = device_port.replace("_", "/")
+                bhs.bh_port_name = device_port.replace("_", "/") if device_port else ''
                 bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
                 bhs.severity = severity if severity else 'unknown'
@@ -1533,7 +1556,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sector_capacity = indexed_cbw[cbw_index][0]['current_value']
             except Exception as e:
                 # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
-                logger.exception(e)
+                logger.error(e)
                 continue
 
             try:
@@ -1571,7 +1594,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 current_out_val = current_out_per * sector_capacity_out / 100.00
 
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 continue  # we dont have any current values with us
 
             if calc_util_last_day():
@@ -1586,7 +1609,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     # peak percentage in/out
                     peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
                 except Exception as e:
-                    logger.exception(e)
+                    logger.error(e)
                     avg_in_per = 0
                     peak_in_per = None
                     avg_out_per = 0
@@ -1621,7 +1644,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     peak_out_val = peak_out_per * sector_capacity_out / 100.00
 
                 except Exception as e:
-                    logger.exception(e)
+                    logger.error(e)
                     avg_in_val = 0
                     peak_in_val = 0
                     avg_out_val = 0
@@ -1707,7 +1730,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             except Exception as e:
                 logger.debug("PMP : {0}".format(e.message))
                 pass
-                # logger.exception(e)
+                # logger.error(e)
 
             # index for dl values
             in_value_index = (sector.sector_configured_on.device_name,
@@ -1737,7 +1760,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sector_capacity_out = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['ul']
             except Exception as e:
                 # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
-                logger.exception(e)
+                logger.error(e)
                 continue
 
             try:
@@ -1769,7 +1792,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 current_out_val = current_out_per * sector_capacity_out / 100.00
 
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 continue  # we dont have any current values with us
 
             # condition is : if the topology count >= 8 : the sector is
@@ -1792,7 +1815,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     # peak percentage in/out
                     peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
                 except Exception as e:
-                    logger.exception(e)
+                    logger.error(e)
                     avg_in_per = 0
                     peak_in_per = None
                     avg_out_per = 0
@@ -1827,7 +1850,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     peak_out_val = peak_out_per * sector_capacity_out / 100.00
 
                 except Exception as e:
-                    logger.exception(e)
+                    logger.error(e)
                     avg_in_val = 0
                     peak_in_val = 0
                     avg_out_val = 0

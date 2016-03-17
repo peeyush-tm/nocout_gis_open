@@ -7405,6 +7405,69 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
             # current delta
             deleted_rows = list()
 
+            is_dr = False
+            # ********************************* BS DEVICE DELETION ********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+
+                # PTP/ PTP BH
+                if 'IP' in row:
+                    if row['IP']:
+                        bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IP']))
+                        if bs_device.exists():
+                            # delete bs device
+                            bs_device.delete()
+                            deleted_rows.insert(0, "BS Device: Deleted \n")
+                        else:
+                            deleted_rows.insert(0, "BS Device: Not Exist \n")
+                    else:
+                        deleted_rows.insert(0, "BS Device: NA \n")
+
+                # PMP
+                if sheet_type in ['PMP BS']:
+                    if 'ODU IP' in row:
+                        if row['ODU IP']:
+                            bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['ODU IP']))
+                            if bs_device.exists():
+                                # delete bs device
+                                bs_device.delete()
+                                deleted_rows.insert(0, "BS Device: Deleted \n")
+                            else:
+                                deleted_rows.insert(0, "BS Device: Not Exist \n")
+                        else:
+                            deleted_rows.insert(0, "BS Device: NA \n")
+
+                # Wimax
+                if sheet_type in ['Wimax BS']:
+                    if 'IDU IP' in row:
+                        if row['IDU IP']:
+                            bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IDU IP']))
+                            if bs_device.exists():
+                                try:
+                                    # Total Sectors connected to this device
+                                    total_sectors = bs_device[0].sector_configured_on.all().count()
+
+                                    # Total DR Sectors connected to this device
+                                    total_dr_sectors = bs_device[0].dr_configured_on.all().count()
+
+                                    if total_dr_sectors > 0:
+                                        is_dr = True
+
+                                    # Delete the sector device if their is only one sector is present in inventory
+                                    if total_sectors == 1 and total_dr_sectors == 0:
+                                        # delete bs device
+                                        bs_device.delete()
+                                        deleted_rows.insert(0, "BS Device: Deleted \n")
+                                    elif total_dr_sectors == 1 and total_sectors == 0:
+                                        # delete bs device
+                                        bs_device.delete()
+                                        deleted_rows.insert(0, "BS Device: Deleted \n")
+                                except Exception, e:
+                                    pass
+                            else:
+                                deleted_rows.insert(0, "BS Device: Not Exist \n")
+                        else:
+                            deleted_rows.insert(0, "BS Device: NA \n")
+
             # *********************************** SECTOR ANTENNA DELETION *********************************
             if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
                 # sector antenna name
@@ -7420,8 +7483,10 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                     sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
                         row['Sector ID'] if 'Sector ID' in row else "")
                 elif sheet_type in ['Wimax BS']:
-                    sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
-                        row['Sector ID'] if 'Sector ID' in row else "")
+                    if not is_dr:
+                        sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                            row['Sector ID'] if 'Sector ID' in row else ""
+                        )
                 else:
                     pass
 
@@ -7429,7 +7494,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                     # sector antenna
                     sector_antenna = Antenna.objects.filter(name=sector_antenna_name)
 
-                    if sector_antenna:
+                    if sector_antenna.exists():
                         # delete setor antenna
                         sector_antenna.delete()
                         deleted_rows.insert(0, "Sector Antenna: Deleted \n")
@@ -7454,57 +7519,19 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                     # ss antenna
                     ss_antenna = Antenna.objects.filter(name=ss_antenna_name)
 
-                    if ss_antenna:
+                    if ss_antenna.exists():
                         # delete ss antenna
                         ss_antenna.delete()
                         deleted_rows.insert(0, "SS Antenna: Deleted \n")
                     else:
                         deleted_rows.insert(0, "SS Antenna: Not Exist \n")
 
-            # # ********************************* BS DEVICE DELETION ********************************
-            # if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
-            #     if 'IP' in row:
-            #         if row['IP']:
-            #             bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IP']))
-            #             if bs_device:
-            #                 # delete bs device
-            #                 bs_device.delete()
-            #                 deleted_rows.insert(0, "BS Device: Deleted \n")
-            #             else:
-            #                 deleted_rows.insert(0, "BS Device: Not Exist \n")
-            #         else:
-            #             deleted_rows.insert(0, "BS Device: NA \n")
-            #     if sheet_type in ['PMP BS']:
-            #         if 'ODU IP' in row:
-            #             if row['ODU IP']:
-            #                 bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['ODU IP']))
-            #                 if bs_device:
-            #                     # delete bs device
-            #                     bs_device.delete()
-            #                     deleted_rows.insert(0, "BS Device: Deleted \n")
-            #                 else:
-            #                     deleted_rows.insert(0, "BS Device: Not Exist \n")
-            #             else:
-            #                 deleted_rows.insert(0, "BS Device: NA \n")
-            #     if sheet_type in ['PMP BS']:
-            #         if 'IDU IP' in row:
-            #             if row['IDU IP']:
-            #                 bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IDU IP']))
-            #                 if bs_device:
-            #                     # delete bs device
-            #                     bs_device.delete()
-            #                     deleted_rows.insert(0, "BS Device: Deleted \n")
-            #                 else:
-            #                     deleted_rows.insert(0, "BS Device: Not Exist \n")
-            #             else:
-            #                 deleted_rows.insert(0, "BS Device: NA \n")
-
             # ********************************* SS DEVICE DELETION ********************************
             if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
                 if 'SS IP' in row:
                     if row['SS IP']:
                         ss_device = Device.objects.filter(ip_address=ip_sanitizer(row['SS IP']))
-                        if ss_device:
+                        if ss_device.exists():
                             # delete ss
                             ss_device.delete()
                             deleted_rows.insert(0, "SS Device: Deleted \n")
@@ -7513,58 +7540,58 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                     else:
                         deleted_rows.insert(0, "SS Device: NA \n")
 
-            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
-                # ********************************** BS SWITCH DELETION **********************************
-                if 'BS Switch IP' in row:
-                    if row['BS Switch IP']:
-                        bs_switch_device = Device.objects.filter(ip_address=ip_sanitizer(row['BS Switch IP']))
-                        if bs_switch_device:
-                            # bs switch device
-                            bs_switch_device.delete()
-                            deleted_rows.insert(0, "BS Switch Device: Deleted \n")
-                        else:
-                            deleted_rows.insert(0, "BS Switch Device: Not Exist \n")
-                    else:
-                        deleted_rows.insert(0, "BS Switch Device: NA \n")
+            # if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
+            #     # ********************************** BS SWITCH DELETION **********************************
+            #     if 'BS Switch IP' in row:
+            #         if row['BS Switch IP']:
+            #             bs_switch_device = Device.objects.filter(ip_address=ip_sanitizer(row['BS Switch IP']))
+            #             if bs_switch_device.exists():
+            #                 # bs switch device
+            #                 bs_switch_device.delete()
+            #                 deleted_rows.insert(0, "BS Switch Device: Deleted \n")
+            #             else:
+            #                 deleted_rows.insert(0, "BS Switch Device: Not Exist \n")
+            #         else:
+            #             deleted_rows.insert(0, "BS Switch Device: NA \n")
 
-                # ********************************* AGGREGATOR DELETION ***********************************
-                if 'Aggregation Switch' in row:
-                    if row['Aggregation Switch']:
-                        aggregator_device = Device.objects.filter(ip_address=ip_sanitizer(row['Aggregation Switch']))
-                        if aggregator_device:
-                            # delete aggregator device
-                            aggregator_device.delete()
-                            deleted_rows.insert(0, "Aggregation Switch Device: Deleted \n")
-                        else:
-                            deleted_rows.insert(0, "Aggregation Switch Device: Not Exist \n")
-                    else:
-                        deleted_rows.insert(0, "Aggregation Switch Device: NA \n")
+            #     # ********************************* AGGREGATOR DELETION ***********************************
+            #     if 'Aggregation Switch' in row:
+            #         if row['Aggregation Switch']:
+            #             aggregator_device = Device.objects.filter(ip_address=ip_sanitizer(row['Aggregation Switch']))
+            #             if aggregator_device.exists():
+            #                 # delete aggregator device
+            #                 aggregator_device.delete()
+            #                 deleted_rows.insert(0, "Aggregation Switch Device: Deleted \n")
+            #             else:
+            #                 deleted_rows.insert(0, "Aggregation Switch Device: Not Exist \n")
+            #         else:
+            #             deleted_rows.insert(0, "Aggregation Switch Device: NA \n")
 
-                # ********************************* BS CONVERTER DELETION *********************************
-                if 'BS Converter IP' in row:
-                    if row['BS Converter IP']:
-                        bs_converter = Device.objects.filter(ip_address=ip_sanitizer(row['BS Converter IP']))
-                        if bs_converter:
-                            # delete bs converter
-                            bs_converter.delete()
-                            deleted_rows.insert(0, "BS Converter Device: Deleted \n")
-                        else:
-                            deleted_rows.insert(0, "BS Converter Device: Not Exist \n")
-                    else:
-                        deleted_rows.insert(0, "BS Converter Device: NA \n")
+            #     # ********************************* BS CONVERTER DELETION *********************************
+            #     if 'BS Converter IP' in row:
+            #         if row['BS Converter IP']:
+            #             bs_converter = Device.objects.filter(ip_address=ip_sanitizer(row['BS Converter IP']))
+            #             if bs_converter.exists():
+            #                 # delete bs converter
+            #                 bs_converter.delete()
+            #                 deleted_rows.insert(0, "BS Converter Device: Deleted \n")
+            #             else:
+            #                 deleted_rows.insert(0, "BS Converter Device: Not Exist \n")
+            #         else:
+            #             deleted_rows.insert(0, "BS Converter Device: NA \n")
 
-                # ********************************* POP CONVERTER DELETION ********************************
-                if 'POP Converter IP' in row:
-                    if row['POP Converter IP']:
-                        pop_converter = Device.objects.filter(ip_address=ip_sanitizer(row['POP Converter IP']))
-                        if pop_converter:
-                            # delete pop converter
-                            pop_converter.delete()
-                            deleted_rows.insert(0, "POP Converter Device: Deleted \n")
-                        else:
-                            deleted_rows.insert(0, "POP Converter Device: Not Exist \n")
-                    else:
-                        deleted_rows.insert(0, "POP Converter Device: NA \n")
+            #     # ********************************* POP CONVERTER DELETION ********************************
+            #     if 'POP Converter IP' in row:
+            #         if row['POP Converter IP']:
+            #             pop_converter = Device.objects.filter(ip_address=ip_sanitizer(row['POP Converter IP']))
+            #             if pop_converter.exists():
+            #                 # delete pop converter
+            #                 pop_converter.delete()
+            #                 deleted_rows.insert(0, "POP Converter Device: Deleted \n")
+            #             else:
+            #                 deleted_rows.insert(0, "POP Converter Device: Not Exist \n")
+            #         else:
+            #             deleted_rows.insert(0, "POP Converter Device: NA \n")
 
             # ************************************ CUSTOMER DELETION ***********************************
             if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
@@ -7590,7 +7617,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                     # customer
                     customer = Customer.objects.filter(name=customer_name)
 
-                    if customer:
+                    if customer.exists():
                         # delete customer
                         customer.delete()
                         deleted_rows.insert(0, "Customer: Deleted \n")
@@ -7615,7 +7642,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                     # circuit
                     circuit = Circuit.objects.filter(name=circuit_name)
 
-                    if circuit:
+                    if circuit.exists():
                         # delete circuit
                         circuit.delete()
                         deleted_rows.insert(0, "Circuit: Deleted \n")
@@ -7639,7 +7666,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                 if substation_name:
                     substation = SubStation.objects.filter(name=substation_name)
 
-                    if substation:
+                    if substation.exists():
                         # delete substation
                         substation.delete()
                         deleted_rows.insert(0, "Sub Station: Deleted \n")
@@ -7659,20 +7686,25 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                         row['Sector ID']) if 'Sector ID' in row.keys() else "",
                         row['Sector Name'] if 'Sector Name' in row.keys() else "")
                 elif sheet_type in ['Wimax BS']:
-                    # pmp name
-                    pmp = ""
-                    try:
-                        if 'PMP' in row.keys():
-                            pmp = row['PMP']
-                            if isinstance(pmp, basestring) or isinstance(pmp, float):
-                                pmp = int(pmp)
-                    except Exception as e:
-                        pass
+                    if not is_dr:
+                        # pmp name
+                        pmp = ""
+                        try:
+                            if 'PMP' in row.keys():
+                                pmp = row['PMP']
+                                if isinstance(pmp, basestring) or isinstance(pmp, float):
+                                    pmp = int(pmp)
+                        except Exception as e:
+                            pass
 
-                    # sector name
-                    sector_name = '{}_{}_{}'.format(special_chars_name_sanitizer_with_lower_case(
-                        row['Sector ID']) if 'Sector ID' in row.keys() else "",
-                        row['Sector Name'] if 'Sector Name' in row.keys() else "", pmp)
+                        # sector name
+                        sector_name = '{}_{}_{}'.format(
+                            special_chars_name_sanitizer_with_lower_case(
+                                row['Sector ID']
+                            ) if 'Sector ID' in row.keys() else "",
+                            row['Sector Name'] if 'Sector Name' in row.keys() else "",
+                            pmp
+                        )
                 else:
                     pass
 
@@ -7680,7 +7712,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                 if sector_name:
                     sector = Sector.objects.filter(name=sector_name)
 
-                    if sector:
+                    if sector.exists():
                         # delete sector
                         sector.delete()
                         deleted_rows.insert(0, "Sector: Deleted \n")
@@ -7688,20 +7720,20 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                         deleted_rows.insert(0, "Sector: Not Exist \n")
 
             # ************************************* BACKHAUL DELETION **********************************
-            if sheet_type in ['Backhaul']:
-                backhaul_name = ip_sanitizer(
-                    row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row else "")
+            # if sheet_type in ['Backhaul']:
+            #     backhaul_name = ip_sanitizer(
+            #         row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row else "")
 
-                # backhaul
-                if backhaul_name:
-                    backhaul = Backhaul.objects.filter(name=backhaul_name)
+            #     # backhaul
+            #     if backhaul_name:
+            #         backhaul = Backhaul.objects.filter(name=backhaul_name)
 
-                    if backhaul:
-                        # delete backhaul
-                        backhaul.delete()
-                        deleted_rows.insert(0, "Backhaul: Deleted \n")
-                    else:
-                        deleted_rows.insert(0, "Backhaul: Not Exist \n")
+            #         if backhaul.exists():
+            #             # delete backhaul
+            #             backhaul.delete()
+            #             deleted_rows.insert(0, "Backhaul: Deleted \n")
+            #         else:
+            #             deleted_rows.insert(0, "Backhaul: Not Exist \n")
 
             # adding delta key in current row
             row['Deleted'] = "".join(deleted_rows)
@@ -7709,14 +7741,17 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
             deleted_list.append(row)
 
         # create delta workbook
-        excel_generator_for_new_column('Deleted',
-                                       'deleted_inventory',
-                                       keys_list,
-                                       deleted_list,
-                                       sheet_type,
-                                       file_path,
-                                       workbook_type,
-                                       1)
+        excel_generator_for_new_column(
+            'Deleted',
+            'deleted_inventory',
+            keys_list,
+            deleted_list,
+            sheet_type,
+            file_path,
+            workbook_type,
+            1
+        )
+
         if auto:
             gis_obj.is_new = 0
             gis_obj.save()
@@ -7892,7 +7927,11 @@ def validate_file_for_bulk_upload(op_type=''):
                     sheet_names = book.sheet_names()
 
                     for sheet_name in sheet_names:
+                        # Current timestamp.
+                        x = time.time()
 
+                        # Formatted time.
+                        fulltimestamp = datetime.datetime.fromtimestamp(x).strftime('%Y-%m-%d-%H-%M-%S-%f')
                         # Get the technology of uploaded inventory sheet.
                         if "Wimax" in sheet_name:
                             technology = "Wimax"
@@ -7923,15 +7962,15 @@ def validate_file_for_bulk_upload(op_type=''):
                                 complete_d.append(d)
 
                             # book_to_upload = xlcopy(book)
+                            dest_filename = sheet_name.lower().replace(' ', '_').strip() + '_' + fulltimestamp + '.xls'
                             try:
-                                shutil.move(filepath, dest)
+                                shutil.copyfile(filepath, dest + '/' + dest_filename)
                             except Exception as e:
                                 description = e.message
                                 logger.exception(e.message)
 
                             gis_bulk_obj = GISInventoryBulkImport()
-                            gis_bulk_obj.original_filename = relative_filepath.replace('auto_upload_inventory',
-                                                                                       'original')
+                            gis_bulk_obj.original_filename = dest + '/' + dest_filename
                             gis_bulk_obj.status = 0
                             gis_bulk_obj.sheet_name = sheet_name
                             gis_bulk_obj.technology = technology
@@ -7942,12 +7981,19 @@ def validate_file_for_bulk_upload(op_type=''):
                             gis_bulk_obj.save()
                             gis_bulk_id = gis_bulk_obj.id
 
-                            result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id,
-                                                                              complete_d,
-                                                                              sheet_name,
-                                                                              keys_list,
-                                                                              full_time,
-                                                                              ufile)
+                            result = validate_gis_inventory_excel_sheet.delay(
+                                gis_bulk_id,
+                                complete_d,
+                                sheet_name,
+                                keys_list,
+                                full_time,
+                                dest_filename
+                            )
+                
+                    try:
+                        os.remove(filepath)
+                    except Exception, e:
+                        pass
                 except Exception as e:
                     logger.info("Workbook not uploaded. Exception: ", e.message)
         else:
@@ -14658,23 +14704,25 @@ def update_topology():
             # Update sub station device.
             try:
                 ss_device = circuit.sub_station.device
-                if re.match(mac_regex, info['connected_device_mac'].lower()):
-                    ss_device.mac_address = info['connected_device_mac']
-                    update_device_list.append(ss_device)
-                else:
+                # if re.match(mac_regex, info['connected_device_mac'].lower()):
+                if radwin5k_mac_mapper.get(info['connected_device_ip']):
                     ss_device.mac_address = radwin5k_mac_mapper[info['connected_device_ip']]['current_value']
-                    update_device_list.append(ss_device)
+                else:
+                    ss_device.mac_address = info['connected_device_mac']
+
+                update_device_list.append(ss_device)
             except Exception as e:
                 pass
             # Update sector device.
             try:
                 sector_device = bs_devices_mapper[info['ip_address']]
-                if re.match(mac_regex, info['mac_address'].lower()):
-                    sector_device.mac_address = info['mac_address']
-                    update_device_list.append(sector_device)
-                else:
+                # if info['mac_address'] and re.match(mac_regex, info['mac_address'].lower()):
+                if radwin5k_mac_mapper.get(info['ip_address']):
                     sector_device.mac_address = radwin5k_mac_mapper[info['ip_address']]['current_value']
-                    update_device_list.append(sector_device)
+                else:
+                    sector_device.mac_address = info['mac_address']
+                    
+                update_device_list.append(sector_device)
             except Exception as e:
                 pass
             # Update circuit.

@@ -2107,3 +2107,210 @@ $('#status_container').delegate('#final_status_table .severity_block', 'click', 
         }
     }
 });
+
+/**
+ * This function binds the click event on 'STATUS, RESET, JOJI' buttons on power tab
+ * on single performance page
+ * @event click
+ */
+$("#content").delegate(".power-actions", 'click', function(){
+
+    var button_this = this,
+        button_name = $(button_this).attr('data-button-respone'),
+        button_title = $(button_this).attr('title'),
+        msg_box_html = '';
+
+    
+    msg_box_html = '<textarea id="power_msg_txt" placeholder="Please enter the reason for your action." \
+                    class="form-control" rows="5"></textarea> \
+                    <span id="power_error_msg" class="text-danger"></span>';
+
+    // Show popup to take reason message from user & save it to user logs
+    bootbox.confirm(msg_box_html, function(action) {
+
+
+        if(action) {
+
+            var reason_str = $.trim($('#power_msg_txt').val());
+
+            if (!reason_str) {
+                $('#power_error_msg').html('*Reason required.');
+                return false;
+            }
+
+            // Show loading on button
+            $(button_this).button('loading');
+
+            // If send message button clicked
+            if (button_name != 'reboot') {
+                initSendSMS(current_device, button_name, button_this, function(succeeded) {
+                    // Complete button loading
+                    $(button_this).button('complete');
+
+                    // if (succeeded) {
+                        savePowerLog(current_device, reason_str, button_title);
+                    // }
+                });
+            } else {
+                if (typeof current_device == 'undefined') {
+                    current_device = '';
+                }
+
+                var device_id = $(button_this).attr('device_id');
+
+                if (device_id) {
+                    current_device = device_id;
+                }
+                // Add the reboot code here(Shellinabox)
+                initDeviceReboot(current_device, button_this, function(response) {
+                    // Complete button loading
+                    $(button_this).button('complete');
+
+                    // if (succeeded) {
+                        savePowerLog(current_device, reason_str, button_title);
+                    // }
+                });
+            }
+        }
+    });
+});
+
+/**
+ * This function makes ajax call to save power logs
+ * @method savePowerLog
+ * @param reason_str {}
+ */
+function savePowerLog(device_id, reason_str, action) {
+    // Make ajax call
+    $.ajax({
+        url: base_url+save_power_log_url,
+        type: 'POST',
+        data: {
+            'device_id': device_id,
+            'reason_str': reason_str,
+            'action': action
+        },
+        success: function(response) {
+            
+            // console.log(response);
+        },
+        error: function(err) {
+
+        }
+    });
+}
+
+/**
+ * This function makes ajax call to send sms as per the user actions.
+ * @method initSendSMS
+ * @param button_name {String}, It contains name of clicked button.
+ * @param clicked_button_instance {Object}, It contains the clicked button instance.
+ */
+function initSendSMS(device_id, button_name, clicked_button_instance, callback) {
+    // Make ajax call to send message
+    $.ajax({
+        url : base_url + power_sms_url + "?device_id=" + device_id + "&button_name=" + button_name,
+        type : 'GET',
+        success : function(response) {
+            if (typeof response == 'string') {
+                response = JSON.parse(response);
+            }
+            var is_success = response['success'];
+            if (response['success']) {
+                dataTableInstance.createDataTable(
+                    power_table_id,
+                    power_listing_headers,
+                    power_ajax_url,
+                    false
+                );
+            }
+
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: $.trim($(clicked_button_instance).attr('title')),
+                // (string | mandatory) the text inside the notification
+                text: response['message'],
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 2000
+            });
+            callback(is_success);
+        },
+        error : function(e) {
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: $.trim($(clicked_button_instance).attr('title')),
+                // (string | mandatory) the text inside the notification
+                text: e.message,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 2000
+            });
+            callback(false);
+        },
+        complete: function() {
+            // Complete button loading
+            $(clicked_button_instance).button('complete');
+        }
+    });
+}
+
+/**
+ * This function makes ajax call to reboot current device
+ * @method initDeviceReboot
+ * @param clicked_button_instance {Object}, It contains the clicked button instance.
+ */
+function initDeviceReboot(device_id, clicked_button_instance, callback) {
+    // Make ajax call to send message
+    $.ajax({
+        url : base_url + device_reboot_url + "?device_id=" + device_id,
+        type : 'GET',
+        success : function(response) {
+            
+            if (typeof response == 'string') {
+                response = JSON.parse(response);
+            }
+
+            var is_success = response['success'];
+            // if (response['success']) {
+            //     dataTableInstance.createDataTable(
+            //         power_table_id,
+            //         power_listing_headers,
+            //         power_ajax_url,
+            //         false
+            //     );
+            // }
+
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: $.trim($(clicked_button_instance).attr('title')),
+                // (string | mandatory) the text inside the notification
+                text: response['message'],
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 2000
+            });
+            callback(is_success);
+        },
+        error : function(e) {
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: $.trim($(clicked_button_instance).attr('title')),
+                // (string | mandatory) the text inside the notification
+                text: e.message,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 2000
+            });
+            callback(false);
+        },
+        complete: function() {
+            // Complete button loading
+            $(clicked_button_instance).button('complete');
+        }
+    });
+}
