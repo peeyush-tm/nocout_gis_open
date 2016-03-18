@@ -122,9 +122,6 @@ function initRfoDashboard() {
     if (load_chart) {
         loadRFOColumnChart(summation_url,String(selected_month), selected_state, selected_city);
     }
-
-    // Hide Loading Spinner
-    hideSpinner();
 }
 
 function initMTTRDashboard() {
@@ -138,10 +135,12 @@ function initMTTRDashboard() {
     }
 
     loadMTTRSummaryChart(mttr_summary_url,String(selected_month), selected_state, selected_city, {'is_normal': true});
-    // Hide Loading Spinner
-    hideSpinner();
 }
 
+/**
+ *
+ *
+ */
 function initINCTicketDashboard() {
     var display_type = $('select[name="display_selector"]').val(),
         selected_month = $('select[name="month_selector"]').val(),
@@ -201,7 +200,6 @@ function initINCTicketDashboard() {
     api_get_params += '?month=' + String(selected_month);
     api_get_params += '&severity=' + selected_severity;
     api_get_params += '&current_target='+ selected_target;
-    api_get_params += '&request_for_chart=1';
 
     if (load_table) {
         // Load INC Ticket Rate Table
@@ -214,11 +212,82 @@ function initINCTicketDashboard() {
     }
 
     if (load_chart) {
+        api_get_params += '&request_for_chart=1';
         loadINCTicketChart(inc_ticket_url + api_get_params, selected_severity);
     }
+}
 
-    // Hide Loading Spinner
-    hideSpinner();
+
+/**
+ *
+ *
+ */
+function initResolutionEfficiencyDashboard() {
+    var display_type = $('select[name="display_selector"]').val(),
+        selected_month = $('select[name="month_selector"]').val(),
+        load_table = true,
+        load_chart = false;
+
+    if (selected_month) {
+        selected_month = Number(selected_month) / 1000;
+    }
+
+    if (display_type == 'both') {
+        load_chart = true;
+        load_table = true;
+        if ($('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').removeClass('hide');
+        }
+        if ($('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').removeClass('hide');
+        }
+        if ($('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').removeClass('hide');
+        }
+
+    } else if (display_type == 'chart') {
+        load_chart = true;
+        load_table = false;
+        if ($('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').removeClass('hide');
+        }
+        if (!$('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').addClass('hide');
+        }
+        if (!$('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').addClass('hide');
+        }
+    } else {
+        load_chart = false;
+        load_table = true;
+        if (!$('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').addClass('hide');
+        }
+        if (!$('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').addClass('hide');
+        }
+        if ($('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').removeClass('hide');
+        }
+    }
+
+    var api_get_params = '';
+    api_get_params += '?month=' + String(selected_month);
+
+    if (load_table) {
+        // Load INC Ticket Rate Table
+        dataTableInstance.createDataTable(
+            'resolution_efficiency_datatable',
+            resolution_efficiency_headers,
+            resolution_efficiency_url + api_get_params,
+            false
+        );
+    }
+
+    if (load_chart) {
+        api_get_params += '&request_for_chart=1';
+        loadResolutionEfficienyChart(resolution_efficiency_url + api_get_params);
+    }
 }
 
 /**
@@ -227,6 +296,9 @@ function initINCTicketDashboard() {
  */
 $('.filter_controls').change(function(e) {
     
+    // show loading spinner
+    showSpinner();
+
     // When state select then show cities of that state only
     if ($(this).attr('name').indexOf('state') > -1) {
         var selected_val = $(this).val();
@@ -244,6 +316,11 @@ $('.filter_controls').change(function(e) {
         initRfoDashboard();
     } else if (window.location.pathname.indexOf('/inc_ticket_rate/') > -1) {
         initINCTicketDashboard();
+    } else if (window.location.pathname.indexOf('/resolution_efficiency/') > -1) {
+        initResolutionEfficiencyDashboard();
+    } else {
+        // hide loading spinner
+        hideSpinner();
     }
 });
 
@@ -264,6 +341,9 @@ function updateFiltersContent(dataset, filter_name, filter_title) {
             var selectbox_html = '';
         }
 
+        var is_inc_page = window.location.pathname.indexOf('/inc_ticket_rate/') == -1,
+            is_re_page = window.location.pathname.indexOf('/resolution_efficiency/') == -1;
+
         for (var i=0; i<dataset.length; i++) {
             if (filter_name == 'month') {
                 try {
@@ -272,9 +352,10 @@ function updateFiltersContent(dataset, filter_name, filter_title) {
 
                     var value = month_dict[timestamp_obj.getMonth()] + ' - ' + timestamp_obj.getFullYear(),
                         selected_item = '';
-                    
-                    if (i == dataset.length - 1) {
-                        selected_item = 'SELECTED="SELECTED"';
+                    if (is_re_page && is_inc_page) {
+                        if (i == dataset.length - 1) {
+                            selected_item = 'SELECTED="SELECTED"';
+                        }
                     }
 
                     selectbox_html += '<option value="' + id + '" ' + selected_item + '>' + value + '</option>';
@@ -431,9 +512,14 @@ function loadRFOColumnChart(ajax_url, month, selected_state, selected_city) {
                     }
                 });
             }
+
+            // hide loading spinner
+            hideSpinner();
         },
         error: function(err) {
-            console.log(err.statusText);
+            // console.log(err.statusText);
+            // hide loading spinner
+            hideSpinner();
         }
     });
 }
@@ -684,9 +770,6 @@ function loadMTTRSummaryChart(ajax_url, month, selected_state, selected_city, ex
                                                     'series_name': series_name
                                                 }
                                             );
-
-                                            // Hide Loading Spinner
-                                            hideSpinner();
                                         }
                                     }
                                 }
@@ -706,9 +789,14 @@ function loadMTTRSummaryChart(ajax_url, month, selected_state, selected_city, ex
                     }
                 });
             }
+
+            // Hide Loading Spinner
+            hideSpinner();
         },
         error: function(err) {
-            console.log(err.statusText);
+            // console.log(err.statusText);
+            // Hide Loading Spinner
+            hideSpinner();
         }
     });
 }
@@ -768,7 +856,8 @@ function loadINCTicketChart(api_url, selected_severity) {
                         dateTimeLabelFormats: {
                             month: '%e. %b',
                             year: '%b'
-                        }
+                        },
+                        tickInterval: 30 * 24 * 3600 * 1000
                     },
                     yAxis: {
                         min: 0,
@@ -802,11 +891,11 @@ function loadINCTicketChart(api_url, selected_severity) {
 
                                     tooltip_html += '<li><br/><span style="color:' + color + '"> \
                                                     '+this.points[i].series.name+'</span>: <strong> \
-                                                    ' +this.points[i].y+'</strong></li>';
+                                                    ' +this.points[i].y+'%</strong></li>';
                                 }
                             } else {
                                 tooltip_html += '<li><br/><span style="color:' + this.point.color + '">\
-                                                ' + this.point.name + '</span>: <strong>' + this.point.y + '</strong></li>';
+                                                ' + this.point.name + '</span>: <strong>' + this.point.y + '%</strong></li>';
                             }
 
                             tooltip_html += '</ul>';
@@ -837,9 +926,148 @@ function loadINCTicketChart(api_url, selected_severity) {
                     }
                 });
                 
-                // Hide Loading Spinner
-                hideSpinner();
             }
+            
+            // Hide Loading Spinner
+            hideSpinner();
+        },
+        error: function(err) {
+            // console.log(err.statusText);
+            // Hide Loading Spinner
+            hideSpinner();
+        }
+    });
+}
+
+/**
+ *
+ */
+function loadResolutionEfficienyChart(api_url) {
+
+    $.ajax({
+        url: api_url,
+        type: 'GET',
+        success: function(all_data_response) {
+            if (typeof(all_data_response) == 'string') {
+                all_data_response = JSON.parse(all_data_response);
+            }
+
+            if (all_data_response['result'] == 'ok') {
+                var data_list = all_data_response['aaData'],
+                    two_hrs_percent = [],
+                    four_hrs_percent = [],
+                    more_than_four_hrs_percent = [];
+                for(var j=0; j<data_list.length; j++) {
+                    var timestamp = Number(data_list[j]['timestamp']) * 1000;
+                    two_hrs_percent.push([
+                        timestamp,
+                        data_list[j]['2_hrs_percent']
+                    ]);
+
+                    four_hrs_percent.push([
+                        timestamp,
+                        data_list[j]['4_hrs_percent']
+                    ]);
+
+                    more_than_four_hrs_percent.push([
+                        timestamp,
+                        data_list[j]['more_than_4_hrs_percent']
+                    ]);
+                }
+
+                $('#inc_line_chart_container').highcharts({
+                    chart: {
+                        type: 'spline'
+                    },
+                    colors: chart_colors_list,
+                    title: {
+                        text: 'RE: RF Network'
+                    },
+                    xAxis: {
+                        title: {
+                            text: 'Month'
+                        },
+                        type: 'datetime',
+                        dateTimeLabelFormats: {
+                            month: '%e. %b',
+                            year: '%b'
+                        },
+                        tickInterval: 30 * 24 * 3600 * 1000
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: '%'
+                        },
+                        labels: {
+                            overflow: 'justify'
+                        }
+                    },
+                    plotOptions: {
+                        spline: {
+                            dataLabels: {
+                                enabled: false
+                            },
+                            showInLegend: true,
+                            marker: {
+                                enabled: true
+                            }
+                        }
+                    },
+                    legend: middle_legends,
+                    tooltip: {
+                        formatter: function (e) {
+                            var tooltip_html = "";
+                            tooltip_html += '<ul><li><b>Resolution Efficiency ('+getFormattedDate(this.x)+')</b></li><br/>';
+
+                            if (this.points && this.points.length > 0) {
+                                for(var i=0;i<this.points.length;i++) {
+                                    var color = this.points[i].series.color;
+
+                                    tooltip_html += '<li><br/><span style="color:' + color + '"> \
+                                                    '+this.points[i].series.name+'</span>: <strong> \
+                                                    ' +this.points[i].y+'%</strong></li>';
+                                }
+                            } else {
+                                tooltip_html += '<li><br/><span style="color:' + this.point.color + '">\
+                                                ' + this.point.name + '</span>: <strong>' + this.point.y + '%</strong></li>';
+                            }
+
+                            tooltip_html += '</ul>';
+
+                            return tooltip_html;
+                        },
+                        crosshairs: true,
+                        shared: true,
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    series: [{
+                        "data": two_hrs_percent,
+                        "name": '2 Hrs %',
+                        "type": 'spline'
+                    }, {
+                        "data": four_hrs_percent,
+                        "name": '4 Hrs %',
+                        "type": 'spline'
+                    }, {
+                        "data": more_than_four_hrs_percent,
+                        "name": '> 4 Hrs %',
+                        "type": 'spline'
+                    }],
+                    noData: {
+                        style: {
+                            fontWeight: 'bold',
+                            fontSize: '20px',
+                            color: '#539fb8',
+                        }
+                    }
+                });    
+            }
+            
+            // Hide Loading Spinner
+            hideSpinner();
         },
         error: function(err) {
             // console.log(err.statusText);

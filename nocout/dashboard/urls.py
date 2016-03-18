@@ -342,5 +342,15 @@ urlpatterns = patterns('',
         r'^inc_ticket_rate/listing/$',
         views.INCTicketRateListing.as_view(),
         name='inc-ticket-rate-listing'
+    ),
+    url(
+        r'^resolution_efficiency/$',
+        views.ResolutionEfficiencyInit.as_view(),
+        name='resolution-efficiency'
+    ),
+    url(
+        r'^resolution_efficiency/listing/$',
+        views.ResolutionEfficiencyListing.as_view(),
+        name='resolution-efficiency-listing'
     )
 )
