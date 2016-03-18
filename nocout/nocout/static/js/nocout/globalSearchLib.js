@@ -142,6 +142,7 @@ $("#global_search_btn").click(function(e) {
 	
 	var search_by = $("#searchBy").select2("val"),
 		search_id = $("#global_search_txt").select2("val");
+	// console.log(search_id)
 
 	if(search_by && search_id) {
 		
