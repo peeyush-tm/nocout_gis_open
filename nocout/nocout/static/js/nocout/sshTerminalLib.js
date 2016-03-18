@@ -40,13 +40,10 @@ $(".controls_container").on('click', "#telnet_ss_btn", function(){
 		url : base_url + '/performance/get_telnet_ss/?device_id=' + current_device,
 		type : 'GET',
 		success : function(response){
-			// console.log('Done')
-			console.log("HERE")
 			var ssh_machine_name = response['data'][0]['machine_name'],
 				ssh_device_ip = response['data'][0]['device_ip'],
 				ssh_device_type = response['data'][0]['device_type'];
 
-			console.log("Completed variables")
 
 			try {
 				console_html = console_html.replace('{0}', ssh_url);
@@ -56,14 +53,12 @@ $(".controls_container").on('click', "#telnet_ss_btn", function(){
 				console_html = console_html.replace('{4}', ssh_device_ip);
 				console_html = console_html.replace('{5}', ssh_device_type);
 
-				console.log("console_html Completed")
 			    /*Call the bootbox to show the popup with SSH-Terminal*/
 			    bootbox.dialog({
 			        title: 'SSH Terminal',
 			        message: console_html
 			    });
 
-			    console.log("bootbox dialog finished")
 
 			    $(".modal-dialog").css("width","80%");
 
@@ -81,7 +76,6 @@ $(".controls_container").on('click', "#telnet_bs_btn", function(){
 		url : base_url + '/performance/get_telnet_bs/?device_id=' + sector_configured_on_id,
 		type : 'GET',
 		success : function(response){
-			// console.log('Done in BS')
 			var ssh_machine_name = response['data'][0]['machine_name'],
 				ssh_device_ip = response['data'][0]['device_ip'],
 				ssh_device_type = response['data'][0]['device_type'];

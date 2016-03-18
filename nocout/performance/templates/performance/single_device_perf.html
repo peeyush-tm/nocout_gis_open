@@ -566,6 +566,10 @@
             alert_url = "",
             power_table_id = 'power_msg_listing',
             power_ajax_url = "";
+            // Getting ssh url, username and password from settings.py
+            ssh_url = '{{ settings.SSH_URL }}';
+            ssh_username = '{{ settings.SSH_USERNAME }}';
+            ssh_password = '{{ settings.SSH_PASSWORD }}';
 
             power_listing_headers = '{{ power_listing_headers }}' ? $.parseJSON('{{ power_listing_headers|safe }}') : [];
 
@@ -683,11 +687,6 @@
                         telnet_placeholder = '<li><a href="{0}" id="{3}" class="btn btn-sm text-dark" \
                                           ><i class="{2}"></i> {1}</a></li>',
 
-                        // telnet_placeholder =    '<li>\
-                        //                             <a href="javascript:;" title="Console" class="ssh_terminal" data-machine-name="'+machine_name+ '"data-ip-address="'+ip_address+'\
-                        //                             " data-device-type="'+device_type+ '">\
-                        //                             <i class="fa fa-terminal"></i> \
-                        //                         <li>'
                         pb_html = '',
                         inc_html = '',
                         telnet_ss_html = '',
