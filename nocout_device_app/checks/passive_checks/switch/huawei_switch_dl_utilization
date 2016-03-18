@@ -8,13 +8,13 @@ from mysql_connection import memc
 uplink utilizationPoller script.
 
 This is part of device application. 
-Poller script determines the port current downlink utilization in terms of number of octets in downlink direction.
+Poller script determines the port current uplink utilization in terms of number of octets in downlink direction.
 poller script takes the snmp value of OID .1.3.6.1.2.1.2.2.1.16 from snmp agent of device at specific interval.
 Total Downlink utilization is sent to device application 
 
 """
 # #######################################################################
-# Function : check_switch_ul_utilization
+# Function : check_switch_dl_utilization
 #
 # Parameters: info (SNMP otuput ,_no_params (NO parameters))
 #
@@ -22,9 +22,9 @@ Total Downlink utilization is sent to device application
 # #######################################################################
 
 
-def juniper_check_switch_ul_utilization(item, _no_params, info):
+def huawei_check_switch_dl_utilization(item, _no_params, info):
     """
-                check_switch_ul_utilization function calculates the downlink utilization
+                check_switch_dl_utilization function calculates the downlink utilization
 
                 Args:
                         item (str) Specific item on SNMP output on which we want to filter results
@@ -40,7 +40,7 @@ def juniper_check_switch_ul_utilization(item, _no_params, info):
                     3: unknown
                         infotext(string):
                                         plugin output
-                                        Example : OK - [Management_Port_on_Odu] ul_utilization:2994339289
+                                        Example : OK - [Management_Port_on_Odu] dl_utilization:2994339289
 
                         performance_data  (list):
                                         performance data
@@ -49,11 +49,14 @@ def juniper_check_switch_ul_utilization(item, _no_params, info):
                                 ValueError ,Exception
     """
     #try:
-    #    memc1 = memcache.Client(['10.133.12.163:11211','10.133.19.165:11211'], debug=1)
+    #    memc1 = memcache.Client(['10.133.19.165:11211','10.133.12.163:11211'], debug=1)
     #except:
     #    memc1 =None
     key = "master_ua" + "_switch"  # key of memcache configured ports
-    memcache_switch = memc.get(key) #dictionary contain hostname as key and port as value
+    memcache_switch= memc.get(key)
+    #print memcache_switch
+    #memcache_switch = memc1.get(key) #dictionary contain hostname as key and port as value
+    #print memcache_switch
     host_name = str(g_hostname) 
      
     try :
@@ -61,44 +64,49 @@ def juniper_check_switch_ul_utilization(item, _no_params, info):
     except:
        conf_port = ""
     
-    conf_port = conf_port.replace("_","/")  # change _ with / to match the info part
-    conf_port_list = conf_port.split(",") # for ring case
+    conf_port_list1 = conf_port.split(",") # list contain the configured ports
+    conf_port_list =[] # will contain the port in formate FastEthernet0/1
+    g_port = 'GigabitEthernet0/0/'
+    for each in conf_port_list1:
+	if 'gi' in each.lower():
+            port = each.rsplit("_",1)
+            port_name = g_port+port[1]
+            conf_port_list.append(port_name)
+
     state = 3
+    
     rate = None
     link_out_octets = None
     wrapped = False
     infotext = "unknown_value"
     status_list = []
-    #port_string1 = conf_port.replace("/","_") # conversion of / with _ to display
-    #port_string2 ="ge-0_1_"
+    #port_string = "fa0_"
+    #port_string2 ="gi0_"
     try:
 	if info:
-		infotext = "ul_utilization:["
+		infotext = "dl_utilization:["
 		this_time = int(time.time())
 		infotext += "time=%s " % this_time
         	for index in xrange(len(info[0])):
-			if info[0][index][0] in conf_port_list:
-				#link_out_octets = int(info[1][index][0]) 	#got corresponding value of index
-				rate = int(info[1][index][0])       #got corresponding value of index
-				if rate ==0:
-					port_string1 = info[0][index][0].replace("/","_")
-				else :
-					rate = rate /(1024.0 * 1024)
-					port_string1 = info[0][index][0].replace("/","_")
-				
-				#this_time = int(time.time())
-				#try:
-					#timedif, rate = get_counter("switch_ul_utilization_%s" % (port_string1),this_time, saveint(link_out_octets))
-					#rate = (rate * 8)/(1024.0 * 1024)
-    				state = 0
-				#except MKCounterWrapped:
-				#	wrapped=True
-                		status_list.append((port_string1,"%.2f" % rate))
-                		infotext += "%s=%s " % (port_string1,rate)
-                key1 = str(g_hostname)+"juniper_switch_ul_utilization"
-                memc.set(key1,status_list)
-		infotext +="]"
+			if info[0][index][0] in conf_port_list:    
+				link_out_octets = int(info[1][index][0]) 	#got corresponding value of index
+				port = info[0][index][0]  # contain string like FastEthernet0/1
+				port_string1= port.replace("/","_") # change again FastEthernet formate to 
 
+				this_time = int(time.time())
+				try:
+					timedif, rate = get_counter("switch_dl_utilization_%s" % (port_string1),this_time, saveint(link_out_octets))
+					rate = (rate * 8)/(1024.0 * 1024)
+    					state = 0
+				except MKCounterWrapped:
+					wrapped=True
+                		status_list.append((port_string1,"%.2f" % rate))
+                		infotext += "%s=%s " % (port_string1,link_out_octets)                				
+
+                key1 = str(g_hostname)+"switch_dl_utilization"  # save value for KPI checks in memcache
+                memc.delete(key1)
+                memc.set(key1,status_list) # saving the status list in memcache
+		infotext += "]"
     except ValueError:
         infotext = "type_mismatch_error"
     except:
@@ -108,9 +116,9 @@ def juniper_check_switch_ul_utilization(item, _no_params, info):
     return (state, infotext, status_list)
 
 
-check_info["juniper_switch_ul_utilization"] = {
-    'check_function': juniper_check_switch_ul_utilization,
-    'service_description': 'juniper_switch_ul_utilization',
+check_info["huawei_switch_dl_utilization"] = {
+    'check_function': huawei_check_switch_dl_utilization,
+    'service_description': 'huawei_switch_dl_utilization',
     'has_perfdata': True,
 }
 
@@ -119,4 +127,4 @@ check_info["juniper_switch_ul_utilization"] = {
 ##############################################################################
 
 
-snmp_info["juniper_switch_ul_utilization"] = [( ".1.3.6.1.2.1.2.2.1",["2"]), ( ".1.3.6.1.4.1.2636.3.3.1.1", ["1"] )]
+snmp_info["huawei_switch_dl_utilization"] = [( ".1.3.6.1.2.1.2.2.1",["2"]),( ".1.3.6.1.2.1.2.2.1", ["16"] )]
