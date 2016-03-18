@@ -667,6 +667,7 @@ class GetPerfomance(View):
         is_radwin5 = 0
         is_viewer_flag = 0
         user_role = self.request.user
+        sector_configured_on_id = []
 
         try:
             if 'radwin5' in device_type.lower():
