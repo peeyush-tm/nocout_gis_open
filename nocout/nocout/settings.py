@@ -854,7 +854,8 @@ SETTINGS_EXPORT = [
     'TELNET_SS_SCRIPT',
     'TELNET_BS_SCRIPT',
     'SHOW_SECTOR_LINK_ON_SS',
-    'TICKETS_LINK_ON_PERF_PAGE'
+    'TICKETS_LINK_ON_PERF_PAGE',
+    'SHOW_SS_PERF_LINK_IA_TABLE'
 ]
 
 # Dashbaord Settings
@@ -1296,6 +1297,7 @@ SHOW_RESOLUTION_EFFCIENCY_DASHBOARD = False
 SHOW_BH_LINK_ON_SS = False
 SHOW_SECTOR_LINK_ON_SS = False
 TICKETS_LINK_ON_PERF_PAGE = False
+SHOW_SS_PERF_LINK_IA_TABLE = False
 
 # Import the local_settings.py file to override global settings
 try:

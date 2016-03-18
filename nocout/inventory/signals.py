@@ -44,10 +44,12 @@ def update_site_on_bs_bhport_change(sender, instance=None, created=False, **kwar
         new_values = [x for x in new_values if x is not None]
 
         if (len(new_values) != len(old_values)) or (list(set(old_values) - set(new_values))):
-            site = old_instance.backhaul.bh_configured_on.site_instance
-            # Modify site bit.
-            site.is_device_change = 1
-            site.save()
+            old_backhaul = old_instance.backhaul
+            if old_backhaul and old_backhaul.bh_configured_on and old_backhaul.bh_configured_on.site_instance:
+                site = old_instance.backhaul.bh_configured_on.site_instance
+                # Modify site bit.
+                site.is_device_change = 1
+                site.save()
 
 
 @nocout_utils.disable_for_loaddata

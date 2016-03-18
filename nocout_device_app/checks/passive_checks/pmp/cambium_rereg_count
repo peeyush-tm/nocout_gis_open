@@ -76,7 +76,7 @@ def live_query_rereg_count(mac):
 		value_list = memc.get(mac)
 		if value_list:
 			try:
-				rereg_count = int(value_list[3])
+				rereg_count = int(value_list[5])
 			except:
 				rereg_count = None
 		if not rereg_count:

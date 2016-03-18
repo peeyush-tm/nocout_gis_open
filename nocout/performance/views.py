@@ -52,7 +52,7 @@ from nocout.mixins.datatable import AdvanceFilteringMixin
 
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
-    AVG_CHART_COLOR, CACHE_TIME, ENV_NAME, \
+    AVG_CHART_COLOR, CACHE_TIME, ENV_NAME, SHOW_SS_PERF_LINK_IA_TABLE, \
     WARN_COLOR, CRIT_COLOR, WARN_TYPE, CRIT_TYPE, MULTI_PROCESSING_ENABLED
 
 from performance.formulae import display_time, rta_null
@@ -3450,9 +3450,11 @@ class GetServiceTypePerformanceData(View):
             'packet_loss',
             'latency',
             'last_down_time',
-            'last_updated',
-            'action'
+            'last_updated'
         ]
+
+        if SHOW_SS_PERF_LINK_IA_TABLE:
+            self.result['data']['objects']['table_data_header'].append('action')
 
         return self.result
 
