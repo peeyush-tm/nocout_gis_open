@@ -1,11 +1,5 @@
-'''
-Created on 19-Jan-2016
-
-@author: TERAMATRIX\siddhika.nag
-
-Script to read network event data and store to snmptt
-'''
-#from nocout_site_name import *
+"""Script to read network event data and store to snmptt"""
+from nocout_site_name import *
 from datetime import datetime, timedelta
 import imp
 import time
@@ -14,14 +8,14 @@ path.append('nocout/performance/service')
 
 
 # change module for production
-db_ops_module = imp.load_source('db_ops', '/omd/sites/ospf2_slave_1/lib/python/handlers/db_ops.py')
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 #from handlers.db_ops import *
 
-start_app_module = imp.load_source('start_pub', '/omd/sites/ospf1_slave_1/lib/python/start_pub.py')
+start_app_module = imp.load_source('start_pub', '/omd/sites/%s/lib/python/start_pub.py' % nocout_site_name)
 app = start_app_module.app
 #from start.start import app
 
-mapper_module =  imp.load_source('mapper', '/omd/sites/ospf1_slave_1/nocout/performance/service/mapper.py')
+mapper_module =  imp.load_source('mapper', '/omd/sites/%s/nocout/performance/service/mapper.py' % nocout_site_name)
 #from trap_handler import mapper
 
 from mapper import Eventmapper
@@ -117,8 +111,6 @@ def make_bs_ul_issue_snmptt_data():
     try:
         queue = db_ops_module.RedisInterface(event_q = 'q:bs_ul_issue_event')
         cur = queue.get(0, -1)
-        #print '..........docs...'
-	#print cur
         docs = []
         for doc in cur:
             severity = doc.get('state').lower()
@@ -146,47 +138,4 @@ def make_bs_ul_issue_snmptt_data():
     except Exception,e :
         #pass
         print "Error in BS UL Issue Redis Tuple : %s \n",str(e)
-        
-"""
-@app.task(name='make_cambium_bs_ul_issue_snmptt_data')
-def make_cambium_bs_ul_issue_snmptt_data():
-    try:
-        queue = db_ops_module.RedisInterface(event_q = 'q:cambium_bs_ul_issue_event')
-        cur = queue.get(0, -1)
-        docs = []
-        for doc in cur:
-            severity = doc.get('state').lower()
-            service  = doc.get('service_description')
-            event_name = 'Uplink_Issue_threshold_Breach'
-            if severity == 'critical' or severity == 'warning' :
-                severity = 'major'
-            if severity == 'ok':
-                severity = 'clear'
-            t = (
-                 '',
-                 event_name,
-                 '',
-                 doc.get('address'),
-                 '',
-                 '',
-                 severity,
-                 '',
-                 time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(doc.get('last_chk')))),
-                 ''
-                 )
-            docs.append(t)
-            t =()
-        return docs
-    except Exception,e :
-        #pass
-        print "Error in Cambium BS UL Issue Redis Tuple : %s \n",str(e)
 
-if __name__ == '__main__':
-    data_list = make_network_snmptt_data()
-    if data_list :
-        print "Data list",data_list
-        worker = Eventmapper()
-        print "Worker Obj : ",worker
-        #worker.filter_traps(data_list)
-
-"""
