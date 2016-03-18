@@ -57,17 +57,18 @@ class ExportTraps(object):
 
 		self.conn_base = ConnectionBase()
 
-	def do_work(self, current_traps=None,clear_traps=None, mark_inactive=None, latest_id=None,flag=None):
+	def do_work(self, current_traps=None,clear_traps=None, mark_inactive=None, latest_id=None, flag=None, history_traps=None):
 		""" Handles inserts/updates for traps"""
 
 		insert_table = 'alert_center_historyalarms'
 		current_table = 'alert_center_currentalarms'
 		clear_table = 'alert_center_clearalarms'
-
+		updated = False
+		inserted = False
 		# TODO: use 2 concurrent threads for insert/update ops
-		inserted = self.insert_traps(current_traps, insert_table)
-		inserted = self.insert_traps(clear_traps, insert_table)
-		if current_traps:
+		if history_traps :
+			inserted = self.insert_traps(history_traps, insert_table)
+		if current_traps and flag is not 'update':
 			table = current_table
                         current_mark_inactive = filter(lambda x: x[2] == 'clear' ,mark_inactive)
 			updated = self.update_traps(current_traps, 
@@ -76,7 +77,7 @@ class ExportTraps(object):
 					mask_table=clear_table,
 					flag=flag
 					)
-		if clear_traps:
+		if clear_traps and flag is not 'update':
 			table = clear_table
                         clear_mark_inactive = filter(lambda x: x[2] != 'clear' ,mark_inactive)
 			updated = self.update_traps(
@@ -87,7 +88,12 @@ class ExportTraps(object):
 					flag=flag
 					)
 	
-
+		if current_traps and flag is 'update' :
+			table = current_table
+			updated = self.update_trap_count(current_traps, table)
+		if clear_traps and flag is 'update':
+                        table = clear_table
+			updated = self.update_trap_count(clear_traps, table)
 		# Check this again ..
 		if inserted and updated:
 			# TODO: if ops are successful, update the processed_traps_info
@@ -100,6 +106,8 @@ class ExportTraps(object):
 		    cursor = mysql_cnx.cursor()
 		    if many:
 			cursor.executemany(qry, data)
+		    elif data :
+			cursor.execute(qry,data)
 		    else:
 			cursor.execute(qry)
 		    mysql_cnx.commit()
@@ -122,23 +130,21 @@ class ExportTraps(object):
 				'device_name', 'ip_address', 'trapoid', 'eventname',
 				'eventno', 'severity', 'uptime', 'traptime',
 				'description', 'alarm_count', 'first_occurred',
-				'last_occurred', 'is_active'
+				'last_occurred', 'is_active', 'sia', 'customer_count'
 				)
 		columns = columns if columns else default_columns
 		# we don't need to update all the columns
 		update_columns = (
 				'severity', 'uptime', 'traptime',
-				'description', 'last_occurred', 'is_active'
+				'description', 'last_occurred', 'is_active', 'sia', 'customer_count'
 				)
 
 		p0 = "INSERT INTO %(table)s" % {'table': table}
 		p1 = ' (%s)' % ','.join(columns)
 		p2 = ' , '.join(map(lambda x: ' %('+ x + ')s', columns))
 		p3 = ' , '.join(map(lambda x: x + ' = VALUES(' + x + ')', update_columns))
-		# incr count of trap
-		p4 = ''.join([', alarm_count = alarm_count + 1'])
 		qry = ''.join(
-				[p0, p1, ' VALUES (', p2, ') ON DUPLICATE KEY UPDATE ', p3,p4]
+				[p0, p1, ' VALUES (', p2, ') ON DUPLICATE KEY UPDATE ', p3] 
 				)
 		if flag == 'event' or flag == 'wimax_trap':
 		    distinct_key = 'eventname'
@@ -179,24 +185,53 @@ class ExportTraps(object):
 				'device_name', 'ip_address', 'trapoid', 'eventname',
 				'eventno', 'severity', 'uptime', 'traptime',
 				'description', 'alarm_count', 'first_occurred',
-				'last_occurred', 'is_active'
+				'last_occurred', 'is_active', 'sia', 'customer_count'
 				)
 		columns = columns if columns else default_columns
-
 		p0 = "INSERT INTO %(table)s" % {'table': table}
 		p1 = ' (%s) ' % ','.join(columns)
 		p2 = ' , '.join(map(lambda x: ' %('+ x + ')s', columns))
 		qry = ''.join([p0, p1, ' VALUES (', p2, ') '])
-
 		if traps:
 			try:
-				self.exec_qry(qry, traps)
+				self.exec_qry(qry, traps, db_name='snmptt_db')
 			except Exception as exc:
 				inserted = False
 				print 'Exc in mysql trap insert: {0}'.format(exc)
 		return inserted
 
+        def update_trap_count(self, traps, table):
+		"""Update alarm count value"""
+                updated = True
+                default_columns = (
+                                'device_name', 'ip_address', 'trapoid', 'eventname',
+                                'eventno', 'severity', 'uptime', 'traptime',
+                                'description', 'alarm_count', 'first_occurred',
+                                'last_occurred', 'is_active', 'sia', 'customer_count'
+                                )
+                update_columns = (
+                                'alarm_count',
+                          )
+
+		p0 = "INSERT INTO %(table)s" % {'table': table}
+		p1 = ' (%s)' % ','.join(default_columns)
+		p2 = ' , '.join(map(lambda x: ' %('+ x + ')s', default_columns))
+		p3 = ''.join([' alarm_count = alarm_count +  values(alarm_count) '])
+		qry = ''.join(
+                	[p0, p1, ' VALUES (', p2, ') ON DUPLICATE KEY UPDATE ' ,p3]
+                	)
+
+                if traps:
+                        try:
+                                self.exec_qry(qry, traps,db_name='snmptt_db')
+                        except Exception as exc:
+                                updated = False
+                                print 'Exc in mysql trap count update: {0}'.format(exc)
+                return updated
+
+
 
 if __name__ == '__main__':
 	db_cls = ConnectionBase()
 	print db_cls.mysql_cnx(db_name='snmptt_db')
+
