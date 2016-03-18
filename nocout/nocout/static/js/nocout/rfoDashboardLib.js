@@ -122,9 +122,6 @@ function initRfoDashboard() {
     if (load_chart) {
         loadRFOColumnChart(summation_url,String(selected_month), selected_state, selected_city);
     }
-
-    // Hide Loading Spinner
-    hideSpinner();
 }
 
 function initMTTRDashboard() {
@@ -138,8 +135,6 @@ function initMTTRDashboard() {
     }
 
     loadMTTRSummaryChart(mttr_summary_url,String(selected_month), selected_state, selected_city, {'is_normal': true});
-    // Hide Loading Spinner
-    hideSpinner();
 }
 
 /**
@@ -220,9 +215,6 @@ function initINCTicketDashboard() {
         api_get_params += '&request_for_chart=1';
         loadINCTicketChart(inc_ticket_url + api_get_params, selected_severity);
     }
-
-    // Hide Loading Spinner
-    hideSpinner();
 }
 
 
@@ -296,9 +288,6 @@ function initResolutionEfficiencyDashboard() {
         api_get_params += '&request_for_chart=1';
         loadResolutionEfficienyChart(resolution_efficiency_url + api_get_params);
     }
-
-    // Hide Loading Spinner
-    hideSpinner();
 }
 
 /**
@@ -307,6 +296,9 @@ function initResolutionEfficiencyDashboard() {
  */
 $('.filter_controls').change(function(e) {
     
+    // show loading spinner
+    showSpinner();
+
     // When state select then show cities of that state only
     if ($(this).attr('name').indexOf('state') > -1) {
         var selected_val = $(this).val();
@@ -326,6 +318,9 @@ $('.filter_controls').change(function(e) {
         initINCTicketDashboard();
     } else if (window.location.pathname.indexOf('/resolution_efficiency/') > -1) {
         initResolutionEfficiencyDashboard();
+    } else {
+        // hide loading spinner
+        hideSpinner();
     }
 });
 
@@ -346,6 +341,9 @@ function updateFiltersContent(dataset, filter_name, filter_title) {
             var selectbox_html = '';
         }
 
+        var is_inc_page = window.location.pathname.indexOf('/inc_ticket_rate/') == -1,
+            is_re_page = window.location.pathname.indexOf('/resolution_efficiency/') == -1;
+
         for (var i=0; i<dataset.length; i++) {
             if (filter_name == 'month') {
                 try {
@@ -354,9 +352,10 @@ function updateFiltersContent(dataset, filter_name, filter_title) {
 
                     var value = month_dict[timestamp_obj.getMonth()] + ' - ' + timestamp_obj.getFullYear(),
                         selected_item = '';
-                    
-                    if (i == dataset.length - 1) {
-                        selected_item = 'SELECTED="SELECTED"';
+                    if (is_re_page && is_inc_page) {
+                        if (i == dataset.length - 1) {
+                            selected_item = 'SELECTED="SELECTED"';
+                        }
                     }
 
                     selectbox_html += '<option value="' + id + '" ' + selected_item + '>' + value + '</option>';
@@ -513,9 +512,14 @@ function loadRFOColumnChart(ajax_url, month, selected_state, selected_city) {
                     }
                 });
             }
+
+            // hide loading spinner
+            hideSpinner();
         },
         error: function(err) {
-            console.log(err.statusText);
+            // console.log(err.statusText);
+            // hide loading spinner
+            hideSpinner();
         }
     });
 }
@@ -766,9 +770,6 @@ function loadMTTRSummaryChart(ajax_url, month, selected_state, selected_city, ex
                                                     'series_name': series_name
                                                 }
                                             );
-
-                                            // Hide Loading Spinner
-                                            hideSpinner();
                                         }
                                     }
                                 }
@@ -788,9 +789,14 @@ function loadMTTRSummaryChart(ajax_url, month, selected_state, selected_city, ex
                     }
                 });
             }
+
+            // Hide Loading Spinner
+            hideSpinner();
         },
         error: function(err) {
-            console.log(err.statusText);
+            // console.log(err.statusText);
+            // Hide Loading Spinner
+            hideSpinner();
         }
     });
 }
@@ -920,9 +926,10 @@ function loadINCTicketChart(api_url, selected_severity) {
                     }
                 });
                 
-                // Hide Loading Spinner
-                hideSpinner();
             }
+            
+            // Hide Loading Spinner
+            hideSpinner();
         },
         error: function(err) {
             // console.log(err.statusText);
@@ -1056,11 +1063,11 @@ function loadResolutionEfficienyChart(api_url) {
                             color: '#539fb8',
                         }
                     }
-                });
-                
-                // Hide Loading Spinner
-                hideSpinner();
+                });    
             }
+            
+            // Hide Loading Spinner
+            hideSpinner();
         },
         error: function(err) {
             // console.log(err.statusText);
