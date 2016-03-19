@@ -7,19 +7,19 @@ from sys import path
 path.append('nocout/performance/service')
 
 
-# change module for production
-db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
-#from handlers.db_ops import *
+# changed module for production
+#db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
+from handlers.db_ops import *
 
-start_app_module = imp.load_source('start_pub', '/omd/sites/%s/lib/python/start_pub.py' % nocout_site_name)
-app = start_app_module.app
-#from start.start import app
+#start_app_module = imp.load_source('start_pub', '/omd/sites/%s/lib/python/start_pub.py' % nocout_site_name)
+#app = start_app_module.app
+from start.start import app
 
 mapper_module =  imp.load_source('mapper', '/omd/sites/%s/nocout/performance/service/mapper.py' % nocout_site_name)
 #from trap_handler import mapper
 
-from mapper import Eventmapper
-# from trap_handler.mapper import Eventmapper
+#from mapper import Eventmapper
+from trap_handler.mapper import Eventmapper
 
 @app.task(name='insert_network_event')
 def insert_network_event():

@@ -1,12 +1,15 @@
 from datetime import datetime
 import operator
-from db_conn import ConnectionBase, ExportTraps
+#from db_conn import ConnectionBase, ExportTraps
 from collections import defaultdict
 import imp
 
-start_app_module = imp.load_source('start_pub', '/omd/sites/ospf1_slave_1/lib/python/start_pub.py')
+# changed module for production
+from trap_handler.db_conn import ConnectionBase, ExportTraps
+from start.start import app
+#start_app_module = imp.load_source('start_pub', '/omd/sites/ospf1_slave_1/lib/python/start_pub.py')
+#app = start_app_module.app
 
-app = start_app_module.app
 severity_for_clear_table = ['clear','ok']
 global alarm_mask_oid
 global mat_entries
