@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.http import HttpRequest
 from datetime import datetime
 import xlwt
+import xlsxwriter
 import simplejson
 import json
 
@@ -93,6 +94,9 @@ def get_datatable_response(payload):
 
         # create http request for getting rows data (for accessing list view classes)
         rows_req = HttpRequest()
+
+        if 'rows_data' in payload:
+            payload['rows_data']['is_download_request'] = 1
 
         # binding data to rows request
         if payload:
@@ -233,7 +237,11 @@ def get_datatable_response(payload):
         is_created = False
 
         # excel workbook
-        wb = xlwt.Workbook()
+        # wb = xlwt.Workbook()
+        # file path
+        file_name = payload['username'] + '_' + payload['fulltime'] + '.xlsx'
+        file_path = 'download_excels/{0}'.format(file_name)
+        wb = xlsxwriter.Workbook(MEDIA_ROOT + file_path)
 
         for result in resultset:
 
@@ -262,10 +270,14 @@ def get_datatable_response(payload):
                     rows_list.append(temp_list)
 
                 # excel worksheet
-                ws = wb.add_sheet(titles_list[counter])
+                # ws = wb.add_sheet(titles_list[counter])
+                ws = wb.add_worksheet(titles_list[counter])
 
                 # xlwt style object for styling header row
-                style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+                # style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+                style = wb.add_format()
+                style.set_fg_color('#F9D8AC')
+                style.set_pattern(1)
 
                 # writing header row to excel sheet
                 try:
@@ -283,6 +295,12 @@ def get_datatable_response(payload):
                                 col = nocout_utils.html_to_text(col)
                             except Exception as e:
                                 pass
+
+                            try:
+                                col = col.strip()
+                            except Exception, e:
+                                pass
+
                             ws.write(i, j, col)
                 except Exception as e:
                     pass
@@ -295,12 +313,9 @@ def get_datatable_response(payload):
 
             # saving bulk upload errors excel sheet
             try:
-                # file path
-                file_path = 'download_excels/{}_{}.xls'.format(payload['username'],
-                                                                  payload['fulltime'])
-
                 # saving workbook
-                wb.save(MEDIA_ROOT + file_path)
+                # wb.save(MEDIA_ROOT + file_path)
+                wb.close()
                 # update downloader object (on success)
                 d_obj.file_path = file_path
                 d_obj.file_type = 'MS-Excel'
