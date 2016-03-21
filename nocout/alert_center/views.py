@@ -2004,7 +2004,9 @@ class SIAListing(ListView):
             {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         specific_invent_columns = [
@@ -2039,14 +2041,15 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     alarm_type = None
     tech_name = None
     columns = [
-        'severity', 'ip_address', 'eventname',
-        'traptime', 'alarm_count','first_occurred','last_occurred'
+        'severity', 'ip_address', 'eventname', 'traptime',
+        'alarm_count','first_occurred','last_occurred',
+        'customer_count', 'sia'
     ]
     
     order_columns = [
         'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state',
         'bh_connectivity', 'bh_type', 'eventname','traptime','uptime',
-        'alarm_count', 'first_occurred','last_occurred'
+        'alarm_count', 'first_occurred','last_occurred', 'customer_count', 'sia'
     ]
 
     other_columns = [
@@ -2206,7 +2209,8 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             self.order_columns = [
                 'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
                 'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
-                'traptime', 'uptime','alarm_count','first_occurred','last_occurred'
+                'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
+                'customer_count', 'sia'
             ]
 
         # Number of columns that are used in sorting

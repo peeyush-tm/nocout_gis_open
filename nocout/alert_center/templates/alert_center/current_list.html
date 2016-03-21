@@ -154,11 +154,11 @@
                 ajax_url_converter = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=switch';
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
-            var common_extra_param = "'alarm_type' : '" + alarm_type + "', 'download_excel': 'yes'",
-                converter_title = "SIA Alarms - Converter (Current)",
-                pmp_title = "SIA Alarms - PMP (Current)",
-                wimax_title = "SIA Alarms - WiMAX (Current)",
-                all_title = "SIA Alarms - All (Current)",
+            var common_extra_param = "'download_excel': 'yes'",
+                converter_title = "SIA Alarms - Converter ({1})",
+                pmp_title = "SIA Alarms - PMP ({1})",
+                wimax_title = "SIA Alarms - WiMAX ({1})",
+                all_title = "SIA Alarms - All ({1})",
                 fetch_data_class = "SIAListingTable",
                 converter_tab_param = "";
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
@@ -170,7 +170,7 @@
                     "header_class_name" : "SIAListing",
                     "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{'headers_data_key' : 'converter_datatable_headers', "+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+converter_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+converter_title+"', 'alarm_type': '{0}', 'tech_name': 'switch', "+common_extra_param+"}"
                 },
                 "snmp_pmp_tab" : {
                     "app_name" : "alert_center",
@@ -178,7 +178,7 @@
                     "header_class_name" : "SIAListing",
                     "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+pmp_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+pmp_title+"', 'alarm_type': '{0}', 'tech_name': 'pmp', "+common_extra_param+"}"
                 },
                 "snmp_wimax_tab" : {
                     "app_name" : "alert_center",
@@ -186,7 +186,7 @@
                     "header_class_name" : "SIAListing",
                     "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+wimax_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+wimax_title+"', 'alarm_type': '{0}', 'tech_name': 'wimax', "+common_extra_param+"}"
                 },
                 "snmp_all_tab" : {
                     "app_name" : "alert_center",
@@ -194,7 +194,7 @@
                     "header_class_name" : "SIAListing",
                     "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+all_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+all_title+"', 'alarm_type': '{0}', 'tech_name': 'all', "+common_extra_param+"}"
                 }
             };
 
