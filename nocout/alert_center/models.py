@@ -16,6 +16,8 @@ class GenericAlarm(models.Model):
     first_occurred = models.DateTimeField(null=True,blank=True)
     last_occurred = models.DateTimeField(null=True,blank=True)
     is_active = models.IntegerField(null=True,blank=True)
+    sia = models.CharField(max_length=32, blank=True, null=True)
+    customer_count = models.IntegerField(blank=True, null=True)
 
     class Meta:
         abstract = True

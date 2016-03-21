@@ -115,6 +115,21 @@ function ourDataTableWidget() {
                 // If download is enabled from settings then show download button else not
                 if(datatables_download_flag) {
                     if(app_name && header_class_name && data_class_name) {
+
+                        if (window.location.pathname.indexOf('/sia/') > -1) {
+                            var alarm_type = $('input[name="alarm_type"]:checked').val();
+
+                            if (!alarm_type) {
+                                alarm_type = '';
+                            }
+
+                            data_extra_param = decodeURIComponent(data_extra_param);
+                            data_extra_param = data_extra_param.replace('{0}', alarm_type);
+                            data_extra_param = data_extra_param.replace('{1}', alarm_type[0].toUpperCase() + alarm_type.substr(1));
+                            current_table_title = current_table_title.replace('{1}', alarm_type[0].toUpperCase() + alarm_type.substr(1));
+                            data_extra_param = encodeURIComponent(data_extra_param);
+                        }
+
                         search_btn_html += '<button id="'+tableId+'_download_btn" \
                                             current_table_title="'+current_table_title+'" \
                                             app_name="'+app_name+'" \
