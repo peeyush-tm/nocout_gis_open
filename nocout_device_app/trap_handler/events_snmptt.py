@@ -1,10 +1,10 @@
 """Script to read network event data and store to snmptt"""
-from nocout_site_name import *
+#from nocout_site_name import *
 from datetime import datetime, timedelta
 import imp
 import time
 from sys import path
-path.append('nocout/performance/service')
+#path.append('nocout/performance/service')
 
 
 # changed module for production
@@ -15,7 +15,7 @@ from handlers.db_ops import *
 #app = start_app_module.app
 from start.start import app
 
-mapper_module =  imp.load_source('mapper', '/omd/sites/%s/nocout/performance/service/mapper.py' % nocout_site_name)
+#mapper_module =  imp.load_source('mapper', '/omd/sites/%s/nocout/performance/service/mapper.py' % nocout_site_name)
 #from trap_handler import mapper
 
 #from mapper import Eventmapper
@@ -109,7 +109,7 @@ def make_network_snmptt_data():
 @app.task(name='make_bs_ul_issue_snmptt_data')
 def make_bs_ul_issue_snmptt_data():
     try:
-        queue = db_ops_module.RedisInterface(event_q = 'q:bs_ul_issue_event')
+        queue = RedisInterface(event_q = 'q:bs_ul_issue_event')
         cur = queue.get(0, -1)
         docs = []
         for doc in cur:
