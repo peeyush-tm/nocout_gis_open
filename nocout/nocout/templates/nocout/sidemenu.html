@@ -62,14 +62,14 @@
                         <ul class="sub-sub">
                             {% if settings.SHOW_INC_TICKET_DASHBOARD %}
                             <li>
-                                <a href="javascript:;">
+                                <a href="{% url 'inc-ticket-rate' %}">
                                     <span class="sub-menu-text">INC Ticket Rate</span>
                                 </a>
                             </li>
                             {% endif %}
                             {% if settings.SHOW_RESOLUTION_EFFCIENCY_DASHBOARD %}
                             <li>
-                                <a href="javascript:;">
+                                <a href="{% url 'resolution-efficiency' %}">
                                     <span class="sub-menu-text">Resolution Efficieny</span>
                                 </a>
                             </li>
@@ -434,11 +434,6 @@
                                             <span class="sub-menu-text">Raw BS Outage</span>
                                         </a>
                                     </li>
-                                    <!-- <li>
-                                        <a href="{% url 'InventoryDownloadCenter' 'bs_daily_fault_report' %}">
-                                            <span class="sub-menu-text">Daily Fault Reports</span>
-                                        </a>
-                                    </li> -->
                                     <li>
                                         <a href="{% url 'InventoryDownloadCenter' 'bs_monthly_uptime_report' %}">
                                             <span class="sub-menu-text">Monthly Uptime Reports</span>
@@ -447,6 +442,11 @@
                                 </ul>
                             </li>
                             {% endif %}
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'bh_polling_failure' %}">
+                                    <span class="sub-menu-text">Backhaul Polling Failure</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <li>

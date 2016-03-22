@@ -20,6 +20,7 @@ from django.utils.dateformat import format
 
 from device.models import Device, DeviceType, DeviceTechnology, DevicePort
 from service.models import ServiceDataSource,Service
+from machine.models import Machine
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, PowerSignals, Customer, CircuitContacts
 from performance.models import PerformanceService, PerformanceNetwork, \
     NetworkStatus, \
@@ -51,7 +52,7 @@ from nocout.mixins.datatable import AdvanceFilteringMixin
 
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
-    AVG_CHART_COLOR, CACHE_TIME, ENV_NAME, \
+    AVG_CHART_COLOR, CACHE_TIME, ENV_NAME, SHOW_SS_PERF_LINK_IA_TABLE, \
     WARN_COLOR, CRIT_COLOR, WARN_TYPE, CRIT_TYPE, MULTI_PROCESSING_ENABLED
 
 from performance.formulae import display_time, rta_null
@@ -666,6 +667,7 @@ class GetPerfomance(View):
         is_radwin5 = 0
         is_viewer_flag = 0
         user_role = self.request.user
+        sector_configured_on_id = []
 
         try:
             if 'radwin5' in device_type.lower():
@@ -699,6 +701,7 @@ class GetPerfomance(View):
                 bs_obj = sector_obj.base_station
                 bs_alias = bs_obj.alias
                 bs_id = [str(bs_obj.id)]
+                sector_configured_on_id = sector_obj.sector_configured_on_id
 
                 try:
                     sector_perf_url  = reverse(
@@ -824,6 +827,7 @@ class GetPerfomance(View):
             'realdevice': realdevice,
             'bs_alias' : bs_alias,
             'bs_id' : json.dumps(bs_id),
+            'sector_configured_on_id' : json.dumps(sector_configured_on_id),
             'get_status_url': inventory_status_url,
             'get_services_url': service_ds_url,
             'inventory_page_url': inventory_page_url,
@@ -3447,9 +3451,11 @@ class GetServiceTypePerformanceData(View):
             'packet_loss',
             'latency',
             'last_down_time',
-            'last_updated',
-            'action'
+            'last_updated'
         ]
+
+        if SHOW_SS_PERF_LINK_IA_TABLE:
+            self.result['data']['objects']['table_data_header'].append('action')
 
         return self.result
 
@@ -9137,3 +9143,76 @@ class InitDeviceReboot(View):
             pass
 
         return HttpResponse(json.dumps(result))
+
+
+
+class GetSSTelnet(View):
+    """
+    Generic class view for giving required info for SS telnet
+    """
+
+    def get(self, request):
+        result = {
+            'success' : 0,
+            'message' : 'telnet info not fetched',
+            'data' : []
+        }
+
+        
+        device_id = self.request.GET.get('device_id')
+        if not device_id:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+
+        device_qs = Device.objects.filter(id = device_id).values('ip_address', 'machine_id', 'device_type')
+        machine_qs = Machine.objects.filter(id = device_qs[0]['machine_id']).values('name')
+        deviceType_qs = DeviceType.objects.filter(id = device_qs[0]['device_type']).values('name')
+
+        machine_name = machine_qs[0]['name']
+        device_ip = device_qs[0]['ip_address']
+        device_type = deviceType_qs[0]['name']
+
+        result['data'].append({
+            'machine_name' : machine_name,
+            'device_ip' : device_ip,
+            'device_type' : device_type
+            })
+
+        result.update(success= 1, message= 'Telnet info fetched successfully')
+
+        return HttpResponse(json.dumps(result), content_type="application/json")
+
+class GetBSTelnet(View):
+    """
+    Generic class view for giving required info for BS telnet
+    """
+
+    def get(self, request):
+        result = {
+            'success' : 0,
+            'message' : 'telnet info not fetched',
+            'data' : []
+        }
+
+        
+        device_id = self.request.GET.get('device_id')
+        if not device_id:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+
+        device_qs = Device.objects.filter(id = device_id).values('ip_address', 'machine_id', 'device_type')
+        machine_qs = Machine.objects.filter(id = device_qs[0]['machine_id']).values('name')
+        deviceType_qs = DeviceType.objects.filter(id = device_qs[0]['device_type']).values('name')
+
+        machine_name = machine_qs[0]['name']
+        device_ip = device_qs[0]['ip_address']
+        device_type = deviceType_qs[0]['name']
+
+        result['data'].append({
+            'machine_name' : machine_name,
+            'device_ip' : device_ip,
+            'device_type' : device_type
+            })
+
+        result.update(success= 1, message= 'Telnet info fetched successfully')
+
+        return HttpResponse(json.dumps(result), content_type="application/json")
+        

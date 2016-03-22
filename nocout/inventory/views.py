@@ -29,6 +29,7 @@ from django.template import RequestContext
 
 from django.contrib.auth.models import User
 from django.contrib.staticfiles.templatetags.staticfiles import static
+from django.conf import settings
 
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
@@ -5234,6 +5235,8 @@ def getModelForSearch(request, search_by='default'):
         search_model = Circuit
     elif search_by in ['sector_id']:
         search_model = Sector
+    elif search_by in ['alias']:
+        search_model = BaseStation
     else:
         search_model = ''
 
@@ -5317,6 +5320,7 @@ def getAutoSuggestion(request, search_by="default", search_txt=""):
     if search_model and search_by:
         # Condition to fetch data
         condition = '%s__istartswith' % search_by
+
         if search_model.__name__ == 'Device':
             # fetch queryset as per the condition, for device model take one more condition of is_added_to_nms
             query_result = search_model.objects.filter(
@@ -5386,7 +5390,7 @@ def getSearchData(request, search_by="default", pk=0):
         if len(query_result) > 0:
             # Initialize data list
             response_data = []
-
+ 
             try:
                 inventory_page_url = ''
                 perf_page_url = ''
@@ -5400,6 +5404,12 @@ def getSearchData(request, search_by="default", pk=0):
                     page_type = getPageType(query_result[0])
                     alert_page_type = page_type
 
+                    try:
+                        device_type_qs = DeviceType.objects.filter(pk=query_result[0].device_type).values('alias')
+                        device_type = device_type_qs[0]['alias']
+                    except Exception, e:
+                        device_type = ''
+
                     # Device Inventory page url
                     inventory_page_url = reverse(
                         'device_edit',
@@ -5412,6 +5422,9 @@ def getSearchData(request, search_by="default", pk=0):
                         kwargs={'page_type': page_type, 'device_id': query_result[0].id},
                         current_app='performance'
                     )
+                    if settings.IDU_SEC_COMMON_UTIL_TAB :
+                        if device_type.lower() == 'starmaxidu' :
+                            perf_page_url = perf_page_url + "?is_util=1"
 
                     if alert_page_type not in ['customer', 'network']:
                         alert_page_type = 'network'
@@ -5422,6 +5435,40 @@ def getSearchData(request, search_by="default", pk=0):
                         kwargs={'page_type': alert_page_type, 'device_id': query_result[0].id, 'data_source': 'down'},
                         current_app='alert_center'
                     )
+                # This handles search by BS Name case
+                elif search_by in ['alias']:
+                    page_type = 'other'
+                    alert_page_type = page_type
+
+                    backhaul_obj = Backhaul.objects.filter(pk=query_result[0].backhaul_id).values('bh_configured_on_id')
+                    backhaul_device_id = backhaul_obj[0]['bh_configured_on_id']
+                    backhaul_device_obj = Device.objects.filter(pk= backhaul_device_id)
+
+
+                    # Single Device perf page url
+                    perf_page_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={'page_type': page_type, 'device_id': backhaul_device_id},
+                        current_app='performance'
+                    )
+                    perf_page_url = perf_page_url + "?is_util=1"
+
+                    # BS inventory page url
+                    inventory_page_url = reverse(
+                        'base_station_edit',
+                        kwargs={'pk': pk},
+                        current_app= 'inventory'
+                    )
+
+                    # Single Device alert page url
+                    alert_page_url = reverse(
+                        'SingleDeviceAlertsInit',
+                        kwargs= {'page_type': alert_page_type, 'device_id': backhaul_device_id, 'data_source': 'down'},
+                        current_app= 'alert_center'
+                    )              
+
+
+
                 elif search_by in ['circuit_id']:
 
                     ss_device_obj = SubStation.objects.filter(pk=query_result[0].sub_station_id).values('device_id')
@@ -5497,6 +5544,8 @@ def getSearchData(request, search_by="default", pk=0):
                         kwargs={'page_type': page_type, 'device_id': query_result[0].sector_configured_on_id},
                         current_app='performance'
                     )
+                    if settings.IDU_SEC_COMMON_UTIL_TAB :
+                        perf_page_url = perf_page_url + "?is_util=1"
 
                     if alert_page_type not in ['customer', 'network']:
                         alert_page_type = 'network'

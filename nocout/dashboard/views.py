@@ -32,7 +32,7 @@ from nocout.utils.util import NocoutUtilsGateway
 # Import Dashboard Models
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, \
     MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, \
-    DashboardSeverityStatusDaily, DashboardRangeStatusDaily, RFOAnalysis
+    DashboardSeverityStatusDaily, DashboardRangeStatusDaily, RFOAnalysis, CustomerFaultAnalysis
 
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, \
@@ -2249,7 +2249,7 @@ def get_rfo_analysis_context():
 
     # Fetch month data from RFOAnalysis model
     months_data = list(RFOAnalysis.objects.extra({
-        'id': 'CONCAT(unix_timestamp(timestamp), "000")'
+        'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
     }).values('id').distinct().order_by('id'))
 
     context = {
@@ -2852,3 +2852,360 @@ class MTTRDetailData(View):
             )
 
         return HttpResponse(json.dumps(result))
+
+
+class INCTicketRateInit(View):
+    """
+    This class loads the INC ticket rate template
+    """
+    def get(self, request, *args, **kwargs):
+        
+        template_name = 'rfo_dashboard/inc_ticket_dashboard.html'
+        # Fetch month data from RFOAnalysis model
+        months_data = list(CustomerFaultAnalysis.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id'))
+
+        severity_data = list(CustomerFaultAnalysis.objects.extra({
+            'id': 'REPLACE(severity, " ", "_")',
+            'value': 'severity'
+        }).values('value', 'id').distinct().order_by('value'))
+
+        inc_ticket_headers = [
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': 'tt_percent', 'sTitle': 'TT %'},
+            {'mData': 'target_percent', 'sTitle': 'Target %'},
+            {'mData': 'tt_count', 'sTitle': 'TT Count'}
+        ]
+
+        context = {
+            'months_data': json.dumps(months_data),
+            'severity_data': json.dumps(severity_data),
+            'inc_ticket_headers': json.dumps(inc_ticket_headers)
+        }
+
+        return render(self.request, template_name, context)
+
+
+class INCTicketRateListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = CustomerFaultAnalysis
+    columns = [
+        'timestamp',
+        'id',
+        'severity',
+        'city'
+    ]
+    order_columns = [
+        'timestamp',
+        'tt_count',
+        'severity',
+        'tt_count'
+    ]
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        severity = self.request.GET.get('severity')
+        target = 10
+        try:
+            # If month present in GET params then filter by it else return last 6 months data
+            if month:
+                qs = self.model.objects.extra({
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }).filter(
+                    severity__iexact=severity,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('severity', 'timestamp').annotate(tt_count=Count('id'))
+            else:
+                current_timestamp = datetime.datetime.now()
+                qs = self.model.objects.extra({
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }).filter(
+                    severity__iexact=severity,
+                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
+                    timestamp__lte=current_timestamp
+                ).values(
+                    'severity',
+                    'timestamp'
+                ).annotate(tt_count=Count('id'))
+            if self.request.GET.get('request_for_chart'):
+                qs.order_by('tt_count')
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = [{
+            key: val for key, val in dct.items()
+        } for dct in qs]
+
+        current_target = self.request.GET.get('current_target', 60)
+        severity_wise_count = {}
+        current_timestamp = datetime.datetime.now()
+
+        for data in json_data:
+            data['tt_percent'] = ''
+            try:
+                unique_id = '{0}_{1}'.format(
+                    data['severity'].replace(' ', '_'),
+                    str(data['timestamp'])
+                ).lower()
+                if unique_id not in severity_wise_count:
+                    # Calculate the total count per severity
+                    severity_wise_count[unique_id] = self.model.objects.filter(
+                        timestamp=datetime.datetime.fromtimestamp(data['timestamp'])
+                    ).count()
+
+                total_count = severity_wise_count[unique_id]
+                # Calculate % as per the total count & sererity wise total count
+                data['tt_percent'] = round((float(data['tt_count'])/float(total_count)) * 100, 2)
+            except Exception, e:
+                pass
+
+            # Format timestamp to 'Month'
+            try:
+                data['month'] = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
+            except Exception, e:
+                data['month'] = datetime.datetime.fromtimestamp(data['timestamp'])
+            try:
+                data['target_percent'] = round(float(current_target), 2)
+            except Exception, e:
+                data['target_percent'] = current_target
+
+        print severity_wise_count
+
+        return json_data
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+
+class ResolutionEfficiencyInit(View):
+    """
+    This class loads the INC ticket rate template
+    """
+    def get(self, request, *args, **kwargs):
+        
+        template_name = 'rfo_dashboard/resolution_efficiency.html'
+        # Fetch month data from RFOAnalysis model
+        months_data = list(CustomerFaultAnalysis.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id'))
+
+        severity_data = list(CustomerFaultAnalysis.objects.extra({
+            'id': 'REPLACE(severity, " ", "_")',
+            'value': 'severity'
+        }).values('value', 'id').distinct().order_by('value'))
+
+        resolution_efficiency_headers = [
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': '2_hrs', 'sTitle': '2 Hours'},
+            {'mData': '2_hrs_percent', 'sTitle': '2 Hours %'},
+            {'mData': '4_hrs', 'sTitle': '4 Hours'},
+            {'mData': '4_hrs_percent', 'sTitle': '4 Hours %'},
+            {'mData': 'more_than_4_hrs', 'sTitle': 'More Than 4 Hours'},
+            {'mData': 'more_than_4_hrs_percent', 'sTitle': 'More Than 4 Hours %'},
+            {'mData': 'total_count', 'sTitle': 'Total TT'}
+        ]
+
+        context = {
+            'months_data': json.dumps(months_data),
+            'severity_data': json.dumps(severity_data),
+            'resolution_efficiency_headers': json.dumps(resolution_efficiency_headers)
+        }
+
+        return render(self.request, template_name, context)
+
+
+class ResolutionEfficiencyListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = CustomerFaultAnalysis
+    columns = [
+        'timestamp',
+        'id',
+        'severity',
+        'city'
+    ]
+    order_columns = [
+        'timestamp',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count'
+    ]
+
+    pre_camel_case_notation = False
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        try:
+            # If month present in GET params then filter by it else return last 6 months data
+            if month:
+                qs = self.model.objects.extra({
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }).filter(
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values(
+                    'downtime_slab',
+                    'timestamp'
+                ).annotate(tt_count=Count('id'))
+            else:
+                current_timestamp = datetime.datetime.now()
+                qs = self.model.objects.extra({
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }).filter(
+                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
+                    timestamp__lte=current_timestamp
+                ).values(
+                    'downtime_slab',
+                    'timestamp'
+                ).annotate(tt_count=Count('id'))
+
+            if self.request.GET.get('request_for_chart'):
+                qs.order_by('tt_count')
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = [{
+            key: val for key, val in dct.items()
+        } for dct in qs]
+
+        current_target = self.request.GET.get('current_target', 60)
+        downtime_slab_wise_count = {}
+        current_timestamp = datetime.datetime.now()
+        temp_dict = {}
+        for data in json_data:
+            tt_count = data['tt_count']
+            if data['timestamp'] not in temp_dict:
+                temp_dict[data['timestamp']] = {
+                    'timestamp': data['timestamp'],
+                    'month': '',
+                    '2_hrs': '',
+                    '2_hrs_percent': '',
+                    '4_hrs': '',
+                    '4_hrs_percent': '',
+                    'more_than_4_hrs': '',
+                    'more_than_4_hrs_percent': '',
+                    'total_count': ''
+                }
+
+            if not temp_dict[data['timestamp']]['month']:
+                try:
+                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
+                except Exception, e:
+                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
+                temp_dict[data['timestamp']]['month'] = formatted_month
+
+            if not temp_dict[data['timestamp']]['total_count']:
+                try:
+                    temp_dict[data['timestamp']]['total_count'] = self.model.objects.extra({
+                        'timestamp': 'unix_timestamp(timestamp)'
+                    }).filter(
+                        timestamp=datetime.datetime.fromtimestamp(float(data['timestamp']))
+                    ).count()
+                except Exception, e:
+                    temp_dict[data['timestamp']]['total_count'] = self.model.objects.filter(id=0).count()
+
+            total_count = temp_dict[data['timestamp']]['total_count']
+                
+            hrs_percent = round((float(tt_count) / float(total_count)) * 100, 2)
+
+            if 'Hours' not in data['downtime_slab']:
+                data['downtime_slab'] += ' Hours'
+
+            if '2' in data['downtime_slab']:
+                temp_dict[data['timestamp']]['2_hrs'] = tt_count
+                temp_dict[data['timestamp']]['2_hrs_percent'] = hrs_percent
+            elif '4' in data['downtime_slab'] and 'greater' not in data['downtime_slab']:
+                temp_dict[data['timestamp']]['4_hrs'] = tt_count
+                temp_dict[data['timestamp']]['4_hrs_percent'] = hrs_percent
+            elif 'greater' in data['downtime_slab']:
+                temp_dict[data['timestamp']]['more_than_4_hrs'] = tt_count
+                temp_dict[data['timestamp']]['more_than_4_hrs_percent'] = hrs_percent
+
+        return temp_dict.values()
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
+
+        qs = self.ordering(qs)
+        
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+

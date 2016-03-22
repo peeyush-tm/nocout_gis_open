@@ -332,5 +332,25 @@ urlpatterns = patterns('',
         r'^mttr/detail/$',
         views.MTTRDetailData.as_view(),
         name='rfo-analysis-mttr-detail-data'
+    ),
+    url(
+        r'^inc_ticket_rate/$',
+        views.INCTicketRateInit.as_view(),
+        name='inc-ticket-rate'
+    ),
+    url(
+        r'^inc_ticket_rate/listing/$',
+        views.INCTicketRateListing.as_view(),
+        name='inc-ticket-rate-listing'
+    ),
+    url(
+        r'^resolution_efficiency/$',
+        views.ResolutionEfficiencyInit.as_view(),
+        name='resolution-efficiency'
+    ),
+    url(
+        r'^resolution_efficiency/listing/$',
+        views.ResolutionEfficiencyListing.as_view(),
+        name='resolution-efficiency-listing'
     )
 )

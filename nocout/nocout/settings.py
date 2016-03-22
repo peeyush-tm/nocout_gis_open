@@ -21,6 +21,15 @@ DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 PROFILE = DEBUG
 PROFILE_TYPE = 'line'
+SSH_PROTOCOL = 'http'
+SSH_HOST = '127.0.0.1'
+SSH_PORT = '8888'
+SSH_URL = SSH_PROTOCOL + '://' + SSH_HOST + ':' + SSH_PORT + '/'  #'http://127.0.0.1:8888/'
+SSH_USERNAME = 'achal'
+SSH_PASSWORD = 'ttpl@123'
+COMMON_SSH_SCRIPT_PATH = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
+TELNET_SS_SCRIPT = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
+TELNET_BS_SCRIPT = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -832,12 +841,21 @@ SETTINGS_EXPORT = [
     'FAULT_REPORT_ENABLED',
     'SHOW_RFO_DASHBOARD',
     'SHOW_ALL_TAB_IN_ALERTS',
+    'GLOBAL_SEARCH_BY_BS_NAME',
+    'IDU_SEC_COMMON_UTIL_TAB',
     'SHOW_MTTR_DASHBOARD',
     'SHOW_INC_TICKET_DASHBOARD',
     'SHOW_RESOLUTION_EFFCIENCY_DASHBOARD',
     'SHOW_BH_LINK_ON_SS',
+    'SSH_URL',
+    'SSH_USERNAME',
+    'SSH_PASSWORD',
+    'COMMON_SSH_SCRIPT_PATH',
+    'TELNET_SS_SCRIPT',
+    'TELNET_BS_SCRIPT',
     'SHOW_SECTOR_LINK_ON_SS',
-    'TICKETS_LINK_ON_PERF_PAGE'
+    'TICKETS_LINK_ON_PERF_PAGE',
+    'SHOW_SS_PERF_LINK_IA_TABLE'
 ]
 
 # Dashbaord Settings
@@ -917,6 +935,12 @@ ENABLE_BIRDEYE_VIEW = False
 
 # Flag to enable/disable custom dashboards on single performance page.
 ENABLE_CUSTOM_DASHBOARD_VIEW = False
+
+# Flag to enable global search by Base station name
+GLOBAL_SEARCH_BY_BS_NAME = False
+
+# Flag to enable common utilization tab for IDU Ip and Sector ID global search
+IDU_SEC_COMMON_UTIL_TAB = False
 
 # Password complexity settings.
 # ===============================
@@ -1273,6 +1297,7 @@ SHOW_RESOLUTION_EFFCIENCY_DASHBOARD = False
 SHOW_BH_LINK_ON_SS = False
 SHOW_SECTOR_LINK_ON_SS = False
 TICKETS_LINK_ON_PERF_PAGE = False
+SHOW_SS_PERF_LINK_IA_TABLE = False
 
 # Import the local_settings.py file to override global settings
 try:
