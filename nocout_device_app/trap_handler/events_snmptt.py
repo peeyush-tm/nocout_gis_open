@@ -28,20 +28,12 @@ def insert_network_event():
         #print "Data list network event",data_list
         worker = Eventmapper()
         worker.filter_events(data_list)
-        
-@app.task(name='insert_wimax_bs_ul_issue_event')
-def insert_wimax_bs_ul_issue_event():
-    data_list = make_bs_ul_issue_snmptt_data()
-    if data_list :
-        #print "Data list Wimax BS UL issue",data_list
-        worker = Eventmapper()
-        worker.filter_events(data_list)
 
-@app.task(name='insert_cambium_bs_ul_issue_event')
-def insert_cambium_bs_ul_issue_event():
+@app.task(name='insert_bs_ul_issue_event')
+def insert_bs_ul_issue_event():
     data_list = make_bs_ul_issue_snmptt_data()
     if data_list :
-        #print "Data list cambium BS UL issue",data_list
+        #print "Data list BS UL issue",data_list
         worker = Eventmapper()
         worker.filter_events(data_list)
 
@@ -50,7 +42,7 @@ def make_network_snmptt_data():
     ds_event_mapping = {}
     {'rta':'Latency_Threshold_Breach'}
     try:
-        queue = db_ops_module.RedisInterface(event_q = 'q:network:snmptt')
+        queue = RedisInterface(perf_q = 'q:network:snmptt')
         cur = queue.get(0, -1)
         docs = []
         for doc in cur:
@@ -109,7 +101,7 @@ def make_network_snmptt_data():
 @app.task(name='make_bs_ul_issue_snmptt_data')
 def make_bs_ul_issue_snmptt_data():
     try:
-        queue = RedisInterface(event_q = 'q:bs_ul_issue_event')
+        queue = RedisInterface(perf_q = 'q:bs_ul_issue_event')
         cur = queue.get(0, -1)
         docs = []
         for doc in cur:

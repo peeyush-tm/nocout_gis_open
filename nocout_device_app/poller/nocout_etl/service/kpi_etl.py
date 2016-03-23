@@ -418,7 +418,7 @@ def extract_wimax_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,sec_t
     ul_issue_list.append(bs_service_dict)        
     #warning('wimax bs ul issue: {0}'.format(len(ul_issue_list)))
     rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
-    #insert_bs_ul_issue_data_to_redis(bs_service_dict)
+    insert_bs_ul_issue_data_to_redis(bs_service_dict)
 
 def insert_bs_ul_issue_data_to_redis(bs_service_dict):
     try :
@@ -430,7 +430,7 @@ def insert_bs_ul_issue_data_to_redis(bs_service_dict):
 	    rds_cli.redis_cnx.rpush('q:bs_ul_issue_event', bs_service_dict)
             #print "BS UL issue record inserted in Redis : ",rds_cli.redis_cnx.lrange('q:bs_ul_issue_event',0, -1),"\n"
     except Exception ,exp :
-        print "Error in Redis DB Data Insertion Cambium BS UL Issue : %s \n" % str(exp)
+        print "Error in Redis DB Data Insertion UL Issue : %s \n" % str(exp)
 
 def extract_cambium_util_data(host_params,**args):
     perf = cam_util = sec_id = plugin_message = ''
@@ -1642,7 +1642,7 @@ def extract_cambium_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,**a
     ul_issue_list.append(bs_service_dict)
     #warning('cambium bs entry: {0}'.format(len(ul_issue_list)))
     rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
-    #insert_bs_ul_issue_data_to_redis(bs_service_dict)
+    insert_bs_ul_issue_data_to_redis(bs_service_dict)
 
 
 @app.task(base=DatabaseTask, name='extract_wimax_ul_issue_data')

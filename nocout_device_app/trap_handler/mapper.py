@@ -2,7 +2,7 @@ from datetime import datetime
 import operator
 #from db_conn import ConnectionBase, ExportTraps
 from collections import defaultdict
-import imp
+#import imp
 
 # changed module for production
 from trap_handler.db_conn import ConnectionBase, ExportTraps

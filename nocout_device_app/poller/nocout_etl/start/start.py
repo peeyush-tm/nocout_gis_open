@@ -157,18 +157,14 @@ class Config:
 	        'schedule': crontab(minute='*/5'),
 	        'kwargs':{'site_name':'ospf2_slave_8'}
 	      },
-            'insert-network-event-ospf2': {
+            'insert-network-event': {
                 'task': 'insert_network_event',
                 'schedule': crontab(minute='*/2')
                 },
-	    'insert-wimax-bs-ul-issue-event': {
-	    	'task': 'insert_wimax_bs_ul_issue_event',
+	    'insert-bs-ul-issue-event': {
+	    	'task': 'insert_bs_ul_issue_event',
 		'schedule': crontab(minute='*/5')
 		},
-            'insert-cambium-bs-ul-issue-event': {
-                'task': 'insert_cambium_bs_ul_issue_event',
-                'schedule': crontab(minute='*/5')
-                },
 
 	     'load_customer_count_in_redis': {
 		'task': 'load_customer_count_in_redis',
