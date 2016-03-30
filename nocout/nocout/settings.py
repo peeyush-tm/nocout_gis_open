@@ -1256,24 +1256,31 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
 ])
 # Global variable to show/hide Scheduled report mail option in dowload center listing.
 REPORT_EMAIL_PERM = json.dumps({
-    'bs_dump': 1,
-    'ss_dump': 1,
-    'ptp_dump': 1,
-    'latency_dump': 1,
-    'customer_report': 1,
-    'duplex_report': 1,
-    'ul_issue': 1,
-    'modulation': 1,
-    'utilization_tot': 1,
-    'temperature': 1,
-    'rectification_segment': 1,
-    'health_ptp_bh': 1    
+    'bs_dump': 0,
+    'ss_dump': 0,
+    'ptp_dump': 0,
+    'latency_dump': 0,
+    'customer_report': 0,
+    'duplex_report': 0,
+    'ul_issue': 0,
+    'modulation': 0,
+    'utilization_tot': 0,
+    'temperature': 0,
+    'rectification_segment': 0,
+    'health_ptp_bh': 0,
+    'bs_outage_daily': 0,
+    'bs_outage_weekly': 0,
+    'bs_outage_monthly': 0,
+    'bs_daily_fault_report': 0,
+    'bs_monthly_uptime_report': 0,
+    'bh_polling_failure': 1,
 })
 
 # Global variable to show/hide single report mail option in download center listing
-SINGLE_REPORT_EMAIL = False
+SINGLE_REPORT_EMAIL = True
+SCHEDULED_SINGLE_REPORT_EMAIL = True
 SCHEDULED_REPORT_EMAIL = False
-SCHEDULED_SINGLE_REPORT_EMAIL = False
+
 
 # Network & customer tickets url
 TICKETS_LINK_ENABLED = False
