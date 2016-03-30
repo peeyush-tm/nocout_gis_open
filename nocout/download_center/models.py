@@ -1136,4 +1136,4 @@ class EmailReport(models.Model):
     email_list = models.TextField()
 
 # Post Singnal call triggers to initiate email report.
-post_save.connect(dc_signals.send_mail_on_report_generation, sender=ProcessedReportDetails)
+# post_save.connect(dc_signals.send_mail_on_report_generation, sender=ProcessedReportDetails)
