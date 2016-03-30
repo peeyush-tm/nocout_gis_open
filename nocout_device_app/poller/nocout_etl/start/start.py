@@ -67,7 +67,9 @@ class Config:
             #'service.service_etl',
 	    'service.kpi_etl',
 	    #'events.events_etl',
-	    #'add_dummy'
+	    #'add_dummy',
+	    'trap_handler.events_snmptt',
+	    'trap_handler.mapper',
 	)
     CELERYD_LOG_COLOR = False
     CELERY_CHORD_PROPAGATES = False
@@ -155,6 +157,19 @@ class Config:
 	        'schedule': crontab(minute='*/5'),
 	        'kwargs':{'site_name':'ospf2_slave_8'}
 	      },
+            'insert-network-event': {
+                'task': 'insert_network_event',
+                'schedule': crontab(minute='*/2')
+                },
+	    'insert-bs-ul-issue-event': {
+	    	'task': 'insert_bs_ul_issue_event',
+		'schedule': crontab(minute='*/5')
+		},
+
+	     'load_customer_count_in_redis': {
+		'task': 'load_customer_count_in_redis',
+		'schedule' : crontab(minute=5)
+	     },
             }
 
 app.config_from_object(Config)
