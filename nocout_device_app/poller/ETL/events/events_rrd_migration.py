@@ -372,6 +372,19 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
         memc_obj.memc_conn.set(attempt_key,1)
 
 
+"""
+Method to format n/w trap and push to Redis
+"""
+def insert_network_event_to_redis(network_events_data):
+    try :
+        rds_obj = db_ops_module.RedisInterface()
+        print "network_events_data",network_events_data
+        rds_obj.redis_cnx.rpush('q:network:snmptt', *network_events_data)
+        #print rds_obj.redis_cnx.lrange('q:network:snmptt',0, -1)
+
+    except Exception,e :
+        pass
+        print "Error in Redis Insertion : %s \n" % str(e)
 
 
 
