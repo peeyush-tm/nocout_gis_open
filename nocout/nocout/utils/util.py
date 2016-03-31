@@ -1813,13 +1813,13 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
 
     if device_name_list and len(device_name_list):
         device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
-        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+        device_name_condition = " WHERE device.device_name in (" + device_name_str + ") "
 
     if is_ptpbh:
-        circuit_type_condition = " AND circuit.circuit_type LIKE '%backhaul%' "
+        circuit_type_condition = " circuit.circuit_type LIKE '%backhaul%' "
     else:
         circuit_type_condition = ""
-        circuit_type_condition += " AND ( isnull(circuit.circuit_type) OR "
+        circuit_type_condition += " ( isnull(circuit.circuit_type) OR "
         circuit_type_condition += " circuit.circuit_type = '' OR "
         circuit_type_condition += " circuit.circuit_type LIKE '%customer%' ) "
 
@@ -1861,22 +1861,36 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
                     customer.alias AS CUST,
                     customer.id AS CUSTID,
 
-                    device.ip_address AS SSIP,
-                    device.device_name AS SSDEVICENAME,
-                    device.id AS DEVICE_ID,
-                    device.id AS SS_DEVICE_ID,
+                    device_info.SSIP AS SSIP,
+                    device_info.SSDEVICENAME AS SSDEVICENAME,
+                    device_info.DEVICE_ID AS DEVICE_ID,
+                    device_info.SS_DEVICE_ID AS SS_DEVICE_ID,
                     
                     devicetype.name AS DEVICE_TYPE,
                     devicetype.id AS TYPEID,
                     
                     technology.name AS DEVICE_TECH,
                     technology.id AS TECHID
-                FROM
-                    inventory_circuit AS circuit
+                FROM (
+                    SELECT
+                        device.id as DEVICE_ID,
+                        device.id as SS_DEVICE_ID,
+                        device.ip_address as SSIP,
+                        device.device_name as SSDEVICENAME,
+                        device.device_technology as device_technology_id,
+                        device.device_type as device_type_id
+                    FROM
+                        device_device as device
+                    {2}
+                    {1}
+                ) AS device_info
+                INNER JOIN
+                    inventory_substation AS substation
+                ON
+                    device_info.DEVICE_ID = substation.device_id
                 LEFT JOIN (
-                    inventory_substation AS substation,
+                    inventory_circuit AS circuit,
                     inventory_customer AS customer,
-                    device_device AS device,
                     device_devicetechnology AS technology,
                     device_devicetype AS devicetype
                 )
@@ -1885,17 +1899,12 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
                     AND
                     customer.id = circuit.customer_id
                     AND
-                    {2}
-                    device.id = substation.device_id
+                    technology.id = device_info.device_technology_id
                     AND
-                    technology.id = device.device_technology
-                    AND
-                    devicetype.id = device.device_type
+                    devicetype.id = device_info.device_type_id
                     {0}
                 )
-                where 
-                    device.is_deleted = 0
-                    {1}
+                where
                     {3}
             ) as only_ss_info
             LEFT JOIN
@@ -2016,7 +2025,7 @@ def get_inventory_sector_query(
     device_name_condition = ""
     dr_sector_id_prefix = " "
     dr_device_condition = ""
-    device_condition = " device.id = sector.sector_configured_on_id "
+    device_condition = " device_info.DEVICE_ID = sector.sector_configured_on_id "
     grouping_condition = ""
     concat_values = ""
 
@@ -2033,12 +2042,12 @@ def get_inventory_sector_query(
 
     if device_name_list and len(device_name_list):
         device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
-        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+        device_name_condition = " WHERE device.device_name in (" + device_name_str + ") "
 
     if is_dr:
         dr_sector_id_prefix = "DR: "
         dr_device_condition = " AND sector.dr_site = 'yes' "
-        device_condition = " device.id = sector.dr_configured_on_id "
+        device_condition = " device_info.DEVICE_ID = sector.dr_configured_on_id "
 
     if is_mrc:
         dr_sector_id_prefix = "MRC: "
@@ -2073,7 +2082,6 @@ def get_inventory_sector_query(
         from
             (
                 select
-                    device.ip_address as SECTOR_CONF_ON_IP,
                     devicetype.name as DEVICE_TYPE,
                     
                     sector.base_station_id AS BSID,
@@ -2088,31 +2096,39 @@ def get_inventory_sector_query(
                     technology.id as TECHID,
                     devicetype.id as TYPEID,
 
-                    device.id as SECTOR_CONF_ON_ID,
-                    device.id AS DEVICE_ID,
-                    device.device_name as SECTOR_CONF_ON_NAME
-
-                from 
+                    device_info.SECTOR_CONF_ON_IP AS SECTOR_CONF_ON_IP,
+                    device_info.SECTOR_CONF_ON_ID AS SECTOR_CONF_ON_ID,
+                    device_info.DEVICE_ID AS DEVICE_ID,
+                    device_info.SECTOR_CONF_ON_NAME AS SECTOR_CONF_ON_NAME
+                from (
+                    SELECT
+                        device.id as DEVICE_ID,
+                        device.id as SECTOR_CONF_ON_ID,
+                        device.ip_address as SECTOR_CONF_ON_IP,
+                        device.device_name as SECTOR_CONF_ON_NAME,
+                        device.device_technology as device_technology_id,
+                        device.device_type as device_type_id
+                    FROM
+                        device_device as device
+                    {2}
+                    {1}
+                ) AS device_info
+                INNER JOIN
                     inventory_sector as sector
+                ON
+                    {5}
                 join (
-                    device_device as device,
                     device_devicetechnology as technology,
                     device_devicetype as devicetype
                 )
                 on (
-                    {5}
-                    AND
-                    {2}
-                    technology.id = device.device_technology
+                    technology.id = device_info.device_technology_id
                     {0}
                     AND
-                    devicetype.id = device.device_type
+                    devicetype.id = device_info.device_type_id
                 )
                 where 
                     not isnull(sector.sector_configured_on_id)
-                    AND
-                    device.is_deleted = 0
-                    {1}
                     {4}
             ) as sector_info
         LEFT JOIN
@@ -2197,7 +2213,7 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
 
     if device_name_list and len(device_name_list):
         device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
-        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+        device_name_condition = " WHERE device.device_name in (" + device_name_str + ") "
 
     if is_ptpbh:
         ptp_condition = " circuit.circuit_type LIKE '%backhaul%' AND "
@@ -2226,7 +2242,6 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                     sector_device_info.*
                 FROM(
                         SELECT
-                            device.ip_address AS SECTOR_CONF_ON_IP,
                             devicetype.name AS DEVICE_TYPE,
                             sector.id AS SECT_ID,
                             sector.base_station_id AS BSID,
@@ -2241,27 +2256,36 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                             technology.id AS TECHID,
                             devicetype.id AS TYPEID,
 
-                            device.id AS NEAR_DEVICE_ID,
-                            device.id AS DEVICE_ID,
-                            device.device_name AS SECTOR_CONF_ON_NAME
-                        FROM 
+                            device_info.SECTOR_CONF_ON_IP AS SECTOR_CONF_ON_IP,
+                            device_info.NEAR_DEVICE_ID AS NEAR_DEVICE_ID,
+                            device_info.DEVICE_ID AS DEVICE_ID,
+                            device_info.SECTOR_CONF_ON_NAME AS SECTOR_CONF_ON_NAME
+                        FROM (
+                            SELECT
+                                device.id as DEVICE_ID,
+                                device.id as NEAR_DEVICE_ID,
+                                device.ip_address as SECTOR_CONF_ON_IP,
+                                device.device_name as SECTOR_CONF_ON_NAME,
+                                device.device_technology as device_technology_id,
+                                device.device_type as device_type_id
+                            FROM
+                                device_device as device
+                            {1}
+                            {0}
+                        ) AS device_info
+                        INNER JOIN
                             inventory_sector AS sector
-                        JOIN (
-                            device_device AS device,
+                        ON
+                            device_info.DEVICE_ID = sector.sector_configured_on_id
+                        LEFT JOIN (
                             device_devicetechnology AS technology,
                             device_devicetype AS devicetype
                         )
                         ON (
-                            device.id = sector.sector_configured_on_id
-                        AND
-                            {1}
-                            technology.id = device.device_technology
-                        AND
-                            devicetype.id = device.device_type
+                            technology.id = device_info.device_technology_id
+                            AND
+                            devicetype.id = device_info.device_type_id
                         )
-                        where 
-                            device.is_deleted = 0
-                            {0}
                 ) as sector_device_info
                 LEFT JOIN
                     inventory_circuit AS circuit
@@ -2328,7 +2352,7 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
     """
     nms_device_condition = ""
     device_name_condition = ""
-    is_bh_condition = " bh.bh_configured_on_id = device.id AND "
+    is_bh_condition = " bh.bh_configured_on_id = device_info.DEVICE_ID "
     grouping_condition = " GROUP BY bh_info.BHIP "
 
     if monitored_only:
@@ -2336,22 +2360,22 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
 
     if device_name_list and len(device_name_list):
         device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
-        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+        device_name_condition = " WHERE device.device_name in (" + device_name_str + ") "
 
     # In case of other devices which are not bh_configured_on
     if type_rf == 'other':
-        is_bh_condition = " ( bh.pop_id = device.id OR \
-                            bh.aggregator_id = device.id OR \
-                            bh.bh_switch_id = device.id ) AND \
-                        not isnull(bh.bh_configured_on_id) AND "
+        is_bh_condition = " ( bh.pop_id = device_info.DEVICE_ID OR \
+                            bh.aggregator_id = device_info.DEVICE_ID OR \
+                            bh.bh_switch_id = device_info.DEVICE_ID ) AND \
+                        not isnull(bh.bh_configured_on_id) "
 
     # In case of all other devices bh_configured_on & others
     if type_rf == 'all':
-        is_bh_condition = " ( bh.bh_configured_on_id = device.id OR \
-                            bh.pop_id = device.id OR \
-                            bh.aggregator_id = device.id OR \
-                            bh.bh_switch_id = device.id ) AND \
-                        not isnull(bh.bh_configured_on_id) AND "
+        is_bh_condition = " ( bh.bh_configured_on_id = device_info.DEVICE_ID OR \
+                            bh.pop_id = device_info.DEVICE_ID OR \
+                            bh.aggregator_id = device_info.DEVICE_ID OR \
+                            bh.bh_switch_id = device_info.DEVICE_ID ) AND \
+                        not isnull(bh.bh_configured_on_id) "
 
     if not grouped_query:
         grouping_condition = ""
@@ -2371,7 +2395,6 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
         FROM 
             (
                 select
-                    device.ip_address AS BHIP,
                     technology.name AS DEVICE_TECH,
                     devicetype.name AS DEVICE_TYPE,
                         
@@ -2380,25 +2403,37 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
                     bh.alias AS BH_ALIAS,
                     
                     devicetype.id AS TYPEID,
-                    device.id AS DEVICE_ID,
-                    device.device_name AS BHDEVICENAME
-                from
+                    
+                    device_info.BHIP AS BHIP,
+                    device_info.DEVICE_ID AS DEVICE_ID,
+                    device_info.BHDEVICENAME AS BHDEVICENAME
+                from (
+                    SELECT
+                        device.id as DEVICE_ID,
+                        device.ip_address as BHIP,
+                        device.device_name as BHDEVICENAME,
+                        device.device_technology as device_technology_id,
+                        device.device_type as device_type_id
+                    FROM
+                        device_device as device
+                    {1}
+                        AND
+                        device.is_deleted = 0
+                        {0}
+                ) as device_info
+                INNER JOIN
                     inventory_backhaul AS bh
-                JOIN (
-                    device_device AS device,
+                ON
+                    {2}
+                LEFT JOIN (
                     device_devicetechnology AS technology,
                     device_devicetype AS devicetype
                 )
                 on (
-                    {2}
-                    {1}
-                    device.device_type = devicetype.id
+                    device_info.device_type_id = devicetype.id
                     AND
-                    device.device_technology = technology.id
+                    device_info.device_technology_id = technology.id
                 )
-                WHERE
-                    device.is_deleted = 0
-                    {0}
             ) AS bh_info
         LEFT JOIN
             inventory_basestation AS bs
