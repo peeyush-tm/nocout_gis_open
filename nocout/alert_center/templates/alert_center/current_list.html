@@ -131,7 +131,7 @@
             filter_api_url = '';
 
         $(document).ready(function (e) {
-
+            refresh_time = 300; //Refresh SIA page in every 5 minutes 5*60 = 300
             {% if not settings.ENABLE_ADVANCE_FILTERS %}
                 // Disable advance filtering
                 create_advance_filters = false;

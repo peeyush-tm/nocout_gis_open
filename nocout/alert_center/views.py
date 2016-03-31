@@ -2118,6 +2118,10 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             tech_name_list = [self.tech_name]
         tech_name_id= list()
 
+        active_filter_condition = ''
+        if self.alarm_type in ['current', 'clear']:
+            active_filter_condition = ' Q(is_active= 1)'
+
         for tech_name in tech_name_list:                
             if tech_name in device_technology_dict:
                 tech_name_id.append(device_technology_dict.get(tech_name))
@@ -2140,23 +2144,27 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                             eventname__in=self.excluded_events \
                         ).filter( \
                             {0}Q(ip_address__in=ip_address_list), \
-                            ({1}) \
+                            ({1}) ,\
+                            {3}\
                         ).using(TRAPS_DATABASE).values(*{2})".format(
                             not_condition_sign,
                             filter_condition,
-                            model_columns
+                            model_columns,
+                            active_filter_condition
                         )
 
         else:
             query = "queryset = self.model.objects.exclude( \
                     eventname__in=self.excluded_events \
                 ).filter( \
-                    {0}Q(ip_address__in=ip_address_list)\
+                    {0}Q(ip_address__in=ip_address_list),\
+                    {2}\
                 ).using(TRAPS_DATABASE).values(*{1})".format(
                     not_condition_sign,
-                    model_columns
+                    model_columns,
+                    active_filter_condition
                 )                   
-        
+
         exec query
         return queryset
 
