@@ -215,5 +215,5 @@ $(".nav-tabs li a").click(function (e, isFirst) {
     /*Refresh the tab after every given timer. Right now it is 5 minutes*/
     timeOutId = setTimeout(function () {
         $("#"+anchor_id).trigger('click', true);
-    }, ((timer) * 1000));
+    }, (Number(timer) * 1000));
 });
