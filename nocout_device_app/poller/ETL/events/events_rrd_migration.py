@@ -350,7 +350,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
         key = nocout_site_name + "_network_event1"
         doc_len_key = key + "_len"
     #memc_obj=db_ops_module.MemcacheInterface()
-        exp_time =300 # 2 min
+        exp_time =170 # 2 min
         memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
         key = nocout_site_name + "_service_event1"
         doc_len_key = key + "_len"
@@ -362,7 +362,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
         key = nocout_site_name + "_network_event2"
         doc_len_key = key + "_len"
     #memc_obj=db_ops_module.MemcacheInterface()
-        exp_time =300 # 2 min
+        exp_time =170 # 2 min
         memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
         key = nocout_site_name + "_service_event2"
         doc_len_key = key + "_len"
