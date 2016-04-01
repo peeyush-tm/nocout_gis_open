@@ -2,8 +2,8 @@
 
 /*variable console_html contains SSH-terminal html structure*/
 
-var console_html =  '<div style="width: 100em; height: 40em;" id="ssh_popup_container">\
-                        <iframe src="{0}/?u={1}&p={2}&d=10&machine={3}&ip={4}&type={5}" id="gadget0" frameborder="0" height="800" width="1400"></iframe>\
+var console_html =  '<div style="width: 100em; min-height: 500px;" id="ssh_popup_container">\
+                        <iframe src="{0}/?machine={3}&ip={4}&type={5}&output=embed" id="gadget0" frameborder="0" height=90% width=90%></iframe>\
                     </div>';
 
 /*Enabling Click event listener on console icon*/
@@ -14,8 +14,8 @@ $(".box-body").on('click', ".ssh_terminal", function(){
 	ssh_device_type = this.getAttribute("data-device-type");
 	try {
 		console_html = console_html.replace('{0}', ssh_url);
-		console_html = console_html.replace('{1}', ssh_username);
-		console_html = console_html.replace('{2}', ssh_password);
+		// console_html = console_html.replace('{1}', ssh_username);
+		// console_html = console_html.replace('{2}', ssh_password);
 		console_html = console_html.replace('{3}', ssh_machine_name);
 		console_html = console_html.replace('{4}', ssh_device_ip);
 		console_html = console_html.replace('{5}', ssh_device_type);
@@ -47,8 +47,8 @@ $(".controls_container").on('click', "#telnet_ss_btn", function(){
 
 			try {
 				console_html = console_html.replace('{0}', ssh_url);
-				console_html = console_html.replace('{1}', ssh_username);
-				console_html = console_html.replace('{2}', ssh_password);
+				// console_html = console_html.replace('{1}', ssh_username);
+				// console_html = console_html.replace('{2}', ssh_password);
 				console_html = console_html.replace('{3}', ssh_machine_name);
 				console_html = console_html.replace('{4}', ssh_device_ip);
 				console_html = console_html.replace('{5}', ssh_device_type);
@@ -61,6 +61,7 @@ $(".controls_container").on('click', "#telnet_ss_btn", function(){
 
 
 			    $(".modal-dialog").css("width","80%");
+			    $(".modal-dialog").css("height","80%");
 
 			} catch(e) {
 				console.error(e);
@@ -82,8 +83,8 @@ $(".controls_container").on('click', "#telnet_bs_btn", function(){
 
 			try {
 				console_html = console_html.replace('{0}', ssh_url);
-				console_html = console_html.replace('{1}', ssh_username);
-				console_html = console_html.replace('{2}', ssh_password);
+				// console_html = console_html.replace('{1}', ssh_username);
+				// console_html = console_html.replace('{2}', ssh_password);
 				console_html = console_html.replace('{3}', ssh_machine_name);
 				console_html = console_html.replace('{4}', ssh_device_ip);
 				console_html = console_html.replace('{5}', ssh_device_type);
@@ -95,6 +96,7 @@ $(".controls_container").on('click', "#telnet_bs_btn", function(){
 			    });
 
 			    $(".modal-dialog").css("width","80%");
+			    $(".modal-dialog").css("height","80%");
 
 			} catch(e) {
 				// console.error(e);
