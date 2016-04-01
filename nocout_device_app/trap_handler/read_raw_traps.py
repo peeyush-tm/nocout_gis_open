@@ -1,8 +1,11 @@
 """ Module to read and prcoss raw traps from snmptt databse"""
 
-from db_conn import ConnectionBase
+from trap_handler.db_conn import ConnectionBase
 #from process_traps import ProcessTraps
-from mapper import Eventmapper 
+
+# changed module for production
+#from mapper import Eventmapper 
+from trap_handler.mapper import Eventmapper
 
 class RawTraps(object):
 

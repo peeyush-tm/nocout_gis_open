@@ -2004,7 +2004,9 @@ class SIAListing(ListView):
             {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         specific_invent_columns = [
@@ -2039,14 +2041,15 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     alarm_type = None
     tech_name = None
     columns = [
-        'severity', 'ip_address', 'eventname',
-        'traptime', 'alarm_count','first_occurred','last_occurred'
+        'severity', 'ip_address', 'eventname', 'traptime',
+        'alarm_count','first_occurred','last_occurred',
+        'customer_count', 'sia'
     ]
     
     order_columns = [
         'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state',
         'bh_connectivity', 'bh_type', 'eventname','traptime','uptime',
-        'alarm_count', 'first_occurred','last_occurred'
+        'alarm_count', 'first_occurred','last_occurred', 'customer_count', 'sia'
     ]
 
     other_columns = [
@@ -2056,7 +2059,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
     excluded_events = [
         'Latency_Threshold_Breach', 'Uplink_Issue_threshold_Breach',
-        'Device_not_reachable'
+        'Device_not_reachable', 'PD_threshold_breach'
     ]
 
     is_ordered = False
@@ -2089,68 +2092,72 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         # model_columns = self.model._meta.get_all_field_names()
         model_columns = self.columns
 
-        if self.tech_name == 'all':            
-            if filter_condition:
-                query = "queryset = self.model.objects.exclude( \
-                            eventname__in=self.excluded_events\
+        # if self.tech_name == 'all':
+        #     if filter_condition:
+        #         query = "queryset = self.model.objects.exclude( \
+        #                     eventname__in=self.excluded_events\
+        #                 ).filter( \
+        #                     {0} \
+        #                 ).using(TRAPS_DATABASE).values(*{1})".format(
+        #                     filter_condition,
+        #                     model_columns
+        #                 )
+
+        #         exec query
+        #     else:
+        #         queryset = self.model.objects.exclude(
+        #             eventname__in=self.excluded_events
+        #         ).using(
+        #             TRAPS_DATABASE
+        #         ).values(*model_columns).all()
+        # else:
+
+        if self.tech_name == 'all':
+            tech_name_list = ['pmp', 'wimax']
+        else:
+            tech_name_list = [self.tech_name]
+        tech_name_id= list()
+
+        for tech_name in tech_name_list:                
+            if tech_name in device_technology_dict:
+                tech_name_id.append(device_technology_dict.get(tech_name))
+
+        not_condition_sign = ''
+        if self.tech_name not in ['pmp', 'wimax', 'all']:
+            tech_name_list = ['pmp', 'wimax']
+            not_condition_sign = '~'
+
+            for tech_name in tech_name_list:
+                if tech_name in device_technology_dict:
+                    tech_name_id.append(device_technology_dict.get(tech_name))
+        
+        ip_address_list = list(Device.objects.filter(
+            device_technology__in=tech_name_id
+        ).values_list('ip_address', flat=True))
+
+        if filter_condition:
+            query = "queryset = self.model.objects.exclude( \
+                            eventname__in=self.excluded_events \
                         ).filter( \
-                            {0} \
-                        ).using(TRAPS_DATABASE).values(*{1})".format(
+                            {0}Q(ip_address__in=ip_address_list), \
+                            ({1}) \
+                        ).using(TRAPS_DATABASE).values(*{2})".format(
+                            not_condition_sign,
                             filter_condition,
                             model_columns
                         )
 
-                exec query
-            else:
-                queryset = self.model.objects.exclude(
-                    eventname__in=self.excluded_events
-                ).using(
-                    TRAPS_DATABASE
-                ).values(*model_columns).all()
         else:
-            tech_name_list = [self.tech_name]
-            tech_name_id= list()
-
-            for tech_name in tech_name_list:                
-                if tech_name in device_technology_dict:
-                    tech_name_id.append(device_technology_dict.get(tech_name))
-
-            not_condition_sign = ''
-            if self.tech_name not in ['pmp', 'wimax']:                
-                tech_name_list = ['pmp', 'wimax']
-                not_condition_sign = '~'
-
-                for tech_name in tech_name_list:                             
-                    if tech_name in device_technology_dict:
-                        tech_name_id.append(device_technology_dict.get(tech_name))
-            
-            ip_address_list = list(Device.objects.filter(
-                device_technology__in=tech_name_id
-            ).values_list('ip_address', flat=True))
-
-            if filter_condition:
-                query = "queryset = self.model.objects.exclude( \
-                                eventname__in=self.excluded_events \
-                            ).filter( \
-                                {0}Q(ip_address__in=ip_address_list), \
-                                ({1}) \
-                            ).using(TRAPS_DATABASE).values(*{2})".format(
-                                not_condition_sign,
-                                filter_condition,
-                                model_columns
-                            )
-
-            else:
-                query = "queryset = self.model.objects.exclude( \
-                        eventname__in=self.excluded_events \
-                    ).filter( \
-                        {0}Q(ip_address__in=ip_address_list)\
-                    ).using(TRAPS_DATABASE).values(*{1})".format(
-                        not_condition_sign,
-                        model_columns
-                    )                   
-            
-            exec query
+            query = "queryset = self.model.objects.exclude( \
+                    eventname__in=self.excluded_events \
+                ).filter( \
+                    {0}Q(ip_address__in=ip_address_list)\
+                ).using(TRAPS_DATABASE).values(*{1})".format(
+                    not_condition_sign,
+                    model_columns
+                )                   
+        
+        exec query
         return queryset
 
     def filter_queryset(self, qs):
@@ -2202,7 +2209,8 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             self.order_columns = [
                 'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
                 'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
-                'traptime', 'uptime','alarm_count','first_occurred','last_occurred'
+                'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
+                'customer_count', 'sia'
             ]
 
         # Number of columns that are used in sorting

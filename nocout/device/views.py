@@ -254,7 +254,6 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         :param qs:
         :return json:
         """
-
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         
         device_type_data = list()
@@ -262,6 +261,10 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         if len(json_data):
             device_type_data = list(DeviceType.objects.all().values('id', 'name'))
             device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
+        is_sync_perm = in_group(self.request.user, 'admin', 'sync_devices')
 
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
@@ -272,8 +275,8 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 logger.exception("Device not present. Exception: ", e.message)
 
             # current device in loop
-
-            current_device = Device.objects.get(pk=dct['id'])
+            if not self.request.GET.get('is_download_request'):
+                current_device = Device.objects.get(pk=dct['id'])
 
             try:
                 # dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
@@ -312,10 +315,6 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             #                       c. sub-station configured on (from model SubStation)
             #                       d. others (any device, may be out of inventory)
 
-            is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
-            is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
-            is_sync_perm = in_group(self.request.user, 'admin', 'sync_devices')
-
             device_actions = ''
             device_nms_actions = ''
 
@@ -338,15 +337,16 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             # text color
             text_color = "text-dark"
             try:
-                if len(Backhaul.objects.filter(bh_configured_on=current_device)):
-                    text_color = "text-info"
-                elif len(Sector.objects.filter(sector_configured_on=current_device)) or \
-                        len(Sector.objects.filter(dr_configured_on=current_device)):
-                    text_color = "text-success"
-                elif SubStation.objects.get(device=current_device):
-                    text_color = "text-danger"
-                else:
-                    pass
+                if not self.request.GET.get('is_download_request'):
+                    if len(Backhaul.objects.filter(bh_configured_on=current_device)):
+                        text_color = "text-info"
+                    elif len(Sector.objects.filter(sector_configured_on=current_device)) or \
+                            len(Sector.objects.filter(dr_configured_on=current_device)):
+                        text_color = "text-success"
+                    elif SubStation.objects.get(device=current_device):
+                        text_color = "text-danger"
+                    else:
+                        pass
             except Exception as e:
                 pass
 
@@ -376,6 +376,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                                            </a>'.format(dct['id'], text_color)
                 except Exception as e:
                     logger.exception("Device is not a substation. %s" % e.message)
+
         return json_data
 
 
@@ -479,6 +480,9 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             device_type_data = list(DeviceType.objects.all().values('id', 'name'))
             device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
 
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
+
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
@@ -490,7 +494,8 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
                 logger.exception("Device not present. Exception: ", e.message)
 
             # current device in loop
-            current_device = Device.objects.get(pk=dct['id'])
+            if not self.request.GET.get('is_download_request'):
+                current_device = Device.objects.get(pk=dct['id'])
 
             # device type name
             try:
@@ -526,9 +531,6 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             #                       c. sub-station configured on (from model SubStation)
             #                       d. others (any device, may be out of inventory)
 
-            is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
-            is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
-
             device_actions = ''
             device_nms_actions = ''
 
@@ -551,15 +553,16 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             # text color
             text_color = "text-dark"
             try:
-                if len(Backhaul.objects.filter(bh_configured_on=current_device)):
-                    text_color = "text-info"
-                elif len(Sector.objects.filter(sector_configured_on=current_device)) or \
-                        len(Sector.objects.filter(dr_configured_on=current_device)):
-                    text_color = "text-success"
-                elif SubStation.objects.get(device=current_device):
-                    text_color = "text-danger"
-                else:
-                    pass
+                if not self.request.GET.get('is_download_request'):
+                    if len(Backhaul.objects.filter(bh_configured_on=current_device)):
+                        text_color = "text-info"
+                    elif len(Sector.objects.filter(sector_configured_on=current_device)) or \
+                            len(Sector.objects.filter(dr_configured_on=current_device)):
+                        text_color = "text-success"
+                    elif SubStation.objects.get(device=current_device):
+                        text_color = "text-danger"
+                    else:
+                        pass
             except Exception as e:
                 pass
 
@@ -673,6 +676,9 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             device_type_data = list(DeviceType.objects.all().values('id', 'name'))
             device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
 
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
+
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
@@ -684,7 +690,8 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 logger.exception("Device not present. Exception: ", e.message)
 
             # current device in loop
-            current_device = Device.objects.get(pk=dct['id'])
+            if not self.request.GET.get('is_download_request'):
+                current_device = Device.objects.get(pk=dct['id'])
 
             # device type name
             try:
@@ -720,8 +727,6 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             #                       c. sub-station configured on (from model SubStation)
             #                       d. others (any device, may be out of inventory)
 
-            is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
-            is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
 
             device_actions = ''
             device_nms_actions = ''
@@ -745,15 +750,16 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             # text color
             text_color = "text-dark"
             try:
-                if len(Backhaul.objects.filter(bh_configured_on=current_device)):
-                    text_color = "text-info"
-                elif len(Sector.objects.filter(sector_configured_on=current_device)) or \
-                        len(Sector.objects.filter(dr_configured_on=current_device)):
-                    text_color = "text-success"
-                elif SubStation.objects.get(device=current_device):
-                    text_color = "text-danger"
-                else:
-                    pass
+                if not self.request.GET.get('is_download_request'):
+                    if len(Backhaul.objects.filter(bh_configured_on=current_device)):
+                        text_color = "text-info"
+                    elif len(Sector.objects.filter(sector_configured_on=current_device)) or \
+                            len(Sector.objects.filter(dr_configured_on=current_device)):
+                        text_color = "text-success"
+                    elif SubStation.objects.get(device=current_device):
+                        text_color = "text-danger"
+                    else:
+                        pass
             except Exception as e:
                 pass
 
@@ -869,6 +875,10 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         # device object
         device = None
 
+        is_add_perm = in_group(self.request.user, 'admin', 'add_device')
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
+
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
@@ -904,9 +914,6 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             # update status icon
             dct.update(status_icon='<i class="fa fa-circle red-dot"></i>')
 
-            is_add_perm = in_group(self.request.user, 'admin', 'add_device')
-            is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
-            is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
 
             device_actions = ''
             device_nms_actions = ''
@@ -1029,6 +1036,9 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
             device_type_data = list(DeviceType.objects.all().values('id', 'name'))
             device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
 
+        is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
+        is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
+        
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
@@ -1040,7 +1050,8 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
                 logger.exception("Device not present. Exception: ", e.message)
 
             # current device in loop
-            current_device = Device.objects.get(pk=dct['id'])
+            if not self.request.GET.get('is_download_request'):
+                current_device = Device.objects.get(pk=dct['id'])
 
             # device type name
             try:
@@ -1067,20 +1078,19 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
             # if device is already added to nms core than show icon in device table
             icon = ""
             try:
-                if current_device.is_added_to_nms == 0 and current_device.host_state == "Enable":
-                    icon = '<i class="fa fa-circle orange-dot"></i>'
-                elif current_device.is_added_to_nms == 0 and current_device.host_state == "Disable":
-                    icon = '<i class="fa fa-circle grey-dot"></i>'
-                elif current_device.is_added_to_nms == 1:
-                    icon = '<i class="fa fa-circle green-dot"></i>'
-                elif current_device.is_added_to_nms == 2:
-                    icon = '<i class="fa fa-circle green-dot"></i>'
+                if not self.request.GET.get('is_download_request'):
+                    if current_device.is_added_to_nms == 0 and current_device.host_state == "Enable":
+                        icon = '<i class="fa fa-circle orange-dot"></i>'
+                    elif current_device.is_added_to_nms == 0 and current_device.host_state == "Disable":
+                        icon = '<i class="fa fa-circle grey-dot"></i>'
+                    elif current_device.is_added_to_nms == 1:
+                        icon = '<i class="fa fa-circle green-dot"></i>'
+                    elif current_device.is_added_to_nms == 2:
+                        icon = '<i class="fa fa-circle green-dot"></i>'
                 dct.update(status_icon=icon)
             except Exception as e:
                 dct.update(status_icon='<img src="">')
 
-            is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
-            is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
 
             device_actions = ''
 

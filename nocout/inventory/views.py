@@ -5590,7 +5590,7 @@ class GetSms(View):
     def dispatch(self, *args, **kwargs):
         return super(GetSms, self).dispatch(*args, **kwargs)
 
-    def post(self, request):
+    def get(self, request):
 
         result = {
             'success': 0,
@@ -5599,9 +5599,9 @@ class GetSms(View):
         }
 
         # Fetch mobile number from post request
-        mobile_no = request.POST.get('mobileno')
-        # Fetch message from post request
-        message = request.POST.get('text')
+        mobile_no = request.GET.get('mobileno')
+        # Fetch message from GET request
+        message = request.GET.get('text')
 
         # If mobile no. and message exist in database
         if mobile_no and message:

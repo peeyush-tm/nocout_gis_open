@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from pprint import pformat
 import imp
 import time
+from copy import deepcopy
 
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -207,9 +208,14 @@ def network_perf_data_live_query(site, log_split, network_events_data, network_e
                 data_source=ds,warning_threshold=host_war,critical_threshold=host_crit,
                 check_timestamp=int(log_split[1]),
                 ip_address=host_ip,site_name=site,service_name='ping',age=age1)
+        modified_host_dict = deepcopy(host_event_dict)
+        if ds  == 'rta' and eval(host_cur) > eval(host_war):
+	    modified_host_dict.update({'severity':'major'}) 
         # Check whether the host has breached RTA thresholds only, but not PL
         if ds == 'pl' and eval(host_cur) < eval(host_crit) and log_split[7].lower() != 'up':
             host_event_dict.update({'severity': 'UP'})
+	    modified_host_dict.update({'severity':'major'}) 
+	    
         matching_criteria = {
                 'device_name': log_split[4],
                 'service_name': 'ping',
@@ -345,7 +351,22 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
     key = nocout_site_name + "_service_event" 
     doc_len_key = key + "_len" 
     memc_obj.store(key,service_events_data,doc_len_key,exp_time,chunksize=1000)
+    insert_network_event_to_redis(network_events_data)
 
+
+"""
+Method to format n/w trap and push to Redis
+"""   
+def insert_network_event_to_redis(network_events_data):
+    try :
+        rds_obj = db_ops_module.RedisInterface()
+	print "network_events_data",network_events_data 
+	rds_obj.redis_cnx.rpush('q:network:snmptt', *network_events_data)
+	#print rds_obj.redis_cnx.lrange('q:network:snmptt',0, -1)
+            
+    except Exception,e :
+	pass
+        print "Error in Redis Insertion : %s \n" % str(e)
   
 if __name__ == '__main__':
     """
@@ -361,3 +382,4 @@ if __name__ == '__main__':
             mongo_db=desired_config.get('nosql_db'),
             mongo_port=int(desired_config.get('port'))
     )
+
