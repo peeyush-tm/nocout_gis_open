@@ -1,8 +1,7 @@
 #from nocout_site import *
-from start_pub import app
-from db_ops import *
+from start.start import app
+from handlers.db_ops import *
 from uuid import uuid4
-from sample import sample_input
 from datetime import datetime
 from collections import defaultdict
 from copy import deepcopy
@@ -184,8 +183,8 @@ class correlation(object):
 
         self.insert_events_into_redis(event_dict)
         self.insert_events_into_redis(ih_dict)
-	logger.error("final event list")
-	logger.error("{0}\n\n".format(event_dict))
+	#logger.error("final event list")
+	#logger.error("{0}\n\n".format(event_dict))
 
     def insert_events_into_redis(self,event_dict,is_list=None):
         p = self.redis_conn().pipeline()
@@ -286,14 +285,12 @@ class correlation(object):
 	alarm_id = kwargs.get('alarm_id')
 	attr_list = converter_or_ptpbh_trap_vars
 	if is_backhaul:
-	    logger.error("Inside is backhaul ")
 	    backhaul_id = kwargs.get('backhaul_id')
-	    logger.error("backhaul id {0}".format(backhaul_id))
 	    key = backhaul_id
 	    siteb_switch_conv_id = kwargs['siteb_switch_conv_id']
 	    static_data = down_device_static_dict[siteb_switch_conv_id]
 	else:
-	    logger.error("key as rc_element {0}".format(rc_element))
+	    #logger.error("key as rc_element {0}".format(rc_element))
 	    key = rc_element
 	    static_data = down_device_static_dict[key]
 	alarm_specific_attr = ['alrm_id','alrm_desc','alrm_name','time_stamp','severity','resource_name','additional_f_4']
@@ -396,7 +393,7 @@ class correlation(object):
 	    static_dict = eval(static_dict)
 	    inventory_tree = redis_conn.get(static_dict.get('inventory_id'))
 	    inventory_tree = eval(inventory_tree)
-	    logger.error("inventory tree {0}".format(inventory_tree))
+	    #logger.error("inventory tree {0}".format(inventory_tree))
 	    dynamic_id = inventory_tree.get(backhaul_ended_switch_con_ip)
 	    dynamic_dict = redis_conn.get(dynamic_id)
 	    dynamic_dict = eval(dynamic_dict)
@@ -553,7 +550,7 @@ def correlation_down_event():
     #down_device = [down_device_id for down_id_list in down_device_list for down_device_id in down_id_list ] 
     down_device = list(itertools.chain(*down_device_list))
 
-    logger.error('Down device data {0}'.format(down_device))
+    #logger.error('Down device data {0}'.format(down_device))
 
     [p.get(dynamic_id) for dynamic_id in down_device]
     down_device_data = p.execute()
@@ -565,7 +562,7 @@ def correlation_down_event():
     [p.get('static_' + str(ip)) for ip in down_device_ips]
     static_info = p.execute()
     # key-value pair for storing device redis key and their staitc data
-    logger.error("inventory tree {0} values {1}".format(down_device_dict.keys(),len(static_info)))
+    #logger.error("inventory tree {0} values {1}".format(down_device_dict.keys(),len(static_info)))
     static_dict = dict([ (dynamic_id,eval(static_entry)) for dynamic_id, static_entry in zip(down_device_dict.keys(), static_info)])
 
     trap_list = []
@@ -576,7 +573,7 @@ def correlation_down_event():
 	down_device = list(down_device_list[index])
 	invent_down_device_dict= dict([(id,down_device_dict[id]) for id in down_device])
         mv_params,del_ss= cor_obj.max_value(inventory_hierarchy, down_device, invent_down_device_dict, static_dict)
-	logger.error("inventory tree {0}".format(mv_params))
+	#logger.error("inventory tree {0}".format(mv_params))
 	trap_list.append(mv_params)
 	if del_ss:
 	    for del_ss_key in del_ss:
@@ -638,7 +635,7 @@ def send_traps(params):
 	params = {}
 	params.update(device_params)
         rc_element,bs_down_list,ss_down_list,ckt_dict,flags = trap_params
-        logger.error("\nFlags \t{0}".format(flags))
+        #logger.error("\nFlags \t{0}".format(flags))
         ptp_bh_flag = flags['ptp_bh_flag']
 	bs_ss_dict = flags['bs_ss_dict']
 	is_backhaul =flags['is_backhaul']
@@ -895,8 +892,8 @@ def send_traps(params):
 	        ss_trap_dict = cor_obj.make_dict_for_ss_trap(**params)
 	        final_trap_list.extend(ss_trap_dict.values())		
  
-    logger.error("Keys to be deleted {0} {1}\n".format(redis_keys,invent_id_list))
-    logger.error("final trap list id {0}\n".format(final_trap_list))
+    #logger.error("Keys to be deleted {0} {1}\n".format(redis_keys,invent_id_list))
+    #logger.error("final trap list id {0}\n".format(final_trap_list))
 
     """
     trap_sender_task.s(final_trap_list).apply_async()

@@ -1,8 +1,8 @@
 from mysql.connector import connect
-from start_pub import app 
-from db_ops import *
+from start.start import app 
+from handlers.db_ops import *
 from formatting import inventory 
-#from celery import Task
+
 # Get topology data in hierarchy for which backhaul exists.
 query1 = """
 SELECT
@@ -266,18 +266,12 @@ def mysql_to_inventory_data():
     cur.execute(query1)
     desc =  cur.description
     my_list = [dict(zip([col[0] for col in desc ],row)) for row in cur.fetchall()]
-    with open('/omd/sites/ospf1_slave_1/test.bs','w') as f:
-    	f.write(str(my_list))
-    #logger.error('{0}'.format(my_list))
     inv.create_inventory_data(my_list,ptp_farend)
     conn = mysql_to_inventory_data.mysql_cnx('snmptt')
     cur = conn.cursor()
     cur.execute(query3)
     desc = cur.description
     mat_list = [dict(zip([col[0] for col in desc ],row)) for row in cur.fetchall()]
-    #with open('/omd/sites/ospf1_slave_1/test.bs','w') as f:
-    #	f.write(str(mat_list))
-    #logger.error('{0}'.format(mat_list))
     inv.insert_mat_data_in_redis(mat_list)
 
 if __name__ == '__main__':

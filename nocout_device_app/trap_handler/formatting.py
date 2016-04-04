@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-from start_pub import app
-from db_ops import *
+from start.start import app
+from handlers.db_ops import *
 logger = get_task_logger(__name__)
 info, warning, error = logger.info, logger.warning, logger.error
 from collections import defaultdict
@@ -9,7 +9,6 @@ from collections import defaultdict
 import imp
 from itertools import izip_longest
 import json
-db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % 'ospf1_slave_1')
 ih_count = 5000
 
 class inventory(object):
@@ -30,9 +29,7 @@ class inventory(object):
     def insert_data_in_redis(self,mapping):
 	items = []
 	key = 'inventory_hiearachy'
-	#print 'in redis'
-	rds_obj = db_ops_module.RedisInterface(custom_conf={'db': 5}) 
-	#rds_obj = db_ops_module.RedisInterface()
+	rds_obj = RedisInterface(custom_conf={'db': 5}) 
 	rds_cnx = rds_obj.redis_cnx	
 	p = rds_cnx.pipeline(transaction=True)
 	#for pair in mapping.iteritems():
@@ -58,8 +55,6 @@ class inventory(object):
 	params = {}
 	filtered_far_end_resultset = list()
 	far_end_resultset,device_inventory = self.prepare_raw_result(resultset,ptp_farend_ip_list,ptp_bh_dict=ptp_bh_dict)
-	#logger.error("PTP bh dict {0}".format(device_inventory.get('ptp_bh_dict')))
-	#logger.error('farend ip {0}'.format(far_end_resultset))
 	for bs in far_end_resultset:
 	    inventory_id = None
 	    try: 
@@ -84,11 +79,6 @@ class inventory(object):
 	    except Exception,e:
 		logger.error("Error {0}".format(e))
 		pass
-	#logger.error("\n\n far end inventory id {0}".format(inventory_id_list)) 
-	#logger.error("\n\n far end ip list {0}".format(ptp_farend_ip_list)) 
-	#ptpbh_parent_child_dict = dict([(v,k) for k,v in device_inventory['ptpbh_parent_child_dict'].iteritems()])
-	#logger.error("ptp_bh {0}".format(device_inventory['ptp_bh_dict']))
-	#logger.error("device inventory {0}".format(filtered_far_end_resultset))
 	is_active = 1
 	ptp_farend_ip_list=None
 	params['ptp_farend_ip_list'] = ptp_farend_ip_list
@@ -104,7 +94,6 @@ class inventory(object):
 	device_inventory['conv_switch_data_dict'].update(far_end_inventory['conv_switch_data_dict'])
 	device_inventory['ih_dynamic'].update(far_end_inventory['ih_dynamic'])
 
-	#logger.error("Far end inventory {0}".format(far_end_inventory))
 	self.insert_data_in_redis(device_inventory['obj_dict'])
 	self.insert_data_in_redis(device_inventory['ss_data_dict'])
 	self.insert_data_in_redis(device_inventory['bs_data_dict'])
@@ -113,7 +102,6 @@ class inventory(object):
 
     def prepare_raw_result(self,resultset=None, ptp_farend_ip_list=None,inventory_id_list=None,is_active=0,ptp_bh_dict=None):
 	# list will carry bs resultset for PTP_BH type hierarchy.
-	#logger.error("ptpbh parent_child dict  {0}".format(ptpbh_parent_child_dict))
 	far_end_resultset = list()
 	total_inventory = dict() 
 	obj_count = 0
