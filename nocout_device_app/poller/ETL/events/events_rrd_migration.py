@@ -342,31 +342,52 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
      #   mongo_module.mongo_db_insert(db, service_events_data, 'serv_event')
       
      #memcache handling of host and service events
-
-    key = nocout_site_name + "_network_event" 
-    doc_len_key = key + "_len" 
     memc_obj=db_ops_module.MemcacheInterface()
-    exp_time =120 # 2 min
-    memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
-    key = nocout_site_name + "_service_event" 
-    doc_len_key = key + "_len" 
-    memc_obj.store(key,service_events_data,doc_len_key,exp_time,chunksize=1000)
-    insert_network_event_to_redis(network_events_data)
+    attempt_key =nocout_site_name+ "_attempt"
+
+    if memc_obj.memc_conn.get(attempt_key)==1:
+
+        key = nocout_site_name + "_network_event1"
+        doc_len_key = key + "_len"
+    #memc_obj=db_ops_module.MemcacheInterface()
+        exp_time =170 # 2 min
+        memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
+        key = nocout_site_name + "_service_event1"
+        doc_len_key = key + "_len"
+        memc_obj.store(key,service_events_data,doc_len_key,exp_time,chunksize=1000)
+        memc_obj.memc_conn.set(attempt_key,2)
+
+    elif memc_obj.memc_conn.get(attempt_key)==2:
+
+        key = nocout_site_name + "_network_event2"
+        doc_len_key = key + "_len"
+    #memc_obj=db_ops_module.MemcacheInterface()
+        exp_time =170 # 2 min
+        memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
+        key = nocout_site_name + "_service_event2"
+        doc_len_key = key + "_len"
+        memc_obj.store(key,service_events_data,doc_len_key,exp_time,chunksize=1000)
+        memc_obj.memc_conn.set(attempt_key,1)
+    else :
+        memc_obj.memc_conn.set(attempt_key,1)
 
 
 """
 Method to format n/w trap and push to Redis
-"""   
+"""
 def insert_network_event_to_redis(network_events_data):
     try :
         rds_obj = db_ops_module.RedisInterface()
-	print "network_events_data",network_events_data 
-	rds_obj.redis_cnx.rpush('q:network:snmptt', *network_events_data)
-	#print rds_obj.redis_cnx.lrange('q:network:snmptt',0, -1)
-            
+        print "network_events_data",network_events_data
+        rds_obj.redis_cnx.rpush('q:network:snmptt', *network_events_data)
+        #print rds_obj.redis_cnx.lrange('q:network:snmptt',0, -1)
+
     except Exception,e :
-	pass
+        pass
         print "Error in Redis Insertion : %s \n" % str(e)
+
+
+
   
 if __name__ == '__main__':
     """
@@ -382,4 +403,3 @@ if __name__ == '__main__':
             mongo_db=desired_config.get('nosql_db'),
             mongo_port=int(desired_config.get('port'))
     )
-
