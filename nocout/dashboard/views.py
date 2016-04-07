@@ -3106,7 +3106,10 @@ class ResolutionEfficiencyListing(BaseDatatableView):
                 ).annotate(tt_count=Count('id'))
 
             if self.request.GET.get('request_for_chart'):
-                qs.order_by('tt_count')
+                try:
+                    qs.order_by('tt_count')
+                except Exception, e:
+                    pass
         except Exception, e:
             qs = self.model.objects.filter(id=0)
 
@@ -3182,12 +3185,16 @@ class ResolutionEfficiencyListing(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
+        total_records = 0
+        if qs.count() > 0:
+            total_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
+        total_display_records = 0
+        if qs.count() > 0:
+            total_display_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
 
         qs = self.ordering(qs)
         
