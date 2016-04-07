@@ -2633,6 +2633,7 @@ def get_maps_initial_data_query(bs_id=[]):
     query = '''
         SELECT
             bs.id AS BSID,
+            bs.has_pps_alarm AS PPSALARMFLAG,
             IF(isnull(bs.name), 'NA', bs.name) AS BSNAME,
             IF(isnull(bs.alias), 'NA', bs.alias) AS BSALIAS,
             IF(isnull(bs.maintenance_status), 'NA', bs.maintenance_status) AS BSMAINTENANCESTATUS,
@@ -2748,7 +2749,7 @@ def get_maps_initial_data_query(bs_id=[]):
         GROUP BY
             bs.id
         '''.format(ss_group_concat_str, bs_where_condition)
-
+        
     return query
 
 

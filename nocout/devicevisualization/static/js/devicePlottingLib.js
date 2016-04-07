@@ -1667,10 +1667,14 @@ function devicePlottingClass_gmap() {
 			var fetched_bs_markerurl = bs_ss_devices[i]['icon_url'],
 				bs_marker_url = fetched_bs_markerurl ? fetched_bs_markerurl : "static/img/icons/bs.png"; 
 
+			// Flag to check if bs_icon with Exclamation mark is going to be displayed
+			var pps_bs_image_filter = bs_ss_devices[i]['has_pps_alarm'] ? bs_ss_devices[i]['has_pps_alarm'] : 0;
+
 			// BS marker icon obj
             var bs_marker_icon_obj = gmap_self.getMarkerImageBySize(
 				base_url+"/"+bs_marker_url,
-				"base_station"
+				"base_station" ,
+				pps_bs_image_filter
 			);
 
 			var fetched_status = bs_ss_devices[i]['maintenance_status'],
@@ -8901,8 +8905,8 @@ function devicePlottingClass_gmap() {
 	 * @method getMarkerImageBySize
 	 * param markerUrl {String}, It contains the url of marker icon.
 	 */
-	this.getMarkerImageBySize = function(markerUrl,marker_type) {
-
+	this.getMarkerImageBySize = function(markerUrl,marker_type,has_pps) {
+		// console.log(markerUrl)
 		var largeur = 32/1.4,
 			hauteur = 37/1.4,
 			divideBy = 0.8,
@@ -8910,8 +8914,14 @@ function devicePlottingClass_gmap() {
 			markerImageObj = "";
 
 		if(marker_type == 'base_station') {
-			largeur = 20/1.4;
-			hauteur = 40/1.4;
+			if(has_pps)
+			{	
+				largeur = 40/1.4;
+				hauteur = 80/1.4;
+			} else{
+				largeur = 20/1.4;
+				hauteur = 40/1.4;
+			}
 		}
 
 		if(current_icon_size == 'small') {

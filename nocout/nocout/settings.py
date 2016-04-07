@@ -504,6 +504,18 @@ CELERYBEAT_SCHEDULE = {
     'scheduled_email_report_task': {
         'task': 'download_center.tasks.scheduled_email_report',
         'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    },
+    'check_current_alarm_for_NO_PPS': {
+        'task': 'inventory.tasks.check_alarms_for_no_pps',
+        'schedule': crontab(minute='*/5'), #Execute at every 5 minute
+        'kwargs': {'alarm_type': 'current'},
+        # 'args' : ['current'],
+    },
+    'check_clear_alarm_for_NO_PPS': {
+        'task': 'inventory.tasks.check_alarms_for_no_pps',
+        'schedule': crontab(minute='*/8'),
+        'kwargs': {'alarm_type': 'clear'},
+        # 'args' : ['clear'],
     }
 }
 
@@ -857,7 +869,8 @@ SETTINGS_EXPORT = [
     'TICKETS_LINK_ON_PERF_PAGE',
     'SHOW_SS_PERF_LINK_IA_TABLE',
     'DASHBOARD_SECTOR_STATUS',
-    'DASHBOARD_BACKHAUL_STATUS'
+    'DASHBOARD_BACKHAUL_STATUS',
+    'EXCLAMATION_NEEDED'
 ]
 
 # Dashbaord Settings
@@ -1294,6 +1307,9 @@ CUSTOMER_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/r
 
 # Enable/Disable permissions link from side menu
 PERMISSIONS_MODULE_ENABLED = False
+
+# Enable/Disable exclamation mark on bs_icon on google maps
+EXCLAMATION_NEEDED = False
 
 # Enable/Disable fault reports from download center
 FAULT_REPORT_ENABLED = False
