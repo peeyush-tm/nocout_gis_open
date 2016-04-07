@@ -303,9 +303,9 @@ class CustomerFaultAnalysis(models.Model):
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
 
-class SectorStatusAlerts(models.Model):
+class SectorSummaryStatus(models.Model):
     """
-    This model contains data for 'Sector Statux Capacity Alerts Dashboard'
+    This model contains data for 'Sector Status Capacity Alerts Dashboard'
     """
     bs_name = models.CharField('BS Name', max_length=256, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=256, null=True, blank=True)
@@ -315,6 +315,24 @@ class SectorStatusAlerts(models.Model):
     ageing_dl_na = models.CharField('Ageing DL Need Augmentation', max_length=256, null=True, blank=True)
     ageing_dl_sp = models.CharField('Ageing DL Stop Provisioning', max_length=256, null=True, blank=True)
     ageing_ul_na = models.CharField('Ageing UL Need Augmentation', max_length=256, null=True, blank=True)
+    ageing_ul_sp = models.CharField('Ageing UL Stop Provisioning', max_length=256, null=True, blank=True)
+    timestamp = models.DateTimeField('Report Month', blank=True, null=True)
+
+
+class BackhaulSummaryStatus(models.Model):
+    """
+    This model contains data for 'Sector Status Capacity Alerts Dashboard'
+    """
+    bs_name = models.CharField('BS Name', max_length=256, null=True, blank=True)
+    ip_address = models.CharField('BHConfigured on  IP', max_length=256, null=True, blank=True)
+    bh_port_name = models.CharField('BH Configured on Port', max_length=256, null=True, blank=True)
+    bh_connectivity = models.CharField('Onnet/Offnet', max_length=256, null=True, blank=True)
+    bh_type = models.CharField('BH Type', max_length=256, null=True, blank=True)
+    bh_capacity = models.CharField('BH Capacity', max_length=256, null=True, blank=True)
+    technology = models.CharField('Technology', max_length=256, null=True, blank=True)
+    ageing_dl_na = models.CharField('Ageing DL Need Augmentation', max_length=256, null=True, blank=True)
+    ageing_dl_sp = models.CharField('Ageing DL Stop Provisioning', max_length=256, null=True, blank=True)
+    ageing_ul_na = models.CharField('Ageing ageing_ul_na Need Augmentation', max_length=256, null=True, blank=True)
     ageing_ul_sp = models.CharField('Ageing UL Stop Provisioning', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
