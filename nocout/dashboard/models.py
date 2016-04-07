@@ -301,3 +301,20 @@ class CustomerFaultAnalysis(models.Model):
     severity = models.CharField('Severity', max_length=256, null=True, blank=True)
     downtime_slab = models.CharField('Downtime Slab', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
+
+
+class SectorStatusAlerts(models.Model):
+    """
+    This model contains data for 'Sector Statux Capacity Alerts Dashboard'
+    """
+    bs_name = models.CharField('BS Name', max_length=256, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=256, null=True, blank=True)
+    pmp_port = models.CharField('PMP Port', max_length=256, null=True, blank=True)
+    sector_id = models.CharField('Sector ID', max_length=256, null=True, blank=True)
+    technology = models.CharField('Technology', max_length=256, null=True, blank=True)
+    ageing_dl_na = models.CharField('Ageing DL Need Augmentation', max_length=256, null=True, blank=True)
+    ageing_dl_sp = models.CharField('Ageing DL Stop Provisioning', max_length=256, null=True, blank=True)
+    ageing_ul_na = models.CharField('Ageing UL Need Augmentation', max_length=256, null=True, blank=True)
+    ageing_ul_sp = models.CharField('Ageing UL Stop Provisioning', max_length=256, null=True, blank=True)
+    timestamp = models.DateTimeField('Report Month', blank=True, null=True)
+
