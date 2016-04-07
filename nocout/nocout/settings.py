@@ -1303,7 +1303,7 @@ CUSTOMER_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/r
 PERMISSIONS_MODULE_ENABLED = False
 
 # Enable/Disable exclamation mark on bs_icon on google maps
-EXCLAMATION_NEEDED = True
+EXCLAMATION_NEEDED = False
 
 # Enable/Disable fault reports from download center
 FAULT_REPORT_ENABLED = False
