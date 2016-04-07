@@ -12,9 +12,10 @@ from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency,
 from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload
 from organization.models import Organization
 from device.models import State, City
-from nocout.settings import MEDIA_ROOT
+from nocout.settings import MEDIA_ROOT, TRAPS_DATABASE
 from nocout.tasks import cache_clear_task
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, Status
+from alert_center.models import CurrentAlarms, ClearAlarms
 from performance.formulae import display_time
 from django.http import HttpRequest
 from django.db.models import Q
@@ -14794,3 +14795,41 @@ def compare_lists_of_dicts(list1, list2):
                                  d['mac_address'] if d['mac_address'] else '',
                                  d['ip_address'] if d['ip_address'] else ''
                                  ) not in check]
+
+
+@task()
+def check_current_alarms():
+    """
+    Check for 'Synchronization_problem__no_PPS' event in current_alarms table
+    """
+    ip_address_list = CurrentAlarms.objects.using(TRAPS_DATABASE).filter(eventname='Synchronization_problem__no_PPS', is_active=1).values_list('ip_address', flat=True)
+
+    bs_id_list = Sector.objects.filter(sector_configured_on__ip_address__in=ip_address_list, bs_technology__name='WiMAX').values_list('base_station__id', flat=True)
+
+    if bs_id_list.exists():
+        try:
+            BaseStation.objects.filter(id__in=bs_id_list).update(has_pps_alarm=True)
+        except Exception, e:
+            logger.error('Check CurrentAlarms Exception')
+            logger.error(e)
+        
+
+    return True
+
+@task()
+def check_clear_alarms():
+    """
+    Check for 'Synchronization_problem__no_PPS' event in clear_alarms table
+    """
+    ip_address_list = ClearAlarms.objects.using(TRAPS_DATABASE).filter(eventname='Synchronization_problem__no_PPS', is_active=1).values_list('ip_address', flat=True)
+
+    bs_id_list = Sector.objects.filter(sector_configured_on__ip_address__in=ip_address_list, bs_technology__name='WiMAX').values_list('base_station__id', flat=True)
+
+    if bs_id_list.exists():
+        try:
+            BaseStation.objects.filter(id__in=bs_id_list).update(has_pps_alarm=False)
+        except Exception, e:
+            logger.error('Check ClearAlarms Exception')
+            logger.error(e)
+
+    return True
