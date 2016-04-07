@@ -77,6 +77,31 @@
                         </ul>
                     </li>
                     {% endif %}
+
+                    {% if settings.DASHBOARD_SECTOR_STATUS or settings.DASHBOARD_BACKHAUL_STATUS %}
+                    <li class="has-sub-sub">
+                        <a href="javascript:;">
+                            <span class="sub-menu-text">Capacity Alerts</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            {% if settings.DASHBOARD_SECTOR_STATUS %}
+                            <li>
+                                <a href="{% url 'capacity_alert_sector_status' %}">
+                                    <span class="sub-menu-text">Sector Status</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if settings.DASHBOARD_BACKHAUL_STATUS %}
+                            <li>
+                                <a href="{% url 'capacity_alert_backhaul_status' %}">
+                                    <span class="sub-menu-text">Backhaul Status</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
                 </ul>
             </li>
             
