@@ -3216,3 +3216,76 @@ class ResolutionEfficiencyListing(BaseDatatableView):
 
         return ret
 
+
+class SectorStatusInit(View):
+    """
+    This class loads the INC ticket rate template
+    """
+    def get(self, request, *args, **kwargs):
+        
+        template_name = 'capacity_alerts/sector_status.html'
+        # Fetch month data from RFOAnalysis model
+        months_data = list(CustomerFaultAnalysis.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id'))
+
+        severity_data = list(CustomerFaultAnalysis.objects.extra({
+            'id': 'REPLACE(severity, " ", "_")',
+            'value': 'severity'
+        }).values('value', 'id').distinct().order_by('value'))
+
+        resolution_efficiency_headers = [
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': '2_hrs', 'sTitle': '2 Hours'},
+            {'mData': '2_hrs_percent', 'sTitle': '2 Hours %'},
+            {'mData': '4_hrs', 'sTitle': '4 Hours'},
+            {'mData': '4_hrs_percent', 'sTitle': '4 Hours %'},
+            {'mData': 'more_than_4_hrs', 'sTitle': 'More Than 4 Hours'},
+            {'mData': 'more_than_4_hrs_percent', 'sTitle': 'More Than 4 Hours %'},
+            {'mData': 'total_count', 'sTitle': 'Total TT'}
+        ]
+
+        context = {
+            'months_data': json.dumps(months_data),
+            'severity_data': json.dumps(severity_data),
+            'resolution_efficiency_headers': json.dumps(resolution_efficiency_headers)
+        }
+
+        return render(self.request, template_name, context)
+
+
+class BackhaulStatusInit(View):
+    """
+    This class loads the INC ticket rate template
+    """
+    def get(self, request, *args, **kwargs):
+        
+        template_name = 'capacity_alerts/backhaul_status.html'
+        # Fetch month data from RFOAnalysis model
+        months_data = list(CustomerFaultAnalysis.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id'))
+
+        severity_data = list(CustomerFaultAnalysis.objects.extra({
+            'id': 'REPLACE(severity, " ", "_")',
+            'value': 'severity'
+        }).values('value', 'id').distinct().order_by('value'))
+
+        resolution_efficiency_headers = [
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': '2_hrs', 'sTitle': '2 Hours'},
+            {'mData': '2_hrs_percent', 'sTitle': '2 Hours %'},
+            {'mData': '4_hrs', 'sTitle': '4 Hours'},
+            {'mData': '4_hrs_percent', 'sTitle': '4 Hours %'},
+            {'mData': 'more_than_4_hrs', 'sTitle': 'More Than 4 Hours'},
+            {'mData': 'more_than_4_hrs_percent', 'sTitle': 'More Than 4 Hours %'},
+            {'mData': 'total_count', 'sTitle': 'Total TT'}
+        ]
+
+        context = {
+            'months_data': json.dumps(months_data),
+            'severity_data': json.dumps(severity_data),
+            'resolution_efficiency_headers': json.dumps(resolution_efficiency_headers)
+        }
+
+        return render(self.request, template_name, context)
