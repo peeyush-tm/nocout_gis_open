@@ -443,6 +443,7 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
             'bh_device_type': bs.get('BHDEVICETYPE'),
             'bh_device_tech': bs.get('BHDEVICETECH'),
             'maintenance_status': bs.get('BSMAINTENANCESTATUS'),
+            'has_pps_alarm' : bs.get('PPSALARMFLAG'),
             'tech_str': '',
             'vendor_str': '',
             'freq_str': '',

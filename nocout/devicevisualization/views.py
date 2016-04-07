@@ -41,6 +41,7 @@ from inventory.utils.util import InventoryUtilsGateway
 from nocout.mixins.datatable import AdvanceFilteringMixin
 from user_profile.utils.auth import in_group
 from device.api import prepare_raw_result_v2
+from nocout.settings import EXCLAMATION_NEEDED
 
 logger = logging.getLogger(__name__)
 
@@ -3900,7 +3901,15 @@ class GISStaticInfo(View):
                 
                 # get formatted bs inventory
                 bs_inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
-
+                pps_alarm_flag = bs_inventory.get('has_pps_alarm')
+                
+                # if EXCLAMATION_NEEDED flag is set to False from settings.py then set has_pps_alarm to 0
+                if (EXCLAMATION_NEEDED == False):
+                    BaseStation.objects.filter(id=bs_id).update(has_pps_alarm=False)
+                    pps_alarm_flag = False
+                # if bs has a pps alarm then change it's icon
+                if (pps_alarm_flag): 
+                    bs_inventory['icon_url'] = 'static/img/icons/bs_exclamation.png'
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
                 bh_device_ip = bs_inventory.get('bh_device_ip')
                 
