@@ -14798,38 +14798,29 @@ def compare_lists_of_dicts(list1, list2):
 
 
 @task()
-def check_current_alarms():
+def check_alarms_for_no_pps(alarm_type=None):
     """
-    Check for 'Synchronization_problem__no_PPS' event in current_alarms table
+    Check for 'Synchronization_problem__no_PPS' event in current_alarms & clear_alarms table
     """
-    ip_address_list = CurrentAlarms.objects.using(TRAPS_DATABASE).filter(eventname='Synchronization_problem__no_PPS', is_active=1).values_list('ip_address', flat=True)
 
-    bs_id_list = Sector.objects.filter(sector_configured_on__ip_address__in=ip_address_list, bs_technology__name='WiMAX').values_list('base_station__id', flat=True)
+    if alarm_type.lower() == 'current':
+        current_model  = CurrentAlarms
+        pps_flag = True
+    elif alarm_type.lower() == 'clear':
+        current_model  = ClearAlarms
+        pps_flag = False
+
+    ip_address_list = current_model.objects.using(TRAPS_DATABASE).filter(eventname='Synchronization_problem__no_PPS', is_active=1).values_list('ip_address', flat=True)
+    wimax_tech_id = DeviceTechnology.objects.filter(name='WiMAX').values_list('id', flat=True)
+
+    bs_id_list = Sector.objects.filter(sector_configured_on__ip_address__in=ip_address_list, sector_configured_on__device_technology__in=wimax_tech_id).values_list('base_station__id', flat=True)
 
     if bs_id_list.exists():
         try:
-            BaseStation.objects.filter(id__in=bs_id_list).update(has_pps_alarm=True)
+            BaseStation.objects.filter(id__in=bs_id_list).update(has_pps_alarm=pps_flag)
         except Exception, e:
-            logger.error('Check CurrentAlarms Exception')
+            logger.error('Check Alarms Exception')
             logger.error(e)
         
-
-    return True
-
-@task()
-def check_clear_alarms():
-    """
-    Check for 'Synchronization_problem__no_PPS' event in clear_alarms table
-    """
-    ip_address_list = ClearAlarms.objects.using(TRAPS_DATABASE).filter(eventname='Synchronization_problem__no_PPS', is_active=1).values_list('ip_address', flat=True)
-
-    bs_id_list = Sector.objects.filter(sector_configured_on__ip_address__in=ip_address_list, bs_technology__name='WiMAX').values_list('base_station__id', flat=True)
-
-    if bs_id_list.exists():
-        try:
-            BaseStation.objects.filter(id__in=bs_id_list).update(has_pps_alarm=False)
-        except Exception, e:
-            logger.error('Check ClearAlarms Exception')
-            logger.error(e)
 
     return True

@@ -506,12 +506,16 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
     },
     'check_current_alarm_for_NO_PPS': {
-        'task': 'inventory.tasks.check_current_alarms',
+        'task': 'inventory.tasks.check_alarms_for_no_pps',
         'schedule': crontab(minute='*/5'), #Execute at every 5 minute
+        'kwargs': {'alarm_type': 'current'},
+        # 'args' : ['current'],
     },
     'check_clear_alarm_for_NO_PPS': {
-        'task': 'inventory.tasks.check_clear_alarms',
+        'task': 'inventory.tasks.check_alarms_for_no_pps',
         'schedule': crontab(minute='*/8'),
+        'kwargs': {'alarm_type': 'clear'},
+        # 'args' : ['clear'],
     }
 }
 
