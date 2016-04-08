@@ -6,9 +6,9 @@ Main file for migration of data from mongodb to mysql for events.This file runs 
 
 from nocout_site_name import *
 import imp
-
+import time
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-
+time.sleep(8)
 def main():
     mongo_conf = []
     configs = config_module.parse_config_obj()

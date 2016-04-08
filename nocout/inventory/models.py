@@ -134,6 +134,7 @@ class BaseStation(models.Model):
     site_sap_id = models.CharField('Site SAP ID', max_length=250, null=True, blank=True)
     mgmt_vlan = models.CharField('MGMT VLAN', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    has_pps_alarm = models.BooleanField('Has PPS Alarm', default=False)
 
     def __unicode__(self):
         return self.name
