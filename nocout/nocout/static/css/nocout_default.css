@@ -785,3 +785,15 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
 #topo_network {
   height: 500px;
 }
+.both_view_seperator {
+  height: 1px;
+  margin-bottom: 10px;
+  width: 100%;
+  background: #DDD;
+}
+.capacity_alerts_container .box-body .list-unstyled {
+  margin-bottom:5px;
+  margin-right: -4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+}

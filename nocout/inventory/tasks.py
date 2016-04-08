@@ -14809,6 +14809,8 @@ def check_alarms_for_no_pps(alarm_type=None):
     elif alarm_type.lower() == 'clear':
         current_model  = ClearAlarms
         pps_flag = False
+    else:
+        return False
 
     ip_address_list = current_model.objects.using(TRAPS_DATABASE).filter(eventname='Synchronization_problem__no_PPS', is_active=1).values_list('ip_address', flat=True)
     wimax_tech_id = DeviceTechnology.objects.filter(name='WiMAX').values_list('id', flat=True)
