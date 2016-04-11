@@ -112,7 +112,7 @@ class correlation(object):
 	event_dict = {}
         ih_dict = {}
 	my_useful_list = filter(lambda x: x[1] == 'Device_not_reachable',current_events )
-	for event in current_events:
+	for event in my_useful_list:
 	    if 'Device_not_reachable' in event[1]:
 	        ip = event[3]
                 static_data = redis_conn.get('static_'+ip)
@@ -756,9 +756,9 @@ def send_traps(params):
 		rc_alarm_id,siteb_trap_list = cor_obj.create_traps(**siteb_params)
         else:
 	    if ptp_bh_flag:
-		siteb_trap_list = cor_obj.create_traps(**siteb_params)
+		alarm_id,siteb_trap_list = cor_obj.create_traps(**siteb_params)
 	    sitea_params.update({'is_backhaul':None})
-	    sitea_trap_list= cor_obj.create_traps(**sitea_params)
+	    alarm_id,sitea_trap_list= cor_obj.create_traps(**sitea_params)
 
 	final_trap_list = final_trap_list + sitea_trap_list + siteb_trap_list
 
