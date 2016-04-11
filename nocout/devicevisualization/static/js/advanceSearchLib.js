@@ -53,6 +53,7 @@ function advanceSearchClass() {
     	$("#filter_city").select2("val","");
     	$("#filter_frequency").select2("val","");
     	$("#filter_polarization").select2("val","");
+    	$("#filter_antena_type").select2("val","");
     	// Reset Advance Filters Flag
         isAdvanceFilter = 0;
         

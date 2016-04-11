@@ -2660,7 +2660,8 @@ def get_maps_initial_data_query(bs_id=[]):
                 IF(isnull(antenna.height), 'NA', antenna.height), '|',
                 IF(isnull(device.ip_address), 'NA', device.ip_address), '|',
                 IF(isnull(device.device_name), 'NA', device.device_name), '|',
-                IF(isnull(device.id), 'NA', device.id)
+                IF(isnull(device.id), 'NA', device.id), '|',
+                IF(isnull(antenna.antenna_type), 'NA', antenna.antenna_type)
             ) SEPARATOR '-|-|-') AS SECT_STR,
             count(ckt.id) AS TOTALSS
         FROM
@@ -2749,7 +2750,7 @@ def get_maps_initial_data_query(bs_id=[]):
         GROUP BY
             bs.id
         '''.format(ss_group_concat_str, bs_where_condition)
-        
+            
     return query
 
 
