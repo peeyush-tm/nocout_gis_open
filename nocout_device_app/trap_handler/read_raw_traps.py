@@ -6,6 +6,7 @@ from trap_handler.db_conn import ConnectionBase
 # changed module for production
 #from mapper import Eventmapper 
 from trap_handler.mapper import Eventmapper
+from start.start import app
 
 class RawTraps(object):
 
@@ -78,7 +79,31 @@ class RawTraps(object):
 			except Exception as exc:
 				print 'Error in redis qry: {0}'.format(exc)
 
+@app.task(name='read_raw_traps')
+def read_traps():
+    worker = RawTraps()
+    worker.do_work()
 
-if __name__ == '__main__':
-	worker = RawTraps()
-	worker.do_work()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
