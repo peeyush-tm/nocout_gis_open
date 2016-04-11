@@ -157,11 +157,12 @@ class inventory(object):
 		conv_switch_data_dict=self.create_conv_switch_data_dict(bs,conv_switch_data_dict,obj_count,
 									resource_name,is_active,ptp_bh_dict)
 
-	    params = self.create_ss_dict(bs,ss_data_dict,obj_count,inventory_hierarchy,ih_dynamic,ptp_farend_ip_list,ptp_bh_dict,is_active)
+	    params = self.create_ss_dict(bs,ss_data_dict,obj_count,inventory_hierarchy,ih_dynamic,
+					ptp_farend_ip_list,ptp_bh_dict,is_active)
 	    ss_data_dict,inventory_hierarchy,ih_dynamic,ptp_parent_child_dict,ptp_bh_dict =  params
 
-	    bs_data_dict,inventory_hierarchy,ih_dynamic = self.create_sect_dict(bs,bs_data_dict,obj_count,inventory_hierarchy,ih_dynamic,
-									   ptp_parent_child_dict,ptp_bh_dict,is_active)
+	    bs_data_dict,inventory_hierarchy,ih_dynamic = self.create_sect_dict(bs,bs_data_dict,obj_count,inventory_hierarchy,
+									ih_dynamic,ptp_parent_child_dict,ptp_bh_dict,is_active)
 	    if inventory_hierarchy and is_active == 0:
 		inventory_hierarchy['change_bit'] = 0
 		inventory_hierarchy['ip_list'] = set()

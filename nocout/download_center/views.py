@@ -112,12 +112,12 @@ class DownloadCenterListing(BaseDatatableView):
         :return qs:
         """
         # get page type
-        page_type = self.request.GET['page_type']
+        page_type = self.request.GET.get('page_type')
 
         # get report name
         report_name = ""
         try:
-            report_name = ReportSettings.objects.get(page_name=self.request.GET['page_type']).report_name
+            report_name = ReportSettings.objects.get(page_name=page_type).report_name
         except Exception as e:
             logger.info(e.message)
 
@@ -785,8 +785,7 @@ class GetEmails(View):
 
 class ResetEmailReport(View):
     """
-    User can Reset Scheduled Email report which will delete the delete the
-    record from database.
+    User can Reset Scheduled Email report which will delete record from database.
     """
     def get(self, request, *args, **kwargs):
         result = {
