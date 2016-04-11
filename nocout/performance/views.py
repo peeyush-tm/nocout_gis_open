@@ -4122,15 +4122,25 @@ class GetServiceTypePerformanceData(View):
                                     current_value = None
                                     current_color = no_val_color
                                     if data.current_value:
-                                        val = float(data.current_value) if data.current_value else 0
-                                        warn_val = float(data.warning_threshold) if data.warning_threshold else val
-                                        crit_val = float(data.critical_threshold) if data.critical_threshold else val
-                                        current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
+                                        try:
+                                            val = float(data.current_value) if data.current_value else 0
+                                        except Exception, e:
+                                            val = ''
 
-                                        if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
-                                            current_color = compare_point(val, warn_val, crit_val)
+                                        if val:
+                                            warn_val = float(data.warning_threshold) if data.warning_threshold else val
+                                            crit_val = float(data.critical_threshold) if data.critical_threshold else val
+                                            try:
+                                                current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
+                                            except Exception, e:
+                                                pass
+
+                                            if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                                current_color = compare_point(val, warn_val, crit_val)
+                                            else:
+                                                current_color = chart_color
                                         else:
-                                            current_color = chart_color
+                                            continue
 
                                     data_list.append({
                                         "name": str(sds_display_name)+"(Current Value)",
@@ -4203,15 +4213,24 @@ class GetServiceTypePerformanceData(View):
                                     current_value = None
                                     current_color = no_val_color
                                     if data.current_value:
-                                        val = float(data.current_value) if data.current_value else 0
-                                        warn_val = float(data.warning_threshold) if data.warning_threshold else val
-                                        crit_val = float(data.critical_threshold) if data.critical_threshold else val
-                                        current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
+                                        try:
+                                            val = float(data.current_value) if data.current_value else 0
+                                        except Exception, e:
+                                            val = ''
 
-                                        if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
-                                            current_color = compare_point(val, warn_val, crit_val)
-                                        else:
-                                            current_color = chart_color
+                                        if val:
+                                            warn_val = float(data.warning_threshold) if data.warning_threshold else val
+                                            crit_val = float(data.critical_threshold) if data.critical_threshold else val
+                                            
+                                            try:
+                                                current_value = eval(str(formula) + "(" + str(val) + ")") if formula else float(data.current_value)
+                                            except Exception, e:
+                                                pass
+
+                                            if data.warning_threshold not in ['', None] and data.critical_threshold not in ['', None]:
+                                                current_color = compare_point(val, warn_val, crit_val)
+                                            else:
+                                                current_color = chart_color
 
                                     data_list.append({
                                         "name": sds_display_name,
@@ -4387,6 +4406,8 @@ class GetServiceTypePerformanceData(View):
                                     }
                                 })
                 except Exception, e:
+                    log.error(' ---------------- Single Device Perf Page - Chart ---------------- ')
+                    log.error(e)
                     pass
 
             #this ensures a further good presentation of data w.r.t thresholds
@@ -9110,16 +9131,13 @@ class InitDeviceReboot(View):
                 env_name
             ]
 
-            log.error('Excecuted Command -- ')
-            log.error(' '.join(cmd_list))
-
             reboot_response = subprocess.Popen(
                 cmd_list, 
                 stdout=subprocess.PIPE
             )
 
             response = reboot_response.stdout.read()
-            log.error('Response --> %s' % response)
+
             if 'yes' in response:
                 result.update(
                     success=1,
