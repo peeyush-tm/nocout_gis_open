@@ -83,27 +83,3 @@ class RawTraps(object):
 def read_traps():
     worker = RawTraps()
     worker.do_work()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
