@@ -14812,7 +14812,7 @@ def check_alarms_for_no_pps(alarm_type=None):
     else:
         return False
 
-    ip_address_list = current_model.objects.using(TRAPS_DATABASE).filter(eventname='Synchronization_problem__no_PPS', is_active=1).values_list('ip_address', flat=True)
+    ip_address_list = list(current_model.objects.filter(eventname='Synchronization_problem__no_PPS', is_active=1).using(TRAPS_DATABASE).values_list('ip_address', flat=True))
     wimax_tech_id = DeviceTechnology.objects.filter(name='WiMAX').values_list('id', flat=True)
 
     bs_id_list = Sector.objects.filter(sector_configured_on__ip_address__in=ip_address_list, sector_configured_on__device_technology__in=wimax_tech_id).values_list('base_station__id', flat=True)
