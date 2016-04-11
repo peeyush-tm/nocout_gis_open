@@ -220,7 +220,6 @@ class Eventmapper(object):
 	history_event = []
         for count,trap in event_count_dict.values():
             new_trap =  {}
-	    current_events_update = []
             if 'wimax' in trap[1].lower() :
                 global formatline_indexes
                 indexes = formatline_indexes['wimax']

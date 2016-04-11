@@ -210,15 +210,18 @@ class ExportTraps(object):
                                 'last_occurred', 'is_active', 'sia', 'customer_count'
                                 )
                 update_columns = (
-                                'alarm_count',
+		                'severity', 'uptime', 'traptime',
+                                'description', 'last_occurred', 'sia',
+				'customer_count'
                           )
 
 		p0 = "INSERT INTO %(table)s" % {'table': table}
 		p1 = ' (%s)' % ','.join(default_columns)
 		p2 = ' , '.join(map(lambda x: ' %('+ x + ')s', default_columns))
-		p3 = ''.join([' alarm_count = alarm_count +  values(alarm_count) '])
+		p3 = ' , '.join(map(lambda x: x + ' = VALUES(' + x + ')', update_columns))
+		p4 = ''.join([', alarm_count = alarm_count +  VALUES(alarm_count) '])
 		qry = ''.join(
-                	[p0, p1, ' VALUES (', p2, ') ON DUPLICATE KEY UPDATE ' ,p3]
+                	[p0, p1, ' VALUES (', p2, ') ON DUPLICATE KEY UPDATE ' ,p3, p4]
                 	)
 
                 if traps:
