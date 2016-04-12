@@ -4127,7 +4127,7 @@ class GetServiceTypePerformanceData(View):
                                         except Exception, e:
                                             val = ''
 
-                                        if val:
+                                        if val or val == 0:
                                             warn_val = float(data.warning_threshold) if data.warning_threshold else val
                                             crit_val = float(data.critical_threshold) if data.critical_threshold else val
                                             try:
@@ -4218,7 +4218,7 @@ class GetServiceTypePerformanceData(View):
                                         except Exception, e:
                                             val = ''
 
-                                        if val:
+                                        if val or val == 0:
                                             warn_val = float(data.warning_threshold) if data.warning_threshold else val
                                             crit_val = float(data.critical_threshold) if data.critical_threshold else val
                                             
