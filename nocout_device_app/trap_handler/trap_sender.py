@@ -1,6 +1,6 @@
 """ This module is used to hold varbind info for traps based 
 on device types. Creates and sends SNMP traps using pysnmp module"""
-
+import threading
 from pprint import pprint
 from pysnmp.hlapi import *
 
@@ -93,7 +93,7 @@ ptp_or_ss_varbinds.update(common_varbinds)
 circuit_ids_varbinds.update(common_varbinds)
 
 
-class Trap(object):
+class Trap(threading.Thread):
     """ Defines a trap object along with related var binds
 
     Example
@@ -115,11 +115,16 @@ class Trap(object):
     """
 
     def __init__(self, **kwds):
-        self.__dict__ = kwds
+	#super(Trap,self).__init__()
+	threading.Thread.__init__(self)
+        self.__dict__.update(**kwds)
         self._fill_defaults()
 
     def __getattr__(self, attr):
         return ''
+
+    def run(self):
+	self.send_trap()
 
     def send_trap(self):
         # community auth password
@@ -206,6 +211,5 @@ if __name__ == '__main__':
                  'time_stamp': 1156734562, 'sector_ids': '12:56434:d43;34:454:3we',
                  'tckt_req': 1, 'is_sia': 1,'corr_req':1,'severity':1,'last_count':1,'impacted_sector_count':2,
                  }
-    trap = Trap(**trap_opts)
-    for i in range(100):
-    	trap.send_trap()
+    t = Trap(**trap_opts)
+    t.start()
