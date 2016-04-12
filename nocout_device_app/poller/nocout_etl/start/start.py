@@ -70,6 +70,7 @@ class Config:
 	    #'add_dummy',
 	    'trap_handler.events_snmptt',
 	    'trap_handler.mapper',
+            'trap_handler.read_raw_traps',
 	)
     CELERYD_LOG_COLOR = False
     CELERY_CHORD_PROPAGATES = False
@@ -170,6 +171,12 @@ class Config:
 		'task': 'load_customer_count_in_redis',
 		'schedule' : crontab(minute=5)
 	     },
+
+             'read_raw_traps': {
+                'task': 'read_raw_traps',
+                'schedule' : crontab(minute='*/5')
+             },
+
             }
 
 app.config_from_object(Config)
