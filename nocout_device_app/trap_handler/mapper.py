@@ -220,7 +220,6 @@ class Eventmapper(object):
 	history_event = []
         for count,trap in event_count_dict.values():
             new_trap =  {}
-	    current_events_update = []
             if 'wimax' in trap[1].lower() :
                 global formatline_indexes
                 indexes = formatline_indexes['wimax']
@@ -413,7 +412,11 @@ class Eventmapper(object):
                             last_occurred = trap[8]
 
 	                eventname = formatline[indexes['event_name']].replace(' ','_')
-                        sia = sia_value[str(self.mat_entry_details['rf_ip_%s_%s' % (eventname,severity)]['sia'])]
+
+			try :
+                            sia = sia_value[str(self.mat_entry_details['rf_ip_%s_%s' % (eventname,severity)]['sia'])]
+			except :
+			    sia = 'NA'
 
 			new_trap.update({
 				'ip_address': trap[3],

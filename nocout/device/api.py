@@ -448,6 +448,7 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
             'vendor_str': '',
             'freq_str': '',
             'polarization_str': '',
+            'antenna_type_str': '',
             'sector_configured_on_devices': '',
             'circuit_ids': '',
             'sectors': []
@@ -542,6 +543,11 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
                     except Exception, e:
                         device_id = ''
 
+                    try:
+                        antenna_type = splitted_str[13]
+                    except Exception, e:
+                        antenna_type = 'NA'
+
                     gmap_icon = ''
                     freq_val = ''
                     color = ''
@@ -571,6 +577,8 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
                     temp_dict['freq_str'] += freq_val + '|'
                     # Concat sectors antenna polarization
                     temp_dict['polarization_str'] += polarization + '|'
+                    # Concat sectors antenna type
+                    temp_dict['antenna_type_str'] += antenna_type + '|'
                     # Concat Sectors IP
                     temp_dict['sector_configured_on_devices'] += sector_ip + '|'
                     # Concat SS IPs
@@ -638,7 +646,8 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
                         'polarization': polarization,
                         'antenna_height': antenna_height,
                         'sub_stations': ss_list,
-                        'device_id': device_id
+                        'device_id': device_id,
+                        'antenna_type': antenna_type
                     }
                     sector_list.append(sector)
                 except Exception, e:
