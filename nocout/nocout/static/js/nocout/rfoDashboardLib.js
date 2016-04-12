@@ -124,6 +124,10 @@ function initRfoDashboard() {
     }
 }
 
+/**
+ *
+ *
+ */
 function initMTTRDashboard() {
 
     var selected_month = $('select[name="month_selector"]').val(),
@@ -291,6 +295,93 @@ function initResolutionEfficiencyDashboard() {
 }
 
 /**
+ *
+ *
+ */
+function initCapacitySummaryDashboard() {
+    var display_type = $('select[name="display_selector"]').val(),
+        selected_month = $('select[name="month_selector"]').val(),
+        load_table = true,
+        load_chart = false;
+
+    if (selected_month) {
+        selected_month = Number(selected_month) / 1000;
+    }
+
+    if (display_type == 'both') {
+        load_chart = true;
+        load_table = true;
+        if ($('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').removeClass('hide');
+        }
+        if ($('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').removeClass('hide');
+        }
+        if ($('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').removeClass('hide');
+        }
+
+    } else if (display_type == 'chart') {
+        load_chart = true;
+        load_table = false;
+        if ($('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').removeClass('hide');
+        }
+        if (!$('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').addClass('hide');
+        }
+        if (!$('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').addClass('hide');
+        }
+    } else {
+        load_chart = false;
+        load_table = true;
+        if (!$('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').addClass('hide');
+        }
+        if (!$('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').addClass('hide');
+        }
+        if ($('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').removeClass('hide');
+        }
+    }
+
+    var api_get_params = '';
+    api_get_params += '?month=' + String(selected_month);
+
+    var selected_tech = $('.nav-tabs li.active a').attr('tech'),
+        table_id_prefix = $('.nav-tabs li.active a').attr('table-id-prefix');
+    
+    // Append technology query string as per the selected tab.
+    api_get_params += '?technology=' + selected_tech;
+
+    if (load_table) {
+        // Load INC Ticket Rate Table
+        dataTableInstance.createDataTable(
+            table_id_prefix+'_datatable',
+            capacity_summary_headers,
+            capacity_summary_url + api_get_params,
+            false
+        );
+    }
+
+    if (load_chart) {
+        api_get_params += '&request_for_chart=1';
+        var window_pathname = window.location.pathname,
+            page_type = '';
+
+        if (window_pathname.indexOf('/backhaul_status/') > -1) {
+            page_type = 'backhaul';
+        } else if (window_pathname.indexOf('/sector_status/') > -1) {
+            page_type = 'sector';
+        }
+
+        loadCapacityAlertChart(capacity_summary_url + api_get_params, table_id_prefix, page_type)
+    }
+}
+
+/**
  * This event trigger when any filter control selectbox value changed
  * @event Change
  */
@@ -309,15 +400,17 @@ $('.filter_controls').change(function(e) {
             $('select[parent_id="'+selected_val+'"] option').show();
         }
     }
-
-    if (window.location.pathname.indexOf('/mttr_summary/') > -1) {
+    var location_pathname = window.location.pathname;
+    if (location_pathname.indexOf('/mttr_summary/') > -1) {
         initMTTRDashboard()
-    } else if (window.location.pathname.indexOf('/rfo_analysis/') > -1) {
+    } else if (location_pathname.indexOf('/rfo_analysis/') > -1) {
         initRfoDashboard();
-    } else if (window.location.pathname.indexOf('/inc_ticket_rate/') > -1) {
+    } else if (location_pathname.indexOf('/inc_ticket_rate/') > -1) {
         initINCTicketDashboard();
-    } else if (window.location.pathname.indexOf('/resolution_efficiency/') > -1) {
+    } else if (location_pathname.indexOf('/resolution_efficiency/') > -1) {
         initResolutionEfficiencyDashboard();
+    } else if (location_pathname.indexOf('/backhaul_status/') > -1 || location_pathname.indexOf('/sector_status/') > -1) {
+        initCapacitySummaryDashboard();
     } else {
         // hide loading spinner
         hideSpinner();
@@ -1077,6 +1170,10 @@ function loadResolutionEfficienyChart(api_url) {
     });
 }
 
+/**
+ *
+ *
+ */
 function getFormattedDate(input_date) {
     var formatted_date = '';
 
@@ -1091,4 +1188,151 @@ function getFormattedDate(input_date) {
     }
 
     return formatted_date;
+}
+
+/**
+ *
+ *
+ */
+$('.nav-tabs li a').click(function(e) {
+    $('.nav-tabs li').removeClass('active');
+    $(this).parent('li').addClass('active');
+    initCapacitySummaryDashboard();
+});
+
+/**
+ * This function fetch data & loads Sector/Backhaul summary status column stacked chart
+ * @method loadCapacityAlertChart
+ * @param ajax_url {String}, If contains the API url to fetch Sector/Backhaul summary status data
+ */
+function loadCapacityAlertChart(ajax_url, dom_id_prefix, page_type) {
+
+    // If dom id not exists then return
+    if ($('#'+dom_id_prefix+'_chart').length == 0) {
+        return false;
+    }
+
+    var chart_title = 'Sector Summary Status';
+
+    if (page_type == 'backhaul') {
+        chart_title = 'Backhaul Summary Status';
+    }
+
+    $.ajax({
+        url: ajax_url,
+        type: 'GET',
+        success: function(response) {
+
+            if (typeof(response) == 'string') {
+                response = JSON.parse(response);
+            }
+
+            if (response['result'] == 'ok') {
+                
+                var column_series_data = [],
+                    data_dict = {};
+
+                for (var i=0;i<response['aaData'].length;i++) {
+                    if (!data_dict['needs_augmentation']) {
+                        data_dict['needs_augmentation'] = [];
+                    }
+                    data_dict['needs_augmentation'].push(response['aaData'][i]['na_percent'])
+
+                    if (!data_dict['stop_provisioning']) {
+                        data_dict['stop_provisioning'] = [];
+                    }
+                    data_dict['stop_provisioning'].push(response['aaData'][i]['sp_percent'])
+
+                }
+                
+                column_series_data.push({
+                    'name': 'Upgrade Sector %',
+                    'type': 'column',
+                    'data': data_dict['needs_augmentation']
+                }, {
+                    'name': 'Stop Provisioning %',
+                    'type': 'column',
+                    'data': data_dict['stop_provisioning']
+                });
+
+                // Initialize column chart for master cause code
+                $('#'+dom_id_prefix+'_chart').highcharts({
+                    chart: {
+                        type: 'column'
+                    },
+                    colors: chart_colors_list,
+                    title: {
+                        text: chart_title,
+                        align: 'left'
+                    },
+                    xAxis: {
+                        // categories: [''],
+                        title: {
+                            text: 'Master Cause Code'
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'Outage In Minutes'
+                        },
+                        labels: {
+                            overflow: 'justify'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function () {
+                            var series_name = this.series.name ? $.trim(this.series.name) : "Value",
+                                tooltip_html = "";
+
+                            tooltip_html += '<ul><li><b>' + chart_title + '</b></li><br/>';
+                            tooltip_html += '<li>'+series_name+' : '+this.point.y+'</li><br/></ul>';
+
+                            return tooltip_html;
+                        }
+                    },
+                    legend: {
+                        itemDistance : 15,
+                        itemMarginBottom : 5,
+                        borderColor : "#CCCCCC",
+                        borderWidth : "1",
+                        borderRadius : "8",
+                        itemStyle: {
+                            color: '#555555',
+                            fontSize : '10px'
+                        },
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'top'
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    plotOptions: {
+                        column: {
+                            pointWidth: 12,
+                            groupPadding: 0,
+                            stacking: 'normal'
+                        }
+                    },
+                    series: column_series_data,
+                    noData: {
+                        style: {
+                            fontWeight: 'bold',
+                            fontSize: '20px',
+                            color: '#539fb8',
+                        }
+                    }
+                });
+            }
+
+            // hide loading spinner
+            hideSpinner();
+        },
+        error: function(err) {
+            // console.log(err.statusText);
+            // hide loading spinner
+            hideSpinner();
+        }
+    });
 }

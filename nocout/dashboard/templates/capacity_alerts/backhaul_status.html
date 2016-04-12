@@ -43,27 +43,27 @@
         <div class="tabbable header-tabs">
             <ul class="nav nav-tabs" style="top: -88px;">
                 <li>
-                    <a href="#tclpop_block" id="tclpop_tab" data-toggle="tab">
+                    <a href="#tclpop_block" id="tclpop_tab" data-toggle="tab" tech="tclpop" table-id-prefix="tclpop_capacity_summary">
                         TCLPOP
                     </a>
                 </li>
                 <li>
-                    <a href="#ptp_block" id="ptp_tab" data-toggle="tab">
+                    <a href="#ptp_block" id="ptp_tab" data-toggle="tab" tech="p2p" table-id-prefix="ptp_capacity_summary">
                         P2P
                     </a>
                 </li>
                 <li>
-                    <a href="#pmp_block" id="pmp_tab" data-toggle="tab">
+                    <a href="#pmp_block" id="pmp_tab" data-toggle="tab" tech="pmp" table-id-prefix="pmp_capacity_summary">
                         PMP
                     </a>
                 </li>
                 <li>
-                    <a href="#wimax_block" id="wimax_tab" data-toggle="tab">
+                    <a href="#wimax_block" id="wimax_tab" data-toggle="tab" tech="wimax" table-id-prefix="wimax_capacity_summary">
                         WiMAX
                     </a>
                 </li>
                 <li class="active">
-                    <a href="#all_block" id="all_tab" data-toggle="tab">
+                    <a href="#all_block" id="all_tab" data-toggle="tab" tech="all" table-id-prefix="all_capacity_summary">
                         OverAll(PMP/WiMAX)
                     </a>
                 </li>
@@ -71,7 +71,7 @@
             <div class="tab-content" style="overflow:auto;margin-top: -30px;">
                 <div class="tab-pane active" id="all_block">
                     <div class="table_view_container">
-                        <table class="datatable table table-striped table-bordered table-hover" id="resolution_efficiency_datatable">
+                        <table class="datatable table table-striped table-bordered table-hover" id="all_capacity_summary_datatable">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -79,14 +79,14 @@
                     </div>
                     <div class="both_view_seperator"></div>
                     <div class="chart_view_container">
-                        <div id="inc_line_chart_container"></div>
+                        <div id="all_capacity_summary_chart"></div>
                         <div class="clearfix"></div>
                     </div>
                 </div>
 
                 <div class="tab-pane" id="wimax_block">
                     <div class="table_view_container">
-                        <table class="datatable table table-striped table-bordered table-hover" id="">
+                        <table class="datatable table table-striped table-bordered table-hover" id="wimax_capacity_summary_datatable">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -94,14 +94,14 @@
                     </div>
                     <div class="both_view_seperator"></div>
                     <div class="chart_view_container">
-                        <div id=""></div>
+                        <div id="wimax_capacity_summary_chart"></div>
                         <div class="clearfix"></div>
                     </div>
                 </div>
 
                 <div class="tab-pane" id="pmp_block">
                     <div class="table_view_container">
-                        <table class="datatable table table-striped table-bordered table-hover" id="">
+                        <table class="datatable table table-striped table-bordered table-hover" id="pmp_capacity_summary_datatable">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -109,14 +109,14 @@
                     </div>
                     <div class="both_view_seperator"></div>
                     <div class="chart_view_container">
-                        <div id=""></div>
+                        <div id="pmp_capacity_summary_chart"></div>
                         <div class="clearfix"></div>
                     </div>
                 </div>
 
                 <div class="tab-pane" id="ptp_block">
                     <div class="table_view_container">
-                        <table class="datatable table table-striped table-bordered table-hover" id="">
+                        <table class="datatable table table-striped table-bordered table-hover" id="ptp_capacity_summary_datatable">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -124,14 +124,14 @@
                     </div>
                     <div class="both_view_seperator"></div>
                     <div class="chart_view_container">
-                        <div id=""></div>
+                        <div id="ptp_capacity_summary_chart"></div>
                         <div class="clearfix"></div>
                     </div>
                 </div>
 
                 <div class="tab-pane" id="tclpop_block">
                     <div class="table_view_container">
-                        <table class="datatable table table-striped table-bordered table-hover" id="">
+                        <table class="datatable table table-striped table-bordered table-hover" id="tclpop_capacity_summary_datatable">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -139,7 +139,7 @@
                     </div>
                     <div class="both_view_seperator"></div>
                     <div class="chart_view_container">
-                        <div id=""></div>
+                        <div id="tclpop_capacity_summary_chart"></div>
                         <div class="clearfix"></div>
                     </div>
                 </div>
@@ -172,8 +172,8 @@
                 '6': 'July', '7': 'August', '8': 'September',
                 '9': 'October', '10': 'November', '11': 'December'
             },
-            resolution_efficiency_headers = [],
-            resolution_efficiency_url = ''
+            capacity_summary_headers = [],
+            capacity_summary_url = ''
             dataTableInstance = '';
 
         $(document).ready(function(e) {
@@ -192,12 +192,12 @@
             }
 
             try {
-                resolution_efficiency_headers = $.parseJSON('{{ resolution_efficiency_headers|safe }}')
+                capacity_summary_headers = $.parseJSON('{{ backhaul_summary_headers|safe }}')
             } catch(e) {
                 // console.error(e);
             }
 
-            resolution_efficiency_url = "{% url 'resolution-efficiency-listing' %}";
+            capacity_summary_url = "{% url 'capacity_alert_backhaul_status_listing' %}";
 
             // Populate month
             if (month_list.length > 0) {
@@ -209,8 +209,8 @@
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 
-            // call initINCTicketDashboard function to populate RFO dashboard data as per the selected filters
-            initResolutionEfficiencyDashboard();
+            // call initCapacitySummaryDashboard function to populate RFO dashboard data as per the selected filters
+            initCapacitySummaryDashboard();
         });
     </script>
 {% endblock %}
