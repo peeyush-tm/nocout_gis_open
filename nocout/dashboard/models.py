@@ -312,9 +312,10 @@ class SectorSummaryStatus(models.Model):
     pmp_port = models.CharField('PMP Port', max_length=256, null=True, blank=True)
     sector_id = models.CharField('Sector ID', max_length=256, null=True, blank=True)
     technology = models.CharField('Technology', max_length=256, null=True, blank=True)
-    dl_ageing = models.CharField('DL Ageing', max_length=256, null=True, blank=True)
-    ul_ageing = models.CharField('UL Ageing', max_length=256, null=True, blank=True)
-    severity = models.CharField('Severity', max_length=256, null=True, blank=True)
+    ageing_dl_na = models.CharField('Ageing DL Need Augmentation', max_length=256, null=True, blank=True)
+    ageing_dl_sp = models.CharField('Ageing DL Stop Provisioning', max_length=256, null=True, blank=True)
+    ageing_ul_na = models.CharField('Ageing UL Need Augmentation', max_length=256, null=True, blank=True)
+    ageing_ul_sp = models.CharField('Ageing UL Stop Provisioning', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
 
@@ -329,8 +330,9 @@ class BackhaulSummaryStatus(models.Model):
     bh_type = models.CharField('BH Type', max_length=256, null=True, blank=True)
     bh_capacity = models.CharField('BH Capacity', max_length=256, null=True, blank=True)
     technology = models.CharField('Technology', max_length=256, null=True, blank=True)
-    dl_ageing = models.CharField('DL Ageing', max_length=256, null=True, blank=True)
-    ul_ageing = models.CharField('UL Ageing', max_length=256, null=True, blank=True)
-    severity = models.CharField('Severity', max_length=256, null=True, blank=True)
+    ageing_dl_na = models.CharField('Ageing DL Need Augmentation', max_length=256, null=True, blank=True)
+    ageing_dl_sp = models.CharField('Ageing DL Stop Provisioning', max_length=256, null=True, blank=True)
+    ageing_ul_na = models.CharField('Ageing ageing_ul_na Need Augmentation', max_length=256, null=True, blank=True)
+    ageing_ul_sp = models.CharField('Ageing UL Stop Provisioning', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
