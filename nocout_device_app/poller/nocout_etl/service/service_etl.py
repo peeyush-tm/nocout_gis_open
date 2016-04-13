@@ -478,7 +478,7 @@ def extract_wimax_topology_fields_value(**args):
 		perf = '%s' %(prefix) + "=%s;%s;%s" % (value,args['war'],args['crit'])
 	    except Exception ,e:
 		#error('Error in wimax services: {0}, {1} {2}'.format(e,ip,service_name))
-		perf = '%s' %(prefix) + "=%s" % ('')
+		perf = '%s=' %(prefix)
 		pass
 
 	    age_of_state,add_to_events = age_since_last_stored_state(host_name, service_name, state_string)
@@ -595,9 +595,9 @@ def extract_wimax_bs_ss_params_fields_value(**args):
                 #error('Error in wimax bs ss param services: {0}, {1} {2}'.format(e,ip,service_name))
 
 		if service_name in wimax_qos_service:
-		    perf = 'dl_qos' % + "=%s " % ('') + 'ul_qos' + "=%s" % ('')
+		    perf = 'dl_qos= ul_qos='
 		else :
-                    perf ='%s' %(prefix) + "=%s" % ('')
+                    perf ='%s=' %(prefix)
                 #pass
 
             age_of_state,create_event = age_since_last_stored_state(host_name, service_name, state_string)
@@ -678,7 +678,7 @@ def extract_wimax_ss_port_params_value(**args):
                      perf = '%s' %(prefix) + "=%s" %(value)
             except Exception ,e:
                 #error('Error in wimax services: {0}, {1} {2}'.format(e,ip,service_name))
-                perf = '%s' %(prefix) + "=%s" % ('')
+                perf = '%s=' %(prefix)
             age_of_state,add_to_events = age_since_last_stored_state(host_name, service_name, state_string)
             service_dict = make_service_dict(
                 perf, state_string, host_name, site, ip, age_of_state, **args)
