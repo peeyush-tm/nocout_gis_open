@@ -166,6 +166,18 @@ class Config:
 	    	'task': 'insert_bs_ul_issue_event',
 		'schedule': crontab(minute='*/5')
 		},
+            'get_passive_checks-ospf2-1-service': {
+                'task': 'get_passive_checks_output',
+                'schedule': crontab(minute='*/5'),
+                'kwargs': {'site_name': 'ospf2_slave_1'}
+                },
+            'get_passive_checks-ospf2-1-interface': {
+                'task': 'get_passive_checks_output',
+                'schedule': crontab(minute=4),
+                'kwargs': {'site_name': 'ospf2_slave_1',
+                           'ends_with' : 'status'
+                          }
+                },
 
 	     'load_customer_count_in_redis': {
 		'task': 'load_customer_count_in_redis',
