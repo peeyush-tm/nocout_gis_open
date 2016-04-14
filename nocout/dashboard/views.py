@@ -3218,33 +3218,32 @@ class ResolutionEfficiencyListing(BaseDatatableView):
         return ret
 
 
-class SectorStatusInit(View):
+class SectorStatusInit(ListView):
     """
     This class loads the INC ticket rate template
     """
-    def get(self, request, *args, **kwargs):
-        
-        template_name = 'capacity_alerts/sector_status.html'
-        # Fetch month data from RFOAnalysis model
-        months_data = list(SectorSummaryStatus.objects.extra({
-            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
-        }).values('id').distinct().order_by('id'))
+    template_name = 'capacity_alerts/sector_status.html'
+    model = SectorSummaryStatus
 
-        sector_summary_headers = [
+    def get_context_data(self, *args, **kwargs):
+
+        context = super(SectorStatusInit, self).get_context_data(**kwargs)
+        
+        # Fetch month data from RFOAnalysis model
+        context['months_data'] = json.dumps(list(SectorSummaryStatus.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id')))
+
+        context['summary_headers']  = json.dumps([
             {'mData': 'month', 'sTitle': 'Month'},
             {'mData': 'na_percent', 'sTitle': 'Upgrade Sector %', 'bSortable': False},
             {'mData': 'sp_percent', 'sTitle': 'Stop Provisioning %', 'bSortable': False},
             {'mData': 'na_sector', 'sTitle': 'Upgrade Sector', 'bSortable': False},
             {'mData': 'sp_sector', 'sTitle': 'Stop Provisioning', 'bSortable': False},
             {'mData': 'total_count', 'sTitle': 'Total Sectors', 'bSortable': False}
-        ]
+        ])
 
-        context = {
-            'months_data': json.dumps(months_data),
-            'sector_summary_headers': json.dumps(sector_summary_headers)
-        }
-
-        return render(self.request, template_name, context)
+        return context
 
 
 class SectorStatusListing(BaseDatatableView):
@@ -3292,18 +3291,20 @@ class SectorStatusListing(BaseDatatableView):
                 )
 
             if technology and technology.lower() == 'all':
-                q &= Q(technology__in=['pmp', 'wimax'])
+                q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+            elif technology and technology.lower() == 'pmp':
+                q &= Q(technology__in=['pmp', 'ubr pmp'])
             else:
                 q &= Q(technology__iexact=technology)
                 
-
-            qs = self.model.objects.filter(q).distinct('sector_id')
+            qs = self.model.objects.filter(q)#.distinct('sector_id')
 
             if self.request.GET.get('request_for_chart'):
                 try:
                     qs.order_by('timestamp')
                 except Exception, e:
                     pass
+
         except Exception, e:
             qs = self.model.objects.filter(id=0)
 
@@ -3311,27 +3312,25 @@ class SectorStatusListing(BaseDatatableView):
 
     def prepare_results(self, qs):
 
-        json_data = [{
-            key: val for key, val in dct.items()
-        } for dct in qs]
-
         technology = self.request.GET.get('technology')
 
         q = Q()
         if technology and technology.lower() == 'all':
-            q &= Q(technology__in=['pmp', 'wimax'])
+            q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+        elif technology and technology.lower() == 'pmp':
+            q &= Q(technology__in=['pmp', 'ubr pmp'])
         else:
             q &= Q(technology__iexact=technology)
 
         temp_dict = {}
-        for data in json_data:
-            current_month = data.month
+        for data in qs:
+            current_month = data.timestamp
             epoch_timestamp = current_month.strftime('%s')
             if epoch_timestamp not in temp_dict:
                 try:
-                    formatted_month = datetime.datetime.fromtimestamp(epoch_timestamp).strftime('%B - %Y')
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp)).strftime('%B - %Y')
                 except Exception, e:
-                    formatted_month = datetime.datetime.fromtimestamp(epoch_timestamp)
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp))
 
                 where_condition = Q()
                 where_condition &= q
@@ -3350,7 +3349,6 @@ class SectorStatusListing(BaseDatatableView):
                 na_total_count = self.model.objects.filter(
                     na_where_condition
                 ).count()
-
                 na_percent = round((float(na_total_count) / float(total_count)) * 100, 2)
 
                 sp_where_condition = Q()
@@ -3361,7 +3359,6 @@ class SectorStatusListing(BaseDatatableView):
                 sp_total_count = self.model.objects.filter(
                     sp_where_condition
                 ).count()
-
                 sp_percent = round((float(sp_total_count) / float(total_count)) * 100, 2)
 
                 temp_dict[epoch_timestamp] = {
@@ -3375,7 +3372,6 @@ class SectorStatusListing(BaseDatatableView):
                 }
             else:
                 continue
-
         return temp_dict.values()
 
     def get_context_data(self, *args, **kwargs):
@@ -3417,31 +3413,29 @@ class SectorStatusListing(BaseDatatableView):
 
         return ret
 
-class BackhaulStatusInit(View):
+class BackhaulStatusInit(ListView):
     """
     This class loads the INC ticket rate template
     """
-    def get(self, request, *args, **kwargs):
+    template_name = 'capacity_alerts/backhaul_status.html'
+    model = BackhaulSummaryStatus
+    def get_context_data(self, *args, **kwargs):
         
-        template_name = 'capacity_alerts/backhaul_status.html'
+        context = super(BackhaulStatusInit, self).get_context_data(**kwargs)
+        
         # Fetch month data from RFOAnalysis model
-        months_data = list(BackhaulSummaryStatus.objects.extra({
+        context['months_data'] = json.dumps(list(BackhaulSummaryStatus.objects.extra({
             'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
-        }).values('id').distinct().order_by('id'))
+        }).values('id').distinct().order_by('id')))
 
-        backhaul_summary_headers = [
+        context['summary_headers'] = json.dumps([
             {'mData': 'month', 'sTitle': 'Month'},
             {'mData': 'na_sector', 'sTitle': 'Needs Augmentation'},
             {'mData': 'sp_sector', 'sTitle': 'Stop Provisioning'},
             {'mData': 'total_count', 'sTitle': 'Total BS Triggered'}
-        ]
+        ])
 
-        context = {
-            'months_data': json.dumps(months_data),
-            'backhaul_summary_headers': json.dumps(backhaul_summary_headers)
-        }
-
-        return render(self.request, template_name, context)
+        return context
 
 
 class BackhaulStatusListing(BaseDatatableView):
@@ -3487,12 +3481,14 @@ class BackhaulStatusListing(BaseDatatableView):
                 )
 
             if technology and technology.lower() == 'all':
-                q &= Q(technology__in=['pmp', 'wimax'])
+                q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+            elif technology and technology.lower() == 'pmp':
+                q &= Q(technology__in=['pmp', 'ubr pmp'])
             else:
                 q &= Q(technology__iexact=technology)
                 
 
-            qs = self.model.objects.filter(q).distinct('ip_address')
+            qs = self.model.objects.filter(q)
 
             if self.request.GET.get('request_for_chart'):
                 try:
@@ -3506,27 +3502,25 @@ class BackhaulStatusListing(BaseDatatableView):
 
     def prepare_results(self, qs):
 
-        json_data = [{
-            key: val for key, val in dct.items()
-        } for dct in qs]
-
         technology = self.request.GET.get('technology')
 
         q = Q()
         if technology and technology.lower() == 'all':
-            q &= Q(technology__in=['pmp', 'wimax'])
+            q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+        elif technology and technology.lower() == 'pmp':
+            q &= Q(technology__in=['pmp', 'ubr pmp'])
         else:
             q &= Q(technology__iexact=technology)
 
         temp_dict = {}
-        for data in json_data:
-            current_month = data.month
+        for data in qs:
+            current_month = data.timestamp
             epoch_timestamp = current_month.strftime('%s')
             if epoch_timestamp not in temp_dict:
                 try:
-                    formatted_month = datetime.datetime.fromtimestamp(epoch_timestamp).strftime('%B - %Y')
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp)).strftime('%B - %Y')
                 except Exception, e:
-                    formatted_month = datetime.datetime.fromtimestamp(epoch_timestamp)
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp))
 
                 where_condition = Q()
                 where_condition &= q
@@ -3562,8 +3556,6 @@ class BackhaulStatusListing(BaseDatatableView):
                     'sp_sector': sp_total_count,
                     'total_count': total_count
                 }
-            else:
-                continue
 
         return temp_dict.values()
 
@@ -3577,19 +3569,22 @@ class BackhaulStatusListing(BaseDatatableView):
 
         # number of records before filtering
         total_records = 0
+        qs_len = len(set(qs.values_list('timestamp', flat=True)))
         if qs.count() > 0:
-            total_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+            total_records = qs_len
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = 0
+        filter_qs_len = len(set(qs.values_list('timestamp', flat=True)))
         if qs.count() > 0:
-            total_display_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+            total_display_records = filter_qs_len
 
         qs = self.ordering(qs)
+
         
-        if not self.request.GET.get('request_for_chart'):
+        if not self.request.GET.get('request_for_chart') and filter_qs_len > 10:
             qs = self.paging(qs)
 
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.

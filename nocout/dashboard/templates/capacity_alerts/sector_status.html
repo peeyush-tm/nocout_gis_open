@@ -6,7 +6,7 @@
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-television'></i> Dashboard" "javascript:;" %}
     {% breadcrumb_safe "Capacity Alerts" "javascript:;" %}
-    {% breadcrumb_safe "Sector Status" "capacity_alert_sector_status" %}
+    {% breadcrumb_safe "Sector Summary Status" "capacity_alert_sector_status" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -21,7 +21,7 @@
 </style>
 <div class="box border lite capacity_alerts_container">
     <div id="tableContainer_div" class="box-title">
-        <h4 class="pull-left"><i class="fa fa-television"></i> Sector Status</h4>
+        <h4 class="pull-left"><i class="fa fa-television"></i> Sector Summary Status</h4>
         <div class="clearfix"></div>
     </div>
     <div class="box-body" style="">
@@ -121,6 +121,8 @@
     <script src={% static "js/solid-gauge.js" %}></script>
     <!-- no data for highcharts -->
     <script src={% static "js/no-data-to-display.js" %}></script>
+    <!-- Highcharts Export Lib -->
+    <script src={% static "js/exporting.js" %}></script>
     <!--Custom Script to load RFO dashboard -->
     <script type="text/javascript" src={% static "js/nocout/rfoDashboardLib.js" %}></script>
     <!-- Custom script for data table-->
@@ -152,13 +154,13 @@
             }
 
             try {
-                capacity_summary_headers = $.parseJSON('{{ sector_summary_headers|safe }}')
+                capacity_summary_headers = $.parseJSON('{{ summary_headers|safe }}')
             } catch(e) {
                 // console.error(e);
             }
 
             capacity_summary_url = "{% url 'capacity_alert_sector_status_listing' %}";
-
+            console.log(month_list);
             // Populate month
             if (month_list.length > 0) {
                 updateFiltersContent(month_list, 'month', 'Month');
