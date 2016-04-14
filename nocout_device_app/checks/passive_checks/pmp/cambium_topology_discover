@@ -92,6 +92,7 @@ def check_cambium_topology_discover(item, params, info):
 			try:
 				if memc:
 					memc.set(connected_ss_mac,ss_value)
+					memc.set(connected_ss_ip,ap_ip)
 			except:
 				pass
 			
