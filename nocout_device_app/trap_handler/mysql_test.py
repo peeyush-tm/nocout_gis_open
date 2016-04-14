@@ -1,8 +1,7 @@
-from mysql.connector import connect
-from start_pub import app 
-from db_ops import *
+from start.start import app 
+from handlers.db_ops import *
 from formatting import inventory 
-#from celery import Task
+
 # Get topology data in hierarchy for which backhaul exists.
 query1 = """
 SELECT
