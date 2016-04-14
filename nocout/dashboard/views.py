@@ -2262,31 +2262,33 @@ def get_rfo_analysis_context():
     return context
 
 
-class RFOAnalysisView(View):
+class RFOAnalysisView(ListView):
     """
     This class populates PB TT RFO Analysis dashboard template
     """
-    def get(self, request, *args, **kwargs):
+    template_name = 'rfo_dashboard/rfo_analysis.html'
+    model = RFOAnalysis
+    def get_context_data(self, *args, **kwargs):
 
-        template_name = 'rfo_dashboard/rfo_analysis.html'
+        context = super(RFOAnalysisView, self).get_context_data(**kwargs)
 
-        context = get_rfo_analysis_context()
+        context_dict = get_rfo_analysis_context()
 
-        summation_headers = [
+        for key in context_dict:
+            context[key] = context_dict[key]
+
+        context['summation_headers'] = json.dumps([
             {'mData': 'master_causecode', 'sTitle': 'Master Cause Code'},
             {'mData': 'outage_in_minutes', 'sTitle': 'Total Minutes'}
-        ]
+        ])
 
-        all_data_headers = [
+        context['all_data_headers'] = json.dumps([
             {'mData': 'master_causecode', 'sTitle': 'Master Cause Code'},
             {'mData': 'sub_causecode', 'sTitle': 'Sub Cause Code'},
             {'mData': 'outage_in_minutes', 'sTitle': 'Total Minutes'}
-        ]
+        ])
 
-        context['summation_headers'] = json.dumps(summation_headers)
-        context['all_data_headers'] = json.dumps(all_data_headers)
-
-        return render(self.request, template_name, context)
+        return context
 
 
 outage_minutes_casting = 'CAST(outage_in_minutes AS DECIMAL(15,2))'
@@ -2599,16 +2601,23 @@ class RFOAnalysisSummationList(BaseDatatableView):
         return ret
 
 
-class LoadMTTRSummaryTemplate(View):
+class LoadMTTRSummaryTemplate(ListView):
     """
     This class loads MTTR dashboard template
     """
 
-    def get(self, request, *args, **kwargs):
+    template_name = 'rfo_dashboard/mttr_summary.html'
+    model = RFOAnalysis
+    def get_context_data(self, *args, **kwargs):
 
-        template_name = 'rfo_dashboard/mttr_summary.html'
-        context = get_rfo_analysis_context()
-        return render(self.request, template_name, context)
+        context = super(LoadMTTRSummaryTemplate, self).get_context_data(**kwargs)
+
+        context_dict = get_rfo_analysis_context()
+
+        for key in context_dict:
+            context[key] = context_dict[key]
+
+        return context
 
 class MTTRSummaryData(View):
     """
@@ -2855,37 +2864,34 @@ class MTTRDetailData(View):
         return HttpResponse(json.dumps(result))
 
 
-class INCTicketRateInit(View):
+class INCTicketRateInit(ListView):
     """
     This class loads the INC ticket rate template
     """
-    def get(self, request, *args, **kwargs):
-        
-        template_name = 'rfo_dashboard/inc_ticket_dashboard.html'
-        # Fetch month data from RFOAnalysis model
-        months_data = list(CustomerFaultAnalysis.objects.extra({
-            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
-        }).values('id').distinct().order_by('id'))
+    template_name = 'rfo_dashboard/inc_ticket_dashboard.html'
+    model = CustomerFaultAnalysis
+    def get_context_data(self, *args, **kwargs):
+            
+        context = super(INCTicketRateInit, self).get_context_data(**kwargs)
 
-        severity_data = list(CustomerFaultAnalysis.objects.extra({
+        # Fetch month data from RFOAnalysis model
+        context['months_data'] = json.dumps(list(CustomerFaultAnalysis.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id')))
+
+        context['severity_data'] = json.dumps(list(CustomerFaultAnalysis.objects.extra({
             'id': 'REPLACE(severity, " ", "_")',
             'value': 'severity'
-        }).values('value', 'id').distinct().order_by('value'))
+        }).values('value', 'id').distinct().order_by('value')))
 
-        inc_ticket_headers = [
+        context['inc_ticket_headers'] = json.dumps([
             {'mData': 'month', 'sTitle': 'Month'},
             {'mData': 'tt_percent', 'sTitle': 'TT %'},
             {'mData': 'target_percent', 'sTitle': 'Target %'},
             {'mData': 'tt_count', 'sTitle': 'TT Count'}
-        ]
+        ])
 
-        context = {
-            'months_data': json.dumps(months_data),
-            'severity_data': json.dumps(severity_data),
-            'inc_ticket_headers': json.dumps(inc_ticket_headers)
-        }
-
-        return render(self.request, template_name, context)
+        return context
 
 
 class INCTicketRateListing(BaseDatatableView):
@@ -3019,24 +3025,27 @@ class INCTicketRateListing(BaseDatatableView):
         return ret
 
 
-class ResolutionEfficiencyInit(View):
+class ResolutionEfficiencyInit(ListView):
     """
     This class loads the INC ticket rate template
     """
-    def get(self, request, *args, **kwargs):
+    template_name = 'rfo_dashboard/resolution_efficiency.html'
+    model = CustomerFaultAnalysis
+    def get_context_data(self, *args, **kwargs):
         
-        template_name = 'rfo_dashboard/resolution_efficiency.html'
-        # Fetch month data from RFOAnalysis model
-        months_data = list(CustomerFaultAnalysis.objects.extra({
-            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
-        }).values('id').distinct().order_by('id'))
+        context = super(ResolutionEfficiencyInit, self).get_context_data(**kwargs)
 
-        severity_data = list(CustomerFaultAnalysis.objects.extra({
+        # Fetch month data from RFOAnalysis model
+        context['months_data'] = json.dumps(list(CustomerFaultAnalysis.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id')))
+
+        context['severity_data'] = json.dumps(list(CustomerFaultAnalysis.objects.extra({
             'id': 'REPLACE(severity, " ", "_")',
             'value': 'severity'
-        }).values('value', 'id').distinct().order_by('value'))
+        }).values('value', 'id').distinct().order_by('value')))
 
-        resolution_efficiency_headers = [
+        context['resolution_efficiency_headers'] = json.dumps([
             {'mData': 'month', 'sTitle': 'Month'},
             {'mData': '2_hrs', 'sTitle': '2 Hours'},
             {'mData': '2_hrs_percent', 'sTitle': '2 Hours %'},
@@ -3045,15 +3054,9 @@ class ResolutionEfficiencyInit(View):
             {'mData': 'more_than_4_hrs', 'sTitle': 'More Than 4 Hours'},
             {'mData': 'more_than_4_hrs_percent', 'sTitle': 'More Than 4 Hours %'},
             {'mData': 'total_count', 'sTitle': 'Total TT'}
-        ]
+        ])
 
-        context = {
-            'months_data': json.dumps(months_data),
-            'severity_data': json.dumps(severity_data),
-            'resolution_efficiency_headers': json.dumps(resolution_efficiency_headers)
-        }
-
-        return render(self.request, template_name, context)
+        return context
 
 
 class ResolutionEfficiencyListing(BaseDatatableView):
