@@ -342,22 +342,26 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
      #   mongo_module.mongo_db_insert(db, service_events_data, 'serv_event')
       
      #memcache handling of host and service events
+   
+    # the below code part is added to get all nagios events
+    # The code is run by crontab after every minutes. The file is able to hold the data of two  minutes.
+    # File stores data upto 2 cycles, one cycle one minute, current cycle is decided by attempt_key 
     memc_obj=db_ops_module.MemcacheInterface()
-    attempt_key =nocout_site_name+ "_attempt"
+    attempt_key =nocout_site_name+ "_attempt"  # current cycle key specfic of each site
 
-    if memc_obj.memc_conn.get(attempt_key)==1:
+    if memc_obj.memc_conn.get(attempt_key)==1: # if first cycle or attempt
 
-        key = nocout_site_name + "_network_event1"
+        key = nocout_site_name + "_network_event1"    # for first cycle use this key to store data in memcache for network events
         doc_len_key = key + "_len"
     #memc_obj=db_ops_module.MemcacheInterface()
-        exp_time =170 # 2 min
+        exp_time =170 # for above key  new data would come after 120 seconds. 
         memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
-        key = nocout_site_name + "_service_event1"
+        key = nocout_site_name + "_service_event1"  #key for service events 
         doc_len_key = key + "_len"
         memc_obj.store(key,service_events_data,doc_len_key,exp_time,chunksize=1000)
-        memc_obj.memc_conn.set(attempt_key,2)
+        memc_obj.memc_conn.set(attempt_key,2)  #set attemet_key 2, so next execuation consider as second cycle. 
 
-    elif memc_obj.memc_conn.get(attempt_key)==2:
+    elif memc_obj.memc_conn.get(attempt_key)==2:  # if second key , second cycle or attempt
 
         key = nocout_site_name + "_network_event2"
         doc_len_key = key + "_len"
@@ -367,11 +371,11 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
         key = nocout_site_name + "_service_event2"
         doc_len_key = key + "_len"
         memc_obj.store(key,service_events_data,doc_len_key,exp_time,chunksize=1000)
-        memc_obj.memc_conn.set(attempt_key,1)
+        memc_obj.memc_conn.set(attempt_key,1) # next run would be consider as first cycle or attempt
     else :
-        memc_obj.memc_conn.set(attempt_key,1)
+        memc_obj.memc_conn.set(attempt_key,1) # if no cycle defined.
 
-
+# after every 128 second event_migration would be run, it takes the data from from both keys _network_event1 and _network_event2 and store in databases. 
 """
 Method to format n/w trap and push to Redis
 """
