@@ -3457,7 +3457,7 @@ class GetServiceTypePerformanceData(View):
             self.result['data']['objects']['table_data'] = result_data
         except Exception, e:
             self.result['data']['objects']['table_data'] = []
-            
+
         self.result['data']['objects']['table_data_header'] = [
             'ip_address',
             'mac_address',
@@ -8908,8 +8908,6 @@ class PowerStatusListing(BaseDatatableView):
         latest_timestamp = ''
         resultset = list()
         for data in qs:
-            # print type(data.get('created_at'))
-            # current_timestamp = data.get('created_at') 
             temp_dict = {
                 'msg': data.get('message'),
                 'created_at': data.get('created_at'),
