@@ -3263,105 +3263,108 @@ class GetServiceTypePerformanceData(View):
         #if it is connected, then it will be present in topology
         #else it will be present in the SECTOR --> CIRCUIT --> SS
         for data in performance_data:
-            temp_time = data.sys_timestamp
-            connected_mac = data.connected_device_mac
-            if connected_mac in aggregate_data:
-                continue
-            else:
-                aggregate_data[connected_mac] = data.connected_device_mac
+            try:
+                temp_time = data.sys_timestamp
+                connected_mac = data.connected_device_mac
+                if connected_mac in aggregate_data:
+                    continue
+                else:
+                    aggregate_data[connected_mac] = data.connected_device_mac
 
-                #check the connected SS
-                connected_ss_ip.append(data.connected_device_ip)
-                #check the connected SS
+                    #check the connected SS
+                    connected_ss_ip.append(data.connected_device_ip)
+                    #check the connected SS
 
-                connected_ip = data.connected_device_ip
-                #check if the devices connected exists in the database
-                #we will loop through the set of connected device
-                #TODO : make a single call to DB
-                connected_devices = Device.objects.filter(ip_address=connected_ip)
-                #since connected devices are all SS
-                #they may exist or not
-                #we will assume them to be no present in db
-                circuit_id = 'NA'
-                customer_name = 'NA'
-                packet_loss = 'NA'
-                latency = 'NA'
-                status_since = 'NA'
-                last_down = 'NA'
-                machine = 'default'
-                vlan = 'NA'
-                #now lets check if SS exists for a device
-                #and that the customer and circuit are present for that SS
+                    connected_ip = data.connected_device_ip
+                    #check if the devices connected exists in the database
+                    #we will loop through the set of connected device
+                    #TODO : make a single call to DB
+                    connected_devices = Device.objects.filter(ip_address=connected_ip)
+                    #since connected devices are all SS
+                    #they may exist or not
+                    #we will assume them to be no present in db
+                    circuit_id = 'NA'
+                    customer_name = 'NA'
+                    packet_loss = 'NA'
+                    latency = 'NA'
+                    status_since = 'NA'
+                    last_down = 'NA'
+                    machine = 'default'
+                    vlan = 'NA'
+                    #now lets check if SS exists for a device
+                    #and that the customer and circuit are present for that SS
 
-                if connected_devices:
-                    connected_device = connected_devices[0]
+                    if connected_devices:
+                        connected_device = connected_devices[0]
+                        try:
+                            ss = connected_device.substation_set.get()
+                            ckt = ss.circuit_set.get()
+                            circuit_id = ckt.circuit_id
+                            customer_name = ckt.customer.alias
+                        except Exception as e:
+                            pass
+
+                        #now lets see what the performance data it holds
+                        if connected_device.is_added_to_nms:
+                            machine = connected_device.machine.name
+                            #is it added?
+                            #only then query the performance network database
+                            #for getting latest status
+
+                            vlan = self.ss_vlan_performance_data_result(
+                                technology=technology,
+                                ss_device_object=connected_device,
+                                machine=machine
+                            )
+
+                            packet_loss, latency, status_since, last_down = self.ss_network_performance_data_result(
+                                ss_device_object=connected_device,
+                                machine=machine
+                            )
+
+                    last_updated = datetime.datetime.fromtimestamp(
+                        float(data.sys_timestamp)
+                    ).strftime(DATE_TIME_FORMAT)
+
+                    show_ip_address = data.ip_address
+
+                    # If DR device IP then add " (DR)" string with it.
+                    if dr_ip and dr_ip == show_ip_address:
+                        show_ip_address += " (DR)"
+
+                    action_html = 'NA'
                     try:
-                        ss = connected_device.substation_set.get()
-                        ckt = ss.circuit_set.get()
-                        circuit_id = ckt.circuit_id
-                        customer_name = ckt.customer.alias
-                    except Exception as e:
+                        if data.connected_device_ip:
+                            device_instance = Device.objects.get(ip_address=data.connected_device_ip)
+                            perf_page_url = reverse(
+                                'SingleDevicePerf',
+                                kwargs={'page_type': 'customer', 'device_id': device_instance.id},
+                                current_app='performance'
+                            )
+                            action_html = '<a href="{0}" title="Device Performance" target="_blank"> \
+                                           <i class="fa fa-bar-chart-o text-info"></i></a>'.format(perf_page_url)
+                    except Exception, e:
                         pass
 
-                    #now lets see what the performance data it holds
-                    if connected_device.is_added_to_nms:
-                        machine = connected_device.machine.name
-                        #is it added?
-                        #only then query the performance network database
-                        #for getting latest status
-
-                        vlan = self.ss_vlan_performance_data_result(
-                            technology=technology,
-                            ss_device_object=connected_device,
-                            machine=machine
-                        )
-
-                        packet_loss, latency, status_since, last_down = self.ss_network_performance_data_result(
-                            ss_device_object=connected_device,
-                            machine=machine
-                        )
-
-                last_updated = datetime.datetime.fromtimestamp(
-                    float(data.sys_timestamp)
-                ).strftime(DATE_TIME_FORMAT)
-
-                show_ip_address = data.ip_address
-
-                # If DR device IP then add " (DR)" string with it.
-                if dr_ip and dr_ip == show_ip_address:
-                    show_ip_address += " (DR)"
-
-                action_html = 'NA'
-                try:
-                    if data.connected_device_ip:
-                        device_instance = Device.objects.get(ip_address=data.connected_device_ip)
-                        perf_page_url = reverse(
-                            'SingleDevicePerf',
-                            kwargs={'page_type': 'customer', 'device_id': device_instance.id},
-                            current_app='performance'
-                        )
-                        action_html = '<a href="{0}" title="Device Performance" target="_blank"> \
-                                       <i class="fa fa-bar-chart-o text-info"></i></a>'.format(perf_page_url)
-                except Exception, e:
-                    pass
-
-                result_data.append({
-                    #'device_name': data.device_name,
-                    'ip_address': show_ip_address,
-                    'mac_address': data.mac_address,
-                    'sector_id': data.sector_id,
-                    'vlan': vlan,
-                    'connected_device_ip': data.connected_device_ip,
-                    'connected_device_mac': data.connected_device_mac,
-                    'circuit_id': circuit_id,
-                    'customer_name': customer_name,
-                    'packet_loss': packet_loss,
-                    'latency': latency,
-                    # 'up_down_since': status_since,
-                    'last_down_time': last_down,
-                    'last_updated': last_updated,
-                    'action': action_html
-                })
+                    result_data.append({
+                        #'device_name': data.device_name,
+                        'ip_address': show_ip_address,
+                        'mac_address': data.mac_address,
+                        'sector_id': data.sector_id,
+                        'vlan': vlan,
+                        'connected_device_ip': data.connected_device_ip,
+                        'connected_device_mac': data.connected_device_mac,
+                        'circuit_id': circuit_id,
+                        'customer_name': customer_name,
+                        'packet_loss': packet_loss,
+                        'latency': latency,
+                        # 'up_down_since': status_since,
+                        'last_down_time': last_down,
+                        'last_updated': last_updated,
+                        'action': action_html
+                    })
+            except Exception, e:
+                pass
 
         #here we will append the rest of the SS
         #which are not in topology now
@@ -3380,65 +3383,81 @@ class GetServiceTypePerformanceData(View):
             sector_id = None
 
             for ss in not_connected_ss:
-                vlan = self.ss_vlan_performance_data_result(
-                    technology=technology,
-                    ss_device_object=ss.device,
-                    machine=ss.device.machine.name
-                )
-                packet_loss, latency, status_since, last_down = self.ss_network_performance_data_result(
-                    ss_device_object=ss.device,
-                    machine=ss.device.machine.name
-                )
                 try:
-                    circuit_object = ss.circuit_set.filter().prefetch_related('sector').get()
-                    circuit_id = circuit_object.circuit_id
-                    customer_name = circuit_object.customer.alias
-                    device_mac = ss.device.mac_address
-                    device_ip = ss.device.ip_address
-                    sector_ip = circuit_object.sector.sector_configured_on.ip_address
-                    sector_mac = circuit_object.sector.sector_configured_on.mac_address
-                    sector_id = circuit_object.sector.sector_id
-
-                except:
-                    continue
-
-                if sector_id:
-
-                    action_html = 'NA'
                     try:
-                        if device_ip:
-                            device_instance = Device.objects.get(ip_address=device_ip)
-                            perf_page_url = reverse(
-                                'SingleDevicePerf',
-                                kwargs={'page_type': 'customer', 'device_id': device_instance.id},
-                                current_app='performance'
-                            )
-                            action_html = '<a href="{0}" title="Device Performance" target="_blank"> \
-                                           <i class="fa fa-bar-chart-o text-info"></i></a>'.format(perf_page_url)
+                        vlan = self.ss_vlan_performance_data_result(
+                            technology=technology,
+                            ss_device_object=ss.device,
+                            machine=ss.device.machine.name
+                        )
                     except Exception, e:
-                        pass
+                        vlan = None
 
-                    result_data.append({
-                        #'device_name': data.device_name,
-                        'ip_address': sector_ip,
-                        'mac_address': sector_mac,
-                        'sector_id': sector_id,
-                        'vlan': vlan,
-                        'connected_device_ip': device_ip,
-                        'connected_device_mac': device_mac,
-                        'circuit_id': circuit_id,
-                        'customer_name': customer_name,
-                        'packet_loss': packet_loss,
-                        'latency': latency,
-                        # 'up_down_since': status_since,
-                        'last_down_time': last_down,
-                        'last_updated': last_updated,
-                        'action': action_html
-                    })
+                    try:
+                        packet_loss, latency, status_since, last_down = self.ss_network_performance_data_result(
+                            ss_device_object=ss.device,
+                            machine=ss.device.machine.name
+                        )
+                    except Exception, e:
+                        packet_loss = None
+                        latency = None
+                        status_since = None
+                        last_down = None
+
+                    try:
+                        circuit_object = ss.circuit_set.filter().prefetch_related('sector').get()
+                        circuit_id = circuit_object.circuit_id
+                        customer_name = circuit_object.customer.alias
+                        device_mac = ss.device.mac_address
+                        device_ip = ss.device.ip_address
+                        sector_ip = circuit_object.sector.sector_configured_on.ip_address
+                        sector_mac = circuit_object.sector.sector_configured_on.mac_address
+                        sector_id = circuit_object.sector.sector_id
+                    except:
+                        continue
+
+                    if sector_id:
+                        action_html = 'NA'
+                        try:
+                            if device_ip:
+                                device_instance = Device.objects.get(ip_address=device_ip)
+                                perf_page_url = reverse(
+                                    'SingleDevicePerf',
+                                    kwargs={'page_type': 'customer', 'device_id': device_instance.id},
+                                    current_app='performance'
+                                )
+                                action_html = '<a href="{0}" title="Device Performance" target="_blank"> \
+                                               <i class="fa fa-bar-chart-o text-info"></i></a>'.format(perf_page_url)
+                        except Exception, e:
+                            pass
+
+                        result_data.append({
+                            #'device_name': data.device_name,
+                            'ip_address': sector_ip,
+                            'mac_address': sector_mac,
+                            'sector_id': sector_id,
+                            'vlan': vlan,
+                            'connected_device_ip': device_ip,
+                            'connected_device_mac': device_mac,
+                            'circuit_id': circuit_id,
+                            'customer_name': customer_name,
+                            'packet_loss': packet_loss,
+                            'latency': latency,
+                            # 'up_down_since': status_since,
+                            'last_down_time': last_down,
+                            'last_updated': last_updated,
+                            'action': action_html
+                        })
+                except Exception, e:
+                    pass
 
         self.result['success'] = 1
         self.result['message'] = 'Device Data Fetched Successfully.' if result_data else 'No Record Found.'
-        self.result['data']['objects']['table_data'] = result_data
+        try:
+            self.result['data']['objects']['table_data'] = result_data
+        except Exception, e:
+            self.result['data']['objects']['table_data'] = []
+            
         self.result['data']['objects']['table_data_header'] = [
             'ip_address',
             'mac_address',
