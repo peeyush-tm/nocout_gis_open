@@ -32,7 +32,8 @@ from nocout.utils.util import NocoutUtilsGateway
 # Import Dashboard Models
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, \
     MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, \
-    DashboardSeverityStatusDaily, DashboardRangeStatusDaily, RFOAnalysis, CustomerFaultAnalysis
+    DashboardSeverityStatusDaily, DashboardRangeStatusDaily, RFOAnalysis, CustomerFaultAnalysis, \
+    SectorSummaryStatus, BackhaulSummaryStatus
 
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, \
@@ -3217,75 +3218,387 @@ class ResolutionEfficiencyListing(BaseDatatableView):
         return ret
 
 
-class SectorStatusInit(View):
+class SectorStatusInit(ListView):
     """
     This class loads the INC ticket rate template
     """
-    def get(self, request, *args, **kwargs):
+    template_name = 'capacity_alerts/sector_status.html'
+    model = SectorSummaryStatus
+
+    def get_context_data(self, *args, **kwargs):
+
+        context = super(SectorStatusInit, self).get_context_data(**kwargs)
         
-        template_name = 'capacity_alerts/sector_status.html'
         # Fetch month data from RFOAnalysis model
-        months_data = list(CustomerFaultAnalysis.objects.extra({
+        context['months_data'] = json.dumps(list(SectorSummaryStatus.objects.extra({
             'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
-        }).values('id').distinct().order_by('id'))
+        }).values('id').distinct().order_by('id')))
 
-        severity_data = list(CustomerFaultAnalysis.objects.extra({
-            'id': 'REPLACE(severity, " ", "_")',
-            'value': 'severity'
-        }).values('value', 'id').distinct().order_by('value'))
-
-        resolution_efficiency_headers = [
+        context['summary_headers']  = json.dumps([
             {'mData': 'month', 'sTitle': 'Month'},
-            {'mData': '2_hrs', 'sTitle': '2 Hours'},
-            {'mData': '2_hrs_percent', 'sTitle': '2 Hours %'},
-            {'mData': '4_hrs', 'sTitle': '4 Hours'},
-            {'mData': '4_hrs_percent', 'sTitle': '4 Hours %'},
-            {'mData': 'more_than_4_hrs', 'sTitle': 'More Than 4 Hours'},
-            {'mData': 'more_than_4_hrs_percent', 'sTitle': 'More Than 4 Hours %'},
-            {'mData': 'total_count', 'sTitle': 'Total TT'}
-        ]
+            {'mData': 'na_percent', 'sTitle': 'Upgrade Sector %', 'bSortable': False},
+            {'mData': 'sp_percent', 'sTitle': 'Stop Provisioning %', 'bSortable': False},
+            {'mData': 'na_sector', 'sTitle': 'Upgrade Sector', 'bSortable': False},
+            {'mData': 'sp_sector', 'sTitle': 'Stop Provisioning', 'bSortable': False},
+            {'mData': 'total_count', 'sTitle': 'Total Sectors', 'bSortable': False}
+        ])
 
-        context = {
-            'months_data': json.dumps(months_data),
-            'severity_data': json.dumps(severity_data),
-            'resolution_efficiency_headers': json.dumps(resolution_efficiency_headers)
+        return context
+
+
+class SectorStatusListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = SectorSummaryStatus
+    columns = [
+        'id',
+        'timestamp',
+        'ageing_ul_sp',
+        'ageing_dl_sp',
+        'ageing_ul_na',
+        'ageing_dl_na',
+        'technology'
+    ]
+    order_columns = [
+        'timestamp',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count'
+    ]
+
+    pre_camel_case_notation = False
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        technology = self.request.GET.get('technology')
+        try:
+            q = Q()
+
+            q &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0) | Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+
+            # If month present in GET params then filter by it else return last 6 months data
+            if month:
+                q &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
+            else:
+                current_timestamp = datetime.datetime.now()
+                q &= Q(
+                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
+                    timestamp__lte=current_timestamp
+                )
+
+            if technology and technology.lower() == 'all':
+                q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+            elif technology and technology.lower() == 'pmp':
+                q &= Q(technology__in=['pmp', 'ubr pmp'])
+            else:
+                q &= Q(technology__iexact=technology)
+                
+            qs = self.model.objects.filter(q)#.distinct('sector_id')
+
+            if self.request.GET.get('request_for_chart'):
+                try:
+                    qs.order_by('timestamp')
+                except Exception, e:
+                    pass
+
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        technology = self.request.GET.get('technology')
+
+        q = Q()
+        if technology and technology.lower() == 'all':
+            q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+        elif technology and technology.lower() == 'pmp':
+            q &= Q(technology__in=['pmp', 'ubr pmp'])
+        else:
+            q &= Q(technology__iexact=technology)
+
+        temp_dict = {}
+        for data in qs:
+            current_month = data.timestamp
+            epoch_timestamp = current_month.strftime('%s')
+            if epoch_timestamp not in temp_dict:
+                try:
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp)).strftime('%B - %Y')
+                except Exception, e:
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp))
+
+                where_condition = Q()
+                where_condition &= q
+                where_condition &= Q(timestamp=current_month)
+                where_condition &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0) | Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+                    
+                total_count = self.model.objects.filter(
+                    where_condition
+                ).count()
+
+                na_where_condition = Q()
+                na_where_condition &= q
+                na_where_condition &= Q(timestamp=current_month)
+                na_where_condition &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0)
+
+                na_total_count = self.model.objects.filter(
+                    na_where_condition
+                ).count()
+                na_percent = round((float(na_total_count) / float(total_count)) * 100, 2)
+
+                sp_where_condition = Q()
+                sp_where_condition &= q
+                sp_where_condition &= Q(timestamp=current_month)
+                sp_where_condition &= Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+
+                sp_total_count = self.model.objects.filter(
+                    sp_where_condition
+                ).count()
+                sp_percent = round((float(sp_total_count) / float(total_count)) * 100, 2)
+
+                temp_dict[epoch_timestamp] = {
+                    'timestamp': epoch_timestamp,
+                    'month': formatted_month,
+                    'na_percent': na_percent,
+                    'sp_percent': sp_percent,
+                    'na_sector': na_total_count,
+                    'sp_sector': sp_total_count,
+                    'total_count': total_count
+                }
+            else:
+                continue
+        return temp_dict.values()
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = 0
+        if qs.count() > 0:
+            total_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = 0
+        if qs.count() > 0:
+            total_display_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+
+        qs = self.ordering(qs)
+        
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
         }
 
-        return render(self.request, template_name, context)
+        return ret
 
-
-class BackhaulStatusInit(View):
+class BackhaulStatusInit(ListView):
     """
     This class loads the INC ticket rate template
     """
-    def get(self, request, *args, **kwargs):
+    template_name = 'capacity_alerts/backhaul_status.html'
+    model = BackhaulSummaryStatus
+    def get_context_data(self, *args, **kwargs):
         
-        template_name = 'capacity_alerts/backhaul_status.html'
+        context = super(BackhaulStatusInit, self).get_context_data(**kwargs)
+        
         # Fetch month data from RFOAnalysis model
-        months_data = list(CustomerFaultAnalysis.objects.extra({
+        context['months_data'] = json.dumps(list(BackhaulSummaryStatus.objects.extra({
             'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
-        }).values('id').distinct().order_by('id'))
+        }).values('id').distinct().order_by('id')))
 
-        severity_data = list(CustomerFaultAnalysis.objects.extra({
-            'id': 'REPLACE(severity, " ", "_")',
-            'value': 'severity'
-        }).values('value', 'id').distinct().order_by('value'))
-
-        resolution_efficiency_headers = [
+        context['summary_headers'] = json.dumps([
             {'mData': 'month', 'sTitle': 'Month'},
-            {'mData': '2_hrs', 'sTitle': '2 Hours'},
-            {'mData': '2_hrs_percent', 'sTitle': '2 Hours %'},
-            {'mData': '4_hrs', 'sTitle': '4 Hours'},
-            {'mData': '4_hrs_percent', 'sTitle': '4 Hours %'},
-            {'mData': 'more_than_4_hrs', 'sTitle': 'More Than 4 Hours'},
-            {'mData': 'more_than_4_hrs_percent', 'sTitle': 'More Than 4 Hours %'},
-            {'mData': 'total_count', 'sTitle': 'Total TT'}
-        ]
+            {'mData': 'na_sector', 'sTitle': 'Needs Augmentation'},
+            {'mData': 'sp_sector', 'sTitle': 'Stop Provisioning'},
+            {'mData': 'total_count', 'sTitle': 'Total BS Triggered'}
+        ])
 
-        context = {
-            'months_data': json.dumps(months_data),
-            'severity_data': json.dumps(severity_data),
-            'resolution_efficiency_headers': json.dumps(resolution_efficiency_headers)
+        return context
+
+
+class BackhaulStatusListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = BackhaulSummaryStatus
+    columns = [
+        'id',
+        'timestamp',
+        'ul_ageing',
+        'dl_ageing',
+        'technology'
+    ]
+    order_columns = [
+        'timestamp',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count'
+    ]
+
+    pre_camel_case_notation = False
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        technology = self.request.GET.get('technology')
+        try:
+            q = Q()
+
+            q &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0) | Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+
+            # If month present in GET params then filter by it else return last 6 months data
+            if month:
+                q &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
+            else:
+                current_timestamp = datetime.datetime.now()
+                q &= Q(
+                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
+                    timestamp__lte=current_timestamp
+                )
+
+            if technology and technology.lower() == 'all':
+                q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+            elif technology and technology.lower() == 'pmp':
+                q &= Q(technology__in=['pmp', 'ubr pmp'])
+            else:
+                q &= Q(technology__iexact=technology)
+                
+
+            qs = self.model.objects.filter(q)
+
+            if self.request.GET.get('request_for_chart'):
+                try:
+                    qs.order_by('timestamp')
+                except Exception, e:
+                    pass
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        technology = self.request.GET.get('technology')
+
+        q = Q()
+        if technology and technology.lower() == 'all':
+            q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+        elif technology and technology.lower() == 'pmp':
+            q &= Q(technology__in=['pmp', 'ubr pmp'])
+        else:
+            q &= Q(technology__iexact=technology)
+
+        temp_dict = {}
+        for data in qs:
+            current_month = data.timestamp
+            epoch_timestamp = current_month.strftime('%s')
+            if epoch_timestamp not in temp_dict:
+                try:
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp)).strftime('%B - %Y')
+                except Exception, e:
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp))
+
+                where_condition = Q()
+                where_condition &= q
+                where_condition &= Q(timestamp=current_month)
+                where_condition &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0) | Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+                    
+                total_count = self.model.objects.filter(
+                    where_condition
+                ).count()
+
+                na_where_condition = Q()
+                na_where_condition &= q
+                na_where_condition &= Q(timestamp=current_month)
+                na_where_condition &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0)
+
+                na_total_count = self.model.objects.filter(
+                    na_where_condition
+                ).count()
+
+                sp_where_condition = Q()
+                sp_where_condition &= q
+                sp_where_condition &= Q(timestamp=current_month)
+                sp_where_condition &= Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+
+                sp_total_count = self.model.objects.filter(
+                    sp_where_condition
+                ).count()
+
+                temp_dict[epoch_timestamp] = {
+                    'timestamp': epoch_timestamp,
+                    'month': formatted_month,
+                    'na_sector': na_total_count,
+                    'sp_sector': sp_total_count,
+                    'total_count': total_count
+                }
+
+        return temp_dict.values()
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = 0
+        qs_len = len(set(qs.values_list('timestamp', flat=True)))
+        if qs.count() > 0:
+            total_records = qs_len
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = 0
+        filter_qs_len = len(set(qs.values_list('timestamp', flat=True)))
+        if qs.count() > 0:
+            total_display_records = filter_qs_len
+
+        qs = self.ordering(qs)
+
+        
+        if not self.request.GET.get('request_for_chart') and filter_qs_len > 10:
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
         }
 
-        return render(self.request, template_name, context)
+        return ret
+
