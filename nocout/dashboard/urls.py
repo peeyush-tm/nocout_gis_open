@@ -359,8 +359,18 @@ urlpatterns = patterns('',
         name='capacity_alert_sector_status'
     ),
     url(
+        r'^sector_status/listing/$',
+        views.SectorStatusListing.as_view(),
+        name='capacity_alert_sector_status_listing'
+    ),
+    url(
         r'^backhaul_status/$',
         views.BackhaulStatusInit.as_view(),
         name='capacity_alert_backhaul_status'
+    ),
+    url(
+        r'^backhaul_status/listing/$',
+        views.BackhaulStatusListing.as_view(),
+        name='capacity_alert_backhaul_status_listing'
     )
 )
