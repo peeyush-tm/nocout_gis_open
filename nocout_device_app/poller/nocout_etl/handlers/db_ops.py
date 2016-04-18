@@ -347,11 +347,11 @@ def load_inventory(self):
 	)
 	dr_query = (
 		"SELECT "
-		"inner_device.Sector_name AS primary_dn, "
-		"outer_device.device_name AS dr_dn "
+		"inner_device.Sector_IP AS primary_ip, "
+		"outer_device.ip_address AS dr_ip "
 		"FROM ( "
 			"SELECT "
-				"ds.device_name AS Sector_name, "
+				"ds.ip_address AS Sector_IP, "
 				"sector.dr_configured_on_id as dr_id "
 		"FROM "
 			"inventory_sector AS sector "
@@ -642,7 +642,7 @@ def load_backhaul_data(data_values, p, extra=None):
 	invent_key = 'device_inventory:%s'
 	for device in data_values:
 		device_attr = []
-		port_wise_capacities = [0]*9
+		port_wise_capacities = [0]*8
 		if  str(device[0]) in processed:
 		    continue
 		if '_' in str(device[5]):
@@ -694,10 +694,8 @@ def load_devicetechno_wise(data_values, p, extra=None):
 		for outer in data_values:
 			del outer[3:]
 			for inner in extra:
-				if inner[0] == outer[0]:
+				if inner[0] == outer[2]:
 					matched_dr = inner[1]
-				elif inner[1] == outer[0]:
-					matched_dr = inner[0]
 					break
 			if matched_dr:
 				outer.append(matched_dr)
