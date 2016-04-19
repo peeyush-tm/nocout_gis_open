@@ -400,13 +400,13 @@ class BackhaulList(PermissionsRequiredMixin, TemplateView):
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
             {'mData': 'bh_configured_on__id', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto'},
-            {'mData': 'bh_port_name', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            # {'mData': 'bh_port_name', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'auto', },
             {'mData': 'pop__id', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'auto', },
             {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', },
-            {'mData': 'bh_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            # {'mData': 'bh_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
 
         # if the user role is Admin or operator then the action column will appear on the datatable

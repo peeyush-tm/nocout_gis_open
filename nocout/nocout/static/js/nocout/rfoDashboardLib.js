@@ -44,7 +44,8 @@ var chart_colors_list = [
         layout: 'vertical',
         align: 'right',
         verticalAlign: 'middle'
-    };;
+    },
+    common_param = "'download_excel': 'yes'";
 
 /**
  * This function initializes RFO dashboard. It calls function to poplates charts/tables.
@@ -107,7 +108,13 @@ function initRfoDashboard() {
             'rfo_data_table',
             all_data_headers,
             all_data_url + '?month=' + String(selected_month)+'&state_name=' + selected_state + '&city_name='+ selected_city,
-            false
+            false,
+            'PB TT RFO Analysis',
+            'dashboard',
+            'RFOAnalysisView',
+            'RFOAnalysisList',
+            "{'headers_data_key': 'all_data_headers', "+common_param+"}",
+            "{'month': '"+selected_month+"', 'report_title': 'PB TT RFO Analysis', 'state_name': '"+selected_state+"', 'city_name': '"+selected_city+"', "+common_param+"}"
         );
 
         // Load Summation data datatables
@@ -115,7 +122,13 @@ function initRfoDashboard() {
             'rfo_summation_table',
             summation_headers,
             summation_url + '?month=' + String(selected_month)+'&state_name=' + selected_state + '&city_name='+ selected_city,
-            false
+            false,
+            'PB TT RFO Analysis',
+            'dashboard',
+            'RFOAnalysisView',
+            'RFOAnalysisSummationList',
+            "{'headers_data_key': 'summation_headers', "+common_param+"}",
+            "{'month': '"+selected_month+"', 'report_title': 'PB TT RFO Analysis', 'state_name': '"+selected_state+"', 'city_name': '"+selected_city+"', "+common_param+"}"
         );
     }
 
@@ -124,6 +137,10 @@ function initRfoDashboard() {
     }
 }
 
+/**
+ *
+ *
+ */
 function initMTTRDashboard() {
 
     var selected_month = $('select[name="month_selector"]').val(),
@@ -207,7 +224,13 @@ function initINCTicketDashboard() {
             'inc_ticket_datatable',
             inc_ticket_headers,
             inc_ticket_url + api_get_params,
-            false
+            false,
+            'INC Ticket Rate',
+            'dashboard',
+            'INCTicketRateInit',
+            'INCTicketRateListing',
+            "{'headers_data_key': 'inc_ticket_headers', "+common_param+"}",
+            "{'month': '"+selected_month+"', 'report_title': 'INC Ticket Rate', 'severity': '"+selected_severity+"', 'current_target': '"+selected_target+"', "+common_param+"}"
         );
     }
 
@@ -280,13 +303,124 @@ function initResolutionEfficiencyDashboard() {
             'resolution_efficiency_datatable',
             resolution_efficiency_headers,
             resolution_efficiency_url + api_get_params,
-            false
+            false,
+            'Resolution Efficiency',
+            'dashboard',
+            'ResolutionEfficiencyInit',
+            'ResolutionEfficiencyListing',
+            "{'headers_data_key': 'resolution_efficiency_headers', "+common_param+"}",
+            "{'month': '"+selected_month+"', 'report_title': 'Resolution Efficiency', "+common_param+"}"
         );
     }
 
     if (load_chart) {
         api_get_params += '&request_for_chart=1';
         loadResolutionEfficienyChart(resolution_efficiency_url + api_get_params);
+    }
+}
+
+/**
+ *
+ *
+ */
+function initCapacitySummaryDashboard() {
+    var display_type = $('select[name="display_selector"]').val(),
+        selected_month = $('select[name="month_selector"]').val(),
+        load_table = true,
+        load_chart = false;
+
+    if (selected_month) {
+        selected_month = Number(selected_month) / 1000;
+    }
+
+    if (display_type == 'both') {
+        load_chart = true;
+        load_table = true;
+        if ($('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').removeClass('hide');
+        }
+        if ($('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').removeClass('hide');
+        }
+        if ($('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').removeClass('hide');
+        }
+
+    } else if (display_type == 'chart') {
+        load_chart = true;
+        load_table = false;
+        if ($('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').removeClass('hide');
+        }
+        if (!$('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').addClass('hide');
+        }
+        if (!$('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').addClass('hide');
+        }
+    } else {
+        load_chart = false;
+        load_table = true;
+        if (!$('.chart_view_container').hasClass('hide')) {
+            $('.chart_view_container').addClass('hide');
+        }
+        if (!$('.both_view_seperator').hasClass('hide')) {
+            $('.both_view_seperator').addClass('hide');
+        }
+        if ($('.table_view_container').hasClass('hide')) {
+            $('.table_view_container').removeClass('hide');
+        }
+    }
+
+    var api_get_params = '';
+    api_get_params += '?month=' + String(selected_month);
+
+    var selected_tech = $('.nav-tabs li.active a').attr('tech'),
+        table_id_prefix = $('.nav-tabs li.active a').attr('table-id-prefix');
+    
+    // Append technology query string as per the selected tab.
+    api_get_params += '&technology=' + selected_tech;
+
+
+    if (load_table) {
+        var tab_txt = $.trim($('.nav-tabs li.active a').text()),
+            table_title = 'Sector Summary Status - ' + tab_txt,
+            headers_class = 'SectorStatusInit',
+            data_class = 'SectorStatusListing';
+
+        if (window.location.pathname.indexOf('/backhaul_status/') > -1) {
+            table_title = 'Backhaul Summary Status - ' + tab_txt;
+            headers_class = 'BackhaulStatusInit';
+            data_class = 'BackhaulStatusListing';
+        }
+
+        // Load Sector/Backhaul summary report
+        dataTableInstance.createDataTable(
+            table_id_prefix+'_datatable',
+            capacity_summary_headers,
+            capacity_summary_url + api_get_params,
+            false,
+            table_title,
+            'dashboard',
+            headers_class,
+            data_class,
+            "{'headers_data_key': 'summary_headers', "+common_param+"}",
+            "{'month': '"+selected_month+"', 'technology': '"+selected_tech+"', 'report_title': '"+table_title+"', "+common_param+"}"
+        );
+    }
+
+    if (load_chart) {
+        api_get_params += '&request_for_chart=1';
+        var window_pathname = window.location.pathname,
+            page_type = '';
+
+        if (window_pathname.indexOf('/backhaul_status/') > -1) {
+            page_type = 'backhaul';
+        } else if (window_pathname.indexOf('/sector_status/') > -1) {
+            page_type = 'sector';
+        }
+
+        loadCapacityAlertChart(capacity_summary_url + api_get_params, table_id_prefix, page_type)
     }
 }
 
@@ -309,15 +443,17 @@ $('.filter_controls').change(function(e) {
             $('select[parent_id="'+selected_val+'"] option').show();
         }
     }
-
-    if (window.location.pathname.indexOf('/mttr_summary/') > -1) {
+    var location_pathname = window.location.pathname;
+    if (location_pathname.indexOf('/mttr_summary/') > -1) {
         initMTTRDashboard()
-    } else if (window.location.pathname.indexOf('/rfo_analysis/') > -1) {
+    } else if (location_pathname.indexOf('/rfo_analysis/') > -1) {
         initRfoDashboard();
-    } else if (window.location.pathname.indexOf('/inc_ticket_rate/') > -1) {
+    } else if (location_pathname.indexOf('/inc_ticket_rate/') > -1) {
         initINCTicketDashboard();
-    } else if (window.location.pathname.indexOf('/resolution_efficiency/') > -1) {
+    } else if (location_pathname.indexOf('/resolution_efficiency/') > -1) {
         initResolutionEfficiencyDashboard();
+    } else if (location_pathname.indexOf('/backhaul_status/') > -1 || location_pathname.indexOf('/sector_status/') > -1) {
+        initCapacitySummaryDashboard();
     } else {
         // hide loading spinner
         hideSpinner();
@@ -417,15 +553,22 @@ function loadRFOColumnChart(ajax_url, month, selected_state, selected_city) {
                         'data': [response['aaData'][i]['outage_in_minutes']]
                     })
                 }
-
+                var chart_title = 'PB TT RFO Analysis ' + year_month_str;
                 // Initialize column chart for master cause code
                 $('#rfo_column_chart_container').highcharts({
                     chart: {
                         type: 'column'
                     },
+                    exporting:{
+                        enabled : true,
+                        allowHTML: true,
+                        sourceWidth: 950,
+                        sourceHeight: 375,
+                        filename: chart_title
+                    },
                     colors: chart_colors_list,
                     title: {
-                        text: 'PB TT RFO Analysis ' + year_month_str,
+                        text: chart_title,
                         align: 'left'
                     },
                     xAxis: {
@@ -587,6 +730,12 @@ function createFaultPieChart(api_url, master_causecode_name) {
                     chart: {
                         type: 'pie'
                     },
+                    exporting:{
+                        enabled : true,
+                        allowHTML: true,
+                        sourceWidth: 950,
+                        sourceHeight: 375
+                    },
                     colors: chart_colors_list,
                     title: {
                         text: ''
@@ -718,6 +867,12 @@ function loadMTTRSummaryChart(ajax_url, month, selected_state, selected_city, ex
                     chart: {
                         type: 'pie'
                     },
+                    exporting:{
+                        enabled : true,
+                        allowHTML: true,
+                        sourceWidth: 950,
+                        sourceHeight: 375
+                    },
                     colors: chart_colors_list,
                     title: {
                         text: '',
@@ -839,14 +994,21 @@ function loadINCTicketChart(api_url, selected_severity) {
                         data_list[j]['target_percent']
                     ]);
                 }
-
+                var chart_title = 'RF Network: '+ selected_severity;
                 $('#inc_line_chart_container').highcharts({
                     chart: {
                         type: 'spline'
                     },
+                    exporting:{
+                        enabled : true,
+                        allowHTML: true,
+                        sourceWidth: 950,
+                        sourceHeight: 375,
+                        filename: chart_title
+                    },
                     colors: chart_colors_list,
                     title: {
-                        text: 'RF Network: '+ selected_severity
+                        text: chart_title
                     },
                     xAxis: {
                         title: {
@@ -974,14 +1136,21 @@ function loadResolutionEfficienyChart(api_url) {
                         data_list[j]['more_than_4_hrs_percent']
                     ]);
                 }
-
+                var chart_title = 'RE: RF Network';
                 $('#inc_line_chart_container').highcharts({
                     chart: {
                         type: 'spline'
                     },
+                    exporting:{
+                        enabled : true,
+                        allowHTML: true,
+                        sourceWidth: 950,
+                        sourceHeight: 375,
+                        filename: chart_title
+                    },
                     colors: chart_colors_list,
                     title: {
-                        text: 'RE: RF Network'
+                        text: chart_title
                     },
                     xAxis: {
                         title: {
@@ -1077,6 +1246,10 @@ function loadResolutionEfficienyChart(api_url) {
     });
 }
 
+/**
+ *
+ *
+ */
 function getFormattedDate(input_date) {
     var formatted_date = '';
 
@@ -1091,4 +1264,199 @@ function getFormattedDate(input_date) {
     }
 
     return formatted_date;
+}
+
+/**
+ *
+ *
+ */
+$('.nav-tabs li a').click(function(e) {
+    $('.nav-tabs li').removeClass('active');
+    $(this).parent('li').addClass('active');
+
+    $('.tab-content .tab-pane').removeClass('active');
+    $($(this).attr('href')).addClass('active');
+    initCapacitySummaryDashboard();
+});
+
+/**
+ * This function fetch data & loads Sector/Backhaul summary status column stacked chart
+ * @method loadCapacityAlertChart
+ * @param ajax_url {String}, If contains the API url to fetch Sector/Backhaul summary status data
+ */
+function loadCapacityAlertChart(ajax_url, dom_id_prefix, page_type) {
+
+    // If dom id not exists then return
+    if ($('#'+dom_id_prefix+'_chart').length == 0) {
+        return false;
+    }
+
+    var chart_title = 'Sector Summary Status',
+        tooltip_suffix = '%';
+
+    if (page_type == 'backhaul') {
+        chart_title = 'Backhaul Summary Status';
+        tooltip_suffix = '';
+    }
+
+    $.ajax({
+        url: ajax_url,
+        type: 'GET',
+        success: function(response) {
+
+            if (typeof(response) == 'string') {
+                response = JSON.parse(response);
+            }
+
+            if (response['result'] == 'ok') {
+                
+                var column_series_data = [],
+                    data_dict = {};
+
+                for (var i=0;i<response['aaData'].length;i++) {
+                    var y1_val = response['aaData'][i]['na_percent'],
+                        y2_val = response['aaData'][i]['sp_percent'],
+                        timestamp = response['aaData'][i]['timestamp'] * 1000;
+
+                    if (typeof y1_val == 'undefined') {
+                        y1_val = response['aaData'][i]['na_sector'];
+                    }
+
+                    if (typeof y2_val == 'undefined') {
+                        y2_val = response['aaData'][i]['sp_sector'];
+                    }
+                    if (!data_dict['needs_augmentation']) {
+                        data_dict['needs_augmentation'] = [];
+                    }
+                    data_dict['needs_augmentation'].push([
+                        timestamp,
+                        y1_val
+                    ])
+
+                    if (!data_dict['stop_provisioning']) {
+                        data_dict['stop_provisioning'] = [];
+                    }
+                    data_dict['stop_provisioning'].push([
+                        timestamp,
+                        y2_val
+                    ])
+
+                }
+                
+                column_series_data.push({
+                    'name': 'Upgrade Sector '+ tooltip_suffix,
+                    'type': 'column',
+                    'data': data_dict['needs_augmentation']
+                }, {
+                    'name': 'Stop Provisioning '+ tooltip_suffix,
+                    'type': 'column',
+                    'data': data_dict['stop_provisioning']
+                });
+
+                // Initialize column chart for master cause code
+                $('#'+dom_id_prefix+'_chart').highcharts({
+                    chart: {
+                        type: 'column'
+                    },
+                    exporting:{
+                        enabled : true,
+                        allowHTML: true,
+                        sourceWidth: 950,
+                        sourceHeight: 375,
+                        filename: chart_title
+                    },
+                    colors: chart_colors_list,
+                    title: {
+                        text: '',
+                        align: 'left'
+                    },
+                    xAxis: {
+                        title: {
+                            text: 'Month'
+                        },
+                        type: 'datetime',
+                        dateTimeLabelFormats: {
+                            month: '%e. %b',
+                            year: '%b'
+                        },
+                        tickInterval: 30 * 24 * 3600 * 1000
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'Ageing'
+                        },
+                        labels: {
+                            overflow: 'justify'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function (e) {
+                            var tooltip_html = "";
+                            tooltip_html += '<ul><li><b>'+chart_title+' ('+getFormattedDate(this.x)+')</b></li><br/>';
+
+                            if (this.points && this.points.length > 0) {
+                                for(var i=0;i<this.points.length;i++) {
+                                    var color = this.points[i].series.color;
+
+                                    tooltip_html += '<li><br/><span style="color:' + color + '"> \
+                                                    '+this.points[i].series.name+'</span>: <strong> \
+                                                    ' +this.points[i].y+ tooltip_suffix+'</strong></li>';
+                                }
+                            } else {
+                                tooltip_html += '<li><br/><span style="color:' + this.point.color + '">\
+                                                ' + this.point.name + '</span>: <strong>' + this.point.y + '%</strong></li>';
+                            }
+
+                            tooltip_html += '</ul>';
+
+                            return tooltip_html;
+                        },
+                        crosshairs: true,
+                        shared: true,
+                    },
+                    legend: {
+                        itemDistance : 15,
+                        itemMarginBottom : 5,
+                        borderColor : "#CCCCCC",
+                        borderWidth : "1",
+                        borderRadius : "8",
+                        itemStyle: {
+                            color: '#555555',
+                            fontSize : '10px'
+                        },
+                        layout: 'horizontal',
+                        align: 'center',
+                        // verticalAlign: 'top'
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    plotOptions: {
+                        column: {
+                            pointWidth: 12,
+                            groupPadding: 0,
+                            stacking: 'normal'
+                        }
+                    },
+                    series: column_series_data,
+                    noData: {
+                        style: {
+                            fontWeight: 'bold',
+                            fontSize: '20px',
+                            color: '#539fb8',
+                        }
+                    }
+                });
+            }
+
+            // hide loading spinner
+            hideSpinner();
+        },
+        error: function(err) {
+            // console.log(err.statusText);
+            // hide loading spinner
+            hideSpinner();
+        }
+    });
 }
