@@ -1,7 +1,6 @@
 """
 db_ops.py
 ==========
-
 Maintains per process database connections and handles 
 data manipulations, used in site-wide ETL operations.
 [for celery]
@@ -347,11 +346,11 @@ def load_inventory(self):
 	)
 	dr_query = (
 		"SELECT "
-		"inner_device.Sector_IP AS primary_ip, "
-		"outer_device.ip_address AS dr_ip "
+		"inner_device.Sector_name AS primary_dn, "
+		"outer_device.device_name AS dr_dn "
 		"FROM ( "
 			"SELECT "
-				"ds.ip_address AS Sector_IP, "
+				"ds.device_name AS Sector_name, "
 				"sector.dr_configured_on_id as dr_id "
 		"FROM "
 			"inventory_sector AS sector "
@@ -642,7 +641,7 @@ def load_backhaul_data(data_values, p, extra=None):
 	invent_key = 'device_inventory:%s'
 	for device in data_values:
 		device_attr = []
-		port_wise_capacities = [0]*8
+		port_wise_capacities = [0]*9
 		if  str(device[0]) in processed:
 		    continue
 		if '_' in str(device[5]):
@@ -694,8 +693,10 @@ def load_devicetechno_wise(data_values, p, extra=None):
 		for outer in data_values:
 			del outer[3:]
 			for inner in extra:
-				if inner[0] == outer[2]:
+				if inner[0] == outer[0]:
 					matched_dr = inner[1]
+				elif inner[1] == outer[0]:
+					matched_dr = inner[0]
 					break
 			if matched_dr:
 				outer.append(matched_dr)
@@ -939,7 +940,6 @@ def mongo_export_mysql_handler(site, delete_values):
 @app.task(base=DatabaseTask, name='mongo-export-mysql', bind=True)
 def mongo_export_mysql(site, delete_values):
 	""" Export old data which is not in mysql due to its downtime,
-
 	Args:
 		site: used to connect to a particular mysql database
 		delete_values: collection name --> doc count mapping, for which
