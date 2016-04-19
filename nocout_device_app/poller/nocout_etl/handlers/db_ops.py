@@ -1,6 +1,7 @@
 """
 db_ops.py
 ==========
+
 Maintains per process database connections and handles 
 data manipulations, used in site-wide ETL operations.
 [for celery]
@@ -940,6 +941,7 @@ def mongo_export_mysql_handler(site, delete_values):
 @app.task(base=DatabaseTask, name='mongo-export-mysql', bind=True)
 def mongo_export_mysql(site, delete_values):
 	""" Export old data which is not in mysql due to its downtime,
+
 	Args:
 		site: used to connect to a particular mysql database
 		delete_values: collection name --> doc count mapping, for which
