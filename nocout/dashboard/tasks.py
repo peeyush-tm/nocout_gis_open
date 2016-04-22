@@ -367,11 +367,23 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
     dashboard_name = '%s_sector_capacity' % (sector_technology.NAME.lower())
 
     for organization in organizations:
-        sector_objects = SectorCapacityStatus.objects.filter(
+        max_timestamp = None
+        try:
+            max_timestamp = SectorCapacityStatus.objects.filter(
                 Q(organization__in=[organization]),
-                Q(sector__sector_configured_on__device_technology=sector_technology.ID),
-                Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
-            )
+                Q(severity__in=['warning', 'critical'])
+            ).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
+        except Exception, e:
+            logger.error('Sector Capacity MAX Timestamp Exception --------')
+            logger.error(e)
+            logger.error('Sector Capacity MAX Timestamp Exception --------')
+            pass
+
+        sector_objects = SectorCapacityStatus.objects.filter(
+            Q(organization__in=[organization]),
+            Q(sector__sector_configured_on__device_technology=sector_technology.ID),
+            Q(severity__in=['warning', 'critical', 'ok', 'unknown'])
+        )
 
 
         if sector_objects.exists():
@@ -392,10 +404,10 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
             sectors = sector_objects.values(*required_values)
 
             for item in sectors:
-                # if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
                 if item['severity'].strip().lower() in ['warning', 'critical']:
                     # Update the range_counter on the basis of severity.
-                    range_counter[item['severity'].strip().lower()] += 1
+                    if max_timestamp and float(item['sys_timestamp']) >= float(max_timestamp) - 420:
+                        range_counter[item['severity'].strip().lower()] += 1
                 elif item['severity'].strip().lower() == 'ok':
                     range_counter['ok'] += 1
                 else:
