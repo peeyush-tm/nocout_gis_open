@@ -2153,7 +2153,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                             {0}{4}\
                             ({1}) ,\
                             {3}\
-                        ).using(TRAPS_DATABASE).values(*{2})".format(
+                        ).using(TRAPS_DATABASE).order_by('-traptime').values(*{2})".format(
                             not_condition_sign,
                             filter_condition,
                             model_columns,
@@ -2167,7 +2167,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 ).filter( \
                     {0}{3}\
                     {2}\
-                ).using(TRAPS_DATABASE).values(*{1})".format(
+                ).using(TRAPS_DATABASE).order_by('-traptime').values(*{1})".format(
                     not_condition_sign,
                     model_columns,
                     active_filter_condition,
