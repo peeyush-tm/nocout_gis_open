@@ -168,6 +168,13 @@
                                     <span class="sub-menu-text">Down</span>
                                 </a>
                             </li>
+                            {% if settings.SIA_ENABLED %}
+                            <li>
+                                <a href="/alarms/sia/">
+                                    <span class="sub-menu-text">Device Alarms</span>
+                                </a>
+                            </li>
+                            {% endif %}
                         </ul>
                     </li>
                     <li class="has-sub-sub">
@@ -232,13 +239,13 @@
                     </li>
                     {% endif %}
 
-                    {% if settings.SIA_ENABLED %}
+                    <!-- {% if settings.SIA_ENABLED %}
                     <li>
                         <a href="/alarms/sia/">
-                            <span class="sub-menu-text">SIA</span>
+                            <span class="sub-menu-text">Device Alarms</span>
                         </a>
                     </li>
-                    {% endif %}
+                    {% endif %} -->
 
                 </ul>
             </li>
@@ -414,7 +421,7 @@
                         <ul class="sub-sub">
                             <li>
                                 <a href="{% url 'InventoryDownloadCenter' 'utilization_tot' %}">
-                                    <span class="sub-menu-text">BS Utilisation(TOT)</span>
+                                    <span class="sub-menu-text">Sector Utilisation(TOT)</span>
                                 </a>
                             </li>
                             <li>
@@ -470,6 +477,11 @@
                             <li>
                                 <a href="{% url 'InventoryDownloadCenter' 'bh_polling_failure' %}">
                                     <span class="sub-menu-text">Backhaul Polling Failure</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'sector_polling_failure' %}">
+                                    <span class="sub-menu-text">Sector Polling Failure</span>
                                 </a>
                             </li>
                         </ul>

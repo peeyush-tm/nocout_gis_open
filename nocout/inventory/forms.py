@@ -153,8 +153,10 @@ class BackhaulForm(forms.ModelForm):
         ('', 'Select'),
         ('E1', 'E1'),
         ('Ethernet', 'Ethernet'),
-        ('SDH', 'SDH'),
-        ('UBR', 'UBR')
+        ('Fiber', 'Fiber'),
+        ('Dark Fibre', 'Dark Fibre'),
+        ('UBR', 'UBR'),
+        ('SDH', 'SDH')
     )
 
     DR_SITE = (
@@ -225,7 +227,7 @@ class BackhaulForm(forms.ModelForm):
         """
         model = Backhaul
         # fields = "__all__"
-        exclude = ['ior_id', 'bh_provider']
+        exclude = ['ior_id', 'bh_provider', 'bh_port_name', 'bh_port', 'bh_capacity']
 
     def clean_name(self):
         """
