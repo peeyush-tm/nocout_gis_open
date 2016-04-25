@@ -535,8 +535,11 @@ class correlation(object):
 	        params.update({'alarm_id': rc_alarm_id })
 	    # Make down IDU/ODU traps for the affected siteB switch/converter 
 	    bs_trap  = self.make_dict_for_idu_odu_trap(**params)
-	
-	    # Temporary trap dict for site B ptp
+
+	    # Trap for SS devices.
+	    ss_trap = self.make_dict_for_ss_trap(**params)
+
+	    # Temporary trap dict for ptp device.
 	    params.update({'ss_down_list':ptp_down_list})
 	    ss_ptp_trap = self.make_dict_for_ss_trap(**params)
 
@@ -547,32 +550,25 @@ class correlation(object):
 	    params.update({'idu_odu_trap_dict': input_trap_dict})
 	    ckt_element_list = self.make_dict_for_ckt(**params)
 
-	    trap_list = rc_element_dict.values() + bs_trap.values() + ckt_element_list
-	    #return rc_alarm_id,trap_list
+	    trap_list = rc_element_dict.values() + bs_trap.values() + ss_trap.values() + ckt_element_list
 
 	elif params.get('bs_list'):
 	    bs_trap = self.make_dict_for_idu_odu_trap(**params)
 
-	    params.update({'idu_odu_trap_dict':bs_trap})
-
 	    ss_trap = self.make_dict_for_ss_trap(**params)
-	    params.update({'idu_odu_trap_dict':bs_trap})
 
+	    params.update({'idu_odu_trap_dict':bs_trap})
 	    ckt_element_list = self.make_dict_for_ckt(**params)
 		
 	    trap_list = bs_trap.values() + ss_trap.values() + ckt_element_list
-	    #return rc_alarm_id,trap_list 
 	elif params.get('ss_list'):
 	    ss_trap = self.make_dict_for_ss_trap(**params)
 	    trap_list = ss_trap.values()
-	    #return rc_alarm_id,trap_list
 	return rc_alarm_id,trap_list
 	
 @app.task(base=DatabaseTask, name='collect_down_events_from_redis')
 def collect_down_events_from_redis(event_list):
     """ TODO: implement code to take values from redis"""
-    print '....In collect_down_events_from_redis.....................'
-    print event_list
     cor_obj=correlation()
     redis_cnx = cor_obj.redis_conn()
     cor_obj.update_redis_inventory_hiearachy(redis_cnx,event_list)
