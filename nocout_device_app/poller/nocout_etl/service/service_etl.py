@@ -1,8 +1,10 @@
 """
 service_etl.py
 ================
+
 This script collects and stores data for host checks
 running on all configured devices for this poller.
+
 """
 
 
@@ -419,4 +421,3 @@ def main(**opts):
 
 if __name__ == '__main__':
 	main()
-
