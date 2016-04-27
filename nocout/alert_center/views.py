@@ -2006,7 +2006,7 @@ class SIAListing(ListView):
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
             # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
-            # {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         specific_invent_columns = [
@@ -2112,6 +2112,8 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         #         ).values(*model_columns).all()
         # else:
 
+        tech_type_filter_condition = 'Q(ip_address__in=ip_address_list),'
+
         if self.tech_name == 'all':
             tech_name_list = ['pmp', 'wimax']
         else:
@@ -2134,6 +2136,11 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             for tech_name in tech_name_list:
                 if tech_name in device_technology_dict:
                     tech_name_id.append(device_technology_dict.get(tech_name))
+
+
+        if self.tech_name == 'all':
+            tech_type_filter_condition = ''
+            not_condition_sign = ''
         
         ip_address_list = list(Device.objects.filter(
             device_technology__in=tech_name_id
@@ -2143,26 +2150,28 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             query = "queryset = self.model.objects.exclude( \
                             eventname__in=self.excluded_events \
                         ).filter( \
-                            {0}Q(ip_address__in=ip_address_list), \
+                            {0}{4}\
                             ({1}) ,\
                             {3}\
-                        ).using(TRAPS_DATABASE).values(*{2})".format(
+                        ).using(TRAPS_DATABASE).order_by('-traptime').values(*{2})".format(
                             not_condition_sign,
                             filter_condition,
                             model_columns,
-                            active_filter_condition
+                            active_filter_condition,
+                            tech_type_filter_condition
                         )
 
         else:
             query = "queryset = self.model.objects.exclude( \
                     eventname__in=self.excluded_events \
                 ).filter( \
-                    {0}Q(ip_address__in=ip_address_list),\
+                    {0}{3}\
                     {2}\
-                ).using(TRAPS_DATABASE).values(*{1})".format(
+                ).using(TRAPS_DATABASE).order_by('-traptime').values(*{1})".format(
                     not_condition_sign,
                     model_columns,
-                    active_filter_condition
+                    active_filter_condition,
+                    tech_type_filter_condition
                 )                   
 
         exec query
