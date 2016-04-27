@@ -510,7 +510,8 @@ class correlation(object):
 	rc_element = params['rc_element']
 	down_device_static_dict = params['static_dict']
  	siteb_switch_conv_id = params.get('siteb_switch_conv_id')	
-	ptp_down_list = params.get('ptp_down_list')
+	ss_list = params.get('ss_list')
+	ptp_list = params.get('ptp_list')
 	alarm_id = params.get('alarm_id')
 	trap_list = [] 
 	rc_alarm_id = None
@@ -537,11 +538,15 @@ class correlation(object):
 	    bs_trap  = self.make_dict_for_idu_odu_trap(**params)
 
 	    # Trap for SS devices.
+	    ss_list = list(set(ss_list)-set(ptp_list))
+	    params.update({'ss_list':ss_list})
 	    ss_trap = self.make_dict_for_ss_trap(**params)
 
 	    # Temporary trap dict for ptp device.
-	    params.update({'ss_down_list':ptp_down_list})
+	    params.update({'ss_list':ptp_list})
 	    ss_ptp_trap = self.make_dict_for_ss_trap(**params)
+	    for key in ss_ptp_trap.keys():
+		ss_ptp_trap[key]['parent_alrm_id'] = params.get('alarm_id')
 
 	    #ckt dict for idu odu and ptp ckt dict
 	    input_trap_dict = {}
@@ -704,14 +709,18 @@ def send_traps(params):
 		       'ptp_bh_flag' : ptp_bh_flag
 	})
         mat_entries = {}
+
+	# Removing bakchaul type ptp device from ss down list.
+	if backhaul_id and backhaul_id in ss_down_list:
+	    ss_down_list.remove(backhaul_id)
+
 	sitea_ptp_down_list = [ptp_down_device for ptp_down_device in ss_down_list
 				if down_device_static_dict[ptp_down_device].get('resource_type') == 'PTP'
 				and not down_device_static_dict[ptp_down_device].get('ptp_bh_flag')]
 
 	siteb_ptp_down_list = [ptp_down_device for ptp_down_device in ss_down_list
 				if down_device_static_dict[ptp_down_device].get('resource_type') == 'PTP'
-				and down_device_static_dict[ptp_down_device].get('ptp_bh_flag')
-				and not down_device_static_dict[ptp_down_device].get('backhaul')]
+				and down_device_static_dict[ptp_down_device].get('ptp_bh_flag')]
 
 	siteb_bs_down_list = [bs_down_device for bs_down_device in bs_down_list  
 				if down_device_static_dict[bs_down_device].get('ptp_bh_flag') ]
@@ -726,14 +735,14 @@ def send_traps(params):
 		     			'bs_list':sitea_bs_down_list,
 		     			'ss_list':sitea_ss_down_list,
 		     			'bs_ss_dict': bs_ss_dict,
-			 		'ptp_down_list': sitea_ptp_down_list,
+			 		'ptp_list': sitea_ptp_down_list,
 			 		'ckt_dict': ckt_dict,
 		     			'alarm_id': None,})
 
 	siteb_params.update({'rc_element':None,
 				     'bs_list': siteb_bs_down_list,
 				     'ss_list': siteb_ss_down_list,
-				     'ptp_down_list': siteb_ptp_down_list,
+				     'ptp_list': siteb_ptp_down_list,
 				     'ckt_dict': ckt_dict,
 				     'bs_ss_dict': bs_ss_dict,
 				     'siteb_switch_conv_id':None,
