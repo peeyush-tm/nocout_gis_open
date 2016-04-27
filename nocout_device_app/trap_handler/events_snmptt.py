@@ -23,8 +23,9 @@ from trap_handler.mapper import Eventmapper
 from trap_handler.correlation import *
 
 @app.task(name='insert_network_event')
-def insert_network_event():
-    data_list = make_network_snmptt_data()
+def insert_network_event(**opt):
+    machine_name = opt.get('machine_name')
+    data_list = make_network_snmptt_data(machine_name)
     if data_list :
         #print "Data list network event",data_list
         worker = Eventmapper()
@@ -32,19 +33,20 @@ def insert_network_event():
 	collect_down_events_from_redis.s(data_list).apply_async()
 
 @app.task(name='insert_bs_ul_issue_event')
-def insert_bs_ul_issue_event():
-    data_list = make_bs_ul_issue_snmptt_data()
+def insert_bs_ul_issue_event(**opt):
+    machine_name =  opt.get('machine_name')
+    data_list = make_bs_ul_issue_snmptt_data(site_name)
     if data_list :
         #print "Data list BS UL issue",data_list
         worker = Eventmapper()
         worker.filter_events(data_list)
 
 @app.task(name='make_network_snmptt_data')
-def make_network_snmptt_data():
+def make_network_snmptt_data(machine_name):
     ds_event_mapping = {}
     {'rta':'Latency_Threshold_Breach'}
     try:
-        queue = RedisInterface(perf_q = 'q:network:snmptt')
+        queue = RedisInterface(perf_q = 'q:network:snmptt:%s' % machine_name)
         cur = queue.get(0, -1)
         docs = []
         for doc in cur:
@@ -101,9 +103,9 @@ def make_network_snmptt_data():
 
 
 @app.task(name='make_bs_ul_issue_snmptt_data')
-def make_bs_ul_issue_snmptt_data():
+def make_bs_ul_issue_snmptt_data(machine_name):
     try:
-        queue = RedisInterface(perf_q = 'q:bs_ul_issue_event')
+        queue = RedisInterface(perf_q = 'q:bs_ul_issue_event:%s' % machine_name)
         cur = queue.get(0, -1)
         docs = []
         for doc in cur:

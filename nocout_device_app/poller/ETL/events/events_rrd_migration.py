@@ -374,16 +374,19 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
         memc_obj.memc_conn.set(attempt_key,1) # next run would be consider as first cycle or attempt
     else :
         memc_obj.memc_conn.set(attempt_key,1) # if no cycle defined.
-
 # after every 128 second event_migration would be run, it takes the data from from both keys _network_event1 and _network_event2 and store in databases. 
+    if network_events_data:
+	insert_network_event_to_redis(network_events_data)
+
 """
 Method to format n/w trap and push to Redis
 """
 def insert_network_event_to_redis(network_events_data):
     try :
         rds_obj = db_ops_module.RedisInterface()
-        print "network_events_data",network_events_data
-        rds_obj.redis_cnx.rpush('q:network:snmptt', *network_events_data)
+        #print "network_events_data",network_events_data
+        machine_name = nocout_site_name.split('_')[0]
+	rds_obj.redis_cnx.rpush('q:network:snmptt:%s' % machine_name, *network_events_data)
         #print rds_obj.redis_cnx.lrange('q:network:snmptt',0, -1)
 
     except Exception,e :

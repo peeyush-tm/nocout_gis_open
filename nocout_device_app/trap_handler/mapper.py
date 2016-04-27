@@ -9,6 +9,7 @@ from trap_handler.db_conn import ConnectionBase, ExportTraps
 from start.start import app
 #start_app_module = imp.load_source('start_pub', '/omd/sites/ospf1_slave_1/lib/python/start_pub.py')
 #app = start_app_module.app
+from copy import deepcopy
 
 severity_for_clear_table = ['clear','ok']
 global alarm_mask_oid
@@ -125,7 +126,7 @@ class Eventmapper(object):
         mat_entries = []
         query_1 = """
         SELECT
-                alarm_name
+                alarm_name, severity
         FROM
                 master_alarm_table
         WHERE        
@@ -133,7 +134,7 @@ class Eventmapper(object):
         """
         qry = """
         SELECT
-                oid
+                oid, severity
         FROM
                 master_alarm_table
         WHERE
@@ -142,9 +143,9 @@ class Eventmapper(object):
         my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
         cursor = my_cnx.cursor()
         cursor.execute(query_1)
-        wimax_mat_entries = [item[0] for item in cursor.fetchall()]
+        wimax_mat_entries = [(item[0],item[1]) for item in cursor.fetchall()]
         cursor.execute(qry)
-        other_traps_mat_entries = [item[0] for item in cursor.fetchall()]
+        other_traps_mat_entries = [(item[0],item[1]) for item in cursor.fetchall()]
         mat_entries = wimax_mat_entries
         mat_entries.extend(other_traps_mat_entries)
         mat_entries = set(mat_entries)
@@ -177,7 +178,8 @@ class Eventmapper(object):
 		unique_key = (alarm_name,event[3])
 	    else:
 	        unique_key = (event[2],event[3])
-	    mat_entry = unique_key[0]
+	    mat_entry = (unique_key[0],event[6].lower())
+	    event_unique_key = (unique_key[0],unique_key[1],event[6].lower())
 	    if mat_entry in mat_entries :
                 # consider trapname and severity for getting maksing entry for WIMAX traps and Events
                 # consider trapoid and severity for getting maksing entry for other traps
@@ -195,18 +197,16 @@ class Eventmapper(object):
 		    stored_event_time = stored_event[8]
 		    if stored_event_time < event[8]:
 		        event_dict[unique_key] = event
-			event_count_dict[unique_key][1] = event
+			event_count_dict[event_unique_key][1] = event
 	        else:
 		    event_dict[unique_key] = event
                     # Dictionary to store event count
-                    if  unique_key in event_count_dict.keys() :
-                        key = 'traps:%s:%s:%s' % (unique_key[1],alarm_name,event[6].lower())
-                        redis_cnx.set(key,event_count_dict[unique_key][1][8])
-                        event_count_dict[unique_key] = [event_count_dict[unique_key][0] + 1 , event]
-                    elif unique_key not in event_count_dict.keys():
-                        event_count_dict[unique_key] = [1,event]
-
-
+                    if  event_unique_key in event_count_dict.keys() :
+                        key = 'traps:%s:%s:%s' % (event_unique_key[1],alarm_name,event[6].lower())
+                        redis_cnx.set(key,event_count_dict[event_unique_key][1][8])
+                        event_count_dict[event_unique_key] = [event_count_dict[event_unique_key][0] + 1 , event]
+                    elif event_unique_key not in event_count_dict.keys():
+                        event_count_dict[event_unique_key] = [1,event]
 	    else :
 		print "Not mapped in MAT : ",mat_entry
 	return event_dict.values(),event_count_dict
@@ -232,7 +232,10 @@ class Eventmapper(object):
                 else :
 		    last_occurred = trap[8]
 		eventname = formatline[indexes['event_name']].replace(' ','_')
-		sia = sia_value[str(self.mat_entry_details['rf_ip_%s_%s' % (eventname,severity)]['sia'])]
+		try :
+		    sia = sia_value[str(self.mat_entry_details['rf_ip_%s_%s' % (eventname,severity)]['sia'])]
+		except:
+		    sia = ''		
                 new_trap.update({
                                 'ip_address': trap[3],
                                 'device_name': self.inventory_info.get(trap[3]),
@@ -266,7 +269,7 @@ class Eventmapper(object):
 
                 new_trap.update({
                                 'ip_address': str(trap[3]),
-                                'device_name': self.inventory_info.get(trap[3]),
+                                'device_name': self.inventory_info.get(trap[3]) if self.inventory_info.get(trap[3]) is not None else '',
                                 'trapoid': str(trap[4]),
                                 'eventname': str(trap[1]),
                                 'eventno': str(trap[2]),
@@ -288,13 +291,15 @@ class Eventmapper(object):
             else:
                 clear_events_update.append(new_trap)
 
+	    history_trap = deepcopy(new_trap)
 	    # Update is_active to 1 in history records
-	    new_trap['is_active'] = 1
+	    history_trap['is_active'] = 1
+	    history_trap['last_occurred'] = history_trap['first_occurred']
 
 	    # Update redis key for next polling cycle last_occurred value
 	    key = 'traps:%s:%s:%s' % (new_trap['ip_address'],new_trap['eventname'],new_trap['severity'])
 	    redis_cnx.set(key,str(new_trap['traptime']))
-	    history_event.append(new_trap)
+	    history_event.append(history_trap)
 
 
 	self.update_db(current_traps=current_events_update, clear_traps=clear_events_update,\
@@ -330,7 +335,7 @@ class Eventmapper(object):
 
 			new_event.update({
 				'ip_address': str(event[3]),
-				'device_name': self.inventory_info.get(event[3]),
+				'device_name': self.inventory_info.get(event[3]) if self.inventory_info.get(event[3]) is not None else '',
 				'trapoid': str(event[4]),
 				'eventname': str(event[1]),
 				'eventno': str(event[2]),
@@ -339,7 +344,7 @@ class Eventmapper(object):
 				'traptime': event[8],
 				'last_occurred': last_occurred,
 				'first_occurred': event[8],
-				'alarm_count': 1,
+				'alarm_count': 0,
 				'description': event[-1],
 				'is_active': 1,
                                 'sia': sia,
@@ -420,7 +425,7 @@ class Eventmapper(object):
 
 			new_trap.update({
 				'ip_address': trap[3],
-				'device_name': self.inventory_info.get(trap[3]),
+				'device_name': self.inventory_info.get(trap[3]) if self.inventory_info.get(trap[3]) is not None else '',
 				'trapoid': trap[4],
 				'eventname': formatline[indexes['event_name']].replace(' ','_'),
 				'eventno': formatline[indexes['event_no']],
@@ -429,7 +434,7 @@ class Eventmapper(object):
 				'traptime': trap[8],
 				'last_occurred': last_occurred,
 				'first_occurred': trap[8],
-				'alarm_count': 1,
+				'alarm_count': 0,
 				'description': trap[-1],
 				'is_active': 1,
 				'sia': sia,
@@ -578,19 +583,33 @@ def delete_history_trap():
     conn_base = ConnectionBase()
     my_cnx = conn_base.mysql_cnx(db_name='snmptt_db')
     cursor = my_cnx.cursor()
+
+    current_delete_query = """
+            DELETE FROM
+                alert_center_currentalarms
+            WHERE
+                traptime < DATE_SUB('{0}', INTERVAL 3 MONTH);
+            """.format(current_date)
+
+    clear_delete_query = """
+            DELETE FROM
+                alert_center_clearalarms
+            WHERE
+                traptime < DATE_SUB('{0}', INTERVAL 3 MONTH);
+            """.format(current_date)
     
-    current_update_query = """
+    current_count_update_query = """
 	    UPDATE
         	 alert_center_currentalarms current  
 	    INNER JOIN (
 		SELECT
-		    device_name,eventname,severity,count(history.alarm_count) AS count
+		    device_name,eventname,severity,SUM(history.alarm_count) AS count
 		FROM
 		     alert_center_historyalarms history 
 		WHERE
 		     history.severity NOT IN ('clear', 'ok ')
 		    AND 
-		    history.traptime BETWEEN DATE_SUB('{0}', INTERVAL 3 MONTH) AND '{0}'
+		    history.traptime < DATE_SUB('{0}', INTERVAL 3 MONTH)
 		GROUP BY
 		     history.device_name, history.eventname, history.severity
 		    ) AS current_history
@@ -600,18 +619,18 @@ def delete_history_trap():
 		current.alarm_count = (current.alarm_count - current_history.count);
 	    """.format(current_date)
     
-    clear_update_query = """
+    clear_count_update_query = """
 	    UPDATE
 		 alert_center_clearalarms clear  
 	    INNER JOIN (
 		SELECT
-		    device_name,eventname,severity,count(history.alarm_count) AS count
+		    device_name,eventname,severity,SUM(history.alarm_count) AS count
 		FROM
 		     alert_center_historyalarms history 
 		WHERE
 		    history.severity IN ('clear', 'ok ')
 		    AND 
-		    history.traptime BETWEEN DATE_SUB('{0}', INTERVAL 3 MONTH) AND '{0}'
+		    history.traptime < DATE_SUB('{0}', INTERVAL 3 MONTH)
 		GROUP BY
 		     history.device_name, history.eventname, history.severity
 		    ) AS clear_history
@@ -620,38 +639,108 @@ def delete_history_trap():
 	    SET
 		clear.alarm_count = (clear.alarm_count - clear_history.count);
 	    """.format(current_date)
-    
+
+    clear_time_update_query = """
+            UPDATE
+		 alert_center_clearalarms clear_alarm  
+            INNER JOIN (
+            	SELECT
+		    device_name,eventname,severity,MIN(traptime) as traptime
+            	FROM
+		    alert_center_historyalarms clear 
+            	WHERE
+		    clear.severity IN ('clear','ok ') AND clear.traptime > DATE_SUB('{0}', INTERVAL 3 MONTH)
+            	GROUP BY
+		    clear.device_name, clear.eventname, clear.severity
+            	)clear
+            ON
+		 clear_alarm.device_name = clear.device_name
+            SET
+		 clear_alarm.first_occurred = clear.traptime ,
+                 clear_alarm.last_occurred = if(clear_alarm.last_occurred < DATE_SUB('{0}', INTERVAL 3 MONTH), clear.traptime, clear_alarm.last_occurred)
+            WHERE
+		 clear_alarm.first_occurred < DATE_SUB('{0}', INTERVAL 3 MONTH) ;
+            """.format(current_date)
+
+    current_time_update_query = """
+            UPDATE
+                 alert_center_currentalarms current_alarm
+            INNER JOIN (
+            	SELECT
+		    device_name,eventname,severity,MIN(traptime) as traptime
+            	FROM
+		    alert_center_historyalarms current
+            	WHERE
+		    current.severity NOT IN ('clear','ok ') AND current.traptime > DATE_SUB('{0}', INTERVAL 3 MONTH)
+            	GROUP BY
+		    current.device_name, current.eventname, current.severity
+            	)current
+            ON
+		 current_alarm.device_name = current.device_name
+            SET
+		 current_alarm.first_occurred = current.traptime ,
+                 current_alarm.last_occurred = if(current_alarm.last_occurred < DATE_SUB('{0}', INTERVAL 3 MONTH), current.traptime, current_alarm.last_occurred)
+            WHERE
+		 current_alarm.first_occurred < DATE_SUB('{0}', INTERVAL 3 MONTH) ;
+            """.format(current_date)
+
     delete_query = """
 	    DELETE FROM
 		alert_center_historyalarms
 	    WHERE    
-		traptime BETWEEN DATE_SUB('{0}', INTERVAL 3 MONTH) AND '{0}'; 
+		traptime < DATE_SUB('{0}', INTERVAL 3 MONTH); 
     	    """.format(current_date)
     
     try:
-        cursor.execute(current_update_query)
+        cursor.execute(current_delete_query)
     except (mysql.connector.Error) as exc:
         cursor.close()
-        print 'Mysql Current Update Error', exc
+        print 'Mysql Current Deletion Error', exc
+    else:
+        my_cnx.commit()
+
+    try:
+        cursor.execute(clear_delete_query)
+    except (mysql.connector.Error) as exc:
+        cursor.close()
+        print 'Mysql Current Deletion Error', exc
+    else:
+        my_cnx.commit()
+
+    try:
+        cursor.execute(current_count_update_query)
+    except (mysql.connector.Error) as exc:
+        print 'Mysql Current Count Update Error', exc
     else:
         my_cnx.commit()
         
     try:
-        cursor.execute(clear_update_query)
+        cursor.execute(clear_count_update_query)
     except (mysql.connector.Error) as exc:
-        cursor.close()
-        print 'Mysql Clear Update Error', exc
+        print 'Mysql Clear Count Update Error', exc
     else:
         my_cnx.commit()    
+
+    try:
+        cursor.execute(current_time_update_query)
+    except (mysql.connector.Error) as exc:
+        print 'Mysql Current Time Update Error', exc
+    else:
+        my_cnx.commit()
+
+    try:
+        cursor.execute(clear_time_update_query)
+    except (mysql.connector.Error) as exc:
+        print 'Mysql Clear Time Update Error', exc
+    else:
+        my_cnx.commit()
     
     try:
         cursor.execute(delete_query)
     except (mysql.connector.Error) as exc:
-        cursor.close()
-        print 'Mysql History Update Error', exc
+        print 'Mysql History Delete Error', exc
     else:
         my_cnx.commit() 
          
     cursor.close()
     my_cnx.close()
-

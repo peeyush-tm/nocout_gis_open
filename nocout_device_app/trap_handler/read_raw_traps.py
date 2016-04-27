@@ -45,10 +45,13 @@ class RawTraps(object):
 
 	def read_raw_traps(self):
 		""" Bulk read traps from snmptt database"""
-
-		qry = """SELECT id, eventname, eventid, agentip, trapoid, category, 
-		severity, uptime, traptime, formatline FROM snmptt WHERE id > {0}
-		""".format(self.get_start_id())
+		if self.get_start_id() :
+			qry = """SELECT id, eventname, eventid, agentip, trapoid, category, 
+			severity, uptime, traptime, formatline FROM snmptt WHERE id > {0}
+			""".format(self.get_start_id())
+		else :
+			qry = """SELECT id, eventname, eventid, agentip, trapoid, category, 
+                        severity, uptime, traptime, formatline FROM snmptt"""
 
 		data = self.exec_qry(qry, 'snmptt_db')
 		#print data
