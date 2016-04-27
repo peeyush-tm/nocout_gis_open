@@ -1,4 +1,162 @@
+"""
+service_etl.py
+================
+This script collects and stores data for host checks
+running on all configured devices for this poller.
+"""
 
+
+from ast import literal_eval
+from ConfigParser import ConfigParser
+from datetime import datetime, timedelta
+import re
+from sys import path
+import sys
+
+from celery import group
+
+from handlers.db_ops import *
+from start.start import app
+
+logger = get_task_logger(__name__)
+info, warning, error = logger.info, logger.warning, logger.error
+
+path.append('/omd/nocout_etl')
+
+INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
+
+
+
+def splitter(perf, delimiters, indexes):
+	out = []
+	for p in perf:
+		for t in zip(delimiters, indexes):
+			temp = p.split(t[0])[t[1]]
+			p = temp
+		out.append(p)
+
+	return out
+
+
+# TODO: don't process data for down BS devices
+def update_topology(li, data_values, name_ip_mapping, delete_old_topology, site):
+	""" processes and updates bs-ss connections topology"""
+	# splitter = lambda x, sep, i: x.split(sep)[i]
+	perf_out = data_values.get('output')
+	ss_ips = []
+	if perf_out:
+		d = {}
+		device_name = str(data_values.get('host_name'))
+		service_name = str(data_values.get('service_description'))
+		now = datetime.now()
+		key = 'device_inventory:' + device_name
+		ip_address = str(name_ip_mapping.get(key))
+		delete_old_topology[0].add(device_name)
+
+		try:
+			plugin_output = perf_out.split('- ')[1]
+			ss_sec_ids, ss_ports = [], []
+			if service_name.startswith('cambium'):
+				bs_mac, ss_sec_id, perf = plugin_output.split(' ', 2)
+				ss_wise_values = perf.split()
+				ss_macs = splitter(ss_wise_values, ('/',), (1,))
+				[ss_sec_ids.append(ss_sec_id) for i, _ in enumerate(ss_macs)]
+				ss_ips = splitter(ss_wise_values, ('/',), (0,))
+				[ss_ports.append(None) for i, _ in enumerate(ss_macs)]
+			elif service_name.startswith('wimax'):
+				perf = plugin_output
+				ss_wise_values = perf.split()
+				ss_macs = splitter(ss_wise_values, ('=',), (0,))
+				ss_sec_ids = splitter(ss_wise_values, ('=', ','), (1, 8))
+				ss_ips = splitter(ss_wise_values, ('=', ','), (1, 9))
+				ss_ports = splitter(ss_wise_values, ('=', ','), (1, -1))
+		except Exception as exc:
+			#error('Error in topology output: {0}, {1}'.format(exc,ss_wise_values))
+			pass
+		else:
+			machine_name = site[:-8]
+			for i, ss_ip in enumerate(ss_ips):
+				delete_old_topology[1].add(ss_ip)
+				d.update({
+					'device_name': device_name,
+					'ip_address': ip_address,
+					'service_name': service_name,
+					'data_source': 'topology',
+					'sys_timestamp': now,
+					'check_timestamp': now,
+					'sector_id': ss_sec_ids[i],
+					'connected_device_ip': ss_ip,
+					'connected_device_mac': ss_macs[i],
+					'refer': ss_ports[i],
+					'site_name': site,
+					'machine_name': site,
+					'mac_address': None,
+				})
+				li.append(d)
+				d = {}
+
+
+@app.task(name='build-export-service')
+def build_export(site, perf_data):
+	""" processes and prepares data for db insert"""
+
+	# contains one dict value for each service data source
+	serv_data = []
+	warning('build_export site {0}'.format(site))
+	# topology perf data
+	topology_serv_data = []
+	# util services data
+	util_serv_data = []
+	kpi_serv_data = []
+	interface_serv_data = []
+	invent_serv_data = []
+	kpi_helper_serv_data = []
+	ss_provis_helper_serv_data = []
+	# delete topology entries from db, for these bs and ss
+	# delete bs based on names and ss on ips
+	old_topology = [set(), set()]
+
+	# needed for mrc and dr manipulations
+	util_services = ['wimax_pmp1_dl_util_bgp', 'wimax_pmp2_dl_util_bgp', 
+					'wimax_pmp1_ul_util_bgp', 'wimax_pmp2_ul_util_bgp']
+	# keep last 2 values for severity these services in Redis, kpi checks
+	# need their values as input
+	kpi_helper_services = ['wimax_ul_cinr', 'wimax_ul_intrf', 'cambium_ul_jitter',
+	                'cambium_rereg_count']
+	# helper services for ss provisioning - keep last two values of field current_value
+	ss_provis_helper_service = ['cambium_ul_rssi', 'cambium_dl_rssi',
+					'cambium_dl_jitter', 'cambium_ul_jitter',
+					'cambium_rereg_count', 'wimax_ul_rssi',
+					'wimax_dl_rssi', 'wimax_dl_cinr', 'wimax_ss_ptx_invent']
+
+	# get device_name --> ip mappings from redis
+	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
+	p = rds_cli.redis_cnx.pipeline()
+	keys = rds_cli.redis_cnx.keys(pattern='device_inventory:*')
+	[p.get(k) for k in keys]
+	name_ip_mapping = dict([t for t in zip(keys, p.execute())])
+
+	for chk_val in perf_data:
+		dict_perf = {}
+		if not chk_val:
+			continue
+		#if not isinstance(chk_val, dict):
+		#	try:
+		#		chk_val = literal_eval(chk_val)
+		#	except Exception as exc:
+		#		error('Error in json loading: %s' % exc)
+		#		continue
+		service_name = str(chk_val['service_description'])
+		device_name = str(chk_val['host_name'])
+		# TODO: deliver to appropriate modules, using message queues [producer/consumer]
+		# topology services
+		if service_name.endswith(('_topology', '_topology_discover')):
+			update_topology(topology_serv_data, chk_val, 
+					name_ip_mapping, old_topology, site)
+		# dr and mrc dependent services
+		elif service_name in util_services:
+			dict_perf = make_dicts_from_perf(util_serv_data, chk_val,
+				name_ip_mapping, site)
 		# kpi services
 		elif service_name.endswith('_kpi'):
 			dict_perf = make_dicts_from_perf(kpi_serv_data, chk_val, 
@@ -261,3 +419,4 @@ def main(**opts):
 
 if __name__ == '__main__':
 	main()
+
