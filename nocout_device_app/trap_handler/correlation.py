@@ -3,6 +3,7 @@ from start.start import app
 from handlers.db_ops import *
 from uuid import uuid4
 from datetime import datetime
+from trap_sender import *
 from collections import defaultdict
 from copy import deepcopy
 import itertools
@@ -509,7 +510,8 @@ class correlation(object):
 	rc_element = params['rc_element']
 	down_device_static_dict = params['static_dict']
  	siteb_switch_conv_id = params.get('siteb_switch_conv_id')	
-	ptp_down_list = params.get('ptp_down_list')
+	ss_list = params.get('ss_list')
+	ptp_list = params.get('ptp_list')
 	alarm_id = params.get('alarm_id')
 	trap_list = [] 
 	rc_alarm_id = None
@@ -522,20 +524,29 @@ class correlation(object):
 		    siteb_switch_conv_id, siteb_switch_conv_static_data = self.get_siteB_switch_conv(params['backhaul_ended_switch_con_ip'])
 		    down_device_static_dict[siteb_switch_conv_id] = siteb_switch_conv_static_data
 		    params.update({'siteb_switch_conv_id': siteb_switch_conv_id})
-		down_device_static_dict[siteb_switch_conv_id]['parent_ip'] = down_device_static_dict[backhaul_id].get('parent_ip')
-		params.update({'is_backhaul':is_backhaul})
 		if down_device_static_dict[backhaul_id]['ptp_bh_type'] == 'fe':
-		    down_device_static_dict['siteb_switch_conv_id']['pop_ip'] = ''
+		    down_device_static_dict[siteb_switch_conv_id]['pop_ip'] = ''
+		down_device_static_dict[siteb_switch_conv_id]['parent_ip'] = down_device_static_dict[backhaul_id].get('parent_ip')
+		down_device_static_dict[siteb_switch_conv_id]['parent_type'] = down_device_static_dict[backhaul_id].get('parent_type')
+		down_device_static_dict[siteb_switch_conv_id]['parent_port'] = down_device_static_dict[backhaul_id].get('parent_port')
+		params.update({'is_backhaul':is_backhaul})
 		
 	    rc_element_dict,rc_alarm_id = self.make_dict_for_conv_swich_trap(**params)
 	    if not alarm_id:
 	        params.update({'alarm_id': rc_alarm_id })
 	    # Make down IDU/ODU traps for the affected siteB switch/converter 
 	    bs_trap  = self.make_dict_for_idu_odu_trap(**params)
-	
-	    # Temporary trap dict for site B ptp
-	    params.update({'ss_down_list':ptp_down_list})
+
+	    # Trap for SS devices.
+	    ss_list = list(set(ss_list)-set(ptp_list))
+	    params.update({'ss_list':ss_list})
+	    ss_trap = self.make_dict_for_ss_trap(**params)
+
+	    # Temporary trap dict for ptp device.
+	    params.update({'ss_list':ptp_list})
 	    ss_ptp_trap = self.make_dict_for_ss_trap(**params)
+	    for key in ss_ptp_trap.keys():
+		ss_ptp_trap[key]['parent_alrm_id'] = params.get('alarm_id')
 
 	    #ckt dict for idu odu and ptp ckt dict
 	    input_trap_dict = {}
@@ -544,32 +555,25 @@ class correlation(object):
 	    params.update({'idu_odu_trap_dict': input_trap_dict})
 	    ckt_element_list = self.make_dict_for_ckt(**params)
 
-	    trap_list = rc_element_dict.values() + bs_trap.values() + ckt_element_list
-	    #return rc_alarm_id,trap_list
+	    trap_list = rc_element_dict.values() + bs_trap.values() + ss_trap.values() + ckt_element_list
 
 	elif params.get('bs_list'):
 	    bs_trap = self.make_dict_for_idu_odu_trap(**params)
 
-	    params.update({'idu_odu_trap_dict':bs_trap})
-
 	    ss_trap = self.make_dict_for_ss_trap(**params)
-	    params.update({'idu_odu_trap_dict':bs_trap})
 
+	    params.update({'idu_odu_trap_dict':bs_trap})
 	    ckt_element_list = self.make_dict_for_ckt(**params)
 		
 	    trap_list = bs_trap.values() + ss_trap.values() + ckt_element_list
-	    #return rc_alarm_id,trap_list 
 	elif params.get('ss_list'):
 	    ss_trap = self.make_dict_for_ss_trap(**params)
 	    trap_list = ss_trap.values()
-	    #return rc_alarm_id,trap_list
 	return rc_alarm_id,trap_list
 	
 @app.task(base=DatabaseTask, name='collect_down_events_from_redis')
 def collect_down_events_from_redis(event_list):
     """ TODO: implement code to take values from redis"""
-    print '....In collect_down_events_from_redis.....................'
-    print event_list
     cor_obj=correlation()
     redis_cnx = cor_obj.redis_conn()
     cor_obj.update_redis_inventory_hiearachy(redis_cnx,event_list)
@@ -687,6 +691,7 @@ def send_traps(params):
 	params = {}
 	params.update({'mat_entries': mat_entries})
 	siteb_params = {}
+	trap_list = []
 	sitea_trap_list = []
 	siteb_trap_list = []
         down_device_dict,down_device_static_dict,rc_element,bs_down_list,ss_down_list,ckt_dict,flags = trap_params
@@ -704,14 +709,18 @@ def send_traps(params):
 		       'ptp_bh_flag' : ptp_bh_flag
 	})
         mat_entries = {}
+
+	# Removing bakchaul type ptp device from ss down list.
+	if backhaul_id and backhaul_id in ss_down_list:
+	    ss_down_list.remove(backhaul_id)
+
 	sitea_ptp_down_list = [ptp_down_device for ptp_down_device in ss_down_list
 				if down_device_static_dict[ptp_down_device].get('resource_type') == 'PTP'
 				and not down_device_static_dict[ptp_down_device].get('ptp_bh_flag')]
 
 	siteb_ptp_down_list = [ptp_down_device for ptp_down_device in ss_down_list
 				if down_device_static_dict[ptp_down_device].get('resource_type') == 'PTP'
-				and down_device_static_dict[ptp_down_device].get('ptp_bh_flag')
-				and not down_device_static_dict[ptp_down_device].get('backhaul')]
+				and down_device_static_dict[ptp_down_device].get('ptp_bh_flag')]
 
 	siteb_bs_down_list = [bs_down_device for bs_down_device in bs_down_list  
 				if down_device_static_dict[bs_down_device].get('ptp_bh_flag') ]
@@ -719,20 +728,21 @@ def send_traps(params):
 			if down_device_static_dict[ss_down_device].get('ptp_bh_flag') ]
 	sitea_bs_down_list = list(set(bs_down_list) - set(siteb_bs_down_list))
 	sitea_ss_down_list = list(set(ss_down_list) - set(siteb_ss_down_list))
+
 	sitea_params = deepcopy(params)
 	siteb_params = deepcopy(params)
 	sitea_params.update({	'rc_element':None,
 		     			'bs_list':sitea_bs_down_list,
 		     			'ss_list':sitea_ss_down_list,
 		     			'bs_ss_dict': bs_ss_dict,
-			 		'ptp_down_list': sitea_ptp_down_list,
+			 		'ptp_list': sitea_ptp_down_list,
 			 		'ckt_dict': ckt_dict,
 		     			'alarm_id': None,})
 
 	siteb_params.update({'rc_element':None,
 				     'bs_list': siteb_bs_down_list,
 				     'ss_list': siteb_ss_down_list,
-				     'ptp_down_list': siteb_ptp_down_list,
+				     'ptp_list': siteb_ptp_down_list,
 				     'ckt_dict': ckt_dict,
 				     'bs_ss_dict': bs_ss_dict,
 				     'siteb_switch_conv_id':None,
@@ -760,11 +770,14 @@ def send_traps(params):
 	    sitea_params.update({'is_backhaul':None})
 	    alarm_id,sitea_trap_list= cor_obj.create_traps(**sitea_params)
 
+	trap_list = sitea_trap_list + siteb_trap_list
 	final_trap_list = final_trap_list + sitea_trap_list + siteb_trap_list
+ 	
+	# Trap sender task will be called for each inventory seperately
+        #trap_sender_task.s(trap_list).apply_async()
 
 
     """
-    trap_sender_task.s(final_trap_list).apply_async()
     
     non_ckt_trap_dict = {}
     [ non_ckt_trap_dict.update(trap_dict) for trap_dict in [ss_trap_dict,idu_odu_trap_dict,rc_element_dict] if trap_dict]
@@ -780,11 +793,11 @@ def send_traps(params):
      
 
 
-#@app.task(base=DatabaseTask, name='trap_sender_task')
+@app.task(base=DatabaseTask, name='trap_sender_task')
 def trap_sender_task(traps):
    for trap in traps:
 	t = Trap(**trap)
-	t.send_trap() 
+	t.start() 
 
  
 
