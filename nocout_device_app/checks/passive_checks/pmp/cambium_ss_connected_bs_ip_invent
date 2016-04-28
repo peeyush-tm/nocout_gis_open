@@ -22,8 +22,9 @@ def extract_host_ip_from_cambium_topology(ss_host_ip):
     try:
         if memc:
             try :
-                data = memc.get(ss_host_ip)
-                return data
+		key = ss_host_ip+ "_t_discover"
+                data = memc.get(key)
+                #return data
             except :
                 data =None 
 
@@ -37,9 +38,13 @@ def extract_host_ip_from_cambium_topology(ss_host_ip):
                 data = cur.fetchall()
                 cur.close()
                 db.close()
-                return data[0][0]
+		data = data[0][0]
+                #return data[0][0]
             except :
                 data =None
+
+	return data
+
     except :
         pass
 
