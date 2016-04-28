@@ -35,7 +35,7 @@ def insert_network_event(**opt):
 @app.task(name='insert_bs_ul_issue_event')
 def insert_bs_ul_issue_event(**opt):
     machine_name =  opt.get('machine_name')
-    data_list = make_bs_ul_issue_snmptt_data(site_name)
+    data_list = make_bs_ul_issue_snmptt_data(machine_name)
     if data_list :
         #print "Data list BS UL issue",data_list
         worker = Eventmapper()

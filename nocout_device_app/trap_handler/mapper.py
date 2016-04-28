@@ -225,11 +225,11 @@ class Eventmapper(object):
                 indexes = formatline_indexes['wimax']
                 formatline = trap[-1].split('|')
                 severity  = self.severity_mapping(formatline[indexes['severity']])
-		last_occurred =  redis_cnx.get('traps:%s:%s:%s' % (trap[3],\
+		try:
+		    last_occurred =  redis_cnx.get('traps:%s:%s:%s' % (trap[3],\
 					 formatline[indexes['event_name']].replace(' ','_'),severity))
-		if last_occurred :
 		    last_occurred = datetime.strptime(last_occurred,'%Y-%m-%d %H:%M:%S')
-                else :
+                except :
 		    last_occurred = trap[8]
 		eventname = formatline[indexes['event_name']].replace(' ','_')
 		try :
@@ -238,7 +238,7 @@ class Eventmapper(object):
 		    sia = ''		
                 new_trap.update({
                                 'ip_address': trap[3],
-                                'device_name': self.inventory_info.get(trap[3]),
+                                'device_name': self.inventory_info.get(trap[3]) if self.inventory_info.get(trap[3]) is not None else '',
                                 'trapoid': trap[4],
                                 'eventname': formatline[indexes['event_name']].replace(' ','_'),
                                 'eventno': formatline[indexes['event_no']],
@@ -256,10 +256,10 @@ class Eventmapper(object):
                                 })
             else :
 		severity  = trap[6].lower()
-		last_occurred = redis_cnx.get('traps:%s:%s:%s' % (str(trap[3]), str(trap[1]),severity))
-                if last_occurred :
+		try:
+		    last_occurred = redis_cnx.get('traps:%s:%s:%s' % (str(trap[3]), str(trap[1]),severity))
                     last_occurred = datetime.strptime(last_occurred,'%Y-%m-%d %H:%M:%S')
-                else :
+                except :
                     last_occurred = trap[8]
 		eventname =  str(trap[1])
 		try :
@@ -318,11 +318,11 @@ class Eventmapper(object):
 		mask_oid = None
 		new_event = {}
 		try:
-			last_occurred = redis_cnx.get('traps:%s:%s:%s' % \
+			try :
+				last_occurred = redis_cnx.get('traps:%s:%s:%s' % \
 					(str(event[3]), str(event[1]),event[6].lower()))
-			if last_occurred :
 				last_occurred = datetime.strptime(last_occurred,'%Y-%m-%d %H:%M:%S')
-			else :
+			except :
 				last_occurred = event[8]
 
 	                eventname =  str(event[1])
@@ -409,11 +409,11 @@ class Eventmapper(object):
 
 		try:
 			severity  = self.severity_mapping(formatline[indexes['severity']])
-			last_occurred = redis_cnx.get('traps:%s:%s:%s' \
+			try :
+			    last_occurred = redis_cnx.get('traps:%s:%s:%s' \
 					% (trap[3], formatline[indexes['event_name']].replace(' ','_'),severity))
-                        if last_occurred :
                             last_occurred = datetime.strptime(last_occurred,'%Y-%m-%d %H:%M:%S')
-                        else :
+                        except :
                             last_occurred = trap[8]
 
 	                eventname = formatline[indexes['event_name']].replace(' ','_')
@@ -694,7 +694,6 @@ def delete_history_trap():
     try:
         cursor.execute(current_delete_query)
     except (mysql.connector.Error) as exc:
-        cursor.close()
         print 'Mysql Current Deletion Error', exc
     else:
         my_cnx.commit()
@@ -702,7 +701,6 @@ def delete_history_trap():
     try:
         cursor.execute(clear_delete_query)
     except (mysql.connector.Error) as exc:
-        cursor.close()
         print 'Mysql Current Deletion Error', exc
     else:
         my_cnx.commit()
