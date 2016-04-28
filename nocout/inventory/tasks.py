@@ -12468,11 +12468,359 @@ def get_selected_pmp_inventory(base_station, sector):
     # pmp sm rows list
     pmp_sm_rows = list()
 
+    # backhaul
+    backhaul = base_station.backhaul
+
+    # ptp row dictionary
+    pmp_bs_row = dict()
+
     # circuits associated with current sector
     circuits = sector.circuit_set.all()
 
+    # *********************************** Near End (PMP BS) *********************************
+
+    # state
+    try:
+        pmp_bs_row['State'] = base_station.state.state_name
+    except Exception as e:
+        logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+    # city
+    try:
+        pmp_bs_row['City'] = base_station.city.city_name
+    except Exception as e:
+        logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
+
+    # address
+    try:
+        pmp_bs_row['Address'] = base_station.address
+    except Exception as e:
+        logger.info("Address not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bs name
+    try:
+        pmp_bs_row['BS Name'] = base_station.alias
+    except Exception as e:
+        logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
+
+    # site id
+    try:
+        pmp_bs_row['Site ID'] = base_station.bs_site_id
+    except Exception as e:
+        logger.info("Site ID not exist for base station ({}).".format(base_station.name, e.message))
+
+    # type of bs (technology)
+    try:
+        pmp_bs_row['Type Of BS (Technology)'] = base_station.bs_type
+    except Exception as e:
+        logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name,
+                                                                                      e.message))
+
+    # site type
+    try:
+        pmp_bs_row['Site Type'] = base_station.bs_site_type
+    except Exception as e:
+        logger.info("Site Type not exist for base station ({}).".format(base_station.name, e.message))
+
+    # infra provider
+    try:
+        pmp_bs_row['Infra Provider'] = base_station.infra_provider
+    except Exception as e:
+        logger.info("Infra Provider not exist for base station ({}).".format(base_station.name, e.message))
+
+    # building height
+    try:
+        pmp_bs_row['Building Height'] = base_station.building_height
+    except Exception as e:
+        logger.info("Building Height not exist for base station ({}).".format(base_station.name, e.message))
+
+    # tower height
+    try:
+        pmp_bs_row['Tower Height'] = base_station.tower_height
+    except Exception as e:
+        logger.info("Tower Height not exist for base station ({}).".format(base_station.name, e.message))
+
+    # latitude
+    try:
+        pmp_bs_row['Latitude'] = base_station.latitude
+    except Exception as e:
+        logger.info("Latitude not exist for base station ({}).".format(base_station.name, e.message))
+
+    # longitude
+    try:
+        pmp_bs_row['Longitude'] = base_station.longitude
+    except Exception as e:
+        logger.info("Longitude not exist for base station ({}).".format(base_station.name, e.message))
+
+    # odu ip
+    try:
+        pmp_bs_row['ODU IP'] = sector.sector_configured_on.ip_address
+    except Exception as e:
+        logger.info("ODU IP not exist for base station ({}).".format(base_station.name, e.message))
+
+    # sector name
+    try:
+        pmp_bs_row['Sector Name'] = sector.name.split("_")[-1]
+    except Exception as e:
+        logger.info("Sector Name not exist for base station ({}).".format(base_station.name, e.message))
+
+    # make of antenna
+    try:
+        pmp_bs_row['Make Of Antenna'] = sector.antenna.make_of_antenna
+    except Exception as e:
+        logger.info("Make Of Antenna not exist for base station ({}).".format(base_station.name,
+                                                                              e.message))
+
+    # polarization
+    try:
+        pmp_bs_row['Polarization'] = sector.antenna.polarization
+    except Exception as e:
+        logger.info("Polarization not exist for base station ({}).".format(base_station.name, e.message))
+
+    # antenna tilt
+    try:
+        pmp_bs_row['Antenna Tilt'] = sector.antenna.tilt
+    except Exception as e:
+        logger.info("Antenna Tilt not exist for base station ({}).".format(base_station.name, e.message))
+
+    # antenna height
+    try:
+        pmp_bs_row['Antenna Height'] = sector.antenna.height
+    except Exception as e:
+        logger.info("Antenna Height not exist for base station ({}).".format(base_station.name, e.message))
+
+    # antenna beamwidth
+    try:
+        pmp_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
+    except Exception as e:
+        logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name,
+                                                                                e.message))
+
+    # azimuth
+    try:
+        pmp_bs_row['Azimuth'] = sector.antenna.azimuth_angle
+    except Exception as e:
+        logger.info("Azimuth not exist for base station ({}).".format(base_station.name, e.message))
+
+    # sync splitter used
+    try:
+        pmp_bs_row['Sync Splitter Used'] = sector.antenna.sync_splitter_used
+    except Exception as e:
+        logger.info("Sync Splitter Used not exist for base station ({}).".format(base_station.name,
+                                                                                 e.message))
+
+    # type of gps
+    try:
+        pmp_bs_row['Type Of GPS'] = base_station.gps_type
+    except Exception as e:
+        logger.info("Type Of GPS not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bs switch ip
+    try:
+        pmp_bs_row['BS Switch IP'] = base_station.bs_switch.ip_address
+    except Exception as e:
+        logger.info("BS Switch IP not exist for base station ({}).".format(base_station.name, e.message))
+
+    # aggregation switch
+    try:
+        pmp_bs_row['Aggregation Switch'] = backhaul.aggregator.ip_address
+    except Exception as e:
+        logger.info("Aggregation Switch not exist for base station ({}).".format(base_station.name,
+                                                                                 e.message))
+
+    # aggregation swith port
+    try:
+        pmp_bs_row['Aggregation Switch Port'] = backhaul.aggregator_port_name
+    except Exception as e:
+        logger.info("Aggregation Switch Port not exist for base station ({}).".format(base_station.name,
+                                                                                      e.message))
+
+    # bs conveter ip
+    try:
+        pmp_bs_row['BS Converter IP'] = backhaul.bh_switch.ip_address
+    except Exception as e:
+        logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+    # pop converter ip
+    try:
+        pmp_bs_row['POP Converter IP'] = backhaul.pop.ip_address
+    except Exception as e:
+        logger.info("POP Converter IP not exist for base station ({}).".format(base_station.name,
+                                                                               e.message))
+
+    # converter type
+    try:
+        pmp_bs_row['Converter Type'] = DeviceType.objects.get(pk=backhaul.bh_switch.device_type).alias
+    except Exception as e:
+        logger.info("Converter Type not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bh configured switch or converter
+    try:
+        pmp_bs_row['BH Configured On Switch/Converter'] = backhaul.bh_configured_on.ip_address
+    except Exception as e:
+        logger.info("BH Configured On Switch/Converter not exist for base station ({}).".format(
+            base_station.name,
+            e.message))
+
+    # bh configured switch or converter port
+    try:
+        pmp_bs_row['Switch/Converter Port'] = backhaul.bh_port_name
+    except Exception as e:
+        logger.info("Switch/Converter Port not exist for base station ({}).".format(base_station.name,
+                                                                                    e.message))
+
+    # bh capacity
+    try:
+        pmp_bs_row['BH Capacity'] = backhaul.bh_capacity
+    except Exception as e:
+        logger.info("BH Capacity not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bh offnet/onnet
+    try:
+        pmp_bs_row['BH Offnet/Onnet'] = backhaul.bh_connectivity
+    except Exception as e:
+        logger.info("BH Offnet/Onnet not exist for base station ({}).".format(base_station.name, e.message))
+
+    # backhaul type
+    try:
+        pmp_bs_row['Backhaul Type'] = backhaul.bh_type
+    except Exception as e:
+        logger.info("Backhaul Type not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bh circuit id
+    try:
+        pmp_bs_row['BH Circuit ID'] = backhaul.bh_circuit_id
+    except Exception as e:
+        logger.info("BH Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+    # pe hostname
+    try:
+        pmp_bs_row['PE Hostname'] = backhaul.pe_hostname
+    except Exception as e:
+        logger.info("PE Hostname not exist for base station ({}).".format(base_station.name, e.message))
+
+    # pe ip
+    try:
+        pmp_bs_row['PE IP'] = backhaul.pe_ip
+    except Exception as e:
+        logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bso circuit id
+    try:
+        pmp_bs_row['BSO Circuit ID'] = backhaul.ttsl_circuit_id
+    except Exception as e:
+        logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+    # dr site
+    try:
+        pmp_bs_row['DR Site'] = sector.dr_site
+    except Exception as e:
+        logger.info("DR Site not exist for base station ({}).".format(base_station.name, e.message))
+
+    # sector id
+    try:
+        pmp_bs_row['Sector ID'] = sector.sector_id
+    except Exception as e:
+        logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
+    # ************************************* BS Perf Parameters **********************************
+    # pl
+    pl = ""
+    try:
+        pl = NetworkStatus.objects.filter(device_name=bs_device_name,
+                                          data_source='pl').using(
+                                          alias=bs_machine_name)[0].current_value
+        pmp_bs_row['PD'] = pl
+    except Exception as e:
+        logger.info("PL not exist for base station ({}).".format(base_station.name, e.message))
+
+    # latency
+    try:
+        pmp_bs_row['Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
+                                                             data_source='rta').using(
+                                                             alias=bs_machine_name)[0].current_value
+    except Exception as e:
+        logger.info("Latency not exist for base station ({}).".format(base_station.name, e.message))
+
+    if pl != "100":
+        # frequency
+        try:
+            pmp_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                     data_source='frequency').using(
+                                                                     alias=bs_machine_name)[0].current_value
+        except Exception as e:
+            logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
+
+        # cell radius
+        try:
+            pmp_bs_row['Cell Radius'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                       data_source='cell_radius').using(
+                                                                       alias=bs_machine_name)[0].current_value
+        except Exception as e:
+            logger.info("Cell Radius not exist for base station ({}).".format(base_station.name, e.message))
+
+        # dl utilization
+        try:
+            if bs_device_type == "Radwin5KBS":
+                pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(
+                    device_name=bs_device_name,
+                    service_name='rad5k_bs_dl_utilization',
+                    data_source='dl_utilization').using(
+                    alias=bs_machine_name)[0].current_value
+            else:
+                pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(
+                    device_name=bs_device_name,
+                    service_name='cambium_dl_utilization',
+                    data_source='dl_utilization').using(
+                    alias=bs_machine_name)[0].current_value
+        except Exception as e:
+            logger.info("Utilization DL not exist for base station ({}).".format(base_station.name, e.message))
+
+        # ul utilization
+        try:
+            if bs_device_type == "Radwin5KBS":
+                pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(
+                    device_name=bs_device_name,
+                    service_name='rad5k_bs_ul_utilization',
+                    data_source='ul_utilization').using(
+                    alias=bs_machine_name)[0].current_value
+            else:
+                pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(
+                    device_name=bs_device_name,
+                    service_name='cambium_ul_utilization',
+                    data_source='ul_utilization').using(
+                    alias=bs_machine_name)[0].current_value
+        except Exception as e:
+            logger.info("Utilization UL not exist for base station ({}).".format(base_station.name, e.message))
+
+        # uptime
+        try:
+            sector_uptime = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                       data_source='uptime').using(
+                                                                       alias=bs_machine_name)[0].current_value
+            pmp_bs_row['Sector Uptime'] = display_time(sector_uptime)
+        except Exception as e:
+            logger.info("Sector Uptime not exist for base station ({}).".format(base_station.name, e.message))
+
+        # transmit power
+        try:
+            pmp_bs_row['TX Power'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                    data_source='transmit_power').using(
+                                                                    alias=bs_machine_name)[0].current_value
+        except Exception as e:
+            logger.info("TX Power not exist for base station ({}).".format(base_station.name, e.message))
+
+        # frequency
+        try:
+            pmp_bs_row['RX Power'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                    data_source='commanded_rx_power').using(
+                                                                    alias=bs_machine_name)[0].current_value
+        except Exception as e:
+            logger.info("RX Power not exist for base station ({}).".format(base_station.name, e.message))
+
     # loop through circuits; if available to get inventory rows
     if circuits:
+
         for circuit in circuits:
             # sub station
             sub_station = circuit.sub_station
@@ -12498,358 +12846,13 @@ def get_selected_pmp_inventory(base_station, sector):
             except Exception as e:
                 logger.info("PMP SS machine not found. Exception: ", e.message)
 
-            # backhaul
-            backhaul = base_station.backhaul
+            
 
             # customer
             customer = circuit.customer
 
             # ptp row dictionary
-            pmp_bs_row = dict()
-
-            # ptp row dictionary
             pmp_sm_row = dict()
-
-            # *********************************** Near End (PMP BS) *********************************
-
-            # state
-            try:
-                pmp_bs_row['State'] = base_station.state.state_name
-            except Exception as e:
-                logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-            # city
-            try:
-                pmp_bs_row['City'] = base_station.city.city_name
-            except Exception as e:
-                logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
-
-            # address
-            try:
-                pmp_bs_row['Address'] = base_station.address
-            except Exception as e:
-                logger.info("Address not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bs name
-            try:
-                pmp_bs_row['BS Name'] = base_station.alias
-            except Exception as e:
-                logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
-
-            # site id
-            try:
-                pmp_bs_row['Site ID'] = base_station.bs_site_id
-            except Exception as e:
-                logger.info("Site ID not exist for base station ({}).".format(base_station.name, e.message))
-
-            # type of bs (technology)
-            try:
-                pmp_bs_row['Type Of BS (Technology)'] = base_station.bs_type
-            except Exception as e:
-                logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name,
-                                                                                              e.message))
-
-            # site type
-            try:
-                pmp_bs_row['Site Type'] = base_station.bs_site_type
-            except Exception as e:
-                logger.info("Site Type not exist for base station ({}).".format(base_station.name, e.message))
-
-            # infra provider
-            try:
-                pmp_bs_row['Infra Provider'] = base_station.infra_provider
-            except Exception as e:
-                logger.info("Infra Provider not exist for base station ({}).".format(base_station.name, e.message))
-
-            # building height
-            try:
-                pmp_bs_row['Building Height'] = base_station.building_height
-            except Exception as e:
-                logger.info("Building Height not exist for base station ({}).".format(base_station.name, e.message))
-
-            # tower height
-            try:
-                pmp_bs_row['Tower Height'] = base_station.tower_height
-            except Exception as e:
-                logger.info("Tower Height not exist for base station ({}).".format(base_station.name, e.message))
-
-            # latitude
-            try:
-                pmp_bs_row['Latitude'] = base_station.latitude
-            except Exception as e:
-                logger.info("Latitude not exist for base station ({}).".format(base_station.name, e.message))
-
-            # longitude
-            try:
-                pmp_bs_row['Longitude'] = base_station.longitude
-            except Exception as e:
-                logger.info("Longitude not exist for base station ({}).".format(base_station.name, e.message))
-
-            # odu ip
-            try:
-                pmp_bs_row['ODU IP'] = sector.sector_configured_on.ip_address
-            except Exception as e:
-                logger.info("ODU IP not exist for base station ({}).".format(base_station.name, e.message))
-
-            # sector name
-            try:
-                pmp_bs_row['Sector Name'] = sector.name.split("_")[-1]
-            except Exception as e:
-                logger.info("Sector Name not exist for base station ({}).".format(base_station.name, e.message))
-
-            # make of antenna
-            try:
-                pmp_bs_row['Make Of Antenna'] = sector.antenna.make_of_antenna
-            except Exception as e:
-                logger.info("Make Of Antenna not exist for base station ({}).".format(base_station.name,
-                                                                                      e.message))
-
-            # polarization
-            try:
-                pmp_bs_row['Polarization'] = sector.antenna.polarization
-            except Exception as e:
-                logger.info("Polarization not exist for base station ({}).".format(base_station.name, e.message))
-
-            # antenna tilt
-            try:
-                pmp_bs_row['Antenna Tilt'] = sector.antenna.tilt
-            except Exception as e:
-                logger.info("Antenna Tilt not exist for base station ({}).".format(base_station.name, e.message))
-
-            # antenna height
-            try:
-                pmp_bs_row['Antenna Height'] = sector.antenna.height
-            except Exception as e:
-                logger.info("Antenna Height not exist for base station ({}).".format(base_station.name, e.message))
-
-            # antenna beamwidth
-            try:
-                pmp_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
-            except Exception as e:
-                logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name,
-                                                                                        e.message))
-
-            # azimuth
-            try:
-                pmp_bs_row['Azimuth'] = sector.antenna.azimuth_angle
-            except Exception as e:
-                logger.info("Azimuth not exist for base station ({}).".format(base_station.name, e.message))
-
-            # sync splitter used
-            try:
-                pmp_bs_row['Sync Splitter Used'] = sector.antenna.sync_splitter_used
-            except Exception as e:
-                logger.info("Sync Splitter Used not exist for base station ({}).".format(base_station.name,
-                                                                                         e.message))
-
-            # type of gps
-            try:
-                pmp_bs_row['Type Of GPS'] = base_station.gps_type
-            except Exception as e:
-                logger.info("Type Of GPS not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bs switch ip
-            try:
-                pmp_bs_row['BS Switch IP'] = base_station.bs_switch.ip_address
-            except Exception as e:
-                logger.info("BS Switch IP not exist for base station ({}).".format(base_station.name, e.message))
-
-            # aggregation switch
-            try:
-                pmp_bs_row['Aggregation Switch'] = backhaul.aggregator.ip_address
-            except Exception as e:
-                logger.info("Aggregation Switch not exist for base station ({}).".format(base_station.name,
-                                                                                         e.message))
-
-            # aggregation swith port
-            try:
-                pmp_bs_row['Aggregation Switch Port'] = backhaul.aggregator_port_name
-            except Exception as e:
-                logger.info("Aggregation Switch Port not exist for base station ({}).".format(base_station.name,
-                                                                                              e.message))
-
-            # bs conveter ip
-            try:
-                pmp_bs_row['BS Converter IP'] = backhaul.bh_switch.ip_address
-            except Exception as e:
-                logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-            # pop converter ip
-            try:
-                pmp_bs_row['POP Converter IP'] = backhaul.pop.ip_address
-            except Exception as e:
-                logger.info("POP Converter IP not exist for base station ({}).".format(base_station.name,
-                                                                                       e.message))
-
-            # converter type
-            try:
-                pmp_bs_row['Converter Type'] = DeviceType.objects.get(pk=backhaul.bh_switch.device_type).alias
-            except Exception as e:
-                logger.info("Converter Type not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bh configured switch or converter
-            try:
-                pmp_bs_row['BH Configured On Switch/Converter'] = backhaul.bh_configured_on.ip_address
-            except Exception as e:
-                logger.info("BH Configured On Switch/Converter not exist for base station ({}).".format(
-                    base_station.name,
-                    e.message))
-
-            # bh configured switch or converter port
-            try:
-                pmp_bs_row['Switch/Converter Port'] = backhaul.bh_port_name
-            except Exception as e:
-                logger.info("Switch/Converter Port not exist for base station ({}).".format(base_station.name,
-                                                                                            e.message))
-
-            # bh capacity
-            try:
-                pmp_bs_row['BH Capacity'] = backhaul.bh_capacity
-            except Exception as e:
-                logger.info("BH Capacity not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bh offnet/onnet
-            try:
-                pmp_bs_row['BH Offnet/Onnet'] = backhaul.bh_connectivity
-            except Exception as e:
-                logger.info("BH Offnet/Onnet not exist for base station ({}).".format(base_station.name, e.message))
-
-            # backhaul type
-            try:
-                pmp_bs_row['Backhaul Type'] = backhaul.bh_type
-            except Exception as e:
-                logger.info("Backhaul Type not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bh circuit id
-            try:
-                pmp_bs_row['BH Circuit ID'] = backhaul.bh_circuit_id
-            except Exception as e:
-                logger.info("BH Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-            # pe hostname
-            try:
-                pmp_bs_row['PE Hostname'] = backhaul.pe_hostname
-            except Exception as e:
-                logger.info("PE Hostname not exist for base station ({}).".format(base_station.name, e.message))
-
-            # pe ip
-            try:
-                pmp_bs_row['PE IP'] = backhaul.pe_ip
-            except Exception as e:
-                logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bso circuit id
-            try:
-                pmp_bs_row['BSO Circuit ID'] = backhaul.ttsl_circuit_id
-            except Exception as e:
-                logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-            # dr site
-            try:
-                pmp_bs_row['DR Site'] = sector.dr_site
-            except Exception as e:
-                logger.info("DR Site not exist for base station ({}).".format(base_station.name, e.message))
-
-            # sector id
-            try:
-                pmp_bs_row['Sector ID'] = sector.sector_id
-            except Exception as e:
-                logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
-
-            # ************************************* BS Perf Parameters **********************************
-            # pl
-            pl = ""
-            try:
-                pl = NetworkStatus.objects.filter(device_name=bs_device_name,
-                                                  data_source='pl').using(
-                                                  alias=bs_machine_name)[0].current_value
-                pmp_bs_row['PD'] = pl
-            except Exception as e:
-                logger.info("PL not exist for base station ({}).".format(base_station.name, e.message))
-
-            # latency
-            try:
-                pmp_bs_row['Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
-                                                                     data_source='rta').using(
-                                                                     alias=bs_machine_name)[0].current_value
-            except Exception as e:
-                logger.info("Latency not exist for base station ({}).".format(base_station.name, e.message))
-
-            if pl != "100":
-                # frequency
-                try:
-                    pmp_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                             data_source='frequency').using(
-                                                                             alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
-
-                # cell radius
-                try:
-                    pmp_bs_row['Cell Radius'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                               data_source='cell_radius').using(
-                                                                               alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Cell Radius not exist for base station ({}).".format(base_station.name, e.message))
-
-                # dl utilization
-                try:
-                    if bs_device_type == "Radwin5KBS":
-                        pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(
-                            device_name=bs_device_name,
-                            service_name='rad5k_bs_dl_utilization',
-                            data_source='dl_utilization').using(
-                            alias=bs_machine_name)[0].current_value
-                    else:
-                        pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(
-                            device_name=bs_device_name,
-                            service_name='cambium_dl_utilization',
-                            data_source='dl_utilization').using(
-                            alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Utilization DL not exist for base station ({}).".format(base_station.name, e.message))
-
-                # ul utilization
-                try:
-                    if bs_device_type == "Radwin5KBS":
-                        pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(
-                            device_name=bs_device_name,
-                            service_name='rad5k_bs_ul_utilization',
-                            data_source='ul_utilization').using(
-                            alias=bs_machine_name)[0].current_value
-                    else:
-                        pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(
-                            device_name=bs_device_name,
-                            service_name='cambium_ul_utilization',
-                            data_source='ul_utilization').using(
-                            alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Utilization UL not exist for base station ({}).".format(base_station.name, e.message))
-
-                # uptime
-                try:
-                    sector_uptime = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                               data_source='uptime').using(
-                                                                               alias=bs_machine_name)[0].current_value
-                    pmp_bs_row['Sector Uptime'] = display_time(sector_uptime)
-                except Exception as e:
-                    logger.info("Sector Uptime not exist for base station ({}).".format(base_station.name, e.message))
-
-                # transmit power
-                try:
-                    pmp_bs_row['TX Power'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                            data_source='transmit_power').using(
-                                                                            alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("TX Power not exist for base station ({}).".format(base_station.name, e.message))
-
-                # frequency
-                try:
-                    pmp_bs_row['RX Power'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                            data_source='commanded_rx_power').using(
-                                                                            alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("RX Power not exist for base station ({}).".format(base_station.name, e.message))
 
             # ********************************** Far End (PMP SM) ********************************
 
@@ -13186,6 +13189,9 @@ def get_selected_pmp_inventory(base_station, sector):
 
             # append 'pmp_sm_row' dictionary in 'pmp_sm_rows'
             pmp_sm_rows.append(pmp_sm_row)
+    else :
+        # append 'pmp_bs_row' dictionary in 'pmp_bs_rows'
+        pmp_bs_rows.append(pmp_bs_row)
 
     # insert 'pmp bs' rows in result dictionary
     result['pmp_bs'] = pmp_bs_rows if pmp_bs_rows else ""
@@ -13219,9 +13225,375 @@ def get_selected_wimax_inventory(base_station, sector):
 
     # wimax ss rows list
     wimax_ss_rows = list()
+    
+    # backhaul
+    backhaul = base_station.backhaul
 
     # circuits associated with current sector
     circuits = sector.circuit_set.all()
+
+    # ptp row dictionary
+    wimax_bs_row = dict()
+
+    # *********************************** Near End (Wimax BS) *********************************
+    # state
+    try:
+        wimax_bs_row['State'] = base_station.state.state_name
+    except Exception as e:
+        logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+    # city
+    try:
+        wimax_bs_row['City'] = base_station.city.city_name
+    except Exception as e:
+        logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
+
+    # address
+    try:
+        wimax_bs_row['Address'] = base_station.address
+    except Exception as e:
+        logger.info("Address not exist for base station ({}).".format(base_station.name, e.message))
+
+    # address
+    try:
+        wimax_bs_row['Site ID'] = base_station.bs_site_id
+    except Exception as e:
+        logger.info("Site ID not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bs name
+    try:
+        wimax_bs_row['BS Name'] = base_station.alias
+    except Exception as e:
+        logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
+
+    # type of bs (technology)
+    try:
+        wimax_bs_row['Type Of BS (Technology)'] = base_station.bs_type
+    except Exception as e:
+        logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name,
+                                                                                      e.message))
+
+    # site type
+    try:
+        wimax_bs_row['Site Type'] = base_station.bs_site_type
+    except Exception as e:
+        logger.info("Site Type not exist for base station ({}).".format(base_station.name, e.message))
+
+    # infra provider
+    try:
+        wimax_bs_row['Infra Provider'] = base_station.infra_provider
+    except Exception as e:
+        logger.info("Infra Provider not exist for base station ({}).".format(base_station.name, e.message))
+
+    # building height
+    try:
+        wimax_bs_row['Building Height'] = base_station.building_height
+    except Exception as e:
+        logger.info("Building Height not exist for base station ({}).".format(base_station.name, e.message))
+
+    # tower height
+    try:
+        wimax_bs_row['Tower Height'] = base_station.tower_height
+    except Exception as e:
+        logger.info("Tower Height not exist for base station ({}).".format(base_station.name, e.message))
+
+    # latitude
+    try:
+        wimax_bs_row['Latitude'] = base_station.latitude
+    except Exception as e:
+        logger.info("Latitude not exist for base station ({}).".format(base_station.name, e.message))
+
+    # longitude
+    try:
+        wimax_bs_row['Longitude'] = base_station.longitude
+    except Exception as e:
+        logger.info("Longitude not exist for base station ({}).".format(base_station.name, e.message))
+
+    # idu ip
+    try:
+        wimax_bs_row['IDU IP'] = sector.sector_configured_on.ip_address
+    except Exception as e:
+        logger.info("IDU IP not exist for base station ({}).".format(base_station.name, e.message))
+
+    # vendor
+    try:
+        wimax_bs_row['Vendor'] = DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).alias
+    except Exception as e:
+        logger.info("IDU Vendor not exist for base station ({}).".format(base_station.name, e.message))
+
+    # sector name
+    try:
+        wimax_bs_row['Sector Name'] = sector.alias
+    except Exception as e:
+        logger.info("Sector Name not exist for base station ({}).".format(base_station.name, e.message))
+
+    # make of antenna
+    try:
+        wimax_bs_row['Make Of Antenna'] = sector.antenna.make_of_antenna
+    except Exception as e:
+        logger.info("Make Of Antenna not exist for base station ({}).".format(base_station.name,
+                                                                              e.message))
+
+    # polarization
+    try:
+        wimax_bs_row['Polarization'] = sector.antenna.polarization
+    except Exception as e:
+        logger.info("Polarization not exist for base station ({}).".format(base_station.name, e.message))
+
+    # antenna tilt
+    try:
+        wimax_bs_row['Antenna Tilt'] = sector.antenna.tilt
+    except Exception as e:
+        logger.info("Antenna Tilt not exist for base station ({}).".format(base_station.name, e.message))
+
+    # antenna height
+    try:
+        wimax_bs_row['Antenna Height'] = sector.antenna.height
+    except Exception as e:
+        logger.info("Antenna Height not exist for base station ({}).".format(base_station.name, e.message))
+
+    # antenna beamwidth
+    try:
+        wimax_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
+    except Exception as e:
+        logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name, e.message))
+
+    # azimuth
+    try:
+        wimax_bs_row['Azimuth'] = sector.antenna.azimuth_angle
+    except Exception as e:
+        logger.info("Azimuth not exist for base station ({}).".format(base_station.name, e.message))
+
+    # installation of splitter
+    try:
+        wimax_bs_row['Installation Of Splitter'] = sector.antenna.sync_splitter_used
+    except Exception as e:
+        logger.info("Installation Of Splitter not exist for base station ({}).".format(base_station.name, e.message))
+
+    # type of gps
+    try:
+        wimax_bs_row['Type Of GPS'] = base_station.gps_type
+    except Exception as e:
+        logger.info("Type Of GPS not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bs switch ip
+    try:
+        wimax_bs_row['BS Switch IP'] = base_station.bs_switch.ip_address
+    except Exception as e:
+        logger.info("BS Switch IP not exist for base station ({}).".format(base_station.name, e.message))
+
+    # aggregation switch
+    try:
+        wimax_bs_row['Aggregation Switch'] = backhaul.aggregator.ip_address
+    except Exception as e:
+        logger.info("Aggregation Switch not exist for base station ({}).".format(base_station.name,
+                                                                                 e.message))
+
+    # aggregation switch port
+    try:
+        wimax_bs_row['Aggregation Switch Port'] = backhaul.aggregator_port_name
+    except Exception as e:
+        logger.info("Aggregation Switch Port not exist for base station ({}).".format(base_station.name,
+                                                                                      e.message))
+
+    # bs converter ip
+    try:
+        wimax_bs_row['BS Converter IP'] = backhaul.bh_switch.ip_address
+    except Exception as e:
+        logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+    # pop converter ip
+    try:
+        wimax_bs_row['POP Converter IP'] = backhaul.pop.ip_address
+    except Exception as e:
+        logger.info("POP Converter IP not exist for base station ({}).".format(base_station.name,
+                                                                               e.message))
+
+    # converter type
+    try:
+        wimax_bs_row['Converter Type'] = DeviceType.objects.get(pk=backhaul.bh_switch.device_type).alias
+    except Exception as e:
+        logger.info("Converter Type not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bh configured switch or converter
+    try:
+        wimax_bs_row['BH Configured On Switch/Converter'] = backhaul.bh_configured_on.ip_address
+    except Exception as e:
+        logger.info("BH Configured On Switch/Converter not exist for base station ({}).".format(
+            base_station.name,
+            e.message))
+
+    # bh configured switch or converter port
+    try:
+        wimax_bs_row['Switch/Converter Port'] = backhaul.bh_port_name
+    except Exception as e:
+        logger.info("Switch/Converter Port not exist for base station ({}).".format(base_station.name,
+                                                                                    e.message))
+
+    # bh capacity
+    try:
+        wimax_bs_row['BH Capacity'] = backhaul.bh_capacity
+    except Exception as e:
+        logger.info("BH Capacity not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bh offnet/onnet
+    try:
+        wimax_bs_row['BH Offnet/Onnet'] = backhaul.bh_connectivity
+    except Exception as e:
+        logger.info("BH Offnet/Onnet not exist for base station ({}).".format(base_station.name, e.message))
+
+    # backhaul type
+    try:
+        wimax_bs_row['Backhaul Type'] = backhaul.bh_type
+    except Exception as e:
+        logger.info("Backhaul Type not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bh circuit id
+    try:
+        wimax_bs_row['BH Circuit ID'] = backhaul.bh_circuit_id
+    except Exception as e:
+        logger.info("BH Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+    # pe hostname
+    try:
+        wimax_bs_row['PE Hostname'] = backhaul.pe_hostname
+    except Exception as e:
+        logger.info("PE Hostname not exist for base station ({}).".format(base_station.name, e.message))
+
+    # pe ip
+    try:
+        wimax_bs_row['PE IP'] = backhaul.pe_ip
+    except Exception as e:
+        logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
+
+    # bso circuit id
+    try:
+        wimax_bs_row['BSO Circuit ID'] = backhaul.ttsl_circuit_id
+    except Exception as e:
+        logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+    # dr site
+    try:
+        wimax_bs_row['DR Site'] = sector.dr_site
+    except Exception as e:
+        logger.info("DR Site not exist for base station ({}).".format(base_station.name, e.message))
+
+    # sector id
+    try:
+        wimax_bs_row['Sector ID'] = sector.sector_id
+    except Exception as e:
+        logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
+    # pmp
+    try:
+        wimax_bs_row['PMP'] = sector.name.split("_")[-1]
+    except Exception as e:
+        logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
+    # sector id
+    try:
+        wimax_bs_row['Sector ID'] = sector.sector_id
+    except Exception as e:
+        logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
+    # dr site master/slave
+    if sector.dr_site.lower() == "yes":
+        wimax_bs_row['DR Master/Slave'] = "Master"
+    else:
+        wimax_bs_row['DR Master/Slave'] = ""
+
+    # ************************************* BS Perf Parameters **********************************
+    # pl
+    pl = ""
+    try:
+        pl = NetworkStatus.objects.filter(device_name=bs_device_name,
+                                          data_source='pl').using(
+                                          alias=bs_machine_name)[0].current_value
+        wimax_bs_row['PD'] = pl
+    except Exception as e:
+        logger.info("PD not exist for base station ({}).".format(base_station.name, e.message))
+
+    # latency
+    try:
+        wimax_bs_row['Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
+                                                               data_source='rta').using(
+            alias=bs_machine_name)[0].current_value
+    except Exception as e:
+        logger.info("Latency not exist for base station ({}).".format(base_station.name, e.message))
+
+    if pl != "100":
+        # sector utilization
+        try:
+            # by splitting last string after underscore from sector name; we get pmp port number
+            if sector.name.split("_")[-1] == '1':
+                wimax_bs_row['Sector Utilization DL'] = ServiceStatus.objects.filter(
+                    device_name=bs_device_name,
+                    service_name='wimax_pmp1_dl_util_bgp').using(
+                    alias=bs_machine_name)[0].current_value
+
+                wimax_bs_row['Sector Utilization UL'] = ServiceStatus.objects.filter(
+                    device_name=bs_device_name,
+                    service_name='wimax_pmp1_ul_util_bgp').using(
+                    alias=bs_machine_name)[0].current_value
+                wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(
+                    device_name=bs_device_name,
+                    service_name='wimax_pmp1_frequency_invent',
+                    data_source='frequency').using(
+                    alias=bs_machine_name)[0].current_value
+            elif sector.name.split("_")[-1] == '2':
+                wimax_bs_row['Sector Utilization DL'] = ServiceStatus.objects.filter(
+                    device_name=bs_device_name,
+                    service_name='wimax_pmp2_dl_util_bgp').using(
+                    alias=bs_machine_name)[0].current_value
+                wimax_bs_row['Sector Utilization UL'] = ServiceStatus.objects.filter(
+                    device_name=bs_device_name,
+                    service_name='wimax_pmp2_ul_util_bgp').using(
+                    alias=bs_machine_name)[0].current_value
+                wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(
+                    device_name=bs_device_name,
+                    service_name='wimax_pmp2_frequency_invent',
+                    data_source='frequency').using(
+                    alias=bs_machine_name)[0].current_value
+            else:
+                pass
+        except Exception as e:
+            logger.info("Sector Utilization DL/UL or Frequecy not exist for base station ({}).".format(
+                base_station.name,
+                e.message))
+
+        # mrc
+        try:
+            # by splitting last string after underscore from sector name; we get pmp port number
+            if sector.name.split("_")[-1] == '1':
+                wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                     data_source='pmp1_mrc').using(
+                                                                     alias=bs_machine_name)[0].current_value
+            elif sector.name.split("_")[-1] == '2':
+                wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                     data_source='pmp2_mrc').using(
+                                                                     alias=bs_machine_name)[0].current_value
+            else:
+                pass
+        except Exception as e:
+            logger.info("MRC not exist for base station ({}).".format(base_station.name, e.message))
+
+        # idu type
+        try:
+            wimax_bs_row['IDU Type'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                      data_source='idu_type').using(
+                                                                      alias=bs_machine_name)[0].current_value
+        except Exception as e:
+            logger.info("IDU Type not exist for base station ({}).".format(base_station.name, e.message))
+
+        # system uptime
+        try:
+            system_uptime = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                         service_name='wimax_bs_uptime',
+                                                         data_source='uptime').using(
+                                                         alias=bs_machine_name)[0].current_value
+            wimax_bs_row['System Uptime'] = display_time(system_uptime)
+        except Exception as e:
+            logger.info("System Uptime not exist for base station ({}).".format(base_station.name, e.message))
 
     # loop through circuits; if available to get inventory rows
     if circuits:
@@ -13243,377 +13615,11 @@ def get_selected_wimax_inventory(base_station, sector):
             except Exception as e:
                 logger.info("WiMAX SS machine not found. Exception: ", e.message)
 
-            # backhaul
-            backhaul = base_station.backhaul
-
             # customer
             customer = circuit.customer
 
             # ptp row dictionary
-            wimax_bs_row = dict()
-
-            # ptp row dictionary
             wimax_ss_row = dict()
-
-            # *********************************** Near End (Wimax BS) *********************************
-            # state
-            try:
-                wimax_bs_row['State'] = base_station.state.state_name
-            except Exception as e:
-                logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-            # city
-            try:
-                wimax_bs_row['City'] = base_station.city.city_name
-            except Exception as e:
-                logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
-
-            # address
-            try:
-                wimax_bs_row['Address'] = base_station.address
-            except Exception as e:
-                logger.info("Address not exist for base station ({}).".format(base_station.name, e.message))
-
-            # address
-            try:
-                wimax_bs_row['Site ID'] = base_station.bs_site_id
-            except Exception as e:
-                logger.info("Site ID not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bs name
-            try:
-                wimax_bs_row['BS Name'] = base_station.alias
-            except Exception as e:
-                logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
-
-            # type of bs (technology)
-            try:
-                wimax_bs_row['Type Of BS (Technology)'] = base_station.bs_type
-            except Exception as e:
-                logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name,
-                                                                                              e.message))
-
-            # site type
-            try:
-                wimax_bs_row['Site Type'] = base_station.bs_site_type
-            except Exception as e:
-                logger.info("Site Type not exist for base station ({}).".format(base_station.name, e.message))
-
-            # infra provider
-            try:
-                wimax_bs_row['Infra Provider'] = base_station.infra_provider
-            except Exception as e:
-                logger.info("Infra Provider not exist for base station ({}).".format(base_station.name, e.message))
-
-            # building height
-            try:
-                wimax_bs_row['Building Height'] = base_station.building_height
-            except Exception as e:
-                logger.info("Building Height not exist for base station ({}).".format(base_station.name, e.message))
-
-            # tower height
-            try:
-                wimax_bs_row['Tower Height'] = base_station.tower_height
-            except Exception as e:
-                logger.info("Tower Height not exist for base station ({}).".format(base_station.name, e.message))
-
-            # latitude
-            try:
-                wimax_bs_row['Latitude'] = base_station.latitude
-            except Exception as e:
-                logger.info("Latitude not exist for base station ({}).".format(base_station.name, e.message))
-
-            # longitude
-            try:
-                wimax_bs_row['Longitude'] = base_station.longitude
-            except Exception as e:
-                logger.info("Longitude not exist for base station ({}).".format(base_station.name, e.message))
-
-            # idu ip
-            try:
-                wimax_bs_row['IDU IP'] = sector.sector_configured_on.ip_address
-            except Exception as e:
-                logger.info("IDU IP not exist for base station ({}).".format(base_station.name, e.message))
-
-            # vendor
-            try:
-                wimax_bs_row['Vendor'] = DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).alias
-            except Exception as e:
-                logger.info("IDU Vendor not exist for base station ({}).".format(base_station.name, e.message))
-
-            # sector name
-            try:
-                wimax_bs_row['Sector Name'] = sector.alias
-            except Exception as e:
-                logger.info("Sector Name not exist for base station ({}).".format(base_station.name, e.message))
-
-            # make of antenna
-            try:
-                wimax_bs_row['Make Of Antenna'] = sector.antenna.make_of_antenna
-            except Exception as e:
-                logger.info("Make Of Antenna not exist for base station ({}).".format(base_station.name,
-                                                                                      e.message))
-
-            # polarization
-            try:
-                wimax_bs_row['Polarization'] = sector.antenna.polarization
-            except Exception as e:
-                logger.info("Polarization not exist for base station ({}).".format(base_station.name, e.message))
-
-            # antenna tilt
-            try:
-                wimax_bs_row['Antenna Tilt'] = sector.antenna.tilt
-            except Exception as e:
-                logger.info("Antenna Tilt not exist for base station ({}).".format(base_station.name, e.message))
-
-            # antenna height
-            try:
-                wimax_bs_row['Antenna Height'] = sector.antenna.height
-            except Exception as e:
-                logger.info("Antenna Height not exist for base station ({}).".format(base_station.name, e.message))
-
-            # antenna beamwidth
-            try:
-                wimax_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
-            except Exception as e:
-                logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name, e.message))
-
-            # azimuth
-            try:
-                wimax_bs_row['Azimuth'] = sector.antenna.azimuth_angle
-            except Exception as e:
-                logger.info("Azimuth not exist for base station ({}).".format(base_station.name, e.message))
-
-            # installation of splitter
-            try:
-                wimax_bs_row['Installation Of Splitter'] = sector.antenna.sync_splitter_used
-            except Exception as e:
-                logger.info("Installation Of Splitter not exist for base station ({}).".format(base_station.name, e.message))
-
-            # type of gps
-            try:
-                wimax_bs_row['Type Of GPS'] = base_station.gps_type
-            except Exception as e:
-                logger.info("Type Of GPS not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bs switch ip
-            try:
-                wimax_bs_row['BS Switch IP'] = base_station.bs_switch.ip_address
-            except Exception as e:
-                logger.info("BS Switch IP not exist for base station ({}).".format(base_station.name, e.message))
-
-            # aggregation switch
-            try:
-                wimax_bs_row['Aggregation Switch'] = backhaul.aggregator.ip_address
-            except Exception as e:
-                logger.info("Aggregation Switch not exist for base station ({}).".format(base_station.name,
-                                                                                         e.message))
-
-            # aggregation switch port
-            try:
-                wimax_bs_row['Aggregation Switch Port'] = backhaul.aggregator_port_name
-            except Exception as e:
-                logger.info("Aggregation Switch Port not exist for base station ({}).".format(base_station.name,
-                                                                                              e.message))
-
-            # bs converter ip
-            try:
-                wimax_bs_row['BS Converter IP'] = backhaul.bh_switch.ip_address
-            except Exception as e:
-                logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-            # pop converter ip
-            try:
-                wimax_bs_row['POP Converter IP'] = backhaul.pop.ip_address
-            except Exception as e:
-                logger.info("POP Converter IP not exist for base station ({}).".format(base_station.name,
-                                                                                       e.message))
-
-            # converter type
-            try:
-                wimax_bs_row['Converter Type'] = DeviceType.objects.get(pk=backhaul.bh_switch.device_type).alias
-            except Exception as e:
-                logger.info("Converter Type not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bh configured switch or converter
-            try:
-                wimax_bs_row['BH Configured On Switch/Converter'] = backhaul.bh_configured_on.ip_address
-            except Exception as e:
-                logger.info("BH Configured On Switch/Converter not exist for base station ({}).".format(
-                    base_station.name,
-                    e.message))
-
-            # bh configured switch or converter port
-            try:
-                wimax_bs_row['Switch/Converter Port'] = backhaul.bh_port_name
-            except Exception as e:
-                logger.info("Switch/Converter Port not exist for base station ({}).".format(base_station.name,
-                                                                                            e.message))
-
-            # bh capacity
-            try:
-                wimax_bs_row['BH Capacity'] = backhaul.bh_capacity
-            except Exception as e:
-                logger.info("BH Capacity not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bh offnet/onnet
-            try:
-                wimax_bs_row['BH Offnet/Onnet'] = backhaul.bh_connectivity
-            except Exception as e:
-                logger.info("BH Offnet/Onnet not exist for base station ({}).".format(base_station.name, e.message))
-
-            # backhaul type
-            try:
-                wimax_bs_row['Backhaul Type'] = backhaul.bh_type
-            except Exception as e:
-                logger.info("Backhaul Type not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bh circuit id
-            try:
-                wimax_bs_row['BH Circuit ID'] = backhaul.bh_circuit_id
-            except Exception as e:
-                logger.info("BH Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-            # pe hostname
-            try:
-                wimax_bs_row['PE Hostname'] = backhaul.pe_hostname
-            except Exception as e:
-                logger.info("PE Hostname not exist for base station ({}).".format(base_station.name, e.message))
-
-            # pe ip
-            try:
-                wimax_bs_row['PE IP'] = backhaul.pe_ip
-            except Exception as e:
-                logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
-
-            # bso circuit id
-            try:
-                wimax_bs_row['BSO Circuit ID'] = backhaul.ttsl_circuit_id
-            except Exception as e:
-                logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-            # dr site
-            try:
-                wimax_bs_row['DR Site'] = sector.dr_site
-            except Exception as e:
-                logger.info("DR Site not exist for base station ({}).".format(base_station.name, e.message))
-
-            # sector id
-            try:
-                wimax_bs_row['Sector ID'] = sector.sector_id
-            except Exception as e:
-                logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
-
-            # pmp
-            try:
-                wimax_bs_row['PMP'] = sector.name.split("_")[-1]
-            except Exception as e:
-                logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
-
-            # sector id
-            try:
-                wimax_bs_row['Sector ID'] = sector.sector_id
-            except Exception as e:
-                logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
-
-            # dr site master/slave
-            if sector.dr_site.lower() == "yes":
-                wimax_bs_row['DR Master/Slave'] = "Master"
-            else:
-                wimax_bs_row['DR Master/Slave'] = ""
-
-            # ************************************* BS Perf Parameters **********************************
-            # pl
-            pl = ""
-            try:
-                pl = NetworkStatus.objects.filter(device_name=bs_device_name,
-                                                  data_source='pl').using(
-                                                  alias=bs_machine_name)[0].current_value
-                wimax_bs_row['PD'] = pl
-            except Exception as e:
-                logger.info("PD not exist for base station ({}).".format(base_station.name, e.message))
-
-            # latency
-            try:
-                wimax_bs_row['Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
-                                                                       data_source='rta').using(
-                    alias=bs_machine_name)[0].current_value
-            except Exception as e:
-                logger.info("Latency not exist for base station ({}).".format(base_station.name, e.message))
-
-            if pl != "100":
-                # sector utilization
-                try:
-                    # by splitting last string after underscore from sector name; we get pmp port number
-                    if sector.name.split("_")[-1] == '1':
-                        wimax_bs_row['Sector Utilization DL'] = ServiceStatus.objects.filter(
-                            device_name=bs_device_name,
-                            service_name='wimax_pmp1_dl_util_bgp').using(
-                            alias=bs_machine_name)[0].current_value
-
-                        wimax_bs_row['Sector Utilization UL'] = ServiceStatus.objects.filter(
-                            device_name=bs_device_name,
-                            service_name='wimax_pmp1_ul_util_bgp').using(
-                            alias=bs_machine_name)[0].current_value
-                        wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(
-                            device_name=bs_device_name,
-                            service_name='wimax_pmp1_frequency_invent',
-                            data_source='frequency').using(
-                            alias=bs_machine_name)[0].current_value
-                    elif sector.name.split("_")[-1] == '2':
-                        wimax_bs_row['Sector Utilization DL'] = ServiceStatus.objects.filter(
-                            device_name=bs_device_name,
-                            service_name='wimax_pmp2_dl_util_bgp').using(
-                            alias=bs_machine_name)[0].current_value
-                        wimax_bs_row['Sector Utilization UL'] = ServiceStatus.objects.filter(
-                            device_name=bs_device_name,
-                            service_name='wimax_pmp2_ul_util_bgp').using(
-                            alias=bs_machine_name)[0].current_value
-                        wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(
-                            device_name=bs_device_name,
-                            service_name='wimax_pmp2_frequency_invent',
-                            data_source='frequency').using(
-                            alias=bs_machine_name)[0].current_value
-                    else:
-                        pass
-                except Exception as e:
-                    logger.info("Sector Utilization DL/UL or Frequecy not exist for base station ({}).".format(
-                        base_station.name,
-                        e.message))
-
-                # mrc
-                try:
-                    # by splitting last string after underscore from sector name; we get pmp port number
-                    if sector.name.split("_")[-1] == '1':
-                        wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                             data_source='pmp1_mrc').using(
-                                                                             alias=bs_machine_name)[0].current_value
-                    elif sector.name.split("_")[-1] == '2':
-                        wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                             data_source='pmp2_mrc').using(
-                                                                             alias=bs_machine_name)[0].current_value
-                    else:
-                        pass
-                except Exception as e:
-                    logger.info("MRC not exist for base station ({}).".format(base_station.name, e.message))
-
-                # idu type
-                try:
-                    wimax_bs_row['IDU Type'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                              data_source='idu_type').using(
-                                                                              alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("IDU Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # system uptime
-                try:
-                    system_uptime = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                 service_name='wimax_bs_uptime',
-                                                                 data_source='uptime').using(
-                                                                 alias=bs_machine_name)[0].current_value
-                    wimax_bs_row['System Uptime'] = display_time(system_uptime)
-                except Exception as e:
-                    logger.info("System Uptime not exist for base station ({}).".format(base_station.name, e.message))
 
             # ********************************** Far End (Wimax SS) ********************************
 
@@ -13966,6 +13972,9 @@ def get_selected_wimax_inventory(base_station, sector):
 
             # append 'wimax_ss_row' dictionary in 'wimax_ss_rows'
             wimax_ss_rows.append(wimax_ss_row)
+    else:
+        # append 'wimax_bs_row' dictionary in 'wimax_bs_rows'
+        wimax_bs_rows.append(wimax_bs_row)
 
     # insert 'wimax bs' rows in result dictionary
     result['wimax_bs'] = wimax_bs_rows if wimax_bs_rows else ""
@@ -14542,7 +14551,7 @@ def update_topology():
     """
     Update mapping of sector, sub station in circuit using topology.
     """
-
+    logger.error('Update Topology - Started')
     # Radwin device technology.
     radwin5k_types = None
     try:
@@ -14551,7 +14560,9 @@ def update_topology():
         pass
 
     # Radwin5K: Device mapper.
-    radwin5k_devices = Device.objects.filter(device_type__in=set(radwin5k_types)).values('ip_address', 'machine__name')
+    radwin5k_devices = Device.objects.filter(
+        device_type__in=set(radwin5k_types)
+    ).values('ip_address', 'machine__name')
 
     # Radwin5K machines.
     radwin5k_machines = set(radwin5k_devices.values_list('machine__name', flat=True))
@@ -14560,42 +14571,43 @@ def update_topology():
     radwin5k_mac_info = []
     for machine in radwin5k_machines:
         temp_macs = InventoryStatus.objects.filter(
-            ip_address__in=set(radwin5k_devices.values_list('ip_address', flat=True)),
-            service_name__in=['rad5k_bs_mac_invent', 'rad5k_ss_mac_invent']).values('ip_address',
-                                                                                    'current_value'
-                                                                                    ).using(alias=machine)
+            ip_address__in=set(radwin5k_devices.filter(
+                machine__name=machine
+            ).values_list('ip_address', flat=True)),
+            service_name__in=['rad5k_bs_mac_invent', 'rad5k_ss_mac_invent']
+        ).values(
+            'ip_address',
+            'current_value'
+        ).using(alias=machine)
+        
         radwin5k_mac_info.extend(temp_macs)
 
     # Radwin5K: Device IP and MAC Mapper.
     radwin5k_mac_mapper = {}
     for row in radwin5k_mac_info:
-        if row['ip_address']:
+        if row.get('ip_address') and row.get('ip_address') not in radwin5k_mac_mapper:
             radwin5k_mac_mapper[row['ip_address']] = row
+        else:
+            continue
 
     # MAC regex.
     mac_regex = "[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$"
 
     # Sector ID's from inventory.
-    sector_ids = set(Sector.objects.values_list('sector_id', flat=True))
+    sector_ids = set(Sector.objects.filter(sector_id__isnull=False).values_list('sector_id', flat=True))
 
     # Sector ID's from topology.
     topo_sector_ids = list(set(Topology.objects.values_list('sector_id', flat=True)))
 
-    # Sector ID's from topology: Uppercase
-    topo_sector_ids_upper = map(lambda x: x.upper(), topo_sector_ids)
-
-    # Sector ID's from topology: Lowercase
-    topo_sector_ids_lower = map(lambda x: x.lower(), topo_sector_ids)
-
-    # Sector ID's common in topology and inventory.
-    # common_sector_ids = sector_ids.intersection(topo_sector_ids)
-
     # Radwin5K: Special case where sector id cannot be considered.
-    radwin5k_topology = Topology.objects.filter(service_name="rad5k_topology_discover").values('connected_device_ip',
-                                                                                               'sector_id',
-                                                                                               'connected_device_mac',
-                                                                                               'mac_address',
-                                                                                               'ip_address')
+    radwin5k_topology = Topology.objects.filter(
+        service_name="rad5k_topology_discover"
+    ).values('connected_device_ip',
+        'sector_id',
+        'connected_device_mac',
+        'mac_address',
+        'ip_address'
+    )
 
     # Radwin 5K: Sector configured on ip's.
     radwin5k_sector_ips = set(radwin5k_topology.values_list('ip_address', flat=True))
@@ -14605,17 +14617,19 @@ def update_topology():
 
     # Sectors & sub stations mapping from Topology.
     topology = Topology.objects.filter(
-        Q(sector_id__in=topo_sector_ids) | Q(connected_device_ip__in=radwin5k_ss_ips)).values(
+        Q(sector_id__in=topo_sector_ids) | Q(connected_device_ip__in=radwin5k_ss_ips)
+    ).values(
         'connected_device_ip',
         'sector_id',
         'connected_device_mac',
         'mac_address',
-        'ip_address')
+        'ip_address'
+    )
 
     # ################################### MAPPERS START #####################################
 
     # Sectors from Inventory corressponding to sector_id's fetched from Topology.
-    sectors = Sector.objects.filter(Q(sector_id__in=topo_sector_ids_upper) | Q(sector_id__in=topo_sector_ids_lower))
+    sectors = Sector.objects.filter(sector_id__in=topo_sector_ids)
 
     # Sector ID's list.
     sector_ids = sectors.values_list('sector_id', flat=True)
@@ -14636,8 +14650,15 @@ def update_topology():
             sectors_mapper[key] = obj
 
     # Radwin 5K sectors.
-    radwin5k_sectors = Sector.objects.filter(Q(sector_configured_on__ip_address__in=radwin5k_sector_ips) | Q(
-        dr_configured_on__ip_address__in=radwin5k_sector_ips))
+    radwin5k_sectors = Sector.objects.filter(
+        Q(sector_id__isnull=False)
+        &
+        (
+            Q(sector_configured_on__ip_address__in=radwin5k_sector_ips)
+            |
+            Q(dr_configured_on__ip_address__in=radwin5k_sector_ips)
+        )
+    )
 
     # Radwin 5K sector configured on ip's list.
     radwin5k_sector_ips = radwin5k_sectors.values_list('sector_configured_on__ip_address', flat=True)
@@ -14661,10 +14682,14 @@ def update_topology():
         bs_devices_mapper[ip] = bs_device
 
     # Sectors & sub stations mapping from Circuit.
-    circuits = Circuit.objects.filter(sub_station__device__ip_address__isnull=False).select_related(
+    circuits = Circuit.objects.filter(
+        sub_station__device__ip_address__isnull=False,
+        sector__sector_id__isnull=False
+    ).select_related(
         'sub_station',
         'sub_station__device__ip_address',
-        'sector__sector_id').order_by('name')
+        'sector__sector_id'
+    ).order_by('name')
 
     # Sub Station devices IP's list corressponding to the connected_device_ip ip's.
     circuits_ss_ips = circuits.values_list('sub_station__device__ip_address', flat=True)
@@ -14680,11 +14705,13 @@ def update_topology():
     serialized_topology = list(topology)
 
     # List of sectors & sub stations mapping from Topology.
-    sectors_list = circuits.values('sector__sector_id',
-                                   'sub_station__device__ip_address',
-                                   'sub_station__device__mac_address',
-                                   'sector__sector_configured_on__ip_address',
-                                   'sector__sector_configured_on__mac_address')
+    sectors_list = circuits.values(
+        'sector__sector_id',
+        'sub_station__device__ip_address',
+        'sub_station__device__mac_address',
+        'sector__sector_configured_on__ip_address',
+        'sector__sector_configured_on__mac_address'
+    )
 
     # Serialized sectors & sub stations mapping from Circuit.
     serialized_sectors_list = [{'connected_device_ip': a['sub_station__device__ip_address'],
@@ -14700,7 +14727,6 @@ def update_topology():
     update_ss_list = []
     update_device_list = []
     update_circuit_list = []
-
     # Update inventory from updated topology.
     for info in updated_mapping:
         # Get circuit from inventory.
@@ -14712,51 +14738,52 @@ def update_topology():
         try:
             circuit = circuits_mapper[info['connected_device_ip']]
         except Exception as e:
-            pass
+            continue
 
         if circuit:
             # Update sub station.
             try:
                 ss = circuit.sub_station
-                if re.match(mac_regex, info['connected_device_mac'].lower()):
-                    ss.mac_address = info['connected_device_mac']
-                    update_ss_list.append(ss)
-                else:
+                if radwin5k_mac_mapper.get(info['connected_device_ip']):
                     ss.mac_address = radwin5k_mac_mapper[info['connected_device_ip']]['current_value']
-                    update_ss_list.append(ss)
+                else:
+                    ss.mac_address = info['connected_device_mac']
+
+                update_ss_list.append(ss)
             except Exception as e:
                 pass
             # Update sub station device.
             try:
                 ss_device = circuit.sub_station.device
-                # if re.match(mac_regex, info['connected_device_mac'].lower()):
                 if radwin5k_mac_mapper.get(info['connected_device_ip']):
                     ss_device.mac_address = radwin5k_mac_mapper[info['connected_device_ip']]['current_value']
                 else:
                     ss_device.mac_address = info['connected_device_mac']
-
+                
                 update_device_list.append(ss_device)
             except Exception as e:
                 pass
             # Update sector device.
             try:
                 sector_device = bs_devices_mapper[info['ip_address']]
-                # if info['mac_address'] and re.match(mac_regex, info['mac_address'].lower()):
+                #if re.match(mac_regex, info['mac_address'].lower()):
                 if radwin5k_mac_mapper.get(info['ip_address']):
                     sector_device.mac_address = radwin5k_mac_mapper[info['ip_address']]['current_value']
                 else:
                     sector_device.mac_address = info['mac_address']
-                    
+                
                 update_device_list.append(sector_device)
             except Exception as e:
+                logger.error('BS Device Exception -----')
+                logger.error(e)
+                logger.error('BS Device Exception -----')
                 pass
             # Update circuit.
             try:
-                if info['connected_device_ip'] in radwin5k_ss_ips:
+                if radwin5k_ss_ips.get(info['connected_device_ip']):
                     circuit.sector = radwin5k_sectors_mapper[info['ip_address'].strip()]
                 else:
-                    circuit.sector = sectors_mapper[
-                        info['sector_id'].strip().lower() + "|" + info['ip_address'].strip()]
+                    circuit.sector = sectors_mapper[info['sector_id'].strip().lower() + "|" + info['ip_address'].strip()]
                 update_circuit_list.append(circuit)
             except Exception as e:
                 pass
@@ -14777,7 +14804,7 @@ def update_topology():
 
     job = group(g_jobs)
     result = job.apply_async()
-
+    logger.error('Update Topology Task -------- END')
     return result
 
 
