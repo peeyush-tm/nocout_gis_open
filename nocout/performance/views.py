@@ -4042,7 +4042,7 @@ class GetServiceTypePerformanceData(View):
                             #     self.result['data']['objects']['valuetext'] = SERVICE_DATA_SOURCE[sds_name]["valuetext"] \
                             #         if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
 
-                            self.result['data']['objects']['plot_type'] = 'charts'
+                            self.result['data']['objects']['plot_type'] = SERVICE_DATA_SOURCE[sds_name].get('data_source_type', 'numeric')
 
                             chart_color = SERVICE_DATA_SOURCE[sds_name]["chart_color"] \
                                 if sds_name in SERVICE_DATA_SOURCE else '#70AFC4'
