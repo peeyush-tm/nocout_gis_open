@@ -1,4 +1,3 @@
-from mysql.connector import connect
 from start.start import app 
 from handlers.db_ops import *
 from formatting import inventory 
@@ -63,7 +62,8 @@ SELECT
         	IF(isnull(customer.alias), 'NA', customer.alias), '|',
 		IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name), '|',
         	IF(isnull(ss.name), 'NA', ss.name), '|',
-        	IF(isnull(device.ip_address), 'NA', device.ip_address)
+        	IF(isnull(device.ip_address), 'NA', device.ip_address),'|',
+		IF(isnull(bs_device_type.name), 'NA', bs_device_type.name)
 	) separator '-|-|-') AS SubStation
 FROM
 	inventory_backhaul AS backhaul
@@ -262,7 +262,6 @@ def mysql_to_inventory_data():
     farend_list = cur.fetchall()
     for ip_tuple in farend_list:
 	ptp_farend.append(ip_tuple[0])
-
     cur.execute(query1)
     desc =  cur.description
     my_list = [dict(zip([col[0] for col in desc ],row)) for row in cur.fetchall()]
