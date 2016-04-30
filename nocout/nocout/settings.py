@@ -1289,12 +1289,12 @@ REPORT_EMAIL_PERM = json.dumps({
     'bs_outage_monthly': 0,
     'bs_daily_fault_report': 0,
     'bs_monthly_uptime_report': 0,
-    'bh_polling_failure': 1,
+    'bh_polling_failure': 0,
 })
 
 # Global variable to show/hide single report mail option in download center listing
-SINGLE_REPORT_EMAIL = True
-SCHEDULED_SINGLE_REPORT_EMAIL = True
+SINGLE_REPORT_EMAIL = False
+SCHEDULED_SINGLE_REPORT_EMAIL = False
 SCHEDULED_REPORT_EMAIL = False
 
 

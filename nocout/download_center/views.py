@@ -854,28 +854,28 @@ class ProcessedReportEmailAPI(View):
                     }
                 }
                 # Verifying if email Report is enabled for this Report.
-                if report_email_perm.get(page_name):
-                    request_object = HttpRequest()
-                    from alarm_escalation.views import EmailSender
-                    # Generating POST Request for EmailSender API.
-                    email_sender = EmailSender()
-                    email_sender.request = request_object
+                #if report_email_perm.get(page_name):
+                request_object = HttpRequest()
+                from alarm_escalation.views import EmailSender
+                # Generating POST Request for EmailSender API.
+                email_sender = EmailSender()
+                email_sender.request = request_object
 
-                    try:
-                        email_sender.request.POST = {
-                            'subject': report_name,
-                            'message': '',
-                            'to_email': email_list,
-                            'attachment_path': file_path
-                        }
-                    except Exception, e:
-                        logger.exception(e)
-                    try:
-                        email_sender.post(email_sender)
-                        result['success'] = 1
-                        result['message'] = 'Mail sent Sucessfully'
-                        result['data']['message'] = 'Here is Your daily Report'
-                    except Exception, e:
-                        logger.exception(e)
+                try:
+                    email_sender.request.POST = {
+                        'subject': report_name,
+                        'message': '',
+                        'to_email': email_list,
+                        'attachment_path': file_path
+                    }
+                except Exception, e:
+                    logger.exception(e)
+                try:
+                    email_sender.post(email_sender)
+                    result['success'] = 1
+                    result['message'] = 'Mail sent Sucessfully'
+                    result['data']['message'] = 'Here is Your daily Report'
+                except Exception, e:
+                    logger.exception(e)
 
         return HttpResponse(json.dumps(result))
