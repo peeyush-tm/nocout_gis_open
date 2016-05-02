@@ -2118,11 +2118,10 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             tech_type_filter_condition = ''
             not_condition_sign = ''
         else:
-            ip_address_list = list(Device.objects.filter(
-                device_technology__in=tech_name_id
-            ).values_list('ip_address', flat=True))
-
-            tech_type_filter_condition = 'Q(ip_address__in=ip_address_list),'
+            # ip_address_list = list(Device.objects.filter(
+            #     device_technology__in=tech_name_id
+            # ).values_list('ip_address', flat=True))
+            tech_type_filter_condition = 'Q(technology__iexact="{{0}}"),'.format(self.tech_name)
 
 
         if filter_condition:
