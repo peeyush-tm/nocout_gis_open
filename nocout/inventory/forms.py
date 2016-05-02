@@ -360,7 +360,7 @@ class BaseStationForm(forms.ModelForm):
         """
         model = BaseStation
         # fields = "__all__"
-        exclude = ['site_ams', 'site_infra_type', 'site_sap_id', 'mgmt_vlan']
+        exclude = ['site_ams', 'site_infra_type', 'site_sap_id', 'mgmt_vlan', 'has_pps_alarm']
 
     def clean_name(self):
         """

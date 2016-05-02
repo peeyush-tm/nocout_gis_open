@@ -527,7 +527,7 @@ class GISExcelDownload(models.Model):
         return super(GISExcelDownload, self).save(*args, **kwargs)
 
     def __unicode__(self):
-        return self.file_path
+        return unicode(self.file_path) or u''
 
 
 # ********************* Connect Inventory Signals *******************
