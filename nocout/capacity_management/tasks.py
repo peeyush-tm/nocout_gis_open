@@ -390,17 +390,18 @@ def gather_backhaul_status():
                 getit='per'
             )
 
-        if kpi.exists() and val.exists():
-            bs = base_stations.filter(backhaul__bh_configured_on__machine__name=machine)
-            g_jobs.append(
-                update_backhaul_status.s(
-                    basestations=bs,
-                    kpi=kpi,
-                    val=val,
-                    avg_max_per=avg_max_per,
-                    avg_max_val=avg_max_val
-                )
+        # Commented because some entries are not appearing in Backhaul status due to no data in polled info
+        # if kpi.exists() and val.exists(): 
+        bs = base_stations.filter(backhaul__bh_configured_on__machine__name=machine)
+        g_jobs.append(
+            update_backhaul_status.s(
+                basestations=bs,
+                kpi=kpi,
+                val=val,
+                avg_max_per=avg_max_per,
+                avg_max_val=avg_max_val
             )
+        )
 
     if len(g_jobs):
         job = group(g_jobs)
@@ -1188,12 +1189,16 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     current_in_val = 'NA'
                     current_out_val = 'NA'
 
-                severity_s = {
-                    indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age'],
-                    indexed_kpi[out_per_index][0]['severity']: indexed_kpi[out_per_index][0]['age'],
-                }
+                try:
+                    severity_s = {
+                        indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age'],
+                        indexed_kpi[out_per_index][0]['severity']: indexed_kpi[out_per_index][0]['age'],
+                    }
 
-                severity, age = get_higher_severity(severity_s)
+                    severity, age = get_higher_severity(severity_s)
+                except Exception, e:
+                    severity = 'unknown'
+                    age = 'NA'
             except Exception as e:
                 pass
                 current_in_per = 'NA'
