@@ -418,16 +418,17 @@ def extract_wimax_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,sec_t
     ul_issue_list.append(bs_service_dict)        
     #warning('wimax bs ul issue: {0}'.format(len(ul_issue_list)))
     rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
-    insert_bs_ul_issue_data_to_redis(bs_service_dict)
+    insert_bs_ul_issue_data_to_redis(bs_service_dict, site)
 
-def insert_bs_ul_issue_data_to_redis(bs_service_dict):
+def insert_bs_ul_issue_data_to_redis(bs_service_dict, site):
     try :
 	#print "BS Dict Here",bs_service_dict
 	#bs_service_dict = self.bs_service_dict
         rds_cli = RedisInterface()
         #print "BS UL issue record state : %s \n" %str(bs_service_dict['state'])
+	machine_name = site.split('_')[0]
 	if bs_service_dict['state'] in ['ok','warning','critical'] :
-	    rds_cli.redis_cnx.rpush('q:bs_ul_issue_event', bs_service_dict)
+	    rds_cli.redis_cnx.rpush('q:bs_ul_issue_event:%s' % machine_name, bs_service_dict)
             #print "BS UL issue record inserted in Redis : ",rds_cli.redis_cnx.lrange('q:bs_ul_issue_event',0, -1),"\n"
     except Exception ,exp :
         print "Error in Redis DB Data Insertion UL Issue : %s \n" % str(exp)
@@ -1642,7 +1643,7 @@ def extract_cambium_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,**a
     ul_issue_list.append(bs_service_dict)
     #warning('cambium bs entry: {0}'.format(len(ul_issue_list)))
     rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
-    insert_bs_ul_issue_data_to_redis(bs_service_dict)
+    insert_bs_ul_issue_data_to_redis(bs_service_dict, site)
 
 
 @app.task(base=DatabaseTask, name='extract_wimax_ul_issue_data')

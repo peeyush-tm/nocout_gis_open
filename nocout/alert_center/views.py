@@ -2084,41 +2084,18 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         filter_condition = False
+        ip_address_list = list()
         # If any advance filter is applied
         if self.request.GET.get('is_filter_applied', False):
             filter_condition = self.prepare_filtering_condition()
 
-        # Columns list associated with current model
-        # model_columns = self.model._meta.get_all_field_names()
         model_columns = self.columns
-
-        # if self.tech_name == 'all':
-        #     if filter_condition:
-        #         query = "queryset = self.model.objects.exclude( \
-        #                     eventname__in=self.excluded_events\
-        #                 ).filter( \
-        #                     {0} \
-        #                 ).using(TRAPS_DATABASE).values(*{1})".format(
-        #                     filter_condition,
-        #                     model_columns
-        #                 )
-
-        #         exec query
-        #     else:
-        #         queryset = self.model.objects.exclude(
-        #             eventname__in=self.excluded_events
-        #         ).using(
-        #             TRAPS_DATABASE
-        #         ).values(*model_columns).all()
-        # else:
-
-        tech_type_filter_condition = 'Q(ip_address__in=ip_address_list),'
 
         if self.tech_name == 'all':
             tech_name_list = ['pmp', 'wimax']
         else:
             tech_name_list = [self.tech_name]
-        tech_name_id= list()
+        tech_name_id = list()
 
         active_filter_condition = ''
         if self.alarm_type in ['current', 'clear']:
@@ -2137,14 +2114,15 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 if tech_name in device_technology_dict:
                     tech_name_id.append(device_technology_dict.get(tech_name))
 
-
         if self.tech_name == 'all':
             tech_type_filter_condition = ''
             not_condition_sign = ''
-        
-        ip_address_list = list(Device.objects.filter(
-            device_technology__in=tech_name_id
-        ).values_list('ip_address', flat=True))
+        else:
+            # ip_address_list = list(Device.objects.filter(
+            #     device_technology__in=tech_name_id
+            # ).values_list('ip_address', flat=True))
+            tech_type_filter_condition = 'Q(technology__iexact="{{0}}"),'.format(self.tech_name)
+
 
         if filter_condition:
             query = "queryset = self.model.objects.exclude( \
