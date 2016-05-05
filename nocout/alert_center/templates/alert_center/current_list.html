@@ -129,13 +129,18 @@
             startDate = '',
             endDate = '',
             date_range_picker_html = '',
-            filter_api_url = '';
+            filter_api_url = '',
+            show_customer_count = false;
 
         $(document).ready(function (e) {
             refresh_time = 300; //Refresh SIA page in every 5 minutes 5*60 = 300
             {% if not settings.ENABLE_ADVANCE_FILTERS %}
                 // Disable advance filtering
                 create_advance_filters = false;
+            {% endif %}
+
+            {% if settings.SHOW_CUSTOMER_COUNT_IN_TRAPS %}
+                show_customer_count = true;
             {% endif %}
 
             date_range_picker_html = '<input type="text" name="filter_date" id="filter_date" class="form-control" value=""/>';
@@ -211,6 +216,8 @@
 
             $("#snmp_all_tab").attr("data_url", ajax_url_all);
             $("#snmp_all_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            show_hide_count_column();
             
             var current_href = window.location.href;
             if(current_href.indexOf("#") == -1 || current_href.split("#")[1] == "") {
