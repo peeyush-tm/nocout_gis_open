@@ -87,21 +87,21 @@ class BackhaulCapacityStatus(models.Model):
     #polled information to be updated
     backhaul_capacity = models.FloatField('Backhaul Capacity',  default=0)
     #polled information to be updated
-    current_in_per = models.FloatField('IN Current Utilization Percentage',  default=0)
-    current_in_val = models.FloatField('IN Current Utilization Value',  default=0)
-    avg_in_per = models.FloatField('IN Current Utilization Average Percentage',  default=0)
-    avg_in_val = models.FloatField('IN Current Utilization Average Value',  default=0)
-    peak_in_per = models.FloatField('IN Peak Utilization Percentage',  default=0)
-    peak_in_val = models.FloatField('IN Peak Utilization Value',  default=0)
+    current_in_per = models.CharField('IN Current Utilization Percentage', max_length=128,  default='NA')
+    current_in_val = models.CharField('IN Current Utilization Value', max_length=128,  default='NA')
+    avg_in_per = models.CharField('IN Current Utilization Average Percentage', max_length=128,  default='NA')
+    avg_in_val = models.CharField('IN Current Utilization Average Value', max_length=128,  default='NA')
+    peak_in_per = models.CharField('IN Peak Utilization Percentage', max_length=128,  default='NA')
+    peak_in_val = models.CharField('IN Peak Utilization Value', max_length=128,  default='NA')
     peak_in_timestamp = models.IntegerField('Peak In Timestamp', default=0)
 
     #polled information to be updated
-    current_out_per = models.FloatField('OUT Current Utilization Percentage',  default=0)
-    current_out_val = models.FloatField('OUT Current Utilization Value',  default=0)
-    avg_out_per = models.FloatField('OUT Current Utilization Average Percentage',  default=0)
-    avg_out_val = models.FloatField('OUT Current Utilization Average Value',  default=0)
-    peak_out_per = models.FloatField('OUT Peak Utilization Percentage',  default=0)
-    peak_out_val = models.FloatField('OUT Peak Utilization Value',  default=0)
+    current_out_per = models.CharField('OUT Current Utilization Percentage', max_length=128,  default='NA')
+    current_out_val = models.CharField('OUT Current Utilization Value', max_length=128,  default='NA')
+    avg_out_per = models.CharField('OUT Current Utilization Average Percentage', max_length=128,  default='NA')
+    avg_out_val = models.CharField('OUT Current Utilization Average Value', max_length=128,  default='NA')
+    peak_out_per = models.CharField('OUT Peak Utilization Percentage', max_length=128,  default='NA')
+    peak_out_val = models.CharField('OUT Peak Utilization Value', max_length=128,  default='NA')
     peak_out_timestamp = models.IntegerField('Peak Out Timestamp', default=0)
     #polled information to be updated
     sys_timestamp = models.IntegerField('SYS Timestamp', db_index=True,  default=0)

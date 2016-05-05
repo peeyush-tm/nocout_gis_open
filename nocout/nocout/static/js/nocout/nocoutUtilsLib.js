@@ -2191,7 +2191,8 @@ function savePowerLog(device_id, reason_str, action) {
             'action': action
         },
         success: function(response) {
-            console.log(response);
+            
+            // console.log(response);
         },
         error: function(err) {
 

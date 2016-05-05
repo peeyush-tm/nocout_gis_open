@@ -179,7 +179,7 @@ function nocoutPerfLib() {
 
         var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p' || device_type.toLowerCase() == 'radwin2kss',
             condition_2 = page_type == 'other',
-            condition_3 = page_type == 'customer' && device_type.toLowerCase() != 'radwin2kbs';
+            condition_3 = page_type == 'customer'; //&& device_type.toLowerCase() != 'radwin2kbs';
             
         // Show power tab only if page type = Customer 
         if (condition_3) {
@@ -1240,7 +1240,15 @@ function nocoutPerfLib() {
 
                     if (result.success == 1) {
 
-                        var grid_headers = result.data.objects.table_data_header;
+                        var grid_headers = result.data.objects.table_data_header,
+                            plot_type = result['data']['objects']['plot_type'];
+
+                        if (plot_type && plot_type.toLowerCase() == 'string') {
+                            draw_type = 'table';
+                            $('#item_type_btn').addClass('hide');
+                        } else {
+                            $('#item_type_btn').removeClass('hide');
+                        }
 
                         if (grid_headers && grid_headers.length > 0) {
 

@@ -23,18 +23,18 @@
 			overflow-y:auto;
 		}
 	</style>
-    <div class="box border lite">
+    <div class="box border lite" id="download_center_container">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>{{ report_title }}</h4>
         </div>
         <div id="tableContainer" class="box-body">
         	<div class="tabbable header-tabs">
 	            <ul class="nav nav-tabs">
-	                <li>
+	                <!-- <li>
 	                    <a href="#custom_outage_block" id="custom_outage_tab" data-toggle="tab">
 	                        <span class="hidden-inline-mobile">Custom Range</span>
 	                    </a>
-	                </li>
+	                </li> -->
 	                <li>
 	                    <a href="#monthly_outage_block" id="monthly_outage_tab" data-toggle="tab">
 	                        <span class="hidden-inline-mobile">Monthly</span>
@@ -70,7 +70,7 @@
 			                <tbody></tbody>
 			            </table>
 	                </div>
-	                <div class="tab-pane" id="custom_outage_block">
+	                <!-- <div class="tab-pane" id="custom_outage_block">
 	                	<div class="col-md-2">
 	                		<label style="vertical-align: sub;">Select Date Range: </label>
 	                	</div>
@@ -88,7 +88,7 @@
 			                <thead></thead>
 			                <tbody></tbody>
 			            </table>
-	                </div>
+	                </div> -->
 	            </div>
 	        </div>
         </div>
@@ -100,14 +100,45 @@
     <!-- Library to load tab content on tab click-->
     <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <!-- Bootstrap daterange picker -->
-    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
-    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
+    <!-- <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script> -->
+    <!-- <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script> -->
     <script type="text/javascript">
         var dataTableInstance = '',
         	custom_startdate = '',
-			custom_enddate = '';
+			custom_enddate = '',
+			report_name = '',
+            report_id = '',
+            reset_emails_url = '',
+            reset_emails_btn_html = '<li><button title="Reset Existing Emails" id="reset_email_btn"\
+                                     class="btn btn-default btn-sm"><i class="fa fa-times text-danger"></i></button></li>';
 
         $(document).ready(function (e) {
+
+        	var report_mail_perms = '{{ settings.REPORT_EMAIL_PERM|safe }}' ? JSON.parse('{{ settings.REPORT_EMAIL_PERM|safe }}') : {};
+
+            page_type = '{{ page_type }}';
+            report_id = '{{ report_id}}';
+            reset_emails_url = "{% url 'reset_emails' %}" + '?id='+report_id;
+
+            {% for group in user.groups.all %}
+                {% if group.name == 'Admin' %}
+                    {% if settings.SCHEDULED_REPORT_EMAIL or settings.SCHEDULED_SINGLE_REPORT_EMAIL %}
+                        if (report_mail_perms[page_type]) {
+                            // Add configure email btn
+                            // Add 'Create Item' link on top header bar.
+                            var create_link_html = '<li><button title="Configure Emails List" id="scheduled_email_btn"\
+                                                    class="btn btn-default btn-sm"><i class="fa fa-envelope"></i></button></li>';
+
+                            {% if email_exists %}
+                                create_link_html += reset_emails_btn_html;
+                            {% endif %}
+
+                            $('.controls_container ul').prepend(create_link_html);
+                        }
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
         	var destroy=false,
             	location_array = window.location.href.split("#");
 
@@ -144,105 +175,220 @@
 
             var minDate = new Date(new Date().getTime() - 180 * 24 * 60 * 60 * 1000),
             	maxDate = new Date();
-
-            // Initialize daterangepicker
-            $('#bsoutage_daterange').daterangepicker({
-	            timePicker: true,
-	            timePickerIncrement: 1,
-	            opens: "right",
-	            showDropdowns: true,
-	            ranges: {
-	                'Last 7 Days': [moment().subtract('days', 7), moment().subtract('days', 1)],
-	                'Last 30 Days': [moment().subtract('days', 30), moment().subtract('days', 1)],
-	                'This Month': [moment().startOf('month'), moment().endOf('month')],
-	                'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
-	            },
-	            buttonClasses: ['btn btn-sm'],
-	            applyClass: 'btn-primary',
-	            cancelClass: 'btn-default',
-	            format: "DD-MM-YYYY HH:mm:ss",
-	            separator: ' to ',
-	            minDate: minDate,
-       			maxDate: maxDate,
-	        }, function (start, end) {
-	            custom_startdate = start;
-	            custom_enddate = end;
-	        });
-
-            /**
-             * This event trigger when download report button clicked
-             * @event click
-             */
-			$('#download_outage_report').click(function(e) {
-				
-				if (custom_startdate && custom_enddate) {
-					var data_class_name = 'BSOutageCustomReportListing',
-						header_class_name = 'BSOutageCustomReportHeaders',
-						startdate_obj = custom_startdate.toDate(),
-						enddate_obj = custom_enddate.toDate(),
-						start_day = startdate_obj.getDate() > 9 ? startdate_obj.getDate() : '0' + String(startdate_obj.getDate()),
-						start_month = startdate_obj.getMonth() > 9 ? (Number(startdate_obj.getMonth()) + 1) : '0' + String(Number(startdate_obj.getMonth()) + 1),
-						start_year = startdate_obj.getFullYear(),
-						startdate_title = start_day + '-' + start_month + '-' + start_year,
-						enddate_title = enddate_obj.getDate() + '-' + (Number(enddate_obj.getMonth()) + 1) + '-' + enddate_obj.getFullYear(),
-						epoch_startdate = startdate_obj.getTime() / 1000,
-						epoch_enddate = custom_enddate.toDate().getTime() / 1000,
-						main_url = base_url+"/downloader/datatable/?",
-						report_title = 'Custom Date Raw Base Station Outage('+ startdate_title +' To '+ enddate_title +')',
-						datetime_filter_param = "'start_date' : '" + epoch_startdate + "', 'end_date' : '" + epoch_enddate + "'",
-				        common_param = "'download_excel' : 'yes', 'report_title' : '" + report_title + "'",
-				        row_data_param = datetime_filter_param + ',' + common_param,
-				        url_get_param = '';
-
-				    // prepare get params
-				    url_get_param += "app=download_center";
-				    url_get_param += "&rows="+data_class_name;
-				    url_get_param += "&rows_data={" + row_data_param + "}"
-				    url_get_param += "&headers="+header_class_name;
-				    url_get_param += "&headers_data={" + common_param + "}";
-
-				    var api_url = main_url + url_get_param;
-
-				    // Make Ajax Call
-				    $.ajax({
-				        url : api_url,
-				        type : 'GET',
-				        success : function(response) {
-				            var result = response;
-				            // parse response if stringified.
-				            if(typeof response == 'string') {
-				                result = JSON.parse(response);
-				            }
-
-				            $.gritter.add({
-				                // (string | mandatory) the heading of the notification
-				                title: report_title,
-				                // (string | mandatory) the text inside the notification
-				                text: result.message,
-				                // (bool | optional) if you want it to fade out on its own or just sit there
-				                sticky: false,
-				                // Time in ms after which the gritter will dissappear.
-				                time : 1000
-				            });
-				        },
-				        error : function(err) {
-				            $.gritter.add({
-				                // (string | mandatory) the heading of the notification
-				                title: report_title,
-				                // (string | mandatory) the text inside the notification
-				                text: err.statusText,
-				                // (bool | optional) if you want it to fade out on its own or just sit there
-				                sticky: false,
-				                // Time in ms after which the gritter will dissappear.
-				                time : 1000
-				            });
-				        }
-				    });
-
-				} else {
-					bootbox.alert('Please select start & end date.')
-				}
-			});
         });
     </script>
+
+    <script type="text/javascript">
+        var mail_form_html = '';
+
+        mail_form_html += '<div class="form-group form-horizontal"> \
+                                <div class="form-group"> \
+                                    <label for="email_txt" class="col-sm-3 control-label">Emails</label> \
+                                    <div class="row col-sm-9"> \
+                                        <textarea class="form-control" placeholder="Please enter comma seperated email ids" name="email_txt" id="email_txt"></textarea> \
+                                    </div> \
+                                </div> \
+                                <div class="clearfix"></div> \
+                            </div>';
+
+
+        $('.controls_container').delegate('#scheduled_email_btn', 'click', function(){
+            getExisitingEmails(function(emails_list) {
+                initEmailPopup(emails_list, true);
+            });
+        });
+
+        $('.controls_container').delegate('#reset_email_btn', 'click', function(){
+            bootbox.confirm('Are you sure you want to remove all emails for this report?', function(response) {
+                if (response) {
+                    $.ajax({
+                        url: base_url+''+reset_emails_url,
+                        type: 'GET',
+                        success: function(response) {
+                            var result = response;
+
+                            if (typeof  response == 'string') {
+                                result = JSON.parse(response);
+                            }
+
+                            if (result.success) {
+                                $('#reset_email_btn').parent('li').remove();
+                            }
+
+                            $.gritter.add({
+                                // (string | mandatory) the heading of the notification
+                                title: 'Reset Configured Emails',
+                                // (string | mandatory) the text inside the notification
+                                text: result.message,
+                                // (bool | optional) if you want it to fade out on its own or just sit there
+                                sticky: true
+                            });
+                        },
+                        error: function(err) {
+                            $.gritter.add({
+                                // (string | mandatory) the heading of the notification
+                                title: 'Reset Configured Emails',
+                                // (string | mandatory) the text inside the notification
+                                text: err.statusText,
+                                // (bool | optional) if you want it to fade out on its own or just sit there
+                                sticky: true
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+
+        $('#download_center_container').delegate('.send_report_btn', 'click', function(){
+            var report_id = $(this).attr('report_id');
+            initEmailPopup('', false, report_id);
+        });
+
+
+        function getExisitingEmails(callback) {
+
+            $.ajax({
+                url: base_url +'/download_center/getemails/'+ page_type + "/",
+                type: 'GET',
+                success: function(response) {
+                    var result = response,
+                        emails_list = '';
+
+                    if (typeof response == 'string') {
+                        result = JSON.parse(response);
+                    }
+
+                    if (result['success']) {
+                        emails_list = result['data']['emails'];
+                    } else {
+                        emails_list = '';
+                    }
+                    callback(emails_list);
+                },
+                error: function(err) {
+                    callback('');
+                }
+            });
+        }
+
+        /**
+         * This function loads existing emails for given report type
+         * @method initEmailPopup
+         * @return {string}, Return emails in initial bootbox popup if exist emails
+         */
+        function initEmailPopup(existing_emails_list, is_update_request, report_id) {
+            var popup_title = '<i class="fa fa-envelope"></i> Configure Emails List',
+                btn_txt = 'Update';
+            
+            if (report_id) {
+                popup_title = '<i class="fa fa-envelope"></i> Send Report';
+                btn_txt = 'Send';
+            }
+
+            bootbox.dialog({
+                title : popup_title,
+                message : mail_form_html,
+                buttons: {
+                    success: {
+                        label: btn_txt,
+                        className: "btn-success",
+                        callback: function(){
+                            var entered_mail_ids = $('#email_txt').val();
+
+                            if (!entered_mail_ids) {
+                                alert('Please enter atleast one mail id');
+                                return false;
+                            }
+                            var mail_ids_list = entered_mail_ids.split(','),
+                                valid_mail_ids = [];
+
+                            for (var i=0;i<mail_ids_list.length;i++) {
+                                var email = mail_ids_list[i] ? $.trim(mail_ids_list[i]) : '';
+                                if (email) {
+                                    var is_valid_email = validateEmail(email);
+                                    if (!is_valid_email) {
+                                        alert('"' + email +'" mail id is not valid. Please enter valid email id.');
+                                        return false;
+                                    } else {
+                                        valid_mail_ids.push(email);
+                                    }
+                                }
+                            }
+
+                            var api_url = '/download_center/emailreport/';
+
+                            initMailJob(valid_mail_ids, api_url, report_id, is_update_request);
+                        }
+                    },
+                    danger: {
+                        label: "Cancel",
+                        className: "btn-danger",
+                        callback: function(){
+                            // pass
+                        }
+                    }
+                }
+            });
+
+            if (existing_emails_list) {
+                $('#email_txt').val(existing_emails_list);
+            }
+        }
+    
+        /**
+         * This function validated given mail id
+         * @method validateEmail
+         * @param email {String}, It contains the email id
+         * @return {Boolean}, Return true/false as per the email valid test
+         */
+        function validateEmail(email) {
+            var re = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
+            return re.test(email);
+        }
+
+        /**
+         *
+         * @param mail_ids
+         * @param api_url
+         * @param report_id: id for report_type/page_type
+         * @param is_update_request{Boolean}: True/False if user request for update
+         * @method initMailJob
+         * @return {String}, message from Json Responce
+         */
+        function initMailJob(mail_ids, api_url, report_id, is_update_request) {
+            if (!report_id) {
+                report_id = '';
+            }
+
+            // Make ajax call to update form data
+            $.ajax({
+                'url': base_url + '' + api_url,
+                'type': 'POST',
+                'data': {
+                    'emails': mail_ids,
+                    'page_name': page_type,
+                    'report_id': report_id
+                },
+                success: function(response) {
+                    var result = response;
+
+                    if (typeof response == 'string') {
+                        result = JSON.parse(response);
+                    }
+
+                    if (result.success && is_update_request) {
+                        if($('#reset_email_btn').length == 0) {
+                            $('.controls_container ul li:last-child').before(reset_emails_btn_html);
+                        }
+                    }
+
+                    bootbox.alert(result['message']);
+                },
+                error: function(err) {
+                    console.log(err.statusText);
+                }
+            });
+        }
+     </script>
 {% endblock %}

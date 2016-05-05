@@ -17,6 +17,18 @@ urlpatterns = patterns('',
                            views.GetTopology.as_view(),
                            name='DeviceTopology'
                        ),
+                       url(r'^get_telnet_ss/$',
+                           views.GetSSTelnet.as_view(),
+                           name='TelnetSSInfo'
+                       ),
+                       url(r'^get_telnet_bs/$',
+                           views.GetBSTelnet.as_view(),
+                           name='TelnetBSInfo'
+                       ),
+                       url(r'^EveryFiveMinDeviceStatus/$',
+                           views.EveryFiveMinDeviceStatus.as_view(),
+                           name='FiveMinuteStatus'
+                       ),
                        url(r'^get_topology/tool_tip/$',
                            views.GetTopologyToolTip.as_view(),
                            name='DeviceTopologyToolTip'

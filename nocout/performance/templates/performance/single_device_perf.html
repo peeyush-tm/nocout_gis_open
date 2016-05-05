@@ -96,6 +96,14 @@
         #birdeye_container table tbody tr td {
             font-size: 12px !important;
         }
+        .perf_device_settings {
+            margin-bottom: 0px;
+        }
+        .perf_device_settings li:not(:nth-child(1)) {
+            padding-left: 0px;
+            padding-right: 0px;
+            margin-top: 2px;
+        }
     </style>
     <!--Device Status Block Start-->
     <div id="status_container" style="overflow:auto;">
@@ -115,7 +123,7 @@
         <div class='box-title'>
             <h4 class="hide">{{ realdevice.device_alias }} ({{ realdevice.ip_address }})</h4>
             <!-- Filters Block - Start-->
-            <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
+            <ul class="list-unstyled list-inline perf_device_settings">
                 <li class="date_range_filter_container">
                     <div class="input-group">
                         <span class="input-group-addon">
@@ -147,7 +155,7 @@
                     </label>
 
                     <div class="btn-group dropdown">
-                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="item_type_btn" title="Display Chart/Table">
+                        <button class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown" id="item_type_btn" title="Display Chart/Table">
                             <i class="text-primary fa fa-bar-chart-o"> </i>  Display Chart
                             <span class="caret"></span>
                         </button>
@@ -176,7 +184,7 @@
                     </label>
 
                     <div class="btn-group dropdown">
-                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="service_view_type_btn" title="Datasource/Service View">
+                        <button class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown" id="service_view_type_btn" title="Datasource/Service View">
                             <i class="text-primary fa fa-bar-chart-o"> </i> Datasource View
                             <span class="caret"></span>
                         </button>
@@ -188,11 +196,27 @@
                             </li>
                             <li>
                                 <a href="javascript:;" radioId="unified_view">
-                                    <i class="fa fa-bar-chart-o"> </i> Service View
+                                    <i class="fa fa-bar-chart-o"> </i> Service View 
                                 </a>
                             </li>
                         </ul>
                     </div>
+                </li>
+                {% endif %}
+
+                {% if settings.SHOW_SECTOR_LINK_ON_SS and sector_perf_url %}
+                <li>
+                    <a href="{{ sector_perf_url }}" target="_blank" class="btn btn-default btn-sm" title="Redirect to Sector Utilization">
+                        <i class="fa fa-bar-chart-o"></i> Sector UL
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if settings.SHOW_BH_LINK_ON_SS and sector_perf_url %}
+                <li>
+                    <a href="{{ bh_perf_url }}" target="_blank" class="btn btn-default btn-sm" title="Redirect to Backhaul Utilization">
+                        <i class="fa fa-bar-chart-o"></i> BH UL
+                    </a>
                 </li>
                 {% endif %}
 
@@ -467,6 +491,8 @@
     <script type="text/javascript" src={% static "js/vis/vis/dist/vis.js" %}></script>
     <!-- Populate network topology custom lib -->
     <script type="text/javascript" src={% static "js/nocout/networkTopologyLib.js" %}></script>
+    <!-- Populate network topology custom lib -->
+    <script type="text/javascript" src={% static "js/nocout/sshTerminalLib.js" %}></script>
     <!-- Populate custom dashboard script -->
     <script type="text/javascript" src={% static "js/nocout/custom_dashboard.js" %}></script>
     <!-- Datetime range picker lib -->
@@ -502,6 +528,7 @@
             is_radwin5 = 0,
             is_viewer = 0,
             bs_id = "",
+            sector_configured_on_id = "",
             all_services_list = [],
             perf_base_url = '',
             clicked_tab_id = '',
@@ -514,6 +541,7 @@
             power_sms_url = '',
             save_power_log_url = '',
             device_reboot_url = '',
+            is_topo_tab_clicked = false,
             enable_reboot_btn = false;
 
         $(document).ready(function (e) {
@@ -527,6 +555,7 @@
             is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
             is_viewer = "{{is_viewer_flag }}" ? Number($.trim("{{ is_viewer_flag }}")) : 0;
             bs_id = '{{ bs_id|safe }}' ? '{{ bs_id|safe }}' : [];
+            sector_configured_on_id = '{{ sector_configured_on_id|safe }}' ? '{{ sector_configured_on_id|safe }}' : '';
             perf_base_url = "{{ perf_base_url }}" ? $.trim("{{ perf_base_url }}") : "";
             non_poll_sds = '{{ settings.NO_ONDEMAND_POLL_SDS|safe }}' ? JSON.parse('{{ settings.NO_ONDEMAND_POLL_SDS|safe }}') : [];
             current_device_technology = "";
@@ -537,6 +566,10 @@
             alert_url = "",
             power_table_id = 'power_msg_listing',
             power_ajax_url = "";
+            // Getting ssh url, username and password from settings.py
+            ssh_url = '{{ settings.SSH_URL }}';
+            ssh_username = '{{ settings.SSH_USERNAME }}';
+            ssh_password = '{{ settings.SSH_PASSWORD }}';
 
             power_listing_headers = '{{ power_listing_headers }}' ? $.parseJSON('{{ power_listing_headers|safe }}') : [];
 
@@ -645,6 +678,52 @@
                                        target="_blank"><i class="fa fa-warning text-danger"></i></a>';
                 $('.controls_container ul').prepend('<li>' + inventory_link_html + '</li>');
                 $('.controls_container ul').prepend('<li>' + alert_link_html + '</li>');
+
+                {% if settings.TICKETS_LINK_ON_PERF_PAGE %}
+                if (page_type_val == 'customer') {
+                    var li_placeholder = '<li><a href="{0}" id="{3}" class="btn btn-sm text-dark" \
+                                          target="_blank"><i class="{2}"></i> {1}</a></li>',
+
+                        telnet_placeholder = '<li><a href="{0}" id="{3}" class="btn btn-sm text-dark" \
+                                          ><i class="{2}"></i> {1}</a></li>',
+
+                        pb_html = '',
+                        inc_html = '',
+                        telnet_ss_html = '',
+                        telnet_bs_html = '';
+
+                    inc_html = li_placeholder;
+                    inc_html = inc_html.replace('{0}', "{{ settings.CUSTOMER_TICKET_URL }}");
+                    inc_html = inc_html.replace('{1}', 'INC Ticket');
+                    inc_html = inc_html.replace('{2}', "fa fa-link");
+                    inc_html = inc_html.replace('{3}', "inc_tkt");
+
+                    pb_html = li_placeholder;
+                    pb_html = pb_html.replace('{0}', "{{ settings.NETWORK_TICKET_URL }}");
+                    pb_html = pb_html.replace('{1}', 'PB Ticket');
+                    pb_html = pb_html.replace('{2}', "fa fa-link");
+                    pb_html = pb_html.replace('{3}', "pb_tkt");
+
+                    telnet_ss_html = telnet_placeholder;
+                    telnet_ss_html = telnet_ss_html.replace('{0}', "javascript:;");
+                    telnet_ss_html = telnet_ss_html.replace('{1}', 'Telnet SS');
+                    telnet_ss_html = telnet_ss_html.replace('{2}', "fa fa-terminal");
+                    telnet_ss_html = telnet_ss_html.replace('{3}', "telnet_ss_btn");
+
+                    telnet_bs_html = telnet_placeholder;
+                    telnet_bs_html = telnet_bs_html.replace('{0}', "javascript:;");
+                    telnet_bs_html = telnet_bs_html.replace('{1}', 'Telnet BS');
+                    telnet_bs_html = telnet_bs_html.replace('{2}', "fa fa-terminal");
+                    telnet_bs_html = telnet_bs_html.replace('{3}', "telnet_bs_btn");
+
+
+                    // Append PB & INC ticket link on page
+                    $('.controls_container ul').prepend(inc_html);
+                    $('.controls_container ul').prepend(pb_html);
+                    $('.controls_container ul').prepend(telnet_bs_html);
+                    $('.controls_container ul').prepend(telnet_ss_html);
+                }
+                {% endif %}
 
 
                 if(inventory_url) {
@@ -859,6 +938,7 @@
            #power_tab,\
            #custom_dashboard"
         ).click(function (e) {
+            is_topo_tab_clicked = false
             // Show li panel
             $('.perfContainerBlock .box-title ul li:not(.pull-right)').removeClass('hide');
 
@@ -882,13 +962,14 @@
 
         // Fetch & Draw Topology view on tab click
         $("#topo_view").click(function(e) {
+            is_topo_tab_clicked = true
             // Show loading Spinner
             showSpinner();
 
             var single_bs_id = bs_id;
 
             $.ajax({
-                url: base_url +  "/performance/get_topology/?bs_id=" + bs_id,
+                url: base_url +  "/performance/get_topology/?bs_id="+bs_id+"&page_type="+page_type_val+"&device_id="+current_device+'&device_tech='+device_technology,
                 type: 'GET',
                 success: function(response) {
                     var result = response;
@@ -901,6 +982,34 @@
                         topo_api_data = result['data'];
                         // Calling function to convert JSON response to VIS lib format
                         convertToVis(result, topo_dom_id);
+
+                        // sending request for pl_info in given time period.
+                        refresh_id = setInterval(function() {
+
+                            // if topo_tab is not clicked than cancelling the request
+                            if (!is_topo_tab_clicked){
+                                clearInterval(refresh_id)
+                            }
+                            
+                            if (is_topo_tab_clicked) {
+                                $.ajax({
+                                    url : base_url + "/performance/EveryFiveMinDeviceStatus/?data=" + JSON.stringify(pl_device_list),
+                                    type : 'GET',
+                                    // data : JSON.stringify(pl_device_list),
+                                    success : function(response){
+                                        var result = response;
+                                        if (typeof result == 'string') {
+                                            result = JSON.parse(result);
+                                        }
+                                        // update network pl info in given time interval
+                                        updateNetworkPeriodically(result);
+                                    } 
+                                })    
+                            }
+                            
+
+                        }, 300000) //refreshing in every 5 Minutes = 5 * 60 * 1000
+
                     } else {
                         $.gritter.add({
                             // (string | mandatory) the heading of the notification

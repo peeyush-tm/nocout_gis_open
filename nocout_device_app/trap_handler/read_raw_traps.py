@@ -1,8 +1,12 @@
 """ Module to read and prcoss raw traps from snmptt databse"""
 
-from db_conn import ConnectionBase
+from trap_handler.db_conn import ConnectionBase
 #from process_traps import ProcessTraps
-from mapper import Eventmapper 
+
+# changed module for production
+#from mapper import Eventmapper 
+from trap_handler.mapper import Eventmapper
+from start.start import app
 
 class RawTraps(object):
 
@@ -41,10 +45,13 @@ class RawTraps(object):
 
 	def read_raw_traps(self):
 		""" Bulk read traps from snmptt database"""
-
-		qry = """SELECT id, eventname, eventid, agentip, trapoid, category, 
-		severity, uptime, traptime, formatline FROM snmptt WHERE id > {0}
-		""".format(self.get_start_id())
+		if self.get_start_id() :
+			qry = """SELECT id, eventname, eventid, agentip, trapoid, category, 
+			severity, uptime, traptime, formatline FROM snmptt WHERE id > {0}
+			""".format(self.get_start_id())
+		else :
+			qry = """SELECT id, eventname, eventid, agentip, trapoid, category, 
+                        severity, uptime, traptime, formatline FROM snmptt"""
 
 		data = self.exec_qry(qry, 'snmptt_db')
 		#print data
@@ -75,7 +82,7 @@ class RawTraps(object):
 			except Exception as exc:
 				print 'Error in redis qry: {0}'.format(exc)
 
-
-if __name__ == '__main__':
-	worker = RawTraps()
-	worker.do_work()
+@app.task(name='read_raw_traps')
+def read_traps():
+    worker = RawTraps()
+    worker.do_work()

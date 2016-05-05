@@ -8,6 +8,7 @@ from django.http import Http404
 from django.utils.dateformat import format
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.db.models import Q, Count, Sum, Avg
+from django.db.models.query import ValuesQuerySet
 
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
@@ -29,8 +30,10 @@ from performance.models import ServiceStatus, NetworkAvailabilityDaily, Utilizat
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 # Import Dashboard Models
-from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, \
-    DashboardRangeStatusTimely, DashboardSeverityStatusTimely, DashboardSeverityStatusDaily, DashboardRangeStatusDaily
+from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, \
+    MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, \
+    DashboardSeverityStatusDaily, DashboardRangeStatusDaily, RFOAnalysis, CustomerFaultAnalysis, \
+    SectorSummaryStatus, BackhaulSummaryStatus
 
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, \
@@ -2221,4 +2224,1384 @@ def get_technology_wise_data_dict(rf_avail_queryset):
             updated_data_dict[technology][date_str] = row_data
 
     return updated_data_dict
+
+def get_rfo_analysis_context():
+    """
+    This function returns context data required for RFO dashboards
+    """
+
+    # Fetch states from RFOAnalysis model
+    states_data = list(RFOAnalysis.objects.extra({
+        'id': 'REPLACE(state, " ", "_")',
+        'value': 'state'
+    }).filter(
+        state__isnull=False
+    ).values('value', 'id').distinct().order_by('value'))
+
+    # Fetch cities from RFOAnalysis model
+    city_data = list(RFOAnalysis.objects.extra({
+        'id': 'REPLACE(city, " ", "_")',
+        'value': 'city',
+        'state_id': 'REPLACE(state, " ", "_")',
+    }).filter(
+        city__isnull=False,
+        state__isnull=False
+    ).values('value', 'id', 'state_id').distinct().order_by('value'))
+
+    # Fetch month data from RFOAnalysis model
+    months_data = list(RFOAnalysis.objects.extra({
+        'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+    }).values('id').distinct().order_by('id'))
+
+    context = {
+        'states_data': json.dumps(states_data),
+        'city_data': json.dumps(city_data),
+        'months_data': json.dumps(months_data)
+    }
+
+    return context
+
+
+class RFOAnalysisView(ListView):
+    """
+    This class populates PB TT RFO Analysis dashboard template
+    """
+    template_name = 'rfo_dashboard/rfo_analysis.html'
+    model = RFOAnalysis
+    def get_context_data(self, *args, **kwargs):
+
+        context = super(RFOAnalysisView, self).get_context_data(**kwargs)
+
+        context_dict = get_rfo_analysis_context()
+
+        for key in context_dict:
+            context[key] = context_dict[key]
+
+        context['summation_headers'] = json.dumps([
+            {'mData': 'master_causecode', 'sTitle': 'Master Cause Code'},
+            {'mData': 'outage_in_minutes', 'sTitle': 'Total Minutes'}
+        ])
+
+        context['all_data_headers'] = json.dumps([
+            {'mData': 'master_causecode', 'sTitle': 'Master Cause Code'},
+            {'mData': 'sub_causecode', 'sTitle': 'Sub Cause Code'},
+            {'mData': 'outage_in_minutes', 'sTitle': 'Total Minutes'}
+        ])
+
+        return context
+
+
+outage_minutes_casting = 'CAST(outage_in_minutes AS DECIMAL(15,2))'
+
+class RFOAnalysisList(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = RFOAnalysis
+    columns = [
+        'master_causecode',
+        'sub_causecode',
+        'outage_in_minutes',
+        'state',
+        'city'
+    ]
+    order_columns = [
+        'master_causecode',
+        'sub_causecode',
+        'outage_in_minutes'
+    ]
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        state_name = self.request.GET.get('state_name')
+        city_name = self.request.GET.get('city_name')
+
+        if state_name:
+            state_name = state_name.replace('_', ' ')
+
+        if city_name:
+            city_name = city_name.replace('_', ' ')
+
+        try:
+            if state_name and city_name:
+                qs = self.model.objects.extra({
+                    'outage_in_minutes': outage_minutes_casting,
+                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+                }).exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    state__exact=state_name,
+                    city__exact=city_name,
+                    master_causecode__isnull=False,
+                    sub_causecode__isnull=False,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values(*self.columns)
+
+            elif state_name and not city_name:
+                qs = self.model.objects.extra({
+                    'outage_in_minutes': outage_minutes_casting,
+                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+                }).exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    state__exact=state_name,
+                    master_causecode__isnull=False,
+                    sub_causecode__isnull=False,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values(*self.columns)
+            elif not state_name and city_name:
+                qs = self.model.objects.extra({
+                    'outage_in_minutes': outage_minutes_casting,
+                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+                }).exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    city__exact=city_name,
+                    master_causecode__isnull=False,
+                    sub_causecode__isnull=False,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values(*self.columns)
+
+            else:
+                qs = self.model.objects.extra({
+                    'outage_in_minutes': outage_minutes_casting,
+                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+                }).exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    master_causecode__isnull=False,
+                    sub_causecode__isnull=False,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values(*self.columns)
+        except Exception, e:
+            qs = self.model.objects.filter(id=0).values(*self.columns)
+
+        return qs
+
+    def filter_queryset(self, qs):
+        """ If search['value'] is provided then filter all searchable columns using istartswith
+        """
+        # get global search value
+        sSearch = self.request.GET.get('search[value]', None)
+
+        if sSearch:
+            query = []
+            exec_query = "qs = qs.filter("
+            if not self.request.GET.get('request_for_chart'):
+                for column in self.columns[:-1]:
+                    # avoid search on 'added_on'
+                    if column == 'added_on':
+                        continue
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            else:
+                # in case of chart data only filter with master cause code
+                query = ['Q(master_causecode__iexact="%s")' % sSearch]
+            
+            exec_query += " | ".join(query)
+            exec_query += ")"
+            exec exec_query
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = [{
+            key: round(val, 2) if key == 'outage_in_minutes' and val else val for key, val in dct.items()
+        } for dct in qs]
+
+        return json_data
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+
+class RFOAnalysisSummationList(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = RFOAnalysis
+    columns = [
+        'master_causecode',
+        'outage_in_minutes',
+        'state',
+        'city'
+    ]
+    order_columns = [
+        'master_causecode',
+        'outage_in_minutes'
+    ]
+    pre_camel_case_notation = False
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        state_name = self.request.GET.get('state_name')
+        city_name = self.request.GET.get('city_name')
+
+        if state_name:
+            state_name = state_name.replace('_', ' ')
+
+        if city_name:
+            city_name = city_name.replace('_', ' ')
+
+        try:
+            if state_name and city_name:
+                
+                qs = self.model.objects.extra({
+                    'outage_in_minutes': outage_minutes_casting,
+                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+                }).exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    state__iexact=state_name,
+                    city__iexact=city_name,
+                    master_causecode__isnull=False,
+                    sub_causecode__isnull=False,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('master_causecode').annotate(outage_in_minutes=Sum('outage_in_minutes'))
+
+            elif state_name and not city_name:
+
+                qs = self.model.objects.extra({
+                    'outage_in_minutes': outage_minutes_casting,
+                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+                }).exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    state__iexact=state_name,
+                    master_causecode__isnull=False,
+                    sub_causecode__isnull=False,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('master_causecode').annotate(outage_in_minutes=Sum('outage_in_minutes'))
+
+            elif not state_name and city_name:
+
+                qs = self.model.objects.extra({
+                    'outage_in_minutes': outage_minutes_casting,
+                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+                }).exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    city__iexact=city_name,
+                    master_causecode__isnull=False,
+                    sub_causecode__isnull=False,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('master_causecode').annotate(outage_in_minutes=Sum('outage_in_minutes'))
+
+            else:
+
+                qs = self.model.objects.extra({
+                    'outage_in_minutes': outage_minutes_casting,
+                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+                }).exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    master_causecode__isnull=False,
+                    sub_causecode__isnull=False,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('master_causecode').annotate(outage_in_minutes=Sum('outage_in_minutes'))
+                
+        except Exception, e:
+            qs = self.model.objects.filter(id=0).values(*self.columns)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = [{
+            key: round(val, 2) if key == 'outage_in_minutes' and val else val for key, val in dct.items()
+        } for dct in qs]
+
+        return json_data
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+
+class LoadMTTRSummaryTemplate(ListView):
+    """
+    This class loads MTTR dashboard template
+    """
+
+    template_name = 'rfo_dashboard/mttr_summary.html'
+    model = RFOAnalysis
+    def get_context_data(self, *args, **kwargs):
+
+        context = super(LoadMTTRSummaryTemplate, self).get_context_data(**kwargs)
+
+        context_dict = get_rfo_analysis_context()
+
+        for key in context_dict:
+            context[key] = context_dict[key]
+
+        return context
+
+class MTTRSummaryData(View):
+    """
+    This class generate percentage count for mttr data of PB TT RFO Analysis
+    """
+    def get(self, request, *args, **kwargs):
+        result = {
+            'success': 1,
+            'message': 'MTTR data fetched successfully',
+            'data': []
+        }
+
+        month = self.request.GET.get('month')
+        state_name = self.request.GET.get('state_name')
+        city_name = self.request.GET.get('city_name')
+        mttr_dataset = []
+        total_dataset = None
+
+        if state_name:
+            state_name = state_name.replace('_', ' ')
+
+        if city_name:
+            city_name = city_name.replace('_', ' ')
+
+        try:
+            if state_name and city_name:
+                mttr_dataset = list(RFOAnalysis.objects.extra({
+                    'name': 'mttr'
+                }).exclude(
+                    master_causecode__exact=''
+                ).filter(
+                    state__iexact=state_name,
+                    city__iexact=city_name,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('name').annotate(total_count=Count('id')))
+
+                total_dataset = RFOAnalysis.objects.filter(
+                    state__iexact=state_name,
+                    city__iexact=city_name,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).count()
+            elif state_name and not city_name:
+                mttr_dataset = list(RFOAnalysis.objects.extra({
+                    'name': 'mttr'
+                }).exclude(
+                    master_causecode__exact=''
+                ).filter(
+                    state__iexact=state_name,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('name').annotate(total_count=Count('id')))
+
+                total_dataset = RFOAnalysis.objects.filter(
+                    state__iexact=state_name,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).count()
+            elif not state_name and city_name:
+                mttr_dataset = list(RFOAnalysis.objects.extra({
+                    'name': 'mttr'
+                }).exclude(
+                    master_causecode__exact=''
+                ).filter(
+                    city__iexact=city_name,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('name').annotate(total_count=Count('id')))
+
+                total_dataset = RFOAnalysis.objects.filter(
+                    city__iexact=city_name,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).count()
+            else:
+                mttr_dataset = list(RFOAnalysis.objects.extra({
+                    'name': 'mttr'
+                }).exclude(
+                    master_causecode__exact=''
+                ).filter(
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('name').annotate(total_count=Count('id')))
+
+                total_dataset = RFOAnalysis.objects.filter(
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).count()
+                
+        except Exception, e:
+            pass
+
+        if total_dataset and mttr_dataset:
+            i = 0
+            for data in mttr_dataset:
+                i += 1
+                if not data.get('name'):
+                    data['name'] = 'NA'
+
+                if 'less' in data.get('name').lower():
+                    legend_index = 1
+                elif 'between' in data.get('name').lower():
+                    legend_index = 2
+                elif 'more than' in data.get('name').lower():
+                    legend_index = 3
+                else:
+                    legend_index = i
+
+                data['legendIndex'] = legend_index
+
+                try:
+                    data['y'] = round(float(data.get('total_count', 0)) / float(total_dataset) * 100 , 2)
+                except Exception, e:
+                    pass
+
+            result.update(
+                success=1,
+                message='MTTR data fetched successfully',
+                data=mttr_dataset 
+            )
+
+        return HttpResponse(json.dumps(result))
+
+
+class MTTRDetailData(View):
+    """
+    This class returns all data for specific MTTR value
+    """
+    def get(self, request, *args, **kwargs):
+        result = {
+            'success': 1,
+            'message': 'MTTR detailed data fetched successfully',
+            'data': []
+        }
+
+        month = self.request.GET.get('month')
+        state_name = self.request.GET.get('state_name')
+        city_name = self.request.GET.get('city_name')
+        mttr_param = self.request.GET.get('mttr_param')
+        mttr_dataset = []
+        total_dataset = None
+
+        if state_name:
+            state_name = state_name.replace('_', ' ')
+
+        if city_name:
+            city_name = city_name.replace('_', ' ')
+        try:
+            if state_name and city_name:
+                
+                mttr_dataset = list(RFOAnalysis.objects.exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    state__iexact=state_name,
+                    city__iexact=city_name,
+                    master_causecode__isnull=False,
+                    mttr__iexact=mttr_param,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('master_causecode').annotate(total_count=Count('id')))
+
+                total_dataset = RFOAnalysis.objects.exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    state__iexact=state_name,
+                    city__iexact=city_name,
+                    master_causecode__isnull=False,
+                    mttr__iexact=mttr_param,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).count()
+
+            elif state_name and not city_name:
+
+                mttr_dataset = list(RFOAnalysis.objects.exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    state__iexact=state_name,
+                    master_causecode__isnull=False,
+                    mttr__iexact=mttr_param,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('master_causecode').annotate(total_count=Count('id')))
+
+                total_dataset = RFOAnalysis.objects.exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    state__iexact=state_name,
+                    master_causecode__isnull=False,
+                    mttr__iexact=mttr_param,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).count()
+
+            elif not state_name and city_name:
+
+                mttr_dataset = list(RFOAnalysis.objects.exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    city__iexact=city_name,
+                    master_causecode__isnull=False,
+                    mttr__iexact=mttr_param,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('master_causecode').annotate(total_count=Count('id')))
+
+                total_dataset = RFOAnalysis.objects.exclude(
+                    master_causecode__exact='',
+                    sub_causecode__exact=''
+                ).filter(
+                    city__iexact=city_name,
+                    master_causecode__isnull=False,
+                    mttr__iexact=mttr_param,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).count()
+
+            else:
+
+                mttr_dataset = list(RFOAnalysis.objects.exclude(
+                    master_causecode__exact=''
+                ).filter(
+                    master_causecode__isnull=False,
+                    mttr__iexact=str(mttr_param).strip(),
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('master_causecode').annotate(total_count=Count('id')))
+
+                total_dataset = RFOAnalysis.objects.exclude(
+                    master_causecode__exact=''
+                ).filter(
+                    master_causecode__isnull=False,
+                    mttr__iexact=mttr_param,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).count()
+        except Exception, e:
+            pass
+
+        if mttr_dataset and total_dataset:
+            for data in mttr_dataset:
+                data['name'] = data['master_causecode']
+                try:
+                    data['y'] = round(float(data.get('total_count', 0)) / float(total_dataset) * 100 , 2)
+                except Exception, e:
+                    pass
+
+            result.update(
+                success=1,
+                message='MTTR data fetched successfully',
+                data=mttr_dataset 
+            )
+
+        return HttpResponse(json.dumps(result))
+
+
+class INCTicketRateInit(ListView):
+    """
+    This class loads the INC ticket rate template
+    """
+    template_name = 'rfo_dashboard/inc_ticket_dashboard.html'
+    model = CustomerFaultAnalysis
+    def get_context_data(self, *args, **kwargs):
+            
+        context = super(INCTicketRateInit, self).get_context_data(**kwargs)
+
+        # Fetch month data from RFOAnalysis model
+        context['months_data'] = json.dumps(list(CustomerFaultAnalysis.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id')))
+
+        context['severity_data'] = json.dumps(list(CustomerFaultAnalysis.objects.extra({
+            'id': 'REPLACE(severity, " ", "_")',
+            'value': 'severity'
+        }).values('value', 'id').distinct().order_by('value')))
+
+        context['inc_ticket_headers'] = json.dumps([
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': 'tt_percent', 'sTitle': 'TT %'},
+            {'mData': 'target_percent', 'sTitle': 'Target %'},
+            {'mData': 'tt_count', 'sTitle': 'TT Count'}
+        ])
+
+        return context
+
+
+class INCTicketRateListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = CustomerFaultAnalysis
+    columns = [
+        'timestamp',
+        'id',
+        'severity',
+        'city'
+    ]
+    order_columns = [
+        'timestamp',
+        'tt_count',
+        'severity',
+        'tt_count'
+    ]
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        severity = self.request.GET.get('severity')
+        target = 10
+        try:
+            # If month present in GET params then filter by it else return last 6 months data
+            if month:
+                qs = self.model.objects.extra({
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }).filter(
+                    severity__iexact=severity,
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values('severity', 'timestamp').annotate(tt_count=Count('id'))
+            else:
+                current_timestamp = datetime.datetime.now()
+                qs = self.model.objects.extra({
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }).filter(
+                    severity__iexact=severity,
+                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
+                    timestamp__lte=current_timestamp
+                ).values(
+                    'severity',
+                    'timestamp'
+                ).annotate(tt_count=Count('id'))
+            if self.request.GET.get('request_for_chart'):
+                qs.order_by('tt_count')
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = [{
+            key: val for key, val in dct.items()
+        } for dct in qs]
+
+        current_target = self.request.GET.get('current_target', 60)
+        severity_wise_count = {}
+        current_timestamp = datetime.datetime.now()
+
+        for data in json_data:
+            data['tt_percent'] = ''
+            try:
+                unique_id = '{0}_{1}'.format(
+                    data['severity'].replace(' ', '_'),
+                    str(data['timestamp'])
+                ).lower()
+                if unique_id not in severity_wise_count:
+                    # Calculate the total count per severity
+                    severity_wise_count[unique_id] = self.model.objects.filter(
+                        timestamp=datetime.datetime.fromtimestamp(data['timestamp'])
+                    ).count()
+
+                total_count = severity_wise_count[unique_id]
+                # Calculate % as per the total count & sererity wise total count
+                data['tt_percent'] = round((float(data['tt_count'])/float(total_count)) * 100, 2)
+            except Exception, e:
+                pass
+
+            # Format timestamp to 'Month'
+            try:
+                data['month'] = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
+            except Exception, e:
+                data['month'] = datetime.datetime.fromtimestamp(data['timestamp'])
+            try:
+                data['target_percent'] = round(float(current_target), 2)
+            except Exception, e:
+                data['target_percent'] = current_target
+
+        print severity_wise_count
+
+        return json_data
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+
+class ResolutionEfficiencyInit(ListView):
+    """
+    This class loads the INC ticket rate template
+    """
+    template_name = 'rfo_dashboard/resolution_efficiency.html'
+    model = CustomerFaultAnalysis
+    def get_context_data(self, *args, **kwargs):
+        
+        context = super(ResolutionEfficiencyInit, self).get_context_data(**kwargs)
+
+        # Fetch month data from RFOAnalysis model
+        context['months_data'] = json.dumps(list(CustomerFaultAnalysis.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id')))
+
+        context['severity_data'] = json.dumps(list(CustomerFaultAnalysis.objects.extra({
+            'id': 'REPLACE(severity, " ", "_")',
+            'value': 'severity'
+        }).values('value', 'id').distinct().order_by('value')))
+
+        context['resolution_efficiency_headers'] = json.dumps([
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': '2_hrs', 'sTitle': '2 Hours'},
+            {'mData': '2_hrs_percent', 'sTitle': '2 Hours %'},
+            {'mData': '4_hrs', 'sTitle': '4 Hours'},
+            {'mData': '4_hrs_percent', 'sTitle': '4 Hours %'},
+            {'mData': 'more_than_4_hrs', 'sTitle': 'More Than 4 Hours'},
+            {'mData': 'more_than_4_hrs_percent', 'sTitle': 'More Than 4 Hours %'},
+            {'mData': 'total_count', 'sTitle': 'Total TT'}
+        ])
+
+        return context
+
+
+class ResolutionEfficiencyListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = CustomerFaultAnalysis
+    columns = [
+        'timestamp',
+        'id',
+        'severity',
+        'city'
+    ]
+    order_columns = [
+        'timestamp',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count'
+    ]
+
+    pre_camel_case_notation = False
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        try:
+            # If month present in GET params then filter by it else return last 6 months data
+            if month:
+                qs = self.model.objects.extra({
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }).filter(
+                    timestamp=datetime.datetime.fromtimestamp(float(month))
+                ).values(
+                    'downtime_slab',
+                    'timestamp'
+                ).annotate(tt_count=Count('id'))
+            else:
+                current_timestamp = datetime.datetime.now()
+                qs = self.model.objects.extra({
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }).filter(
+                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
+                    timestamp__lte=current_timestamp
+                ).values(
+                    'downtime_slab',
+                    'timestamp'
+                ).annotate(tt_count=Count('id'))
+
+            if self.request.GET.get('request_for_chart'):
+                try:
+                    qs.order_by('tt_count')
+                except Exception, e:
+                    pass
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = [{
+            key: val for key, val in dct.items()
+        } for dct in qs]
+
+        current_target = self.request.GET.get('current_target', 60)
+        downtime_slab_wise_count = {}
+        current_timestamp = datetime.datetime.now()
+        temp_dict = {}
+        for data in json_data:
+            tt_count = data['tt_count']
+            if data['timestamp'] not in temp_dict:
+                temp_dict[data['timestamp']] = {
+                    'timestamp': data['timestamp'],
+                    'month': '',
+                    '2_hrs': '',
+                    '2_hrs_percent': '',
+                    '4_hrs': '',
+                    '4_hrs_percent': '',
+                    'more_than_4_hrs': '',
+                    'more_than_4_hrs_percent': '',
+                    'total_count': ''
+                }
+
+            if not temp_dict[data['timestamp']]['month']:
+                try:
+                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
+                except Exception, e:
+                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
+                temp_dict[data['timestamp']]['month'] = formatted_month
+
+            if not temp_dict[data['timestamp']]['total_count']:
+                try:
+                    temp_dict[data['timestamp']]['total_count'] = self.model.objects.extra({
+                        'timestamp': 'unix_timestamp(timestamp)'
+                    }).filter(
+                        timestamp=datetime.datetime.fromtimestamp(float(data['timestamp']))
+                    ).count()
+                except Exception, e:
+                    temp_dict[data['timestamp']]['total_count'] = self.model.objects.filter(id=0).count()
+
+            total_count = temp_dict[data['timestamp']]['total_count']
+                
+            hrs_percent = round((float(tt_count) / float(total_count)) * 100, 2)
+
+            if 'Hours' not in data['downtime_slab']:
+                data['downtime_slab'] += ' Hours'
+
+            if '2' in data['downtime_slab']:
+                temp_dict[data['timestamp']]['2_hrs'] = tt_count
+                temp_dict[data['timestamp']]['2_hrs_percent'] = hrs_percent
+            elif '4' in data['downtime_slab'] and 'greater' not in data['downtime_slab']:
+                temp_dict[data['timestamp']]['4_hrs'] = tt_count
+                temp_dict[data['timestamp']]['4_hrs_percent'] = hrs_percent
+            elif 'greater' in data['downtime_slab']:
+                temp_dict[data['timestamp']]['more_than_4_hrs'] = tt_count
+                temp_dict[data['timestamp']]['more_than_4_hrs_percent'] = hrs_percent
+
+        return temp_dict.values()
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = 0
+        if qs.count() > 0:
+            total_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = 0
+        if qs.count() > 0:
+            total_display_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
+
+        qs = self.ordering(qs)
+        
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+
+class SectorStatusInit(ListView):
+    """
+    This class loads the INC ticket rate template
+    """
+    template_name = 'capacity_alerts/sector_status.html'
+    model = SectorSummaryStatus
+
+    def get_context_data(self, *args, **kwargs):
+
+        context = super(SectorStatusInit, self).get_context_data(**kwargs)
+        
+        # Fetch month data from RFOAnalysis model
+        context['months_data'] = json.dumps(list(SectorSummaryStatus.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id')))
+
+        context['summary_headers']  = json.dumps([
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': 'na_percent', 'sTitle': 'Upgrade Sector %', 'bSortable': False},
+            {'mData': 'sp_percent', 'sTitle': 'Stop Provisioning %', 'bSortable': False},
+            {'mData': 'na_sector', 'sTitle': 'Upgrade Sector', 'bSortable': False},
+            {'mData': 'sp_sector', 'sTitle': 'Stop Provisioning', 'bSortable': False},
+            {'mData': 'total_count', 'sTitle': 'Total Sectors', 'bSortable': False}
+        ])
+
+        return context
+
+
+class SectorStatusListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = SectorSummaryStatus
+    columns = [
+        'id',
+        'timestamp',
+        'ageing_ul_sp',
+        'ageing_dl_sp',
+        'ageing_ul_na',
+        'ageing_dl_na',
+        'technology'
+    ]
+    order_columns = [
+        'timestamp',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count'
+    ]
+
+    pre_camel_case_notation = False
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        technology = self.request.GET.get('technology')
+        try:
+            q = Q()
+
+            q &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0) | Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+
+            # If month present in GET params then filter by it else return last 6 months data
+            if month:
+                q &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
+            else:
+                current_timestamp = datetime.datetime.now()
+                q &= Q(
+                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
+                    timestamp__lte=current_timestamp
+                )
+
+            if technology and technology.lower() == 'all':
+                q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+            elif technology and technology.lower() == 'pmp':
+                q &= Q(technology__in=['pmp', 'ubr pmp'])
+            else:
+                q &= Q(technology__iexact=technology)
+                
+            qs = self.model.objects.filter(q)#.distinct('sector_id')
+
+            if self.request.GET.get('request_for_chart'):
+                try:
+                    qs.order_by('timestamp')
+                except Exception, e:
+                    pass
+
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        technology = self.request.GET.get('technology')
+
+        q = Q()
+        if technology and technology.lower() == 'all':
+            q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+        elif technology and technology.lower() == 'pmp':
+            q &= Q(technology__in=['pmp', 'ubr pmp'])
+        else:
+            q &= Q(technology__iexact=technology)
+
+        temp_dict = {}
+        for data in qs:
+            current_month = data.timestamp
+            epoch_timestamp = current_month.strftime('%s')
+            if epoch_timestamp not in temp_dict:
+                try:
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp)).strftime('%B - %Y')
+                except Exception, e:
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp))
+
+                where_condition = Q()
+                where_condition &= q
+                where_condition &= Q(timestamp=current_month)
+                where_condition &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0) | Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+                    
+                total_count = self.model.objects.filter(
+                    where_condition
+                ).count()
+
+                na_where_condition = Q()
+                na_where_condition &= q
+                na_where_condition &= Q(timestamp=current_month)
+                na_where_condition &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0)
+
+                na_total_count = self.model.objects.filter(
+                    na_where_condition
+                ).count()
+                na_percent = round((float(na_total_count) / float(total_count)) * 100, 2)
+
+                sp_where_condition = Q()
+                sp_where_condition &= q
+                sp_where_condition &= Q(timestamp=current_month)
+                sp_where_condition &= Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+
+                sp_total_count = self.model.objects.filter(
+                    sp_where_condition
+                ).count()
+                sp_percent = round((float(sp_total_count) / float(total_count)) * 100, 2)
+
+                temp_dict[epoch_timestamp] = {
+                    'timestamp': epoch_timestamp,
+                    'month': formatted_month,
+                    'na_percent': na_percent,
+                    'sp_percent': sp_percent,
+                    'na_sector': na_total_count,
+                    'sp_sector': sp_total_count,
+                    'total_count': total_count
+                }
+            else:
+                continue
+        return temp_dict.values()
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = 0
+        if qs.count() > 0:
+            total_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = 0
+        if qs.count() > 0:
+            total_display_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+
+        qs = self.ordering(qs)
+        
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+class BackhaulStatusInit(ListView):
+    """
+    This class loads the INC ticket rate template
+    """
+    template_name = 'capacity_alerts/backhaul_status.html'
+    model = BackhaulSummaryStatus
+    def get_context_data(self, *args, **kwargs):
+        
+        context = super(BackhaulStatusInit, self).get_context_data(**kwargs)
+        
+        # Fetch month data from RFOAnalysis model
+        context['months_data'] = json.dumps(list(BackhaulSummaryStatus.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id')))
+
+        context['summary_headers'] = json.dumps([
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': 'na_sector', 'sTitle': 'Needs Augmentation'},
+            {'mData': 'sp_sector', 'sTitle': 'Stop Provisioning'},
+            {'mData': 'total_count', 'sTitle': 'Total BS Triggered'}
+        ])
+
+        return context
+
+
+class BackhaulStatusListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Analysis all data listing
+    """
+    model = BackhaulSummaryStatus
+    columns = [
+        'id',
+        'timestamp',
+        'ul_ageing',
+        'dl_ageing',
+        'technology'
+    ]
+    order_columns = [
+        'timestamp',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count'
+    ]
+
+    pre_camel_case_notation = False
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        technology = self.request.GET.get('technology')
+        try:
+            q = Q()
+
+            q &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0) | Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+
+            # If month present in GET params then filter by it else return last 6 months data
+            if month:
+                q &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
+            else:
+                current_timestamp = datetime.datetime.now()
+                q &= Q(
+                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
+                    timestamp__lte=current_timestamp
+                )
+
+            if technology and technology.lower() == 'all':
+                q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+            elif technology and technology.lower() == 'pmp':
+                q &= Q(technology__in=['pmp', 'ubr pmp'])
+            else:
+                q &= Q(technology__iexact=technology)
+                
+
+            qs = self.model.objects.filter(q)
+
+            if self.request.GET.get('request_for_chart'):
+                try:
+                    qs.order_by('timestamp')
+                except Exception, e:
+                    pass
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        technology = self.request.GET.get('technology')
+
+        q = Q()
+        if technology and technology.lower() == 'all':
+            q &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+        elif technology and technology.lower() == 'pmp':
+            q &= Q(technology__in=['pmp', 'ubr pmp'])
+        else:
+            q &= Q(technology__iexact=technology)
+
+        temp_dict = {}
+        for data in qs:
+            current_month = data.timestamp
+            epoch_timestamp = current_month.strftime('%s')
+            if epoch_timestamp not in temp_dict:
+                try:
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp)).strftime('%B - %Y')
+                except Exception, e:
+                    formatted_month = datetime.datetime.fromtimestamp(float(epoch_timestamp))
+
+                where_condition = Q()
+                where_condition &= q
+                where_condition &= Q(timestamp=current_month)
+                where_condition &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0) | Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+                    
+                total_count = self.model.objects.filter(
+                    where_condition
+                ).count()
+
+                na_where_condition = Q()
+                na_where_condition &= q
+                na_where_condition &= Q(timestamp=current_month)
+                na_where_condition &= Q(ageing_ul_na__gt=0) | Q(ageing_dl_na__gt=0)
+
+                na_total_count = self.model.objects.filter(
+                    na_where_condition
+                ).count()
+
+                sp_where_condition = Q()
+                sp_where_condition &= q
+                sp_where_condition &= Q(timestamp=current_month)
+                sp_where_condition &= Q(ageing_ul_sp__gt=0) | Q(ageing_dl_sp__gt=0)
+
+                sp_total_count = self.model.objects.filter(
+                    sp_where_condition
+                ).count()
+
+                temp_dict[epoch_timestamp] = {
+                    'timestamp': epoch_timestamp,
+                    'month': formatted_month,
+                    'na_sector': na_total_count,
+                    'sp_sector': sp_total_count,
+                    'total_count': total_count
+                }
+
+        return temp_dict.values()
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = 0
+        qs_len = len(set(qs.values_list('timestamp', flat=True)))
+        if qs.count() > 0:
+            total_records = qs_len
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = 0
+        filter_qs_len = len(set(qs.values_list('timestamp', flat=True)))
+        if qs.count() > 0:
+            total_display_records = filter_qs_len
+
+        qs = self.ordering(qs)
+
+        
+        if not self.request.GET.get('request_for_chart') and filter_qs_len > 10:
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
 

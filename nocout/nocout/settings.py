@@ -21,6 +21,15 @@ DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 PROFILE = DEBUG
 PROFILE_TYPE = 'line'
+SSH_PROTOCOL = 'http'
+SSH_HOST = '127.0.0.1'
+SSH_PORT = '8888'
+SSH_URL = SSH_PROTOCOL + '://' + SSH_HOST + ':' + SSH_PORT + '/'  #'http://127.0.0.1:8888/'
+SSH_USERNAME = 'achal'
+SSH_PASSWORD = 'ttpl@123'
+COMMON_SSH_SCRIPT_PATH = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
+TELNET_SS_SCRIPT = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
+TELNET_BS_SCRIPT = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -495,6 +504,18 @@ CELERYBEAT_SCHEDULE = {
     'scheduled_email_report_task': {
         'task': 'download_center.tasks.scheduled_email_report',
         'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    },
+    'check_current_alarm_for_NO_PPS': {
+        'task': 'inventory.tasks.check_alarms_for_no_pps',
+        'schedule': crontab(minute='*/5'), #Execute at every 5 minute
+        'kwargs': {'alarm_type': 'current'},
+        # 'args' : ['current'],
+    },
+    'check_clear_alarm_for_NO_PPS': {
+        'task': 'inventory.tasks.check_alarms_for_no_pps',
+        'schedule': crontab(minute='*/8'),
+        'kwargs': {'alarm_type': 'clear'},
+        # 'args' : ['clear'],
     }
 }
 
@@ -829,7 +850,28 @@ SETTINGS_EXPORT = [
     'NETWORK_TICKET_URL',
     'CUSTOMER_TICKET_URL',
     'PERMISSIONS_MODULE_ENABLED',
-    'FAULT_REPORT_ENABLED'
+    'FAULT_REPORT_ENABLED',
+    'SHOW_RFO_DASHBOARD',
+    'SHOW_ALL_TAB_IN_ALERTS',
+    'GLOBAL_SEARCH_BY_BS_NAME',
+    'IDU_SEC_COMMON_UTIL_TAB',
+    'SHOW_MTTR_DASHBOARD',
+    'SHOW_INC_TICKET_DASHBOARD',
+    'SHOW_RESOLUTION_EFFCIENCY_DASHBOARD',
+    'SHOW_BH_LINK_ON_SS',
+    'SSH_URL',
+    'SSH_USERNAME',
+    'SSH_PASSWORD',
+    'COMMON_SSH_SCRIPT_PATH',
+    'TELNET_SS_SCRIPT',
+    'TELNET_BS_SCRIPT',
+    'SHOW_SECTOR_LINK_ON_SS',
+    'TICKETS_LINK_ON_PERF_PAGE',
+    'SHOW_SS_PERF_LINK_IA_TABLE',
+    'DASHBOARD_SECTOR_STATUS',
+    'DASHBOARD_BACKHAUL_STATUS',
+    'EXCLAMATION_NEEDED',
+    'ANTENA_TYPE_ADV_FILTER'
 ]
 
 # Dashbaord Settings
@@ -909,6 +951,12 @@ ENABLE_BIRDEYE_VIEW = False
 
 # Flag to enable/disable custom dashboards on single performance page.
 ENABLE_CUSTOM_DASHBOARD_VIEW = False
+
+# Flag to enable global search by Base station name
+GLOBAL_SEARCH_BY_BS_NAME = False
+
+# Flag to enable common utilization tab for IDU Ip and Sector ID global search
+IDU_SEC_COMMON_UTIL_TAB = False
 
 # Password complexity settings.
 # ===============================
@@ -1224,24 +1272,31 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
 ])
 # Global variable to show/hide Scheduled report mail option in dowload center listing.
 REPORT_EMAIL_PERM = json.dumps({
-    'bs_dump': 1,
-    'ss_dump': 1,
-    'ptp_dump': 1,
-    'latency_dump': 1,
-    'customer_report': 1,
-    'duplex_report': 1,
-    'ul_issue': 1,
-    'modulation': 1,
-    'utilization_tot': 1,
-    'temperature': 1,
-    'rectification_segment': 1,
-    'health_ptp_bh': 1    
+    'bs_dump': 0,
+    'ss_dump': 0,
+    'ptp_dump': 0,
+    'latency_dump': 0,
+    'customer_report': 0,
+    'duplex_report': 0,
+    'ul_issue': 0,
+    'modulation': 0,
+    'utilization_tot': 0,
+    'temperature': 0,
+    'rectification_segment': 0,
+    'health_ptp_bh': 0,
+    'bs_outage_daily': 0,
+    'bs_outage_weekly': 0,
+    'bs_outage_monthly': 0,
+    'bs_daily_fault_report': 0,
+    'bs_monthly_uptime_report': 0,
+    'bh_polling_failure': 0,
 })
 
 # Global variable to show/hide single report mail option in download center listing
 SINGLE_REPORT_EMAIL = False
-SCHEDULED_REPORT_EMAIL = False
 SCHEDULED_SINGLE_REPORT_EMAIL = False
+SCHEDULED_REPORT_EMAIL = False
+
 
 # Network & customer tickets url
 TICKETS_LINK_ENABLED = False
@@ -1254,8 +1309,24 @@ CUSTOMER_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/r
 # Enable/Disable permissions link from side menu
 PERMISSIONS_MODULE_ENABLED = False
 
+# Enable/Disable exclamation mark on bs_icon on google maps
+EXCLAMATION_NEEDED = False
+
 # Enable/Disable fault reports from download center
 FAULT_REPORT_ENABLED = False
+SHOW_ALL_TAB_IN_ALERTS = False
+
+SHOW_RFO_DASHBOARD = False
+SHOW_MTTR_DASHBOARD = False
+SHOW_INC_TICKET_DASHBOARD = False
+SHOW_RESOLUTION_EFFCIENCY_DASHBOARD = False
+SHOW_BH_LINK_ON_SS = False
+SHOW_SECTOR_LINK_ON_SS = False
+TICKETS_LINK_ON_PERF_PAGE = False
+SHOW_SS_PERF_LINK_IA_TABLE = False
+DASHBOARD_SECTOR_STATUS = False
+DASHBOARD_BACKHAUL_STATUS = False
+ANTENA_TYPE_ADV_FILTER = False
 
 # Import the local_settings.py file to override global settings
 try:

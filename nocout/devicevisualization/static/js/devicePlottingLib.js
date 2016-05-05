@@ -1187,7 +1187,8 @@ function devicePlottingClass_gmap() {
 			technology_filter = complete_filtering_data["advance"]["technology"],
 			vendor_filter = complete_filtering_data["advance"]["vendor"],
 			frequency_filter = complete_filtering_data["advance"]["frequency"],
-			polarization_filter = complete_filtering_data["advance"]["polarization"];
+			polarization_filter = complete_filtering_data["advance"]["polarization"],
+			antena_type_filter = complete_filtering_data["advance"]["antena_type"];
 
 		var dataset_clone = dataset;
 		// Remove unmatched sectors
@@ -1201,16 +1202,18 @@ function devicePlottingClass_gmap() {
 					sector_vendor = $.trim(bs_sectors[y].vendor.toLowerCase()),
 					sector_frequency_1 = $.trim(bs_sectors[y].freq),
 					sector_frequency_2 = "",
-					sector_polarization = bs_sectors[y].polarization ? $.trim(bs_sectors[y].polarization.toLowerCase()) : "";
+					sector_polarization = bs_sectors[y].polarization ? $.trim(bs_sectors[y].polarization.toLowerCase()) : "",
+					sector_antena_type = bs_sectors[y].antenna_type ? $.trim(bs_sectors[y].antenna_type.toLowerCase()) : "";
 
 				if(technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0) {
 					var advance_filter_condition1 = technology_filter.length > 0 ? technology_filter.indexOf(sector_technology) > -1 : true,
 						advance_filter_condition2 = vendor_filter.length > 0 ? vendor_filter.indexOf(sector_vendor) > -1 : true,
 						frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1,
 						advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter_condition : true,
-						advance_filter_condition4 = polarization_filter.length > 0 ? polarization_filter.indexOf(sector_polarization) > -1 : true;
+						advance_filter_condition4 = polarization_filter.length > 0 ? polarization_filter.indexOf(sector_polarization) > -1 : true,
+						advance_filter_condition5 = antena_type_filter.length > 0 ? antena_type_filter.indexOf(sector_antena_type) > -1 : true;
 
-					if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4) {
+					if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5) {
 						if($.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0) {
 							var basic_filter_technology = $.trim($("#technology").val()).length > 0 ? $.trim($("#technology option:selected").text()) : false,
 								basic_filter_vendor = $.trim($("#vendor").val()).length > 0 ? $.trim($("#vendor option:selected").text()) : false,
@@ -1271,10 +1274,12 @@ function devicePlottingClass_gmap() {
 			state_filter = complete_filtering_data["advance"]["state"],
 			frequency_filter = complete_filtering_data["advance"]["frequency"],
 			polarization_filter = complete_filtering_data["advance"]["polarization"],
+			antena_type_filter = complete_filtering_data["advance"]["antena_type"],
 			filterObj = complete_filtering_data["basic"],
-			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0 || antena_type_filter.length > 0,
 			isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()).length > 0 || $.trim($("#city").val()).length > 0;
 
+		// console.log(complete_filtering_data);
 		var filtered_Data = all_devices_loki_db.where(function(obj) {
 
 			var bs_city = obj.city ? $.trim(obj.city.toLowerCase()) : "",
@@ -1308,15 +1313,18 @@ function devicePlottingClass_gmap() {
 							) {
 								// If advance Filters Applied
 								if(isAdvanceFilterApplied) {
-
+									console.log('-----------------------------------------------------------sectors')
+									console.log(sectors)
 									var sector_frequency_1 = sectors[i].freq ? $.trim(sectors[i].freq) : "",
 										sector_frequency_2 = "",
 										frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1,
 										sector_polarization = sectors[i].polarization ? $.trim(sectors[i].polarization.toLowerCase()) : "",
+										sector_antena_type = sectors[i].antenna_type ? $.trim(sectors[i].antenna_type.toLowerCase()) : "",
 										advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sector_tech) > -1 : true,
 						                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sector_vendor) > -1 : true,
 						            	advance_filter_condition5 = frequency_filter.length > 0 ? frequency_filter_condition : true,
-						            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sector_polarization) > -1 : true;
+						            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sector_polarization) > -1 : true,
+						            	advance_filter_condition7 = antena_type_filter.length > 0 ? antena_type_filter.indexOf(sector_antena_type) > -1 : true;
 
 						            if(
 						            	advance_filter_condition1
@@ -1330,6 +1338,8 @@ function devicePlottingClass_gmap() {
 						            	advance_filter_condition5
 						            	&&
 						            	advance_filter_condition6
+						            	&&
+						            	advance_filter_condition7
 					            	) {
 						                isCorrect = true;
 						                break;
@@ -1358,6 +1368,8 @@ function devicePlottingClass_gmap() {
 		        					frequency_filter.length > 0
 		        					||
 		        					polarization_filter.length > 0
+		        					||
+		        					antena_type_filter.length > 0
 	        					) {
 					        		for(var i=0;i<sectors.length;i++) {
 
@@ -1366,7 +1378,8 @@ function devicePlottingClass_gmap() {
 											advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technology.toLowerCase()) > -1 : true,
 							                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor.toLowerCase()) > -1 : true,
 							            	advance_filter_condition5 = frequency_filter.length > 0 ? frequency_filter_condition : true,
-							            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation.toLowerCase()) > -1 : true;
+							            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation.toLowerCase()) > -1 : true,
+							            	advance_filter_condition7 = antena_type_filter.length > 0 ? antena_type_filter.indexOf(sectors[i].antenna_type.toLowerCase()) > -1 : true;
 
 							            if(
 							            	advance_filter_condition1
@@ -1380,6 +1393,8 @@ function devicePlottingClass_gmap() {
 							            	advance_filter_condition5
 							            	&&
 							            	advance_filter_condition6
+							            	&&
+							            	advance_filter_condition7
 						            	) {
 							                isCorrect = true;
 					                		break;
@@ -1413,6 +1428,8 @@ function devicePlottingClass_gmap() {
 					frequency_filter.length > 0
 					||
 					polarization_filter.length > 0
+					||
+					antena_type_filter.length > 0
 				) {
         			if(!isCorrect) {
 		        		for(var i=0;i<sectors.length;i++) {
@@ -1423,7 +1440,8 @@ function devicePlottingClass_gmap() {
 								advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technology.toLowerCase()) > -1 : true,
 				                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor.toLowerCase()) > -1 : true,
 				            	advance_filter_condition5 = frequency_filter.length > 0 ? frequency_filter_condition : true,
-				            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].polarization.toLowerCase()) > -1 : true;
+				            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].polarization.toLowerCase()) > -1 : true,
+				            	advance_filter_condition7 = antena_type_filter.length > 0 ? antena_type_filter.indexOf(sectors[i].antenna_type.toLowerCase()) > -1 : true;
 
 				            if(
 				            	advance_filter_condition1
@@ -1437,6 +1455,8 @@ function devicePlottingClass_gmap() {
 				            	advance_filter_condition5
 				            	&&
 				            	advance_filter_condition6
+				            	&&
+				            	advance_filter_condition7
 			            	) {
 				                isCorrect = true;
 				                break;
@@ -1667,10 +1687,14 @@ function devicePlottingClass_gmap() {
 			var fetched_bs_markerurl = bs_ss_devices[i]['icon_url'],
 				bs_marker_url = fetched_bs_markerurl ? fetched_bs_markerurl : "static/img/icons/bs.png"; 
 
+			// Flag to check if bs_icon with Exclamation mark is going to be displayed
+			var pps_bs_image_filter = bs_ss_devices[i]['has_pps_alarm'] ? bs_ss_devices[i]['has_pps_alarm'] : 0;
+
 			// BS marker icon obj
             var bs_marker_icon_obj = gmap_self.getMarkerImageBySize(
 				base_url+"/"+bs_marker_url,
-				"base_station"
+				"base_station" ,
+				pps_bs_image_filter
 			);
 
 			var fetched_status = bs_ss_devices[i]['maintenance_status'],
@@ -3063,7 +3087,20 @@ function devicePlottingClass_gmap() {
 										  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
 										  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'\
 										  device_type='"+device_type+"'> <i class='fa fa-flash'></i> Poll Now</button>\
+										  {0}\
 										  <div class='clearfix'></div><div class='divide-10'></div>";
+
+							var reboot_btn_html = '';
+							if (enable_reboot_btn && device_type == 'radwin2kbs' && device_tech != 'ptp-bh') {
+								reboot_btn_html = "<button title='Soft Reboot' class='btn btn-default power-actions btn-xs pull-right ' \
+												  style='margin-right: 10px;' id='power_send_reboot' \
+												  device_id='"+device_id+"' data-button-respone='reboot' \
+					                              data-complete-text='<i class=\"fa fa-refresh\"></i> Soft Reboot' \
+					                              data-loading-text='<i class=\"fa fa-spinner fa-spin\"></i> Please Wait...'> \
+					                              <i class='fa fa-refresh'></i> Soft Reboot\
+					                              </button>";
+							}
+							infoTable = infoTable.replace('{0}', reboot_btn_html);
 						}
 
 						infoTable += "<table class='table table-bordered table-hover'><tbody>";
@@ -4648,6 +4685,43 @@ function devicePlottingClass_gmap() {
 		    }
         });
 
+        $("#filter_antena_type").select2({
+        	multiple: true,
+        	minimumInputLength: 3,
+        	query: function (query) {
+        		var antenna_type_array = [];
+        		var searchPattern = new RegExp('^' + query.term, 'i');
+        		var filtered_data = all_devices_loki_db.where(function(obj) {
+        			var antenna_types = obj.antenna_type_str ? obj.antenna_type_str.toLowerCase() : '';
+        			if(antenna_types.search(query.term.toLowerCase()) > -1) {
+	        			return true;
+        			} else {
+        				return false;
+        			}
+        		});
+
+        		// console.log(filtered_data);
+		        var data = {results: []}, i, j, s;
+		        // var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
+		        for (i = 0; i < filtered_data.length; i++) {
+		        	var antenna_type_list = filtered_data[i].antenna_type_str ? filtered_data[i].antenna_type_str.split("|") : [];
+        			for(var j=0;j<antenna_type_list.length;j++) {
+        				if(searchPattern.test(antenna_type_list[j])) {
+        					if(data.results.length >= 40) {
+        						break;
+        					} else {
+					        	if(antenna_type_array.indexOf(antenna_type_list[j].toLowerCase()) < 0) {
+					        		antenna_type_array.push(antenna_type_list[j].toLowerCase());
+					            	data.results.push({id: antenna_type_list[j], text: antenna_type_list[j], value : antenna_type_list[j]});
+					        	}
+				        	}
+			        	}
+    				}
+		        }
+		        query.callback(data);
+		    }
+        });
+
         hideSpinner();
 	};
 
@@ -4842,18 +4916,21 @@ function devicePlottingClass_gmap() {
 			has_state = $("#filter_state").select2('val').length > 0,
 			has_frequency = $("#filter_frequency").select2('val').length > 0,
 			has_polarization = $("#filter_polarization").select2('val').length > 0,
+			has_antena_type = $("#filter_antena_type").length > 0 ? $("#filter_antena_type").select2('val').length > 0 : false,
 			technology_data = $("#filter_technology").select2('data'),
 			vendor_data = $("#filter_vendor").select2('data'),
 			city_filter_data = $("#filter_city").select2('data'),
 			state_data = $("#filter_state").select2('data'),
 			frequency_data = $("#filter_frequency").select2('data'),
 			polarization_data = $("#filter_polarization").select2('data'),
+			antenna_type_data = has_antena_type ? $("#filter_antena_type").select2('data') : [],
 			technology_filter = [],
 			vendor_filter = [],
 			city_filter = [],
 			state_filter = [],
 			frequency_filter = [],
 			polarization_filter = [],
+			antena_type_filter = [],
 			selected_filters_data = {
 				"basic" : {
 					"technology" : $.trim($("#technology option:selected").text()),
@@ -4867,7 +4944,8 @@ function devicePlottingClass_gmap() {
 					"city" : [],
 					"state" : [],
 					"frequency" : [],
-					"polarization" : []
+					"polarization" : [],
+					"antena_type" : []
 				}
 			};
 
@@ -4902,12 +4980,18 @@ function devicePlottingClass_gmap() {
 			polarization_filter = gmap_self.prepareSelect2Array(polarization_data);
 		}
 
+		// If any antena type filter is applied the get selected antena type
+		if(has_antena_type && antenna_type_data.length > 0) {
+			antena_type_filter = gmap_self.prepareSelect2Array(antenna_type_data);
+		}
+
 		selected_filters_data["advance"]["technology"] = technology_filter;
 		selected_filters_data["advance"]["vendor"] = vendor_filter;
 		selected_filters_data["advance"]["city"] = city_filter;
 		selected_filters_data["advance"]["state"] = state_filter;
 		selected_filters_data["advance"]["frequency"] = frequency_filter;
 		selected_filters_data["advance"]["polarization"] = polarization_filter;
+		selected_filters_data["advance"]["antena_type"] = antena_type_filter;
 
 		return selected_filters_data;
 	};
@@ -5425,11 +5509,12 @@ function devicePlottingClass_gmap() {
 			state_filter = complete_filtering_data["advance"]["state"],
 			frequency_filter = complete_filtering_data["advance"]["frequency"],
 			polarization_filter = complete_filtering_data["advance"]["polarization"],
+			antena_type_filter = complete_filtering_data["advance"]["antena_type"],
 			filterObj = complete_filtering_data["basic"],
-			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0 || antena_type_filter.length > 0,
 			isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()).length > 0 || $.trim($("#city").val()).length > 0,
 			basic_filter_condition = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0,
-			advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+			advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0 || antena_type_filter.length > 0,
 			filtered_data_1 = [],
 			data_to_plot_1 = [];
 
@@ -8888,8 +8973,8 @@ function devicePlottingClass_gmap() {
 	 * @method getMarkerImageBySize
 	 * param markerUrl {String}, It contains the url of marker icon.
 	 */
-	this.getMarkerImageBySize = function(markerUrl,marker_type) {
-
+	this.getMarkerImageBySize = function(markerUrl,marker_type,has_pps) {
+		// console.log(markerUrl)
 		var largeur = 32/1.4,
 			hauteur = 37/1.4,
 			divideBy = 0.8,
@@ -8897,8 +8982,14 @@ function devicePlottingClass_gmap() {
 			markerImageObj = "";
 
 		if(marker_type == 'base_station') {
-			largeur = 20/1.4;
-			hauteur = 40/1.4;
+			if(has_pps)
+			{	
+				largeur = 40/1.4;
+				hauteur = 80/1.4;
+			} else{
+				largeur = 20/1.4;
+				hauteur = 40/1.4;
+			}
 		}
 
 		if(current_icon_size == 'small') {

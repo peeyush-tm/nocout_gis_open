@@ -418,19 +418,20 @@ def extract_wimax_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,sec_t
     ul_issue_list.append(bs_service_dict)        
     #warning('wimax bs ul issue: {0}'.format(len(ul_issue_list)))
     rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
-    insert_bs_ul_issue_data_to_redis(bs_service_dict)
+    insert_bs_ul_issue_data_to_redis(bs_service_dict, site)
 
-def insert_bs_ul_issue_data_to_redis(bs_service_dict):
+def insert_bs_ul_issue_data_to_redis(bs_service_dict, site):
     try :
 	#print "BS Dict Here",bs_service_dict
 	#bs_service_dict = self.bs_service_dict
         rds_cli = RedisInterface()
         #print "BS UL issue record state : %s \n" %str(bs_service_dict['state'])
+	machine_name = site.split('_')[0]
 	if bs_service_dict['state'] in ['ok','warning','critical'] :
-	    rds_cli.redis_cnx.rpush('q:bs_ul_issue_event', bs_service_dict)
+	    rds_cli.redis_cnx.rpush('q:bs_ul_issue_event:%s' % machine_name, bs_service_dict)
             #print "BS UL issue record inserted in Redis : ",rds_cli.redis_cnx.lrange('q:bs_ul_issue_event',0, -1),"\n"
     except Exception ,exp :
-        print "Error in Redis DB Data Insertion Cambium BS UL Issue : %s \n" % str(exp)
+        print "Error in Redis DB Data Insertion UL Issue : %s \n" % str(exp)
 
 def extract_cambium_util_data(host_params,**args):
     perf = cam_util = sec_id = plugin_message = ''
@@ -560,8 +561,17 @@ def extract_mrotek_util_data(host_params,**args):
         try:
                 if args['memc']:
                     #sec_id = args['memc'].get(str(hostname) + "_sec_id")
-                    mrotek_util = args['memc'].get(str(hostname) + "_" + util_type)
+                    #mrotek_util = args['memc'].get(str(hostname) + "_" + util_type)
                     #warning('radwin util: {0}'.format(rad_util))
+                    util_values =  args['memc'].get(str(hostname) + "_" + util_type) # got values like '0.7,9'
+                    util_list = util_values.split(",")
+                    try :
+                        mrotek_util = float(util_list[0])
+                        index1 = util_list[1]
+                        data_s = "fe_"+str(index1)+"_kpi"
+                    except Exception as e:
+                        error('Mrotek conversion: {0}'.format(e))
+
                 if mrotek_util != None and isinstance(mrotek_util,basestring):
                     mrotek_util = literal_eval(mrotek_util)
         except Exception,e:
@@ -569,8 +579,8 @@ def extract_mrotek_util_data(host_params,**args):
                 #warning('args: {0}'.format(args))
                 sec_id = ''
         try:
-                if mrotek_util != None and capacity[0]:
-                    mrotek_util = (float(mrotek_util)/float(capacity[0])) * 100
+                if mrotek_util != None and capacity[int(index1)-1]:
+                    mrotek_util = (float(mrotek_util)/float(capacity[int(index1)-1])) * 100
                     mrotek_util = round(mrotek_util,2)
                     if mrotek_util < float(args['war']):
                        state = 0
@@ -581,7 +591,7 @@ def extract_mrotek_util_data(host_params,**args):
                     else:
                        state = 1
                        state_string = "warning"
-                perf = "fe_1_kpi" + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
+                    perf = data_s + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
         except Exception,e:
                 #warning('cam ss util: {0}'.format(e))
                 perf = "fe_1_kpi" + "=;%s;%s" %(args['war'],args['crit'])
@@ -700,7 +710,7 @@ def extract_wimax_util_data(host_params,**args):
         service_name = 'wimax_%s_%s_util_bgp' % (sec_type, util_type)
         try:
 	    
-            error('Memc connection: {0}'.format(args['memc']))
+            #error('Memc connection: {0}'.format(args['memc']))
             if args['memc']:
                 sec_id_suffix = "_%s_sec" % sec_type
                 util_suffix = "_%s_%s_util" % (sec_type,util_type)
@@ -1633,7 +1643,7 @@ def extract_cambium_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,**a
     ul_issue_list.append(bs_service_dict)
     #warning('cambium bs entry: {0}'.format(len(ul_issue_list)))
     rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
-    insert_bs_ul_issue_data_to_redis(bs_service_dict)
+    insert_bs_ul_issue_data_to_redis(bs_service_dict, site)
 
 
 @app.task(base=DatabaseTask, name='extract_wimax_ul_issue_data')

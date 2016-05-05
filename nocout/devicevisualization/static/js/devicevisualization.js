@@ -442,7 +442,8 @@ $("#setAdvFilterBtn").click(function(e) {
         state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
         frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
         polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
-        total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length + frequency_filter.length + polarization_filter.length;
+        antena_type_filter = $("#filter_antena_type").select2('val').length > 0 ? $("#filter_antena_type").select2('val').join(',').split(',') : [],
+        total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length + frequency_filter.length + polarization_filter.length + antena_type_filter.length;
 
     // If any value is selected in filter
     if(total_selected_items > 0) {
@@ -1817,6 +1818,7 @@ function showAdvSearch() {
         $("#filter_city").select2("val","");
         $("#filter_frequency").select2("val","");
         $("#filter_polarization").select2("val","");
+        $("#filter_antena_type").select2("val","");
 
         // Reset Advance Filters Flag
         isAdvanceFilter = 0;
