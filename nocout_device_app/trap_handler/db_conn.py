@@ -97,7 +97,7 @@ class ExportTraps(object):
 		# Check this again ..
 		if inserted and updated:
 			# TODO: if ops are successful, update the processed_traps_info
-			if flag != 'event':
+			if flag != 'event' and latest_id is not None:
 			    self.update_id(latest_id)
 
 	def exec_qry(self, qry, data=None, many=True, db_name='application_db'):
@@ -130,7 +130,8 @@ class ExportTraps(object):
 				'device_name', 'ip_address', 'trapoid', 'eventname',
 				'eventno', 'severity', 'uptime', 'traptime',
 				'description', 'alarm_count', 'first_occurred',
-				'last_occurred', 'is_active', 'sia', 'customer_count'
+				'last_occurred', 'is_active', 'sia', 'customer_count',
+				'technology'
 				)
 		columns = columns if columns else default_columns
 		# we don't need to update all the columns
@@ -185,7 +186,8 @@ class ExportTraps(object):
 				'device_name', 'ip_address', 'trapoid', 'eventname',
 				'eventno', 'severity', 'uptime', 'traptime',
 				'description', 'alarm_count', 'first_occurred',
-				'last_occurred', 'is_active', 'sia', 'customer_count'
+				'last_occurred', 'is_active', 'sia', 'customer_count',
+				'technology'
 				)
 		columns = columns if columns else default_columns
 		p0 = "INSERT INTO %(table)s" % {'table': table}
@@ -207,7 +209,8 @@ class ExportTraps(object):
                                 'device_name', 'ip_address', 'trapoid', 'eventname',
                                 'eventno', 'severity', 'uptime', 'traptime',
                                 'description', 'alarm_count', 'first_occurred',
-                                'last_occurred', 'is_active', 'sia', 'customer_count'
+                                'last_occurred', 'is_active', 'sia', 'customer_count',
+				'technology'
                                 )
                 update_columns = (
 		                'severity', 'uptime', 'traptime',

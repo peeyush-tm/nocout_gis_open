@@ -186,8 +186,8 @@ class Config:
 		'schedule' : crontab(minute=5)
 	     },
 
-             'read_raw_traps': {
-                'task': 'read_raw_traps',
+             'read_traps': {
+                'task': 'read_traps',
                 'schedule' : crontab(minute='*/5')
              },
 

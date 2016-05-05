@@ -30,7 +30,7 @@ def insert_network_event(**opt):
         #print "Data list network event",data_list
         worker = Eventmapper()
         worker.filter_events(data_list)
-	collect_down_events_from_redis.s(data_list).apply_async()
+	#collect_down_events_from_redis.s(data_list).apply_async()
 
 @app.task(name='insert_bs_ul_issue_event')
 def insert_bs_ul_issue_event(**opt):
