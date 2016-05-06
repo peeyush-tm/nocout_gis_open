@@ -30,7 +30,8 @@ class AntennaForm(forms.ModelForm):
     POLARIZATION = (
         ('', 'Select'),
         ('Vertical', 'Vertical'),
-        ('Horizontal', 'Horizontal')
+        ('Horizontal', 'Horizontal'),
+        ('Dual', 'Dual')
     )
 
     SPLITTER_INSTALLED = (
