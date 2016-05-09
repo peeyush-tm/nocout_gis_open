@@ -12,7 +12,6 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceTechnology,DeviceType
 # For SIA Listing
 from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
-from download_center.models import Customer_Count_Sector
 from performance.models import EventNetwork, EventService
 
 from operator import itemgetter
