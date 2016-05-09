@@ -1166,7 +1166,8 @@ def prepare_gis_devices_optimized(
                     "cust_id" : 0,
                     "polled_frequency" : "NA",
                     "freq_id" : 0,
-                    "planned_frequency": "NA"
+                    "planned_frequency": "NA",
+                    "customer_count": 0
                 })
 
 
@@ -1184,6 +1185,7 @@ def prepare_gis_devices_optimized(
                     continue
 
                 for inventory_row in inventory_dataset:
+                    
                     data.update({
                         "id" : inventory_row.get('DEVICE_ID', 0),
                         "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
@@ -1208,7 +1210,8 @@ def prepare_gis_devices_optimized(
                         "cust_id" : inventory_row.get('CUSTID', 0),
                         "polled_frequency" : inventory_row.get('FREQUENCY', "NA"),
                         "freq_id" : inventory_row.get('FREQ_ID', 0),
-                        "planned_frequency": inventory_row.get('SECTOR_PLANNED_FREQUENCY', 'NA')
+                        "planned_frequency": inventory_row.get('SECTOR_PLANNED_FREQUENCY', 'NA'),
+                        "customer_count": inventory_row.get('CUSTOMER_COUNT', 0),
                     })
                     
                     # append the deep copied dict

@@ -1,6 +1,6 @@
 from celery import task, group
 
-from django.db.models import Q, Avg, Sum
+from django.db.models import Q, Avg, Sum, Max
 from django.utils import timezone
 import datetime
 

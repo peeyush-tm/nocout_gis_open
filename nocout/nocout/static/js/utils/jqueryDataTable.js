@@ -70,6 +70,13 @@ function ourDataTableWidget() {
         /*Show the spinner*/
         showSpinner();
 
+        if (window.location.href.indexOf('/alarms/sia/') > -1) {
+            if ($.fn.DataTable.isDataTable('#'+tableId)){
+                $("#"+tableId).dataTable().fnDestroy();
+                $("#"+tableId).html('<thead></thead><tbody></tbody>');
+            }
+        }
+
         destroy = typeof destroy !== 'undefined' ? destroy : true;
 
         var page_length_val = [[10, 25, 50, 100], [10, 25, 50, 100]];
@@ -80,7 +87,7 @@ function ourDataTableWidget() {
 
         var default_selected_page_length = page_length_val[0][0] ? page_length_val[0][0] : 10;
 
-        if (destroy){
+        if (destroy) {
             $("#"+tableId).dataTable().fnDestroy();
         }
 
