@@ -2078,6 +2078,7 @@ def get_inventory_sector_query(
             bs.city_id as BSCITYID,
             bs.state_id as BSSTATEID,
             IF(not isnull(freq.value), freq.value, 'NA') AS FREQUENCY,
+            IF(not isnull(customer_count_sec.count_of_customer), customer_count_sec.count_of_customer, 0) AS CUSTOMER_COUNT,
             sector_info.* 
         from
             (
@@ -2151,6 +2152,10 @@ def get_inventory_sector_query(
             device_deviceport AS device_port
         ON
             device_port.id = sector_info.sector_port_id
+        LEFT JOIN
+            download_center_customer_count_sector AS customer_count_sec
+        ON 
+            customer_count_sec.sector_id = sector_info.SECTOR_SECTOR_ID
         and
             not isnull(sector_info.sector_port_id)
         {6};

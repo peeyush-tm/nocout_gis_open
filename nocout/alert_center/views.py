@@ -12,7 +12,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceTechnology,DeviceType
 # For SIA Listing
 from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
-
+from download_center.models import Customer_Count_Sector
 from performance.models import EventNetwork, EventService
 
 from operator import itemgetter
@@ -806,6 +806,11 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'refer', 'sTitle': 'Affected Sectors', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True}
+            # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
+        ul_issue_specific_headers_2 = [
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         bh_dt_specific_headers = [
@@ -827,6 +832,7 @@ class NetworkAlertDetailHeaders(ListView):
 
         polled_headers = [
             {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'bSortable': True},
+            # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto',
              'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"}
         ]
@@ -857,6 +863,7 @@ class NetworkAlertDetailHeaders(ListView):
         ul_issue_datatable_headers += ul_issue_specific_headers
         ul_issue_datatable_headers += common_headers
         ul_issue_datatable_headers += polled_headers
+        ul_issue_datatable_headers += ul_issue_specific_headers_2
         ul_issue_datatable_headers += other_headers
 
         bh_dt_headers = []
@@ -1477,6 +1484,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         total_records = len(qs)
 
         qs = self.filter_queryset(qs)
+
 
         # number of records after filtering
         total_display_records = len(qs)
