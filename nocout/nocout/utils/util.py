@@ -9,7 +9,7 @@ from dateutil import tz
 from django.db import connections
 from django.db.models import Q
 from operator import itemgetter
-from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME, MAX_SUGGESTION_COUNT, DATATABLE_SEARCHTXT_KEY
+from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME, MAX_SUGGESTION_COUNT, DATATABLE_SEARCHTXT_KEY, SHOW_CUSTOMER_COUNT_IN_ALERT_LIST
 
 date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
@@ -2068,6 +2068,18 @@ def get_inventory_sector_query(
         concat_values = " sector_info.SECTOR_SECTOR_ID AS SECTOR_PORT_SECTOR_ID , \
                          ".format(dr_sector_id_prefix)
 
+    if SHOW_CUSTOMER_COUNT_IN_ALERT_LIST:
+        fetch_cutomer_count_query_1 = "IF(not isnull(customer_count_sec.count_of_customer), customer_count_sec.count_of_customer, 0) AS CUSTOMER_COUNT,"
+        fetch_cutomer_count_query_2 =   '''
+                                            LEFT JOIN
+                                                download_center_customer_count_sector AS customer_count_sec
+                                            ON 
+                                                customer_count_sec.sector_id = sector_info.SECTOR_SECTOR_ID
+                                        '''
+    else:
+        fetch_cutomer_count_query_1 = ''
+        fetch_cutomer_count_query_2 = ''
+
     sector_query = '''
         SELECT 
             IF(not isnull(bs.alias), bs.alias, 'NA') as BSALIAS,
@@ -2078,7 +2090,7 @@ def get_inventory_sector_query(
             bs.city_id as BSCITYID,
             bs.state_id as BSSTATEID,
             IF(not isnull(freq.value), freq.value, 'NA') AS FREQUENCY,
-            IF(not isnull(customer_count_sec.count_of_customer), customer_count_sec.count_of_customer, 0) AS CUSTOMER_COUNT,
+            {7}
             sector_info.* 
         from
             (
@@ -2152,10 +2164,7 @@ def get_inventory_sector_query(
             device_deviceport AS device_port
         ON
             device_port.id = sector_info.sector_port_id
-        LEFT JOIN
-            download_center_customer_count_sector AS customer_count_sec
-        ON 
-            customer_count_sec.sector_id = sector_info.SECTOR_SECTOR_ID
+        {8}
         and
             not isnull(sector_info.sector_port_id)
         {6};
@@ -2167,7 +2176,9 @@ def get_inventory_sector_query(
             concat_values,
             dr_device_condition,
             device_condition,
-            grouping_condition
+            grouping_condition,
+            fetch_cutomer_count_query_1,
+            fetch_cutomer_count_query_2
         )
 
     return sector_query

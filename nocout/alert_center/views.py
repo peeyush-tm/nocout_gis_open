@@ -35,7 +35,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from django.utils.dateformat import format
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME
+from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME, SHOW_CUSTOMER_COUNT_IN_ALERT_LIST
 
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
@@ -863,7 +863,8 @@ class NetworkAlertDetailHeaders(ListView):
         ul_issue_datatable_headers += ul_issue_specific_headers
         ul_issue_datatable_headers += common_headers
         ul_issue_datatable_headers += polled_headers
-        ul_issue_datatable_headers += ul_issue_specific_headers_2
+        if SHOW_CUSTOMER_COUNT_IN_ALERT_LIST:
+            ul_issue_datatable_headers += ul_issue_specific_headers_2
         ul_issue_datatable_headers += other_headers
 
         bh_dt_headers = []
