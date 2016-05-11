@@ -11,7 +11,7 @@ def scheduled_email_report(report=None):
     """
     This is a celery function which supports two types of email report generation
     1.) Single email report to multiple emails triggered when report is ready using Signal.
-    2.) Scheduled email report generation(per user email contains multiple reports) based on time time definedin settings file.
+    2.) Scheduled email report generation(per user email contains multiple reports) based on time defined in settings.
 
     Args:
         email_report(dict) : Dictionary containing email_id as a Key and list of report_name

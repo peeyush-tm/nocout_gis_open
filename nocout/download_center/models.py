@@ -1137,3 +1137,24 @@ class EmailReport(models.Model):
 
 # Post Singnal call triggers to initiate email report.
 # post_save.connect(dc_signals.send_mail_on_report_generation, sender=ProcessedReportDetails)
+
+class Customer_Count_Sector(models.Model):
+	sector_id = models.CharField('Sector ID', max_length=55, null=True)
+	sector_config_ip = models.CharField('Sector Config IP', max_length=55, null=True)
+	bs_name = models.CharField('BS Name', max_length=55, null=True)
+	count_of_customer = models.CharField('Count Of Customer', max_length=55, null=True)
+	technology = models.CharField('Technology', max_length=55, null=True)
+
+class Customer_Count_BSname(models.Model):
+	base_station_name = models.CharField('Base Station Name', max_length=55, null=True)
+	bs_converter = models.CharField('BS Converter', max_length=55, null=True)
+	bs_switch = models.CharField('BS Switch', max_length=45, null=True)
+	pop_converter = models.CharField('POP Converter', max_length=45, null=True)
+	count_of_customer = models.CharField('Count Of Customer', max_length=45, null=True)
+	technology = models.CharField('Technology', max_length=45, null=True)
+
+class Customer_Count_IPaddress(models.Model):
+	sector_config_ip = models.CharField('Sector Config IP', max_length=55, null=True)
+	bs_name = models.CharField('BS Name', max_length=55, null=True)
+	count_of_customer = models.CharField('Count Of Customer', max_length=55, null=True)
+	technology = models.CharField('Technology', max_length=55, null=True)

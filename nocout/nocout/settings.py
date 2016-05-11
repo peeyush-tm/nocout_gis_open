@@ -501,10 +501,10 @@ CELERYBEAT_SCHEDULE = {
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=25, hour=0)
     },
-    'scheduled_email_report_task': {
-        'task': 'download_center.tasks.scheduled_email_report',
-        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
-    },
+    #'scheduled_email_report_task': {
+    #    'task': 'download_center.tasks.scheduled_email_report',
+    #    'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    #},
     'check_current_alarm_for_NO_PPS': {
         'task': 'inventory.tasks.check_alarms_for_no_pps',
         'schedule': crontab(minute='*/5'), #Execute at every 5 minute
@@ -872,7 +872,8 @@ SETTINGS_EXPORT = [
     'DASHBOARD_BACKHAUL_STATUS',
     'EXCLAMATION_NEEDED',
     'ANTENA_TYPE_ADV_FILTER',
-    'SHOW_CUSTOMER_COUNT_IN_TRAPS'
+    'SHOW_CUSTOMER_COUNT_IN_TRAPS',
+    'SHOW_CUSTOMER_COUNT_IN_ALERT_LIST'
 ]
 
 # Dashbaord Settings
@@ -1329,6 +1330,7 @@ DASHBOARD_SECTOR_STATUS = False
 DASHBOARD_BACKHAUL_STATUS = False
 ANTENA_TYPE_ADV_FILTER = False
 SHOW_CUSTOMER_COUNT_IN_TRAPS = False
+SHOW_CUSTOMER_COUNT_IN_ALERT_LIST = False
 
 # Import the local_settings.py file to override global settings
 try:
