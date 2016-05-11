@@ -501,10 +501,10 @@ CELERYBEAT_SCHEDULE = {
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=25, hour=0)
     },
-    'scheduled_email_report_task': {
-        'task': 'download_center.tasks.scheduled_email_report',
-        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
-    },
+    #'scheduled_email_report_task': {
+    #    'task': 'download_center.tasks.scheduled_email_report',
+    #    'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    #},
     'check_current_alarm_for_NO_PPS': {
         'task': 'inventory.tasks.check_alarms_for_no_pps',
         'schedule': crontab(minute='*/5'), #Execute at every 5 minute
