@@ -549,10 +549,13 @@ function addDataToChartTable_nocout(table_obj, table_id) {
 function addPointsToChart_nocout(pointArray, dom_id) {
 
     var highChartSeries = $('#'+dom_id+'_chart').highcharts().series;
-
     for (var i = 0; i < highChartSeries.length; i++) {
-        for (var j = 0; j < pointArray[i].data.length; j++) {
-            $('#'+dom_id+'_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
+        if (typeof dataset_list != 'undefined' && dataset_list.length) {
+            $('#'+dom_id+'_chart').highcharts().series[i].setData(dataset_list[i]['data'],false,false);
+        } else {
+            for (var j = 0; j < pointArray[i].data.length; j++) {
+                $('#'+dom_id+'_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
+            }   
         }
     }
 
