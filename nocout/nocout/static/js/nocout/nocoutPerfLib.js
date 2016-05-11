@@ -1335,6 +1335,11 @@ function nocoutPerfLib() {
                             // If any data available then plot chart & table
                             if (chart_config.chart_data.length > 0) {
                                 if (draw_type == 'chart') {
+                                    for(var i=0;i<chart_config.chart_data.length;i++) {
+                                        if(!chart_config.chart_data[i]['turboThreshold']) {
+                                            chart_config.chart_data[i]['turboThreshold'] = 0;
+                                        }
+                                    }
                                     if (!is_birdeye_view && !is_custom_view) {
                                         // Destroy 'perf_data_table'
                                         nocout_destroyDataTable('other_perf_table');
@@ -1353,10 +1358,17 @@ function nocoutPerfLib() {
                                     }
 
                                     if (!$('#' + service_id+ '_chart').highcharts()) {
+                                        if(typeof dataset_list == 'undefined') {
+                                            dataset_list = [];
+                                        }
+                                        dataset_list = chart_config.chart_data;
                                         createHighChart_nocout(chart_config,service_id, false, false, function(status) {
                                             // 
                                         });
                                     } else {
+                                        for (var i =0;i<chart_config.chart_data.length;i++) {
+                                            dataset_list[i]['data'] = dataset_list[i]['data'].concat(chart_config.chart_data[i]['data']);
+                                        }
                                         addPointsToChart_nocout(chart_config.chart_data,service_id);
                                     }
 
@@ -1776,6 +1788,7 @@ $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e
         }
 
         if (show_historical_on_performance || is_perf_polling_enabled) {
+            dataset_list = [];
             perfInstance.initGetServiceData(serviceDataUrl, tab_service_id, current_device);
         }
     }
