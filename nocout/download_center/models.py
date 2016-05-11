@@ -1146,7 +1146,7 @@ class Customer_Count_Sector(models.Model):
 	technology = models.CharField('Technology', max_length=55, null=True)
 
 class Customer_Count_BSname(models.Model):
-	bs_name = models.CharField('Base Station Name', max_length=55, null=True)
+	base_station_name = models.CharField('Base Station Name', max_length=55, null=True)
 	bs_converter = models.CharField('BS Converter', max_length=55, null=True)
 	bs_switch = models.CharField('BS Switch', max_length=45, null=True)
 	pop_converter = models.CharField('POP Converter', max_length=45, null=True)
