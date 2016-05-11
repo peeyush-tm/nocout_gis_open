@@ -28,6 +28,12 @@ sia_value = {
 	'0' : 'NSA',
 	'1' : 'SA',
 }
+technology = {
+	'wimax' : 'wimax',
+	'pmp' : 'pmp',
+	'radwin5k' : 'pmp',
+	'converter' : 'converter',
+}
 class Eventmapper(object):
    def __init__(self):
 	self.conn_base = ConnectionBase()
@@ -62,20 +68,20 @@ class Eventmapper(object):
 		print 'Error in reading MAT: {0}'.format(exc)
 	return mat_entry_details
 
-   def read_customer_count_from_redis(self):	
+   def read_customer_count_from_redis(self):
         customer_count_dict = defaultdict(list)
 	try :
 		redis_cnx = self.conn_base.redis_cnx(db_name='redis')
 		customer_count_data = redis_cnx.keys('customer_count:*')
 		for entry in customer_count_data :
-        		key = entry.split(':')[-1]
-        		customer_count_dict[key] = int(redis_cnx.get(entry))
+			key = entry.split(':')[-1]
+			customer_count_dict[key] = int(redis_cnx.get(entry))
 	except Exception,exc :
-  		print 'Error in reading customer count from redis: {0}'.format(exc)
+		print 'Error in reading customer count from redis: {0}'.format(exc)
 	return customer_count_dict
 
    def get_alarm_mask_oids(self):
-	""" For every current trap, adds its corresponding clear trap 
+	""" For every current trap, adds its corresponding clear trap
 	and vice-versa"""
         alarm_masking_dict = defaultdict(list)
         query_1 = """
@@ -94,7 +100,7 @@ class Eventmapper(object):
 	and     master1.device_type in ('wimax')
         """
 	qry = """
-	SELECT 
+	SELECT
 		master1.oid,master1.severity ,master2.oid mask_oid,master2.severity mask_severity
 	FROM
 		alarm_masking_table mask
@@ -109,16 +115,24 @@ class Eventmapper(object):
 
 	and     master1.device_type not in ('wimax')
 	"""
-	my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
-	cursor = my_cnx.cursor()
-	cursor.execute(query_1)
-	wimax_data = cursor.fetchall()
-	cursor.execute(qry)
-	other_traps_data = cursor.fetchall()
-        for (name,severity,mask_name,mask_severity) in wimax_data:
-		alarm_masking_dict[(name,severity)].append((mask_name,mask_severity))
-	for oid,severity,mask_oid,mask_severity in other_traps_data:
-        	alarm_masking_dict[(str(oid),severity)].append((mask_oid,mask_severity))
+	try :
+		my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
+		cursor = my_cnx.cursor()
+		cursor.execute(query_1)
+		wimax_data = cursor.fetchall()
+		cursor.execute(qry)
+		other_traps_data = cursor.fetchall()
+		for (name,severity,mask_name,mask_severity) in wimax_data:
+			alarm_masking_dict[(name,severity)].append((mask_name,mask_severity))
+		for oid,severity,mask_oid,mask_severity in other_traps_data:
+			alarm_masking_dict[(str(oid),severity)].append((mask_oid,mask_severity))
+        except Exception ,e :
+                print "Error in get_alarm_mask_oids : %s "% str(e)
+        finally:
+                if cursor :
+                        cursor.close()
+                        my_cnx.close()
+
 	return  alarm_masking_dict
 
    def get_mapped_mat_entries(self):
@@ -129,7 +143,7 @@ class Eventmapper(object):
                 alarm_name, severity
         FROM
                 master_alarm_table
-        WHERE        
+        WHERE
                 device_type in ('wimax')
         """
         qry = """
@@ -140,15 +154,22 @@ class Eventmapper(object):
         WHERE
                 device_type not in ('wimax')
         """
-        my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
-        cursor = my_cnx.cursor()
-        cursor.execute(query_1)
-        wimax_mat_entries = [(item[0],item[1]) for item in cursor.fetchall()]
-        cursor.execute(qry)
-        other_traps_mat_entries = [(item[0],item[1]) for item in cursor.fetchall()]
-        mat_entries = wimax_mat_entries
-        mat_entries.extend(other_traps_mat_entries)
-        mat_entries = set(mat_entries)
+	try :
+        	my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
+        	cursor = my_cnx.cursor()
+        	cursor.execute(query_1)
+        	wimax_mat_entries = [(item[0],item[1]) for item in cursor.fetchall()]
+        	cursor.execute(qry)
+        	other_traps_mat_entries = [(item[0],item[1]) for item in cursor.fetchall()]
+        	mat_entries = wimax_mat_entries
+        	mat_entries.extend(other_traps_mat_entries)
+        	mat_entries = set(mat_entries)
+        except Exception ,e :
+                print "Error in get_mapped_mat_entries : %s "% str(e)
+        finally:
+                if cursor :
+                        cursor.close()
+                        my_cnx.close()
         return mat_entries
 
    def make_unique_event_dict(self,events,flag=None):
@@ -166,6 +187,7 @@ class Eventmapper(object):
 	alarm_mask_oid = self.get_alarm_mask_oids()
         mask_oid_key = None 	
 	mat_entry = None
+	not_mapped = []
 	for event in events :
 	    alarm_name = str(event[1])
 	    if flag == 'event' :
@@ -208,7 +230,9 @@ class Eventmapper(object):
                     elif event_unique_key not in event_count_dict.keys():
                         event_count_dict[event_unique_key] = [1,event]
 	    else :
-		print "Not mapped in MAT : ",mat_entry
+		not_mapped.append(mat_entry)
+	if not_mapped :
+		print "Not mapped in MAT : ",not_mapped
 	return event_dict.values(),event_count_dict
 
    def update_trap_count(self,event_count_dict):
@@ -234,8 +258,11 @@ class Eventmapper(object):
 		eventname = formatline[indexes['event_name']].replace(' ','_')
 		try :
 		    sia = sia_value[str(self.mat_entry_details['rf_ip_%s_%s' % (eventname,severity)]['sia'])]
+                    device_type = technology[str(self.mat_entry_details['rf_ip_%s_%s' \
+                                                 % (eventname,severity)]['device_type'])]
 		except:
-		    sia = ''		
+		    sia = ''
+		    device_type = ''
                 new_trap.update({
                                 'ip_address': trap[3],
                                 'device_name': self.inventory_info.get(trap[3]) if self.inventory_info.get(trap[3]) is not None else '',
@@ -252,7 +279,8 @@ class Eventmapper(object):
                                 'is_active': 0,
                                 'sia': sia,
 				'customer_count': self.customer_count_details[str(trap[3])] \
-						if str(trap[3]) in self.customer_count_details else None
+						if str(trap[3]) in self.customer_count_details else None,
+                                'technology': device_type
                                 })
             else :
 		severity  = trap[6].lower()
@@ -263,10 +291,19 @@ class Eventmapper(object):
                     last_occurred = trap[8]
 		eventname =  str(trap[1])
 		try :
-                	sia = sia_value[str(self.mat_entry_details['rf_ip_%s_%s' % (eventname,severity)]['sia'])]
-                except :
-                        sia = ''
+                        if 'PMP_' in eventname :
+                            sia = sia_value[str(self.mat_entry_details['rf_ip_%s_%s' % (eventname.split('_')[1],severity)]['sia'])]
+                            device_type = technology[str(self.mat_entry_details['rf_ip_%s_%s' \
+                                                 % (eventname.split('_')[1],severity)]['device_type'])]
+                        else :
+                            sia = sia_value[str(self.mat_entry_details['rf_ip_%s_%s' % (eventname,severity)]['sia'])]
+                            device_type = technology[str(self.mat_entry_details['rf_ip_%s_%s' \
+                                                 % (eventname,severity)]['device_type'])]
 
+                except Exception,e:
+                        print e
+                        sia = ''
+                        device_type = ''
                 new_trap.update({
                                 'ip_address': str(trap[3]),
                                 'device_name': self.inventory_info.get(trap[3]) if self.inventory_info.get(trap[3]) is not None else '',
@@ -283,9 +320,10 @@ class Eventmapper(object):
                                 'is_active': 0,
                                 'sia': sia,
                                 'customer_count': self.customer_count_details[str(trap[3])] \
-						if str(trap[3]) in self.customer_count_details else None
+						if str(trap[3]) in self.customer_count_details else None,
+                                'technology':device_type
                                 })
-	      
+
             if severity.lower() not in severity_for_clear_table:
                 current_events_update.append(new_trap)
             else:
@@ -343,13 +381,14 @@ class Eventmapper(object):
 				'uptime': event[7],
 				'traptime': event[8],
 				'last_occurred': last_occurred,
-				'first_occurred': event[8],
+				'first_occurred': last_occurred,
 				'alarm_count': 0,
 				'description': event[-1],
 				'is_active': 1,
                                 'sia': sia,
                                 'customer_count': self.customer_count_details[str(event[3])]
-						 if str(event[3]) in self.customer_count_details else None
+						 if str(event[3]) in self.customer_count_details else None,
+				'technology': device_type
 				})
 			if event[6].lower() not in severity_for_clear_table:
 				current_events.append(new_event)
@@ -420,8 +459,12 @@ class Eventmapper(object):
 
 			try :
                             sia = sia_value[str(self.mat_entry_details['rf_ip_%s_%s' % (eventname,severity)]['sia'])]
+                            device_type = technology[str(self.mat_entry_details['rf_ip_%s_%s' \
+                                                 % (eventname,severity)]['device_type'])]
+
 			except :
 			    sia = 'NA'
+			    device_type = ''
 
 			new_trap.update({
 				'ip_address': trap[3],
@@ -433,19 +476,20 @@ class Eventmapper(object):
 				'uptime': trap[7],
 				'traptime': trap[8],
 				'last_occurred': last_occurred,
-				'first_occurred': trap[8],
+				'first_occurred': last_occurred,
 				'alarm_count': 0,
 				'description': trap[-1],
 				'is_active': 1,
 				'sia': sia,
                                 'customer_count': self.customer_count_details[str(trap[3])] 
-						if str(trap[3]) in self.customer_count_details else None
+						if str(trap[3]) in self.customer_count_details else None,
+				'technology': device_type
 				})
 
 			if severity not in severity_for_clear_table:
 				current_traps.append(new_trap)
 			else:
-				clear_traps.append(new_trap) 
+				clear_traps.append(new_trap)
 		except IndexError as exc:
 			continue
 
@@ -559,13 +603,16 @@ def load_customer_count_in_redis():
     cursor = my_cnx.cursor()
     query = """
             SELECT
-                `Sector Config IP`,`Count Of Customer` 
+                `Sector Config IP`,`Count Of Customer`
 	    FROM
 		download_center_customer_count_ipaddress
 	    """
-    cursor.execute(query)
-    customer_count_data = cursor.fetchall()
-    cursor.close()
+    try :
+       cursor.execute(query)
+       customer_count_data = cursor.fetchall()
+    except Exception ,e:
+        print "MySQL exception : %s" % e
+        cursor.close()
     try :
 	redis_cnx = conn_base.redis_cnx(db_name='redis')
 	p = redis_cnx.pipeline()
@@ -579,7 +626,7 @@ def load_customer_count_in_redis():
 def delete_history_trap():
     """Delete 3 months old trap after updating the alarm_count in current and clear tables"""
     current_date = datetime.now()
-    current_date = current_date.replace(hour=0, minute=0, second=0, microsecond=0) 
+    current_date = current_date.replace(hour=0, minute=0, second=0, microsecond=0)
     conn_base = ConnectionBase()
     my_cnx = conn_base.mysql_cnx(db_name='snmptt_db')
     cursor = my_cnx.cursor()
@@ -600,21 +647,21 @@ def delete_history_trap():
     
     current_count_update_query = """
 	    UPDATE
-        	 alert_center_currentalarms current  
+        	 alert_center_currentalarms current
 	    INNER JOIN (
 		SELECT
 		    device_name,eventname,severity,SUM(history.alarm_count) AS count
 		FROM
-		     alert_center_historyalarms history 
+		     alert_center_historyalarms history
 		WHERE
 		     history.severity NOT IN ('clear', 'ok ')
-		    AND 
+		    AND
 		    history.traptime < DATE_SUB('{0}', INTERVAL 3 MONTH)
 		GROUP BY
 		     history.device_name, history.eventname, history.severity
 		    ) AS current_history
 	    ON 
-		current.device_name = current_history.device_name              
+		current.device_name = current_history.device_name
 	    SET
 		current.alarm_count = (current.alarm_count - current_history.count);
 	    """.format(current_date)
@@ -647,7 +694,7 @@ def delete_history_trap():
             	SELECT
 		    device_name,eventname,severity,MIN(traptime) as traptime
             	FROM
-		    alert_center_historyalarms clear 
+		    alert_center_historyalarms clear
             	WHERE
 		    clear.severity IN ('clear','ok ') AND clear.traptime > DATE_SUB('{0}', INTERVAL 3 MONTH)
             	GROUP BY
@@ -687,8 +734,8 @@ def delete_history_trap():
     delete_query = """
 	    DELETE FROM
 		alert_center_historyalarms
-	    WHERE    
-		traptime < DATE_SUB('{0}', INTERVAL 3 MONTH); 
+	    WHERE
+		traptime < DATE_SUB('{0}', INTERVAL 3 MONTH);
     	    """.format(current_date)
     
     try:
@@ -717,7 +764,7 @@ def delete_history_trap():
     except (mysql.connector.Error) as exc:
         print 'Mysql Clear Count Update Error', exc
     else:
-        my_cnx.commit()    
+        my_cnx.commit()
 
     try:
         cursor.execute(current_time_update_query)
@@ -738,7 +785,7 @@ def delete_history_trap():
     except (mysql.connector.Error) as exc:
         print 'Mysql History Delete Error', exc
     else:
-        my_cnx.commit() 
-         
+        my_cnx.commit()
+
     cursor.close()
     my_cnx.close()

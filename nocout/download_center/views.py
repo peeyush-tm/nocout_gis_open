@@ -20,6 +20,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
 from nocout.settings import SINGLE_REPORT_EMAIL, REPORT_EMAIL_PERM
 from django.views.decorators.csrf import csrf_exempt
+import itertools
 
 
 from django.http import HttpRequest
@@ -837,9 +838,10 @@ class ProcessedReportEmailAPI(View):
                 file_path = processed_reports.path
                 file_path = file_path.split()
 
-                email_list = EmailReport.objects.get(
-                    report_name=ReportSettings.objects.get(report_name=report_name)).email_list
-                email_list = email_list.split(",")
+                emails = EmailReport.objects.filter(
+                    report_name=ReportSettings.objects.get(report_name=report_name)).values_list('email_list',flat=True)
+                email_list = [email.split(',') for email in emails]
+                email_list = list(itertools.chain(*email_list))
                 email_list = [email.strip() for email in email_list]
 
                 result = {
