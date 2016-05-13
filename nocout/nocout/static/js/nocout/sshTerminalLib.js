@@ -13,17 +13,16 @@ $(".box-body").on('click', ".ssh_terminal", function(){
 	ssh_device_ip = (this.getAttribute("data-ip-address")).trim();
 	ssh_device_type = this.getAttribute("data-device-type");
 	try {
-		console_html = console_html.replace('{0}', ssh_url);
-		// console_html = console_html.replace('{1}', ssh_username);
-		// console_html = console_html.replace('{2}', ssh_password);
-		console_html = console_html.replace('{3}', ssh_machine_name);
-		console_html = console_html.replace('{4}', ssh_device_ip);
-		console_html = console_html.replace('{5}', ssh_device_type);
+		var ssh_terminal_html = console_html;
+		ssh_terminal_html = ssh_terminal_html.replace('{0}', ssh_url);
+		ssh_terminal_html = ssh_terminal_html.replace('{3}', ssh_machine_name);
+		ssh_terminal_html = ssh_terminal_html.replace('{4}', ssh_device_ip);
+		ssh_terminal_html = ssh_terminal_html.replace('{5}', ssh_device_type);
 
 	    /*Call the bootbox to show the popup with SSH-Terminal*/
 	    bootbox.dialog({
 	        title: 'SSH Terminal',
-	        message: console_html
+	        message: ssh_terminal_html
 	    });
 
 	    $(".modal-dialog").css("width","80%");
@@ -44,19 +43,17 @@ $(".controls_container").on('click', "#telnet_ss_btn", function(){
 				ssh_device_ip = response['data'][0]['device_ip'],
 				ssh_device_type = response['data'][0]['device_type'];
 
-
 			try {
-				console_html = console_html.replace('{0}', ssh_url);
-				// console_html = console_html.replace('{1}', ssh_username);
-				// console_html = console_html.replace('{2}', ssh_password);
-				console_html = console_html.replace('{3}', ssh_machine_name);
-				console_html = console_html.replace('{4}', ssh_device_ip);
-				console_html = console_html.replace('{5}', ssh_device_type);
+				var ss_console_html = console_html;
+				ss_console_html = ss_console_html.replace('{0}', ssh_url);
+				ss_console_html = ss_console_html.replace('{3}', ssh_machine_name);
+				ss_console_html = ss_console_html.replace('{4}', ssh_device_ip);
+				ss_console_html = ss_console_html.replace('{5}', ssh_device_type);
 
 			    /*Call the bootbox to show the popup with SSH-Terminal*/
 			    bootbox.dialog({
 			        title: 'SSH Terminal',
-			        message: console_html
+			        message: ss_console_html
 			    });
 
 
@@ -82,17 +79,16 @@ $(".controls_container").on('click', "#telnet_bs_btn", function(){
 				ssh_device_type = response['data'][0]['device_type'];
 
 			try {
-				console_html = console_html.replace('{0}', ssh_url);
-				// console_html = console_html.replace('{1}', ssh_username);
-				// console_html = console_html.replace('{2}', ssh_password);
-				console_html = console_html.replace('{3}', ssh_machine_name);
-				console_html = console_html.replace('{4}', ssh_device_ip);
-				console_html = console_html.replace('{5}', ssh_device_type);
+				var bs_console_html = console_html;
+				bs_console_html = bs_console_html.replace('{0}', ssh_url);
+				bs_console_html = bs_console_html.replace('{3}', ssh_machine_name);
+				bs_console_html = bs_console_html.replace('{4}', ssh_device_ip);
+				bs_console_html = bs_console_html.replace('{5}', ssh_device_type);
 
 			    /*Call the bootbox to show the popup with SSH-Terminal*/
 			    bootbox.dialog({
 			        title: 'SSH Terminal',
-			        message: console_html
+			        message: bs_console_html
 			    });
 
 			    $(".modal-dialog").css("width","80%");
