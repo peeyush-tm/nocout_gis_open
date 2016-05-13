@@ -3968,6 +3968,11 @@ class GetServiceTypePerformanceData(View):
             counter = -1
             for ds in ds_list:
                 try:
+                    is_pl = False
+                    legend_color = ''
+                    if ds == 'pl':
+                        is_pl = True
+                        legend_color = 'transparent'
                     # Variables used for HISTORICAL data
                     data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
                     data_list_min, data_list_max, data_list_avg =  list(), list(), list()
@@ -4311,12 +4316,15 @@ class GetServiceTypePerformanceData(View):
                                 ]
 
                     if data_list and len(data_list) > 0 and sds_name not in ["availability"]:
+                        base_color = data_list[0]['color']
+                        if is_pl:
+                            base_color = legend_color
                         if is_dual_axis:
                             chart_data.append({
                                 'name': self.result['data']['objects']['display_name'],
                                 'data': data_list,
                                 'yAxis' : counter,
-                                'color' : data_list[0]['color'],
+                                'color' : base_color, #data_list[0]['color'],
                                 'type': self.result['data']['objects']['type'],
                                 'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                 'valuetext': self.result['data']['objects']['valuetext'],
@@ -4326,7 +4334,7 @@ class GetServiceTypePerformanceData(View):
                             chart_data.append({
                                 'name': self.result['data']['objects']['display_name'],
                                 'data': data_list,
-                                'color' : data_list[0]['color'],
+                                'color' : base_color, #data_list[0]['color'],
                                 'type': self.result['data']['objects']['type'],
                                 'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                 'valuetext': self.result['data']['objects']['valuetext'],
