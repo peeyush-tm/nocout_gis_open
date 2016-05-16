@@ -974,6 +974,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
     table_name = "performance_servicestatus"
 
     polled_value_columns = [
+        'customer_count',
         'min_value',
         'max_value',
         'current_value',
@@ -1387,6 +1388,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'state',
                 'data_source_name',
                 'current_value',
+                'customer_count',
                 'sys_timestamp',
                 'age'
             ]
