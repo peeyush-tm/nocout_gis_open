@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import re
 # faster json processing module
 import ujson as json
 
@@ -975,6 +974,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
     table_name = "performance_servicestatus"
 
     polled_value_columns = [
+        'customer_count',
         'min_value',
         'max_value',
         'current_value',
@@ -1358,12 +1358,6 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
             try:
                 if sort_using in self.polled_value_columns:
                     qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
-                elif sort_using in ['customer_count']:
-                    qs = sorted(
-                            sort_data,
-                            key=lambda data: int(re.sub(r'\W+', '', unicode(data[sort_using]).strip().lower())) if data[sort_using] and data[sort_using].lower() != 'na' else data[sort_using],
-                            reverse=reverse
-                        )
                 else:
                     qs = sorted(
                         sort_data,
