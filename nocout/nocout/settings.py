@@ -1331,6 +1331,7 @@ DASHBOARD_BACKHAUL_STATUS = False
 ANTENA_TYPE_ADV_FILTER = False
 SHOW_CUSTOMER_COUNT_IN_TRAPS = False
 SHOW_CUSTOMER_COUNT_IN_ALERT_LIST = False
+SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT = False
 
 # Import the local_settings.py file to override global settings
 try:

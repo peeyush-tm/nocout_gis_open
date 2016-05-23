@@ -34,7 +34,8 @@ from nocout.utils.util import NocoutUtilsGateway
 from django.utils.dateformat import format
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME, SHOW_CUSTOMER_COUNT_IN_ALERT_LIST
+from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME, \
+SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT
 
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
@@ -197,6 +198,15 @@ class AlertCenterListing(ListView):
         pmp_wimax_datatable_headers += pmp_wimax_starting_headers
         pmp_wimax_datatable_headers += common_headers
         pmp_wimax_datatable_headers += polled_headers
+
+        if SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT:
+            pmp_wimax_datatable_headers += [{
+                'mData': 'customer_count',
+                'sTitle': 'Customer Count',
+                'sWidth': 'auto',
+                'bSortable': True
+            }]
+
         pmp_wimax_datatable_headers += other_headers
 
         # Pass bh_datatable_headers only in case of 'network' page
@@ -254,7 +264,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         'max_value',
         'avg_value',
         'age',
-        'sys_timestamp'
+        'sys_timestamp',
+        'customer_count'
     ]
 
     main_qs = []
@@ -709,8 +720,12 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 'max_value',
                 'min_value'
             ]
+        other_columns = []
+        
+        if data_tab in ['PMP', 'WiMAX'] and SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT:
+            other_columns = ['customer_count']
 
-        other_columns = [
+        other_columns += [
             'sys_timestamp',
             'age',
             'action'
