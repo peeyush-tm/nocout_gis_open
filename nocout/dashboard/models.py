@@ -336,3 +336,13 @@ class BackhaulSummaryStatus(models.Model):
     ageing_ul_sp = models.CharField('Ageing UL Stop Provisioning', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
+
+class NetworkUptimeMonthly(models.Model):
+    """
+    This model contains data for 'Sector Status Capacity Alerts Dashboard'
+    """
+    bs_name = models.CharField('BS Name', max_length=256, null=True, blank=True)
+    ip_address = models.CharField('BS Device IP', max_length=256, null=True, blank=True)
+    technology = models.CharField('Technology', max_length=256, null=True, blank=True)
+    uptime_percent = models.CharField('Uptime Percent', max_length=256)
+    timestamp = models.DateTimeField('Report Month')
