@@ -102,6 +102,27 @@
                         </ul>
                     </li>
                     {% endif %}
+
+                    {% if settings.ENABLE_UPTIME_DASHBOARD %}
+                    <li class="has-sub-sub">
+                        <a href="javascript:;">
+                            <span class="sub-menu-text">Network Performance</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            <li>
+                                <a href="{% url 'init_network_uptime' %}">
+                                    <span class="sub-menu-text">Network Uptime</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'init_ptpbh_uptime' %}">
+                                    <span class="sub-menu-text">PTP Backhaul Uptime</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
                 </ul>
             </li>
             
@@ -401,6 +422,13 @@
                                     <span class="sub-menu-text">Latency Report</span>
                                 </a>
                             </li>
+                            {% if settings.SHOW_CUSTOMER_FAULT_REPORT %}
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'customer_fault_report' %}">
+                                    <span class="sub-menu-text">Customer Fault Report</span>
+                                </a>
+                            </li>
+                            {% endif %}
                             <li>
                                 <a href="{% url 'InventoryDownloadCenter' 'duplex_report' %}">
                                     <span class="sub-menu-text">Duplex Report</span>
