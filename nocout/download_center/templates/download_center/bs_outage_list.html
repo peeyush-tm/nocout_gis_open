@@ -5,8 +5,12 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-file-excel-o'></i> Download Center" "javascript:;" %}
+    {% if not show_daily_report %}
+    {% breadcrumb_safe 'Backhaul Summary Reports' "javascript:;" %}
+    {% else %}
     {% breadcrumb_safe 'Fault Reports' "javascript:;" %}
     {% breadcrumb_safe 'Raw BS Outage Reports' "javascript:;" %}
+    {% endif %}
     {% breadcrumb_safe report_title "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -40,25 +44,37 @@
 	                        <span class="hidden-inline-mobile">Monthly</span>
 	                    </a>
 	                </li>
+                    {% if not show_daily_report %}
+                    <li class="active">
+                    {% else %}
 	                <li>
+                    {% endif %}
 	                    <a href="#weekly_outage_block" id="weekly_outage_tab" data-toggle="tab">
 	                        <span class="hidden-inline-mobile">Weekly</span>
 	                    </a>
 	                </li>
+                    {% if show_daily_report %}
 	                <li class="active">
 	                    <a href="#daily_outage_block" id="daily_outage_tab" data-toggle="tab">
 	                        <span class="hidden-inline-mobile">Daily</span>
 	                    </a>
 	                </li>
+                    {% endif %}
 	            </ul>
 	            <div class="tab-content outage_content">
+                    {% if show_daily_report %}
 	                <div class="tab-pane active" id="daily_outage_block">
 	                	<table class="datatable table table-striped table-bordered table-hover" id="bs_outage_daily_listing">
 			                <thead></thead>
 			                <tbody></tbody>
 			            </table>
 	                </div>
-	                <div class="tab-pane" id="weekly_outage_block">
+                    {% endif %}
+                    {% if not show_daily_report %}
+	                <div class="tab-pane active" id="weekly_outage_block">
+                    {% else %}
+                    <div class="tab-pane" id="weekly_outage_block">
+                    {% endif %}
 	                	<table class="datatable table table-striped table-bordered table-hover" id="bs_outage_weekly_listing">
 			                <thead></thead>
 			                <tbody></tbody>
@@ -149,18 +165,27 @@
             dataTableInstance = new ourDataTableWidget();
 
             /*Grid headers object*/
-            var gridHeadersObj = '{{ datatable_headers|safe }}',
-            	daily_page_type = '{{ page_type }}'  ? $.trim('{{ page_type }}') : '',
-            	weekly_page_type = daily_page_type ? daily_page_type.split('_daily').join('_weekly') : '',
-            	monthly_page_type = daily_page_type ? daily_page_type.split('_daily').join('_monthly') : '';
+            var gridHeadersObj = '{{ datatable_headers|safe }}';
+
+            {% if show_daily_report %}
+            	var daily_page_type = '{{ page_type }}'  ? $.trim('{{ page_type }}') : '',
+                	weekly_page_type = daily_page_type ? daily_page_type.split('_daily').join('_weekly') : '',
+                	monthly_page_type = daily_page_type ? daily_page_type.split('_daily').join('_monthly') : '';
+            {% else %}
+                var daily_page_type = '',
+                    weekly_page_type = '{{ page_type }}'  ? $.trim('{{ page_type }}') : '',
+                    monthly_page_type = weekly_page_type ? weekly_page_type.split('_weekly').join('_monthly') : '';
+            {% endif %}
 
             /*Ajax url to get grid data*/
             var daily_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type='+ daily_page_type,
             	weekly_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type='+ weekly_page_type,
             	monthly_ajax_url = '{% url "DownloadCenterListing" %}' + '?page_type='+ monthly_page_type;
 
-            $("#daily_outage_tab").attr("data_url", daily_ajax_url);
-            $("#daily_outage_tab").attr("data_header", gridHeadersObj);
+            {% if show_daily_report %}
+                $("#daily_outage_tab").attr("data_url", daily_ajax_url);
+                $("#daily_outage_tab").attr("data_header", gridHeadersObj);
+            {% endif %}
 
             $("#weekly_outage_tab").attr("data_url", weekly_ajax_url);
             $("#weekly_outage_tab").attr("data_header", gridHeadersObj);
@@ -170,7 +195,11 @@
 
             if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
                 /*Trigger click event on active tab to load its data*/
+                {% if show_daily_report %}
                 $("#daily_outage_tab").trigger('click', true);
+                {% else %}
+                $("#weekly_outage_tab").trigger('click', true);
+                {% endif %}
             }
 
             var minDate = new Date(new Date().getTime() - 180 * 24 * 60 * 60 * 1000),

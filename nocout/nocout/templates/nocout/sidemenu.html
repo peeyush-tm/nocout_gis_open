@@ -512,6 +512,13 @@
                                     <span class="sub-menu-text">Sector Polling Failure</span>
                                 </a>
                             </li>
+                            {% if settings.SHOW_BH_SUMMARY_REPORT %}
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'backhaul_summary_weekly' %}">
+                                    <span class="sub-menu-text">Backhaul Summary Report</span>
+                                </a>
+                            </li>
+                            {% endif %}
                         </ul>
                     </li>
                     <li>
