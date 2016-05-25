@@ -10,6 +10,8 @@ from performance.views import PerformanceViewsGateway
 # getLastXMonths
 from performance.models import SpotDashboard, RfNetworkAvailability, NetworkAvailabilityDaily
 from device.models import DeviceType, DeviceTechnology, SiteInstance, Device
+from organization.models import Organization
+from dashboard.models import PTPBHUptime
 from inventory.models import Sector
 import inventory.tasks as inventory_tasks
 # Import inventory utils gateway class
@@ -20,6 +22,8 @@ from celery.utils.log import get_task_logger
 from django.utils.dateformat import format
 # datetime utility
 import datetime
+from dateutil.relativedelta import *
+from inventory.tasks import bulk_update_create
 
 logger = get_task_logger(__name__)
 
@@ -724,3 +728,101 @@ def insert_network_avail_result(resultant_data, tech_id):
 
 
 ################## Task for RF Main Dashboard Network Availability Calculation - End ###################
+
+@task()
+def calculate_avg_availability_ptpbh():
+    from inventory.utils.util import filter_devices, prepare_machines
+    org_id_list = Organization.objects.values_list('id',flat=True)
+    devices = filter_devices(
+
+       organizations= org_id_list,
+       data_tab='P2P',
+       page_type='network',
+       required_value_list=['id', 'machine__name', 'device_name', 'ip_address', 'organization__id']
+    )
+
+    # Return dict, key:machine_name and value:list of device.
+    machines = prepare_machines(
+       devices, machine_key='machine_name'
+    )
+    # key value mapping for device_name and organization id.
+    mapping_device_organization = dict([(device['device_name'],device['organization_id']) for device in devices])
+    resultset = dict()
+    cur_time = datetime.datetime.now()
+    year = cur_time.year-1
+    month = cur_time.month
+    day = 1
+    datetime_first_day=list()    #List of datetime object(first day) for last 12 month from current time.
+    datetime_last_day = list()   #List of datetime object(last day) for last 12 month from current time.
+    epoch_first_day = list()     #List of epochtime/timeticks(first day) for last 12 month from current time.
+    epoch_last_day = list()      #List of epochtime/timeticks(last day) for last 12 month from current time.
+    for i in range(12):
+        datetime_first_day.append(datetime.datetime(year,month,day))
+        datetime_last_day.append(datetime.datetime(year,month,day) + relativedelta(day=31))
+        epoch_first_day = [int(val.strftime("%s")) for val in datetime_first_day]
+        epoch_last_day = [int(val.strftime("%s")) for val in datetime_last_day]
+        month = month+1
+        if month>12:
+            year = year+1
+            month = 1
+
+    PTPBHUptime_set = PTPBHUptime.objects.all()
+
+    # If True: Delete the entries from oldest month and Insert last month entries.
+    if PTPBHUptime_set.exists():
+        # Delete Entry for oldest month
+        PTPBHUptime.objects.filter(sys_timestamp_gte=epoch_first_day[0], sys_timestamp_lt = epoch_last_day[0]).delete()
+
+        # Insert Entry for latest month
+        for machine in machines:
+            devices = machines.get(machine)
+            result = NetworkAvailabilityDaily.objects.using(machine).filter(device_name__in=list(devices),
+                                                            sys_timestamp__gte = epoch_first_day[11],
+                                                            sys_timestamp__lt = epoch_last_day[11] )\
+                                                            .annotate(uptime_percent = Avg('current_value'))\
+                                                            .values('ip_address', 'device_name', 'uptime_percent')
+            resultset[datetime_first_day[11]] = result
+
+    # Calculate and Store entries for last 12 months.
+    else:
+        # Network Availability data for devices is stored in their respective machine location.
+        # Query over Each machine in database.
+        for machine in machines:
+            devices = machines.get(machine)
+            for i in range(12):
+                result = NetworkAvailabilityDaily.objects.using(machine).filter(device_name__in=list(devices),
+                                                            sys_timestamp__gte = epoch_first_day[i],
+                                                            sys_timestamp__lt = epoch_last_day[i] )\
+                                                            .annotate(uptime_percent = Avg('current_value'))\
+                                                            .values('ip_address', 'device_name', 'uptime_percent')
+
+                if datetime_first_day[i] in resultset:
+                    resultset[datetime_first_day[i]].append(result)
+                else:
+                    resultset[datetime_first_day[i]] = result
+
+
+    bulk_bh_entry = list()
+    for date_time in resultset:
+        entries = [PTPBHUptime(datetime=date_time,
+                                ip_address=entry['ip_address'],
+                                device_name=entry['device_name'],
+                                organization_id = mapping_device_organization.get(entry['device_name']),
+                                uptime_percent=entry['uptime_percent']) \
+                    for entry in resultset[date_time]]
+
+        bulk_bh_entry = bulk_bh_entry  + entries
+
+    g_jobs = list()
+
+    if len(bulk_bh_entry):
+        g_jobs.append(bulk_update_create.s(bulk_bh_entry, action='create', model=PTPBHUptime))
+    else:
+        return False
+
+    job = group(g_jobs)
+    job.apply_async()  # Start the Job.
+    return True
+
+
+

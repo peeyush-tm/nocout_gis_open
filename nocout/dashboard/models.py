@@ -336,3 +336,12 @@ class BackhaulSummaryStatus(models.Model):
     ageing_ul_sp = models.CharField('Ageing UL Stop Provisioning', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
+class PTPBHUptime(models.Model):
+    """
+    Average uptime for a month for each device.
+    """
+    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
+    uptime_percent = models.CharField('Uptime percent', max_length=10, null=True, blank=True)
+    datetime = models.DateTimeField('Date-Time', max_length=100, null=True, blank=True)
+    organization = models.ForeignKey(Organization)
