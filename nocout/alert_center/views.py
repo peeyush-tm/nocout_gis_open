@@ -722,7 +722,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             ]
         other_columns = []
         
-        if data_tab in ['PMP', 'WiMAX'] and SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT:
+        if data_tab in ['PMP', 'WiMAX', 'all'] and SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT:
             other_columns = ['customer_count']
 
         other_columns += [
