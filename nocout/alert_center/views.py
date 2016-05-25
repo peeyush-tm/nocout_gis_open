@@ -2146,7 +2146,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             # ip_address_list = list(Device.objects.filter(
             #     device_technology__in=tech_name_id
             # ).values_list('ip_address', flat=True))
-            tech_type_filter_condition = 'Q(technology__iexact="{{0}}"),'.format(self.tech_name)
+            tech_type_filter_condition = 'Q(technology__iexact="{0}"),'.format(self.tech_name)
 
 
         if filter_condition:
