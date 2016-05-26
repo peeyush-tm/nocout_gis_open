@@ -501,6 +501,11 @@ CELERYBEAT_SCHEDULE = {
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=25, hour=0)
     },
+    #PTP-BH upttime Average from Daily Network availability data.
+    'calculate_avg_availability_ptpbh': {
+        'task': 'performance.tasks.calculate_avg_availability_ptpbh',
+         'schedule': crontab(0,0,day_of_month=1)
+    },
     #'scheduled_email_report_task': {
     #    'task': 'download_center.tasks.scheduled_email_report',
     #    'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
@@ -1295,6 +1300,8 @@ REPORT_EMAIL_PERM = json.dumps({
     'bs_daily_fault_report': 0,
     'bs_monthly_uptime_report': 0,
     'bh_polling_failure': 0,
+    'backhaul_summary_weekly':0,
+    'backhaul_summary_monthly':0,
 })
 
 # Global variable to show/hide single report mail option in download center listing
