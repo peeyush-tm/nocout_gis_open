@@ -606,7 +606,7 @@ def filter_devices(
             'machine_name': device['machine__name'],
             'id': device['id'],
             'ip_address': device['ip_address'],
-            'organization_id' : device['organization__id']
+            'organization_id' : device.get('organization__id')
         }
         for device in device_list
     ]
