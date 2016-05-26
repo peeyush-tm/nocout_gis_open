@@ -5,8 +5,8 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-television'></i> Dashboard" "javascript:;" %}
-    {% breadcrumb_safe "Capacity Alerts" "javascript:;" %}
-    {% breadcrumb_safe "Sector Summary Status" "capacity_alert_sector_status" %}
+    {% breadcrumb_safe "Network Performance" "javascript:;" %}
+    {% breadcrumb_safe "Network Uptime" "init_network_uptime" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -21,15 +21,15 @@
 </style>
 <div class="box border lite capacity_alerts_container">
     <div id="tableContainer_div" class="box-title">
-        <h4 class="pull-left"><i class="fa fa-television"></i> Sector Summary Status</h4>
+        <h4 class="pull-left"><i class="fa fa-television"></i> Network Uptime</h4>
         <div class="clearfix"></div>
     </div>
     <div class="box-body" style="">
         <ul class="list-unstyled list-inline" align="right">
             <li>
-                <select name="display_selector" class="form-control input-sm filter_controls">
-                    <option value="table" selected="selected">Display Table</option>
-                    <option value="chart">Display Chart</option>
+                <select name="display_selector" class="form-control input-sm hide filter_controls">
+                    <option value="table">Display Table</option>
+                    <option value="chart" selected="selected">Display Chart</option>
                     <option value="both">Display Both</option>
                 </select>
             </li>
@@ -134,8 +134,8 @@
                 '6': 'July', '7': 'August', '8': 'September',
                 '9': 'October', '10': 'November', '11': 'December'
             },
-            capacity_summary_headers = [],
-            capacity_summary_url = ''
+            network_uptime_headers = [],
+            network_uptime_url = ''
             dataTableInstance = '';
 
         $(document).ready(function(e) {
@@ -154,12 +154,12 @@
             }
 
             try {
-                capacity_summary_headers = $.parseJSON('{{ summary_headers|safe }}')
+                network_uptime_headers = $.parseJSON('{{ uptime_headers|safe }}')
             } catch(e) {
                 // console.error(e);
             }
 
-            capacity_summary_url = "{% url 'capacity_alert_sector_status_listing' %}";
+            network_uptime_url = "{% url 'network_uptime_listing' %}";
 
             // Populate month
             if (month_list.length > 0) {
@@ -172,7 +172,7 @@
             dataTableInstance = new ourDataTableWidget();
 
             // call initCapacitySummaryDashboard function to populate RFO dashboard data as per the selected filters
-            initCapacitySummaryDashboard();
+            initUptimeDashboard();
         });
     </script>
 {% endblock %}

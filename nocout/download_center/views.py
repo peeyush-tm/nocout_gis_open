@@ -73,8 +73,15 @@ class DownloadCenter(ListView):
         except Exception, e:
             pass
 
+        show_daily_report = False
+
         if 'bs_outage_daily' in page_type:
+            show_daily_report = True
             report_title = 'Raw BS Outage Report'
+            self.template_name = 'download_center/bs_outage_list.html'
+
+        if 'backhaul_summary_weekly' in page_type:
+            report_title = 'Backhaul Summary Report'
             self.template_name = 'download_center/bs_outage_list.html'
 
         context = super(DownloadCenter, self).get_context_data(**kwargs)
@@ -93,6 +100,7 @@ class DownloadCenter(ListView):
         context['report_id'] = report_id
         context['report_title'] = report_title
         context['email_exists'] = email_exists
+        context['show_daily_report'] = show_daily_report
 
         return context
 

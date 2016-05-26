@@ -345,3 +345,14 @@ class PTPBHUptime(models.Model):
     uptime_percent = models.CharField('Uptime percent', max_length=10, null=True, blank=True)
     datetime = models.DateTimeField('Date-Time', max_length=100, null=True, blank=True)
     organization = models.ForeignKey(Organization)
+
+class NetworkUptimeMonthly(models.Model):
+    """
+    This model contains data for 'Sector Status Capacity Alerts Dashboard'
+    """
+    # bs_name = models.CharField('BS Name', max_length=256, null=True, blank=True)
+    # ip_address = models.CharField('BS Device IP', max_length=256, null=True, blank=True)
+    technology = models.CharField('Technology', max_length=256, null=True, blank=True)
+    uptime_percent = models.CharField('Uptime Percent', max_length=256)
+    timestamp = models.DateTimeField('Report Month')
+

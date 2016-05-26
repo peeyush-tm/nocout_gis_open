@@ -33,7 +33,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, \
     MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, \
     DashboardSeverityStatusDaily, DashboardRangeStatusDaily, RFOAnalysis, CustomerFaultAnalysis, \
-    SectorSummaryStatus, BackhaulSummaryStatus
+    SectorSummaryStatus, BackhaulSummaryStatus, NetworkUptimeMonthly
 
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, \
@@ -3605,3 +3605,304 @@ class BackhaulStatusListing(BaseDatatableView):
 
         return ret
 
+
+class NetworkUptimeInit(TemplateView):
+    """
+    This class loads network uptime dashboard template
+    """
+    template_name = 'network_uptime/network_uptime.html'
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(NetworkUptimeInit, self).get_context_data(**kwargs)
+
+        context['months_data'] = json.dumps(list(NetworkUptimeMonthly.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id')))
+
+        context['uptime_headers'] = json.dumps([
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': 'below_threshold', 'sTitle': 'Less Than 99.5'},
+            {'mData': 'above_threshold', 'sTitle': 'Greater Than 99.5'}
+        ])
+
+        return context
+
+
+class NetworkUptimeListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for NetworkUptimeListing data
+    """
+    model = NetworkUptimeMonthly
+    columns = [
+        'id',
+        'timestamp',
+        'uptime_percent',
+        'technology'
+    ]
+    order_columns = [
+        'timestamp',
+        'uptime_percent',
+        'uptime_percent'
+    ]
+
+    pre_camel_case_notation = False
+
+    def get_initial_queryset(self):
+
+        month = self.request.GET.get('month')
+        technology = self.request.GET.get('technology')
+
+        where_condition = Q()
+        if technology and technology.lower() == 'all':
+            where_condition &= Q(technology__in=['overall'])
+        elif technology and technology.lower() == 'pmp':
+            where_condition &= Q(technology__in=['pmp', 'ubr pmp', 'cambium'])
+        else:
+            where_condition &= Q(technology__iexact=technology)
+
+        if month:
+            where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
+        else:
+            current_timestamp = datetime.datetime.now()
+            where_condition &= Q(timestamp__gte=current_timestamp - datetime.timedelta(365))
+            where_condition &= Q(timestamp__lte=current_timestamp)
+
+        try:
+            qs = self.model.objects.extra({
+                'timestamp': 'unix_timestamp(timestamp)'
+            }).filter(where_condition).values(*self.columns)
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        current_timestamp = datetime.datetime.now()
+        temp_dict = {}
+        for data in qs:
+            if data['timestamp'] not in temp_dict:
+                temp_dict[data['timestamp']] = {
+                    'timestamp': data['timestamp'],
+                    'month': '',
+                    'below_threshold': '',
+                    'above_threshold': ''
+                }
+
+            if not temp_dict[data['timestamp']]['month']:
+                try:
+                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
+                except Exception, e:
+                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
+                temp_dict[data['timestamp']]['month'] = formatted_month
+
+            if not temp_dict[data['timestamp']]['above_threshold']:
+                try:
+                    temp_dict[data['timestamp']]['above_threshold'] = round(float(data['uptime_percent']), 2)
+                except Exception, e:
+                    temp_dict[data['timestamp']]['above_threshold'] = 0
+
+            if not temp_dict[data['timestamp']]['below_threshold']:
+                try:
+                    temp_dict[data['timestamp']]['below_threshold'] = round(100.0 - float(data['uptime_percent']), 2)
+                except Exception, e:
+                    temp_dict[data['timestamp']]['below_threshold'] = 0
+
+        return temp_dict.values()
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = 0
+        if qs.count() > 0:
+            total_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = 0
+        if qs.count() > 0:
+            total_display_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+
+        qs = self.ordering(qs)
+        
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+
+class PTPBHUptimeInit(TemplateView):
+    """
+    This class loads ptpbh uptime dashboard template
+    """
+    template_name = 'network_uptime/ptpbh_uptime.html'
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(PTPBHUptimeInit, self).get_context_data(**kwargs)
+
+        context['uptime_headers'] = json.dumps([
+            {'mData': 'month', 'sTitle': 'Month'},
+            {'mData': 'below_threshold', 'sTitle': 'Less Than 99.5'},
+            {'mData': 'above_threshold', 'sTitle': 'Greater Than 99.5'},
+            {'mData': 'total_count', 'sTitle': 'Total Devices'}
+        ])
+
+        return context
+
+
+# class PTPBHUptimeListing(BaseDatatableView):
+#     """
+#     This class defines BaseDatatableView for NetworkUptimeListing data
+#     """
+#     model = PTPBhUptime
+#     columns = [
+#         'datetime',
+#         'id',
+#     ]
+#     order_columns = [
+#         'datetime',
+#         'uptime_percent',
+#         'uptime_percent'
+#     ]
+
+#     pre_camel_case_notation = False
+
+#     def get_initial_queryset(self):
+
+#         month = self.request.GET.get('month')
+#         technology = self.request.GET.get('technology')
+
+#         where_condition = Q()
+#         if technology and technology.lower() == 'all':
+#             where_condition &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
+#         elif technology and technology.lower() == 'pmp':
+#             where_condition &= Q(technology__in=['pmp', 'ubr pmp'])
+#         else:
+#             where_condition &= Q(technology__iexact=technology)
+
+#         if month:
+#             where_condition &= Q(datetime=datetime.datetime.fromtimestamp(float(month)))
+#         else:
+#             current_timestamp = datetime.datetime.now()
+#             where_condition &= Q(datetime__gte=current_timestamp - datetime.timedelta(365))
+#             where_condition &= Q(datetime__lte=current_timestamp)
+
+#         try:
+#             qs = self.model.objects.extra({
+#                 'timestamp': 'unix_timestamp(datetime)'
+#             }).filter(where_condition).values(
+#                 'id', 'technology', 'uptime_percent', 'timestamp'
+#             )
+#         except Exception, e:
+#             qs = self.model.objects.filter(id=0)
+
+#         return qs
+
+#     def prepare_results(self, qs):
+
+#         current_timestamp = datetime.datetime.now()
+#         temp_dict = {}
+#         for data in qs:
+#             tt_count = data['tt_count']
+#             if data['timestamp'] not in temp_dict:
+#                 temp_dict[data['timestamp']] = {
+#                     'timestamp': data['timestamp'],
+#                     'month': '',
+#                     'below_threshold': '',
+#                     'above_threshold': ''
+#                 }
+
+#             if not temp_dict[data['timestamp']]['month']:
+#                 try:
+#                     formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
+#                 except Exception, e:
+#                     formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
+#                 temp_dict[data['timestamp']]['month'] = formatted_month
+
+#             if not temp_dict[data['timestamp']]['above_threshold']:
+#                 try:
+#                     temp_dict[data['timestamp']]['above_threshold'] = self.model.objects.extra({
+#                         'timestamp': 'unix_timestamp(timestamp)'
+#                     }).filter(
+#                         timestamp=datetime.datetime.fromtimestamp(float(data['timestamp'])),
+#                         uptime_percent__gte=99.5
+#                     ).count()
+#                 except Exception, e:
+#                     temp_dict[data['timestamp']]['above_threshold'] = 0
+
+#             if not temp_dict[data['timestamp']]['below_threshold']:
+#                 try:
+#                     temp_dict[data['timestamp']]['below_threshold'] = self.model.objects.extra({
+#                         'timestamp': 'unix_timestamp(timestamp)'
+#                     }).filter(
+#                         timestamp=datetime.datetime.fromtimestamp(float(data['timestamp'])),
+#                         uptime_percent__lt=99.5
+#                     ).count()
+#                 except Exception, e:
+#                     temp_dict[data['timestamp']]['below_threshold'] = 0
+
+#         return temp_dict.values()
+
+
+#     def get_context_data(self, *args, **kwargs):
+
+#         request = self.request
+#         self.initialize(*args, **kwargs)
+
+#         qs = self.get_initial_queryset()
+
+#         # number of records before filtering
+#         total_records = 0
+#         if qs.count() > 0:
+#             total_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+
+#         qs = self.filter_queryset(qs)
+
+#         # number of records after filtering
+#         total_display_records = 0
+#         if qs.count() > 0:
+#             total_display_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+
+#         qs = self.ordering(qs)
+        
+#         if not self.request.GET.get('request_for_chart'):
+#             qs = self.paging(qs)
+
+#         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+#         if not qs and isinstance(qs, ValuesQuerySet):
+#             qs = list(qs)
+
+#         aaData = self.prepare_results(qs)
+        
+#         ret = {
+#             'sEcho': int(request.REQUEST.get('sEcho', 0)),
+#             'iTotalRecords': total_records,
+#             'iTotalDisplayRecords': total_display_records,
+#             'aaData': aaData
+#         }
+
+#         return ret

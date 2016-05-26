@@ -372,5 +372,25 @@ urlpatterns = patterns('',
         r'^backhaul_status/listing/$',
         views.BackhaulStatusListing.as_view(),
         name='capacity_alert_backhaul_status_listing'
-    )
+    ),
+    url(
+        r'^network_uptime/$',
+        views.NetworkUptimeInit.as_view(),
+        name='init_network_uptime'
+    ),
+    url(
+        r'^network_uptime/listing/$',
+        views.NetworkUptimeListing.as_view(),
+        name='network_uptime_listing'
+    ),
+    url(
+        r'^ptpbh_uptime/$',
+        views.PTPBHUptimeInit.as_view(),
+        name='init_ptpbh_uptime'
+    ),
+    # url(
+    #     r'^ptpbh_uptime/listing/$',
+    #     views.PTPBHUptimeListing.as_view(),
+    #     name='ptpbh_uptime_listing'
+    # )
 )
