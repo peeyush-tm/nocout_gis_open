@@ -4,7 +4,7 @@ import math
 from django.db.models import Avg, F, Q
 
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway, fetch_raw_result
+from nocout.utils.util import NocoutUtilsGateway
 # performance gateway class import
 from performance.views import PerformanceViewsGateway
 # getLastXMonths
@@ -729,13 +729,56 @@ def insert_network_avail_result(resultant_data, tech_id):
 
 ################## Task for RF Main Dashboard Network Availability Calculation - End ###################
 
+def ptpbh_uptime_resultset(machine='default',devices=[], first_day=None, last_day=None):
+    """
+    This function return uptime percentage as per the given params
+    :param machine: machine name to filter out devices based on machine.
+    :param devices: list of device_name.
+    :param first_day: Epoch time for first day of month.
+    :param last_day: Epoch time for last day of month.
+    :return:
+    """
+    if not (devices and first_day and last_day):
+        return []
+
+    nocout_utils = NocoutUtilsGateway()
+    devices_str = ','.join(str(device) for device in devices)
+
+    query = """select
+                    round(Avg(current_value),3) as uptime_percent,
+                    ip_address,
+                    device_name
+                from
+                    performance_networkavailabilitydaily
+                where
+                    device_name in ({0})
+                And
+                    sys_timestamp >= {1}
+                And
+                    sys_timestamp < {2}
+                Group by
+                    ip_address
+                """.format(devices_str, first_day, last_day)
+
+    result = nocout_utils.fetch_raw_result(query, machine=machine)
+
+    return result
+
+
+
 @task()
 def calculate_avg_availability_ptpbh():
-    from inventory.utils.util import filter_devices, prepare_machines
-    org_id_list = Organization.objects.values_list('id',flat=True)
-    # Filter devices for page_type , organizations and data_tab.
-    devices = filter_devices(
+    """
+    Calcualate Average uptime for ptp backhaul type devices.
+    Task scheduled to 1st day of every month.
+    Database keeps last 12 month data in PTPBHUptime model.
 
+    :return: True/False
+    """
+    inventory_utils = InventoryUtilsGateway()
+    org_id_list = list(Organization.objects.values_list('id',flat=True))
+    # Filter devices for page_type , organizations and data_tab.
+    devices = inventory_utils.filter_devices(
        organizations= org_id_list,
        data_tab='P2P',
        page_type='network',
@@ -743,92 +786,80 @@ def calculate_avg_availability_ptpbh():
     )
 
     # Return dict, key:machine_name and value:list of device.
-    machines = prepare_machines(
+    machines_dict = inventory_utils.prepare_machines(
        devices, machine_key='machine_name'
     )
     # key value mapping for device_name and organization id.
     mapping_device_organization = dict([(device['device_name'],device['organization_id']) for device in devices])
+
     resultset = dict()
+
     cur_time = datetime.datetime.now()
-    year = cur_time.year-1
-    month = cur_time.month+1
-    day = 1
-    datetime_first_day=list()    #List of datetime object(first day) for last 12 month from current time.
-    datetime_last_day = list()   #List of datetime object(last day) for last 12 month from current time.
-    epoch_first_day = list()     #List of epochtime/timeticks(first day) for last 12 month from current time.
-    epoch_last_day = list()      #List of epochtime/timeticks(last day) for last 12 month from current time.
-    for i in range(12):
-        datetime_first_day.append(datetime.datetime(year,month,day))
-        datetime_last_day.append(datetime.datetime(year,month,day) + relativedelta(day=31))
-        epoch_first_day = [int(val.strftime("%s")) for val in datetime_first_day]
-        epoch_last_day = [int(val.strftime("%s")) for val in datetime_last_day]
-        month = month+1
-        if month>12:
-            year = year+1
-            month = 1
+    cur_time = datetime.datetime(cur_time.year, cur_time.month, cur_time.day, 0, 0, 0)
 
     PTPBHUptime_set = PTPBHUptime.objects.all()
 
     # If True: Delete the entries from oldest month and Insert last month entries.
     if PTPBHUptime_set.exists():
+        last_year = datetime.datetime(cur_time.year-1, cur_time.month, cur_time.day)
         # Delete Entry for oldest month
-        PTPBHUptime.objects.filter(datetime__gte=datetime_first_day[0], datetime__lt = datetime_last_day[0]).delete()
+        PTPBHUptime.objects.filter(
+            datetime__lt=last_year
+        ).delete()
 
+        last_month_start = datetime.datetime(cur_time.year, cur_time.month-1, 1)
+        last_month_end = last_month_start + relativedelta(day=31)
+
+        # Datetime object to Epoch time conversion.
+        last_month_start_epoch = int(last_month_start.strftime('%s'))
+        last_month_end_epoch = int(last_month_end.strftime('%s'))
         # Insert Entry for latest month
-        for machine in machines:
-            devices = machines.get(machine)
-            devices = ','.join(str(device) for device in devices)
-            query = """select
-                            round(Avg(current_value),3) as uptime_percent,
-                            ip_address,
-                            device_name
-                        from
-                            performance_networkavailabilitydaily
-                        where
-                            device_name in ({0})
-                        And
-                            sys_timestamp >= {1}
-                        And
-                            sys_timestamp < {2}
-                        Group by
-                            ip_address
-                        """.format(devices, epoch_first_day[11], epoch_last_day[11])
-
-            result = fetch_raw_result(query,machine=machine)
-            resultset[datetime_first_day[11]] = result
-
+        for machine in machines_dict:
+            devices = machines_dict.get(machine)
+            result = ptpbh_uptime_resultset(
+                machine=machine,
+                devices=devices,
+                first_day=last_month_start_epoch,
+                last_day=last_month_end_epoch
+            )
+            if result:
+                resultset[last_month_start] = result
     # Calculate and Store entries for last 12 months.
     else:
         # Network Availability data for devices is stored in their respective machine location.
+        year = cur_time.year-1
+        month = cur_time.month
+        day = 1
+
         # Query over Each machine in database.
-        for machine in machines:
-            devices = machines.get(machine)
-            devices = ','.join(str(device) for device in devices)
+        for machine in machines_dict:
+            devices = machines_dict.get(machine)
             for i in range(12):
-                query = """select
-                                round(Avg(current_value),3) as uptime_percent,
-                                ip_address,
-                                device_name
-                            from
-                                performance_networkavailabilitydaily
-                            where
-                                device_name in ({0})
-                            And
-                                sys_timestamp >= {1}
-                            And
-                                sys_timestamp < {2}
-                            Group by
-                                ip_address
-                            """.format(devices, epoch_first_day[i], epoch_last_day[i])
+                first_day = datetime.datetime(year,month,day)
+                last_day = datetime.datetime(year,month,day) + relativedelta(day=31)
 
-                result = fetch_raw_result(query,machine=machine)
+                first_day_epoch = int(first_day.strftime('%s'))
+                last_day_epoch = int(last_day.strftime('%s'))
 
-                if datetime_first_day[i] in resultset:
-                    resultset[datetime_first_day[i]].append(result)
-                else:
-                    resultset[datetime_first_day[i]] = result
+                result = ptpbh_uptime_resultset(
+                    machine=machine,
+                    devices=devices,
+                    first_day=first_day_epoch,
+                    last_day=last_day_epoch
+                )
+
+                if result:
+                    if first_day not in resultset:
+                        resultset[first_day] = []
+                    map(lambda device_data: resultset[first_day].append(device_data), result)
+
+                month = month+1
+                if month>12:
+                    year = year+1
+                    month = 1
 
     bulk_bh_entry = list()
+
     for date_time in resultset:
         entries = [PTPBHUptime(datetime=date_time,
                                 ip_address=entry['ip_address'],
@@ -842,11 +873,15 @@ def calculate_avg_availability_ptpbh():
     g_jobs = list()
 
     if len(bulk_bh_entry):
-        g_jobs.append(inventory_tasks.bulk_update_create.s(bulk_bh_entry, action='create', model=PTPBHUptime))
+        g_jobs.append(inventory_tasks.bulk_update_create.s(
+            bulk_bh_entry,
+            action='create',
+            model=PTPBHUptime
+        ))
     else:
         return False
 
     job = group(g_jobs)
     job.apply_async()  # Start the Job.
-    return True
 
+    return True
