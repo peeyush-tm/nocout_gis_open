@@ -388,9 +388,9 @@ urlpatterns = patterns('',
         views.PTPBHUptimeInit.as_view(),
         name='init_ptpbh_uptime'
     ),
-    # url(
-    #     r'^ptpbh_uptime/listing/$',
-    #     views.PTPBHUptimeListing.as_view(),
-    #     name='ptpbh_uptime_listing'
-    # )
+    url(
+        r'^ptpbh_uptime/listing/$',
+        views.PTPBHUptimeListing.as_view(),
+        name='ptpbh_uptime_listing'
+    )
 )

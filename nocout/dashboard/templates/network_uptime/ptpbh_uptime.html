@@ -154,12 +154,12 @@
             }
 
             try {
-                capacity_summary_headers = $.parseJSON('{{ summary_headers|safe }}')
+                network_uptime_headers = $.parseJSON('{{ uptime_headers|safe }}')
             } catch(e) {
                 // console.error(e);
             }
 
-            capacity_summary_url = "{% url 'capacity_alert_sector_status_listing' %}";
+            network_uptime_url = "{% url 'ptpbh_uptime_listing' %}";
 
             // Populate month
             if (month_list.length > 0) {
@@ -172,7 +172,7 @@
             dataTableInstance = new ourDataTableWidget();
 
             // call initCapacitySummaryDashboard function to populate RFO dashboard data as per the selected filters
-            initCapacitySummaryDashboard();
+            initUptimeDashboard();
         });
     </script>
 {% endblock %}
