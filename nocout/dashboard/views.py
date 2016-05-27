@@ -2923,7 +2923,7 @@ class INCTicketRateListing(BaseDatatableView):
                 qs = self.model.objects.extra({
                     'timestamp': 'unix_timestamp(timestamp)'
                 }).filter(
-                    severity__iexact=severity,
+                    severity__iexact=severity.replace('_', ' '),
                     timestamp=datetime.datetime.fromtimestamp(float(month))
                 ).values('severity', 'timestamp').annotate(tt_count=Count('id'))
             else:
@@ -2931,7 +2931,7 @@ class INCTicketRateListing(BaseDatatableView):
                 qs = self.model.objects.extra({
                     'timestamp': 'unix_timestamp(timestamp)'
                 }).filter(
-                    severity__iexact=severity,
+                    severity__iexact=severity.replace('_', ' '),
                     timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
                     timestamp__lte=current_timestamp
                 ).values(
