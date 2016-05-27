@@ -3682,36 +3682,34 @@ class NetworkUptimeListing(BaseDatatableView):
         """
 
         """
-        data_dict = {}
+        resultset = list()
         for data in qs:
-            if data['timestamp'] not in data_dict:
-                data_dict[data['timestamp']] = {
-                    'timestamp': data['timestamp'],
-                    'month': '',
-                    'below_threshold': '',
-                    'above_threshold': ''
-                }
+            data_dict = {
+                'timestamp': data['timestamp'],
+                'month': '',
+                'below_threshold': '',
+                'above_threshold': ''
+            }
 
-            if not data_dict[data['timestamp']]['month']:
-                try:
-                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
-                except Exception, e:
-                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
-                data_dict[data['timestamp']]['month'] = formatted_month
+            try:
+                formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
+            except Exception, e:
+                formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
+            data_dict['month'] = formatted_month
 
-            if not data_dict[data['timestamp']]['above_threshold']:
-                try:
-                    data_dict[data['timestamp']]['above_threshold'] = round(float(data['uptime_percent']), 2)
-                except Exception, e:
-                    data_dict[data['timestamp']]['above_threshold'] = 0
+            try:
+                data_dict['above_threshold'] = round(float(data['uptime_percent']), 2)
+            except Exception, e:
+                data_dict['above_threshold'] = 0
 
-            if not data_dict[data['timestamp']]['below_threshold']:
-                try:
-                    data_dict[data['timestamp']]['below_threshold'] = round(100.0 - float(data['uptime_percent']), 2)
-                except Exception, e:
-                    data_dict[data['timestamp']]['below_threshold'] = 0
+            try:
+                data_dict['below_threshold'] = round(100.0 - float(data['uptime_percent']), 2)
+            except Exception, e:
+                data_dict['below_threshold'] = 0
 
-        return data_dict.values()
+            resultset.append(data_dict)
+
+        return resultset
 
 
     def get_context_data(self, *args, **kwargs):
@@ -3821,37 +3819,36 @@ class PTPBHUptimeListing(BaseDatatableView):
 
     def prepare_results(self, qs):
         """
+
         """
-        data_dict = {}
+        resultset = list()
         for data in qs:
-            if data['timestamp'] not in data_dict:
-                data_dict[data['timestamp']] = {
-                    'timestamp': data['timestamp'],
-                    'month': '',
-                    'below_threshold': '',
-                    'above_threshold': ''
-                }
+            data_dict = {
+                'timestamp': data['timestamp'],
+                'month': '',
+                'below_threshold': '',
+                'above_threshold': ''
+            }
 
-            if not data_dict[data['timestamp']]['month']:
-                try:
-                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
-                except Exception, e:
-                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
-                data_dict[data['timestamp']]['month'] = formatted_month
+            try:
+                formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
+            except Exception, e:
+                formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
+            data_dict['month'] = formatted_month
 
-            if not data_dict[data['timestamp']]['above_threshold']:
-                try:
-                    data_dict[data['timestamp']]['above_threshold'] = round(float(data['uptime_percent']), 2)
-                except Exception, e:
-                    data_dict[data['timestamp']]['above_threshold'] = 0
+            try:
+                data_dict['above_threshold'] = round(float(data['uptime_percent']), 2)
+            except Exception, e:
+                data_dict['above_threshold'] = 0
 
-            if not data_dict[data['timestamp']]['below_threshold']:
-                try:
-                    data_dict[data['timestamp']]['below_threshold'] = round(100.0 - float(data['uptime_percent']), 2)
-                except Exception, e:
-                    data_dict[data['timestamp']]['below_threshold'] = 0
+            try:
+                data_dict['below_threshold'] = round(100.0 - float(data['uptime_percent']), 2)
+            except Exception, e:
+                data_dict['below_threshold'] = 0
 
-        return data_dict.values()
+            resultset.append(data_dict)
+
+        return resultset
 
 
     def get_context_data(self, *args, **kwargs):
