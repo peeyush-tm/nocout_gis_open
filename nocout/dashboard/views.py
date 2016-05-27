@@ -33,7 +33,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, \
     MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, \
     DashboardSeverityStatusDaily, DashboardRangeStatusDaily, RFOAnalysis, CustomerFaultAnalysis, \
-    SectorSummaryStatus, BackhaulSummaryStatus, NetworkUptimeMonthly
+    SectorSummaryStatus, BackhaulSummaryStatus, NetworkUptimeMonthly, PTPBHUptime
 
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, \
@@ -3679,38 +3679,39 @@ class NetworkUptimeListing(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
+        """
 
-        current_timestamp = datetime.datetime.now()
-        temp_dict = {}
+        """
+        data_dict = {}
         for data in qs:
-            if data['timestamp'] not in temp_dict:
-                temp_dict[data['timestamp']] = {
+            if data['timestamp'] not in data_dict:
+                data_dict[data['timestamp']] = {
                     'timestamp': data['timestamp'],
                     'month': '',
                     'below_threshold': '',
                     'above_threshold': ''
                 }
 
-            if not temp_dict[data['timestamp']]['month']:
+            if not data_dict[data['timestamp']]['month']:
                 try:
                     formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
                 except Exception, e:
                     formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
-                temp_dict[data['timestamp']]['month'] = formatted_month
+                data_dict[data['timestamp']]['month'] = formatted_month
 
-            if not temp_dict[data['timestamp']]['above_threshold']:
+            if not data_dict[data['timestamp']]['above_threshold']:
                 try:
-                    temp_dict[data['timestamp']]['above_threshold'] = round(float(data['uptime_percent']), 2)
+                    data_dict[data['timestamp']]['above_threshold'] = round(float(data['uptime_percent']), 2)
                 except Exception, e:
-                    temp_dict[data['timestamp']]['above_threshold'] = 0
+                    data_dict[data['timestamp']]['above_threshold'] = 0
 
-            if not temp_dict[data['timestamp']]['below_threshold']:
+            if not data_dict[data['timestamp']]['below_threshold']:
                 try:
-                    temp_dict[data['timestamp']]['below_threshold'] = round(100.0 - float(data['uptime_percent']), 2)
+                    data_dict[data['timestamp']]['below_threshold'] = round(100.0 - float(data['uptime_percent']), 2)
                 except Exception, e:
-                    temp_dict[data['timestamp']]['below_threshold'] = 0
+                    data_dict[data['timestamp']]['below_threshold'] = 0
 
-        return temp_dict.values()
+        return data_dict.values()
 
 
     def get_context_data(self, *args, **kwargs):
@@ -3764,6 +3765,10 @@ class PTPBHUptimeInit(TemplateView):
         """
         context = super(PTPBHUptimeInit, self).get_context_data(**kwargs)
 
+        context['months_data'] = json.dumps(list(PTPBHUptime.objects.extra({
+            'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+        }).values('id').distinct().order_by('id')))
+
         context['uptime_headers'] = json.dumps([
             {'mData': 'month', 'sTitle': 'Month'},
             {'mData': 'below_threshold', 'sTitle': 'Less Than 99.5'},
@@ -3774,135 +3779,116 @@ class PTPBHUptimeInit(TemplateView):
         return context
 
 
-# class PTPBHUptimeListing(BaseDatatableView):
-#     """
-#     This class defines BaseDatatableView for NetworkUptimeListing data
-#     """
-#     model = PTPBhUptime
-#     columns = [
-#         'datetime',
-#         'id',
-#     ]
-#     order_columns = [
-#         'datetime',
-#         'uptime_percent',
-#         'uptime_percent'
-#     ]
+class PTPBHUptimeListing(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for NetworkUptimeListing data
+    """
+    model = PTPBHUptime
+    columns = [
+        'id',
+        'timestamp',
+        'uptime_percent',
+    ]
+    order_columns = [
+        'timestamp',
+        'uptime_percent',
+        'uptime_percent'
+    ]
 
-#     pre_camel_case_notation = False
+    pre_camel_case_notation = False
 
-#     def get_initial_queryset(self):
+    def get_initial_queryset(self):
 
-#         month = self.request.GET.get('month')
-#         technology = self.request.GET.get('technology')
+        month = self.request.GET.get('month')
 
-#         where_condition = Q()
-#         if technology and technology.lower() == 'all':
-#             where_condition &= Q(technology__in=['pmp', 'ubr pmp', 'wimax'])
-#         elif technology and technology.lower() == 'pmp':
-#             where_condition &= Q(technology__in=['pmp', 'ubr pmp'])
-#         else:
-#             where_condition &= Q(technology__iexact=technology)
+        where_condition = Q()
 
-#         if month:
-#             where_condition &= Q(datetime=datetime.datetime.fromtimestamp(float(month)))
-#         else:
-#             current_timestamp = datetime.datetime.now()
-#             where_condition &= Q(datetime__gte=current_timestamp - datetime.timedelta(365))
-#             where_condition &= Q(datetime__lte=current_timestamp)
+        if month:
+            where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
+        else:
+            current_timestamp = datetime.datetime.now()
+            where_condition &= Q(timestamp__gte=current_timestamp - datetime.timedelta(365))
+            where_condition &= Q(timestamp__lte=current_timestamp)
 
-#         try:
-#             qs = self.model.objects.extra({
-#                 'timestamp': 'unix_timestamp(datetime)'
-#             }).filter(where_condition).values(
-#                 'id', 'technology', 'uptime_percent', 'timestamp'
-#             )
-#         except Exception, e:
-#             qs = self.model.objects.filter(id=0)
+        try:
+            qs = self.model.objects.extra({
+                'timestamp': 'unix_timestamp(timestamp)'
+            }).filter(where_condition).values(*self.columns)
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
 
-#         return qs
+        return qs
 
-#     def prepare_results(self, qs):
+    def prepare_results(self, qs):
+        """
+        """
+        data_dict = {}
+        for data in qs:
+            if data['timestamp'] not in data_dict:
+                data_dict[data['timestamp']] = {
+                    'timestamp': data['timestamp'],
+                    'month': '',
+                    'below_threshold': '',
+                    'above_threshold': ''
+                }
 
-#         current_timestamp = datetime.datetime.now()
-#         temp_dict = {}
-#         for data in qs:
-#             tt_count = data['tt_count']
-#             if data['timestamp'] not in temp_dict:
-#                 temp_dict[data['timestamp']] = {
-#                     'timestamp': data['timestamp'],
-#                     'month': '',
-#                     'below_threshold': '',
-#                     'above_threshold': ''
-#                 }
+            if not data_dict[data['timestamp']]['month']:
+                try:
+                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
+                except Exception, e:
+                    formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
+                data_dict[data['timestamp']]['month'] = formatted_month
 
-#             if not temp_dict[data['timestamp']]['month']:
-#                 try:
-#                     formatted_month = datetime.datetime.fromtimestamp(data['timestamp']).strftime('%B - %Y')
-#                 except Exception, e:
-#                     formatted_month = datetime.datetime.fromtimestamp(data['timestamp'])
-#                 temp_dict[data['timestamp']]['month'] = formatted_month
+            if not data_dict[data['timestamp']]['above_threshold']:
+                try:
+                    data_dict[data['timestamp']]['above_threshold'] = round(float(data['uptime_percent']), 2)
+                except Exception, e:
+                    data_dict[data['timestamp']]['above_threshold'] = 0
 
-#             if not temp_dict[data['timestamp']]['above_threshold']:
-#                 try:
-#                     temp_dict[data['timestamp']]['above_threshold'] = self.model.objects.extra({
-#                         'timestamp': 'unix_timestamp(timestamp)'
-#                     }).filter(
-#                         timestamp=datetime.datetime.fromtimestamp(float(data['timestamp'])),
-#                         uptime_percent__gte=99.5
-#                     ).count()
-#                 except Exception, e:
-#                     temp_dict[data['timestamp']]['above_threshold'] = 0
+            if not data_dict[data['timestamp']]['below_threshold']:
+                try:
+                    data_dict[data['timestamp']]['below_threshold'] = round(100.0 - float(data['uptime_percent']), 2)
+                except Exception, e:
+                    data_dict[data['timestamp']]['below_threshold'] = 0
 
-#             if not temp_dict[data['timestamp']]['below_threshold']:
-#                 try:
-#                     temp_dict[data['timestamp']]['below_threshold'] = self.model.objects.extra({
-#                         'timestamp': 'unix_timestamp(timestamp)'
-#                     }).filter(
-#                         timestamp=datetime.datetime.fromtimestamp(float(data['timestamp'])),
-#                         uptime_percent__lt=99.5
-#                     ).count()
-#                 except Exception, e:
-#                     temp_dict[data['timestamp']]['below_threshold'] = 0
-
-#         return temp_dict.values()
+        return data_dict.values()
 
 
-#     def get_context_data(self, *args, **kwargs):
+    def get_context_data(self, *args, **kwargs):
 
-#         request = self.request
-#         self.initialize(*args, **kwargs)
+        request = self.request
+        self.initialize(*args, **kwargs)
 
-#         qs = self.get_initial_queryset()
+        qs = self.get_initial_queryset()
 
-#         # number of records before filtering
-#         total_records = 0
-#         if qs.count() > 0:
-#             total_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+        # number of records before filtering
+        total_records = 0
+        if qs.count() > 0:
+            total_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
 
-#         qs = self.filter_queryset(qs)
+        qs = self.filter_queryset(qs)
 
-#         # number of records after filtering
-#         total_display_records = 0
-#         if qs.count() > 0:
-#             total_display_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+        # number of records after filtering
+        total_display_records = 0
+        if qs.count() > 0:
+            total_display_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
 
-#         qs = self.ordering(qs)
+        qs = self.ordering(qs)
         
-#         if not self.request.GET.get('request_for_chart'):
-#             qs = self.paging(qs)
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
 
-#         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-#         if not qs and isinstance(qs, ValuesQuerySet):
-#             qs = list(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
 
-#         aaData = self.prepare_results(qs)
+        aaData = self.prepare_results(qs)
         
-#         ret = {
-#             'sEcho': int(request.REQUEST.get('sEcho', 0)),
-#             'iTotalRecords': total_records,
-#             'iTotalDisplayRecords': total_display_records,
-#             'aaData': aaData
-#         }
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
 
-#         return ret
+        return ret
