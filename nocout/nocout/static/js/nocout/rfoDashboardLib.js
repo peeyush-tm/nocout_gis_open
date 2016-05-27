@@ -1612,7 +1612,7 @@ function loadUptimeChart(ajax_url, dom_id_prefix, page_type) {
                     yAxis: {
                         min: 0,
                         title: {
-                            text: '%'
+                            text: 'Uptime %'
                         },
                         labels: {
                             overflow: 'justify'
