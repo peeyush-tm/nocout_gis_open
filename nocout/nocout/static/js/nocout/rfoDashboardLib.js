@@ -1604,8 +1604,8 @@ function loadUptimeChart(ajax_url, dom_id_prefix, page_type) {
                         },
                         type: 'datetime',
                         dateTimeLabelFormats: {
-                            month: '%e. %b',
-                            year: '%b'
+                            month: '%b %Y',
+                            year: '%Y'
                         },
                         tickInterval: 30 * 24 * 3600 * 1000
                     },
