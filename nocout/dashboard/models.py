@@ -340,11 +340,8 @@ class PTPBHUptime(models.Model):
     """
     Average uptime for a month for each device.
     """
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
     uptime_percent = models.CharField('Uptime percent', max_length=10, null=True, blank=True)
-    datetime = models.DateTimeField('Date-Time', max_length=100, null=True, blank=True)
-    organization = models.ForeignKey(Organization)
+    timestamp = models.DateTimeField('Time', max_length=100, null=True, blank=True)
 
 class NetworkUptimeMonthly(models.Model):
     """
