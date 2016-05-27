@@ -728,7 +728,6 @@ def insert_network_avail_result(resultant_data, tech_id):
 
 
 ################## Task for RF Main Dashboard Network Availability Calculation - End ###################
-
 def ptpbh_uptime_resultset(machine='default',devices=[], first_day=None, last_day=None):
     """
     This function return uptime percentage as per the given params
@@ -745,9 +744,7 @@ def ptpbh_uptime_resultset(machine='default',devices=[], first_day=None, last_da
     devices_str = ','.join(str(device) for device in devices)
 
     query = """select
-                    round(Avg(current_value),3) as uptime_percent,
-                    ip_address,
-                    device_name
+                    round(Avg(current_value),3) as uptime_percent
                 from
                     performance_networkavailabilitydaily
                 where
@@ -761,8 +758,15 @@ def ptpbh_uptime_resultset(machine='default',devices=[], first_day=None, last_da
                 """.format(devices_str, first_day, last_day)
 
     result = nocout_utils.fetch_raw_result(query, machine=machine)
-
-    return result
+    logger.error("query result {0}".format(result))
+    if result:
+        uptime_percent_list = [data['uptime_percent'] for data in result]
+        length = len(uptime_percent_list)
+        value = sum(val>99.5 for val in uptime_percent_list)
+        percent = round(float((float(value)/float(length))*100.0), 3)
+    else:
+        percent = 0.0
+    return percent
 
 
 
@@ -789,8 +793,8 @@ def calculate_avg_availability_ptpbh():
     machines_dict = inventory_utils.prepare_machines(
        devices, machine_key='machine_name'
     )
-    # key value mapping for device_name and organization id.
-    mapping_device_organization = dict([(device['device_name'],device['organization_id']) for device in devices])
+    # # key value mapping for device_name and organization id.
+    # mapping_device_organization = dict([(device['device_name'],device['organization_id']) for device in devices])
 
     resultset = dict()
 
@@ -822,8 +826,8 @@ def calculate_avg_availability_ptpbh():
                 first_day=last_month_start_epoch,
                 last_day=last_month_end_epoch
             )
-            if result:
-                resultset[last_month_start] = result
+            resultset[last_month_start] = result
+
     # Calculate and Store entries for last 12 months.
     else:
         # Network Availability data for devices is stored in their respective machine location.
@@ -848,27 +852,16 @@ def calculate_avg_availability_ptpbh():
                     last_day=last_day_epoch
                 )
 
-                if result:
-                    if first_day not in resultset:
-                        resultset[first_day] = []
-                    map(lambda device_data: resultset[first_day].append(device_data), result)
+                resultset[first_day] = result
 
                 month = month+1
                 if month>12:
                     year = year+1
                     month = 1
 
-    bulk_bh_entry = list()
-
-    for date_time in resultset:
-        entries = [PTPBHUptime(datetime=date_time,
-                                ip_address=entry['ip_address'],
-                                device_name=entry['device_name'],
-                                organization_id = mapping_device_organization.get(entry['device_name']),
-                                uptime_percent=entry['uptime_percent']) \
-                    for entry in resultset[date_time]]
-
-        bulk_bh_entry = bulk_bh_entry  + entries
+    bulk_bh_entry = [PTPBHUptime(timestamp=date_time,
+                                 uptime_percent=percent) \
+                for date_time,percent in resultset.iteritems()]
 
     g_jobs = list()
 
