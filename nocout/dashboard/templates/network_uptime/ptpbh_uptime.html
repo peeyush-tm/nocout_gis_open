@@ -19,12 +19,10 @@
         min-width: 150px;
     }
 </style>
-<div class="box border lite capacity_alerts_container">
+<div class="box border lite ptp_bh_uptime_container">
     <div id="tableContainer_div" class="box-title">
         <h4 class="pull-left"><i class="fa fa-television"></i> PTP BH Uptime</h4>
-        <div class="clearfix"></div>
-    </div>
-    <div class="box-body" style="">
+        <!-- <div class="clearfix"></div> -->
         <ul class="list-unstyled list-inline" align="right">
             <li>
                 <select name="display_selector" class="form-control input-sm hide filter_controls">
@@ -39,72 +37,19 @@
                 </select>
             </li>
         </ul>
-
-        <div class="tabbable header-tabs">
-            <ul class="nav nav-tabs" style="top: -88px;">
-                <li>
-                    <a href="#pmp_block" id="pmp_tab" data-toggle="tab" tech="pmp" table-id-prefix="pmp_capacity_summary">
-                        PMP
-                    </a>
-                </li>
-                <li>
-                    <a href="#wimax_block" id="wimax_tab" data-toggle="tab" tech="wimax" table-id-prefix="wimax_capacity_summary">
-                        WiMAX
-                    </a>
-                </li>
-                <li class="active">
-                    <a href="#all_block" id="all_tab" data-toggle="tab" tech="all" table-id-prefix="all_capacity_summary">
-                        OverAll(PMP/WiMAX)
-                    </a>
-                </li>
-            </ul>
-            <div class="tab-content" style="overflow:auto;margin-top: -30px;">
-                <div class="tab-pane active" id="all_block">
-                    <div class="table_view_container">
-                        <table class="datatable table table-striped table-bordered table-hover" id="all_capacity_summary_datatable">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                        <div class="clearfix"></div>
-                    </div>
-                    <div class="both_view_seperator"></div>
-                    <div class="chart_view_container">
-                        <div id="all_capacity_summary_chart"></div>
-                        <div class="clearfix"></div>
-                    </div>
-                </div>
-
-                <div class="tab-pane" id="wimax_block">
-                    <div class="table_view_container">
-                        <table class="datatable table table-striped table-bordered table-hover" id="wimax_capacity_summary_datatable">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                        <div class="clearfix"></div>
-                    </div>
-                    <div class="both_view_seperator"></div>
-                    <div class="chart_view_container">
-                        <div id="wimax_capacity_summary_chart"></div>
-                        <div class="clearfix"></div>
-                    </div>
-                </div>
-
-                <div class="tab-pane" id="pmp_block">
-                    <div class="table_view_container">
-                        <table class="datatable table table-striped table-bordered table-hover" id="pmp_capacity_summary_datatable">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                        <div class="clearfix"></div>
-                    </div>
-                    <div class="both_view_seperator"></div>
-                    <div class="chart_view_container">
-                        <div id="pmp_capacity_summary_chart"></div>
-                        <div class="clearfix"></div>
-                    </div>
-                </div>
-
-            </div>
+    </div>
+    <div class="box-body" style="">
+        <div class="table_view_container">
+            <table class="datatable table table-striped table-bordered table-hover" id="ptp_bh_uptime_datatable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+            <div class="clearfix"></div>
+        </div>
+        <div class="both_view_seperator"></div>
+        <div class="chart_view_container">
+            <div id="ptp_bh_uptime_chart"></div>
+            <div class="clearfix"></div>
         </div>
     </div>
     <div class="clearfix"></div>
@@ -154,12 +99,12 @@
             }
 
             try {
-                capacity_summary_headers = $.parseJSON('{{ summary_headers|safe }}')
+                network_uptime_headers = $.parseJSON('{{ uptime_headers|safe }}')
             } catch(e) {
                 // console.error(e);
             }
 
-            capacity_summary_url = "{% url 'capacity_alert_sector_status_listing' %}";
+            network_uptime_url = "{% url 'ptpbh_uptime_listing' %}";
 
             // Populate month
             if (month_list.length > 0) {
@@ -171,8 +116,8 @@
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 
-            // call initCapacitySummaryDashboard function to populate RFO dashboard data as per the selected filters
-            initCapacitySummaryDashboard();
+            // call initUptimeDashboard function to populate PTP Backhaul uptime data as per the selected filters
+            initUptimeDashboard();
         });
     </script>
 {% endblock %}

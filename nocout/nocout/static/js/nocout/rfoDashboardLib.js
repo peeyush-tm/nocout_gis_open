@@ -481,10 +481,14 @@ function initUptimeDashboard() {
 
     var selected_tech = $('.nav-tabs li.active a').attr('tech'),
         table_id_prefix = $('.nav-tabs li.active a').attr('table-id-prefix');
+
+    if (window.location.pathname.indexOf('/ptpbh_uptime/') > -1) {
+        selected_tech = '';
+        table_id_prefix = 'ptp_bh_uptime';
+    }
     
     // Append technology query string as per the selected tab.
     api_get_params += '&technology=' + selected_tech;
-
 
     if (load_table) {
         var tab_txt = $.trim($('.nav-tabs li.active a').text()),
@@ -497,7 +501,6 @@ function initUptimeDashboard() {
             headers_class = 'PTPBHUptimeInit';
             data_class = 'BackhaulStatusListing';
         }
-
         // Load Sector/Backhaul summary report
         dataTableInstance.createDataTable(
             table_id_prefix+'_datatable',
@@ -546,7 +549,8 @@ function updateFiltersContent(dataset, filter_name, filter_title) {
         }
 
         var is_inc_page = window.location.pathname.indexOf('/inc_ticket_rate/') == -1,
-            is_re_page = window.location.pathname.indexOf('/resolution_efficiency/') == -1;
+            is_re_page = window.location.pathname.indexOf('/resolution_efficiency/') == -1,
+            is_uptime_page = window.location.pathname.indexOf('_uptime/') == -1;
 
         for (var i=0; i<dataset.length; i++) {
             if (filter_name == 'month') {
@@ -556,7 +560,7 @@ function updateFiltersContent(dataset, filter_name, filter_title) {
 
                     var value = month_dict[timestamp_obj.getMonth()] + ' - ' + timestamp_obj.getFullYear(),
                         selected_item = '';
-                    if (is_re_page && is_inc_page) {
+                    if (is_re_page && is_inc_page && is_uptime_page) {
                         if (i == dataset.length - 1) {
                             selected_item = 'SELECTED="SELECTED"';
                         }
