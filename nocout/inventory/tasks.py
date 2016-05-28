@@ -11171,6 +11171,7 @@ def get_machine_and_site(machines_dict):
     """
 
     if machines_dict:
+        machine_limit_reached = True
         for machine, sites in machines_dict.iteritems():
             try:
                 current_machine = machine
@@ -11180,15 +11181,23 @@ def get_machine_and_site(machines_dict):
                 current_machine = Machine.objects.get(name=machine)
                 for site in sites:
                     for name, number_of_devices in site.iteritems():
-                        if number_of_devices < 1400:
+                        if number_of_devices < 1500:
+                            machine_limit_reached = False
                             current_site = SiteInstance.objects.get(name=name)
                             return {'machine': current_machine, 'site': current_site}
-                        else:
-                            logger.error("******************** Machine/Sites limit reached.")
-                            return ""            
+                        # else:
+                        #     logger.error("******************** Machine/Sites limit reached.")
+                        #     return ""
             except Exception as e:
                 logger.info("******************** M/C Exception: ", e.message)
                 return ""
+
+        if machine_limit_reached:
+            logger.error("******************** Machine/Sites limit reached.")
+            return ""
+    else:
+        logger.error("******************** Machine/Sites limit reached.")
+        return ""
 
 
 def get_ip_network(ip):
