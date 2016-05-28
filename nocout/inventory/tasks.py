@@ -14913,7 +14913,7 @@ def update_pps_flg(mapper_instance, current_pps_flag):
     Set has_pps_alarm for given model object.
     """
     current_timestamp = datetime.datetime.now()
-    mapper_timestamp = mapper_instance.latest_timestamp
+    mapper_timestamp = mapper_instance.updated_at
 
     time_diff = current_timestamp - mapper_timestamp
 

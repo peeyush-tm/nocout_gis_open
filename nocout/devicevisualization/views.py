@@ -3893,6 +3893,8 @@ class GISStaticInfo(View):
         # Create instance of 'InventoryUtilsGateway' class
         inventory_utils = InventoryUtilsGateway()
 
+        pps_alarm_flag = False
+        
         # loop through all base stations having id's in bs_ids list
         for bs_id in bs_ids:
             try:
@@ -3903,7 +3905,7 @@ class GISStaticInfo(View):
                 bs_inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
                 
                 # if EXCLAMATION_NEEDED flag is set to False from settings.py then set has_pps_alarm to 0
-                if (EXCLAMATION_NEEDED == True):
+                if EXCLAMATION_NEEDED:
                     try:
                         pps_alarm_flag = bs_inventory.get('has_pps_alarm', 0)
                     except Exception, e:
@@ -3912,7 +3914,7 @@ class GISStaticInfo(View):
             
             
                 # if bs has a pps alarm then change it's icon
-                if (pps_alarm_flag): 
+                if pps_alarm_flag: 
                     bs_inventory['icon_url'] = 'static/img/icons/bs_exclamation.png'
                     
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************

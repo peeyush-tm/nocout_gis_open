@@ -536,7 +536,7 @@ class BaseStationPpsMapper(models.Model):
     """
     base_station = models.ForeignKey(BaseStation)
     has_pps_alarm = models.BooleanField(default=False)
-    latest_timestamp = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 # ********************* Connect Inventory Signals *******************
 pre_save.connect(inventory_signals.update_site_on_bs_bhport_change, sender=BaseStation)
