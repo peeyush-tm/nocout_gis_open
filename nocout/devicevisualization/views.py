@@ -17,7 +17,7 @@ from django.views.generic.edit import CreateView, DeleteView
 from device.models import Device, DeviceFrequency, DeviceTechnology, DeviceType
 from django.db.models import Q
 from inventory.models import ThematicSettings, UserThematicSettings, BaseStation, SubStation, UserPingThematicSettings, \
-    PingThematicSettings, Circuit, CircuitL2Report, Sector
+    PingThematicSettings, Circuit, CircuitL2Report, Sector, BaseStationPpsMapper
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
     PerformanceNetwork, PerformanceService, Status, Topology, Utilization, UtilizationStatus
 # from performance.views import device_last_down_time
@@ -3901,15 +3901,20 @@ class GISStaticInfo(View):
                 
                 # get formatted bs inventory
                 bs_inventory = prepare_raw_result_v2(nocout_utils.get_maps_initial_data_noncached(bs_id=[str(bs_id)]))[0]
-                pps_alarm_flag = bs_inventory.get('has_pps_alarm')
                 
                 # if EXCLAMATION_NEEDED flag is set to False from settings.py then set has_pps_alarm to 0
-                if (EXCLAMATION_NEEDED == False):
-                    BaseStation.objects.filter(id=bs_id).update(has_pps_alarm=False)
-                    pps_alarm_flag = False
+                if (EXCLAMATION_NEEDED == True):
+                    try:
+                        pps_alarm_flag = bs_inventory.get('has_pps_alarm', 0)
+                    except Exception, e:
+                        pps_alarm_flag = False
+
+            
+            
                 # if bs has a pps alarm then change it's icon
                 if (pps_alarm_flag): 
                     bs_inventory['icon_url'] = 'static/img/icons/bs_exclamation.png'
+                    
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
                 bh_device_ip = bs_inventory.get('bh_device_ip')
                 

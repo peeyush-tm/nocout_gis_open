@@ -518,7 +518,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'check_clear_alarm_for_NO_PPS': {
         'task': 'inventory.tasks.check_alarms_for_no_pps',
-        'schedule': crontab(minute='*/8'),
+        'schedule': crontab(hour='*/1'),
         'kwargs': {'alarm_type': 'clear'},
         # 'args' : ['clear'],
     }
