@@ -2278,7 +2278,7 @@ class RFOAnalysisView(ListView):
             context[key] = context_dict[key]
 
         context['summation_headers'] = json.dumps([
-            {'mData': 'master_causecode', 'sTitle': 'Master Cause Code'},
+            {'mData': 'master_causecode', 'sTitle': 'Cause Code'},
             {'mData': 'outage_in_minutes', 'sTitle': 'Total Minutes'}
         ])
 
@@ -2487,70 +2487,32 @@ class RFOAnalysisSummationList(BaseDatatableView):
             city_name = city_name.replace('_', ' ')
 
         try:
+            timestamp_obj = datetime.datetime.fromtimestamp(float(month))
+            where_condition = Q()
+            where_condition &= Q(timestamp=timestamp_obj)
+            where_condition &= Q(master_causecode__isnull=False)
+            where_condition &= Q(sub_causecode__isnull=False)
+
             if state_name and city_name:
-                
-                qs = self.model.objects.extra({
-                    'outage_in_minutes': outage_minutes_casting,
-                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
-                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
-                }).exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    state__iexact=state_name,
-                    city__iexact=city_name,
-                    master_causecode__isnull=False,
-                    sub_causecode__isnull=False,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('master_causecode').annotate(outage_in_minutes=Sum('outage_in_minutes'))
-
+                where_condition &= Q(state__iexact=state_name)
+                where_condition &= Q(city__iexact=city_name)
             elif state_name and not city_name:
-
-                qs = self.model.objects.extra({
-                    'outage_in_minutes': outage_minutes_casting,
-                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
-                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
-                }).exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    state__iexact=state_name,
-                    master_causecode__isnull=False,
-                    sub_causecode__isnull=False,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('master_causecode').annotate(outage_in_minutes=Sum('outage_in_minutes'))
-
+                where_condition &= Q(state__iexact=state_name)
             elif not state_name and city_name:
-
-                qs = self.model.objects.extra({
-                    'outage_in_minutes': outage_minutes_casting,
-                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
-                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
-                }).exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    city__iexact=city_name,
-                    master_causecode__isnull=False,
-                    sub_causecode__isnull=False,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('master_causecode').annotate(outage_in_minutes=Sum('outage_in_minutes'))
-
+                where_condition &= Q(city__iexact=city_name)
             else:
+                pass
 
-                qs = self.model.objects.extra({
-                    'outage_in_minutes': outage_minutes_casting,
-                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
-                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
-                }).exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    master_causecode__isnull=False,
-                    sub_causecode__isnull=False,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('master_causecode').annotate(outage_in_minutes=Sum('outage_in_minutes'))
-                
+            qs = self.model.objects.extra({
+                'outage_in_minutes': outage_minutes_casting,
+                'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+            }).exclude(
+                master_causecode__exact='',
+                sub_causecode__exact=''
+            ).filter(where_condition).values('master_causecode').annotate(
+                outage_in_minutes=Sum('outage_in_minutes')
+            )    
         except Exception, e:
             qs = self.model.objects.filter(id=0).values(*self.columns)
 
@@ -2559,7 +2521,7 @@ class RFOAnalysisSummationList(BaseDatatableView):
     def prepare_results(self, qs):
 
         json_data = [{
-            key: round(val, 2) if key == 'outage_in_minutes' and val else val for key, val in dct.items()
+            key: round(float(val), 2) if key == 'outage_in_minutes' and val else val for key, val in dct.items()
         } for dct in qs]
 
         return json_data
@@ -2643,63 +2605,30 @@ class MTTRSummaryData(View):
             city_name = city_name.replace('_', ' ')
 
         try:
+            month_timestamp = datetime.datetime.fromtimestamp(float(month))
+            
+            where_condition = Q()
+            where_condition &= Q(timestamp=month_timestamp)
+            
             if state_name and city_name:
-                mttr_dataset = list(RFOAnalysis.objects.extra({
-                    'name': 'mttr'
-                }).exclude(
-                    master_causecode__exact=''
-                ).filter(
-                    state__iexact=state_name,
-                    city__iexact=city_name,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('name').annotate(total_count=Count('id')))
-
-                total_dataset = RFOAnalysis.objects.filter(
-                    state__iexact=state_name,
-                    city__iexact=city_name,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).count()
+                where_condition &= Q(state__iexact=state_name)
+                where_condition &= Q(city__iexact=city_name)
             elif state_name and not city_name:
-                mttr_dataset = list(RFOAnalysis.objects.extra({
-                    'name': 'mttr'
-                }).exclude(
-                    master_causecode__exact=''
-                ).filter(
-                    state__iexact=state_name,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('name').annotate(total_count=Count('id')))
-
-                total_dataset = RFOAnalysis.objects.filter(
-                    state__iexact=state_name,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).count()
+                where_condition &= Q(state__iexact=state_name)
             elif not state_name and city_name:
-                mttr_dataset = list(RFOAnalysis.objects.extra({
-                    'name': 'mttr'
-                }).exclude(
-                    master_causecode__exact=''
-                ).filter(
-                    city__iexact=city_name,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('name').annotate(total_count=Count('id')))
-
-                total_dataset = RFOAnalysis.objects.filter(
-                    city__iexact=city_name,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).count()
+                where_condition &= Q(city__iexact=city_name)
             else:
-                mttr_dataset = list(RFOAnalysis.objects.extra({
-                    'name': 'mttr'
-                }).exclude(
-                    master_causecode__exact=''
-                ).filter(
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('name').annotate(total_count=Count('id')))
+                pass
 
-                total_dataset = RFOAnalysis.objects.filter(
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).count()
-                
+            mttr_dataset = list(RFOAnalysis.objects.extra({
+                'name': 'mttr'
+            }).exclude(
+                master_causecode__exact='',
+            ).filter(where_condition).values('name').annotate(
+                total_count=Count('id'))
+            )
+
+            total_dataset = RFOAnalysis.objects.filter(where_condition).count()    
         except Exception, e:
             pass
 
@@ -2710,16 +2639,16 @@ class MTTRSummaryData(View):
                 if not data.get('name'):
                     data['name'] = 'NA'
 
-                if 'less' in data.get('name').lower():
-                    legend_index = 1
-                elif 'between' in data.get('name').lower():
-                    legend_index = 2
-                elif 'more than' in data.get('name').lower():
-                    legend_index = 3
-                else:
-                    legend_index = i
+                # if 'less' in data.get('name').lower():
+                #     legend_index = 1
+                # elif 'between' in data.get('name').lower():
+                #     legend_index = 2
+                # elif 'more than' in data.get('name').lower():
+                #     legend_index = 3
+                # else:
+                #     legend_index = i
 
-                data['legendIndex'] = legend_index
+                # data['legendIndex'] = legend_index
 
                 try:
                     data['y'] = round(float(data.get('total_count', 0)) / float(total_dataset) * 100 , 2)
@@ -3045,16 +2974,46 @@ class ResolutionEfficiencyInit(ListView):
             'value': 'severity'
         }).values('value', 'id').distinct().order_by('value')))
 
-        context['resolution_efficiency_headers'] = json.dumps([
-            {'mData': 'month', 'sTitle': 'Month'},
-            {'mData': '2_hrs', 'sTitle': '2 Hours'},
-            {'mData': '2_hrs_percent', 'sTitle': '2 Hours %'},
-            {'mData': '4_hrs', 'sTitle': '4 Hours'},
-            {'mData': '4_hrs_percent', 'sTitle': '4 Hours %'},
-            {'mData': 'more_than_4_hrs', 'sTitle': 'More Than 4 Hours'},
-            {'mData': 'more_than_4_hrs_percent', 'sTitle': 'More Than 4 Hours %'},
-            {'mData': 'total_count', 'sTitle': 'Total TT'}
-        ])
+        downtime_slab_list = set(CustomerFaultAnalysis.objects.values_list(
+            'downtime_slab', flat=True
+        ))
+
+        downtime_slab_dict = dict()
+        downtime_slab_key_list = list()
+
+        datatable_headers = [
+            {'mData': 'month', 'sTitle': 'Month'}
+        ]
+
+        for downtime_slab in downtime_slab_list:
+            if not downtime_slab:
+                continue
+            downtime_slab_key = downtime_slab.lower().replace(' ', '_')
+            downtime_slab_title = downtime_slab.replace('More Than', '>')
+            downtime_slab_title = downtime_slab_title.replace('Less Than', '<')
+            datatable_headers.append({
+                'mData': downtime_slab_key,
+                'sTitle': downtime_slab_title
+            })
+            datatable_headers.append({
+                'mData': downtime_slab_key+'_percent',
+                'sTitle': downtime_slab_title+' %'
+            })
+
+            # downtime_slab_dict[downtime_slab_key] = downtime_slab
+            downtime_slab_dict[downtime_slab_key+'_percent'] = downtime_slab+' %'
+
+            # downtime_slab_key_list.append(downtime_slab_key)
+            downtime_slab_key_list.append(downtime_slab_key+'_percent')
+
+        datatable_headers.append({
+            'mData': 'total_count',
+            'sTitle': 'Total TT'
+        })
+
+        context['resolution_efficiency_headers'] = json.dumps(datatable_headers)
+        context['downtime_slab_dict'] = json.dumps(downtime_slab_dict)
+        context['downtime_slab_key_list'] = json.dumps(downtime_slab_key_list)
 
         return context
 
@@ -3135,12 +3094,6 @@ class ResolutionEfficiencyListing(BaseDatatableView):
                 temp_dict[data['timestamp']] = {
                     'timestamp': data['timestamp'],
                     'month': '',
-                    '2_hrs': '',
-                    '2_hrs_percent': '',
-                    '4_hrs': '',
-                    '4_hrs_percent': '',
-                    'more_than_4_hrs': '',
-                    'more_than_4_hrs_percent': '',
                     'total_count': ''
                 }
 
@@ -3165,18 +3118,10 @@ class ResolutionEfficiencyListing(BaseDatatableView):
                 
             hrs_percent = round((float(tt_count) / float(total_count)) * 100, 2)
 
-            if 'Hours' not in data['downtime_slab']:
-                data['downtime_slab'] += ' Hours'
+            downtime_slab_key = data['downtime_slab'].lower().replace(' ', '_')
 
-            if '2' in data['downtime_slab']:
-                temp_dict[data['timestamp']]['2_hrs'] = tt_count
-                temp_dict[data['timestamp']]['2_hrs_percent'] = hrs_percent
-            elif '4' in data['downtime_slab'] and 'greater' not in data['downtime_slab']:
-                temp_dict[data['timestamp']]['4_hrs'] = tt_count
-                temp_dict[data['timestamp']]['4_hrs_percent'] = hrs_percent
-            elif 'greater' in data['downtime_slab']:
-                temp_dict[data['timestamp']]['more_than_4_hrs'] = tt_count
-                temp_dict[data['timestamp']]['more_than_4_hrs_percent'] = hrs_percent
+            temp_dict[data['timestamp']][downtime_slab_key] = tt_count
+            temp_dict[data['timestamp']][downtime_slab_key+'_percent'] = hrs_percent
 
         return temp_dict.values()
 

@@ -5,11 +5,11 @@
  */
 
 var chart_colors_list = [
-        '#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9', 
+        '#7cb5ec', '#90ed7d', '#f7a35c', '#8085e9', '#3D96AE', 
         '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1',
         '#2f7ed8', '#0d233a', '#8bbc21', '#910000', '#1aadce', 
         '#492970', '#f28f43', '#77a1e5', '#c42525', '#a6c96a',
-        '#4572A7', '#AA4643', '#89A54E', '#80699B', '#3D96AE', 
+        '#4572A7', '#AA4643', '#89A54E', '#80699B', '#e58e7c',
         '#DB843D', '#92A8CD', '#A47D7C', '#B5CA92', '#d69e9f',
         '#1c3066', '#0a3c5d', '#2f6494', '#2f70a6', '#2c5d8a',
         '#2a5a85', '#1f21f2', '#1f5a78', '#1d4263', '#1c3f5e',
@@ -18,7 +18,7 @@ var chart_colors_list = [
         '#23c5e3', '#c5e323', '#a8f2c3', '#6fd6a5', '#ffceb4',
         '#e1ac96', '#3c2e28', '#53856d', '#b24747', '#a5e79b',
         '#77e180', '#488864', '#8e92a2', '#ff0033', '#9bc7ae',
-        '#528969', '#ffdeed', '#b296a2', '#fb6547', '#e58e7c'
+        '#528969', '#ffdeed', '#b296a2', '#fb6547', 
     ],
     middle_legends = {
         itemDistance : 15,
@@ -236,6 +236,7 @@ function initINCTicketDashboard() {
 
     if (load_chart) {
         api_get_params += '&request_for_chart=1';
+        selected_severity = selected_severity.split('_').join(' ');
         loadINCTicketChart(inc_ticket_url + api_get_params, selected_severity);
     }
 }
@@ -673,7 +674,8 @@ function loadRFOColumnChart(ajax_url, month, selected_state, selected_city) {
                         itemMarginBottom : 5,
                         borderColor : "#CCCCCC",
                         borderWidth : "1",
-                        borderRadius : "8",
+                        borderRadius : "0",
+                        x: -25,
                         itemStyle: {
                             color: '#555555',
                             fontSize : '10px'
@@ -773,7 +775,7 @@ function createFaultPieChart(api_url, master_causecode_name) {
                 
                 for(var key in pie_dict) {
                     if (pie_dict.hasOwnProperty(key)) {
-                        pie_chart_data.push([key, pie_dict[key]])
+                        pie_chart_data.push([key, parseFloat(parseFloat(pie_dict[key]).toFixed(2))])
                     }
                 }
 
@@ -1079,8 +1081,8 @@ function loadINCTicketChart(api_url, selected_severity) {
                         },
                         type: 'datetime',
                         dateTimeLabelFormats: {
-                            month: '%e. %b',
-                            year: '%b'
+                            month: '%b %Y',
+                            year: '%Y'
                         },
                         tickInterval: 30 * 24 * 3600 * 1000
                     },
@@ -1169,6 +1171,7 @@ function loadINCTicketChart(api_url, selected_severity) {
  * @method loadResolutionEfficienyChart
  */
 function loadResolutionEfficienyChart(api_url) {
+    
     $.ajax({
         url: api_url,
         type: 'GET',
@@ -1179,26 +1182,35 @@ function loadResolutionEfficienyChart(api_url) {
 
             if (all_data_response['result'] == 'ok') {
                 var data_list = all_data_response['aaData'],
-                    two_hrs_percent = [],
-                    four_hrs_percent = [],
-                    more_than_four_hrs_percent = [];
+                    data_dict = {};
+
                 for(var j=0; j<data_list.length; j++) {
                     var timestamp = Number(data_list[j]['timestamp']) * 1000;
-                    two_hrs_percent.push([
-                        timestamp,
-                        data_list[j]['2_hrs_percent']
-                    ]);
+                    for (var i=0;i<downtime_slab_key_list.length; i++) {
 
-                    four_hrs_percent.push([
-                        timestamp,
-                        data_list[j]['4_hrs_percent']
-                    ]);
+                        if(!data_dict[downtime_slab_key_list[i]]) {
+                            data_dict[downtime_slab_key_list[i]] = {
+                                'data': [],
+                                'type': 'spline',
+                                'name': downtime_slab_dict[downtime_slab_key_list[i]]
+                            }
+                        }
 
-                    more_than_four_hrs_percent.push([
-                        timestamp,
-                        data_list[j]['more_than_4_hrs_percent']
-                    ]);
+                        data_dict[downtime_slab_key_list[i]]['data'].push([
+                            timestamp,
+                            data_list[j][downtime_slab_key_list[i]]
+                        ])
+                    }
                 }
+
+                var resultset = [];
+
+                for(key in data_dict) {
+                    if(data_dict.hasOwnProperty(key)) {
+                        resultset.push(data_dict[key]);
+                    }
+                }
+
                 var chart_title = 'RE: RF Network';
                 $('#inc_line_chart_container').highcharts({
                     chart: {
@@ -1221,8 +1233,8 @@ function loadResolutionEfficienyChart(api_url) {
                         },
                         type: 'datetime',
                         dateTimeLabelFormats: {
-                            month: '%e. %b',
-                            year: '%b'
+                            month: '%b %Y',
+                            year: '%Y'
                         },
                         tickInterval: 30 * 24 * 3600 * 1000
                     },
@@ -1249,24 +1261,20 @@ function loadResolutionEfficienyChart(api_url) {
                     legend: middle_legends,
                     tooltip: {
                         formatter: function (e) {
-                            var tooltip_html = "";
-                            tooltip_html += '<ul><li><b>Resolution Efficiency ('+getFormattedDate(this.x)+')</b></li><br/>';
+                            var tooltip_html = "",
+                                that = this;
+                            tooltip_html += '<b>Resolution Efficiency ('+getFormattedDate(that.x)+')</b><br/>';
 
-                            if (this.points && this.points.length > 0) {
-                                for(var i=0;i<this.points.length;i++) {
-                                    var color = this.points[i].series.color;
-
-                                    tooltip_html += '<li><br/><span style="color:' + color + '"> \
-                                                    '+this.points[i].series.name+'</span>: <strong> \
-                                                    ' +this.points[i].y+'%</strong></li>';
+                            if (that.points && that.points.length > 0) {
+                                for(var i=0;i<that.points.length;i++) {
+                                    var color = that.points[i].series.color;
+                                    tooltip_html += '<br/><span style="color:' + color + '"> '+that.points[i].series.name+'</span>: \
+                                                     <b>' +that.points[i].y+'%</b>';
                                 }
                             } else {
-                                tooltip_html += '<li><br/><span style="color:' + this.point.color + '">\
-                                                ' + this.point.name + '</span>: <strong>' + this.point.y + '%</strong></li>';
+                                tooltip_html += '<br/><span style="color:' + that.point.color + '">\
+                                                ' + that.point.name + '</span>: <b>' + that.point.y + '%</b>';
                             }
-
-                            tooltip_html += '</ul>';
-
                             return tooltip_html;
                         },
                         crosshairs: true,
@@ -1275,19 +1283,7 @@ function loadResolutionEfficienyChart(api_url) {
                     credits: {
                         enabled: false
                     },
-                    series: [{
-                        "data": two_hrs_percent,
-                        "name": '2 Hrs %',
-                        "type": 'spline'
-                    }, {
-                        "data": four_hrs_percent,
-                        "name": '4 Hrs %',
-                        "type": 'spline'
-                    }, {
-                        "data": more_than_four_hrs_percent,
-                        "name": '> 4 Hrs %',
-                        "type": 'spline'
-                    }],
+                    series: resultset,
                     noData: {
                         style: {
                             fontWeight: 'bold',
@@ -1427,8 +1423,8 @@ function loadCapacityAlertChart(ajax_url, dom_id_prefix, page_type) {
                         },
                         type: 'datetime',
                         dateTimeLabelFormats: {
-                            month: '%e. %b',
-                            year: '%b'
+                            month: '%b %Y',
+                            year: '%Y'
                         },
                         tickInterval: 30 * 24 * 3600 * 1000
                     },
@@ -1567,8 +1563,6 @@ function loadUptimeChart(ajax_url, dom_id_prefix, page_type) {
                         timestamp,
                         y2_val
                     ])
-
-                    console.log(timestamp + ' ------> ' + y2_val);
                 }
                 
                 line_series_data.push({
@@ -1710,8 +1704,16 @@ $('.filter_controls').change(function(e) {
     }
     var location_pathname = window.location.pathname;
     if (location_pathname.indexOf('/mttr_summary/') > -1) {
+        if ($(this).attr('name').indexOf('month') > -1) {
+            $('select[name="state_selector"]').val('');
+            $('select[name="city_selector"]').val('');
+        }
         initMTTRDashboard()
     } else if (location_pathname.indexOf('/rfo_analysis/') > -1) {
+        if ($(this).attr('name').indexOf('month') > -1) {
+            $('select[name="state_selector"]').val('');
+            $('select[name="city_selector"]').val('');
+        }
         initRfoDashboard();
     } else if (location_pathname.indexOf('/inc_ticket_rate/') > -1) {
         initINCTicketDashboard();
