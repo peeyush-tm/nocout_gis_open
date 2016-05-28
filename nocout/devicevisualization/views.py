@@ -3893,10 +3893,10 @@ class GISStaticInfo(View):
         # Create instance of 'InventoryUtilsGateway' class
         inventory_utils = InventoryUtilsGateway()
 
-        pps_alarm_flag = False
         
         # loop through all base stations having id's in bs_ids list
         for bs_id in bs_ids:
+            pps_alarm_flag = False
             try:
                 
                 devices_ip_address_list = list()
