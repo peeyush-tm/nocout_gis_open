@@ -134,7 +134,7 @@ class BaseStation(models.Model):
     site_sap_id = models.CharField('Site SAP ID', max_length=250, null=True, blank=True)
     mgmt_vlan = models.CharField('MGMT VLAN', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    has_pps_alarm = models.BooleanField('Has PPS Alarm', default=False)
+    # has_pps_alarm = models.BooleanField('Has PPS Alarm', default=False)
 
     def __unicode__(self):
         return self.name
@@ -529,6 +529,14 @@ class GISExcelDownload(models.Model):
     def __unicode__(self):
         return unicode(self.file_path) or u''
 
+class BaseStationPpsMapper(models.Model):
+    """
+    This model works as a mapper between Base Stations and their
+    PPS Alarms.
+    """
+    base_station = models.ForeignKey(BaseStation)
+    has_pps_alarm = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
 
 # ********************* Connect Inventory Signals *******************
 pre_save.connect(inventory_signals.update_site_on_bs_bhport_change, sender=BaseStation)
