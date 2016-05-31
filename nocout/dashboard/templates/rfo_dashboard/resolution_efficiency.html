@@ -82,6 +82,8 @@
             },
             resolution_efficiency_headers = [],
             resolution_efficiency_url = ''
+            downtime_slab_dict = {},
+            downtime_slab_key_list = [],
             dataTableInstance = '';
 
         $(document).ready(function(e) {
@@ -90,6 +92,9 @@
 
             // Show Loading Spinner
             showSpinner();
+
+            downtime_slab_dict = JSON.parse('{{ downtime_slab_dict|safe }}');
+            downtime_slab_key_list = JSON.parse('{{ downtime_slab_key_list|safe }}');
 
             var month_list = [];
             

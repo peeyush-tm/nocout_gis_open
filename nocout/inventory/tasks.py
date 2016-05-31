@@ -9,7 +9,7 @@ import requests
 from site_instance.models import SiteInstance
 from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency, DeviceType, ModelType, VendorModel, \
     Country, TechnologyVendor, DeviceVendor, DeviceModel
-from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload
+from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload, BaseStationPpsMapper
 from organization.models import Organization
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT, TRAPS_DATABASE
@@ -11171,6 +11171,7 @@ def get_machine_and_site(machines_dict):
     """
 
     if machines_dict:
+        machine_limit_reached = True
         for machine, sites in machines_dict.iteritems():
             try:
                 current_machine = machine
@@ -11180,15 +11181,23 @@ def get_machine_and_site(machines_dict):
                 current_machine = Machine.objects.get(name=machine)
                 for site in sites:
                     for name, number_of_devices in site.iteritems():
-                        if number_of_devices < 1400:
+                        if number_of_devices < 1500:
+                            machine_limit_reached = False
                             current_site = SiteInstance.objects.get(name=name)
                             return {'machine': current_machine, 'site': current_site}
-                        else:
-                            logger.error("******************** Machine/Sites limit reached.")
-                            return ""            
+                        # else:
+                        #     logger.error("******************** Machine/Sites limit reached.")
+                        #     return ""
             except Exception as e:
                 logger.info("******************** M/C Exception: ", e.message)
                 return ""
+
+        if machine_limit_reached:
+            logger.error("******************** Machine/Sites limit reached.")
+            return ""
+    else:
+        logger.error("******************** Machine/Sites limit reached.")
+        return ""
 
 
 def get_ip_network(ip):
@@ -14848,31 +14857,71 @@ def check_alarms_for_no_pps(alarm_type=None):
     if alarm_type.lower() == 'current':
         current_model  = CurrentAlarms
         pps_flag = True
+
+        ip_address_list = list(current_model.objects.filter(
+            eventname='Synchronization_problem__no_PPS',
+            is_active=1
+        ).using(TRAPS_DATABASE).values_list('ip_address', flat=True))
+
     elif alarm_type.lower() == 'clear':
-        current_model  = ClearAlarms
+        current_model  = CurrentAlarms #ClearAlarms
         pps_flag = False
+
+        ip_address_list = list(current_model.objects.filter(
+            eventname='Synchronization_problem__no_PPS'
+        ).using(TRAPS_DATABASE).values_list('ip_address', flat=True))
+
     else:
         return False
 
-    ip_address_list = list(current_model.objects.filter(
-        eventname='Synchronization_problem__no_PPS',
-        is_active=1
-    ).using(TRAPS_DATABASE).values_list('ip_address', flat=True))
 
     wimax_tech_id = DeviceTechnology.objects.filter(name='WiMAX').values_list('id', flat=True)
     
     bs_id_list = Sector.objects.filter(
         sector_configured_on__ip_address__in=ip_address_list,
         sector_configured_on__device_technology__in=wimax_tech_id
-    ).values_list('base_station__id', flat=True)
+    ).values_list('base_station__id', flat=True).distinct()
 
     if bs_id_list.exists():
         try:
-            BaseStation.objects.filter(
-                id__in=bs_id_list
-            ).update(has_pps_alarm=pps_flag)
+            # In Case of Current Alarms
+            if pps_flag:
+                for bs_id in bs_id_list:
+
+                    mapper_obj, newly_created = BaseStationPpsMapper.objects.get_or_create(base_station_id=bs_id)
+                    if newly_created:
+                        mapper_obj.has_pps_alarm = True
+                        mapper_obj.save(update_fields=['has_pps_alarm'])
+                    else:
+                        update_pps_flg(mapper_obj, pps_flag)
+            else:
+                # In case of Clear Alarms
+                for bs_id in bs_id_list:
+                    try:
+                        mapper_obj = BaseStationPpsMapper.objects.get(base_station_id=bs_id)
+                        update_pps_flg(mapper_obj, pps_flag)
+                    except Exception, e:
+                        continue
         except Exception, e:
             logger.error('Check Alarms Exception')
             logger.error(e)
 
     return True
+
+def update_pps_flg(mapper_instance, current_pps_flag):
+    """
+    Set has_pps_alarm for given model object.
+    """
+    current_timestamp = datetime.datetime.now()
+    mapper_timestamp = mapper_instance.updated_at
+
+    time_diff = current_timestamp - mapper_timestamp
+
+    diff_hours, remainder = divmod(time_diff.seconds, 3600)
+    diff_minutes, diff_seconds = divmod(remainder, 60)
+    
+    if diff_minutes >= 2880: #48 Hours in Minutes -> 48x60 = 2880
+        mapper_instance.has_pps_alarm = current_pps_flag
+        mapper_instance.save()
+
+    return
