@@ -3515,7 +3515,7 @@ class NetworkUptimeListing(BaseDatatableView):
         try:
             qs = self.model.objects.extra({
                 'timestamp': 'unix_timestamp(timestamp)'
-            }).filter(where_condition).values(*self.columns)
+            }).filter(where_condition).values(*self.columns).order_by('timestamp')
         except Exception, e:
             qs = self.model.objects.filter(id=0)
 
@@ -3654,7 +3654,7 @@ class PTPBHUptimeListing(BaseDatatableView):
         try:
             qs = self.model.objects.extra({
                 'timestamp': 'unix_timestamp(timestamp)'
-            }).filter(where_condition).values(*self.columns)
+            }).filter(where_condition).values(*self.columns).order_by('timestamp')
         except Exception, e:
             qs = self.model.objects.filter(id=0)
 
