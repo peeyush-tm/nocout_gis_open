@@ -2878,9 +2878,11 @@ class ResolutionEfficiencyInit(ListView):
             'value': 'severity'
         }).values('value', 'id').distinct().order_by('value')))
 
-        downtime_slab_list = set(CustomerFaultAnalysis.objects.values_list(
+        downtime_slab_list = CustomerFaultAnalysis.objects.extra({
+            'actual_downtime': 'CAST(actual_downtime AS DECIMAL)'
+        }).values_list(
             'downtime_slab', flat=True
-        ))
+        ).order_by('actual_downtime')
 
         downtime_slab_dict = dict()
         downtime_slab_key_list = list()
@@ -2889,16 +2891,28 @@ class ResolutionEfficiencyInit(ListView):
             {'mData': 'month', 'sTitle': 'Month'}
         ]
 
+        used_slabs = list()
+
         for downtime_slab in downtime_slab_list:
             if not downtime_slab:
                 continue
+
+            if downtime_slab in used_slabs:
+                continue
+
+            used_slabs.append(downtime_slab)
+
             downtime_slab_key = downtime_slab.lower().replace(' ', '_')
             downtime_slab_title = downtime_slab.replace('More Than', '>')
             downtime_slab_title = downtime_slab_title.replace('Less Than', '<')
+
+            downtime_slab_title = downtime_slab_title.replace('Greater Than', '>')
+            
             datatable_headers.append({
                 'mData': downtime_slab_key,
                 'sTitle': downtime_slab_title
             })
+
             datatable_headers.append({
                 'mData': downtime_slab_key+'_percent',
                 'sTitle': downtime_slab_title+' %'
@@ -2959,9 +2973,11 @@ class ResolutionEfficiencyListing(BaseDatatableView):
                 where_condition = Q(timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12))
                 where_condition = Q(timestamp__lte=current_timestamp)
 
-            qs = self.model.objects.extra({
-                'timestamp': 'unix_timestamp(timestamp)'
-            }).filter(where_condition).values(
+            qs = self.model.objects.extra(
+                select={
+                    'timestamp': 'unix_timestamp(timestamp)'
+                }
+            ).filter(where_condition).values(
                 'downtime_slab',
                 'timestamp'
             ).annotate(tt_count=Count('id'))
@@ -3044,7 +3060,7 @@ class ResolutionEfficiencyListing(BaseDatatableView):
             total_display_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
 
         qs = self.ordering(qs)
-        
+
         if not self.request.GET.get('request_for_chart'):
             qs = self.paging(qs)
 
