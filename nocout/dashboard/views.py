@@ -2324,64 +2324,30 @@ class RFOAnalysisList(BaseDatatableView):
             city_name = city_name.replace('_', ' ')
 
         try:
+            where_condition = Q()
+
+            where_condition &= Q(master_causecode__isnull=False)
+            where_condition &= Q(sub_causecode__isnull=False)
+            where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
+
             if state_name and city_name:
-                qs = self.model.objects.extra({
-                    'outage_in_minutes': outage_minutes_casting,
-                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
-                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
-                }).exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    state__exact=state_name,
-                    city__exact=city_name,
-                    master_causecode__isnull=False,
-                    sub_causecode__isnull=False,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values(*self.columns)
-
+                where_condition &= Q(state__exact=state_name)
+                where_condition &= Q(city__exact=city_name)
             elif state_name and not city_name:
-                qs = self.model.objects.extra({
-                    'outage_in_minutes': outage_minutes_casting,
-                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
-                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
-                }).exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    state__exact=state_name,
-                    master_causecode__isnull=False,
-                    sub_causecode__isnull=False,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values(*self.columns)
+                where_condition &= Q(state__exact=state_name)
             elif not state_name and city_name:
-                qs = self.model.objects.extra({
-                    'outage_in_minutes': outage_minutes_casting,
-                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
-                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
-                }).exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    city__exact=city_name,
-                    master_causecode__isnull=False,
-                    sub_causecode__isnull=False,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values(*self.columns)
-
+                where_condition &= Q(city__exact=city_name)
             else:
-                qs = self.model.objects.extra({
-                    'outage_in_minutes': outage_minutes_casting,
-                    'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
-                    'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
-                }).exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    master_causecode__isnull=False,
-                    sub_causecode__isnull=False,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values(*self.columns)
+                pass
+
+            qs = self.model.objects.extra({
+                'outage_in_minutes': outage_minutes_casting,
+                'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+            }).exclude(
+                master_causecode__exact='',
+                sub_causecode__exact=''
+            ).filter(where_condition).values(*self.columns)
         except Exception, e:
             qs = self.model.objects.filter(id=0).values(*self.columns)
 
@@ -2688,91 +2654,31 @@ class MTTRDetailData(View):
         if city_name:
             city_name = city_name.replace('_', ' ')
         try:
+            where_condition = Q()
+
+            where_condition &= Q(master_causecode__isnull=False)
+            where_condition &= Q(mttr__iexact=str(mttr_param).strip())
+            where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
+
             if state_name and city_name:
-                
-                mttr_dataset = list(RFOAnalysis.objects.exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    state__iexact=state_name,
-                    city__iexact=city_name,
-                    master_causecode__isnull=False,
-                    mttr__iexact=mttr_param,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('master_causecode').annotate(total_count=Count('id')))
-
-                total_dataset = RFOAnalysis.objects.exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    state__iexact=state_name,
-                    city__iexact=city_name,
-                    master_causecode__isnull=False,
-                    mttr__iexact=mttr_param,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).count()
-
+                where_condition &= Q(state__iexact=state_name)
+                where_condition &= Q(city__iexact=city_name)
             elif state_name and not city_name:
-
-                mttr_dataset = list(RFOAnalysis.objects.exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    state__iexact=state_name,
-                    master_causecode__isnull=False,
-                    mttr__iexact=mttr_param,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('master_causecode').annotate(total_count=Count('id')))
-
-                total_dataset = RFOAnalysis.objects.exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    state__iexact=state_name,
-                    master_causecode__isnull=False,
-                    mttr__iexact=mttr_param,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).count()
-
+                where_condition &= Q(state__iexact=state_name)
             elif not state_name and city_name:
-
-                mttr_dataset = list(RFOAnalysis.objects.exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    city__iexact=city_name,
-                    master_causecode__isnull=False,
-                    mttr__iexact=mttr_param,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('master_causecode').annotate(total_count=Count('id')))
-
-                total_dataset = RFOAnalysis.objects.exclude(
-                    master_causecode__exact='',
-                    sub_causecode__exact=''
-                ).filter(
-                    city__iexact=city_name,
-                    master_causecode__isnull=False,
-                    mttr__iexact=mttr_param,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).count()
-
+                where_condition &= Q(city__iexact=city_name)
             else:
+                pass
 
-                mttr_dataset = list(RFOAnalysis.objects.exclude(
-                    master_causecode__exact=''
-                ).filter(
-                    master_causecode__isnull=False,
-                    mttr__iexact=str(mttr_param).strip(),
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('master_causecode').annotate(total_count=Count('id')))
+            mttr_dataset = list(RFOAnalysis.objects.exclude(
+                master_causecode__exact=''
+            ).filter(where_condition).values('master_causecode').annotate(
+                total_count=Count('id')
+            ))
 
-                total_dataset = RFOAnalysis.objects.exclude(
-                    master_causecode__exact=''
-                ).filter(
-                    master_causecode__isnull=False,
-                    mttr__iexact=mttr_param,
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).count()
+            total_dataset = RFOAnalysis.objects.exclude(
+                master_causecode__exact=''
+            ).filter(where_condition).count()
         except Exception, e:
             pass
 
@@ -2847,26 +2753,24 @@ class INCTicketRateListing(BaseDatatableView):
         severity = self.request.GET.get('severity')
         target = 10
         try:
+            where_condition = Q()
+
+            where_condition &= Q(severity__iexact=severity.replace('_', ' '))
             # If month present in GET params then filter by it else return last 6 months data
             if month:
-                qs = self.model.objects.extra({
-                    'timestamp': 'unix_timestamp(timestamp)'
-                }).filter(
-                    severity__iexact=severity.replace('_', ' '),
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values('severity', 'timestamp').annotate(tt_count=Count('id'))
+                where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
             else:
                 current_timestamp = datetime.datetime.now()
-                qs = self.model.objects.extra({
-                    'timestamp': 'unix_timestamp(timestamp)'
-                }).filter(
-                    severity__iexact=severity.replace('_', ' '),
-                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
-                    timestamp__lte=current_timestamp
-                ).values(
-                    'severity',
-                    'timestamp'
-                ).annotate(tt_count=Count('id'))
+                where_condition &= Q(timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12))
+                where_condition &= Q(timestamp__lte=current_timestamp)
+
+            qs = self.model.objects.extra({
+                'timestamp': 'unix_timestamp(timestamp)'
+            }).filter(where_condition).values(
+                'severity',
+                'timestamp'
+            ).annotate(tt_count=Count('id'))
+
             if self.request.GET.get('request_for_chart'):
                 qs.order_by('tt_count')
         except Exception, e:
@@ -2974,9 +2878,11 @@ class ResolutionEfficiencyInit(ListView):
             'value': 'severity'
         }).values('value', 'id').distinct().order_by('value')))
 
-        downtime_slab_list = set(CustomerFaultAnalysis.objects.values_list(
+        downtime_slab_list = CustomerFaultAnalysis.objects.extra({
+            'actual_downtime': 'CAST(actual_downtime AS DECIMAL)'
+        }).values_list(
             'downtime_slab', flat=True
-        ))
+        ).order_by('actual_downtime')
 
         downtime_slab_dict = dict()
         downtime_slab_key_list = list()
@@ -2985,16 +2891,28 @@ class ResolutionEfficiencyInit(ListView):
             {'mData': 'month', 'sTitle': 'Month'}
         ]
 
+        used_slabs = list()
+
         for downtime_slab in downtime_slab_list:
             if not downtime_slab:
                 continue
+
+            if downtime_slab in used_slabs:
+                continue
+
+            used_slabs.append(downtime_slab)
+
             downtime_slab_key = downtime_slab.lower().replace(' ', '_')
             downtime_slab_title = downtime_slab.replace('More Than', '>')
             downtime_slab_title = downtime_slab_title.replace('Less Than', '<')
+
+            downtime_slab_title = downtime_slab_title.replace('Greater Than', '>')
+            
             datatable_headers.append({
                 'mData': downtime_slab_key,
                 'sTitle': downtime_slab_title
             })
+
             datatable_headers.append({
                 'mData': downtime_slab_key+'_percent',
                 'sTitle': downtime_slab_title+' %'
@@ -3046,27 +2964,23 @@ class ResolutionEfficiencyListing(BaseDatatableView):
 
         month = self.request.GET.get('month')
         try:
+            where_condition = Q()
             # If month present in GET params then filter by it else return last 6 months data
             if month:
-                qs = self.model.objects.extra({
-                    'timestamp': 'unix_timestamp(timestamp)'
-                }).filter(
-                    timestamp=datetime.datetime.fromtimestamp(float(month))
-                ).values(
-                    'downtime_slab',
-                    'timestamp'
-                ).annotate(tt_count=Count('id'))
+                where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
             else:
                 current_timestamp = datetime.datetime.now()
-                qs = self.model.objects.extra({
+                where_condition = Q(timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12))
+                where_condition = Q(timestamp__lte=current_timestamp)
+
+            qs = self.model.objects.extra(
+                select={
                     'timestamp': 'unix_timestamp(timestamp)'
-                }).filter(
-                    timestamp__gte=current_timestamp - datetime.timedelta(6 * 365/12),
-                    timestamp__lte=current_timestamp
-                ).values(
-                    'downtime_slab',
-                    'timestamp'
-                ).annotate(tt_count=Count('id'))
+                }
+            ).filter(where_condition).values(
+                'downtime_slab',
+                'timestamp'
+            ).annotate(tt_count=Count('id'))
 
             if self.request.GET.get('request_for_chart'):
                 try:
@@ -3146,7 +3060,7 @@ class ResolutionEfficiencyListing(BaseDatatableView):
             total_display_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
 
         qs = self.ordering(qs)
-        
+
         if not self.request.GET.get('request_for_chart'):
             qs = self.paging(qs)
 
@@ -3617,7 +3531,7 @@ class NetworkUptimeListing(BaseDatatableView):
         try:
             qs = self.model.objects.extra({
                 'timestamp': 'unix_timestamp(timestamp)'
-            }).filter(where_condition).values(*self.columns)
+            }).filter(where_condition).values(*self.columns).order_by('timestamp')
         except Exception, e:
             qs = self.model.objects.filter(id=0)
 
@@ -3756,7 +3670,7 @@ class PTPBHUptimeListing(BaseDatatableView):
         try:
             qs = self.model.objects.extra({
                 'timestamp': 'unix_timestamp(timestamp)'
-            }).filter(where_condition).values(*self.columns)
+            }).filter(where_condition).values(*self.columns).order_by('timestamp')
         except Exception, e:
             qs = self.model.objects.filter(id=0)
 

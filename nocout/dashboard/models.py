@@ -300,6 +300,7 @@ class CustomerFaultAnalysis(models.Model):
     docket_id = models.CharField('Docket ID', max_length=256, null=True, blank=True)
     severity = models.CharField('Severity', max_length=256, null=True, blank=True)
     downtime_slab = models.CharField('Downtime Slab', max_length=256, null=True, blank=True)
+    actual_downtime = models.CharField('Actual Downtime', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
 

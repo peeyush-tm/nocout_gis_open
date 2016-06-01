@@ -1416,7 +1416,7 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                     if(result && result.length > 0) {
 
                         var fetched_polled_info = result,
-                            tooltip_info_dict = [];
+                            tooltip_info_dict = fetched_polled_info;
 
                         if(point_type == 'sector_Marker' || point_type == 'sector') {
                             
