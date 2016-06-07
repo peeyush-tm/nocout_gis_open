@@ -14916,12 +14916,9 @@ def update_pps_flg(mapper_instance, current_pps_flag):
     mapper_timestamp = mapper_instance.updated_at
 
     time_diff = current_timestamp - mapper_timestamp
-
-    diff_hours, remainder = divmod(time_diff.seconds, 3600)
-    diff_minutes, diff_seconds = divmod(remainder, 60)
     
-    if diff_minutes >= 2880: #48 Hours in Minutes -> 48x60 = 2880
+    if time_diff.days >= 2:
         mapper_instance.has_pps_alarm = current_pps_flag
         mapper_instance.save()
 
-    return
+    return True
