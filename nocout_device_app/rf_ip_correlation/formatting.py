@@ -9,8 +9,9 @@ import imp
 from itertools import izip_longest
 import json
 ih_count = 5000
-
+ip_id = {}
 class inventory(object):
+    global ip_id
     def __init__(self):
 	pass
 
@@ -92,13 +93,14 @@ class inventory(object):
 	device_inventory['bs_data_dict'].update(far_end_inventory['bs_data_dict'])
 	device_inventory['conv_switch_data_dict'].update(far_end_inventory['conv_switch_data_dict'])
 	device_inventory['ih_dynamic'].update(far_end_inventory['ih_dynamic'])
-
+	
+	ip_invent_mapping = {'ip_id':ip_id}
 	self.insert_data_in_redis(device_inventory['obj_dict'])
 	self.insert_data_in_redis(device_inventory['ss_data_dict'])
 	self.insert_data_in_redis(device_inventory['bs_data_dict'])
 	self.insert_data_in_redis(device_inventory['conv_switch_data_dict'])
 	self.insert_data_in_redis(device_inventory['ih_dynamic'])
-
+	self.insert_data_in_redis(ip_invent_mapping)
     def prepare_raw_result(self,resultset=None, ptp_farend_ip_list=None,inventory_id_list=None,is_active=0,ptp_bh_dict=None):
 	# list will carry bs resultset for PTP_BH type hierarchy.
 	far_end_resultset = list()
@@ -115,16 +117,12 @@ class inventory(object):
 	    inventory_hierarchy = self.tree()
 	    sector_info_str = bs.get('SECT_STR', '')
 	    if is_active == 0:
-		# if switch/converter parent(ptp farend device) in ptp_far_ip_list, Skip the process.
-		# Inventory belongs to SiteB(PTP BH inventory) will be processed in next call to prepare_raw_result with is_active=1.
 		if bs.get('BSswitchParentIP') in ptp_farend_ip_list:
 		    far_end_resultset.append(bs)
 		    continue
 		elif bs.get('BTSconverterParentIP') in ptp_farend_ip_list:
 		    far_end_resultset.append(bs)
 		    continue
-	    # SiteB(PTP bh inventory).
-	    # Find inventory id of SiteA, create inventory and append into it.
 	    if is_active == 1:
 		index = resultset.index(bs)
 		inventory_id = inventory_id_list[index]
@@ -166,9 +164,6 @@ class inventory(object):
 	    bs_data_dict,inventory_hierarchy,ih_dynamic = self.create_sect_dict(bs,bs_data_dict,obj_count,inventory_hierarchy,ih_dynamic,
 									   ptp_parent_child_dict,ptp_bh_dict,is_active)
 	    if inventory_hierarchy and is_active == 0:
-		inventory_hierarchy['change_bit'] = 0
-		inventory_hierarchy['ip_list'] = set()
-		inventory_hierarchy['timestamp'] = '' 
 		inventory_hierarchy['id'] = obj_count
 		obj_dict[obj_count] = inventory_hierarchy
 		obj_count = obj_count + 1
@@ -231,6 +226,7 @@ class inventory(object):
 	    parent_port = bs.get('BSswitchParentPort')
 	    technology = bs.get('BSswitchTech')
 
+	ip_id[ip] = obj_count
 	key = 'static_' + ip
 	if is_active == 1:
 	    data_dict[key]['ptp_bh_flag'] = 1
@@ -328,6 +324,8 @@ class inventory(object):
 		   except:
 		       bs_parent_port = ''
 		       pass
+			
+	           ip_id[bs_ip] = obj_count
 		   bs_key = 'static_' + bs_ip
 		   data_dict[bs_key]['bs_name'] = bs_name 
 		   data_dict[bs_key]['region'] = region
@@ -426,6 +424,7 @@ class inventory(object):
 		print e
 		continue
 	    
+	    ip_id[ss_ip] = obj_count
 	    ss_key = 'static_' + ss_ip
 	    ss_data_dict[ss_key]['circuit_id'] = ckt_id
 	    ss_data_dict[ss_key]['customer_name'] = customer_name
@@ -470,30 +469,33 @@ class inventory(object):
 	for alarm_info in resultset:
 	    alarm_name = alarm_info.get('alarm_name','')
 	    severity = alarm_info.get('severity','')
-	    key = 'rf_ip'+'_'+alarm_name+'_'+severity
+	    key = (alarm_name,severity)
 	    mat_data[key] = dict()
-	    mat_data[key]['alarm_name'] = alarm_info.get('alarm_name','')
-	    mat_data[key]['oid'] = alarm_info.get('oid','')
-	    mat_data[key]['severity'] = alarm_info.get('severity','')
-	    mat_data[key]['device_type'] = alarm_info.get('device_type','')
-	    mat_data[key]['alarm_mode'] = alarm_info.get('alarm_mode','')
-	    mat_data[key]['alarm_type'] = alarm_info.get('alarm_type','')
-	    mat_data[key]['sia'] = alarm_info.get('sia','')
-	    mat_data[key]['auto_tt'] = alarm_info.get('auto_tt','')
-	    mat_data[key]['correlation'] = alarm_info.get('correlation','')
-	    mat_data[key]['to_monolith'] = alarm_info.get('to_monolith','')
-	    mat_data[key]['mail'] = alarm_info.get('mail','')
-	    mat_data[key]['sms'] = alarm_info.get('sms','')
-	    mat_data[key]['coverage'] = alarm_info.get('coverage' ,'')
-	    mat_data[key]['resource_name'] = alarm_info.get('resource_name','')
-	    mat_data[key]['resource_type'] = alarm_info.get('resource_type','')
-	    mat_data[key]['support_organization'] = alarm_info.get('support_organization','')
-	    mat_data[key]['bearer_organization'] = alarm_info.get('bearer_organization','')
-	    mat_data[key]['priority'] = alarm_info.get('priority','')
-	    mat_data[key]['category'] = alarm_info.get('alarm_category','')
-	    mat_data[key]['refer'] = alarm_info.get('refer','')
-	self.insert_data_in_redis(mat_data)
-
+	    mat_data[key]['alarm_name'] = alarm_info.get('alarm_name', '') 
+	    mat_data[key]['oid'] = alarm_info.get('oid', '')
+	    mat_data[key]['severity'] = alarm_info.get('severity', '')
+	    mat_data[key]['device_type'] = alarm_info.get('device_type', '')
+	    mat_data[key]['alarm_mode'] = alarm_info.get('alarm_mode', '')
+	    mat_data[key]['alarm_type'] = alarm_info.get('alarm_type', '')
+	    mat_data[key]['sia'] = alarm_info.get('sia', '')
+	    mat_data[key]['auto_tt'] = alarm_info.get('auto_tt', '')
+	    mat_data[key]['correlation'] = alarm_info.get('correlation', '')
+	    mat_data[key]['to_monolith'] = alarm_info.get('to_monolith', '')
+	    mat_data[key]['mail'] = alarm_info.get('mail', '')
+	    mat_data[key]['sms'] = alarm_info.get('sms', '')
+	    mat_data[key]['coverage'] = alarm_info.get('coverage' , '')
+	    mat_data[key]['resource_name'] = alarm_info.get('resource_name', '')
+	    mat_data[key]['resource_type'] = alarm_info.get('resource_type', '')
+	    mat_data[key]['support_organization'] = alarm_info.get('support_organization', '')
+	    mat_data[key]['bearer_organization'] = alarm_info.get('bearer_organization', '')
+	    mat_data[key]['priority'] = alarm_info.get('priority', '')
+	    # Type conversion str -> Set
+	    mat_data[key]['category'] = eval(alarm_info.get('alarm_category', 'set([])'))
+	    mat_data[key]['refer'] = alarm_info.get('refer', '')
+	# TODO: mat is stored temporary on 6 for testing
+	rds_obj = RedisInterface(custom_conf={'db': 6}) 
+	redis_conn = rds_obj.redis_cnx	
+	redis_conn.set('mat_data',mat_data)
 
 
 
