@@ -469,8 +469,6 @@ class inventory(object):
 	for alarm_info in resultset:
 	    alarm_name = alarm_info.get('alarm_name','')
 	    severity = alarm_info.get('severity','')
-	    #TODO: change key it will be like alarm_name+severity+device_type
-	    # Look into it
 	    key = (alarm_name,severity)
 	    mat_data[key] = dict()
 	    mat_data[key]['alarm_name'] = alarm_info.get('alarm_name', '') 
