@@ -42,13 +42,13 @@ def live_query_reg_count(mac):
 				reg_count = int(value_list[4])
 			except:
 				reg_count = None
-		if not reg_count:
+		if reg_count is None:
 			try:
 				key1 = mac + "_topology"
 				ss_params = memc.get(key1)
 			except:
 				pass
-	if not reg_count:
+	if reg_count is None:
 		if not ss_params: 
         	    host_name = extract_host_from_cambium_topology(mac)
 		    try:
