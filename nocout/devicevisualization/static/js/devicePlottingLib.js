@@ -215,6 +215,9 @@ var isDialogOpen = true,
 	sectorOmsMarkers = [],
 	na_items_list = ['n/a', 'na'];
 
+// Variables used for displaying link status on hover
+var link_status_device_type_list = ['radwin2kbs', 'radwin2kss', 'canopysm100ss', 'starmaxss'];
+
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
  * @class gmap_devicePlottingLib
@@ -1871,6 +1874,10 @@ function devicePlottingClass_gmap() {
 						}
 					});
 
+					if(show_link_status) {
+				    	createHoverWindow(sector_Marker);
+				    }
+
 					if(sectorMarkerConfiguredOn.indexOf(sector_array[j].ip_address) == -1) {
 						sector_MarkersArray.push(sector_Marker);
 
@@ -1958,6 +1965,14 @@ function devicePlottingClass_gmap() {
 	                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = perf_infobox;
 				    	}
 				    }
+
+				    var ss_device_type = $.trim(ss_marker_obj.device_type.toLowerCase());
+				    // Show Link status in hover
+				    if((link_status_device_type_list.indexOf(ss_device_type) > -1) && show_link_status) {
+				    	createHoverWindow(ss_marker);
+				    } else if(ss_device_type == 'radwin5kss' && show_link_status_rad5) {
+				    	createHoverWindow(ss_marker);
+					}
 
 				    // Right click event on sub-station marker
 					google.maps.event.addListener(ss_marker, 'rightclick', function(e) {

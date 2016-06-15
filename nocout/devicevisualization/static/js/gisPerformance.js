@@ -887,6 +887,14 @@ function GisPerformance() {
                                         }
                                     }
 
+                                    var ss_device_type = $.trim(ss_marker_object.device_type.toLowerCase());
+                                    // Show Link status in hover
+                                    if((link_status_device_type_list.indexOf(ss_device_type) > -1) && show_link_status){
+                                        createHoverWindow(ss_marker);
+                                    } else if(ss_device_type == 'radwin5kss' && show_link_status_rad5){
+                                        createHoverWindow(ss_marker);
+                                    }
+
                                     // Right click event on sub-station marker
                                     google.maps.event.addListener(ss_marker, 'rightclick', function(e) {
                                         var condition1 = (typeof(this.pl) != 'undefined' && $.trim(this.pl) != 'N/A'),

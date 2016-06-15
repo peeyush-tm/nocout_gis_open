@@ -2962,37 +2962,39 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
         }
 
         required_info = {
-            ptLat              : extra_info.bs_lat,
-            ptLon              : extra_info.bs_lon,
-            alias              : info_obj.ip_address,
-            pointType          : pointType,
-            technology         : info_obj.technology,
-            device_type        : info_obj.device_type,
-            vendor             : info_obj.vendor,
-            dataset            : info_obj.dataset ? info_obj.dataset : [],
-            poll_info          : [],
-            pl                 : "",
-            rta                : "",
-            radius             : rad,
-            azimuth            : azimuth,
-            beam_width         : beam_width,
-            polarisation       : polarisation,
-            bg_color           : bg_color,
-            perf_url           : sector_perf_url,
-            inventory_url      : sector_inventory_url,
-            sectorName         : info_obj.ip_address,
-            sector_child       : info_obj.sub_stations,
-            sector_id          : info_obj.sector_id,
-            device_id          : info_obj.device_id ? info_obj.device_id : '',
-            device_name        : info_obj.device_name,
-            name               : info_obj.device_name,
-            filter_data        : extra_info.filter_info,
-            sector_lat         : extra_info.startLat,
-            sector_lon         : extra_info.startLon,
-            cktId              : "",
-            antenna_height     : info_obj.antenna_height,
-            isActive           : 1,
-            windowTitle        : "Base Station Device"
+            ptLat                 : extra_info.bs_lat,
+            ptLon                 : extra_info.bs_lon,
+            alias                 : info_obj.ip_address,
+            pointType             : pointType,
+            technology            : info_obj.technology,
+            device_type           : info_obj.device_type,
+            vendor                : info_obj.vendor,
+            dataset               : info_obj.dataset ? info_obj.dataset : [],
+            poll_info             : [],
+            pl                    : "",
+            rta                   : "",
+            radius                : rad,
+            azimuth               : azimuth,
+            beam_width            : beam_width,
+            polarisation          : polarisation,
+            bg_color              : bg_color,
+            link_status           : info_obj.link_status ? info_obj.link_status : 'NA',
+            link_status_timestamp : info_obj.link_status_timestamp ? info_obj.link_status_timestamp : 'NA',
+            perf_url              : sector_perf_url,
+            inventory_url         : sector_inventory_url,
+            sectorName            : info_obj.ip_address,
+            sector_child          : info_obj.sub_stations,
+            sector_id             : info_obj.sector_id,
+            device_id             : info_obj.device_id ? info_obj.device_id : '',
+            device_name           : info_obj.device_name,
+            name                  : info_obj.device_name,
+            filter_data           : extra_info.filter_info,
+            sector_lat            : extra_info.startLat,
+            sector_lon            : extra_info.startLon,
+            cktId                 : "",
+            antenna_height        : info_obj.antenna_height,
+            isActive              : 1,
+            windowTitle           : "Base Station Device"
         };
 
     } else if (elem_type == 'sub_station') {
@@ -3004,35 +3006,37 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
             ss_rta = info_obj.rta ? info_obj.rta : "";
 
         required_info = {
-            ptLat            :  info_obj.lat,
-            ptLon            :  info_obj.lon,
-            technology       :  extra_info.technology,
-            device_type      :  info_obj.device_type,
-            pointType        :  "sub_station",
-            alias            :  info_obj.circuit_id,
-            dataset          :  ss_info_dict,
-            bhInfo           :  [],
-            poll_info        :  [],
-            pl               :  ss_pl,
-            rta              :  ss_rta,
-            pl_timestamp     :  ss_pl_rta_timestamp,
-            perf_url         :  ss_perf_url,
-            inventory_url    :  ss_inventory_url,
-            antenna_height   :  info_obj.antenna_height,
-            name             :  info_obj.name,
-            bs_name          :  extra_info.filter_info.bs_name,
-            bs_sector_device :  extra_info.sector_device_name,
-            label_str        :  info_obj.label_str ? info_obj.label_str : '',
-            filter_data      :  extra_info.filter_info,
-            device_name      :  info_obj.device_name,
-            ss_device_id     :  info_obj.device_id,
-            ss_ip            :  info_obj.ip_address,
-            sector_ip        :  extra_info.filter_info.sector_name,
-            cktId            :  info_obj.circuit_id,
-            zIndex           :  200,
-            optimized        :  false,
-            isActive         :  1,
-            windowTitle      : "Sub Station"
+            ptLat                 :  info_obj.lat,
+            ptLon                 :  info_obj.lon,
+            technology            :  extra_info.technology,
+            device_type           :  info_obj.device_type,
+            pointType             :  "sub_station",
+            alias                 :  info_obj.circuit_id,
+            dataset               :  ss_info_dict,
+            bhInfo                :  [],
+            poll_info             :  [],
+            pl                    :  ss_pl,
+            rta                   :  ss_rta,
+            pl_timestamp          :  ss_pl_rta_timestamp,
+            perf_url              :  ss_perf_url,
+            link_status           :  info_obj.link_status ? info_obj.link_status : 'NA',
+            link_status_timestamp :  info_obj.link_status_timestamp ? info_obj.link_status_timestamp : 'NA',
+            inventory_url         :  ss_inventory_url,
+            antenna_height        :  info_obj.antenna_height,
+            name                  :  info_obj.name,
+            bs_name               :  extra_info.filter_info.bs_name,
+            bs_sector_device      :  extra_info.sector_device_name,
+            label_str             :  info_obj.label_str ? info_obj.label_str : '',
+            filter_data           :  extra_info.filter_info,
+            device_name           :  info_obj.device_name,
+            ss_device_id          :  info_obj.device_id,
+            ss_ip                 :  info_obj.ip_address,
+            sector_ip             :  extra_info.filter_info.sector_name,
+            cktId                 :  info_obj.circuit_id,
+            zIndex                :  200,
+            optimized             :  false,
+            isActive              :  1,
+            windowTitle           : "Sub Station"
         };
     
     } else {
@@ -3042,6 +3046,46 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
     return required_info;
 }
 
+
+/**
+ * This function binds mouseover & mouseout event on given marker
+ * @method createHoverWindow
+ * @param marker_obj {Object}, It contains the google marker object
+ */
+function createHoverWindow(marker_obj) {
+    if (marker_obj) {
+        google.maps.event.addListener(marker_obj, 'mouseover', function(e) {
+            var link_status = this.link_status ? $.trim(this.link_status) : 'NA',
+                link_status_timestamp = this.link_status_timestamp ? $.trim(this.link_status_timestamp) : 'NA',
+                info_html = '';
+
+            if (!link_status) {
+                link_status = 'NA';
+            }
+
+            info_html += '<table class="table table-responsive table-bordered table-hover">\
+                          <tr><td>Ethernet Status</td><td>'+link_status+'</td></tr>\
+                          <tr><td>Timestamp</td><td>'+link_status_timestamp+'</td></tr>\
+                          </table>';
+
+            /*Set the content for infowindow*/
+            infowindow.setContent(info_html);
+            /*Shift the window little up*/
+            infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
+            /*Set The Position for InfoWindow*/
+            infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
+            /*Open the info window*/
+            infowindow.open(mapInstance);                           
+        });
+
+        google.maps.event.addListener(marker_obj, 'mouseout', function(e) {
+            infowindow.close();
+        });
+        return true;
+    } else {
+        return false;
+    }
+}
 
 // "Object.key" prototyping for IE
 if (!Object.keys) {
