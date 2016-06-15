@@ -2278,7 +2278,7 @@ class RFOAnalysisView(ListView):
             context[key] = context_dict[key]
 
         context['summation_headers'] = json.dumps([
-            {'mData': 'master_causecode', 'sTitle': 'Cause Code'},
+            {'mData': 'master_causecode', 'sTitle': 'Master Cause Code'},
             {'mData': 'outage_in_minutes', 'sTitle': 'Total Minutes'}
         ])
 
