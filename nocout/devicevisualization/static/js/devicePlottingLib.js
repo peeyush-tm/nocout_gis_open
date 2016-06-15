@@ -1985,8 +1985,6 @@ function devicePlottingClass_gmap() {
 				    	}
 				    }
 
-				    var infowindow = new google.maps.InfoWindow();
-
 				    var ss_device_type = $.trim(ss_marker_obj.device_type.toLowerCase());
 				    // Show Link status in hover
 				    if((link_status_device_type_list.indexOf(ss_device_type) > -1) && show_link_status) {
