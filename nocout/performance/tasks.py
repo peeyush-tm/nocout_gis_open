@@ -786,7 +786,8 @@ def calculate_avg_availability_ptpbh():
        organizations= org_id_list,
        data_tab='P2P',
        page_type='network',
-       required_value_list=['id', 'machine__name', 'device_name', 'ip_address', 'organization__id']
+       required_value_list=['id', 'machine__name', 'device_name', 'ip_address', 'organization__id'],
+       specify_ptp_bh_type='ss'
     )
 
     # Return dict, key:machine_name and value:list of device.

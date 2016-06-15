@@ -1700,6 +1700,8 @@ $('.filter_controls').change(function(e) {
             $('select[name="city_selector"]').val('');
             $('select[name="city_selector"] option:not([parent_id="'+selected_val+'"])').hide();
             $('select[parent_id="'+selected_val+'"] option').show();
+        } else {
+            $('select[name="city_selector"]').val('');
         }
     }
     var location_pathname = window.location.pathname;
