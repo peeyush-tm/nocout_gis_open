@@ -217,25 +217,6 @@ var isDialogOpen = true,
 
 // Variables used for displaying link status on hover
 var link_status_device_type_list = ['radwin2kbs', 'radwin2kss', 'canopysm100ss', 'starmaxss'];
-// var link_status_dict = {
-// 	'Radwin2KBS': {'service': 'radwin_link_ethernet_status',
-// 					'data_source': 'Management_Port_on_Odu'	
-// 				},
-// 	'Radwin2KSS': {'service': 'radwin_link_ethernet_status',
-// 					'data_source': 'Management_Port_on_Odu'	
-// 				},
-// 	'CanopySM100SS': {'service': 'cambium_link_ethernet_status',
-// 					'data_source': 'link_state'	
-// 				},
-// 	'Radwin5KSS': {'service': 'rad5k_eth_link_status',
-// 					'data_source': 'link_state'	
-// 				},
-// 	'StarmaxSS': {'service': 'wimax_ss_link_status',
-// 					'data_source': 'link_state'	
-// 				}
-// 	},
-// 	show_link_status = false,
-// 	link_status_ss_id = 0;
 
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
