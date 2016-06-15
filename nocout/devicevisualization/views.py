@@ -41,7 +41,7 @@ from inventory.utils.util import InventoryUtilsGateway
 from nocout.mixins.datatable import AdvanceFilteringMixin
 from user_profile.utils.auth import in_group
 from device.api import prepare_raw_result_v2
-from nocout.settings import EXCLAMATION_NEEDED
+from nocout.settings import EXCLAMATION_NEEDED, SHOW_LINK_STATUS, SHOW_LINK_STATUS_RAD5
 
 logger = logging.getLogger(__name__)
 
@@ -3893,7 +3893,6 @@ class GISStaticInfo(View):
         # Create instance of 'InventoryUtilsGateway' class
         inventory_utils = InventoryUtilsGateway()
 
-        
         # loop through all base stations having id's in bs_ids list
         for bs_id in bs_ids:
             pps_alarm_flag = False
@@ -3910,8 +3909,6 @@ class GISStaticInfo(View):
                         pps_alarm_flag = bs_inventory.get('has_pps_alarm', 0)
                     except Exception, e:
                         pps_alarm_flag = False
-
-            
             
                 # if bs has a pps alarm then change it's icon
                 if pps_alarm_flag: 
@@ -3967,14 +3964,12 @@ class GISStaticInfo(View):
                     current_user = None
 
                 machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
-                
                 complete_performance_obj = get_complete_performance(
                     machine_dict=machine_dict,
                     tech_list=tech_list,
                     current_user=current_user,
                     ts_type=ts_type
                 )
-
                 if complete_performance_obj:
                     tech_wise_thematic = complete_performance_obj.get('tech_wise_thematic')
                     complete_performance = complete_performance_obj.get('complete_performance')
@@ -3988,7 +3983,6 @@ class GISStaticInfo(View):
                         'status_perf_data': list(),
                         'utilization_perf_data': list()
                     }
-
                 # ********************************* BACKHAUL PERF INFO (START) ***********************************
                 if bh_device_ip and bh_device:
                     backhaul_data = self.get_backhaul_info(bh_device, complete_performance['network_perf_data'])
@@ -3999,7 +3993,6 @@ class GISStaticInfo(View):
                 # ********************************** BACKHAUL PERF INFO (END) ************************************
 
                 # ******************************** GET DEVICE MACHINE MAPPING (END) ******************************
-
                 for sector in bs_inventory['sectors']:
                     # get sector
                     try:
@@ -4084,7 +4077,7 @@ class GISStaticInfo(View):
                         sector['pl_timestamp'] = sector_extra_info['pl_timestamp']
                         sector['color'] = sector_extra_info['color']
                         sector['polled_frequency'] = sector_extra_info['polled_frequency']
-
+                        
                     for sub_station in sector['sub_stations']:
                             try:
                                 substation_device = ip_address_mapped_dict[sub_station['ip_address']][0]
@@ -4146,6 +4139,43 @@ class GISStaticInfo(View):
                             sub_station['pl'] = ''
                             sub_station['pl_timestamp'] = ''
                             sub_station['rta'] = ''
+                            sub_station['link_status'] = ''
+                            sub_station['link_status_timestamp'] = ''
+
+                            try:
+                                # Get Link Ethernet status value & timestamp
+                                status_ds = ''
+                                status_service = ''
+                                link_status_result = []
+
+                                # Only calculate if it is enabled from settings.py
+                                if SHOW_LINK_STATUS or SHOW_LINK_STATUS_RAD5:
+                                    if substation_device_tech.name == 'P2P':
+                                        status_service = 'radwin_link_ethernet_status'
+                                        status_ds = 'Management_Port_on_Odu'
+                                    elif substation_device_tech.name == 'PMP':
+                                        status_ds = 'link_state'
+                                        if substation_device_type.name in ['Radwin5KSS'] and SHOW_LINK_STATUS_RAD5:
+                                            status_service = 'rad5k_eth_link_status'
+                                        else:
+                                            status_service = 'cambium_link_ethernet_status'
+                                    elif substation_device_tech.name == 'WiMAX':
+                                        status_service = 'wimax_ss_link_status'
+                                        status_ds = 'link_state'
+
+                                if status_service and status_ds:
+                                    status_perf_data = complete_performance.get('status_perf_data')
+                                    link_status_result = [d for d in status_perf_data if d['device_name'] == substation_device['device_name'] and d['service_name'] == status_service and d['data_source'] == status_ds]
+
+                                if link_status_result:
+                                    try:
+                                        sub_station['link_status'] = link_status_result[0]['current_value']
+                                        sub_station['link_status_timestamp'] = datetime.datetime.fromtimestamp(link_status_result[0]['sys_timestamp']).strftime('%d-%b-%Y at %H:%M:%S')
+                                    except Exception, e:
+                                        pass
+                            except Exception, e:
+                                logger.error('Ethernet Status Error(Outer) ===== ')
+                                logger.error(e)
 
                             if service and data_source:
                                 # performance value
@@ -4178,6 +4208,8 @@ class GISStaticInfo(View):
                                 sub_station['pl_timestamp'] = substation_extra_info['pl_timestamp']
                                 sub_station['rta'] = substation_extra_info['rta']
             except Exception as e:
+                logger.error('Static Info Error')
+                logger.error(e)
                 pass
 
         return HttpResponse(json.dumps(bs_inventory))
@@ -4320,6 +4352,11 @@ class GISStaticInfo(View):
         radius = self.get_frequency_color_and_radius(device_frequency, device_pl)[1]
 
         result['radius'] = radius
+
+        try:
+            device_type_name = device_type.name
+        except Exception, e:
+            device_type_name = ''
 
         # pl timstamp
         pl_timestamp = ""
@@ -5297,6 +5334,10 @@ def get_complete_performance(machine_dict={}, tech_list=[], current_user=None, t
                         tech_wise_thematic[tech_name] = list()
                     tech_wise_thematic[tech_name].append(item)
 
+    if SHOW_LINK_STATUS or SHOW_LINK_STATUS_RAD5:
+        ds_list.append('Management_Port_on_Odu')
+        ds_list.append('link_state')
+
     network_perf_data = list()
     performance_perf_data = list()
     service_perf_data = list()
@@ -5328,11 +5369,11 @@ def get_complete_performance(machine_dict={}, tech_list=[], current_user=None, t
         network_perf_data.extend(list(device_network_info))
 
         # device performance info
-        performance_network_info = PerformanceStatus.objects.filter(where_condition).values(
-            *polled_columns
-        ).using(alias=machine_name)
+        # performance_network_info = PerformanceStatus.objects.filter(where_condition).values(
+        #     *polled_columns
+        # ).using(alias=machine_name)
 
-        performance_perf_data.extend(list(performance_network_info))
+        # performance_perf_data.extend(list(performance_network_info))
 
         # device service info
         device_service_info = ServiceStatus.objects.filter(where_condition).values(
@@ -5383,7 +5424,6 @@ def get_complete_performance(machine_dict={}, tech_list=[], current_user=None, t
             'status_perf_data': status_perf_data,
             'utilization_perf_data': utilization_perf_data
         }
-
 
     return result
 
