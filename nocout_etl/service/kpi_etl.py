@@ -36,6 +36,21 @@ info, warning, error = logger.info, logger.warning, logger.error
 INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
 
 
+@app.task(name='get-ul-issue-service-checks', ignore_result=True)
+def get_ul_issue_service_checks_output(**opt):
+	# get check results from redis backed queue
+	# pulling 2000 values from queue, at a time
+	#DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
+	#conf = ConfigParser()
+	#conf.read(DB_CONF)
+	site_name = opt.get('site_name')
+	queue = RedisInterface(perf_q='queue:ul_issue:%s' % site_name)
+	check_results = queue.get(0, -1)
+	warning('ul_issue Queue len: {0}'.format(len(check_results)))
+	if check_results:
+		build_export.s(site_name, check_results).apply_async()
+
+
 def extract_cambium_connected_ss(hostname,memc_conn):
     ss_connected = []
     try:
@@ -55,7 +70,7 @@ def fetch_cisco_util_from_memc(hostname,site,util_type,memc):
         	error('cisco util error: {0}'.format(e))
 		mro_dl_dict = {}
 	#print mro_dl_dict
-        error('cisco util: {0}'.format(mro_dl_dict))
+        #error('cisco util: {0}'.format(mro_dl_dict))
         return mro_dl_dict
 
 def fetch_juni_util_from_memc(hostname,site,util_type,memc):
@@ -78,8 +93,7 @@ def extract_juniper_util_data(host_params,**args):
             hostname, site, ip_address,qos_value = eval(entry[0])
         else:
             break
-    	try:
-    		qos_value = qos_value[0]
+	try:
     		kpi_list_index = [i for i,x in enumerate(qos_value) if int(x) >0]
 	except:
 		continue
@@ -88,41 +102,42 @@ def extract_juniper_util_data(host_params,**args):
 	if 'ul_util' in args['service']:
 		util_type = 'ul'
 	try:
-		dl_util_dict= fetch_juni_util_from_memc(hostname,site,util_type,memc)
+		dl_util_dict= fetch_juni_util_from_memc(hostname,site,util_type,args['memc'])
 		for entry in dl_util_dict.keys():
 			each, inc , index = entry.split("_") #['ge-0', '1', '12'],['ge-0', '0', '12']
 			index =int(index)	
 			if inc == '1':
-				index = index+47
+				index = index+48
 			if index in kpi_list_index:
 				kpi =  dl_util_dict[entry]
 				try:
 					kpi = (float(kpi)/float(qos_value[index])) *100
 					entry = entry+"_kpi"
-					tup1 = (entry,kpi, index )
-					dict1_kpi.append(tup1)
+					war = float(args['war'])
+					crit = float(args['crit'])
+					kpi = round(kpi,2)
+					#tup1 = (entry,kpi, index )
+					#dict1_kpi.append(tup1)
 				except Exception,e:
 					continue
-		max_tuple = max(dict1_kpi, key = lambda x:x[1])
-		kpi = max_tuple[1]
-		kpi = round(dl_kpi,2)
-		if kpi or kpi == 0:
-			perf += str(max_tuple[0]) + "=%s;%s;%s;%s " % (kpi,war,crit,qos_value[max_tuple[2]])
-			if kpi >= crit:
-				crit_flag = 1
-			elif kpi >= war and kpi < crit:
-				warn_flag = 1
-			else:
-				normal_flag = 1
-		if crit_flag:
-			state =2
-			state_string = "critical"
-		elif warn_flag:
-			state =1
-			state_string = "warning"
-		elif normal_flag:
-			state = 0
-			state_string = "ok"
+			#kpi = round(kpi,2)
+			if kpi or kpi == 0:
+				perf += str(entry) + "=%s;%s;%s;%s " % (kpi,war,crit,qos_value[index])
+				if kpi >= crit:
+					crit_flag = 1
+				elif kpi >= war and kpi < crit:
+					warn_flag = 1
+				else:
+					normal_flag = 1
+			if crit_flag:
+				state =2
+				state_string = "critical"
+			elif warn_flag:
+				state =1
+				state_string = "warning"
+			elif normal_flag:
+				state = 0
+				state_string = "ok"
 			
 	except Exception ,e:
 	    perf = ''	 
@@ -133,7 +148,85 @@ def extract_juniper_util_data(host_params,**args):
 	service_list.append(service_dict)
     if len(service_list) > 0:     
 	build_export.s(args['site_name'], service_list).apply_async()
-		
+	
+
+def fetch_huawei_util_from_memc(hostname,site,util_type,memc):
+        try:
+                key1 = str(hostname)+"switch_%s_utilization" % util_type
+                dict2 = memc.get(key1)
+                mro_dl_dict=dict(dict2)
+        except Exception ,e:
+                mro_dl_dict = {}
+        return mro_dl_dict
+
+def extract_huawei_util_data(host_params,**args):
+    service_list = []
+    for entry in host_params:
+        crit_flag = warn_flag = normal_flag = 0
+        kpi = perf = ''
+        dict1_kpi = []
+        kpi_list_index = []
+        state_string = "unknown"
+        if entry and len(eval(entry[0])) == 4:
+            hostname, site, ip_address,qos_value = eval(entry[0])
+        else:
+            break
+        try:
+                kpi_list = [x for i,x in enumerate(qos_value) if int(x) >0]
+        except:
+                continue
+        if 'dl_util' in args['service']:
+                util_type = 'dl'
+        if 'ul_util' in args['service']:
+                util_type = 'ul'
+        try:
+                ul_util_dict= fetch_huawei_util_from_memc(hostname,site,util_type,args['memc'])
+                if len(ul_util_dict) >1:   # if 2 port are there 
+                    if len(kpi_list)==1: # but capacity only one given 
+                          kpi_list.append(kpi_list[0])  # add one more value
+                for x in xrange(len(ul_util_dict)):
+                    entry = ul_util_dict.keys()[x]  #entry = Gi0/1
+                    kpi =  ul_util_dict[entry] # kpi = utilization like 7.4
+                    try:
+                        kpi = (float(kpi)/float(kpi_list[x])) *100
+                        entry = entry+"_kpi"
+			war = float(args['war'])
+			crit = float(args['crit'])
+                    except Exception,e:
+                        #error('huawei eerr$: {0}'.format(e))
+                        continue  
+                    ul_kpi = kpi
+                    ul_kpi = round(ul_kpi,2)
+                    if ul_kpi or ul_kpi ==0:
+                    	perf += str(entry) + "=%s;%s;%s;%s " % (ul_kpi,war,crit,kpi_list[x])
+                   	if ul_kpi >= crit:
+                        	crit_flag = 1
+                    	elif ul_kpi >= war and ul_kpi < crit:
+                        	warn_flag = 1
+                    	else:
+                        	normal_flag = 1
+                	if crit_flag:
+                    		state =2
+                    		state_string = "critical"
+                	elif warn_flag:
+                    		state =1
+                    		state_string = "warning"
+                	elif normal_flag:
+                    		state = 0
+                    		state_string = "ok"
+
+        except Exception ,e:
+            perf = ''
+        age_of_state = age_since_last_state(hostname, args['service'], state_string)
+
+        service_dict = service_dict_for_kpi_services(
+            perf, state_string, hostname, site, ip_address, age_of_state, **args)
+        service_list.append(service_dict)
+    if len(service_list) > 0:
+        build_export.s(args['site_name'], service_list).apply_async()
+
+
+	
 def extract_cisco_util_data(host_params,**args):
     service_list = []
     for entry in host_params:
@@ -161,39 +254,40 @@ def extract_cisco_util_data(host_params,**args):
 			index = int(index)
 			if each == "gi0":
 				index = index+24
-    			error('cisco dict: {0}{1}'.format(index,kpi_list_index))
+    			#error('cisco dict: {0}{1}'.format(index,kpi_list_index))
 			if index in kpi_list_index:
 				kpi =  dl_util_dict[entry]
 				try:
 					kpi = (float(kpi)/float(qos_value[index-1])) *100
 					entry = entry+"_kpi"
-					tup1 = (entry,kpi, index )
-					dict1_kpi.append(tup1)
+					war = float(args['war'])
+		                        crit = float(args['crit'])
+
+					#tup1 = (entry,kpi, index )
+					#dict1_kpi.append(tup1)
 					#max_tuple = max(dict1_kpi, key = lambda x:x[1])
 					#print "max ", max_tuple
 				except Exception,e:
-    					error('cisco error=4: {0}'.format(e))
+    					#error('cisco error=4: {0}'.format(e))
 					continue
-		max_tuple = max(dict1_kpi, key = lambda x:x[1])
-		kpi = max_tuple[1]
-		kpi = round(kpi,2)
-		if kpi or kpi ==0:
-			perf += str(max_tuple[0]) + "=%s;%s;%s;%s " % (kpi,war,crit,qos_value[max_tuple[2]-1])
-			if kpi >= crit:
-				crit_flag = 1
-			elif kpi >= war and kpi < crit:
-				warn_flag = 1
-			else:
-				normal_flag = 1
-		if crit_flag:
-			state =2
-			state_string = "critical"
-		elif warn_flag:
-			state =1
-			state_string = "warning"
-		elif normal_flag:
-			state = 0
-			state_string = "ok"
+			kpi = round(kpi,2)
+			if kpi or kpi ==0:
+				perf += str(entry) + "=%s;%s;%s;%s " % (kpi,war,crit,qos_value[index-1])
+				if kpi >= crit:
+					crit_flag = 1
+				elif kpi >= war and kpi < crit:
+					warn_flag = 1
+				else:
+					normal_flag = 1
+			if crit_flag:
+				state =2
+				state_string = "critical"
+			elif warn_flag:
+				state =1
+				state_string = "warning"
+			elif normal_flag:
+				state = 0
+				state_string = "ok"
 			
 	except Exception ,e:
 		perf = ''
@@ -214,18 +308,18 @@ def extract_wimax_connected_ss(hostname,dr_slave,memc_conn):
         #pmp2_ss_connected = args['memc'].get("pmp2_%s" % hostname)
         #warning('wimax connected ss: {0} {1}'.format(ss_connected_list,memc_conn))
         try:
-            if ss_connected_list[0]: 
-                pmp1_conn_ss_ip=ss_connected_list[0].get(1)
-                pmp2_conn_ss_ip=ss_connected_list[0].get(2)
+            if ss_connected_list: 
+                pmp1_conn_ss_ip=ss_connected_list.get(1)
+                pmp2_conn_ss_ip=ss_connected_list.get(2)
         except:
             pass
         if dr_slave:
             dr_ss_connected_list = memc_conn.get("%s_conn_ss" % str(hostname))
             #dr_pmp1_ss_connected = args['memc'].get("pmp1_%s" % dr_slave)
             #dr_pmp2_ss_connected = args['memc'].get("pmp2_%s" % dr_slave)
-            if dr_ss_connected_list[0]:
-                dr_pmp1_conn_ss_ip=dr_ss_connected_list[0].get(1)
-                dr_pmp2_conn_ss_ip=dr_ss_connected_list[0].get(2)
+            if dr_ss_connected_list:
+                dr_pmp1_conn_ss_ip=dr_ss_connected_list.get(1)
+                dr_pmp2_conn_ss_ip=dr_ss_connected_list.get(2)
     except Exception,e:
         warning('wimax connected ss: {0}'.format(e))
         pass
@@ -275,55 +369,77 @@ def extract_wimax_bs_sec_id(hostname,memc_conn):
 
 
 @app.task(base=DatabaseTask, name ='extract_wimax_bs_ul_issue_data')
-def extract_wimax_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,sec_type,**args):
+def extract_wimax_bs_ul_issue_data(wimax_bs_ul_issue_data,**args):
     count = 0
     perf = ''
     sec_ul_issue = ''
     state_string = 'unknown'
     #warning('wimax ss entry: {0}'.format(ul_issue_list))
     rds_cli = RedisInterface()
-    for service_dict in ul_issue_list:
-        try:
-            value = int(service_dict['perf_data'].split('=')[1].split(';')[0])
-        except Exception,e:
-            warning('wimax_bs_ul_issue: {0}'.format(e))
-            continue
-        else:
-            count = count +value
-    try:    
-        if len(ul_issue_list):    
-            sec_ul_issue = count/float(len(ul_issue_list)) * 100
-        if sec_ul_issue != '':
-            sec_ul_issue = "%.2f" % sec_ul_issue
-            if float(sec_ul_issue) < float(args['war']):
-                state = 0
-                state_string = "ok"
-            elif float(sec_ul_issue) >= float(args['crit']):
-                state = 2
-                state_string = "critical"
-            else:
-                state = 1
-                state_string = "warning"
-        
-        perf = ''.join('%s_ul_issue' % sec_type + "=%s;%s;%s;%s" %(sec_ul_issue,args['war'],args['crit'],sect_id))
-    except Exception,e:
-        warning('wimax bs entry: {0}'.format(e))
-        perf = ';%s;%s;%s' % (args['war'],args['crit'],sect_id)
-    args['service'] = 'wimax_bs_ul_issue_kpi'
-    age_of_state = age_since_last_state(host_name, args['service'], state_string)
-    bs_service_dict = service_dict_for_kpi_services(
-            perf,
-            state_string,
-            host_name,
-            site,
-            ip,
-            age_of_state,
-            **args)
-    bs_service_dict['refer'] =sect_id
-    ul_issue_list.append(bs_service_dict)        
-    #warning('wimax bs ul issue: {0}'.format(len(ul_issue_list)))
-    rds_cli.redis_cnx.rpush('queue:ul_issue',*ul_issue_list)
+    bs_service_dict_list = []
+    for (ul_issue_list, host_name, site, ip, sect_id, sec_type) in wimax_bs_ul_issue_data :
+            perf = ''
+            sec_ul_issue = ''
+    	    state_string = 'unknown'
+	    for service_dict in ul_issue_list:
+		try:
+		    value = int(service_dict['perf_data'].split('=')[1].split(';')[0])
+		except Exception,e:
+		    warning('wimax_bs_ul_issue: {0}'.format(e))
+		    continue
+		else:
+		    count = count +value
+	    try:    
+		if len(ul_issue_list):    
+		    sec_ul_issue = count/float(len(ul_issue_list)) * 100
+		    if sec_ul_issue > 100:
+			sec_ul_issue = 100
+		if sec_ul_issue not in ['',None]:
+		    sec_ul_issue = "%.2f" % sec_ul_issue
+		    if float(sec_ul_issue) < float(args['war']):
+			state = 0
+			state_string = "ok"
+		    elif float(sec_ul_issue) >= float(args['crit']):
+			state = 2
+			state_string = "critical"
+		    else:
+			state = 1
+			state_string = "warning"
+		
+		perf = ''.join('%s_ul_issue' % sec_type + "=%s;%s;%s;%s" %(sec_ul_issue,args['war'],args['crit'],sect_id))
+	    except Exception,e:
+		error('wimax bs entry: {0} {1} {2} {3} {4}'.format(e,sec_ul_issue,perf,args['war'],args['crit']))
+		perf = ''
+	    args['service'] = 'wimax_bs_ul_issue_kpi'
+	    age_of_state = age_since_last_state(host_name, args['service'], state_string)
+	    bs_service_dict = service_dict_for_kpi_services(
+		    perf,
+		    state_string,
+		    host_name,
+		    site,
+		    ip,
+		    age_of_state,
+		    **args)
+	    bs_service_dict['refer'] =sect_id
+	    ul_issue_list.append(bs_service_dict)        
+	    #warning('wimax bs ul issue: {0}'.format(len(ul_issue_list)))
+	    rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
+	    #bs_service_dict_list.append((bs_service_dict, site))
+    #insert_bs_ul_issue_data_to_redis(bs_service_dict)
 
+def insert_bs_ul_issue_data_to_redis(bs_service_dict_list):
+    try :
+	#print "BS Dict Here",bs_service_dict
+	#bs_service_dict = self.bs_service_dict
+        rds_cli = RedisInterface()
+        #print "BS UL issue record state : %s \n" %str(bs_service_dict['state'])
+        for (bs_service_dict,site) in bs_service_dict_list :
+	    machine_name = site.split('_')[0]
+	    if bs_service_dict['state'] in ['ok','warning','critical'] :
+	        rds_cli.redis_cnx.rpush('q:bs_ul_issue_event:%s' % machine_name, bs_service_dict)
+                #print "BS UL issue record inserted in Redis : ",rds_cli.redis_cnx.lrange('q:bs_ul_issue_event',0, -1),"\n"
+    except Exception ,exp :
+        print "Error in Redis DB Data Insertion UL Issue : %s \n" % str(exp)
 
 def extract_cambium_util_data(host_params,**args):
     perf = cam_util = sec_id = plugin_message = ''
@@ -452,8 +568,17 @@ def extract_mrotek_util_data(host_params,**args):
         try:
                 if args['memc']:
                     #sec_id = args['memc'].get(str(hostname) + "_sec_id")
-                    mrotek_util = args['memc'].get(str(hostname) + "_" + util_type)
+                    #mrotek_util = args['memc'].get(str(hostname) + "_" + util_type)
                     #warning('radwin util: {0}'.format(rad_util))
+                    util_values =  args['memc'].get(str(hostname) + "_" + util_type) # got values like '0.7,9'
+                    util_list = util_values.split(",")
+                    try :
+                        mrotek_util = float(util_list[0])
+                        index1 = util_list[1]
+                        data_s = "fe_"+str(index1)+"_kpi"
+                    except Exception as e:
+                        error('Mrotek conversion: {0}'.format(e))
+
                 if mrotek_util != None and isinstance(mrotek_util,basestring):
                     mrotek_util = literal_eval(mrotek_util)
         except Exception,e:
@@ -461,8 +586,8 @@ def extract_mrotek_util_data(host_params,**args):
                 #warning('args: {0}'.format(args))
                 sec_id = ''
         try:
-                if mrotek_util != None and capacity[0]:
-                    mrotek_util = (float(mrotek_util)/float(capacity[0])) * 100
+                if mrotek_util != None and capacity[int(index1)-1]:
+                    mrotek_util = (float(mrotek_util)/float(capacity[int(index1)-1])) * 100
                     mrotek_util = round(mrotek_util,2)
                     if mrotek_util < float(args['war']):
                        state = 0
@@ -473,7 +598,7 @@ def extract_mrotek_util_data(host_params,**args):
                     else:
                        state = 1
                        state_string = "warning"
-                perf = "fe_1_kpi" + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
+                    perf = data_s + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
         except Exception,e:
                 #warning('cam ss util: {0}'.format(e))
                 perf = "fe_1_kpi" + "=;%s;%s" %(args['war'],args['crit'])
@@ -530,7 +655,7 @@ def extract_rici_util_data(host_params,**args):
                             rici_kpi  = round(rici_kpi,2)
                     except Exception,e:
                         perf += str(entry[0]) + '_kpi' + "=;%s;%s;%s " % (args['war'],args['crit'],capacity[index1-1])
-                	warning('Rici kpi error: {0}'.format(e))
+                	#warning('Rici kpi error: {0}'.format(e))
                         continue
                     if rici_kpi != None:
                         perf += str(entry[0]) + '_kpi'+ "=%s;%s;%s;%s " % (rici_kpi,args['war'],args['crit'],capacity[index1-1])
@@ -705,7 +830,7 @@ def service_dict_for_kpi_services(
     service_dict['address'] = ip_address 
     service_dict['site'] = site
     service_dict['perf_data'] = perf
-    service_dict['last_state_change'] = ''
+    service_dict['last_state_change'] = age_of_state
     service_dict['state']  = state
     service_dict['last_chk'] = time.time()
     service_dict['service_description']=args['service']
@@ -715,8 +840,7 @@ def service_dict_for_kpi_services(
 
 
 @app.task(base=DatabaseTask,name='extract_ss_ul_issue_data')
-def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,
-        bs_ip_address,sect_id,sec_type,redis_conn,**args):
+def extract_ss_ul_issue_data(pmp_data_dict,redis_conn,**args):        
     state = 3
     ul_issue =0
     perf = ''
@@ -726,48 +850,89 @@ def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,
     state_string = "unknown"
     service_state_type = ["warning","critical"]
     service_dict_list = []
+    cambium_bs_ul_issue_data = []
+    wimax_bs_ul_issue_data = []
     #warning('ss info: {0}'.format(ss_info))
 
     local_cnx = redis_conn.redis_cnx
     p = local_cnx.pipeline()
-    for entry in ss_info:
-        if entry:
-            host_name ,site ,ip_address = literal_eval(entry[0])
-        else:
-            break
-        try:
-            service_state_out = []
-            ss_serv_key = local_cnx.keys(pattern="ul_issue:%s:*" % host_name)
-            [p.lrange(k, 0 , -1) for k  in ss_serv_key]
-            service_values = p.execute()
-            #warning('service values: {0}'.format(service_values))
-            for entry in service_values:
-                service_state_out.extend(entry)
-                
-            if len(service_state_out) == 4:
-                state_string = "ok"
-                state = 0
-                for entry in service_state_out:
-                    if str(entry).lower() in service_state_type:
-                        ul_issue=1
-                        continue
-                    else:
-                        ul_issue = 0
-                        break
-            perf = 'ul_issue' + "=%s;;;" % (ul_issue)
-        except Exception ,e:
-            warning('error: {0}'.format(e))
-            perf = ''
+    for (ss_info, bs_host_name, bs_site_name, bs_ip_address, sect_id, sec_type) in pmp_data_dict :
+        service_dict_list = []
+        state_string = 'unknown'
+        ul_issue = 0
+	perf = ''
+	for entry in ss_info:
+		if entry:
+		    host_name ,site ,ip_address = literal_eval(entry[0])
+		else:
+		    break
+		try:
+		    service_state_out = []
+		    if 'wimax' in args['service']:
+			ul_intrf_serv_key = local_cnx.keys(pattern="ul_issue:%s:wimax_ul_intrf" % host_name)
+			[p.lrange(k, 0 , -1) for k  in ul_intrf_serv_key]
+			ul_intrf_values = p.execute()
+			dl_intrf_serv_key = local_cnx.keys(pattern="ul_issue:%s:wimax_dl_intrf" % host_name)
+			[p.lrange(k, 0 , -1) for k  in dl_intrf_serv_key]
+			dl_intrf_values = p.execute()
+			if len(dl_intrf_values[0]) == 2 and dl_intrf_values[0][0].lower() == 'critical' and \
+			    dl_intrf_values[0][1].lower() == 'critical':
+			    ul_issue = 0 
+			    state_string = "ok"
+			elif len(ul_intrf_values[0]) == 2 and ul_intrf_values[0][0].lower() in service_state_type and \
+			    ul_intrf_values[0][1].lower() in service_state_type:
+			    ul_issue = 1
+			    state_string = "ok"
+			elif len(ul_intrf_values[0]) == 2  and len(dl_intrf_values[0]) == 2:
+			    ul_issue = 0
+			    state_string = "ok"
+		    else:
+			ul_jitter_count = 0
+			rereg_count = 0
+			ul_jitter_key = local_cnx.keys(pattern="ul_issue:%s:cambium_ul_jitter" % host_name)
+			rereg_count_key = local_cnx.keys(pattern="ul_issue:%s:cambium_rereg_count" % host_name)
+			[p.lrange(k, 0 , -1) for k  in ul_jitter_key]
+			ul_jitter_values = p.execute()
+			[p.lrange(k, 0 , -1) for k  in rereg_count_key]
+			rereg_values = p.execute()
+			#error('ss ul issue: {0} {1} {2}'.format(ul_jitter_values,rereg_values,host_name))
+			try:
+			    for entry in ul_jitter_values[0]:
+				if entry in service_state_type:
+				    ul_jitter_count = ul_jitter_count +1
+			except:
+			    ul_jitter_count = 0
+			for entry in rereg_values[0]:
+			    if entry in service_state_type:
+				rereg_count = rereg_count + 1
 
-    	age_of_state = age_since_last_state(host_name, args['service'], state_string)
-    	service_dict = service_dict_for_kpi_services(
-            perf,state_string,host_name,
-            site,ip_address,age_of_state,**args)
-    	service_dict_list.append(service_dict)
+			
+			if ul_jitter_count == 2 or rereg_count == 2 :
+			    state_string = "ok"
+			    state = 0
+			    ul_issue = 1
+			else:
+			    state_string = "ok"
+			    ul_issue = 0
+		    perf = 'ul_issue' + "=%s;;;" % (ul_issue)
+		except Exception ,e:
+		    warning('error: {0}'.format(e))
+		    perf = ''
+
+		age_of_state = age_since_last_state(host_name, args['service'], state_string)
+		service_dict = service_dict_for_kpi_services(
+		    perf,state_string,host_name,
+		    site,ip_address,age_of_state,**args)
+		service_dict_list.append(service_dict)
+	if 'cambium' in args['service']:
+		cambium_bs_ul_issue_data.append((service_dict_list,bs_host_name,bs_site_name,bs_ip_address,sect_id))
+	elif 'wimax' in args['service']:
+		wimax_bs_ul_issue_data.append((service_dict_list,bs_host_name,bs_site_name,bs_ip_address,sect_id,sec_type))
 
     #redis_conn = str(args['redis'])
     #arg['redis'] = ''
     #warning(' ul issue dict: {0}'.format(len(service_dict_list)))
+    """
     if 'cambium' in args['service']:
         extract_cambium_bs_ul_issue_data.s(
                 service_dict_list,
@@ -785,7 +950,11 @@ def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,
                 sect_id ,
                 sec_type,
                 **args).apply_async()
-
+    """
+    if 'cambium' in args['service']:
+        extract_cambium_bs_ul_issue_data.s(cambium_bs_ul_issue_data,**args).apply_async()
+    elif 'wimax' in args['service']:
+        extract_wimax_bs_ul_issue_data.s(wimax_bs_ul_issue_data,**args).apply_async()
 
 @app.task(base=DatabaseTask,name='call_kpi_services')
 def call_kpi_services(**opt):
@@ -800,9 +969,8 @@ def call_kpi_services(**opt):
     wimax_bs_key = redis_cnx.keys(pattern="wimax:bs:%s:*" % opts['site_name'])
     #wimax_ss_key = redis_cnx.keys(pattern="wimax:ss:*")
     wimax_ss_key = redis_cnx.keys(pattern="wimax:ss:%s:*" % opts['site_name'])
-
-    warning('wimax_bs_key len: {0}'.format(len(wimax_bs_key)))
-    warning('wimax_ss_key len: {0}'.format(len(wimax_ss_key)))
+    #warning('wimax_bs_key len: {0}'.format(len(wimax_bs_key)))
+    #warning('wimax_ss_key len: {0}'.format(len(wimax_ss_key)))
 
     pmp_bs_key = redis_cnx.keys(pattern="pmp:bs:%s:*" % opts['site_name'])
     pmp_ss_key = redis_cnx.keys(pattern="pmp:ss:%s:*" % opts['site_name'])
@@ -811,7 +979,7 @@ def call_kpi_services(**opt):
     rici_bs_key = redis_cnx.keys(pattern="rici:bs:%s:*" % opts['site_name'])
     cisco_bs_key = redis_cnx.keys(pattern="cisco:bs:%s:*" % opts['site_name'])
     juniper_bs_key = redis_cnx.keys(pattern="juniper:bs:%s:*" % opts['site_name'])
-
+    huawei_bs_key = redis_cnx.keys(pattern="huawei:bs:%s:*" % opts['site_name'])
     p = redis_cnx.pipeline()
 
     wimax_util_kpi_services = [
@@ -850,6 +1018,11 @@ def call_kpi_services(**opt):
             'juniper_switch_ul_util_kpi'
             ]
 
+    huawei_util_kpi_services = [
+            'huawei_switch_dl_util_kpi',
+            'huawei_switch_ul_util_kpi'
+            ]
+
     service_threshold = {}
     total_services = []
     total_services.extend(wimax_util_kpi_services)
@@ -859,6 +1032,7 @@ def call_kpi_services(**opt):
     total_services.extend(rici_util_kpi_services)
     total_services.extend(cisco_util_kpi_services)
     total_services.extend(juniper_util_kpi_services)
+    total_services.extend(huawei_util_kpi_services)
     total_services.extend(['wimax_bs_ul_issue_kpi', 'cambium_bs_ul_issue_kpi'])
 
     for service_name in total_services:
@@ -1029,7 +1203,7 @@ def call_kpi_services(**opt):
             func='extract_radwin_util_data'
             )
     call_tasks(
-            pmp_ss_key,
+            radwin_ss_key,
             radwin_util_kpi_services[2],
             service_threshold,
             site_name=opt.get('site_name'),
@@ -1124,6 +1298,14 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_cisco_util_data'
             )
+    call_tasks(
+            huawei_bs_key,
+            huawei_util_kpi_services,
+            service_threshold,
+            site_name=opt.get('site_name'),
+            func='extract_huawei_util_data'
+            )
+
     #for i in izip_longest(*[iter(rici_bs_key)] * 500):
     #    args = {}
     #    args['site_name'] =  opts['site_name']
@@ -1155,11 +1337,11 @@ def call_kpi_services(**opt):
 
 
 @app.task(base=DatabaseTask, name='call_tasks')
-def call_tasks(hosts, services, services_thresholds, site_name=None, func=None, batch=500):
+def call_tasks(hosts, services, services_thresholds, site_name=None, func=None, batch=200):
     """ Sends messages for given tasks in celery queue"""
     redis_cnx = RedisInterface(custom_conf={'db': INVENTORY_DB}).redis_cnx
     p = redis_cnx.pipeline()
-    warning('Sending kpi tasks for: {0} hosts'.format(len(hosts)))
+    #warning('Sending kpi tasks for: {0} hosts'.format(len(hosts)))
     if not isinstance(services, list):
 	    services = [services]
     while  hosts:
@@ -1227,7 +1409,7 @@ def extract_radwin_ss_provis_data(host_params,**args):
 	ss_state = ''
         state_string = 'unknown'
         if entry:
-            host ,site,ip = literal_eval(entry[0])
+            host ,site,ip,_,_,_ = literal_eval(entry[0])
         else:
             break
         try:
@@ -1435,49 +1617,59 @@ def extract_kpi_services_data(**args):
 
 
 @app.task(base=DatabaseTask, name ='extract_cambium_bs_ul_issue_data')
-def extract_cambium_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,**args):
+def extract_cambium_bs_ul_issue_data(bs_ul_issue_data,**args):
     count = 0
     perf = ''
     sec_ul_issue = ''
     state_string = 'uknown'
     #warning('cambium ss entry: {0}'.format(ul_issue_list))
     rds_cli = RedisInterface()
-    for service_dict in ul_issue_list:
-        try:
-            value = int(service_dict['perf_data'].split('=')[1])
-        except:
-            continue
-        count = count +value
+    bs_service_dict_list = []
+    for (ul_issue_list, host_name, site, ip, sect_id) in bs_ul_issue_data :
+            perf = ''
+            sec_ul_issue = ''
+            state_string = 'unknown'
+	    for service_dict in ul_issue_list:
+		try:
+		    value = int(service_dict['perf_data'].split('=')[1])
+		except:
+		    continue
+		count = count +value
 
-    if len(ul_issue_list):
-        sec_ul_issue = count/float(len(ul_issue_list)) * 100
-    try:
-        if sec_ul_issue != '':
-            sec_ul_issue = "%.2f" % sec_ul_issue
-            if float(sec_ul_issue) < args['war']:
-                state = 0
-                state_string = "ok"
-            elif float(sec_ul_issue) >= args['crit']:
-                state = 2
-                state_string = "critical"
-            else:
-                state = 1
-                state_string = "warning"
-        perf = ''.join(
-                'bs_ul_issue' + "=%s;%s;%s;%s" %(sec_ul_issue,args['war'],
-                    args['crit'],sect_id))
-    except:
-        perf = 'bs_ul_issue'+'=;%s;%s;%s' % (args['war'],args['crit'],sect_id)
-        
-    args['service'] = 'cambium_bs_ul_issue_kpi'
-    age_of_state = age_since_last_state(host_name, args['service'], state_string)
-    bs_service_dict = service_dict_for_kpi_services(
-            perf,state_string,
-            host_name,site,ip,age_of_state,**args)
-    bs_service_dict['refer'] =sect_id
-    ul_issue_list.append(bs_service_dict)
-    warning('cambium bs entry: {0}'.format(len(ul_issue_list)))
-    rds_cli.redis_cnx.rpush('queue:ul_issue',*ul_issue_list)
+	    if len(ul_issue_list):
+		sec_ul_issue = count/float(len(ul_issue_list)) * 100
+		if sec_ul_issue > 100:
+		    sec_ul_issue = 100
+	    try:
+		if sec_ul_issue not in ['',None]:
+		    sec_ul_issue = "%.2f" % sec_ul_issue
+		    if float(sec_ul_issue) < args['war']:
+			state = 0
+			state_string = "ok"
+		    elif float(sec_ul_issue) >= args['crit']:
+			state = 2
+			state_string = "critical"
+		    else:
+			state = 1
+			state_string = "warning"
+		perf = ''.join(
+			'bs_ul_issue' + "=%s;%s;%s;%s" %(sec_ul_issue,args['war'],
+			    args['crit'],sect_id))
+	    except Exception,e:
+    	        error('cambium ss entry: {0}'.format(e))
+		perf = 'bs_ul_issue'+'=;%s;%s;%s' % (args['war'],args['crit'],sect_id)
+		
+	    args['service'] = 'cambium_bs_ul_issue_kpi'
+	    age_of_state = age_since_last_state(host_name, args['service'], state_string)
+	    bs_service_dict = service_dict_for_kpi_services(
+		    perf,state_string,
+		    host_name,site,ip,age_of_state,**args)
+	    bs_service_dict['refer'] =sect_id
+	    ul_issue_list.append(bs_service_dict)
+	    #warning('cambium bs entry: {0}'.format(len(ul_issue_list)))
+	    rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
+	    #bs_service_dict_list.append((bs_service_dict, site))
+    #insert_bs_ul_issue_data_to_redis(bs_service_dict_list)
 
 
 @app.task(base=DatabaseTask, name='extract_wimax_ul_issue_data')
@@ -1487,6 +1679,7 @@ def extract_wimax_ul_issue_data(**args):
     pmp2_service_list = []
     pmp1_ss_info = []
     pmp2_ss_info = []
+    pmp_data_dict = []
     rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
     p = rds_cli.redis_cnx.pipeline()
     args['memc']  = ''
@@ -1514,6 +1707,11 @@ def extract_wimax_ul_issue_data(**args):
         [p.lrange(k[0], 0 , -1) for k  in pmp1_ss_key if k]
         pmp1_ss_info = p.execute()
         #warning('pmp2 ss info: {0}, pmp1 ss info {1}'.format(pmp2_ss_info,pmp1_ss_info))
+        
+        pmp_data_dict.append((pmp2_ss_info,host_name,site_name,ip_address,pmp2_sect_id,'pmp2'))
+        pmp_data_dict.append((pmp1_ss_info,host_name,site_name,ip_address,pmp1_sect_id,'pmp1'))
+        
+        """
         extract_ss_ul_issue_data.s(
                 pmp2_ss_info,
                 host_name,
@@ -1532,6 +1730,8 @@ def extract_wimax_ul_issue_data(**args):
                 'pmp1',
                 redis_conn,
                 **args).apply_async()
+		"""
+    extract_ss_ul_issue_data.s(pmp_data_dict,redis_conn,**args).apply_async()
     #warning('pmp2 service list: {0}'.format(pmp2_service_list))
 
 
@@ -1546,6 +1746,7 @@ def extract_cambium_ul_issue_data(**args):
     args['memc'] = ''
     redis_conn =args['redis']
     args['redis'] = ''
+    ss_ul_issue_data = []
     for entry in host_info:
         if entry:
             if len(literal_eval(entry[0])) == 3:
@@ -1561,9 +1762,9 @@ def extract_cambium_ul_issue_data(**args):
             ss_key = map(lambda x: rds_cli.redis_cnx.keys(pattern="pmp:ss:*:%s" %x) ,conn_ss_ip)
             [p.lrange(k[0], 0 , -1) for k  in ss_key if k]
             ss_info = p.execute()
+            ss_ul_issue_data.append((ss_info,host_name,site_name,ip_address,sect_id,None))
 
-            extract_ss_ul_issue_data.s(ss_info,host_name,site_name,ip_address,
-                    sect_id,None,redis_conn,**args).apply_async()
+    extract_ss_ul_issue_data.s(ss_ul_issue_data,redis_conn,**args).apply_async()
 
 
 if __name__ == '__main__':
