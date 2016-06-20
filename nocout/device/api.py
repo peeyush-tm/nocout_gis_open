@@ -94,7 +94,7 @@ from performance.formulae import display_time, rta_null
 # Import service utils gateway class
 from service.utils.util import ServiceUtilsGateway
 from sitesearch.views import prepare_raw_bs_result
-from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME, \
+from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME,\
     PING_RTA_WARNING, PING_RTA_CRITICAL, \
     PING_PL_WARNING, PING_PL_CRITICAL, \
     SERVICE_DATA_SOURCE
@@ -160,6 +160,7 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}, b
         return ss_dict
 
     for data in ss_dataset:
+
         data_list = data.split('|')
         if len(data_list) > 1:
             if data_list[0] not in ss_dict:
@@ -362,7 +363,7 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}, b
                     'show_link': 1,
                     'link_color': '',
                     'label_str': label_str
-                }
+                }                
 
                 ss_dict[data_list[0]]['ss_list'].append(ss_info)
                 ss_dict[data_list[0]]['ip_list'].append(ip_address)
@@ -445,10 +446,12 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
             'bh_device_type': bs.get('BHDEVICETYPE'),
             'bh_device_tech': bs.get('BHDEVICETECH'),
             'maintenance_status': bs.get('BSMAINTENANCESTATUS'),
+            'has_pps_alarm' : bs.get('has_pps'),
             'tech_str': '',
             'vendor_str': '',
             'freq_str': '',
             'polarization_str': '',
+            'antenna_type_str': '',
             'sector_configured_on_devices': '',
             'circuit_ids': '',
             'sectors': []
@@ -543,6 +546,11 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
                     except Exception, e:
                         device_id = ''
 
+                    try:
+                        antenna_type = splitted_str[13]
+                    except Exception, e:
+                        antenna_type = 'NA'
+
                     gmap_icon = ''
                     freq_val = ''
                     color = ''
@@ -572,6 +580,8 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
                     temp_dict['freq_str'] += freq_val + '|'
                     # Concat sectors antenna polarization
                     temp_dict['polarization_str'] += polarization + '|'
+                    # Concat sectors antenna type
+                    temp_dict['antenna_type_str'] += antenna_type + '|'
                     # Concat Sectors IP
                     temp_dict['sector_configured_on_devices'] += sector_ip + '|'
                     # Concat SS IPs
@@ -639,7 +649,8 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
                         'polarization': polarization,
                         'antenna_height': antenna_height,
                         'sub_stations': ss_list,
-                        'device_id': device_id
+                        'device_id': device_id,
+                        'antenna_type': antenna_type
                     }
                     sector_list.append(sector)
                 except Exception, e:

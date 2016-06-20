@@ -76,16 +76,16 @@ def live_query_rereg_count(mac):
 		value_list = memc.get(mac)
 		if value_list:
 			try:
-				rereg_count = int(value_list[3])
+				rereg_count = int(value_list[5])
 			except:
 				rereg_count = None
-		if not rereg_count:
+		if rereg_count is None:
 			try:
 				key1 = mac + "_topology"
 				ss_params = memc.get(key1)
 			except:
 				pass
-	if not rereg_count:
+	if rereg_count is None:
 		if not ss_params: 
         	    host_name = extract_host_from_cambium_topology(mac)
 		    try:
@@ -173,10 +173,10 @@ def check_cambium_rereg_count(item, params, info):
 		if ss_mac:
 			rereg_count = live_query_rereg_count(ss_mac )
 			if rereg_count != None:
-				if rereg_count > crit:
+				if rereg_count > int(crit):
 					state  = 2
 					state_string = "critical"
-				elif rereg_count <= crit and rereg_count >= warn:
+				elif rereg_count <= int(crit) and rereg_count >= int(warn):
 					state = 1
 					state_string = "warning"
 				else:

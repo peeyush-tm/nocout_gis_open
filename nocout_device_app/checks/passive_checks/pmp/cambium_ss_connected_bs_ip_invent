@@ -18,16 +18,35 @@ IP information is sent to device application
 
 
 def extract_host_ip_from_cambium_topology(ss_host_ip):
-        query = """
-        select ip_address from performance_topology where connected_device_ip ='%s' """ %(ss_host_ip)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
 
-        return data
+    try:
+        if memc:
+            try :
+		key = ss_host_ip+ "_t_discover"
+                data = memc.get(key)
+                #return data
+            except :
+                data =None 
 
+        if not data:
+            try:
+                query = """
+                select ip_address from performance_topology where connected_device_ip ='%s' """ %(ss_host_ip)
+                db = mysql_conn()
+                cur = db.cursor()
+                cur.execute(query)
+                data = cur.fetchall()
+                cur.close()
+                db.close()
+		data = data[0][0]
+                #return data[0][0]
+            except :
+                data =None
+
+	return data
+
+    except :
+        pass
 
 
 def check_cambium_ss_connected_bs_ip_invent(item, _no_params, info):
@@ -60,7 +79,7 @@ def check_cambium_ss_connected_bs_ip_invent(item, _no_params, info):
             if info[0][0]:
                 connected_bs_ip = info[0][0]
 		bs_ip=extract_host_ip_from_cambium_topology(connected_bs_ip)
-		bs_ip =bs_ip[0][0]
+		#bs_ip =bs_ip[0][0]
                 state = 0
                 infotext = "%s" % bs_ip
     except:

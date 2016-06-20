@@ -109,7 +109,8 @@ class InventoryUtilsGateway:
         page_type="customer", 
         other_type=None, 
         required_value_list=None, 
-        other_bh=False
+        other_bh=False,
+        specify_ptp_bh_type='all'
     ):
         """
 
@@ -127,7 +128,8 @@ class InventoryUtilsGateway:
             page_type=page_type, 
             other_type=other_type, 
             required_value_list=required_value_list, 
-            other_bh=other_bh
+            other_bh=other_bh,
+            specify_ptp_bh_type=specify_ptp_bh_type
         )
 
         return param1
@@ -543,7 +545,8 @@ def filter_devices(
     page_type="customer", 
     other_type=None, 
     required_value_list=None, 
-    other_bh=False
+    other_bh=False,
+    specify_ptp_bh_type='all'
 ):
 
     """
@@ -605,7 +608,8 @@ def filter_devices(
             'device_name': device['device_name'],
             'machine_name': device['machine__name'],
             'id': device['id'],
-            'ip_address': device['ip_address']
+            'ip_address': device['ip_address'],
+            'organization_id' : device.get('organization__id')
         }
         for device in device_list
     ]

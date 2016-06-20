@@ -77,13 +77,13 @@ def live_query_ul_rssi(mac):
 				ul_rssi = int(value_list[0])
 			except:
 				ul_rssi = None
-		if not ul_rssi:
+		if ul_rssi is None:
 			try:
 				key1 = mac + "_topology"
 				ss_params = memc.get(key1)
 			except:
 				pass
-	if not ul_rssi:
+	if ul_rssi is None:
 		if not ss_params: 
         	    host_name = extract_host_from_cambium_topology(mac)
 		    try:
