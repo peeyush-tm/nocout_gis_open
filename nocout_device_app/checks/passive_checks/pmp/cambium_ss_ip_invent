@@ -41,6 +41,7 @@ def check_cambium_ss_ip_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    ss_ip = ''
     try:
         if info:
             if info[0][0]:
@@ -49,12 +50,13 @@ def check_cambium_ss_ip_invent(item, _no_params, info):
                 infotext = "%s" % ss_ip
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[("ss_ip",ss_ip)])
 
 
 check_info["cambium_ss_ip_invent"] = {
     'check_function': check_cambium_ss_ip_invent,
     'service_description': 'cambium_ss_ip_invent',
+    'has_perfdata': True
 }
 
 #################################################################

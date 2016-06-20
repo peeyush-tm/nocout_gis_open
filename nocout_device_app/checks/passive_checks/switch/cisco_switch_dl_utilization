@@ -3,7 +3,13 @@ import re
 import time
 from operator import itemgetter
 import memcache
-from mysql_connection import memc
+try:
+   from mysql_connection_1 import db_connection
+   memc = db_connection().memcache_connect
+except Exception,e:
+   memc = None
+
+
 """
 uplink utilizationPoller script.
 
@@ -114,7 +120,7 @@ def cisco_check_switch_dl_utilization(item, _no_params, info):
 
                 key1 = str(g_hostname)+"switch_dl_utilization"  # save value for KPI checks in memcache
                 memc.delete(key1)
-                memc.set(key1,status_list) # saving the status list in memcache
+                memc.set(key1,status_list,700) # saving the status list in memcache
 		infotext += "]"
     except ValueError:
         infotext = "type_mismatch_error"

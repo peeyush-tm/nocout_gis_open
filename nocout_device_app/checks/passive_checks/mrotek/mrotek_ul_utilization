@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import re
 import time
-from mysql_connection import memc
 """
 Downlink utilizationPoller script.
 

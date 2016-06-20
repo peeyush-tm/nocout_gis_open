@@ -1,11 +1,10 @@
 #!/usr/bin/python
-
 import sys
 from telnetlib import Telnet
 import socket
 import json
 import os
-from mysql_connection import memc
+
 import mysql.connector
 """
 operating Frequency of ss device  Poller script.
@@ -126,23 +125,20 @@ def check_wimax_ss_port_params(item, _no_params, info):
     state = 3
     infotext = ""
     ss_speed= None
+    ss_params = []
     ipaddress = ipaddresses.get(g_hostname)
     try:
 	ss_speed,ss_autoneg,ss_duplex,uptime,dl_modulation_change,link_state =connection_telnet_for_port_params(ipaddress, 23)
 	infotext += "ss_speed=" + ss_speed + "," + "ss_autoneg="+ ss_autoneg + "," + "ss_duplex=" + ss_duplex + "," +\
 	"uptime=" + str(uptime) +"," + "dl_modulation_change=" + dl_modulation_change + ","+ "link_state=" + link_state
  	state = 0
-	service_tag = '_ss_port_params'
-        try:
-            if memc:
-                value_list= []
-                key = str(g_hostname) + service_tag
-                value_list.extend([str(ss_speed),str(ss_autoneg),
-                str(ss_duplex),str(uptime),str(dl_modulation_change),str(link_state)])
-		#print "value_list",value_list
-                memc.set(key,value_list,360)
-        except:
-            pass
+	ss_params.extend([ss_speed,ss_autoneg,ss_duplex,uptime,dl_modulation_change,link_state])
+	try:
+		if memc:
+			memc.set("%s_ss_port_params" % g_hostname,ss_params)
+
+	except:
+		pass
     except ValueError:
         infotext = "type_mismatch_value"
     except:

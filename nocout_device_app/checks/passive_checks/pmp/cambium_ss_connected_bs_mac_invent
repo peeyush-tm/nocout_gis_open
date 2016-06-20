@@ -41,6 +41,7 @@ def check_cambium_ss_connected_bs_mac_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    connected_bs_mac = ''
     try:
         if info:
             if info[0][0]:
@@ -50,12 +51,13 @@ def check_cambium_ss_connected_bs_mac_invent(item, _no_params, info):
                 infotext = "%s" % connected_bs_mac
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[('ss_connected_bs_mac',connected_bs_mac)])
 
 
 check_info["cambium_ss_connected_bs_mac_invent"] = {
     'check_function': check_cambium_ss_connected_bs_mac_invent,
     'service_description': 'cambium_ss_connected_bs_mac_invent',
+    'has_perfdata' :True
 }
 
 #################################################################

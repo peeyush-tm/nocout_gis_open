@@ -3,7 +3,14 @@ import re
 import time
 from operator import itemgetter
 import memcache
-from mysql_connection import memc
+try:
+   from mysql_connection_1 import db_connection
+   memc = db_connection().memcache_connect
+except Exception,e:
+   memc = None
+
+
+
 """
 uplink utilizationPoller script.
 

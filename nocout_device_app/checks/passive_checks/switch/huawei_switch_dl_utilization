@@ -3,7 +3,14 @@ import re
 import time
 from operator import itemgetter
 import memcache
-from mysql_connection import memc
+
+try:
+    from mysql_connection_1 import db_connection
+    memc = db_connection().memcache_connect
+except Exception,e:
+    memc = None
+
+
 """
 uplink utilizationPoller script.
 
@@ -63,7 +70,6 @@ def huawei_check_switch_dl_utilization(item, _no_params, info):
        conf_port =  memcache_switch.get(host_name,"") #conf_port contain back_hual configured port like  ge-0_0_1
     except:
        conf_port = ""
-    
     conf_port_list1 = conf_port.split(",") # list contain the configured ports
     conf_port_list =[] # will contain the port in formate FastEthernet0/1
     g_port = 'GigabitEthernet0/0/'

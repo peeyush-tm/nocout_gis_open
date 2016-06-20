@@ -43,6 +43,7 @@ def check_cambium_serial_number_invent(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     serial_number_list = []
+    new_serial_number = ''
     try:
         if info:
             if info[0][0]:
@@ -55,12 +56,13 @@ def check_cambium_serial_number_invent(item, _no_params, info):
                 infotext += "%s" % (new_serial_number)
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[("serial_number",new_serial_number)])
 
 
 check_info["cambium_serial_number_invent"] = {
     'check_function': check_cambium_serial_number_invent,
     'service_description': 'cambium_serial_number_invent',
+    'has_perfdata': True
 }
 
 #################################################################

@@ -41,6 +41,7 @@ def check_cambium_odu_type_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    odu_type = ''
     try:
         if info:
             if info[0][0]:
@@ -49,12 +50,13 @@ def check_cambium_odu_type_invent(item, _no_params, info):
                 infotext = "%s" % odu_type
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[("odu_type",odu_type)])
 
 
 check_info["cambium_odu_type_invent"] = {
     'check_function': check_cambium_odu_type_invent,
     'service_description': 'cambium_odu_type_invent',
+    'has_perfdata': True
 }
 
 #################################################################

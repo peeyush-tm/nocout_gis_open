@@ -29,7 +29,6 @@ def live_query_for_rad5k_ul_rssi(serial_number):
         """
         exit_value = 3
         ul_rssi = None
-        bs_params = None
         if memc:
                 key = serial_number + "_param"
                 value_list = memc.get(key)
@@ -38,54 +37,6 @@ def live_query_for_rad5k_ul_rssi(serial_number):
                                 ul_rssi = value_list[0]
                         except:
                                 ul_rssi = None
-                if ul_rssi is None:
-                        try:
-                                key_bs = serial_number + "_topology"
-                                bs_params = memc.get(key_bs)
-                        except :
-                                pass
-        if ul_rssi is None :
-                if not bs_params :
-                        host_name = extract_host_from_rad5k_topology(serial_number)
-                        try :
-                                bs_hostname = host_name[0][0]
-                                bs_site = host_name[0][1]
-                        except :
-                                bs_hostname = None
-                        if memc :
-                                if bs_hostname :
-                                        try :
-                                                arg_list = []
-
-                                                arg_list.append([bs_hostname,bs_site])
-                                                key = serial_number + "_topology"
-                                                memc.set(key,arg_list,360)
-                                        except Exception,e :
-                                                pass
-                else :
-                        bs_hostname = bs_params[0][0]
-                        bs_site = bs_params[0][1]
-
-                try:
-                        if bs_hostname :
-                                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("rad5k_topology_discover", bs_hostname)
-
-
-                                site = bs_site
-                                machine_name = site.split('_')[0]
-                                socket_ip = _LIVESTATUS[machine_name]['host']
-                                socket_port = _LIVESTATUS[machine_name][site]['port']
-
-                                query_output = eval(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
-                                if query_output[0][0]:
-                                        plugin_output = str(query_output[0][0].split(' - ')[1])
-                                        plugin_output = [entry for entry in plugin_output.split(' ')]
-                                        entry=filter(lambda x: serial_number in x, plugin_output)
-                                        ul_rssi = int(entry[0].split('=')[1].split('/')[0])
-
-                except Exception,e:
-                        ul_rssi = None					
 
         return ul_rssi
 

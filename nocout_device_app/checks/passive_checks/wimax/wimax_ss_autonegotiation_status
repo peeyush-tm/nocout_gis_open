@@ -25,30 +25,6 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def live_query_ss_autoneg(host_name):
-        """
-        Connects to a socket, checks for the WELCOME-MSG and closes the
-        connection.
-        Returns nothing.
-
-        """
-        exit_value = 3
-        ss_autoneg = None
-        try:
-                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_ss_port_params",host_name)
-
-                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
-                if query_output[0][0]:
-                        plugin_output = str(query_output[0][0].split('OK -')[1])
-                        plugin_output = [entry for entry in plugin_output.split(',')]
-                        ss_autoneg = plugin_output[1].split('=')[1]
-
-        except:
-                ss_autoneg = None
-        return ss_autoneg
-
-
                                 
 
 def check_wimax_ss_autonegotiation_status(item, _no_params, info):
@@ -76,9 +52,15 @@ def check_wimax_ss_autonegotiation_status(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
-    autonegotiation_value= None
+    autonegotiation_value= ''
     try:
-	autonegotiation_value =live_query_ss_autoneg(g_hostname)
+	    if memc:
+		    value_list = memc.get('%s_ss_port_params' % g_hostname)
+		    if value_list:
+		    	autonegotiation_value = value_list[1]
+    except:
+	    pass
+    try:
 	if autonegotiation_value:
 		autonegotiation_value = autonegotiation_value.strip('\r')
 		infotext = "SS ethernet autonegotiation is %s" % autonegotiation_value

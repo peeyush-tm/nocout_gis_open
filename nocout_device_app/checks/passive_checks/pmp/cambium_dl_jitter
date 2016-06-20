@@ -2,10 +2,11 @@
 from datetime import datetime,timedelta
 import time
 try:
-    from mysql_connection import memc
+    from mysql_connection_1 import db_connection
+    memc = db_connection().memcache_connect
 except Exception,e:
-    print e
-    pass
+    memc = None
+   
 """
 Poller script for jitter value in downlink for SS type cambium devices.
 

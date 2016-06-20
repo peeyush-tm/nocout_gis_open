@@ -85,7 +85,14 @@ def check_mrotek_port_speed_status(item, _no_params, info):
     port_string = "fe_"
     try:
 	infotext = ""	
-	speed_list =extract_port_speed_status_from_live(g_hostname)
+	#speed_list =extract_port_speed_status_from_live(g_hostname)
+	try:
+		if memc:
+			key = g_hostname + "_port_params"
+			speed_list = memc.get(key)
+			speed_list = speed_list[1] 
+	except:
+		pass
 	if speed_list:
 		for index in range(len(speed_list)):
 			status_list.append((port_string + str(index + 1) +"_state",speed_list[index]))

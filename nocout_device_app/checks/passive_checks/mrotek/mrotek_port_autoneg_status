@@ -5,7 +5,6 @@ import socket
 import json
 import os
 
-
 """
 operating Frequency of ss device  Poller script.
 
@@ -81,11 +80,18 @@ def check_mrotek_port_autoneg_status(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
-    status_list = []
+    autoneg_list = []
     port_string = "fe_"
     try:
 	infotext = ""	
-	autoneg_list =extract_port_autoneg_status_from_live(g_hostname)
+	#autoneg_list =extract_port_autoneg_status_from_live(g_hostname)
+	try:
+		if memc:
+			key = g_hostname + "_port_params"
+			autoneg_list = memc.get(key)
+			autoneg_list = autoneg_list[3] 
+	except:
+		pass
 	if autoneg_list:
 		for index in range(len(autoneg_list)):
 			status_list.append((port_string + str(index + 1) + "_state",autoneg_list[index]))

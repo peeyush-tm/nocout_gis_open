@@ -24,18 +24,6 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
-def extract_hostip_from_wimax_topology(ss_host_mac):
-	from mysql_connection import db
-	query = """
-	select connected_device_ip from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-	#db = mysql_conn()
-	cur = db.cursor()
-	cur.execute(query)
-	data = cur.fetchall()
-	cur.close()
-	db.close()
-	return data
-
 
 
 def check_wimax_ss_ip(item, _no_params, info):

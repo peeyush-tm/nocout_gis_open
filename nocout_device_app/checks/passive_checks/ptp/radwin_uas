@@ -47,6 +47,11 @@ def check_radwin_uas(item, params, info):
     uas = None
     infotext = "unknown output"
     warn,crit = params
+    try :
+	warn = int(warn)
+	crit = int(crit)
+    except Exception as e :
+	print e
     try:
         if info:
             if info[0][0]:

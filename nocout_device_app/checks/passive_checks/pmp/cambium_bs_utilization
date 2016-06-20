@@ -59,7 +59,7 @@ def check_cambium_bs_utilization(item, _no_params, info):
 		except MKCounterWrapped:
 			wrapped=True
 		status_list.append(("utilization",rate))
-		infotext = "Uplink utilization for interface [time=%s count=%s]" % (this_time,utilization)
+		infotext = "Uplink utilization for interface %s: %s " % (item,rate)
 		state= 0
 	else:
 		infotext = "No interface present"

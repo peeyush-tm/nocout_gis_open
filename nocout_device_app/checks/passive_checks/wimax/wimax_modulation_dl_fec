@@ -46,51 +46,6 @@ def live_query_modulation_dl_fec(mac):
 			except:
 				 modulation_dl_fec = None
 		
-		if not modulation_dl_fec:
-			try:
-				key1 = mac + "_topology"
-				ss_params = memc.get(key1)
-			except:
-				pass 
-	if not modulation_dl_fec:
-		if not ss_params: 
-        		host_name = extract_host_from_wimax_topology(mac)
-			try:
-				bs_hostname = host_name[0][0]
-				bs_site = host_name[0][1]
-			except:
-				bs_hostname = None
-			if memc:
-				if bs_hostname:
-					try:
-						arg_list = []
-						arg_list.append(bs_hostname,bs_site)
-						key = mac + "_topology"
-						memc.set(key,arg_list,360)
-					except:
-						pass
-		else:
-			bs_hostname = ss_params[0]
-			bs_site = ss_params[1]
-        	try:
-                	if bs_hostname:
-                        	query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("wimax_topology",bs_hostname)
-
-				site = bs_site
-				machine_name = site.split('_')[0]
-				socket_ip = _LIVESTATUS[machine_name]['host']
-				socket_port = _LIVESTATUS[machine_name][site]['port']
-
-				query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
-				if query_output[0][0]:
-					plugin_output = str(query_output[0][0].split('OK -')[1])
-					plugin_output = [entry for entry in plugin_output.split(' ')]
-					entry=filter(lambda x: mac in x.lower() , plugin_output)
-					modulation_dl_fec = entry[0].split('=')[1].split(',')[6]
-
-		except:
-                	modulation_dl_fec= None
         return modulation_dl_fec
 
 def convert(x):

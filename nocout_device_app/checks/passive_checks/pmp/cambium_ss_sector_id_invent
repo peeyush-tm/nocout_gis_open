@@ -87,7 +87,7 @@ def check_cambium_ss_sector_id_invent(item, _no_params, info):
                                Exception
     """
     state = 3
-    ss_sector_id = None
+    ss_sector_id = ''
     infotext = "unknown_value"
     try:
         if info:
@@ -97,19 +97,27 @@ def check_cambium_ss_sector_id_invent(item, _no_params, info):
                 n = 2
                 ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		if ss_mac:
-			ss_sector_id = live_query_ss_sector_id(ss_mac )
-			infotext = "%s " % ss_sector_id
-			state = 0
+			try:
+				if memc:
+					ss_list=memc.get(ss_mac)
+					if ss_list:
+						ss_sector_id = ss_list[6]
+			except:
+				pass
+			if ss_sector_id:
+				infotext = "%s " % ss_sector_id
+				state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[("ss_sector_id",ss_sector_id)])
 
 
 check_info["cambium_ss_sector_id_invent"] = {
     'check_function': check_cambium_ss_sector_id_invent,
     'service_description': 'cambium_ss_sector_id_invent',
+    'has_perfdata' : True
 }
 
 #################################################################

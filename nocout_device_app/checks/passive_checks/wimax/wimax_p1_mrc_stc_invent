@@ -24,28 +24,6 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def live_query_p1_mrc_stc(host_name):
-        """
-        Connects to a socket, checks for the WELCOME-MSG and closes the
-        connection.
-        Returns nothing.
-
-        """
-        exit_value = 3
-        pmp1_mrc, pmp1_stc = '', ''
-        try:
-                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
-
-                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
-                if query_output[0][0]:
-                        plugin_output = str(query_output[0][0].split('OK - ')[1])
-                        plugin_output = [entry for entry in plugin_output.split()]
-                        pmp1_mrc, pmp1_stc = plugin_output[13].split('=')[1], plugin_output[14].split('=')[1]
-
-        except:
-                pass
-        return pmp1_mrc, pmp1_stc
 
 
 def check_wimax_p1_mrc_stc_invent(item, _no_params, info):
@@ -75,7 +53,14 @@ def check_wimax_p1_mrc_stc_invent(item, _no_params, info):
     infotext = "unknown_value"
     pmp1_mrc, pmp1_stc = '', ''
     try:
-        pmp1_mrc, pmp1_stc = live_query_p1_mrc_stc(g_hostname)
+	    if memc:
+		    value_list = memc.get('%s_bs_params' % g_hostname)
+		    value_list = eval(value_list)
+		    if value_list:
+		    	pmp1_mrc,pmp1_stc = (value_list[13],value_list[14])
+    except:
+	    pass
+    try:
 	if pmp1_mrc or pmp1_stc:
 		infotext = "pmp1_mrc=%s pmp1_stc=%s" % (pmp1_mrc,pmp1_stc)
 		state = 0
@@ -84,12 +69,13 @@ def check_wimax_p1_mrc_stc_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext)
+    return (state, infotext,[("pmp1_mrc",pmp1_mrc),("pmp1_stc",pmp1_stc)])
 
 
 check_info["wimax_p1_mrc_stc_invent"] = {
     'check_function': check_wimax_p1_mrc_stc_invent,
     'service_description': 'wimax_p1_mrc_stc_invent',
+    'has_perfdata' : True,
 }
 
 #########################################################################

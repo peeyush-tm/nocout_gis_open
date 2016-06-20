@@ -24,30 +24,6 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def live_query_odu_serial(host_name):
-        """
-        Connects to a socket, checks for the WELCOME-MSG and closes the
-        connection.
-        Returns nothing.
-
-        """
-        exit_value = 3
-        odu_serial_1, odu_serial_2 = '', ''
-        try:
-                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
-
-                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
-                if query_output[0][0]:
-                        plugin_output = str(query_output[0][0].split('OK - ')[1])
-                        plugin_output = [entry for entry in plugin_output.split()]
-                        odu_serial_1, odu_serial_2 = plugin_output[6].split('=')[1], plugin_output[7].split('=')[1]
-
-        except:
-                pass
-        return odu_serial_1, odu_serial_2
-
-
 def check_wimax_odu_serial_invent(item, _no_params, info):
     """
             check_wimax_odu_serial_invent function calcdlates the operating ptx
@@ -76,7 +52,14 @@ def check_wimax_odu_serial_invent(item, _no_params, info):
     odu_serial_1= ''
     odu_serial_2= ''
     try:
-        odu_serial_1, odu_serial_2 = live_query_odu_serial(g_hostname)
+	    if memc:
+		    value_list = memc.get('%s_bs_params' % g_hostname)
+		    value_list = eval(value_list)
+		    if value_list:
+		    	odu_serial_1,odu_serial_2 = (value_list[6],value_list[7]) 
+    except:
+	    pass
+    try:
         if odu_serial_1 or odu_serial_2:
                 infotext = "odu1=%s odu2=%s" % (odu_serial_1, odu_serial_2)
                 state = 0
@@ -85,12 +68,13 @@ def check_wimax_odu_serial_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext)
+    return (state, infotext,[("odu1",odu_serial_1),("odu2",odu_serial_2)])
 
 
 check_info["wimax_odu_serial_invent"] = {
     'check_function': check_wimax_odu_serial_invent,
     'service_description': 'wimax_odu_serial_invent',
+    'has_perfdata' : True,
 }
 
 #########################################################################

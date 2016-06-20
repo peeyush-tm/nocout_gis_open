@@ -1,6 +1,4 @@
 #!/usr/bin/python
-from mysql_connection import memc
-
 """
 Color code of BS Poller script.
 
@@ -44,6 +42,7 @@ def check_cambium_bs_sector_id_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
+    sector_id = ''
     try:
         if info:
             if info[0][0]:
@@ -51,22 +50,25 @@ def check_cambium_bs_sector_id_invent(item, _no_params, info):
 		bs_ip = info[0][0]
                 state = 0
                 infotext = "%s_%s" % (bs_ip,color_code)
+		sector_id = infotext
 		key = g_hostname + '_sec_id'
 		try:
 			if memc:
 				memc.set(key,infotext)
 		except:
 			pass
+			
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[("bs_sector_id",sector_id)])
 
 
 check_info["cambium_bs_sector_id_invent"] = {
     'check_function': check_cambium_bs_sector_id_invent,
     'service_description': 'cambium_bs_sector_id_invent',
+    'has_perfdata' : True
 }
 
 #########################################################################

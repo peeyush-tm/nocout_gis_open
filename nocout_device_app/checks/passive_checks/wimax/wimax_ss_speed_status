@@ -24,29 +24,6 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
-def live_query_ss_speed(host_name):
-        """
-        Connects to a socket, checks for the WELCOME-MSG and closes the
-        connection.
-        Returns nothing.
-
-        """
-        exit_value = 3
-        ss_speed = None
-        try:
-                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_ss_port_params",host_name)
-
-                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
-                if query_output[0][0]:
-                        plugin_output = str(query_output[0][0].split('OK -')[1])
-                        plugin_output = [entry for entry in plugin_output.split(',')]
-                        ss_speed = plugin_output[0].split('=')[1]
-
-        except:
-                ss_speed = None
-        return ss_speed
-
 
 
 def check_wimax_ss_speed_status(item, _no_params, info):
@@ -74,9 +51,15 @@ def check_wimax_ss_speed_status(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
-    ss_speed= None
+    ss_speed=''
     try:
-	ss_speed =live_query_ss_speed(g_hostname)
+	    if memc:
+		    value_list = memc.get('%s_ss_port_params' % g_hostname)
+		    if value_list:
+		    	ss_speed = value_list[0]
+    except:
+	    pass
+    try:
 	if ss_speed:
 		ss_speed = ss_speed.strip('\r')
 		ss_speed = ss_speed.replace(' ',"_")

@@ -56,7 +56,7 @@ def check_rad5k_speed_status(item, _no_params, info):
 		infotext = "type_mismatch_value"
 	except:
 		infotext = "unknown_value"
-	return(state,infotext,[("ss_spped",speed)])
+	return(state,infotext,[("ss_speed",speed)])
 
 check_info["rad5k_speed_status"] = {
 	'check_function' : check_rad5k_speed_status,

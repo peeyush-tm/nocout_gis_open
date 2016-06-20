@@ -41,6 +41,7 @@ def check_wimax_bs_ip_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    bs_ip = ''
     try:
         if info:
             if info[0][0]:
@@ -49,12 +50,13 @@ def check_wimax_bs_ip_invent(item, _no_params, info):
                 infotext = "%s" % bs_ip
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[("bs_ip",bs_ip)])
 
 
 check_info["wimax_bs_ip_invent"] = {
     'check_function': check_wimax_bs_ip_invent,
     'service_description': 'wimax_bs_ip_invent',
+    'has_perfdata': True,
 }
 
 #################################################################

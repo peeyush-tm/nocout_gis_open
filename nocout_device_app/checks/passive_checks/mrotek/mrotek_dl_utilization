@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import re
 import time
-from mysql_connection import memc
 """
 Downlink utilizationPoller script.
 
@@ -22,10 +21,10 @@ Total Downlink utilization is sent to device application
 
 def check_mrotek_dl_utilization(item, _no_params, info):
     """
-                check_mrotek_dl_utilization function calcdlates the downlink utilization
+                check_mrotek_dl_utilization function calculates the downlink utilization
 
                 Args:
-                        item (str) Specific item on SNMP output on which we want to filter resdlts
+                        item (str) Specific item on SNMP output on which we want to filter results
                 
                 Kwargs:
                         params (tuple) Check parameters for critical and warning state of service
@@ -73,7 +72,7 @@ def check_mrotek_dl_utilization(item, _no_params, info):
 				if memc:
 					key = str(g_hostname) + "_dl"
 					rate1 = str(round(rate,2))+","+str(index1)   # to send port number to KPI with rate
-					memc.set(key,rate1,900)
+					memc.set(key,rate,300)
 			except:
 				pass
 		except MKCounterWrapped:

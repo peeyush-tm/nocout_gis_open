@@ -38,56 +38,6 @@ def live_query_for_rad5k_ss_dl_utilization(serial_number):
                                 dl_utilization = value_list[2]
                         except:
                                 dl_utilization = None
-                if dl_utilization is None:
-                        try:
-                                key_bs = serial_number + "_topology"
-                                bs_params = memc.get(key_bs)
-                        except :
-                                pass
-        if dl_utilization is None :
-                if not bs_params :
-                        host_name = extract_host_from_rad5k_topology(serial_number)
-                        try :
-                                bs_hostname = host_name[0][0]
-                                bs_site = host_name[0][1]
-                        except :
-                                bs_hostname = None
-                        if memc :
-                                if bs_hostname :
-                                        try :
-                                                arg_list = []
-                                                arg_list.append([bs_hostname,bs_site])
-                                                key = serial_number + "_topology"
-                                                memc.set(key,arg_list,360)
-                                        except Exception,e :
-                                                pass
-                else :
-                        bs_hostname = bs_params[0][0]
-                        bs_site = bs_params[0][1]
-
-                try:
-                        if bs_hostname:
-                                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("rad5k_topology_discover", bs_hostname)
-
-
-                                site = bs_site
-                                machine_name = site.split('_')[0]
-                                socket_ip = _LIVESTATUS[machine_name]['host']
-                                socket_port = _LIVESTATUS[machine_name][site]['port']
-
-                                query_output = eval(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
-				#print query_output
-	                        if query_output[0][0]:
-                                        plugin_output = str(query_output[0][0].split(' - ')[1])
-                                        plugin_output = [entry for entry in plugin_output.split(' ')]
-					#print plugin_output
-                                        entry=filter(lambda x: serial_number in x, plugin_output)
-                                        dl_utilization = entry[0].split('=')[1].split('/')[2]
-
-                except Exception,e:
-			#print e
-                        dl_utilization = None
         return dl_utilization
 
 def check_rad5k_ss_dl_utilization(item, _no_params, info):

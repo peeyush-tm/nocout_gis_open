@@ -6,8 +6,13 @@ import socket
 import json
 import os
 import memcache
-from mysql_connection import memc
 import re
+try:
+    from mysql_connection_1 import db_connection
+    db_obj = db_connection()
+    memc = db_obj.memcache_connect
+except:
+    memc = None
 """
 operating Frequency of ss device  Poller script.
 
@@ -39,12 +44,14 @@ def get_from_socket(socket_ip,socket_port, query,site,machine):
          Exception: SyntaxError,socket error
     """
 
-    my_machine = nagios_user.split('_')[0]
-    if site == nagios_user:
-        s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.connect(livestatus_unix_socket)
-    elif machine == my_machine:
-        socket_path = "/omd/sites/%s/tmp/run/live" % site
+
+    my_site  = var_dir.split('/')[3]   
+    #my_machine = nagios_user.split('_')[0]
+    #if site == nagios_user:
+    #    s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    #    s.connect(livestatus_unix_socket)
+    if site == my_site:
+        socket_path = "/omd/dev_slave/%s/var/run/live" % site
         s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.connect(socket_path)
     else:
@@ -53,11 +60,21 @@ def get_from_socket(socket_ip,socket_port, query,site,machine):
     s.settimeout(60.0)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
-    try:
-        output = s.recv(100000000)
-        output.strip("\n")
-    except:
-        output=None
+    output = ''
+    while True:
+     try:
+        out = s.recv(100000000)
+     except socket.timeout,e:
+	break
+     out.strip()
+     if not len(out):
+        break
+     output += out
+    #try:
+    #    output = s.recv(100000000)
+    #    output.strip("\n")
+    #except:
+    #    output=None
     return output
 
 
@@ -85,10 +102,11 @@ def connection_telnet_bs_for_topology(hostname, port,pmp1_sec_id,pmp2_sec_id):
         data = tn.read_all()
 
         plugin_message= ""
+
+	ss_ip_list = []
 	sec_ss_ip = {}
 	sec_ss_ip[1] = []
-	sec_ss_ip[2] = []
-	ss_ip_list = []
+	sec_ss_ip[2] = []			
 	try:
         	row_list=  [row for row in data.split("\n")]
         	strToFind = re.compile(r'([0-9A-F]{2}[:-]){5}([0-9A-F]{2})', re.I)
@@ -137,7 +155,6 @@ def connection_telnet_bs_for_topology(hostname, port,pmp1_sec_id,pmp2_sec_id):
 					sec_ss_ip[pmp_port].append(ss_ip)
     			except:
         			pass
-
 		try:
 			if memc:
 				#ss_ip_list.append(sec_ss_ip)

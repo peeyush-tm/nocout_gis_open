@@ -26,38 +26,6 @@ Device on which Frequency operating is sent to device application
 
 
 
-
-def live_query_for_session_uptime(host_name,mac,site):
-        """
-        Connects to a socket, checks for the WELCOME-MSG and closes the
-        connection.
-        Returns nothing.
-
-        """
-        exit_value = 3
-        uptime = None
-        try:
-                machine_name = site.split('_')[0]
-                socket_ip = _LIVESTATUS[machine_name]['host']
-                socket_port = _LIVESTATUS[machine_name][site]['port']
-
-                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_bs_ss_params",host_name)
-
-                query_output = eval(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
-                if query_output[0][0]:
-                        plugin_output = str(query_output[0][0].split('OK -')[1])
-                        plugin_output = [entry for entry in plugin_output.split(' ')]
-                        plugin_output = filter(lambda x: mac in x,plugin_output)
-                        uptime = plugin_output[0].split('=')[1].split(',')[4]
-
-        except:
-                uptime = None
-        return uptime
-
-
-
-
 def check_wimax_ss_session_uptime(item, _no_params, info):
     """
             check_wimax_ss_session_uptime function calcdlates the operating ptx
@@ -91,7 +59,6 @@ def check_wimax_ss_session_uptime(item, _no_params, info):
         mac_list=map(lambda x: convert(x),mac_info)
         if mac_list[1] != '00:00:00:00:00:00':
                 ss_mac= mac_list[1]
-                state = 0
         else:
                 index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
                 index =index[0]
@@ -105,24 +72,6 @@ def check_wimax_ss_session_uptime(item, _no_params, info):
 					ss_session_uptime = value_list[4]
 				except:
 					ss_session_uptime = None
-			if not ss_session_uptime:
-				try:
-                                	key1 = ss_mac + "_topology"
-                                	ss_params = memc.get(key1)
-                        	except:
-                                	pass
-
-				
-		if not ss_session_uptime:
-			if not ss_params:
-				host_name = extract_host_from_wimax_topology(ss_mac)
-				host = host_name[0][0]
-				site = host_name[0][1]
-			else:
-				host = ss_params[0]
-				site = ss_params[1]
-			if host:
-				ss_session_uptime = live_query_for_session_uptime(host,ss_mac,site)
 		if ss_session_uptime:
 			infotext = "Device session uptime is %s " % ss_session_uptime
 			state = 0
