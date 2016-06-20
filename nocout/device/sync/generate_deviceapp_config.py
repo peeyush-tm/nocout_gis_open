@@ -7,15 +7,15 @@ from itertools import izip_longest
 from datetime import datetime
 from operator import itemgetter
 from pprint import pformat
-
+import imp
 from celery.utils.log import get_task_logger
 from celery import Celery
-from celery_sentinel import register_celery_alias
+from celery.utils.celery_sentinel import register_celery_alias
 register_celery_alias('redis-sentinel')
 
 from mysql_connection import mysql_conn
 nocout_site_name= 'master_UA'
-db_ops_module = imp.load_source('db_ops', '/apps/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 logger = get_task_logger(__name__)
 info, warning, error = (
