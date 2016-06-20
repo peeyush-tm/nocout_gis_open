@@ -67,7 +67,10 @@ class Config:
             #'service.service_etl',
 	    'service.kpi_etl',
 	    #'events.events_etl',
-	    #'add_dummy'
+	    #'add_dummy',
+	    'trap_handler.events_snmptt',
+	    'trap_handler.mapper',
+            'trap_handler.read_raw_traps',
 	)
     CELERYD_LOG_COLOR = False
     CELERY_CHORD_PROPAGATES = False
@@ -155,6 +158,39 @@ class Config:
 	        'schedule': crontab(minute='*/5'),
 	        'kwargs':{'site_name':'ospf2_slave_8'}
 	      },
+            'insert-network-event-ospf1': {
+                'task': 'insert_network_event',
+                'schedule': crontab(minute='*/2'),
+                'kwargs': {'machine_name' : 'ospf1'}
+                },
+	    'insert-bs-ul-issue-event-ospf1': {
+	    	'task': 'insert_bs_ul_issue_event',
+		'schedule': crontab(minute='*/5'),
+                'kwargs': {'machine_name': 'ospf1'},
+		},
+            #'get_passive_checks-ospf2-1-service': {
+            #   'task': 'get_passive_checks_output',
+            #   'schedule': crontab(minute='*/5'),
+            #   'kwargs': {'site_name': 'ospf2_slave_1'}
+            #   },
+            #'get_passive_checks-ospf2-1-interface': {
+            #   'task': 'get_passive_checks_output',
+            #   'schedule': crontab(minute=4),
+            #   'kwargs': {'site_name': 'ospf2_slave_1',
+            #              'ends_with' : 'status'
+            #             }
+            #   },
+
+	     'load_customer_count_in_redis': {
+		'task': 'load_customer_count_in_redis',
+		'schedule' : crontab(minute=5)
+	     },
+
+             'read_raw_traps': {
+                'task': 'read_raw_traps',
+                'schedule' : crontab(minute='*/5')
+             },
+
             }
 
 app.config_from_object(Config)

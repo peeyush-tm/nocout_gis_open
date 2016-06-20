@@ -26,7 +26,7 @@ from django.db.models.query import ValuesQuerySet, Q
 from django.views.generic import ListView
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from user_profile.models import UserProfile
+from user_profile.models import UserProfile, PowerLogs
 from activity_stream.models import UserAction
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
@@ -179,6 +179,149 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFil
         }
 
         return ret
+
+
+class PowerLogsInit(PermissionsRequiredMixin, ListView):
+    """
+
+    """
+    model = PowerLogs
+    template_name = 'activity_stream/power_logs.html'
+    required_permissions = ('activity_stream.view_useraction',)
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the context variables required in the template rendering.
+        """
+        context = super(PowerLogsInit, self).get_context_data(**kwargs)
+        context['datatable_headers'] = json.dumps([
+            {'mData': 'user_id', 'sTitle': 'User', 'bSortable': True},
+            {'mData': 'action', 'sTitle': 'Action', 'bSortable': True},
+            {'mData': 'logged_at', 'sTitle': 'Timestamp', 'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'bSortable': True},
+            {'mData': 'reason', 'sTitle': 'Reason', 'bSortable': True},
+            {'mData': 'ss_ip', 'sTitle': 'SS IP', 'bSortable': True},
+            {'mData': 'customer_alias', 'sTitle': 'Customer', 'bSortable': True}
+        ])
+
+        return context
+
+
+class PowerLogsListing(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
+    """
+    """
+    model = PowerLogs
+    required_permissions = ('activity_stream.view_useraction',)
+    columns = [
+        'user_id',
+        'action',
+        'logged_at',
+        'circuit_id',
+        'reason',
+        'ss_ip',
+        'customer_alias'
+    ]
+
+    order_columns = columns
+
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+        """
+        # get global search value
+        sSearch = self.request.GET.get('search[value]', None)
+
+        if sSearch and not self.pre_camel_case_notation:
+            q = Q()
+            for col in self.columns:
+                if col == 'logged_at':
+                    continue
+
+                q |= Q(**{'%s__icontains' % col : sSearch})
+
+            qs = qs.filter(q)
+        return self.advance_filter_queryset(qs)
+
+    def get_initial_queryset(self):
+        """
+        Preparing  initial queryset for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        # Get all the user ids of logged in user's organization.
+        user_id_list = UserProfile.objects.filter(
+            organization__in=self.nocout_utils.logged_in_user_organizations(self)
+        ).values_list('id')
+
+        # Show logs from start time to end time.
+        start_time = datetime.today() - timedelta(days=30)
+        end_time = datetime.today()
+
+        # Get user logs of last 30 days for all fetched user id's.
+        user_logs_resultset = self.model.objects.filter(
+            user_id__in=user_id_list,
+            logged_at__gt=start_time,
+            logged_at__lte=end_time,
+        ).values(*self.columns).order_by('-logged_at')
+
+        return user_logs_resultset
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+        """
+        if qs:
+            for dct in qs:
+                dct['logged_at'] = self.nocout_utils.convert_utc_to_local_timezone(dct['logged_at'])
+                user_id = dct['user_id']
+                try:
+                    dct['user_id'] = unicode(UserProfile.objects.get(id=user_id))
+                except Exception, e:
+                    dct['user_id'] = 'User Unknown/Deleted'
+                    pass
+            return list(qs)
+
+        return []
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering, prepare and display the data on the datatable.
+        """
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # Number of records before filtering.
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # Number of records after filtering.
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+
+        # If the 'qs' is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # Therefore changing its type to list.
+        if not (qs and isinstance(qs, ValuesQuerySet)) and len(qs):
+            qs = list(qs)
+
+        # Preparing output data.
+        aaData = self.prepare_results(qs)
+
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+
+        return ret    
 
 
 @csrf_exempt

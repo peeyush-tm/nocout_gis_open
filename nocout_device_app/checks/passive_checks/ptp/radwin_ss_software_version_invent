@@ -1,0 +1,63 @@
+#!/usr/bin/python
+
+
+"""
+# ######################################################################
+# Function: radwin_ss_software_version_invent
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+
+"""
+
+def radwin_ss_software_version_invent(item, _no_params, info):
+    """
+            radwin_ss_software_version_invent function calcdlates the operating ptx
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter resdlts
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - 5835
+
+                    Raises:
+                            ValueError ,Exception
+"""
+    state = 3
+    infotext = "unknown_value"
+    version= None
+    try:
+	version = info[0][0]
+	if version:
+		infotext = "%s" % version
+		state = 0
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext,[("ss_software_version", version)])
+
+
+check_info["radwin_ss_software_version_invent"] = {
+    'check_function': radwin_ss_software_version_invent,
+    'service_description': 'radwin_ss_software_version_invent',
+    'has_perfdata' : True,
+}
+
+#########################################################################
+#	SNMP OID for the operating ptx
+#########################################################################
+snmp_info["radwin_ss_software_version_invent"] = ( ".1.3.6.1.4.1.4458.1000.1.1.3", ["0"] )

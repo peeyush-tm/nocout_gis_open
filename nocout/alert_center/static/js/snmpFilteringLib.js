@@ -56,9 +56,12 @@ $('input[name="alarm_type"]').change(function(e) {
         updated_url_wimax = "",
         updated_url_all = "";
 
+    show_hide_count_column();
+
     // Update converter url
-    var array1 = converter_url.split("?"),
-        array2 = array1[1].split("&");
+    var array1 = converter_url ? converter_url.split("?") : [],
+        array2 = array1 && array1.length > 1 ? array1[1].split("&") : [];
+
     array2[0] = new_get_param
     array1[1] = array2.join('&');
     updated_url_converter = array1.join('?')
@@ -93,6 +96,49 @@ $('input[name="alarm_type"]').change(function(e) {
     // Trigger click event on active tab
     $("#" + active_tab_id).trigger('click', true);
 });
+
+function show_hide_count_column() {
+    if (!show_customer_count) {
+        return false;
+    }
+
+    var hide_class = 'hide',
+        alarm_type = $.trim($('input[name="alarm_type"]:checked').val());
+
+    if (alarm_type == 'current') {
+        hide_class = '';
+    }
+
+    var all_headers_list = JSON.parse($("#snmp_all_tab").attr("data_header")),
+        pmp_headers_list = JSON.parse($("#snmp_pmp_tab").attr("data_header")),
+        wimax_headers_list = JSON.parse($("#snmp_wimax_tab").attr("data_header"));
+
+    for (var i=0;i<all_headers_list.length;i++) {
+        if (all_headers_list[i]['mData'] == 'customer_count') {
+            all_headers_list[i]['sClass'] = hide_class;
+        }
+    }
+
+    for (var i=0;i<pmp_headers_list.length;i++) {
+        if (pmp_headers_list[i]['mData'] == 'customer_count') {
+            pmp_headers_list[i]['sClass'] = hide_class;
+        }
+    }
+
+    for (var i=0;i<wimax_headers_list.length;i++) {
+        if (wimax_headers_list[i]['mData'] == 'customer_count') {
+            wimax_headers_list[i]['sClass'] = hide_class;
+        }
+    }
+
+    // Update headers data in tabs header attribute
+    $("#snmp_all_tab").attr("data_header", JSON.stringify(all_headers_list));
+    $("#snmp_pmp_tab").attr("data_header", JSON.stringify(pmp_headers_list));
+    $("#snmp_wimax_tab").attr("data_header", JSON.stringify(wimax_headers_list));
+    
+    return true;
+
+}
 
 /**
  * This event triggers when 'Advance Filter' button clicked & will show the filtering form

@@ -115,12 +115,12 @@ def extract_juniper_util_data(host_params,**args):
 					entry = entry+"_kpi"
 					war = float(args['war'])
 					crit = float(args['crit'])
-
+					kpi = round(kpi,2)
 					#tup1 = (entry,kpi, index )
 					#dict1_kpi.append(tup1)
 				except Exception,e:
 					continue
-			kpi = round(kpi,2)
+			#kpi = round(kpi,2)
 			if kpi or kpi == 0:
 				perf += str(entry) + "=%s;%s;%s;%s " % (kpi,war,crit,qos_value[index])
 				if kpi >= crit:
@@ -370,67 +370,77 @@ def extract_wimax_bs_sec_id(hostname,memc_conn):
 
 
 @app.task(base=DatabaseTask, name ='extract_wimax_bs_ul_issue_data')
-def extract_wimax_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,sec_type,**args):
+def extract_wimax_bs_ul_issue_data(wimax_bs_ul_issue_data,**args):
     count = 0
     perf = ''
     sec_ul_issue = ''
     state_string = 'unknown'
     #warning('wimax ss entry: {0}'.format(ul_issue_list))
     rds_cli = RedisInterface()
-    for service_dict in ul_issue_list:
-        try:
-            value = int(service_dict['perf_data'].split('=')[1].split(';')[0])
-        except Exception,e:
-            warning('wimax_bs_ul_issue: {0}'.format(e))
-            continue
-        else:
-            count = count +value
-    try:    
-        if len(ul_issue_list):    
-            sec_ul_issue = count/float(len(ul_issue_list)) * 100
-        if sec_ul_issue != '':
-            sec_ul_issue = "%.2f" % sec_ul_issue
-            if float(sec_ul_issue) < float(args['war']):
-                state = 0
-                state_string = "ok"
-            elif float(sec_ul_issue) >= float(args['crit']):
-                state = 2
-                state_string = "critical"
-            else:
-                state = 1
-                state_string = "warning"
-        
-        perf = ''.join('%s_ul_issue' % sec_type + "=%s;%s;%s;%s" %(sec_ul_issue,args['war'],args['crit'],sect_id))
-    except Exception,e:
-        warning('wimax bs entry: {0}'.format(e))
-        perf = ';%s;%s;%s' % (args['war'],args['crit'],sect_id)
-    args['service'] = 'wimax_bs_ul_issue_kpi'
-    age_of_state = age_since_last_state(host_name, args['service'], state_string)
-    bs_service_dict = service_dict_for_kpi_services(
-            perf,
-            state_string,
-            host_name,
-            site,
-            ip,
-            age_of_state,
-            **args)
-    bs_service_dict['refer'] =sect_id
-    ul_issue_list.append(bs_service_dict)        
-    #warning('wimax bs ul issue: {0}'.format(len(ul_issue_list)))
-    rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
-    insert_bs_ul_issue_data_to_redis(bs_service_dict)
+    bs_service_dict_list = []
+    for (ul_issue_list, host_name, site, ip, sect_id, sec_type) in wimax_bs_ul_issue_data :
+            perf = ''
+            sec_ul_issue = ''
+    	    state_string = 'unknown'
+	    for service_dict in ul_issue_list:
+		try:
+		    value = int(service_dict['perf_data'].split('=')[1].split(';')[0])
+		except Exception,e:
+		    warning('wimax_bs_ul_issue: {0}'.format(e))
+		    continue
+		else:
+		    count = count +value
+	    try:    
+		if len(ul_issue_list):    
+		    sec_ul_issue = count/float(len(ul_issue_list)) * 100
+		    if sec_ul_issue > 100:
+			sec_ul_issue = 100
+		if sec_ul_issue not in ['',None]:
+		    sec_ul_issue = "%.2f" % sec_ul_issue
+		    if float(sec_ul_issue) < float(args['war']):
+			state = 0
+			state_string = "ok"
+		    elif float(sec_ul_issue) >= float(args['crit']):
+			state = 2
+			state_string = "critical"
+		    else:
+			state = 1
+			state_string = "warning"
+		
+		perf = ''.join('%s_ul_issue' % sec_type + "=%s;%s;%s;%s" %(sec_ul_issue,args['war'],args['crit'],sect_id))
+	    except Exception,e:
+		error('wimax bs entry: {0} {1} {2} {3} {4}'.format(e,sec_ul_issue,perf,args['war'],args['crit']))
+		perf = ''
+	    args['service'] = 'wimax_bs_ul_issue_kpi'
+	    age_of_state = age_since_last_state(host_name, args['service'], state_string)
+	    bs_service_dict = service_dict_for_kpi_services(
+		    perf,
+		    state_string,
+		    host_name,
+		    site,
+		    ip,
+		    age_of_state,
+		    **args)
+	    bs_service_dict['refer'] =sect_id
+	    ul_issue_list.append(bs_service_dict)        
+	    #warning('wimax bs ul issue: {0}'.format(len(ul_issue_list)))
+	    rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
+	    #bs_service_dict_list.append((bs_service_dict, site))
+    #insert_bs_ul_issue_data_to_redis(bs_service_dict)
 
-def insert_bs_ul_issue_data_to_redis(bs_service_dict):
+def insert_bs_ul_issue_data_to_redis(bs_service_dict_list):
     try :
-	print "BS Dict Here",bs_service_dict
+	#print "BS Dict Here",bs_service_dict
 	#bs_service_dict = self.bs_service_dict
         rds_cli = RedisInterface()
-        print "BS UL issue record state : %s \n" %str(bs_service_dict['state'])
-	if bs_service_dict['state'] in ['ok','warning','critical'] :
-	    rds_cli.redis_cnx.rpush('q:bs_ul_issue_event', bs_service_dict)
-            print "BS UL issue record inserted in Redis : ",rds_cli.redis_cnx.lrange('q:bs_ul_issue_event',0, -1),"\n"
+        #print "BS UL issue record state : %s \n" %str(bs_service_dict['state'])
+        for (bs_service_dict,site) in bs_service_dict_list :
+	    machine_name = site.split('_')[0]
+	    if bs_service_dict['state'] in ['ok','warning','critical'] :
+	        rds_cli.redis_cnx.rpush('q:bs_ul_issue_event:%s' % machine_name, bs_service_dict)
+                #print "BS UL issue record inserted in Redis : ",rds_cli.redis_cnx.lrange('q:bs_ul_issue_event',0, -1),"\n"
     except Exception ,exp :
-        print "Error in Redis DB Data Insertion Cambium BS UL Issue : %s \n" % str(exp)
+        print "Error in Redis DB Data Insertion UL Issue : %s \n" % str(exp)
 
 def extract_cambium_util_data(host_params,**args):
     perf = cam_util = sec_id = plugin_message = ''
@@ -560,8 +570,17 @@ def extract_mrotek_util_data(host_params,**args):
         try:
                 if args['memc']:
                     #sec_id = args['memc'].get(str(hostname) + "_sec_id")
-                    mrotek_util = args['memc'].get(str(hostname) + "_" + util_type)
+                    #mrotek_util = args['memc'].get(str(hostname) + "_" + util_type)
                     #warning('radwin util: {0}'.format(rad_util))
+                    util_values =  args['memc'].get(str(hostname) + "_" + util_type) # got values like '0.7,9'
+                    util_list = util_values.split(",")
+                    try :
+                        mrotek_util = float(util_list[0])
+                        index1 = util_list[1]
+                        data_s = "fe_"+str(index1)+"_kpi"
+                    except Exception as e:
+                        error('Mrotek conversion: {0}'.format(e))
+
                 if mrotek_util != None and isinstance(mrotek_util,basestring):
                     mrotek_util = literal_eval(mrotek_util)
         except Exception,e:
@@ -569,8 +588,8 @@ def extract_mrotek_util_data(host_params,**args):
                 #warning('args: {0}'.format(args))
                 sec_id = ''
         try:
-                if mrotek_util != None and capacity[0]:
-                    mrotek_util = (float(mrotek_util)/float(capacity[0])) * 100
+                if mrotek_util != None and capacity[int(index1)-1]:
+                    mrotek_util = (float(mrotek_util)/float(capacity[int(index1)-1])) * 100
                     mrotek_util = round(mrotek_util,2)
                     if mrotek_util < float(args['war']):
                        state = 0
@@ -581,7 +600,7 @@ def extract_mrotek_util_data(host_params,**args):
                     else:
                        state = 1
                        state_string = "warning"
-                perf = "fe_1_kpi" + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
+                    perf = data_s + "=%s;%s;%s" %(mrotek_util,args['war'],args['crit'])
         except Exception,e:
                 #warning('cam ss util: {0}'.format(e))
                 perf = "fe_1_kpi" + "=;%s;%s" %(args['war'],args['crit'])
@@ -700,7 +719,7 @@ def extract_wimax_util_data(host_params,**args):
         service_name = 'wimax_%s_%s_util_bgp' % (sec_type, util_type)
         try:
 	    
-            error('Memc connection: {0}'.format(args['memc']))
+            #error('Memc connection: {0}'.format(args['memc']))
             if args['memc']:
                 sec_id_suffix = "_%s_sec" % sec_type
                 util_suffix = "_%s_%s_util" % (sec_type,util_type)
@@ -824,8 +843,7 @@ def service_dict_for_kpi_services(
 
 
 @app.task(base=DatabaseTask,name='extract_ss_ul_issue_data')
-def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,
-        bs_ip_address,sect_id,sec_type,redis_conn,**args):
+def extract_ss_ul_issue_data(pmp_data_dict,redis_conn,**args):        
     state = 3
     ul_issue =0
     perf = ''
@@ -835,48 +853,89 @@ def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,
     state_string = "unknown"
     service_state_type = ["warning","critical"]
     service_dict_list = []
+    cambium_bs_ul_issue_data = []
+    wimax_bs_ul_issue_data = []
     #warning('ss info: {0}'.format(ss_info))
 
     local_cnx = redis_conn.redis_cnx
     p = local_cnx.pipeline()
-    for entry in ss_info:
-        if entry:
-            host_name ,site ,ip_address = literal_eval(entry[0])
-        else:
-            break
-        try:
-            service_state_out = []
-            ss_serv_key = local_cnx.keys(pattern="ul_issue:%s:*" % host_name)
-            [p.lrange(k, 0 , -1) for k  in ss_serv_key]
-            service_values = p.execute()
-            #warning('service values: {0}'.format(service_values))
-            for entry in service_values:
-                service_state_out.extend(entry)
-                
-            if len(service_state_out) == 4:
-                state_string = "ok"
-                state = 0
-                for entry in service_state_out:
-                    if str(entry).lower() in service_state_type:
-                        ul_issue=1
-                        continue
-                    else:
-                        ul_issue = 0
-                        break
-            perf = 'ul_issue' + "=%s;;;" % (ul_issue)
-        except Exception ,e:
-            warning('error: {0}'.format(e))
-            perf = ''
+    for (ss_info, bs_host_name, bs_site_name, bs_ip_address, sect_id, sec_type) in pmp_data_dict :
+        service_dict_list = []
+        state_string = 'unknown'
+        ul_issue = 0
+	perf = ''
+	for entry in ss_info:
+		if entry:
+		    host_name ,site ,ip_address = literal_eval(entry[0])
+		else:
+		    break
+		try:
+		    service_state_out = []
+		    if 'wimax' in args['service']:
+			ul_intrf_serv_key = local_cnx.keys(pattern="ul_issue:%s:wimax_ul_intrf" % host_name)
+			[p.lrange(k, 0 , -1) for k  in ul_intrf_serv_key]
+			ul_intrf_values = p.execute()
+			dl_intrf_serv_key = local_cnx.keys(pattern="ul_issue:%s:wimax_dl_intrf" % host_name)
+			[p.lrange(k, 0 , -1) for k  in dl_intrf_serv_key]
+			dl_intrf_values = p.execute()
+			if len(dl_intrf_values[0]) == 2 and dl_intrf_values[0][0].lower() == 'critical' and \
+			    dl_intrf_values[0][1].lower() == 'critical':
+			    ul_issue = 0 
+			    state_string = "ok"
+			elif len(ul_intrf_values[0]) == 2 and ul_intrf_values[0][0].lower() in service_state_type and \
+			    ul_intrf_values[0][1].lower() in service_state_type:
+			    ul_issue = 1
+			    state_string = "ok"
+			elif len(ul_intrf_values[0]) == 2  and len(dl_intrf_values[0]) == 2:
+			    ul_issue = 0
+			    state_string = "ok"
+		    else:
+			ul_jitter_count = 0
+			rereg_count = 0
+			ul_jitter_key = local_cnx.keys(pattern="ul_issue:%s:cambium_ul_jitter" % host_name)
+			rereg_count_key = local_cnx.keys(pattern="ul_issue:%s:cambium_rereg_count" % host_name)
+			[p.lrange(k, 0 , -1) for k  in ul_jitter_key]
+			ul_jitter_values = p.execute()
+			[p.lrange(k, 0 , -1) for k  in rereg_count_key]
+			rereg_values = p.execute()
+			#error('ss ul issue: {0} {1} {2}'.format(ul_jitter_values,rereg_values,host_name))
+			try:
+			    for entry in ul_jitter_values[0]:
+				if entry in service_state_type:
+				    ul_jitter_count = ul_jitter_count +1
+			except:
+			    ul_jitter_count = 0
+			for entry in rereg_values[0]:
+			    if entry in service_state_type:
+				rereg_count = rereg_count + 1
 
-    	age_of_state = age_since_last_state(host_name, args['service'], state_string)
-    	service_dict = service_dict_for_kpi_services(
-            perf,state_string,host_name,
-            site,ip_address,age_of_state,**args)
-    	service_dict_list.append(service_dict)
+			
+			if ul_jitter_count == 2 or rereg_count == 2 :
+			    state_string = "ok"
+			    state = 0
+			    ul_issue = 1
+			else:
+			    state_string = "ok"
+			    ul_issue = 0
+		    perf = 'ul_issue' + "=%s;;;" % (ul_issue)
+		except Exception ,e:
+		    warning('error: {0}'.format(e))
+		    perf = ''
+
+		age_of_state = age_since_last_state(host_name, args['service'], state_string)
+		service_dict = service_dict_for_kpi_services(
+		    perf,state_string,host_name,
+		    site,ip_address,age_of_state,**args)
+		service_dict_list.append(service_dict)
+	if 'cambium' in args['service']:
+		cambium_bs_ul_issue_data.append((service_dict_list,bs_host_name,bs_site_name,bs_ip_address,sect_id))
+	elif 'wimax' in args['service']:
+		wimax_bs_ul_issue_data.append((service_dict_list,bs_host_name,bs_site_name,bs_ip_address,sect_id,sec_type))
 
     #redis_conn = str(args['redis'])
     #arg['redis'] = ''
     #warning(' ul issue dict: {0}'.format(len(service_dict_list)))
+    """
     if 'cambium' in args['service']:
         extract_cambium_bs_ul_issue_data.s(
                 service_dict_list,
@@ -894,7 +953,11 @@ def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,
                 sect_id ,
                 sec_type,
                 **args).apply_async()
-
+    """
+    if 'cambium' in args['service']:
+        extract_cambium_bs_ul_issue_data.s(cambium_bs_ul_issue_data,**args).apply_async()
+    elif 'wimax' in args['service']:
+        extract_wimax_bs_ul_issue_data.s(wimax_bs_ul_issue_data,**args).apply_async()
 
 @app.task(base=DatabaseTask,name='call_kpi_services')
 def call_kpi_services(**opt):
@@ -1278,7 +1341,7 @@ def call_kpi_services(**opt):
 
 
 @app.task(base=DatabaseTask, name='call_tasks')
-def call_tasks(hosts, services, services_thresholds, site_name=None, func=None, batch=500):
+def call_tasks(hosts, services, services_thresholds, site_name=None, func=None, batch=200):
     """ Sends messages for given tasks in celery queue"""
     redis_cnx = RedisInterface(custom_conf={'db': INVENTORY_DB}).redis_cnx
     p = redis_cnx.pipeline()
@@ -1561,50 +1624,59 @@ def extract_kpi_services_data(**args):
 
 
 @app.task(base=DatabaseTask, name ='extract_cambium_bs_ul_issue_data')
-def extract_cambium_bs_ul_issue_data(ul_issue_list,host_name,site,ip,sect_id,**args):
+def extract_cambium_bs_ul_issue_data(bs_ul_issue_data,**args):
     count = 0
     perf = ''
     sec_ul_issue = ''
     state_string = 'uknown'
     #warning('cambium ss entry: {0}'.format(ul_issue_list))
     rds_cli = RedisInterface()
-    for service_dict in ul_issue_list:
-        try:
-            value = int(service_dict['perf_data'].split('=')[1])
-        except:
-            continue
-        count = count +value
+    bs_service_dict_list = []
+    for (ul_issue_list, host_name, site, ip, sect_id) in bs_ul_issue_data :
+            perf = ''
+            sec_ul_issue = ''
+            state_string = 'unknown'
+	    for service_dict in ul_issue_list:
+		try:
+		    value = int(service_dict['perf_data'].split('=')[1])
+		except:
+		    continue
+		count = count +value
 
-    if len(ul_issue_list):
-        sec_ul_issue = count/float(len(ul_issue_list)) * 100
-    try:
-        if sec_ul_issue != '':
-            sec_ul_issue = "%.2f" % sec_ul_issue
-            if float(sec_ul_issue) < args['war']:
-                state = 0
-                state_string = "ok"
-            elif float(sec_ul_issue) >= args['crit']:
-                state = 2
-                state_string = "critical"
-            else:
-                state = 1
-                state_string = "warning"
-        perf = ''.join(
-                'bs_ul_issue' + "=%s;%s;%s;%s" %(sec_ul_issue,args['war'],
-                    args['crit'],sect_id))
-    except:
-        perf = 'bs_ul_issue'+'=;%s;%s;%s' % (args['war'],args['crit'],sect_id)
-        
-    args['service'] = 'cambium_bs_ul_issue_kpi'
-    age_of_state = age_since_last_state(host_name, args['service'], state_string)
-    bs_service_dict = service_dict_for_kpi_services(
-            perf,state_string,
-            host_name,site,ip,age_of_state,**args)
-    bs_service_dict['refer'] =sect_id
-    ul_issue_list.append(bs_service_dict)
-    #warning('cambium bs entry: {0}'.format(len(ul_issue_list)))
-    rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
-    insert_bs_ul_issue_data_to_redis(bs_service_dict)
+	    if len(ul_issue_list):
+		sec_ul_issue = count/float(len(ul_issue_list)) * 100
+		if sec_ul_issue > 100:
+		    sec_ul_issue = 100
+	    try:
+		if sec_ul_issue not in ['',None]:
+		    sec_ul_issue = "%.2f" % sec_ul_issue
+		    if float(sec_ul_issue) < args['war']:
+			state = 0
+			state_string = "ok"
+		    elif float(sec_ul_issue) >= args['crit']:
+			state = 2
+			state_string = "critical"
+		    else:
+			state = 1
+			state_string = "warning"
+		perf = ''.join(
+			'bs_ul_issue' + "=%s;%s;%s;%s" %(sec_ul_issue,args['war'],
+			    args['crit'],sect_id))
+	    except Exception,e:
+    	        error('cambium ss entry: {0}'.format(e))
+		perf = 'bs_ul_issue'+'=;%s;%s;%s' % (args['war'],args['crit'],sect_id)
+		
+	    args['service'] = 'cambium_bs_ul_issue_kpi'
+	    age_of_state = age_since_last_state(host_name, args['service'], state_string)
+	    bs_service_dict = service_dict_for_kpi_services(
+		    perf,state_string,
+		    host_name,site,ip,age_of_state,**args)
+	    bs_service_dict['refer'] =sect_id
+	    ul_issue_list.append(bs_service_dict)
+	    #warning('cambium bs entry: {0}'.format(len(ul_issue_list)))
+	    rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
+	    #bs_service_dict_list.append((bs_service_dict, site))
+    #insert_bs_ul_issue_data_to_redis(bs_service_dict_list)
 
 
 @app.task(base=DatabaseTask, name='extract_wimax_ul_issue_data')
@@ -1614,6 +1686,7 @@ def extract_wimax_ul_issue_data(**args):
     pmp2_service_list = []
     pmp1_ss_info = []
     pmp2_ss_info = []
+    pmp_data_dict = []
     rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
     p = rds_cli.redis_cnx.pipeline()
     args['memc']  = ''
@@ -1641,6 +1714,11 @@ def extract_wimax_ul_issue_data(**args):
         [p.lrange(k[0], 0 , -1) for k  in pmp1_ss_key if k]
         pmp1_ss_info = p.execute()
         #warning('pmp2 ss info: {0}, pmp1 ss info {1}'.format(pmp2_ss_info,pmp1_ss_info))
+        
+        pmp_data_dict.append((pmp2_ss_info,host_name,site_name,ip_address,pmp2_sect_id,'pmp2'))
+        pmp_data_dict.append((pmp1_ss_info,host_name,site_name,ip_address,pmp1_sect_id,'pmp1'))
+        
+        """
         extract_ss_ul_issue_data.s(
                 pmp2_ss_info,
                 host_name,
@@ -1659,6 +1737,8 @@ def extract_wimax_ul_issue_data(**args):
                 'pmp1',
                 redis_conn,
                 **args).apply_async()
+		"""
+    extract_ss_ul_issue_data.s(pmp_data_dict,redis_conn,**args).apply_async()
     #warning('pmp2 service list: {0}'.format(pmp2_service_list))
 
 
@@ -1673,6 +1753,7 @@ def extract_cambium_ul_issue_data(**args):
     args['memc'] = ''
     redis_conn =args['redis']
     args['redis'] = ''
+    ss_ul_issue_data = []
     for entry in host_info:
         if entry:
             if len(literal_eval(entry[0])) == 3:
@@ -1688,9 +1769,9 @@ def extract_cambium_ul_issue_data(**args):
             ss_key = map(lambda x: rds_cli.redis_cnx.keys(pattern="pmp:ss:*:%s" %x) ,conn_ss_ip)
             [p.lrange(k[0], 0 , -1) for k  in ss_key if k]
             ss_info = p.execute()
+            ss_ul_issue_data.append((ss_info,host_name,site_name,ip_address,sect_id,None))
 
-            extract_ss_ul_issue_data.s(ss_info,host_name,site_name,ip_address,
-                    sect_id,None,redis_conn,**args).apply_async()
+    extract_ss_ul_issue_data.s(ss_ul_issue_data,redis_conn,**args).apply_async()
 
 
 if __name__ == '__main__':

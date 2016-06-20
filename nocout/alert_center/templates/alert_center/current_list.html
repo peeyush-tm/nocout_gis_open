@@ -5,7 +5,8 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-bell-o'></i> Alert Center" "javascript:;" %}
-    {% breadcrumb_safe "SIA" traps %}
+    {% breadcrumb_safe "Network Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "Device Alarms" traps %}
     {% breadcrumb_safe "All" "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -30,14 +31,14 @@
                 <input type="radio" name="alarm_type" style="vertical-align:sub;" value="history"> History
             </li>
             {% if not settings.ENABLE_ADVANCE_FILTERS %}
-            <li>
+            <!-- <li>
                 <button type="button" id="snmp_advFilterBtn" class="btn btn-sm btn-default">
                     <i class='fa fa-filter'></i> Advance Filter
                 </button>
                 <button type="button" id="snmp_removeFilterBtn" class="btn btn-sm btn-danger hide" style="margin-left:10px;">
                     <i class='fa fa-times'></i> Reset Filter
                 </button>
-            </li>
+            </li> -->
             {% endif %}
         </ul>
     </div>
@@ -54,17 +55,17 @@
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-bell-o"></i>SIA </h4>
+            <h4><i class="fa fa-bell-o"></i>Device Alarms </h4>
         </div>
 
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                    <li>
+                    <!-- <li>
                         <a href="#snmp_converter_block" id="snmp_converter_tab" data-toggle="tab">
                             Converter
                         </a>
-                    </li>
+                    </li> -->
                     <li>
                         <a href="#snmp_pmp_block" id="snmp_pmp_tab" data-toggle="tab">
                             PMP
@@ -100,12 +101,12 @@
                             <tbody></tbody>
                         </table>
                     </div>
-                    <div class="tab-pane" id="snmp_converter_block">
+                    <!-- <div class="tab-pane" id="snmp_converter_block">
                         <table id="snmp_converter_table" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
-                    </div>
+                    </div> -->
                 </div>
 
                 <div class="clearfix"></div>
@@ -128,13 +129,18 @@
             startDate = '',
             endDate = '',
             date_range_picker_html = '',
-            filter_api_url = '';
+            filter_api_url = '',
+            show_customer_count = false;
 
         $(document).ready(function (e) {
-
+            refresh_time = 300; //Refresh SIA page in every 5 minutes 5*60 = 300
             {% if not settings.ENABLE_ADVANCE_FILTERS %}
                 // Disable advance filtering
                 create_advance_filters = false;
+            {% endif %}
+
+            {% if settings.SHOW_CUSTOMER_COUNT_IN_TRAPS %}
+                show_customer_count = true;
             {% endif %}
 
             date_range_picker_html = '<input type="text" name="filter_date" id="filter_date" class="form-control" value=""/>';
@@ -154,11 +160,11 @@
                 ajax_url_converter = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=switch';
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
-            var common_extra_param = "'alarm_type' : '" + alarm_type + "', 'download_excel': 'yes'",
-                converter_title = "SIA Alarms - Converter (Current)",
-                pmp_title = "SIA Alarms - PMP (Current)",
-                wimax_title = "SIA Alarms - WiMAX (Current)",
-                all_title = "SIA Alarms - All (Current)",
+            var common_extra_param = "'download_excel': 'yes'",
+                converter_title = "Device Alarms - Converter ({1})",
+                pmp_title = "Device Alarms - PMP ({1})",
+                wimax_title = "Device Alarms - WiMAX ({1})",
+                all_title = "Device Alarms - All ({1})",
                 fetch_data_class = "SIAListingTable",
                 converter_tab_param = "";
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
@@ -170,7 +176,7 @@
                     "header_class_name" : "SIAListing",
                     "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{'headers_data_key' : 'converter_datatable_headers', "+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+converter_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+converter_title+"', 'alarm_type': '{0}', 'tech_name': 'switch', "+common_extra_param+"}"
                 },
                 "snmp_pmp_tab" : {
                     "app_name" : "alert_center",
@@ -178,7 +184,7 @@
                     "header_class_name" : "SIAListing",
                     "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+pmp_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+pmp_title+"', 'alarm_type': '{0}', 'tech_name': 'pmp', "+common_extra_param+"}"
                 },
                 "snmp_wimax_tab" : {
                     "app_name" : "alert_center",
@@ -186,7 +192,7 @@
                     "header_class_name" : "SIAListing",
                     "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+wimax_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+wimax_title+"', 'alarm_type': '{0}', 'tech_name': 'wimax', "+common_extra_param+"}"
                 },
                 "snmp_all_tab" : {
                     "app_name" : "alert_center",
@@ -194,13 +200,13 @@
                     "header_class_name" : "SIAListing",
                     "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+all_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+all_title+"', 'alarm_type': '{0}', 'tech_name': 'all', "+common_extra_param+"}"
                 }
             };
 
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
-            $("#snmp_converter_tab").attr("data_url", ajax_url_converter);
-            $("#snmp_converter_tab").attr("data_header", '{{ converter_datatable_headers|safe }}');
+            // $("#snmp_converter_tab").attr("data_url", ajax_url_converter);
+            // $("#snmp_converter_tab").attr("data_header", '{{ converter_datatable_headers|safe }}');
 
             $("#snmp_pmp_tab").attr("data_url", ajax_url_pmp);
             $("#snmp_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
@@ -210,6 +216,8 @@
 
             $("#snmp_all_tab").attr("data_url", ajax_url_all);
             $("#snmp_all_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            show_hide_count_column();
             
             var current_href = window.location.href;
             if(current_href.indexOf("#") == -1 || current_href.split("#")[1] == "") {

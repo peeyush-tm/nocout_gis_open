@@ -20,6 +20,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
 from nocout.settings import SINGLE_REPORT_EMAIL, REPORT_EMAIL_PERM
 from django.views.decorators.csrf import csrf_exempt
+import itertools
 
 
 from django.http import HttpRequest
@@ -72,8 +73,15 @@ class DownloadCenter(ListView):
         except Exception, e:
             pass
 
+        show_daily_report = False
+
         if 'bs_outage_daily' in page_type:
+            show_daily_report = True
             report_title = 'Raw BS Outage Report'
+            self.template_name = 'download_center/bs_outage_list.html'
+
+        if 'backhaul_summary_weekly' in page_type:
+            report_title = 'Backhaul Summary Report'
             self.template_name = 'download_center/bs_outage_list.html'
 
         context = super(DownloadCenter, self).get_context_data(**kwargs)
@@ -92,6 +100,7 @@ class DownloadCenter(ListView):
         context['report_id'] = report_id
         context['report_title'] = report_title
         context['email_exists'] = email_exists
+        context['show_daily_report'] = show_daily_report
 
         return context
 
@@ -112,12 +121,12 @@ class DownloadCenterListing(BaseDatatableView):
         :return qs:
         """
         # get page type
-        page_type = self.request.GET['page_type']
+        page_type = self.request.GET.get('page_type')
 
         # get report name
         report_name = ""
         try:
-            report_name = ReportSettings.objects.get(page_name=self.request.GET['page_type']).report_name
+            report_name = ReportSettings.objects.get(page_name=page_type).report_name
         except Exception as e:
             logger.info(e.message)
 
@@ -785,8 +794,7 @@ class GetEmails(View):
 
 class ResetEmailReport(View):
     """
-    User can Reset Scheduled Email report which will delete the delete the
-    record from database.
+    User can Reset Scheduled Email report which will delete record from database.
     """
     def get(self, request, *args, **kwargs):
         result = {
@@ -838,9 +846,10 @@ class ProcessedReportEmailAPI(View):
                 file_path = processed_reports.path
                 file_path = file_path.split()
 
-                email_list = EmailReport.objects.get(
-                    report_name=ReportSettings.objects.get(report_name=report_name)).email_list
-                email_list = email_list.split(",")
+                emails = EmailReport.objects.filter(
+                    report_name=ReportSettings.objects.get(report_name=report_name)).values_list('email_list',flat=True)
+                email_list = [email.split(',') for email in emails]
+                email_list = list(itertools.chain(*email_list))
                 email_list = [email.strip() for email in email_list]
 
                 result = {
@@ -855,28 +864,28 @@ class ProcessedReportEmailAPI(View):
                     }
                 }
                 # Verifying if email Report is enabled for this Report.
-                if report_email_perm.get(page_name):
-                    request_object = HttpRequest()
-                    from alarm_escalation.views import EmailSender
-                    # Generating POST Request for EmailSender API.
-                    email_sender = EmailSender()
-                    email_sender.request = request_object
+                #if report_email_perm.get(page_name):
+                request_object = HttpRequest()
+                from alarm_escalation.views import EmailSender
+                # Generating POST Request for EmailSender API.
+                email_sender = EmailSender()
+                email_sender.request = request_object
 
-                    try:
-                        email_sender.request.POST = {
-                            'subject': report_name,
-                            'message': '',
-                            'to_email': email_list,
-                            'attachment_path': file_path
-                        }
-                    except Exception, e:
-                        logger.exception(e)
-                    try:
-                        email_sender.post(email_sender)
-                        result['success'] = 1
-                        result['message'] = 'Mail sent Sucessfully'
-                        result['data']['message'] = 'Here is Your daily Report'
-                    except Exception, e:
-                        logger.exception(e)
+                try:
+                    email_sender.request.POST = {
+                        'subject': report_name,
+                        'message': '',
+                        'to_email': email_list,
+                        'attachment_path': file_path
+                    }
+                except Exception, e:
+                    logger.exception(e)
+                try:
+                    email_sender.post(email_sender)
+                    result['success'] = 1
+                    result['message'] = 'Mail sent Sucessfully'
+                    result['data']['message'] = 'Here is Your daily Report'
+                except Exception, e:
+                    logger.exception(e)
 
         return HttpResponse(json.dumps(result))

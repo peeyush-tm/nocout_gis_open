@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from pprint import pformat
 import imp
 import time
+from copy import deepcopy
 
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -207,9 +208,14 @@ def network_perf_data_live_query(site, log_split, network_events_data, network_e
                 data_source=ds,warning_threshold=host_war,critical_threshold=host_crit,
                 check_timestamp=int(log_split[1]),
                 ip_address=host_ip,site_name=site,service_name='ping',age=age1)
+        modified_host_dict = deepcopy(host_event_dict)
+        if ds  == 'rta' and eval(host_cur) > eval(host_war):
+	    modified_host_dict.update({'severity':'major'}) 
         # Check whether the host has breached RTA thresholds only, but not PL
         if ds == 'pl' and eval(host_cur) < eval(host_crit) and log_split[7].lower() != 'up':
             host_event_dict.update({'severity': 'UP'})
+	    modified_host_dict.update({'severity':'major'}) 
+	    
         matching_criteria = {
                 'device_name': log_split[4],
                 'service_name': 'ping',
@@ -336,15 +342,58 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
      #   mongo_module.mongo_db_insert(db, service_events_data, 'serv_event')
       
      #memcache handling of host and service events
-
-    key = nocout_site_name + "_network_event" 
-    doc_len_key = key + "_len" 
+   
+    # the below code part is added to get all nagios events
+    # The code is run by crontab after every minutes. The file is able to hold the data of two  minutes.
+    # File stores data upto 2 cycles, one cycle one minute, current cycle is decided by attempt_key 
     memc_obj=db_ops_module.MemcacheInterface()
-    exp_time =120 # 2 min
-    memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
-    key = nocout_site_name + "_service_event" 
-    doc_len_key = key + "_len" 
-    memc_obj.store(key,service_events_data,doc_len_key,exp_time,chunksize=1000)
+    attempt_key =nocout_site_name+ "_attempt"  # current cycle key specfic of each site
+
+    if memc_obj.memc_conn.get(attempt_key)==1: # if first cycle or attempt
+
+        key = nocout_site_name + "_network_event1"    # for first cycle use this key to store data in memcache for network events
+        doc_len_key = key + "_len"
+    #memc_obj=db_ops_module.MemcacheInterface()
+        exp_time =170 # for above key  new data would come after 120 seconds. 
+        memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
+        key = nocout_site_name + "_service_event1"  #key for service events 
+        doc_len_key = key + "_len"
+        memc_obj.store(key,service_events_data,doc_len_key,exp_time,chunksize=1000)
+        memc_obj.memc_conn.set(attempt_key,2)  #set attemet_key 2, so next execuation consider as second cycle. 
+
+    elif memc_obj.memc_conn.get(attempt_key)==2:  # if second key , second cycle or attempt
+
+        key = nocout_site_name + "_network_event2"
+        doc_len_key = key + "_len"
+    #memc_obj=db_ops_module.MemcacheInterface()
+        exp_time =170 # 2 min
+        memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
+        key = nocout_site_name + "_service_event2"
+        doc_len_key = key + "_len"
+        memc_obj.store(key,service_events_data,doc_len_key,exp_time,chunksize=1000)
+        memc_obj.memc_conn.set(attempt_key,1) # next run would be consider as first cycle or attempt
+    else :
+        memc_obj.memc_conn.set(attempt_key,1) # if no cycle defined.
+# after every 128 second event_migration would be run, it takes the data from from both keys _network_event1 and _network_event2 and store in databases. 
+    if network_events_data:
+	insert_network_event_to_redis(network_events_data)
+
+"""
+Method to format n/w trap and push to Redis
+"""
+def insert_network_event_to_redis(network_events_data):
+    try :
+        rds_obj = db_ops_module.RedisInterface()
+        #print "network_events_data",network_events_data
+        machine_name = nocout_site_name.split('_')[0]
+	rds_obj.redis_cnx.rpush('q:network:snmptt:%s' % machine_name, *network_events_data)
+        #print rds_obj.redis_cnx.lrange('q:network:snmptt',0, -1)
+
+    except Exception,e :
+        pass
+        print "Error in Redis Insertion : %s \n" % str(e)
+
+
 
   
 if __name__ == '__main__':

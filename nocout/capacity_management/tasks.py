@@ -390,17 +390,18 @@ def gather_backhaul_status():
                 getit='per'
             )
 
-        if kpi.exists() and val.exists():
-            bs = base_stations.filter(backhaul__bh_configured_on__machine__name=machine)
-            g_jobs.append(
-                update_backhaul_status.s(
-                    basestations=bs,
-                    kpi=kpi,
-                    val=val,
-                    avg_max_per=avg_max_per,
-                    avg_max_val=avg_max_val
-                )
+        # Commented because some entries are not appearing in Backhaul status due to no data in polled info
+        # if kpi.exists() and val.exists(): 
+        bs = base_stations.filter(backhaul__bh_configured_on__machine__name=machine)
+        g_jobs.append(
+            update_backhaul_status.s(
+                basestations=bs,
+                kpi=kpi,
+                val=val,
+                avg_max_per=avg_max_per,
+                avg_max_val=avg_max_val
             )
+        )
 
     if len(g_jobs):
         job = group(g_jobs)
@@ -559,28 +560,6 @@ def gather_sector_status(technology):
     return ret
 
 
-# def get_higher_severity(severity_dict):
-#     """
-#
-#     :param severity_dict:
-#     :return:
-#     """
-#     s, a = None, None
-#     for severity in severity_dict:
-#         s = severity
-#         a = severity_dict[severity]
-#         if severity in ['critical']:
-#             #return severity, age
-#             return severity, severity_dict[severity]
-#         elif severity in ['warning']:
-#             return severity, severity_dict[severity]
-#         elif severity in ['unknown']:
-#             continue
-#         else:
-#             continue
-#
-#     return s, a
-
 def get_higher_severity(severity_dict):
     """
 
@@ -650,23 +629,20 @@ def calc_util_last_day():
     :return: True. False
     """
 
-    # tdy = datetime.datetime.today()
-    #
-    # # this is the end time today's 00:10:00
-    # end_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 10), 'U'))
-    #
-    # # this is the start time yesterday's 00:00:00
-    # start_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0), 'U'))
-    #
-    # # this is the time when we would be considering to get last 24 hours performance
-    # time_now = float(format(datetime.datetime.now(), 'U'))
-    #
-    # if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
-    #     return True
-    # return False
-    #
-    return True
-
+    tdy = datetime.datetime.today()
+    
+    # this is the end time today's 00:10:00
+    end_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 10), 'U'))
+    
+    # this is the start time yesterday's 00:00:00
+    start_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0), 'U'))
+    
+    # this is the time when we would be considering to get last 24 hours performance
+    time_now = float(format(datetime.datetime.now(), 'U'))
+    
+    if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
+        return True
+    return False
 
 def get_sector_bw(devices, service_name, data_source, machine):
     """
@@ -807,7 +783,7 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
         perf = nocout_utils.fetch_raw_result(query=query, machine=machine)
 
     except Exception as e:
-        logger.exception(e)
+        logger.error(e)
         return None
 
     return perf
@@ -848,7 +824,7 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
             # current_value=max_value
         ).using(alias=machine).values('current_value', 'sys_timestamp')
     except Exception as e:
-        logger.exception(e)
+        logger.error(e)
         return 0, 0
 
     if perf and perf.exists():
@@ -1034,9 +1010,9 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             is_raw=True
         )
     count = 0
-    logger.exception("********************************** count - {}".format(basestations.count()))
+    logger.error("********************************** count - {}".format(basestations.count()))
     for bs in basestations:
-        # logger.exception("***************************** {}".format(count))
+        # logger.error("***************************** {}".format(count))
         count += 1
         # base station device
         bh_device = bs.backhaul.bh_configured_on
@@ -1102,30 +1078,41 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 for ds in data_sources:
                     ds = ds.strip()
                     tmp_port = DevicePort.objects.get(alias=ds).name
-                    ds_name = ServiceDataSource.objects.get(name__iexact=tmp_port).name.lower()
-                    util = ServiceStatus.objects.filter(
-                        device_name=bh_device.device_name,
-                        service_name=val_dl_service,
-                        data_source__iexact=ds_name
-                    ).using(device_machine)[0].current_value
+                    data_source_name = ServiceDataSource.objects.get(name__iexact=tmp_port).name
+                    ds_name = data_source_name.lower()
+                    try:
+                        util = ServiceStatus.objects.filter(
+                            device_name=bh_device.device_name,
+                            service_name=val_dl_service,
+                            data_source__iexact=ds_name
+                        ).using(device_machine)[0].current_value
 
-                    if util not in ['', None]:
-                        util = float(util)
+                        if util not in ['', None]:
+                            util = float(util)
 
-                    ds_dict[util] = ds_name
-                    dp_dict[ds_name] = tmp_port
+                        ds_dict[util] = ds_name
+                        dp_dict[ds_name] = tmp_port
+                    except Exception, e:
+                        data_source = data_source_name
+                        device_port = tmp_port
 
-                data_source = ds_dict[max(ds_dict.keys())]
-                device_port = dp_dict[data_source]
+                if ds_dict:
+                    data_source = ds_dict[max(ds_dict.keys())]
+
+                if dp_dict:
+                    device_port = dp_dict[data_source]
             except Exception as e:
+                logger.error('Utilization Error ----- ')
+                logger.error(e)
                 continue
         else:
             try:
                 # we don't care about port, till it actually is mapped to a data source
                 data_source = ServiceDataSource.objects.get(
-                    name=DevicePort.objects.get(alias=bs.bh_port_name).name).name.lower()
+                    name=DevicePort.objects.get(alias=bs.bh_port_name).name
+                ).name.lower()
             except Exception as e:
-                # logger.debug('Back-hual Port {0}'.format(bs.bh_port_name))
+                logger.debug('Back-hual Port {0}'.format(bs.bh_port_name))
                 # logger.debug('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
                 pass
                 # if we don't have a port mapping
@@ -1182,11 +1169,11 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                         # current in/out %
                         current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
                     else:
-                        current_in_per = 0
-                        current_out_per = 0
+                        current_in_per = 'NA'
+                        current_out_per = 'NA'
                 except Exception, e:
-                    current_in_per = 0
-                    current_out_per = 0
+                    current_in_per = 'NA'
+                    current_out_per = 'NA'
 
                 try:
                     val_sys_timestamp = indexed_val[in_val_index][0]['sys_timestamp']
@@ -1196,27 +1183,31 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                         # current in/out values
                         current_out_val = float(indexed_val[out_val_index][0]['current_value'])
                     else:
-                        current_in_val = 0
-                        current_out_val = 0
+                        current_in_val = 'NA'
+                        current_out_val = 'NA'
                 except Exception, e:
-                    current_in_val = 0
-                    current_out_val = 0
+                    current_in_val = 'NA'
+                    current_out_val = 'NA'
 
-                severity_s = {
-                    indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age'],
-                    indexed_kpi[out_per_index][0]['severity']: indexed_kpi[out_per_index][0]['age'],
-                }
+                try:
+                    severity_s = {
+                        indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age'],
+                        indexed_kpi[out_per_index][0]['severity']: indexed_kpi[out_per_index][0]['age'],
+                    }
 
-                severity, age = get_higher_severity(severity_s)
+                    severity, age = get_higher_severity(severity_s)
+                except Exception, e:
+                    severity = 'unknown'
+                    age = 'NA'
             except Exception as e:
                 pass
-                current_in_per = 0
-                current_out_per = 0
-                current_in_val = 0
-                current_out_val = 0
+                current_in_per = 'NA'
+                current_out_per = 'NA'
+                current_in_val = 'NA'
+                current_out_val = 'NA'
                 severity = 'unknown'
-                age = 0
-                sys_timestamp = 0
+                age = 'NA'
+                sys_timestamp = 'NA'
 
             # now that we have severity and age all we need to do now is gather the average and peak values
             if calc_util_last_day():
@@ -1226,7 +1217,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     # peak percentage in/out
                     peak_in_per = float(indexed_avg_max_per[in_per_index][0]['max_val'])
                 except Exception, e:
-                    avg_in_per = 0
+                    avg_in_per = None
                     peak_in_per = None
                     pass
 
@@ -1237,7 +1228,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
 
                 except Exception as e:
-                    avg_out_per = 0
+                    avg_out_per = None
                     peak_out_per = None
                     pass
 
@@ -1247,8 +1238,8 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     # peak percentage in/out
                     peak_in_val = float(indexed_avg_max_val[in_val_index][0]['max_val'])
                 except Exception, e:
-                    avg_in_val = 0
-                    peak_in_val = 0
+                    avg_in_val = 'NA'
+                    peak_in_val = 'NA'
                     pass
 
                 try:
@@ -1258,8 +1249,8 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     peak_out_val = float(indexed_avg_max_val[out_val_index][0]['max_val'])
 
                 except Exception as e:
-                    avg_out_val = 0
-                    peak_out_val = 0
+                    avg_out_val = 'NA'
+                    peak_out_val = 'NA'
                     pass
 
                 peak_in_per, peak_in_timestamp = get_peak_sectors_util(
@@ -1289,77 +1280,90 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     # bh_port_name=bs.bh_port_name
                 )
                 bhs_count = bhs.count()
-                bhs = bhs[0]
+
+                temp_bhs = bhs[0]
+
+                if bhs_count > 1:
+                    deleted_bh = bhs.exclude(id=temp_bhs.id)
+                    deleted_bh.delete()
+                
+                bhs = temp_bhs
             except Exception as e:
                 pass
 
             if bhs_count < 1:
-                logger.exception("******************************* Create - {}".format(bhs_count))
+                try:
+                    logger.exception("******************************* Creating - {}".format(bs.backhaul.bh_configured_on.ip_address))
+                except Exception, e:
+                    logger.error("******************************* Creating - {}".format(bhs_count))
 
                 bulk_create_bhs.append(
-                    BackhaulCapacityStatus
-                    (
+                    BackhaulCapacityStatus(
                         backhaul=bs.backhaul,
                         basestation=bs,
-                        bh_port_name=device_port.replace("_", "/"),
-
-                        backhaul_capacity=round(float(backhaul_capacity), 2) if backhaul_capacity else 0,
-                        current_in_per=round(float(current_in_per), 2) if current_in_per else 0,
-                        current_in_val=round(float(current_in_val), 2) if current_in_val else 0,
-                        avg_in_per=round(float(avg_in_per), 2) if avg_in_per else 0,
-                        avg_in_val=round(float(avg_in_val), 2) if avg_in_val else 0,
-                        peak_in_per=round(float(peak_in_per), 2) if peak_in_per else 0,
-                        peak_in_val=round(float(peak_in_val), 2) if peak_in_val else 0,
-                        peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else 0,
-                        current_out_per=round(float(current_out_per), 2) if current_out_per else 0,
-                        current_out_val=round(float(current_out_val), 2) if current_out_val else 0,
-                        avg_out_per=round(float(avg_out_per), 2) if avg_out_per else 0,
-                        avg_out_val=round(float(avg_out_val), 2) if avg_out_val else 0,
-                        peak_out_per=round(float(peak_out_per), 2) if peak_out_per else 0,
-                        peak_out_val=round(float(peak_out_val), 2) if peak_out_val else 0,
-                        peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
-                        sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
+                        bh_port_name=device_port.replace("_", "/") if device_port else '',
+                        backhaul_capacity=round(float(backhaul_capacity), 2) if backhaul_capacity not in ['', 'NA', None] else 0,
+                        current_in_per=round(float(current_in_per), 2) if current_in_per not in ['NA', '', None] else 'NA',
+                        current_in_val=round(float(current_in_val), 2) if current_in_val not in ['NA', '', None] else 'NA',
+                        avg_in_per=round(float(avg_in_per), 2) if avg_in_per not in ['NA', '', None] else 'NA',
+                        avg_in_val=round(float(avg_in_val), 2) if avg_in_val not in ['NA', '', None] else 'NA',
+                        peak_in_per=round(float(peak_in_per), 2) if peak_in_per not in ['NA', '', None] else 'NA',
+                        peak_in_val=round(float(peak_in_val), 2) if peak_in_val not in ['NA', '', None] else 'NA',
+                        peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp not in ['NA', '', None] else 0,
+                        current_out_per=round(float(current_out_per), 2) if current_out_per not in ['NA', '', None] else 'NA',
+                        current_out_val=round(float(current_out_val), 2) if current_out_val not in ['NA', '', None] else 'NA',
+                        avg_out_per=round(float(avg_out_per), 2) if avg_out_per not in ['NA', '', None] else 'NA',
+                        avg_out_val=round(float(avg_out_val), 2) if avg_out_val not in ['NA', '', None] else 'NA',
+                        peak_out_per=round(float(peak_out_per), 2) if peak_out_per not in ['NA', '', None] else 'NA',
+                        peak_out_val=round(float(peak_out_val), 2) if peak_out_val not in ['NA', '', None] else 'NA',
+                        peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp not in ['NA', '', None] else 0,
+                        sys_timestamp=float(sys_timestamp) if sys_timestamp not in ['NA', '', None] else 0,
                         organization=bs.backhaul.organization if bs.backhaul.organization else 1,
                         severity=severity if severity else 'unknown',
-                        age=float(age) if age else 0
+                        age=float(age) if age not in ['NA', '', None] else 0
                     )
                 )
             else:
-                logger.exception("******************************* Update - {}".format(bhs_count))
+                try:
+                    logger.error("******************************* Updating - {}".format(bs.backhaul.bh_configured_on.ip_address))
+                except Exception, e:
+                    logger.error("******************************* Updating - {}".format(bhs_count))
+
                 # values that would be updated per 5 minutes
-                bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
-                bhs.bh_port_name = device_port.replace("_", "/")
-                bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
+                bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity not in ['', 'NA', None] else 0
+                bhs.bh_port_name = device_port.replace("_", "/") if device_port else ''
+                bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp not in ['', 'NA', None] else 0
                 bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
                 bhs.severity = severity if severity else 'unknown'
-                bhs.age = float(age) if age else 0
+                bhs.age = float(age) if age not in ['', 'NA', None] else 0
 
-                bhs.current_in_per = round(float(current_in_per), 2) if current_in_per else 0
-                bhs.current_in_val = round(float(current_in_val), 2) if current_in_val else 0
+                bhs.current_in_per = round(float(current_in_per), 2) if current_in_per not in ['', 'NA', None] else current_in_per
+                bhs.current_in_val = round(float(current_in_val), 2) if current_in_val not in ['', 'NA', None] else current_in_val
 
-                bhs.current_out_per = round(float(current_out_per), 2) if current_out_per else 0
-                bhs.current_out_val = round(float(current_out_val), 2) if current_out_val else 0
+                bhs.current_out_per = round(float(current_out_per), 2) if current_out_per not in ['', 'NA', None] else current_out_per
+                bhs.current_out_val = round(float(current_out_val), 2) if current_out_val not in ['', 'NA', None] else current_out_val
 
                 if calc_util_last_day():  # values that would be updated once in a day
-                    bhs.avg_in_per = round(float(avg_in_per), 2) if avg_in_per else 0
-                    bhs.avg_in_val = round(float(avg_in_val), 2) if avg_in_val else 0
-                    bhs.peak_in_per = round(float(peak_in_per), 2) if peak_in_per else 0
-                    bhs.peak_in_val = round(float(peak_in_val), 2) if peak_in_val else 0
+                    bhs.avg_in_per = round(float(avg_in_per), 2) if avg_in_per not in ['', 'NA', None] else 'NA'
+                    bhs.avg_in_val = round(float(avg_in_val), 2) if avg_in_val not in ['', 'NA', None] else 'NA'
+                    bhs.peak_in_per = round(float(peak_in_per), 2) if peak_in_per not in ['', 'NA', None] else 'NA'
+                    bhs.peak_in_val = round(float(peak_in_val), 2) if peak_in_val not in ['', 'NA', None] else 'NA'
 
-                    bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
+                    bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp not in ['', 'NA', None] else 0
 
-                    bhs.avg_out_per = round(float(avg_out_per), 2) if avg_out_per else 0
-                    bhs.avg_out_val = round(float(avg_out_val), 2) if avg_out_val else 0
-                    bhs.peak_out_per = round(float(peak_out_per), 2) if peak_out_per else 0
-                    bhs.peak_out_val = round(float(peak_out_val), 2) if peak_out_val else 0
+                    bhs.avg_out_per = round(float(avg_out_per), 2) if avg_out_per not in ['', 'NA', None] else 'NA'
+                    bhs.avg_out_val = round(float(avg_out_val), 2) if avg_out_val not in ['', 'NA', None] else 'NA'
+                    bhs.peak_out_per = round(float(peak_out_per), 2) if peak_out_per not in ['', 'NA', None] else 'NA'
+                    bhs.peak_out_val = round(float(peak_out_val), 2) if peak_out_val not in ['', 'NA', None] else 'NA'
 
-                    bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
+                    bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp not in ['', 'NA', None] else 0
 
                 bulk_update_bhs.append(bhs)
 
     g_jobs = list()
 
     if len(bulk_create_bhs):
+        logger.exception("******************************* bulk_create_bhs Create Length - {}".format(len(bulk_create_bhs)))
         g_jobs.append(bulk_update_create.s(bulk_create_bhs, action='create', model=BackhaulCapacityStatus))
 
     if len(bulk_update_bhs):
@@ -1533,7 +1537,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sector_capacity = indexed_cbw[cbw_index][0]['current_value']
             except Exception as e:
                 # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
-                logger.exception(e)
+                logger.error(e)
                 continue
 
             try:
@@ -1571,7 +1575,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 current_out_val = current_out_per * sector_capacity_out / 100.00
 
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 continue  # we dont have any current values with us
 
             if calc_util_last_day():
@@ -1586,7 +1590,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     # peak percentage in/out
                     peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
                 except Exception as e:
-                    logger.exception(e)
+                    logger.error(e)
                     avg_in_per = 0
                     peak_in_per = None
                     avg_out_per = 0
@@ -1621,7 +1625,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     peak_out_val = peak_out_per * sector_capacity_out / 100.00
 
                 except Exception as e:
-                    logger.exception(e)
+                    logger.error(e)
                     avg_in_val = 0
                     peak_in_val = 0
                     avg_out_val = 0
@@ -1707,7 +1711,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             except Exception as e:
                 logger.debug("PMP : {0}".format(e.message))
                 pass
-                # logger.exception(e)
+                # logger.error(e)
 
             # index for dl values
             in_value_index = (sector.sector_configured_on.device_name,
@@ -1737,7 +1741,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sector_capacity_out = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['ul']
             except Exception as e:
                 # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
-                logger.exception(e)
+                logger.error(e)
                 continue
 
             try:
@@ -1769,7 +1773,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 current_out_val = current_out_per * sector_capacity_out / 100.00
 
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 continue  # we dont have any current values with us
 
             # condition is : if the topology count >= 8 : the sector is
@@ -1792,7 +1796,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     # peak percentage in/out
                     peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
                 except Exception as e:
-                    logger.exception(e)
+                    logger.error(e)
                     avg_in_per = 0
                     peak_in_per = None
                     avg_out_per = 0
@@ -1827,7 +1831,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     peak_out_val = peak_out_per * sector_capacity_out / 100.00
 
                 except Exception as e:
-                    logger.exception(e)
+                    logger.error(e)
                     avg_in_val = 0
                     peak_in_val = 0
                     avg_out_val = 0
@@ -1882,22 +1886,22 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         sector_capacity_in=sector_capacity_in,
                         sector_capacity_out=sector_capacity_out,
 
-                        current_in_per=float(current_in_per) if current_in_per else 0,
-                        current_in_val=float(current_in_val) if current_in_val else 0,
+                        current_in_per=round(float(current_in_per), 2) if current_in_per else 0,
+                        current_in_val=round(float(current_in_val), 2) if current_in_val else 0,
 
-                        avg_in_per=float(avg_in_per) if avg_in_per else 0,
-                        avg_in_val=float(avg_in_val) if avg_in_val else 0,
-                        peak_in_per=float(peak_in_per) if peak_in_per else 0,
-                        peak_in_val=float(peak_in_val) if peak_in_val else 0,
+                        avg_in_per=round(float(avg_in_per), 2) if avg_in_per else 0,
+                        avg_in_val=round(float(avg_in_val), 2) if avg_in_val else 0,
+                        peak_in_per=round(float(peak_in_per), 2) if peak_in_per else 0,
+                        peak_in_val=round(float(peak_in_val), 2) if peak_in_val else 0,
                         peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else 0,
 
-                        current_out_per=float(current_out_per) if current_out_per else 0,
-                        current_out_val=float(current_out_val) if current_out_val else 0,
+                        current_out_per=round(float(current_out_per), 2) if current_out_per else 0,
+                        current_out_val=round(float(current_out_val), 2) if current_out_val else 0,
 
-                        avg_out_per=float(avg_out_per) if avg_out_per else 0,
-                        avg_out_val=float(avg_out_val) if avg_out_val else 0,
-                        peak_out_per=float(peak_out_per) if peak_out_per else 0,
-                        peak_out_val=float(peak_out_val) if peak_out_val else 0,
+                        avg_out_per=round(float(avg_out_per), 2) if avg_out_per else 0,
+                        avg_out_val=round(float(avg_out_val), 2) if avg_out_val else 0,
+                        peak_out_per=round(float(peak_out_per), 2) if peak_out_per else 0,
+                        peak_out_val=round(float(peak_out_val), 2) if peak_out_val else 0,
                         peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
 
                         sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
@@ -1906,7 +1910,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         age=float(age) if age else 0
                     )
                 )
-
         else:
             return False
 

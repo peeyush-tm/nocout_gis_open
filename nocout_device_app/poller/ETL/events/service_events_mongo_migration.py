@@ -74,10 +74,20 @@ def read_data(start_time, end_time, **kwargs):
     #    port=int(kwargs.get('configs')[2]),
     #    db_name=kwargs.get('db_name')
     #)
-    key = nocout_site_name + "_service_event"
+    key = nocout_site_name + "_service_event1"
     doc_len_key = key + "_len"
     memc_obj = db_ops_module.MemcacheInterface()
     cur=memc_obj.retrieve(key,doc_len_key)
+
+    key = nocout_site_name + "_service_event2"
+    doc_len_key = key + "_len"
+    cur1=memc_obj.retrieve(key,doc_len_key)
+
+    cur.extend(cur1)
+
+
+
+
     """
     if db:
             cur = db.nocout_service_event_log.find({

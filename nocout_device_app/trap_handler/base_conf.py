@@ -26,3 +26,16 @@ redis_master = {
 		'db': 3
 		}
 
+# connection to redis db for storing current/clear trap info
+redis = {
+                'host': '10.133.19.165',
+                'port': 6380,
+                'db': 0
+                }
+
+# connection to redis db for MAT info
+redis_MAT =  {
+                'host': '10.133.19.165',
+                'port': 6380,
+                'db': 5
+                }
