@@ -11686,7 +11686,11 @@ def get_selected_ptp_inventory(base_station, sector):
     if circuits:
         for circuit in circuits:
             # sub station
-            sub_station = circuit.sub_station
+            sub_station = None
+            try:
+                sub_station = circuit.sub_station
+            except Exception as e:
+                logger.error("Sub station not found. Exception: ",e.message)
 
             # sub station device name
             ss_device_name = ""
@@ -12136,13 +12140,13 @@ def get_selected_ptp_inventory(base_station, sector):
             try:
                 ptp_row['SS City'] = sub_station.city.city_name
             except Exception as e:
-                logger.info("SS City not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS City not exist for sub station ({}).".format(e.message))
 
             # ss state
             try:
                 ptp_row['SS State'] = sub_station.state.state_name
             except Exception as e:
-                logger.info("SS State not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS State not exist for sub station ({}).".format(e.message))
 
             # ss circuit id
             try:
@@ -12153,142 +12157,133 @@ def get_selected_ptp_inventory(base_station, sector):
                 else:
                     pass
             except Exception as e:
-                logger.info("SS Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Circuit ID not exist for sub station ({}).".format(e.message))
 
             # ss customer name
             try:
                 ptp_row['SS Customer Name'] = customer.alias
             except Exception as e:
-                logger.info("SS Customer Name not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Customer Name not exist for sub station ({}).".format(e.message))
 
             # ss customer address
             try:
                 ptp_row['SS Customer Address'] = customer.address
             except Exception as e:
-                logger.info("SS Customer Address not exist for sub station ({}).".format(sub_station.name,
-                                                                                         e.message))
+                logger.info("SS Customer Address not exist for sub station ({}).".format(e.message))
 
             # ss bs name
             try:
                 ptp_row['SS BS Name'] = base_station.alias
             except Exception as e:
-                logger.info("SS BS Name not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS BS Name not exist for sub station ({}).".format(e.message))
 
             # ss qos bandwidth
             try:
                 ptp_row['SS QOS (BW)'] = circuit.qos_bandwidth
             except Exception as e:
-                logger.info("SS QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS QOS (BW) not exist for sub station ({}).".format(e.message))
 
             # ss latitude
             try:
                 ptp_row['SS Latitude'] = sub_station.latitude
             except Exception as e:
-                logger.info("SS Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Latitude not exist for sub station ({}).".format(e.message))
 
             # ss longitude
             try:
                 ptp_row['SS Longitude'] = sub_station.longitude
             except Exception as e:
-                logger.info("SS Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Longitude not exist for sub station ({}).".format(e.message))
 
             # ss antenna height
             try:
                 ptp_row['SS Antenna Height'] = sub_station.antenna.height
             except Exception as e:
-                logger.info("SS Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Antenna Height not exist for sub station ({}).".format(e.message))
 
             # ss antenna type
             try:
                 ptp_row['SS Antenna Type'] = sub_station.antenna.antenna_type
             except Exception as e:
-                logger.info("SS Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Antenna Type not exist for sub station ({}).".format(e.message))
 
             # ss antenna gain
             try:
                 ptp_row['SS Antenna Gain'] = sub_station.antenna.gain
             except Exception as e:
-                logger.info("SS Antenna Gain not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Antenna Gain not exist for sub station ({}).".format(e.message))
 
             # ss antenna mount type
             try:
                 ptp_row['SS Antenna Mount Type'] = sub_station.antenna.mount_type
             except Exception as e:
-                logger.info("SS Antenna Mount Type not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
+                logger.info("SS Antenna Mount Type not exist for sub station ({}).".format(e.message))
 
             # ss ethernet extender
             try:
                 ptp_row['SS Ethernet Extender'] = sub_station.ethernet_extender
             except Exception as e:
-                logger.info("SS Ethernet Extender not exist for sub station ({}).".format(sub_station.name,
-                                                                                          e.message))
+                logger.info("SS Ethernet Extender not exist for sub station ({}).".format(e.message))
 
             # ss building height
             try:
                 ptp_row['SS Building Height'] = sub_station.building_height
             except Exception as e:
-                logger.info("SS Building Height not exist for sub station ({}).".format(sub_station.name,
-                                                                                        e.message))
+                logger.info("SS Building Height not exist for sub station ({}).".format(e.message))
 
             # ss tower or pole height
             try:
                 ptp_row['SS Tower/Pole Height'] = sub_station.tower_height
             except Exception as e:
-                logger.info("SS Tower/Pole Height not exist for sub station ({}).".format(sub_station.name,
-                                                                                          e.message))
+                logger.info("SS Tower/Pole Height not exist for sub station ({}).".format(e.message))
 
             # ss cable length
             try:
                 ptp_row['SS Cable Length'] = sub_station.cable_length
             except Exception as e:
-                logger.info("SS Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Cable Length not exist for sub station ({}).".format(e.message))
 
             # ss rssi during acceptance
             try:
                 ptp_row['SS RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
             except Exception as e:
-                logger.info("SS RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                               e.message))
+                logger.info("SS RSSI During Acceptance not exist for sub station ({}).".format(e.message))
 
             # ss throughput during acceptance
             try:
                 ptp_row['SS Throughput During Acceptance'] = circuit.throughput_during_acceptance
             except Exception as e:
-                logger.info("SS Throughput During Acceptance not exist for sub station ({}).".format(
-                    sub_station.name,
-                    e.message))
+                logger.info("SS Throughput During Acceptance not exist for sub station ({}).".format(e.message))
 
             # ss date of acceptance
             try:
                 ptp_row['SS Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
             except Exception as e:
-                logger.info("SS Date Of Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
+                logger.info("SS Date Of Acceptance not exist for sub station ({}).".format(e.message))
 
             # ss bh bso
             try:
                 ptp_row['SS BH BSO'] = base_station.bh_bso
             except Exception as e:
-                logger.info("SS BH BSO not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS BH BSO not exist for sub station ({}).".format(e.message))
 
             # ss ip
             try:
                 ptp_row['SS IP'] = sub_station.device.ip_address
             except Exception as e:
-                logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS IP not exist for sub station ({}).".format(e.message))
 
             # ss mac
             try:
                 ptp_row['SS MAC'] = sub_station.device.mac_address
             except Exception as e:
-                logger.info("SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS MAC not exist for sub station ({}).".format(e.message))
 
             # ss polarization
             try:
                 ptp_row['SS Polarization'] = sub_station.antenna.polarization
             except Exception as e:
-                logger.info("SS Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Polarization not exist for sub station ({}).".format(e.message))
 
             # ********************************* PTP SS Perf Info *************************************
             pl = ""
@@ -12299,7 +12294,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                    alias=ss_machine_name)[0].current_value
                 ptp_row['SS PD'] = pl
             except Exception as e:
-                logger.info("SS PD not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS PD not exist for sub station ({}).".format(e.message))
 
             # ss latency
             try:
@@ -12307,7 +12302,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                      data_source='rta').using(
                                                                      alias=ss_machine_name)[0].current_value
             except Exception as e:
-                logger.info("SS Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Latency not exist for sub station ({}).".format(e.message))
 
             if pl != "100":
                 # ss auto negotiation
@@ -12317,8 +12312,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                            data_source='1').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Auto Negotiation not exist for sub station ({}).".format(sub_station.name,
-                                                                                             e.message))
+                    logger.info("SS Auto Negotiation not exist for sub station ({}).".format(e.message))
 
                 # mimo/diversity
                 try:
@@ -12335,7 +12329,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                                 data_source='producttype').using(
                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Product Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Product Type not exist for sub station ({}).".format(e.message))
 
                 # ss frequency
                 try:
@@ -12343,7 +12337,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                              data_source='frequency').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Frequency not exist for sub station ({}).".format(e.message))
 
                 # ss uas
                 try:
@@ -12351,7 +12345,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                      data_source='uas').using(
                                                                      alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS UAS not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS UAS not exist for sub station ({}).".format(e.message))
 
                 # ss rssi
                 try:
@@ -12359,7 +12353,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                       data_source='rssi').using(
                                                                       alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS RSSI not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS RSSI not exist for sub station ({}).".format(e.message))
 
                 # ss estimated throughput
                 try:
@@ -12368,8 +12362,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                         data_source='service_throughput').using(
                                                                         alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Estimated Throughput not exist for sub station ({}).".format(sub_station.name,
-                                                                                                 e.message))
+                    logger.info("SS Estimated Throughput not exist for sub station ({}).".format(e.message))
 
                 # ss utilization dl
                 try:
@@ -12378,8 +12371,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                         data_source='Management_Port_on_Odu').using(
                                                                         alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Utilisation DL not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
+                    logger.info("SS Utilisation DL not exist for sub station ({}).".format(e.message))
 
                 # ss utilization ul
                 try:
@@ -12388,8 +12380,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                         data_source='Management_Port_on_Odu').using(
                                                                         alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Utilisation UL not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
+                    logger.info("SS Utilisation UL not exist for sub station ({}).".format(e.message))
 
                 # ss uptime
                 try:
@@ -12399,7 +12390,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                         alias=ss_machine_name)[0].current_value
                     ptp_row['SS Uptime'] = display_time(ss_uptime)
                 except Exception as e:
-                    logger.info("SS Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Uptime not exist for sub station ({}).".format(e.message))
 
                 # ss link distance
                 try:
@@ -12407,8 +12398,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                                  data_source='link_distance').using(
                                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Link Distance not exist for sub station ({}).".format(sub_station.name,
-                                                                                          e.message))
+                    logger.info("SS Link Distance not exist for sub station ({}).".format(e.message))
 
                 # ss cbw
                 try:
@@ -12416,7 +12406,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                        data_source='cbw').using(
                                                                        alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS CBW not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS CBW not exist for sub station ({}).".format(e.message))
 
                 # ss duplex
                 try:
@@ -12425,7 +12415,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                  data_source='1').using(
                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Duplex not exist for sub station ({}).".format(e.message))
 
                 # ss speed
                 try:
@@ -12434,7 +12424,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                 data_source='1').using(
                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Speed not exist for sub station ({}).".format(e.message))
 
                 # ss link
                 try:
@@ -12443,7 +12433,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                data_source='Management_Port_on_Odu').using(
                                                                alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Link not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Link not exist for sub station ({}).".format(e.message))
 
             # filter 'ptp' and 'ptp bh' rows
             if circuit.circuit_type == "Customer":
@@ -12847,8 +12837,11 @@ def get_selected_pmp_inventory(base_station, sector):
 
         for circuit in circuits:
             # sub station
-            sub_station = circuit.sub_station
-
+            sub_station = None
+            try:
+                sub_station = circuit.sub_station
+            except Exception as e:
+                logger.error("Sub station not found ",e.message)
             # sub station device name
             ss_device_name = ""
             try:
@@ -12884,13 +12877,13 @@ def get_selected_pmp_inventory(base_station, sector):
             try:
                 pmp_sm_row['Customer Name'] = customer.alias
             except Exception as e:
-                logger.info("Customer Name not exist for base station ({}).".format(sub_station.name, e.message))
+                logger.info("Customer Name not exist for base station ({}).".format(e.message))
 
             # circuit id
             try:
                 pmp_sm_row['Circuit ID'] = circuit.circuit_id
             except Exception as e:
-                logger.info("Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Circuit ID not exist for sub station ({}).".format(e.message))
 
             # site id
             try:
@@ -12908,105 +12901,103 @@ def get_selected_pmp_inventory(base_station, sector):
             try:
                 pmp_sm_row['SS IP'] = sub_station.device.ip_address
             except Exception as e:
-                logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS IP not exist for sub station ({}).".format(e.message))
 
             # qos bandwidth
             try:
                 pmp_sm_row['QOS (BW)'] = circuit.qos_bandwidth
             except Exception as e:
-                logger.info("QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("QOS (BW) not exist for sub station ({}).".format(e.message))
 
             # latitude
             try:
                 pmp_sm_row['Latitude'] = sub_station.latitude
             except Exception as e:
-                logger.info("Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Latitude not exist for sub station ({}).".format(e.message))
 
             # longitude
             try:
                 pmp_sm_row['Longitude'] = sub_station.longitude
             except Exception as e:
-                logger.info("Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Longitude not exist for sub station ({}).".format(e.message))
 
             # mac address
             try:
                 pmp_sm_row['MAC'] = sub_station.mac_address
             except Exception as e:
-                logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("MAC not exist for sub station ({}).".format(e.message))
 
             # building height
             try:
                 pmp_sm_row['Building Height'] = sub_station.building_height
             except Exception as e:
-                logger.info("Building Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Building Height not exist for sub station ({}).".format(e.message))
 
             # tower/pole height
             try:
                 pmp_sm_row['Tower/Pole Height'] = sub_station.tower_height
             except Exception as e:
-                logger.info("Tower/Pole Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Tower/Pole Height not exist for sub station ({}).".format(e.message))
 
             # antenna height
             try:
                 pmp_sm_row['Antenna Height'] = sub_station.antenna.height
             except Exception as e:
-                logger.info("Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Height not exist for sub station ({}).".format(e.message))
 
             # antenna beamwidth
             try:
                 pmp_sm_row['Antenna Beamwidth'] = sub_station.antenna.beam_width
             except Exception as e:
-                logger.info("Antenna Beamwidth not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Beamwidth not exist for sub station ({}).".format(e.message))
 
             # polarization
             try:
                 pmp_sm_row['Polarization'] = sub_station.antenna.polarization
             except Exception as e:
-                logger.info("Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Polarization not exist for sub station ({}).".format(e.message))
 
             # antenna type
             try:
                 pmp_sm_row['Antenna Type'] = sub_station.antenna.antenna_type
             except Exception as e:
-                logger.info("Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Type not exist for sub station ({}).".format(e.message))
 
             # ss mount type
             try:
                 pmp_sm_row['SS Mount Type'] = sub_station.antenna.mount_type
             except Exception as e:
-                logger.info("SS Mount Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Mount Type not exist for sub station ({}).".format(e.message))
 
             # ethernet extender
             try:
                 pmp_sm_row['Ethernet Extender'] = sub_station.ethernet_extender
             except Exception as e:
-                logger.info("Ethernet Extender not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Ethernet Extender not exist for sub station ({}).".format(e.message))
 
             # cable length
             try:
                 pmp_sm_row['Cable Length'] = sub_station.cable_length
             except Exception as e:
-                logger.info("Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Cable Length not exist for sub station ({}).".format(e.message))
 
             # rssi during acceptance
             try:
                 pmp_sm_row['RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
             except Exception as e:
-                logger.info("RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
+                logger.info("RSSI During Acceptance not exist for sub station ({}).".format(e.message))
 
             # cinr during acceptance
             try:
                 pmp_sm_row['CINR During Acceptance'] = circuit.dl_cinr_during_acceptance
             except Exception as e:
-                logger.info("CINR During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
+                logger.info("CINR During Acceptance not exist for sub station ({}).".format(e.message))
 
             # Customer Address
             try:
                 pmp_sm_row['Customer Address'] = customer.address
             except Exception as e:
-                logger.info("Customer Address not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Customer Address not exist for sub station ({}).".format(e.message))
 
             # date of acceptance
             try:
@@ -13024,7 +13015,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                   alias=ss_machine_name)[0].current_value
                 pmp_sm_row['PD'] = pl
             except Exception as e:
-                logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("PD not exist for sub station ({}).".format(e.message))
 
             # latency
             try:
@@ -13032,7 +13023,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                      data_source='rta').using(
                                                                      alias=ss_machine_name)[0].current_value
             except Exception as e:
-                logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Latency not exist for sub station ({}).".format(e.message))
 
             if pl != "100":
                 # frequency
@@ -13041,7 +13032,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                              data_source='frequency').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Frequency not exist for sub station ({}).".format(e.message))
 
                 # dl rssi
                 try:
@@ -13049,7 +13040,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                          data_source='dl_rssi').using(
                                                                          alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("RSSI DL not exist for sub station ({}).".format(e.message))
 
                 # ul rssi
                 try:
@@ -13057,7 +13048,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                          data_source='ul_rssi').using(
                                                                          alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("RSSI UL not exist for sub station ({}).".format(e.message))
 
                 # dl jitter
                 try:
@@ -13065,7 +13056,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                            data_source='dl_jitter').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Jitter DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Jitter DL not exist for sub station ({}).".format(e.message))
 
                 # ul jitter
                 try:
@@ -13073,7 +13064,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                            data_source='ul_jitter').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Jitter UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Jitter UL not exist for sub station ({}).".format(e.message))
 
                 # transmit power
                 try:
@@ -13081,7 +13072,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                                   data_source='transmit_power').using(
                                                                                   alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Transmit Power not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Transmit Power not exist for sub station ({}).".format(e.message))
 
                 # polles ss ip
                 try:
@@ -13089,7 +13080,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                                 data_source='ss_ip').using(
                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled SS IP not exist for sub station ({}).".format(e.message))
 
                 # polled ss mac
                 try:
@@ -13097,7 +13088,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                                  data_source='ss_mac').using(
                                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled SS MAC not exist for sub station ({}).".format(e.message))
 
                 # polled bs ip
                 try:
@@ -13105,7 +13096,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                                 data_source='bs_ip').using(
                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled BS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled BS IP not exist for sub station ({}).".format(e.message))
 
                 # polles bs mac
                 try:
@@ -13121,7 +13112,7 @@ def get_selected_pmp_inventory(base_station, sector):
                             data_source='ss_connected_bs_mac').using(
                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled BS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled BS MAC not exist for sub station ({}).".format(e.message))
 
                 # uptime
                 try:
@@ -13139,7 +13130,7 @@ def get_selected_pmp_inventory(base_station, sector):
                         pmp_sm_row['Session Uptime'] = display_time(session_uptime)
 
                 except Exception as e:
-                    logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Session Uptime not exist for sub station ({}).".format(e.message))
 
                 # dl utilization
                 try:
@@ -13157,7 +13148,7 @@ def get_selected_pmp_inventory(base_station, sector):
                             alias=ss_machine_name)[0].current_value
 
                 except Exception as e:
-                    logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Utilization DL not exist for sub station ({}).".format(e.message))
 
                 # ul utilization
                 try:
@@ -13174,7 +13165,7 @@ def get_selected_pmp_inventory(base_station, sector):
                             data_source='ul_utilization').using(
                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Utilization UL not exist for sub station ({}).".format(e.message))
 
                 # auto negotiation
                 try:
@@ -13182,7 +13173,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                            data_source='autonegotiation').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Auto Negotiation not exist for sub station ({}).".format(e.message))
 
                 # duplex
                 try:
@@ -13190,7 +13181,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                  data_source='duplex').using(
                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Duplex not exist for sub station ({}).".format(e.message))
 
                 # speed
                 try:
@@ -13198,7 +13189,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                 data_source='ss_speed').using(
                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Speed not exist for sub station ({}).".format(e.message))
 
                 # link state
                 try:
@@ -13206,7 +13197,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                data_source='link_state').using(
                                                                alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Link not exist for sub station ({}).".format(e.message))
 
             # append 'pmp_bs_row' dictionary in 'pmp_bs_rows'
             pmp_bs_rows.append(pmp_bs_row)
@@ -13623,7 +13614,11 @@ def get_selected_wimax_inventory(base_station, sector):
     if circuits:
         for circuit in circuits:
             # sub station
-            sub_station = circuit.sub_station
+            sub_station = None
+            try:
+                sub_station = circuit.sub_station
+            except Exception as e:
+                logger.error("Sub station not Found, Exception: ",e.message)
 
             # sub station device name
             ss_device_name = ""
@@ -13651,13 +13646,13 @@ def get_selected_wimax_inventory(base_station, sector):
             try:
                 wimax_ss_row['Customer Name'] = customer.alias
             except Exception as e:
-                logger.info("Customer Name not exist for base station ({}).".format(sub_station.name, e.message))
+                logger.info("Customer Name not exist for base station ({}).".format(e.message))
 
             # circuit id
             try:
                 wimax_ss_row['Circuit ID'] = circuit.circuit_id
             except Exception as e:
-                logger.info("Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Circuit ID not exist for sub station ({}).".format(e.message))
 
             # sector id
             try:
@@ -13669,111 +13664,109 @@ def get_selected_wimax_inventory(base_station, sector):
             try:
                 wimax_ss_row['SS IP'] = sub_station.device.ip_address
             except Exception as e:
-                logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS IP not exist for sub station ({}).".format(e.message))
 
             # ss vendor
             try:
                 wimax_ss_row['Vendor'] = DeviceVendor.objects.get(id=sub_station.device.device_vendor).alias
             except Exception as e:
-                logger.info("Vendor not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Vendor not exist for sub station ({}).".format(e.message))
 
             # qos bandwidth
             try:
                 wimax_ss_row['QOS (BW)'] = circuit.qos_bandwidth
             except Exception as e:
-                logger.info("QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("QOS (BW) not exist for sub station ({}).".format(e.message))
 
             # latitude
             try:
                 wimax_ss_row['Latitude'] = sub_station.latitude
             except Exception as e:
-                logger.info("Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Latitude not exist for sub station ({}).".format(e.message))
 
             # longitude
             try:
                 wimax_ss_row['Longitude'] = sub_station.longitude
             except Exception as e:
-                logger.info("Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Longitude not exist for sub station ({}).".format(e.message))
 
             # mac address
             try:
                 wimax_ss_row['MAC'] = sub_station.device.mac_address
             except Exception as e:
-                logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("MAC not exist for sub station ({}).".format(e.message))
 
             # building height
             try:
                 wimax_ss_row['Building Height'] = sub_station.building_height
             except Exception as e:
-                logger.info("Building Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Building Height not exist for sub station ({}).".format(e.message))
 
             # tower/pole height
             try:
                 wimax_ss_row['Tower/Pole Height'] = sub_station.tower_height
             except Exception as e:
-                logger.info("Tower/Pole Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Tower/Pole Height not exist for sub station ({}).".format(e.message))
 
             # antenna height
             try:
                 wimax_ss_row['Antenna Height'] = sub_station.antenna.height
             except Exception as e:
-                logger.info("Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Height not exist for sub station ({}).".format(e.message))
 
             # antenna beamwidth
             try:
                 wimax_ss_row['Antenna Beamwidth'] = sub_station.antenna.beam_width
             except Exception as e:
-                logger.info("Antenna Beamwidth not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Beamwidth not exist for sub station ({}).".format(e.message))
 
             # polarization
             try:
                 wimax_ss_row['Polarization'] = sub_station.antenna.polarization
             except Exception as e:
-                logger.info("Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Polarization not exist for sub station ({}).".format(e.message))
 
             # antenna type
             try:
                 wimax_ss_row['Antenna Type'] = sub_station.antenna.antenna_type
             except Exception as e:
-                logger.info("Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Type not exist for sub station ({}).".format(e.message))
 
             # ss mount type
             try:
                 wimax_ss_row['SS Mount Type'] = sub_station.antenna.mount_type
             except Exception as e:
-                logger.info("SS Mount Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Mount Type not exist for sub station ({}).".format(e.message))
 
             # ethernet extender
             try:
                 wimax_ss_row['Ethernet Extender'] = sub_station.ethernet_extender
             except Exception as e:
-                logger.info("Ethernet Extender not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Ethernet Extender not exist for sub station ({}).".format(e.message))
 
             # cable length
             try:
                 wimax_ss_row['Cable Length'] = sub_station.cable_length
             except Exception as e:
-                logger.info("Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Cable Length not exist for sub station ({}).".format(e.message))
 
             # rssi during acceptance
             try:
                 wimax_ss_row['RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
             except Exception as e:
-                logger.info("RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
+                logger.info("RSSI During Acceptance not exist for sub station ({}).".format(e.message))
 
             # cinr during acceptance
             try:
                 wimax_ss_row['CINR During Acceptance'] = circuit.dl_cinr_during_acceptance
             except Exception as e:
-                logger.info("CINR During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
+                logger.info("CINR During Acceptance not exist for sub station ({}).".format(e.message))
 
             # Customer Address
             try:
                 wimax_ss_row['Customer Address'] = customer.address
             except Exception as e:
-                logger.info("Customer Address not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Customer Address not exist for sub station ({}).".format(e.message))
 
             # date of acceptance
             try:
@@ -13791,7 +13784,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                   alias=ss_machine_name)[0].current_value
                 wimax_ss_row['PD'] = pl
             except Exception as e:
-                logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("PD not exist for sub station ({}).".format(e.message))
 
             # latency
             try:
@@ -13799,7 +13792,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                        data_source='rta').using(
                                                                        alias=ss_machine_name)[0].current_value
             except Exception as e:
-                logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Latency not exist for sub station ({}).".format(e.message))
 
             if pl != "100":
                 # frequency
@@ -13809,7 +13802,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                              data_source='frequency').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Frequency not exist for sub station ({}).".format(e.message))
 
                 # sector id
                 try:
@@ -13825,7 +13818,7 @@ def get_selected_wimax_inventory(base_station, sector):
                     else:
                         pass
                 except Exception as e:
-                    logger.info("Sector ID not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Sector ID not exist for sub station ({}).".format(e.message))
 
                 # polled ss ip
                 try:
@@ -13833,7 +13826,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                                 data_source='ss_ip').using(
                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled SS IP not exist for sub station ({}).".format(e.message))
 
                 # polled ss mac
                 try:
@@ -13841,7 +13834,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                              data_source='ss_mac').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled SS MAC not exist for sub station ({}).".format(e.message))
 
                 # rssi dl
                 try:
@@ -13849,7 +13842,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                            data_source='dl_rssi').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("RSSI DL not exist for sub station ({}).".format(e.message))
 
                 # rssi ul
                 try:
@@ -13857,7 +13850,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                            data_source='ul_rssi').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("RSSI UL not exist for sub station ({}).".format(e.message))
 
                 # cinr dl
                 try:
@@ -13865,7 +13858,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                            data_source='dl_cinr').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("CINR DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("CINR DL not exist for sub station ({}).".format(e.message))
 
                 # cinr ul
                 try:
@@ -13873,7 +13866,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                            data_source='ul_cinr').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("CINR UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("CINR UL not exist for sub station ({}).".format(e.message))
 
                 # intrf dl
                 try:
@@ -13881,7 +13874,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='dl_intrf').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("INTRF DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("INTRF DL not exist for sub station ({}).".format(e.message))
 
                 # intrf ul
                 try:
@@ -13889,7 +13882,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='ul_intrf').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("INTRF UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("INTRF UL not exist for sub station ({}).".format(e.message))
 
                 # ptx
                 try:
@@ -13897,7 +13890,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                          data_source='ss_ptx').using(
                                                                          alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("PTX not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("PTX not exist for sub station ({}).".format(e.message))
 
                 # session uptime
                 try:
@@ -13906,7 +13899,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                   alias=ss_machine_name)[0].current_value
                     wimax_ss_row['Session Uptime'] = display_time(system_uptime)
                 except Exception as e:
-                    logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Session Uptime not exist for sub station ({}).".format(e.message))
 
                 # device uptime
                 try:
@@ -13915,7 +13908,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                               alias=ss_machine_name)[0].current_value
                     wimax_ss_row['Device Uptime'] = display_time(device_uptime)
                 except Exception as e:
-                    logger.info("Device Uptime  not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Device Uptime  not exist for sub station ({}).".format(e.message))
 
                 # modulation dl fec
                 try:
@@ -13923,7 +13916,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='modulation_dl_fec').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Modulation DL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Modulation DL FEC not exist for sub station ({}).".format(e.message))
 
                 # modulation ul fec
                 try:
@@ -13931,7 +13924,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='modulation_ul_fec').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Modulation UL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Modulation UL FEC not exist for sub station ({}).".format(e.message))
 
                 # utilization dl
                 try:
@@ -13939,7 +13932,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='dl_utilization').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Utilization DL not exist for sub station ({}).".format(e.message))
 
                 # utilization ul
                 try:
@@ -13947,7 +13940,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='ul_utilization').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Utilization UL not exist for sub station ({}).".format(e.message))
 
                 # auto negotiation
                 try:
@@ -13955,7 +13948,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                              data_source='autonegotiation').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Auto Negotiation not exist for sub station ({}).".format(e.message))
 
                 # duplex
                 try:
@@ -13963,7 +13956,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                    data_source='duplex').using(
                                                                    alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Duplex not exist for sub station ({}).".format(e.message))
 
                 # speed
                 try:
@@ -13971,7 +13964,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                    data_source='ss_speed').using(
                                                                    alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Speed not exist for sub station ({}).".format(e.message))
 
                 # link
                 try:
@@ -13979,7 +13972,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                  data_source='link_state').using(
                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Link not exist for sub station ({}).".format(e.message))
 
             # append 'wimax_bs_row' dictionary in 'wimax_bs_rows'
             wimax_bs_rows.append(wimax_bs_row)
