@@ -2344,8 +2344,8 @@ class RFOAnalysisList(BaseDatatableView):
         try:
             where_condition = Q()
 
-            where_condition &= Q(master_causecode__isnull=False)
-            where_condition &= Q(sub_causecode__isnull=False)
+            # where_condition &= Q(master_causecode__isnull=False)
+            # where_condition &= Q(sub_causecode__isnull=False)
             where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
 
             if state_name and city_name:
@@ -2363,8 +2363,8 @@ class RFOAnalysisList(BaseDatatableView):
                 'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
                 'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
             }).exclude(
-                master_causecode__exact='',
-                sub_causecode__exact=''
+                # master_causecode__exact='',
+                # sub_causecode__exact=''
             ).filter(where_condition)
         except Exception, e:
             qs = self.model.objects.filter(id=0)
@@ -2496,8 +2496,8 @@ class RFOAnalysisSummationList(BaseDatatableView):
             timestamp_obj = datetime.datetime.fromtimestamp(float(month))
             where_condition = Q()
             where_condition &= Q(timestamp=timestamp_obj)
-            where_condition &= Q(master_causecode__isnull=False)
-            where_condition &= Q(sub_causecode__isnull=False)
+            # where_condition &= Q(master_causecode__isnull=False)
+            # where_condition &= Q(sub_causecode__isnull=False)
 
             if state_name and city_name:
                 where_condition &= Q(state__iexact=state_name)
@@ -2514,8 +2514,8 @@ class RFOAnalysisSummationList(BaseDatatableView):
                 'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
                 'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
             }).exclude(
-                master_causecode__exact='',
-                sub_causecode__exact=''
+                # master_causecode__exact='',
+                # sub_causecode__exact=''
             ).filter(where_condition)
         except Exception, e:
             qs = self.model.objects.filter(id=0).values(*self.columns)
@@ -2657,15 +2657,16 @@ class MTTRSummaryData(View):
                 pass
 
             mttr_dataset = list(RFOAnalysis.objects.extra({
-                'name': 'mttr'
+                'name': 'mttr',
+                'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)'
             }).exclude(
-                master_causecode__exact='',
+                # master_causecode__exact='',
             ).filter(where_condition).values('name').annotate(
                 total_count=Count('id'))
             )
 
             total_dataset = RFOAnalysis.objects.exclude(
-                master_causecode__exact='',
+                # master_causecode__exact='',
             ).filter(where_condition).count()    
         except Exception, e:
             pass
@@ -2717,7 +2718,7 @@ class MTTRDetailData(View):
         try:
             where_condition = Q()
 
-            where_condition &= Q(master_causecode__isnull=False)
+            # where_condition &= Q(master_causecode__isnull=False)
             where_condition &= Q(mttr__iexact=str(mttr_param).strip())
             where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
 
@@ -2731,14 +2732,16 @@ class MTTRDetailData(View):
             else:
                 pass
 
-            mttr_dataset = list(RFOAnalysis.objects.exclude(
-                master_causecode__exact=''
+            mttr_dataset = list(RFOAnalysis.objects.extra({
+                'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)'    
+            }).exclude(
+                # master_causecode__exact=''
             ).filter(where_condition).values('master_causecode').annotate(
                 total_count=Count('id')
             ))
 
             total_dataset = RFOAnalysis.objects.exclude(
-                master_causecode__exact=''
+                # master_causecode__exact=''
             ).filter(where_condition).count()
         except Exception, e:
             pass
