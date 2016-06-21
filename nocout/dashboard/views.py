@@ -2301,9 +2301,9 @@ class RFOAnalysisList(BaseDatatableView):
     columns = [
         'master_causecode',
         'sub_causecode',
-        'outage_in_minutes',
-        'state',
-        'city'
+        # 'outage_in_minutes',
+        # 'state',
+        # 'city'
     ]
     order_columns = [
         'master_causecode',
@@ -2312,7 +2312,25 @@ class RFOAnalysisList(BaseDatatableView):
     ]
 
     def get_initial_queryset(self):
+        """
 
+        """
+        try:
+            base_qs = self.get_base_queryset()
+            qs = base_qs.values(
+                'master_causecode', 'sub_causecode'
+            ).annotate(
+                outage_in_minutes=Sum('outage_in_minutes')
+            )
+        except Exception, e:
+            qs = self.model.objects.filter(id=0).values(*self.columns)
+
+        return qs
+
+    def get_base_queryset(self):
+        """
+
+        """
         month = self.request.GET.get('month')
         state_name = self.request.GET.get('state_name')
         city_name = self.request.GET.get('city_name')
@@ -2340,14 +2358,6 @@ class RFOAnalysisList(BaseDatatableView):
             else:
                 pass
 
-            # qs = self.model.objects.extra({
-            #     'outage_in_minutes': outage_minutes_casting,
-            #     'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
-            #     'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
-            # }).exclude(
-            #     master_causecode__exact='',
-            #     sub_causecode__exact=''
-            # ).filter(where_condition).values(*self.columns)
             qs = RFOAnalysis.objects.extra({
                 'outage_in_minutes': outage_minutes_casting,
                 'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
@@ -2355,15 +2365,12 @@ class RFOAnalysisList(BaseDatatableView):
             }).exclude(
                 master_causecode__exact='',
                 sub_causecode__exact=''
-            ).filter(where_condition).values(
-                'master_causecode', 'sub_causecode'
-            ).annotate(
-                outage_in_minutes=Sum('outage_in_minutes')
-            )
+            ).filter(where_condition)
         except Exception, e:
-            qs = self.model.objects.filter(id=0).values(*self.columns)
+            qs = self.model.objects.filter(id=0)
 
-        return qs
+        return qs        
+
 
     def filter_queryset(self, qs):
         """ If search['value'] is provided then filter all searchable columns using istartswith
@@ -2372,8 +2379,10 @@ class RFOAnalysisList(BaseDatatableView):
         sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
+            # Get Base Queryset
+            base_qs = self.get_base_queryset()
             query = []
-            exec_query = "qs = qs.filter("
+            exec_query = "base_qs = base_qs.filter("
             if not self.request.GET.get('request_for_chart'):
                 for column in self.columns[:-1]:
                     # avoid search on 'added_on'
@@ -2387,7 +2396,14 @@ class RFOAnalysisList(BaseDatatableView):
             
             exec_query += " | ".join(query)
             exec_query += ")"
+            
             exec exec_query
+
+            qs = base_qs.values(
+                'master_causecode', 'sub_causecode'
+            ).annotate(
+                outage_in_minutes=Sum('outage_in_minutes')
+            )
         return qs
 
     def prepare_results(self, qs):
@@ -2442,9 +2458,7 @@ class RFOAnalysisSummationList(BaseDatatableView):
     model = RFOAnalysis
     columns = [
         'master_causecode',
-        'outage_in_minutes',
-        'state',
-        'city'
+        'outage_in_minutes'
     ]
     order_columns = [
         'master_causecode',
@@ -2453,6 +2467,20 @@ class RFOAnalysisSummationList(BaseDatatableView):
     pre_camel_case_notation = False
 
     def get_initial_queryset(self):
+        """
+
+        """
+        try:
+            base_qs = self.get_base_queryset()
+            qs = base_qs.values('master_causecode').annotate(
+                outage_in_minutes=Sum('outage_in_minutes')
+            )
+        except Exception, e:
+            qs = self.model.objects.filter(id=0).values(*self.columns)
+
+        return qs
+
+    def get_base_queryset(self):
 
         month = self.request.GET.get('month')
         state_name = self.request.GET.get('state_name')
@@ -2488,12 +2516,42 @@ class RFOAnalysisSummationList(BaseDatatableView):
             }).exclude(
                 master_causecode__exact='',
                 sub_causecode__exact=''
-            ).filter(where_condition).values('master_causecode').annotate(
-                outage_in_minutes=Sum('outage_in_minutes')
-            )
+            ).filter(where_condition)
         except Exception, e:
             qs = self.model.objects.filter(id=0).values(*self.columns)
 
+        return qs
+
+    def filter_queryset(self, qs):
+        """ If search['value'] is provided then filter all searchable columns using istartswith
+        """
+        # get global search value
+        sSearch = self.request.GET.get('search[value]', None)
+
+        if sSearch:
+            # Get Base Queryset
+            base_qs = self.get_base_queryset()
+            query = []
+            exec_query = "base_qs = base_qs.filter("
+            if not self.request.GET.get('request_for_chart'):
+                for column in self.columns[:-1]:
+                    # avoid search on 'added_on'
+                    if column == 'added_on':
+                        continue
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            else:
+                # in case of chart data only filter with master cause code
+                query = ['Q(master_causecode__iexact="%s")' % sSearch]
+            
+            exec_query += " | ".join(query)
+            exec_query += ")"
+            
+            exec exec_query
+
+            qs = base_qs.values('master_causecode').annotate(
+                outage_in_minutes=Sum('outage_in_minutes')
+            )
         return qs
 
     def prepare_results(self, qs):
@@ -2819,8 +2877,6 @@ class INCTicketRateListing(BaseDatatableView):
                 data['target_percent'] = round(float(current_target), 2)
             except Exception, e:
                 data['target_percent'] = current_target
-
-        print severity_wise_count
 
         return json_data
 
