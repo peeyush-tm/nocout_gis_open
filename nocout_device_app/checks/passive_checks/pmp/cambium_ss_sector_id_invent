@@ -31,10 +31,19 @@ def live_query_ss_sector_id(mac):
         Returns nothing.
     
         """
+
         exit_value = 3
         ss_sector_id = None
-        host_name = extract_host_from_cambium_topology(mac)
-        try:
+        if memc:
+            try :
+                value_list = memc.get(mac)
+                ss_sector_id= value_list[6]
+            except :
+                ss_sector_id= None
+        if not ss_sector_id  :
+
+            host_name = extract_host_from_cambium_topology(mac)
+            try:
                 if host_name[0][0]:
                         query_string = "GET services\nColumns: plugin_output\nFilter: " + \
                                 "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("cambium_topology_discover",host_name[0][0])
@@ -48,7 +57,7 @@ def live_query_ss_sector_id(mac):
                                 plugin_output = [entry for entry in plugin_output.split(' ')]
                                 ss_sector_id= plugin_output[1]
 					
-        except:
+            except:
 		ss_sector_id= None	
 	return ss_sector_id	
 

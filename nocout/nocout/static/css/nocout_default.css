@@ -313,7 +313,7 @@ iframe {
   margin-bottom:5px;
 }
 .date_range_filter_container .form-control {
-  height:31px !important;
+  height: 30px !important;
 }
 #main_dashboard_container .box-body h5, #main_dashboard_container .box-body h4 {
   margin-top: 0px !important;
@@ -781,4 +781,19 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
 #powerStatusContainer {
   border-color: #C7C7CE !important;
   margin-right: 10px;
+}
+#topo_network {
+  height: 500px;
+}
+.both_view_seperator {
+  height: 1px;
+  margin-bottom: 10px;
+  width: 100%;
+  background: #DDD;
+}
+.capacity_alerts_container .box-body .list-unstyled {
+  margin-bottom:5px;
+  margin-right: -4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
 }

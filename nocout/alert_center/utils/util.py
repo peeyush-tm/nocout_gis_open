@@ -532,23 +532,23 @@ def common_get_severity_icon(severity):
 
     if severity in ['down', 'critical', 'crit']:
         severity_icon = '<i class="fa fa-circle red-dot" title="{0}">\
-                         <span style="display:none">DOWN</span></i>'.format(severity.title())
+                         <span style="display:none">{0}</span></i>'.format(severity.title())
     
     elif severity in ['warning', 'warn', 'major']:
         severity_icon = '<i class="fa fa-circle orange-dot" title="{0}">\
-                         <span style="display:none">WARNING</span></i>'.format(severity.title())
+                         <span style="display:none">{0}</span></i>'.format(severity.title())
 
     elif severity in ['up', 'ok', 'informational']:
         severity_icon = '<i class="fa fa-circle green-dot" title="{0}">\
-                         <span style="display:none">UP</span></i>'.format(severity.title())
+                         <span style="display:none">{0}</span></i>'.format(severity.title())
 
     elif severity in ['minor']:
         severity_icon = '<i class="fa fa-circle blue-dot" title="{0}">\
-                         <span style="display:none">Minor</span></i>'.format(severity.title())
+                         <span style="display:none">{0}</span></i>'.format(severity.title())
 
     elif severity in ['normal']:
         severity_icon = '<i class="fa fa-circle purple-dot" title="{0}">\
-                         <span style="display:none">Normal</span></i>'.format(severity.title())
+                         <span style="display:none">{0}</span></i>'.format(severity.title())
 
     else:
         severity_icon = '<i class="fa fa-circle grey-dot" title="{0}">\

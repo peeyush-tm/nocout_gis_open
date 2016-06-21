@@ -347,11 +347,11 @@ def load_inventory(self):
 	)
 	dr_query = (
 		"SELECT "
-		"inner_device.Sector_IP AS primary_ip, "
-		"outer_device.ip_address AS dr_ip "
+		"inner_device.Sector_name AS primary_dn, "
+		"outer_device.device_name AS dr_dn "
 		"FROM ( "
 			"SELECT "
-				"ds.ip_address AS Sector_IP, "
+				"ds.device_name AS Sector_name, "
 				"sector.dr_configured_on_id as dr_id "
 		"FROM "
 			"inventory_sector AS sector "
@@ -633,7 +633,7 @@ def load_switch_data(data_values, p, extra=None):
 def load_backhaul_data(data_values, p, extra=None):
 	t = data_values[0]
 	processed = []
-	error('PORT-Data: {0}'.format(data_values))
+	#error('PORT-Data: {0}'.format(data_values))
 	# key:: <device-tech>:<device-type>:<site-name>:<ip>
 	key = '%s:%s:%s:%s' % (str(t[3]).lower(),
 					'ss' if t[3].endswith('SS') else 'bs',
@@ -642,7 +642,7 @@ def load_backhaul_data(data_values, p, extra=None):
 	invent_key = 'device_inventory:%s'
 	for device in data_values:
 		device_attr = []
-		port_wise_capacities = [0]*8
+		port_wise_capacities = [0]*9
 		if  str(device[0]) in processed:
 		    continue
 		if '_' in str(device[5]):
@@ -694,8 +694,10 @@ def load_devicetechno_wise(data_values, p, extra=None):
 		for outer in data_values:
 			del outer[3:]
 			for inner in extra:
-				if inner[0] == outer[2]:
+				if inner[0] == outer[0]:
 					matched_dr = inner[1]
+				elif inner[1] == outer[0]:
+					matched_dr = inner[0]
 					break
 			if matched_dr:
 				outer.append(matched_dr)
@@ -788,6 +790,7 @@ def mysql_update(self, table, data_values, site, columns=None):
 		cur.executemany(updt_qry, data_values)
 		lcl_cnx.commit()
 		cur.close()
+		lcl_cnx.close()
 	except Exception as exc:
 		# rollback transaction
 		lcl_cnx.rollback()
@@ -820,6 +823,7 @@ def mysql_insert(self, table, data_values, mongo_col, site, columns=None):
 		cur.executemany(query, data_values)
 		lcl_cnx.commit()
 		cur.close()
+		lcl_cnx.close()
 	except (OperationalError, InterfaceError) as db_exc:
 		lcl_cnx.rollback()
 		error('Error in mysql_insert task, {0}'.format(db_exc))
@@ -897,6 +901,7 @@ def delete_old_topology(cnx, old_topology):
 		cur.execute(q)
 		cnx.commit()
 		cur.close()
+		cnx.close()
 	except Exception as exc:
 		error('Error in removing old topology data: {0}'.format(exc))
 

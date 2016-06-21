@@ -21,6 +21,15 @@ DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 PROFILE = DEBUG
 PROFILE_TYPE = 'line'
+SSH_PROTOCOL = 'http'
+SSH_HOST = '127.0.0.1'
+SSH_PORT = '8888'
+SSH_URL = SSH_PROTOCOL + '://' + SSH_HOST + ':' + SSH_PORT + '/'  #'http://127.0.0.1:8888/'
+SSH_USERNAME = 'achal'
+SSH_PASSWORD = 'ttpl@123'
+COMMON_SSH_SCRIPT_PATH = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
+TELNET_SS_SCRIPT = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
+TELNET_BS_SCRIPT = '/home/achal/Documents/NOCOUT/nocout_gis/nocout/performance/ssh.sh'
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -495,9 +504,26 @@ CELERYBEAT_SCHEDULE = {
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=25, hour=0)
     },
-    'scheduled_email_report_task': {
-        'task': 'download_center.tasks.scheduled_email_report',
-        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    #PTP-BH upttime Average from Daily Network availability data.
+    'calculate_avg_availability_ptpbh': {
+        'task': 'performance.tasks.calculate_avg_availability_ptpbh',
+         'schedule': crontab(day_of_month=1, hour=2)
+    },
+    #'scheduled_email_report_task': {
+    #    'task': 'download_center.tasks.scheduled_email_report',
+    #    'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    #},
+    'check_current_alarm_for_NO_PPS': {
+        'task': 'inventory.tasks.check_alarms_for_no_pps',
+        'schedule': crontab(minute='*/5'), #Execute at every 5 minute
+        'kwargs': {'alarm_type': 'current'},
+        # 'args' : ['current'],
+    },
+    'check_clear_alarm_for_NO_PPS': {
+        'task': 'inventory.tasks.check_alarms_for_no_pps',
+        'schedule': crontab(hour='*/1'),
+        'kwargs': {'alarm_type': 'clear'},
+        # 'args' : ['clear'],
     }
 }
 
@@ -733,6 +759,7 @@ REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = '/nocout/tmp/app-messages'   # Change this to a proper location.
+SMS_LOG_FILE_PATH = '/nocout/tmp/app-messages/sms'   # Change this to a proper location.
 
 # Special Calculation Mechanism for capacity management.
 CAPACITY_SPECIFIC_TIME = 0
@@ -817,6 +844,8 @@ SETTINGS_EXPORT = [
     'ENABLE_WHITE_THEME',
     'ENABLE_TOPO_VIEW',
     'ENABLE_POWER_TAB',
+    'ENABLE_DEVICE_REBOOT_BTN',
+    'SHOW_POWER_LOGS',
     'ENABLE_BIRDEYE_VIEW',
     'ENABLE_CUSTOM_DASHBOARD_VIEW',
     'SHOW_RF_COLUMN',
@@ -829,7 +858,35 @@ SETTINGS_EXPORT = [
     'NETWORK_TICKET_URL',
     'CUSTOMER_TICKET_URL',
     'PERMISSIONS_MODULE_ENABLED',
-    'FAULT_REPORT_ENABLED'
+    'FAULT_REPORT_ENABLED',
+    'SHOW_RFO_DASHBOARD',
+    'SHOW_ALL_TAB_IN_ALERTS',
+    'GLOBAL_SEARCH_BY_BS_NAME',
+    'IDU_SEC_COMMON_UTIL_TAB',
+    'SHOW_MTTR_DASHBOARD',
+    'SHOW_INC_TICKET_DASHBOARD',
+    'SHOW_RESOLUTION_EFFCIENCY_DASHBOARD',
+    'SHOW_BH_LINK_ON_SS',
+    'SSH_URL',
+    'SSH_USERNAME',
+    'SSH_PASSWORD',
+    'COMMON_SSH_SCRIPT_PATH',
+    'TELNET_SS_SCRIPT',
+    'TELNET_BS_SCRIPT',
+    'SHOW_SECTOR_LINK_ON_SS',
+    'TICKETS_LINK_ON_PERF_PAGE',
+    'SHOW_SS_PERF_LINK_IA_TABLE',
+    'DASHBOARD_SECTOR_STATUS',
+    'DASHBOARD_BACKHAUL_STATUS',
+    'EXCLAMATION_NEEDED',
+    'ANTENA_TYPE_ADV_FILTER',
+    'SHOW_CUSTOMER_COUNT_IN_TRAPS',
+    'SHOW_CUSTOMER_COUNT_IN_ALERT_LIST',
+    'ENABLE_UPTIME_DASHBOARD',
+    'SHOW_CUSTOMER_FAULT_REPORT',
+    'SHOW_BH_SUMMARY_REPORT',
+    'SHOW_LINK_STATUS',
+    'SHOW_LINK_STATUS_RAD5'
 ]
 
 # Dashbaord Settings
@@ -898,11 +955,23 @@ ENABLE_TOPO_VIEW = False
 # Flag to enable/disable power on single performance page.
 ENABLE_POWER_TAB = False
 
+# Flag to show/hide "Soft Reboot" button from power tab
+ENABLE_DEVICE_REBOOT_BTN = False
+
+# Flag to show/hide power logs menu
+SHOW_POWER_LOGS = False
+
 # Flag to enable/disable birdeye view on single performance page.
 ENABLE_BIRDEYE_VIEW = False
 
 # Flag to enable/disable custom dashboards on single performance page.
 ENABLE_CUSTOM_DASHBOARD_VIEW = False
+
+# Flag to enable global search by Base station name
+GLOBAL_SEARCH_BY_BS_NAME = False
+
+# Flag to enable common utilization tab for IDU Ip and Sector ID global search
+IDU_SEC_COMMON_UTIL_TAB = False
 
 # Password complexity settings.
 # ===============================
@@ -1218,23 +1287,33 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
 ])
 # Global variable to show/hide Scheduled report mail option in dowload center listing.
 REPORT_EMAIL_PERM = json.dumps({
-    'bs_dump': 1,
-    'ss_dump': 1,
-    'ptp_dump': 1,
-    'latency_dump': 1,
-    'customer_report': 1,
-    'duplex_report': 1,
-    'modulation': 1,
-    'utilization_tot': 1,
-    'temperature': 1,
-    'rectification_segment': 1,
-    'health_ptp_bh': 1    
+    'bs_dump': 0,
+    'ss_dump': 0,
+    'ptp_dump': 0,
+    'latency_dump': 0,
+    'customer_report': 0,
+    'duplex_report': 0,
+    'ul_issue': 0,
+    'modulation': 0,
+    'utilization_tot': 0,
+    'temperature': 0,
+    'rectification_segment': 0,
+    'health_ptp_bh': 0,
+    'bs_outage_daily': 0,
+    'bs_outage_weekly': 0,
+    'bs_outage_monthly': 0,
+    'bs_daily_fault_report': 0,
+    'bs_monthly_uptime_report': 0,
+    'bh_polling_failure': 0,
+    'backhaul_summary_weekly':0,
+    'backhaul_summary_monthly':0,
 })
 
 # Global variable to show/hide single report mail option in download center listing
-SINGLE_REPORT_EMAIL = True
+SINGLE_REPORT_EMAIL = False
+SCHEDULED_SINGLE_REPORT_EMAIL = False
 SCHEDULED_REPORT_EMAIL = False
-SCHEDULED_SINGLE_REPORT_EMAIL = True
+
 
 # Network & customer tickets url
 TICKETS_LINK_ENABLED = False
@@ -1247,8 +1326,32 @@ CUSTOMER_TICKET_URL = TICKET_PROTOCOL + '://' + TICKET_IP_PORT + '/arsys/forms/r
 # Enable/Disable permissions link from side menu
 PERMISSIONS_MODULE_ENABLED = False
 
+# Enable/Disable exclamation mark on bs_icon on google maps
+EXCLAMATION_NEEDED = False
+
 # Enable/Disable fault reports from download center
 FAULT_REPORT_ENABLED = False
+SHOW_ALL_TAB_IN_ALERTS = False
+
+SHOW_RFO_DASHBOARD = False
+SHOW_MTTR_DASHBOARD = False
+SHOW_INC_TICKET_DASHBOARD = False
+SHOW_RESOLUTION_EFFCIENCY_DASHBOARD = False
+SHOW_BH_LINK_ON_SS = False
+SHOW_SECTOR_LINK_ON_SS = False
+TICKETS_LINK_ON_PERF_PAGE = False
+SHOW_SS_PERF_LINK_IA_TABLE = False
+DASHBOARD_SECTOR_STATUS = False
+DASHBOARD_BACKHAUL_STATUS = False
+ANTENA_TYPE_ADV_FILTER = False
+SHOW_CUSTOMER_COUNT_IN_TRAPS = False
+SHOW_CUSTOMER_COUNT_IN_ALERT_LIST = False
+SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT = False
+ENABLE_UPTIME_DASHBOARD = False
+SHOW_CUSTOMER_FAULT_REPORT = False
+SHOW_BH_SUMMARY_REPORT = False
+SHOW_LINK_STATUS  = False
+SHOW_LINK_STATUS_RAD5 = False
 
 # Import the local_settings.py file to override global settings
 try:

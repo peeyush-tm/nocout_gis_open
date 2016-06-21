@@ -356,6 +356,7 @@ function GisPerformance() {
                 bs_name = apiResponse.name ? apiResponse.name : "",
                 bs_maintenance_status = apiResponse.maintenance_status ? apiResponse.maintenance_status : false,
                 maintenance_icon = apiResponse.markerUrl ? apiResponse.markerUrl : false,
+                bh_icon = apiResponse.icon_url ? apiResponse.icon_url : false,
                 perf_bh_info = apiResponse.bh_polled_info ? apiResponse.bh_polled_info : [],
                 perf_bh_severity = apiResponse.bhSeverity ? apiResponse.bhSeverity : "",
                 bh_pl = apiResponse.bh_pl ? apiResponse.bh_pl : "",
@@ -363,6 +364,7 @@ function GisPerformance() {
                 bs_lat = apiResponse.lat,
                 bs_lon = apiResponse.lon,
                 bsInfo = apiResponse.base_station,
+                has_pps = apiResponse['has_pps_alarm'] ? apiResponse['has_pps_alarm'] : 0,
                 bhInfo = apiResponse.backhual,
                 sector_info_list = apiResponse.sectors_info_list,
                 sector_infoWindow_content = sector_info_list ? sector_info_list : [],
@@ -391,7 +393,9 @@ function GisPerformance() {
 
                     // If we have new BS icon then update it in Bs marker
                     if(maintenance_icon) {
-                        perf_self.updateMarkerIcon(bs_marker, maintenance_icon, 'base_station');
+                        perf_self.updateMarkerIcon(bs_marker, maintenance_icon, 'base_station', has_pps);
+                    } else if(bh_icon) {
+                        perf_self.updateMarkerIcon(bs_marker, bh_icon, 'base_station', has_pps);
                     }
                 } catch(e) {
                     // console.log(e);
@@ -881,6 +885,14 @@ function GisPerformance() {
                                             toolTip_infobox.open(mapInstance, ss_marker);
                                             tooltipInfoLabel['ss_'+ss_marker_data.name] = toolTip_infobox;
                                         }
+                                    }
+
+                                    var ss_device_type = $.trim(ss_marker_object.device_type.toLowerCase());
+                                    // Show Link status in hover
+                                    if((link_status_device_type_list.indexOf(ss_device_type) > -1) && show_link_status){
+                                        createHoverWindow(ss_marker);
+                                    } else if(ss_device_type == 'radwin5kss' && show_link_status_rad5){
+                                        createHoverWindow(ss_marker);
                                     }
 
                                     // Right click event on sub-station marker
@@ -1408,7 +1420,7 @@ function GisPerformance() {
      * @param marker {Object}, It contains the map marker object.
      * @param icon {String}, It contains the marker icon url string
      */
-    this.updateMarkerIcon = function(marker, new_icon, marker_type) {
+    this.updateMarkerIcon = function(marker, new_icon, marker_type, has_pps) {
 
         var iconUrl = base_url+"/"+new_icon,
             old_icon_obj = iconUrl,
@@ -1450,7 +1462,7 @@ function GisPerformance() {
             var sectorMarkerLayer = marker.layer ? marker.layer : marker.layerReference;
             sectorMarkerLayer.redraw();
         } else {
-            var marker_icon_obj = gmap_self.getMarkerImageBySize(old_icon_obj, marker_type);
+            var marker_icon_obj = gmap_self.getMarkerImageBySize(old_icon_obj, marker_type, has_pps);
 
             if(marker_type == 'base_station') {
                 // Update BS marker icon

@@ -45,7 +45,7 @@ def live_query_ul_jitter(mac):
 		value_list = memc.get(mac)
 		if value_list:
 			try:
-				ul_jitter = int(value_list[1])
+				ul_jitter = int(value_list[3])
 			except:
 				ul_jitter = None
 		if not ul_jitter:

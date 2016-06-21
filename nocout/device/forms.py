@@ -42,6 +42,8 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
         self.base_fields['device_type'].label = 'Device Type'
+        if 'parent' in self.base_fields:
+            self.base_fields['parent'].label = 'Parent IP'
         # self.base_fields['service'].label = 'Services'
         try:
             if 'instance' in kwargs:
@@ -56,13 +58,17 @@ class DeviceForm(forms.ModelForm):
         if not self.request is None:
             # Create instance of 'NocoutUtilsGateway' class
             nocout_utils = NocoutUtilsGateway()
+            # print "**********self.fields**********"
+            # print self.fields
+            # print "**********self.fields**********"
             self.fields['organization'].queryset = nocout_utils.logged_in_user_organizations(self)
         else:
             self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].empty_label = "Select"
         # self.fields['parent'].empty_label = "Select"
-        # self.fields['parent'].widget.choices = self.fields['parent'].choices
+        if 'parent' in self.fields:
+            self.fields['parent'].widget = forms.HiddenInput()
         self.fields['site_instance'].empty_label = "Select"
         self.fields['site_instance'].widget.choices = self.fields['site_instance'].choices
         self.fields['machine'].empty_label = "Select"
@@ -125,7 +131,7 @@ class DeviceForm(forms.ModelForm):
         Meta Information
         """
         model = Device
-        exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms', 'parent']
+        exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms']
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }
@@ -134,8 +140,15 @@ class DeviceForm(forms.ModelForm):
         """
         Latitude field validations
         """
-        latitude = self.data['latitude']
-        if latitude != '' and len(latitude) > 2 and latitude[2] != '.':
+        latitude = self.request.POST.get('latitude') #self.data['latitude']
+
+        is_error = False
+        try:
+            latitude = float(latitude)
+        except Exception, e:
+            is_error = True
+
+        if latitude == '' or str(latitude).count('.') > 1 or is_error:
             raise forms.ValidationError("Please enter correct value for latitude.")
         return self.cleaned_data.get('latitude')
 
@@ -143,8 +156,15 @@ class DeviceForm(forms.ModelForm):
         """
         Longitude field validation
         """
-        longitude = self.data['longitude']
-        if longitude != '' and len(longitude) > 2 and longitude[2] != '.':
+        longitude = self.request.POST.get('longitude') #self.data['longitude']
+        
+        is_error = False
+        try:
+            longitude = float(longitude)
+        except Exception, e:
+            is_error = True
+
+        if longitude == '' or str(longitude).count('.') > 1 or is_error:
             raise forms.ValidationError("Please enter correct value for longitude.")
         return self.cleaned_data.get('longitude')
 
@@ -182,8 +202,8 @@ class DeviceForm(forms.ModelForm):
         """
         Validations for device form
         """
-        latitude = self.cleaned_data.get('latitude')
-        longitude = self.cleaned_data.get('longitude')
+        latitude = self.request.POST.get('latitude')
+        longitude = self.request.POST.get('longitude')
         state = self.cleaned_data.get('state')
 
         # check that device name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
@@ -198,7 +218,10 @@ class DeviceForm(forms.ModelForm):
         # Create instance of 'NocoutUtilsGateway' class
         nocout_utils = NocoutUtilsGateway()
 
-        is_lat_long_valid = nocout_utils.is_lat_long_in_state(latitude, longitude, state)
+        try:
+            is_lat_long_valid = nocout_utils.is_lat_long_in_state(float(latitude), float(longitude), state)
+        except Exception, e:
+            is_lat_long_valid = False
 
         if not is_lat_long_valid:
             self._errors["latitude"] = ErrorList(

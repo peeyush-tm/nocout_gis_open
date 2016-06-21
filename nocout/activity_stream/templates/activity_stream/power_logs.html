@@ -1,0 +1,69 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-sitemap'></i> User Management" "javascript:;" %}
+    {% breadcrumb_safe "Power Logs" "actionlist" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}Power Logs{% endblock %}
+{% block content_description %} {% endblock %}
+{% block content %}
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>POWER LOGS</h4>
+        </div>
+        <div id="tableContainer" class="box-body">
+            <table class="datatable table table-striped table-bordered table-hover" id="power_logs_listing">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            /*Grid headers object*/
+            var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+
+            /*Ajax url to get grid data*/
+            var ajax_url = '{% url "power_logs_listing" %}';
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+
+            var common_extra_param = "'download_excel': 'yes'",
+                table_title = "Power Logs Listing",
+                app_name = "activity_stream",
+                header_class_name = "PowerLogsInit",
+                data_class_name = "PowerLogsListing",
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}";
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy = false;
+            
+            dataTableInstance.createDataTable(
+                "power_logs_listing",
+                tableObject,
+                ajax_url,
+                destroy,
+                table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                extra_param,
+                extra_param
+            );
+        });
+    </script>
+{% endblock %}

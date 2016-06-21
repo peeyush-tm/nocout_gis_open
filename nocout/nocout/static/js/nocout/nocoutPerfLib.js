@@ -179,7 +179,7 @@ function nocoutPerfLib() {
 
         var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p' || device_type.toLowerCase() == 'radwin2kss',
             condition_2 = page_type == 'other',
-            condition_3 = page_type == 'customer' && device_type.toLowerCase() != 'radwin2kbs';
+            condition_3 = page_type == 'customer'; //&& device_type.toLowerCase() != 'radwin2kbs';
             
         // Show power tab only if page type = Customer 
         if (condition_3) {
@@ -465,18 +465,19 @@ function nocoutPerfLib() {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\
                             <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
-                            <button title="Status" class="btn btn-default power-actions" id="power_send_status" data-button-respone="status" \
-                                data-complete-text="<i class=\'fa fa-circle\'></i> Status" \
-                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-circle"></i> Status\
+                            <button title="Power Status" class="btn btn-default power-actions" id="power_send_status" data-button-respone="status" \
+                                data-complete-text="<i class=\'fa fa-circle\'></i> Power Status" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-circle"></i> Power Status\
                             </button>\
-                            <button title="Reset" class="btn btn-default power-actions" id="power_send_reset" data-button-respone="reset" \
-                                data-complete-text="<i class=\'fa fa-refresh\'></i> Reset" \
-                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-refresh"></i> Reset\
+                            <button title="Power Reboot" class="btn btn-default power-actions" id="power_send_reset" data-button-respone="reset" \
+                                data-complete-text="<i class=\'fa fa-refresh\'></i> Power Reboot" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-refresh"></i> Power Reboot\
                             </button>\
                             <button title="JOJI" class="btn btn-default power-actions" id="power_send_joji" data-button-respone="joji" \
-                                data-complete-text="<i class=\'fa fa-plug\'></i> Joji" \
-                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-plug"></i> Joji\
+                                data-complete-text="<i class=\'fa fa-plug\'></i> JOJI" \
+                                data-loading-text="<i class=\'fa fa-spinner fa-spin\'></i> Sending..."> <i class="fa fa-plug"></i> JOJI\
                             </button>\
+                            {0}\
                             <div class="clearfix"></div>\
                             <div class="divide-20"></div>\
                             <table id="power_msg_listing" class="datatable table table-striped table-bordered table-hover"> \
@@ -485,6 +486,17 @@ function nocoutPerfLib() {
                             </table> \
                             <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
                             </div></div></div>';
+            
+            var reboot_btn_html = '';
+            if (enable_reboot_btn) {
+                reboot_btn_html = '<button title="Soft Reboot" class="btn btn-default power-actions" \
+                                       id="power_send_reboot" data-button-respone="reboot" \
+                                       data-complete-text="<i class=\'fa fa-refresh\'></i> Soft Reboot" \
+                                       data-loading-text="<i class=\'fa fa-spinner fa-spin\'> \
+                                       </i> Please Wait..."> <i class="fa fa-refresh"></i> Soft Reboot\
+                                       </button>';
+            }
+            content_html = content_html.replace('{0}', reboot_btn_html);
         } else {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\
@@ -1228,7 +1240,15 @@ function nocoutPerfLib() {
 
                     if (result.success == 1) {
 
-                        var grid_headers = result.data.objects.table_data_header;
+                        var grid_headers = result.data.objects.table_data_header,
+                            plot_type = result['data']['objects']['plot_type'];
+
+                        if (plot_type && plot_type.toLowerCase() == 'string') {
+                            draw_type = 'table';
+                            $('#item_type_btn').addClass('hide');
+                        } else {
+                            $('#item_type_btn').removeClass('hide');
+                        }
 
                         if (grid_headers && grid_headers.length > 0) {
 
@@ -1315,6 +1335,11 @@ function nocoutPerfLib() {
                             // If any data available then plot chart & table
                             if (chart_config.chart_data.length > 0) {
                                 if (draw_type == 'chart') {
+                                    for(var i=0;i<chart_config.chart_data.length;i++) {
+                                        if(!chart_config.chart_data[i]['turboThreshold']) {
+                                            chart_config.chart_data[i]['turboThreshold'] = 0;
+                                        }
+                                    }
                                     if (!is_birdeye_view && !is_custom_view) {
                                         // Destroy 'perf_data_table'
                                         nocout_destroyDataTable('other_perf_table');
@@ -1333,10 +1358,17 @@ function nocoutPerfLib() {
                                     }
 
                                     if (!$('#' + service_id+ '_chart').highcharts()) {
+                                        if(typeof dataset_list == 'undefined') {
+                                            dataset_list = [];
+                                        }
+                                        dataset_list = chart_config.chart_data;
                                         createHighChart_nocout(chart_config,service_id, false, false, function(status) {
                                             // 
                                         });
                                     } else {
+                                        for (var i =0;i<chart_config.chart_data.length;i++) {
+                                            dataset_list[i]['data'] = dataset_list[i]['data'].concat(chart_config.chart_data[i]['data']);
+                                        }
                                         addPointsToChart_nocout(chart_config.chart_data,service_id);
                                     }
 
@@ -1756,6 +1788,7 @@ $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e
         }
 
         if (show_historical_on_performance || is_perf_polling_enabled) {
+            dataset_list = [];
             perfInstance.initGetServiceData(serviceDataUrl, tab_service_id, current_device);
         }
     }

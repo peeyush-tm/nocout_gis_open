@@ -3,13 +3,19 @@ file from mysql"""
 
 
 from collections import namedtuple
+from itertools import izip_longest
 from datetime import datetime
 from operator import itemgetter
 from pprint import pformat
-
+import imp
 from celery.utils.log import get_task_logger
+from celery import Celery
+from celery.utils.celery_sentinel import register_celery_alias
+register_celery_alias('redis-sentinel')
 
 from mysql_connection import mysql_conn
+nocout_site_name= 'master_UA'
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 logger = get_task_logger(__name__)
 info, warning, error = (
@@ -75,6 +81,97 @@ t_interval_s_type = {
 wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
 
 
+def send_task_message(sentinels, service_name, min_sentinels):
+    """ Sends task message on appropriate broker"""
+    class CeleryConfig(object):
+        #BROKER_URL = 'redis://10.133.19.165:6381/15'
+        # options needed for celery broker connection
+        BROKER_TRANSPORT_OPTIONS = {
+                'service_name': service_name,
+                'sentinels': sentinels,
+                'min_other_sentinels': min_sentinels,
+                'db': 15
+        }
+        BROKER_URL = 'redis-sentinel://'
+    celery = Celery()
+    print '-----------------'
+    try:
+            celery.config_from_object(CeleryConfig)
+            celery.send_task('load-inventory')
+    except Exception as exc:
+        print 'Error in calling task load-inventory'
+        print exc
+    else:
+	print 'Task sent for: {0}'.format(service_name)
+    print '-----------------'
+
+
+def call_load_inventory():
+    # machines we need to send tasks to
+    machines = ['ospf1', 'ospf2', 'ospf3', 
+		'ospf4', 'ospf5', 'vrfprv', 'pub']
+    for m in machines:
+        config = get_sentinels_for_machine(m)
+        send_task_message(config.get('sentinels'),
+		config.get('service_name'),
+		config.get('min_sentinels')
+	)
+
+
+def get_sentinels_for_machine(m):
+	default_sentinels = [
+		('115.114.79.37', 26379),
+		('115.114.79.38', 26379),
+		('115.114.79.39', 26380),
+		('115.114.79.40', 26379),
+		('115.114.79.41', 26379),
+	]
+	vrfprv_sentinels = [
+		('10.206.30.15', 26379)
+	]
+	pub_sentinels = [
+		('115.114.85.173', 26379)
+	]
+        mapping = {
+                'ospf1': {
+			'sentinels': default_sentinels,
+			'service_name': 'ospf1',
+			'min_sentinels': 3,
+        	},
+                'ospf2': {
+			'sentinels': default_sentinels,
+			'service_name': 'ospf2',
+			'min_sentinels': 3,
+        	},
+                'ospf3': {
+			'sentinels': default_sentinels,
+			'service_name': 'ospf3',
+			'min_sentinels': 3,
+        	},
+                'ospf4': {
+			'sentinels': default_sentinels,
+			'service_name': 'ospf4',
+			'min_sentinels': 3,
+        	},
+                'ospf5': {
+			'sentinels': default_sentinels,
+			'service_name': 'ospf5',
+			'min_sentinels': 3,
+        	},
+                'vrfprv': {
+			'sentinels': vrfprv_sentinels,
+			'service_name': 'vrfprv',
+			'min_sentinels': 0,
+        	},
+                'pub': {
+			'sentinels': pub_sentinels,
+			'service_name': 'pub',
+			'min_sentinels': 0,
+        	},
+	}
+        return mapping.get(m)
+
+
 def prepare_hosts_file():
     T = namedtuple('devices', 
             ['wimax_bs_devices', 'cambium_bs_devices',
@@ -90,15 +187,9 @@ def prepare_hosts_file():
     warning('disabled_services: {0}'.format(disabled_services))
     # This file contains device names, to be updated in configuration db
     open('hosts.txt', 'w').close()
-    #try:
     bs_devices = make_BS_data(disabled_services)
-    #except Exception, exp:
-    #   logger.error('Exception in make_BS_data: ' + pformat(exp))
-    #try:
     ss_devices = make_SS_data(bs_devices.all_hosts, bs_devices.ipaddresses, 
             bs_devices.host_attributes, disabled_services)
-    #except Exception, exp:
-    #   logger.error('Exception in make_SS_data: ' + pformat(exp))
     # Final Devices
     devices_plus_backhaul = make_Backhaul_data(ss_devices.all_hosts,
             ss_devices.ipaddresses, ss_devices.host_attributes, disabled_services)
@@ -163,7 +254,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     device_device.is_deleted=0 and
     device_device.host_state <> 'Disable'
     and 
-    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE')
+    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE','Huawei')
     group by device_device.ip_address
     ;
     """
@@ -214,9 +305,11 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
                 int_ports = map(lambda x: int(x), int_ports)   #convert int type
                 int_string = map(lambda x: x.split('/')[0], device[9].split(','))
                 for i in xrange(len(int_string)):
-                    if int_string[i]== 'Gi0':
+                    if 'gi' in int_string[i].lower():
                         int_ports[i]= int_ports[i]+24
                 capacities = device[10].split(',') if device[10] else device[10]
+                if len(int_string)>1:  # to multiple kpi for ring ports
+                    capacities.append(capacities[0])
                 for p_n, p_cap in zip(int_ports, capacities):
                     port_wise_capacities[int(p_n)-1] = p_cap
             except Exception as e:
@@ -231,6 +324,8 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
                    if int_ports_s[i]== 1:
                        int_ports[i]=int_ports[i]+48
                capacities = device[10].split(',') if device[10] else device[10]
+               if len(int_ports)>1: # for ring port extra capcity added
+                   capacities.append(capacities[0])
                for p_n, p_cap in zip(int_ports, capacities):
                    port_wise_capacities[int(p_n)] = p_cap
            except Exception as e:
@@ -252,7 +347,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
         if disabled_service_tags:
             disabled_service_tags_entry = '|' +  '|'.join(disabled_service_tags)
         entry = str(device[1]) + '|' + str(device[2]) + '|' + str(device[3]).lower() + \
-            '|wan|prod|' + str(device[4]) + '|site:' + str(device[11]) + \
+            '|wan|prod|' + str(device[4]) + '|site:' + str(device[5]) + \
             disabled_service_tags_entry + '|wato|//' 
         all_hosts.append(entry) 
         ipaddresses.update({str(device[1]): str(device[0])})
@@ -370,19 +465,13 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         'wimax_bs_devices', 'cambium_bs_devices', 'radwin_bs_devices'])
     processed = []
     dr_en_devices = sorted(filter(lambda e: e[9] and e[9].lower() == 'yes' and e[10], data), key=itemgetter(10))
-    #print 'dr_en_devices --'
-    #print len(dr_en_devices)
     data = filter(lambda e: e[9] == '' or e[9] == None or (e[9] and e[9].lower() == 'no'), data)
     # dr_enabled devices ids
     # dr_configured_on_devices would be treated as master device
     dr_configured_on_ids = map(lambda e: e[10], dr_en_devices)
-    #print '--dr_configured_on_ids----'
-    #print len(dr_configured_on_ids)
     # Find dr_configured on devices from device_device table
     dr_configured_on_devices = get_dr_configured_on_devices(device_ids=dr_configured_on_ids)
     final_dr_devices = zip(dr_en_devices, dr_configured_on_devices)
-    #print '-- final_dr_devices --'
-    #print len(final_dr_devices)
 
     hosts_only = open('hosts.txt', 'a')
 
@@ -403,7 +492,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         # Entries for master dr device
         dr_device_entry = str(entry[0][1]) + '|' + str(entry[0][2]) + '|' + str(entry[0][3]) + \
                 '| dr: ' + str(entry[1][0]) + '|dr_master|wan|prod|' + str(entry[0][5]) + '|site:' \
-                + str(entry[0][13]) + disabled_service_tags_entry + '|wato|//'
+                + str(entry[0][7]) + disabled_service_tags_entry + '|wato|//'
         all_hosts.append(dr_device_entry)
         ipaddresses.update({str(entry[0][1]): str(entry[0][0])})
         host_attributes.update({str(entry[0][1]):
@@ -424,7 +513,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         # inventory_sector table
         dr_device_entry = str(entry[1][0]) + '|' + str(entry[0][2]) + '|' + str(entry[1][2]) + \
                 '| dr: ' + str(entry[0][1]) + '|dr_slave|wan|prod|' + str(entry[0][5]) + '|site:' \
-                + str(entry[0][13]) + disabled_service_tags_entry + '|wato|//'
+                + str(entry[0][7]) + disabled_service_tags_entry + '|wato|//'
         all_hosts.append(dr_device_entry)
         ipaddresses.update({str(entry[1][0]): str(entry[1][1])})
         host_attributes.update({str(entry[1][0]):
@@ -436,7 +525,6 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
                 }
             })
 
-    #print data
     for device in data:
         # get all disabled services on this host, if any
         disabled_service_tags = disabled_services.get(str(device[1]))
@@ -448,7 +536,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         hosts_only.write(str(device[1]) + '\n')
         processed.append(str(device[1]))
         entry = str(device[1]) + '|' + str(device[2]) + '|' + str(device[3]).lower() + \
-            '|wan|prod|' + str(device[5]) + '|site:' + str(device[13]) + \
+            '|wan|prod|' + str(device[5]) + '|site:' + str(device[7]) + \
             disabled_service_tags_entry + '|wato|//' 
         all_hosts.append(entry) 
         ipaddresses.update({str(device[1]): str(device[0])})
@@ -467,9 +555,6 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     L0 = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'wimax', data))
     # Ex entry : ('device_1', 'ospf4_slave_1', 'dr_site')
     L1 = map(lambda e: (e[0][1], e[0][7], e[1][0]), final_dr_devices)
-    #for entry in final_dr_devices:
-    #    L1.append((entry[0][1], entry[0][7]))
-    #    L1.append((entry[1][0], entry[0][7]))
     wimax_bs_devices = L0 + L1
     # Get the Cambium BS devices (we need them for active checks)
     # Since, as of now, we have only Cambium devices in pmp technology
@@ -486,8 +571,6 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     radwin_bs_devices = zip(radwin_bs_devices, qos_values)
     for e in radwin_bs_devices:
 	final_radwin_devices_entry.append((e[0][0], e[0][1], e[1]))
-    #for a, b in izip_longest(radwin_bs_devices, qos_values):
-    #    final_radwin_devices_entry.append((a[0], a[1], b))
 
     T1.radwin_bs_devices = final_radwin_devices_entry
 
@@ -534,7 +617,8 @@ def get_disabled_services():
     return data
 
 
-def eval_qos(vals, out=[]):
+def eval_qos(vals, out=None):
+    out = []
     for v in vals:
         if v and int(v) > 10:
             v = float(v) / float(1024)
@@ -557,14 +641,6 @@ def write_hosts_file(all_hosts, ipaddresses, host_attributes):
         f.write("host_attributes.update(\n%s)\n" % pformat(host_attributes))
 
     
-    ## Write DR enabled devices to separate .mk file
-    #with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/wimax_dr_en.mk', 'w') as f:
-    #   f.write("# encoding: utf-8\n\n")
-    #   f.write("\nhost_contactgroups += []\n\n\n")
-    #   f.write("all_hosts += %s\n" % pformat(dr_all_hosts))
-    #   f.write("\n\n# Explicit IP Addresses\n")
-    #   f.write("ipaddresses.update(%s)\n\n" % pformat(dr_ipaddresses))
-    #   f.write("host_attributes.update(\n%s)\n" % pformat(dr_host_attributes))
 
 
 def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
@@ -644,7 +720,7 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
             disabled_service_tags_entry = '|' +  '|'.join(disabled_service_tags)
         hosts_only.write(str(device[4]) + '\n')
         processed.append(str(device[4]))
-        entry = str(device[4]) + '|' + str(device[6]) + '|' + str(device[5]).lower() + '|' + str(device[1]) + '|wan|prod|' + str(device[7]) + '|site:' + str(device[16]) + disabled_service_tags_entry + '|wato|//'
+        entry = str(device[4]) + '|' + str(device[6]) + '|' + str(device[5]).lower() + '|' + str(device[1]) + '|wan|prod|' + str(device[7]) + '|site:' + str(device[8]) + disabled_service_tags_entry + '|wato|//'
         all_hosts.append(entry)
         ipaddresses.update({str(device[4]): str(device[0])})
         host_attributes.update({
@@ -666,8 +742,6 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
     radwin_ss_devices = zip(radwin_ss_devices, qos_values)
     for e in radwin_ss_devices:
         final_radwin_devices_entry.append((e[0][0], e[0][1], e[1]))
-    #for a, b in izip_longest(radwin_ss_devices, qos_values):
-    #    final_radwin_devices_entry.append((a[0], a[1], b))
 
     # Get Wimax SS devices, for active checks
     wimax_ss_devices = filter(lambda e: e[14].lower() == 'wimax', data)
@@ -720,9 +794,6 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
 
 
 def prepare_rules(devices):
-    #ping_levels_db, default_checks, snmp_ports_db, \
-    #        snmp_communities_db, active_checks_thresholds, \
-    #        active_checks_thresholds_per_device = get_settings()
     settings_out = get_settings()
 
     #print settings_out.active_checks_thresholds
@@ -738,8 +809,53 @@ def prepare_rules(devices):
 
     write_rules_file(settings_out, ac_chks1)
 
+def dict_to_redis_hset(r, hkey, dict_to_store):
+    return all([r.hset(hkey, k, v) for k, v in dict_to_store.items()])
 
 def get_settings():
+
+    #query1 = """
+    # select device.device_name as device_name,  backhaul.bh_port_name as port from device_device as device left join
+    # (  inventory_backhaul as backhaul  ) on  (  device.id  = backhaul.bh_configured_on_id  )  where device.device_type IN (12,18) 
+    #and backhaul.bh_port_name <> 'NULL';
+    #"""
+
+
+    query2 = """
+select
+	bh_device.device_name,
+	
+	GROUP_CONCAT(bs.bh_port_name separator ',') as bh_ports
+	
+from
+	inventory_basestation as bs
+left join
+	inventory_backhaul as bh
+on
+	bs.backhaul_id = bh.id
+left join
+	device_device as bh_device
+ON
+	bh_device.id = bh.bh_configured_on_id
+left join
+	device_devicetype as dtype
+ON
+	dtype.id = bh_device.device_type
+left join
+	service_servicedatasource as sds
+ON
+	lower(sds.name) = lower(bs.bh_port_name)
+	OR
+	lower(sds.alias) = lower(bs.bh_port_name)
+	OR
+	lower(sds.name) = lower(replace(bs.bh_port_name, '/', '_'))
+	OR
+	lower(sds.alias) = lower(replace(bs.bh_port_name, '/', '_'))
+WHERE
+	lower(dtype.name) in ('juniper', 'cisco', 'huawei')
+group by
+	bh_device.id;
+""" 
     global snmp_check_interval
     snmp_communities_db, snmp_ports_db = [], []
     data = []
@@ -757,14 +873,20 @@ def get_settings():
         cur = db.cursor()
         cur.execute(query)
         data = dict_rows(cur)
+	cur.execute(query2)
+	data2 = cur.fetchall()  # from basestation
         cur.close()
-        #logger.error('data in get_settings: ' + pformat(data))
     except Exception, exp:
         logger.error('Exception in get_settings: ' + pformat(exp))
         db.close()
     finally:
         db.close()
-
+    memc_obj1=db_ops_module.MemcacheInterface()
+    memc_obj =memc_obj1.memc_conn
+    dict3 = [(key,value.replace("/", "_")) for key, value in data2 if value] # for basestation
+    dict_switch = dict(dict3) # for basestation 
+    key = "master_ua" + "_switch"
+    memc_obj.set(key, dict_switch)
     processed = []
     active_check_services = []
     # Following utilization active checks should not be included in list of passive checks
@@ -776,7 +898,7 @@ def get_settings():
             'radwin_ss_provis_kpi',
             'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
             'rici_dl_util_kpi', 'rici_ul_util_kpi',
-            'switch_dl_util_kpi', 'switch_ul_util_kpi']
+            'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi','huawei_switch_dl_util_kpi','huawei_switch_ul_util_kpi']
     # Following dependent SS checks should not be included in list of passive checks
     # As they are treated as active checks (Dependent in sense they get data from their BS)
     exclude_ss_active_services = ['cambium_ss_ul_issue_kpi', 'cambium_ss_provis_kpi', 'wimax_ss_ul_issue_kpi',
@@ -850,8 +972,13 @@ def get_settings():
             d_ports = service['port'], [service['devicetype']], ['@all']
             if d_ports not in snmp_ports_db:
                 snmp_ports_db.append(d_ports)
-
-            d_community = str(service['community']), [str(service['devicetype'])], ['@all']
+            
+            if service['version'] == 'v3':
+                 snmp_v3_parameter = (str(service['security_level']), str(service['auth_protocol']), str(service['security_name']), 
+                 str(service['auth_password']), str(service['private_phase']), str(service['private_pass_phase']))
+                 d_community = snmp_v3_parameter, [str(service['devicetype'])], ['@all']
+            else :
+            	d_community = str(service['community']), [str(service['devicetype'])], ['@all']
             if d_community not in snmp_communities_db:
                 snmp_communities_db.append(d_community)
     T.ping_levels_db, T.default_checks, T.snmp_ports_db = ping_levels_db, default_checks, snmp_ports_db
@@ -886,7 +1013,13 @@ def prepare_query():
     devicetype.timeout as ping_timeout,
     protocol.port as port,
     protocol.version as version,
-    protocol.read_community as community
+    protocol.read_community as community,
+    protocol.auth_password as auth_password,
+    protocol.auth_protocol as auth_protocol,
+    protocol.security_name as security_name,
+    protocol.security_level as security_level,
+    protocol.private_phase as private_phase,
+    protocol.private_pass_phase as private_pass_phase
     from device_devicetype as devicetype
     left join (
         service_service as service,
@@ -928,8 +1061,6 @@ def get_threshold(service):
     serv = service.get('service')
     warn = None
     crit = None
-    #print service
-    #try:
     if service.get('dtype_ds_warning') or service.get('dtype_ds_critical'):
         warn = service.get('dtype_ds_warning')
         crit = service.get('dtype_ds_critical')
@@ -941,8 +1072,6 @@ def get_threshold(service):
     elif service.get('warning') or service.get('critical'):
         warn = service.get('warning')
         crit = service.get('critical')
-    #except Exception:
-        #return result
 
     result = format_threshold(warn, crit, serv)
 
@@ -1039,7 +1168,7 @@ def make_active_check_rows(container, devices, services, active_checks_threshold
 
     qos_based_services = ['radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'mrotek_dl_util_kpi', 
 		'mrotek_ul_util_kpi', 'rici_dl_util_kpi', 'rici_ul_util_kpi',
-		'switch_dl_util_kpi', 'switch_ul_util_kpi']
+		'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi']
     for service in services:
 
 	######### Code has been Added to facilate addtion/deletion of service from device_typeon UI ,only active checks which 
@@ -1080,7 +1209,8 @@ def util_active_checks(devices, active_checks_thresholds, active_checks_threshol
     radwin_util_services = ['radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'radwin_ss_provis_kpi']
     mrotek_util_services = ['mrotek_dl_util_kpi', 'mrotek_ul_util_kpi']
     rici_util_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi']
-    switch_util_services = ['switch_dl_util_kpi', 'switch_ul_util_kpi']
+    cisco_switch_util_services = ['cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi']
+    juniper_switch_util_services= ['juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi']
     check_dict = {}
     check_dict = make_active_check_rows(check_dict, devices.wimax_bs_devices,
             wimax_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
@@ -1100,8 +1230,11 @@ def util_active_checks(devices, active_checks_thresholds, active_checks_threshol
             rici_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     # switch utilization active checks
-    check_dict = make_active_check_rows(check_dict, devices.switch_devices,
-            switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
+    check_dict = make_active_check_rows(check_dict, devices.cisco_switch_devices,
+            cisco_switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
+            def_war=80, def_crit=90)
+    check_dict = make_active_check_rows(check_dict, devices.juniper_switch_devices,
+            juniper_switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     ########################################################################################
     # These values would be used if we dont find device specific entry
@@ -1250,10 +1383,6 @@ def write_rules_file(settings_out, final_active_checks):
         f.write("ping_levels += %s" % pformat(settings_out.ping_levels_db))
         f.write("\n\n\n\n")
 
-        #for service in final_active_checks.keys():
-        #    f.write("active_checks.setdefault('" + service + "', [])\n")
-        #for service, check_list in final_active_checks.iteritems():
-        #    f.write("active_checks['" + service + "'] += %s\n\n" % pformat(check_list))
 
         f.write("checks += %s" % pformat(settings_out.default_checks))
         f.write("\n\n\n")
@@ -1270,15 +1399,11 @@ def write_rules_file(settings_out, final_active_checks):
 
 def main():
     hosts_out = prepare_hosts_file()
-    
-    #warning("wimax_bs_devices, wimax_ss_devices, cambium_bs_devices", "cambium_ss_devices", \
-    #        "radwin_bs_devices", "radwin_ss_devices", "mrotek_devices", "rici_devices", "switch_devices")
-    #warning(len(hosts_out.wimax_bs_devices), len(hosts_out.wimax_ss_devices), len(hosts_out.cambium_bs_devices), \
-    #        len(hosts_out.cambium_ss_devices), len(hosts_out.radwin_bs_devices), len(hosts_out.radwin_ss_devices), \
-    #        len(hosts_out.mrotek_devices), len(hosts_out.rici_devices), len(hosts_out.switch_devices))
 
     prepare_rules(hosts_out)
 
 
 if __name__ == '__main__':
     main()
+    # call load inventory tasks by sending message to brokers on Prd servers
+    call_load_inventory()
