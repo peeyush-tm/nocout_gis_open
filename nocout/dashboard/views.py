@@ -2606,7 +2606,9 @@ class MTTRSummaryData(View):
                 total_count=Count('id'))
             )
 
-            total_dataset = RFOAnalysis.objects.filter(where_condition).count()    
+            total_dataset = RFOAnalysis.objects.exclude(
+                master_causecode__exact='',
+            ).filter(where_condition).count()    
         except Exception, e:
             pass
 
