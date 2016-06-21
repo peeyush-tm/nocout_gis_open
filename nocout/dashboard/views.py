@@ -2340,14 +2340,26 @@ class RFOAnalysisList(BaseDatatableView):
             else:
                 pass
 
-            qs = self.model.objects.extra({
+            # qs = self.model.objects.extra({
+            #     'outage_in_minutes': outage_minutes_casting,
+            #     'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+            #     'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+            # }).exclude(
+            #     master_causecode__exact='',
+            #     sub_causecode__exact=''
+            # ).filter(where_condition).values(*self.columns)
+            qs = RFOAnalysis.objects.extra({
                 'outage_in_minutes': outage_minutes_casting,
                 'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
                 'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
             }).exclude(
                 master_causecode__exact='',
                 sub_causecode__exact=''
-            ).filter(where_condition).values(*self.columns)
+            ).filter(where_condition).values(
+                'master_causecode', 'sub_causecode'
+            ).annotate(
+                outage_in_minutes=Sum('outage_in_minutes')
+            )
         except Exception, e:
             qs = self.model.objects.filter(id=0).values(*self.columns)
 
@@ -2478,7 +2490,7 @@ class RFOAnalysisSummationList(BaseDatatableView):
                 sub_causecode__exact=''
             ).filter(where_condition).values('master_causecode').annotate(
                 outage_in_minutes=Sum('outage_in_minutes')
-            )    
+            )
         except Exception, e:
             qs = self.model.objects.filter(id=0).values(*self.columns)
 
@@ -2604,17 +2616,6 @@ class MTTRSummaryData(View):
                 i += 1
                 if not data.get('name'):
                     data['name'] = 'NA'
-
-                # if 'less' in data.get('name').lower():
-                #     legend_index = 1
-                # elif 'between' in data.get('name').lower():
-                #     legend_index = 2
-                # elif 'more than' in data.get('name').lower():
-                #     legend_index = 3
-                # else:
-                #     legend_index = i
-
-                # data['legendIndex'] = legend_index
 
                 try:
                     data['y'] = round(float(data.get('total_count', 0)) / float(total_dataset) * 100 , 2)
