@@ -809,7 +809,7 @@ def calculate_avg_availability_ptpbh():
         last_year = datetime.datetime(cur_time.year-1, cur_time.month, cur_time.day)
         # Delete Entry for oldest month
         PTPBHUptime.objects.filter(
-            datetime__lt=last_year
+            timestamp__lt=last_year
         ).delete()
 
         last_month_start = datetime.datetime(cur_time.year, cur_time.month-1, 1)
