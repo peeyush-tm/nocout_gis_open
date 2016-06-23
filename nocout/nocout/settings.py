@@ -923,8 +923,8 @@ CACHE_TIME = {
 
 POWER_SMS_DICT = {
     'status' : 'Status',
-    'reset' : 'Reset',
-    'joji' : 'JOJI'
+    'reset' : 'RESET',
+    'joji' : 'Joji'
 }
 
 # Params for advance filters feature.
