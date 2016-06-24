@@ -81,6 +81,49 @@ t_interval_s_type = {
 wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
 
 
+def send_task_message(sentinels):
+	""" Sends task message on appropriate broker"""
+	class CeleryConfig(object):
+		#BROKER_URL = 'redis://10.133.19.165:6381/15'
+		SERVICE_NAME = 'mymaster'
+		# options needed for celery broker connection
+		BROKER_TRANSPORT_OPTIONS = {
+		'service_name': 'mymaster',
+		'sentinels': sentinels,
+		'min_other_sentinels': 2,
+		'db':15 
+		}
+		BROKER_URL = 'redis-sentinel://'
+	celery = Celery()
+
+
+	try:
+		celery.config_from_object(CeleryConfig)
+		celery.send_task('load-inventory')
+		logger.error('in send task ' )
+	except Exception as exc:
+		logger.error('Error in send task: ' + pformat(exc))
+
+
+def call_load_inventory():
+	    # machines we need to send tasks to
+	machines = ['dev']
+	logger.error('calling load invnetory: ' + pformat(machines))
+	for m in machines:
+		sentinels = get_sentinels_for_machine(m)
+		send_task_message(sentinels)
+
+def get_sentinels_for_machine(m):
+	logger.error('getting sentinel: ')
+	mapping = {
+		'dev': [
+			('10.133.19.165', 26379),
+			('10.133.19.165', 26380)
+			]
+		}
+	return mapping.get(m)
+'''
+#for prod
 def send_task_message(sentinels, service_name, min_sentinels):
     """ Sends task message on appropriate broker"""
     class CeleryConfig(object):
@@ -170,7 +213,7 @@ def get_sentinels_for_machine(m):
         	},
 	}
         return mapping.get(m)
-
+'''
 
 def prepare_hosts_file():
     T = namedtuple('devices', 
@@ -772,7 +815,8 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
             cur.execute(query)
             db.commit()
             cur.close()
-
+    db.close()
+    '''
     try:
         if update_id:
             sync_finished_at = str(datetime.now())
@@ -786,6 +830,7 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
         logger.error('Sync Log Updation failed: ' + pformat(exp))
     finally:
         db.close()
+    '''
 
 
 ##############################
@@ -1401,9 +1446,9 @@ def main():
     hosts_out = prepare_hosts_file()
 
     prepare_rules(hosts_out)
-
+    call_load_inventory()
 
 if __name__ == '__main__':
     main()
     # call load inventory tasks by sending message to brokers on Prd servers
-    call_load_inventory()
+    #call_load_inventory()

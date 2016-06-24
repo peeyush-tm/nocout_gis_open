@@ -23,11 +23,9 @@ info, warning, error = (
 SYNC_BASE_DIR = settings.BASE_DIR + '/device/sync/'
 
 
-@task(name='sync-main')
+@task()#(name='sync-main')
 def sync_main(**kw):
-
 	machines = kw.get('machines')
-
 	try:
 		generate_deviceapp_config.main()
 	except Exception as exc:
@@ -45,23 +43,24 @@ def sync_main(**kw):
 		else:
 			out.close()
 			# call the sync api for all the machines, in parallel
-			call_sync_apis.s(machines=machines).apply_async()
+			#call_sync_apis.s(machines=machines).apply_async()
+			call_sync_apis.apply_async(machines=machines)
 
 
-@task(name='call-sync-api')
+@task()#(name='call-sync-api')
 def call_sync_apis(**kw):
 	""" Calls sync apis using celery group"""
 
 	scheme = 'http://'
 	urls = []
 	machines = kw.get('machines')
-	if machines:
-		for ip, port in machines.iteritems():
-			urls.append(
-					scheme + str(ip) + ':' + str(port)
-					)
+	if True: #machines:
+		#for ip, port in machines.iteritems():
+		#	urls.append(
+		#			scheme + str(ip) + ':' + str(port)
+		#			)
 		urls = [
-				'http://10.133.19.165:5019'
+				'http://10.133.19.165:5018'
 			]
 		warning('urls: {0}'.format(urls))
 		header = group([get_request.s(url=url) for url in urls]).apply_async()
@@ -97,7 +96,8 @@ def update_sync_status(successful):
 	status = 1 if successful else 2
 	message = message + "successful" if successful else message + 'unsuccessful'
 	now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
+	if successful :
+		generate_deviceapp_config.update_configuration_db()
 	try:
 		dsho = DeviceSyncHistory.objects.latest('id')
 		dsho.status = status
@@ -122,7 +122,7 @@ def get_request(**kw):
 
 	try:
 		os.chdir(SYNC_BASE_DIR)
-		files = {'file': ('da_config.tar.gz', open('da_config.tar.gz', 'rb'))}
+		files = {'file': ('da_config.tar.gz', open('da_config.tar.gz', mode='rb'))}
 		r = requests.post(sync_api, files=files)
 		res = r.text
 		status_code = r.status_code
@@ -132,8 +132,8 @@ def get_request(**kw):
 		error('Error in sending request: {0}'.format(exc))
 	else:
 		try:
+			warning('API URL --> %s' % restart_api)
 			jsn_res = r.json()
-			warning('Sync Response: {0}'.format(jsn_res))
 			if status_code == 200 and jsn_res.get('success') == 1:
 				retval = True
 				# restart monitoring core
