@@ -45,6 +45,7 @@ def main(**kw):
 				bs_name_ss_mac_mapping=kw.get('bs_name_ss_mac_mapping'),
 				ss_name_mac_mapping=kw.get('ss_name_mac_mapping'),
 				ds=kw.get('ds'),
+				is_first_call=kw.get('is_first_call'),
 				)
 	else:
 		response.update({
@@ -63,6 +64,7 @@ def poll_device(**kw):
 		service_list = kw.get('service_list')
 		bs_name_ss_mac_mapping = kw.get('bs_name_ss_mac_mapping')
 		ss_name_mac_mapping = kw.get('ss_name_mac_mapping')
+		is_first_call = kw.get('is_first_call')
 	except Exception as exc:
 		logger.error('Problem with request params: {0}'.format(exc))
 	logger.info('device_list: {0}'.format(device_list))
@@ -86,10 +88,12 @@ def poll_device(**kw):
 					'service_list': service_list,
 					'data_source_list': data_source_list,
 					'bs_name_ss_mac_mapping': bs_name_ss_mac_mapping,
-					'ss_name_mac_mapping': ss_name_mac_mapping
+					'ss_name_mac_mapping': ss_name_mac_mapping,
+					'is_first_call': is_first_call,
 					}
 				) for device in device_list
 			]
+	logger.info("jobs-----{0}".format(jobs))
 	for j in jobs:
 		j.start()
 	for k in jobs:
@@ -116,6 +120,7 @@ def get_current_value(
 		is_first_call=0,
 		):
 	""" Function to perform live polling for device(s)"""
+
 	interface_services = [
 			'cambium_ul_rssi',
 			'cambium_ul_jitter',
@@ -219,6 +224,13 @@ def get_current_value(
 	# Data sources for ping service
 	pl, rta = None, None
 	ip = None
+	memc = None
+	try:
+	    from mysql_connection_1 import db_connection
+	    db_obj = db_connection()
+	    memc = db_obj.memcache_connect
+	except Exception as e:
+	    memc = None
 
 	for service in service_list:
 		device = old_device
@@ -271,7 +283,6 @@ def get_current_value(
 							)
 					filtered_ss_data.extend(filtered_ss_output)
 
-				logger.info('filtered_ss_data: {0}'.format(filtered_ss_data))
 				index = cambium_services.index(old_service)
 
 				for entry in filtered_ss_data:
@@ -337,7 +348,7 @@ def get_current_value(
 					data_value = []
 					check_output = filter(lambda t: 'wimax_bs_ss_params' in t, check_output.split('\n'))
 					check_output = check_output[0].split('- ')[1].split(' ')
-					#logger.debug('Final check_output : ' + pformat(check_output))
+					logger.error('wimax_ss_service Final check_output : ' + pformat(check_output))
 					for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
 						filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t,check_output)
 						filtered_ss_data.extend(filtered_ss_output)
@@ -371,7 +382,6 @@ def get_current_value(
 						data_value = []
 						q.put(data_dict)
 
-					logger.error(filtered_ss_data)
 				except Exception, e:
 					logger.error('Empty check_output: ' + pformat(e))
 					for host_name,mac_value in ss_name_mac_mapping.items():
@@ -453,7 +463,7 @@ def get_current_value(
 			elif service in util_service_list:
 				reg_exp2 = re.compile(r'(?<=\[)[^]]*',re.MULTILINE)
 				util_values = re.findall(reg_exp2, check_output)
-				logger.info('current_states : %s %s' % (util_values,is_first_call))
+				#logger.info('current_states : %s %s' % (util_values,is_first_call))
 				if util_values:
 					if service == 'rici_dl_utilization' or service == 'rici_ul_utilization':
 						cur_values = util_values[0].split(' ')
@@ -466,7 +476,6 @@ def get_current_value(
 						logger.info('values : %s' % (this_value))
 					elif service in switch_utilization:
 						try:
-							logger.info('current_states : %s %s' % (util_values,is_first_call))
 							ds = data_source_list[0]
 
 							if 'GigabitEthernet0_0_' not in ds:
@@ -509,8 +518,8 @@ def get_current_value(
                                 	else:
                                         	key = "".join([old_device,"_",service])
                                 	key =key.encode('ascii','ignore')
-                                	memc_obj = db_ops_module.MemcacheInterface()
-                                	memc = memc_obj.memc_conn
+                                	#memc_obj = db_ops_module.MemcacheInterface()
+                                	#memc = memc_obj.memc_conn
                                 	key_value = ""
                                 	if is_first_call:
                                 	        util_list = [this_time,this_value]
@@ -546,25 +555,24 @@ def get_current_value(
 
 
 
-				else:
-					reg_exp1 = re.compile(r'(?<=\()[^)]*(?=\)$)', re.MULTILINE)
-					# Parse perfdata for all services running on that device
-					ds_current_states = re.findall(reg_exp1, check_output)
-					logger.info('ds_current_states : %s' % ds_current_states)
-					# Placing all the ds values into one single list
-					if ds_current_states:
-						ds_values = ds_current_states[0].split(' ')
-						logger.info('ds_values : %s' % ds_values)
-	
-						for ds in data_source_list:
-							# Parse the output to get current value for that data source
-							desired_ds = filter(lambda x: ds in x.split('=')[0], ds_values)
-							logger.debug('desired_ds : %s' % desired_ds)
-							data_values = (map(lambda x: x.split('=')[1].split(';')[0], desired_ds))
-							#logger.debug('data_values:' + pformat(data_values))
-							data_dict = {old_device: data_values}
-							q.put(data_dict)
+			else:
+				reg_exp1 = re.compile(r'(?<=\()[^)]*(?=\)$)', re.MULTILINE)
+				# Parse perfdata for all services running on that device
+				ds_current_states = re.findall(reg_exp1, check_output)
+				#logger.error('ds_current_states : %s' % ds_current_states)
+				# Placing all the ds values into one single list
+				if ds_current_states:
+					ds_values = ds_current_states[0].split(' ')
 
-					else:
-						data_dict = {old_device: []}
+					for ds in data_source_list:
+						# Parse the output to get current value for that data source
+						desired_ds = filter(lambda x: ds in x.split('=')[0], ds_values)
+						#logger.error('desired_ds : %s' % desired_ds)
+						data_values = (map(lambda x: x.split('=')[1].split(';')[0], desired_ds))
+						#logger.debug('data_values:' + pformat(data_values))
+						data_dict = {old_device: data_values}
 						q.put(data_dict)
+
+				else:
+					data_dict = {old_device: []}
+					q.put(data_dict)

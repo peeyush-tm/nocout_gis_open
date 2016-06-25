@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 
 """This Class is an Arbiter module for having a webservice
@@ -6,8 +6,11 @@ throuhg which we can have `sync` and `live polling` functionalities
 """
 
 
+import json
 import os
 import select
+import subprocess
+import sys
 import tarfile
 import time
 
@@ -15,7 +18,7 @@ from shinken.basemodule import BaseModule
 from shinken.external_command import ExternalCommand
 from shinken.log import logger
 from shinken.webui.bottlewebui import (run, route, request, 
-		response, abort, check_auth, parse_auth)
+		response, abort, parse_auth)
 
 from nocout_live import main as live_poll_main
 
@@ -36,8 +39,11 @@ def get_instance(plugin):
 app = None
 
 # Check_MK home dir
-check_mk_conf_path = '/omd/dev_slave/slave_2/etc/check_mk/conf.d/wato/'
-check_mk_bin = '/omd/dev_slave/slave_2/bin/cmk'
+#CHECK_MK_CONF_PATH = '/omd/dev_slave/slave_2/etc/check_mk/conf.d/wato/'
+#CHECK_MK_BIN = '/omd/dev_slave/slave_2/bin/cmk'
+
+OLD_CONFIG = 'old_config.tar.gz'
+NEW_CONFIG = 'new_config.tar.gz'
 
 
 def get_commands(time_stamps, hosts, services, return_codes, outputs):
@@ -115,7 +121,7 @@ def do_restart():
 	time_stamp = request.forms.get('time_stamp', int(time.time()))
 	command = '[%s] RESTART_PROGRAM\n' % time_stamp
 
-	check_auth()
+	#check_auth()
 
 	# Adding commands to the main queue()
 	logger.warning("[WS_Nocout] command: %s" % str(command))
@@ -130,7 +136,7 @@ def do_reload():
 	time_stamp = request.forms.get('time_stamp', int(time.time()))
 	command = '[%s] RELOAD_CONFIG\n' % time_stamp
 
-	check_auth()
+	#check_auth()
 
 	# Adding commands to the main queue()
 	logger.warning("[WS_Nocout] command: %s" % str(command))
@@ -167,7 +173,7 @@ def do_recheck():
 															   time_stamp)
 
 	# We check for auth if it's not anonymously allowed
-	check_auth()
+	#check_auth()
 
 	# Adding commands to the main queue()
 	logger.debug("[WS_Nocout] command =  %s" % command)
@@ -258,17 +264,27 @@ def do_local_sync():
 	""" Get the host and service config files and restart local
 	check_mk instance"""
 
-	check_auth()
+	#check_auth()
 
-	res = {
+	# load device inventory into redis and memc
+	ok_msg = {
 			'success': 1,
 			'message': 'Config pushed successfully'
 			}
-	status_code = 200
+	err_msg = {
+			'success': 0,
+			'message': 'Error with the config'
+			}
+	body = {}
+	body.update(err_msg)
+
+	response.status = 200
+	#response.content_type = "application/json"
 
 	# prepare a backup of current state
-	os.chdir(check_mk_conf_path)
-	out = tarfile.open(check_mk_conf_path + 'wato_backup.tar.gz', mode='w:gz')
+	os.chdir(CHECK_MK_CONF_PATH)
+	#logger.error('local_sync: {0}'.format(CHECK_MK_CONF_PATH))
+	out = tarfile.open(CHECK_MK_CONF_PATH + OLD_CONFIG, mode='w:gz')
 	try:
 		out = prepare_tar(out)
 	except Exception as exc:
@@ -278,42 +294,74 @@ def do_local_sync():
 	
 	# extract files from request obj and perform check mk restart
 	try:
-		filename = request.files.save(check_mk_conf_path, overwrite=True)
-		abs_path = check_mk_conf_path + filename
-		prepare_untar(abs_path, check_mk_conf_path)
-		os.system(check_mk_bin + ' -R')
+		old_backup = CHECK_MK_CONF_PATH + OLD_CONFIG
+		fp = request.files.get('file').file
+		with open(NEW_CONFIG, 'w') as f:
+			f.write(fp.read())
+		abs_path = CHECK_MK_CONF_PATH + NEW_CONFIG
+		prepare_untar(abs_path, CHECK_MK_CONF_PATH)
+		#ret = os.system(CHECK_MK_BIN + ' -R')
+		ret = subprocess.call(CHECK_MK_BIN + ' -C', shell=True)
+		logger.warning('Ret: {0}'.format(ret))
+		if ret == 0:
+			body.update(ok_msg)
+		else:
+			# rollback operation
+			rollback(old_backup)
 	except Exception as exc:
 		logger.error('Error in installing new config: {0}'.format(exc))
-		# TODO: update response with error
-		res.update({
-			'success': 0,
-			'message': 'Error with the config'
-			})
-		status_code = 500 
+		#status_code = 500 
 		try:
 			# rollback operation
-			rollback()
+			rollback(old_backup)
 		except Exception as exc:
 			# only for debugging purposes
 			logger.error('Error in rollback operation: {0}'.format(exc))
-	
-	# if everything is OK
-	# TODO: send response with success
 
-	return response(body=res, status=status_code)
+	body.update({
+		'ret': ret,
+		})
+	
+	return json.dumps(body)
+
+
+def do_local_restart():
+	""" Restart monitoring core"""
+
+	#check_auth()
+
+	ok_msg = {
+			'success': 1,
+			'message': 'Restart successfully'
+			}
+	err_msg = {
+			'success': 0,
+			'message': 'Problem with the restart'
+			}
+	body = {}
+	body.update(err_msg)
+	response.status = 200
+	try:
+		ret = subprocess.call(CHECK_MK_BIN + ' -R', shell=True)
+		if ret == 0:
+			body.update(ok_msg)
+	except Exception as exc:
+		logger.error('Error in restart program: {0}'.format(exc))
+
+	return json.dumps(body)
 
 
 def prepare_untar(filename, extract_to):
 	tarfile.open(filename, mode='r:gz').extractall(extract_to)
 
 
-def rollback(old_tar_path):
-	prepare_untar(old_tar_path, mode='r:gz').extractall(check_mk_conf_path)
-	os.system(check_mk_bin + ' -R')
+def rollback(old_backup):
+	prepare_untar(old_backup, CHECK_MK_CONF_PATH)
+	os.system(CHECK_MK_BIN + ' -R')
 
 
 def prepare_tar(out):
-	os.chdir(check_mk_conf_path)
+	os.chdir(CHECK_MK_CONF_PATH)
 	for entry in os.listdir('.'):
 		if entry.endswith('.mk'):
 			out.add(entry)
@@ -324,14 +372,18 @@ def prepare_tar(out):
 def do_live_poll():
 	"""Calls live poll module"""
 
-	check_auth()
+	#check_auth()
 
-	res = {}
+	res = {
+		'message': 'ok',
+		}
 	status_code = 200
 
+	logger.warning('Live poll calld')
 	# get poll params from request obj
 	try:
 		req_params = request.json
+		logger.warning('req: {0}'.format(type(req_params)))
 	except Exception as exc:
 		status_code = 500
 		logger.error('[Ws-Nocout] Exception in do_live_poll: {0}'.format(
@@ -345,15 +397,17 @@ def do_live_poll():
 				'ss_name_mac_mapping')
 		ds = req_params.get(
 				'ds')
+		is_first_call = req_params.get('is_first_call')
 		res = live_poll_main(
 				device_list=device_list,
 				service_list=service_list,
 				bs_name_ss_mac_mapping=bs_ss_map,
 				ss_name_mac_mapping=ss_map,
-				ds=ds
+				ds=ds,
+				is_first_call=is_first_call,
 				)
 
-	return response(body=res, status_code=status_code)
+	return json.dumps(res)
 
 
 class WsNocout(BaseModule):
@@ -367,6 +421,19 @@ class WsNocout(BaseModule):
 			self.password = getattr(modconf, 'password', '')
 			self.port = int(getattr(modconf, 'port', '7760'))
 			self.host = getattr(modconf, 'host', '0.0.0.0')
+
+			# cmk paths
+			global CHECK_MK_CONF_PATH
+			CHECK_MK_CONF_PATH = getattr(
+					modconf, 'CHECK_MK_CONF_PATH', None) 
+			global CHECK_MK_BIN
+			CHECK_MK_BIN = getattr(
+					modconf, 'CHECK_MK_BIN', None) 
+
+			# adding `inventory load` celery task here [being called from do_local_sync]
+			ETL_BASE_DIR = getattr(modconf, 'ETL_BASE_DIR', '/omd/nocout_etl')
+			sys.path.insert(0, ETL_BASE_DIR)
+
 			logger.info(
 					"[WS_Nocout] Configuration done, host: %s(%s), username: %s)" %
 					(self.host, self.port, self.username)
@@ -394,7 +461,8 @@ class WsNocout(BaseModule):
 		logger.info("[WS_Nocout] Server started")
 		# And we link our page
 		route('/push_check_result', callback=get_page, method='POST')
-		route('/restart', callback=do_restart, method='POST')
+		#route('/restart', callback=do_restart, method='POST')
+		route('/restart', callback=do_local_restart, method='POST')
 		route('/reload', callback=do_reload, method='POST')
 		route('/downtime', callback=do_downtime, method='POST')
 		route('/recheck', callback=do_recheck, method='POST')
