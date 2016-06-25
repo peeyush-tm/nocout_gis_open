@@ -2,12 +2,7 @@
 import binascii
 import time
 import memcache
-try:
-    from mysql_connection_1 import db_connection
-    db_obj = db_connection()
-    memc = db_obj.memcache_connect
-except:
-    memc = None
+from mysql_connection import memc
 #import datetime
 # ######################################################################
 # Function : check_rad5k_topology_discover

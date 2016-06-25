@@ -5,12 +5,6 @@ from telnetlib import Telnet
 import socket
 import json
 import os
-try:
-    from mysql_connection_1 import db_connection
-    db_obj = db_connection()
-    memc = db_obj.memcache_connect
-except:
-    memc = None
 
 """
 operating Frequency of ss device  Poller script.
@@ -37,9 +31,6 @@ def connection_telnet_for_rici_port_state(hostip, port,num_port):
         Returns nothing.
     
         """
-	port_duplex_list = []
-	port_speed_list = []
-	port_params = []
 	try:
 		tn = Telnet(hostip,port,timeout=3)
 	except socket.timeout:
@@ -81,17 +72,7 @@ def connection_telnet_for_rici_port_state(hostip, port,num_port):
 				index = index+1
 				port_duplex = entry.split(' ')[0]
 				port_speed = entry.split(' ')[1] + "_" + entry.split(' ')[2]
-				plugin_message += "%s=%s,%s " % (index,port_duplex,port_speed)
-				port_speed_list.append(port_speed)
-				port_duplex_list.append(port_duplex)
-			try:
-				if memc:
-		        	    key = "%s_rici_port_params" % g_hostname
-				    port_params.append(port_speed_list)
-				    port_params.append(port_duplex_list)
-				    memc.set(key,port_params)
-			except:
-				pass
+				plugin_message += "%s=%s,%s " % (index,port_duplex,port_speed) 
 		except:
 			plugin_message = ""
 	return plugin_message
@@ -129,10 +110,8 @@ def check_rici_port_values(item, _no_params, info):
 	if ip:
 		plugin_message =connection_telnet_for_rici_port_state(ip, 23,num_port)
 		if plugin_message:
-		    infotext = "%s" % (plugin_message)
-		    state = 0
-
-
+			infotext = "%s" % (plugin_message)
+			state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:

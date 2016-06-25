@@ -23,6 +23,30 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
+def live_query_idu_serial(host_name):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+
+        """
+        exit_value = 3
+        idu_serial_1, idu_serial_2 = '', ''
+        try:
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK - ')[1])
+                        plugin_output = [entry for entry in plugin_output.split()]
+                        idu_serial_1, idu_serial_2 = plugin_output[2].split('=')[1], plugin_output[3].split('=')[1]
+
+        except:
+                pass
+        return idu_serial_1, idu_serial_2
+
+                                
 
 def check_wimax_idu_serial_invent(item, _no_params, info):
     """
@@ -52,14 +76,7 @@ def check_wimax_idu_serial_invent(item, _no_params, info):
     idu_serial_1= ''
     idu_serial_2= ''
     try:
-	    if memc:
-		    value_list = memc.get('%s_bs_params' % g_hostname)
-		    value_list = eval(value_list)
-		    if value_list:
-		    	idu_serial_1,idu_serial_2 = (value_list[2],value_list[3]) 
-    except:
-	    pass
-    try:
+        idu_serial_1, idu_serial_2 = live_query_idu_serial(g_hostname)
         if idu_serial_1 or idu_serial_2:
 		if idu_serial_1:
 			idu_serial_1 = idu_serial_1.replace('-','_')
@@ -73,13 +90,12 @@ def check_wimax_idu_serial_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext,[("Chassis",idu_serial_1),("Carrier_Board",idu_serial_2)])
+    return (state, infotext)
 
 
 check_info["wimax_idu_serial_invent"] = {
     'check_function': check_wimax_idu_serial_invent,
     'service_description': 'wimax_idu_serial_invent',
-    'has_perfdata':True,
 }
 
 #########################################################################

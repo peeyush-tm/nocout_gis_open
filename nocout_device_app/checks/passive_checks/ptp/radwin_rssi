@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import memcache
+from mysql_connection import memc
 
 """
 RSSI Poller script.

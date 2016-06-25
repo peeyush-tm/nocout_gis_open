@@ -108,12 +108,6 @@ def check_wimax_ss_mac(item, params, info):
 		ss_mac = mac_list[index]
 		state = 0
 	infotext = "%s" % ss_mac
-	try:
-		if memc:
-			memc.set(g_hostname + "_mac" ,ss_mac)
-	except:
-		pass
-		
     except ValueError:
         infotext = "type_mismatch_value"
     except:

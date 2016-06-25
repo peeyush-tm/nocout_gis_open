@@ -42,7 +42,6 @@ def check_cambium_bs_mac_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
-    new_bs_mac = ''
     try:
         if info:
             if info[0][0]:
@@ -54,13 +53,12 @@ def check_cambium_bs_mac_invent(item, _no_params, info):
                 infotext = "%s" % new_bs_mac
     except:
         infotext = "unknown_value"
-    return (state, infotext,[("bs_mac",new_bs_mac)])
+    return (state, infotext)
 
 
 check_info["cambium_bs_mac_invent"] = {
     'check_function': check_cambium_bs_mac_invent,
     'service_description': 'cambium_bs_mac_invent',
-    'has_perfdata' : True
 }
 
 #################################################################

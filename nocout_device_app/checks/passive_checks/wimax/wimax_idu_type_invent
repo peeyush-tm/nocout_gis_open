@@ -24,6 +24,29 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
+def live_query_idu_type(host_name):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+
+        """
+        exit_value = 3
+        idu_type = ''
+        try:
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK - ')[1])
+                        plugin_output = [entry for entry in plugin_output.split()]
+                        idu_type = plugin_output[8].split('=')[1]
+
+        except:
+                pass
+        return idu_type
+                                
 
 def check_wimax_idu_type_invent(item, _no_params, info):
     """
@@ -52,16 +75,7 @@ def check_wimax_idu_type_invent(item, _no_params, info):
     infotext = "unknown_value"
     idu_type = ''
     try:
-	    if memc:
-		    value_list = memc.get('%s_bs_params' % g_hostname)
-		    value_list = eval(value_list)
-		    if value_list:
-		    	idu_type = value_list[8]
-    except:
-	    pass
-    try:
-	if not idu_type:
-        	idu_type = live_query_idu_type(g_hostname)
+        idu_type = live_query_idu_type(g_hostname)
         if idu_type:
                 infotext = "%s" % idu_type
                 state = 0
@@ -71,13 +85,12 @@ def check_wimax_idu_type_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext,[("idu_type",idu_type)])
+    return (state, infotext)
 
 
 check_info["wimax_idu_type_invent"] = {
     'check_function': check_wimax_idu_type_invent,
     'service_description': 'wimax_idu_type_invent',
-    'has_perfdata' : True,
 }
 
 #########################################################################

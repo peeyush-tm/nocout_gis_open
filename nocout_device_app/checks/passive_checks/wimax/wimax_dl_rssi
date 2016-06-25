@@ -7,10 +7,17 @@ import json
 import os
 import binascii
 import mysql.connector
-from ast import literal_eval
+from datetime import datetime,timedelta
+import time
 #from mysql_connection import db
 #from mysql_connection import con_pool
+try:
+    import nocout_settings
+    from nocout_settings import _DATABASES, _LIVESTATUS
+except Exception as exp:
+    print exp
 
+from mysql_connection import memc
 
 
 """
@@ -30,8 +37,33 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
+def mysql_conn():
+        db = None
+        try:
+            db = mysql.connector.connect(
+                        user=_DATABASES['user'],
+                        host=_DATABASES['host'],
+                        password=_DATABASES['password'],
+                        database=_DATABASES['database'],
+                        port=_DATABASES['port']
+                        )
+        except Exception as exp:
+            print exp
+        return db
 
 
+
+def extract_host_from_wimax_topology(ss_host_mac):
+	from mysql_connection import db
+	query = """
+	select device_name ,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+	#db = mysql_conn()
+	cur = db.cursor()
+	cur.execute(query)
+	data = cur.fetchall()
+	cur.close()
+	#db.close()
+	return data
 
 def get_from_socket(socket_ip,socket_port, query,site,machine):
     """
@@ -46,10 +78,13 @@ def get_from_socket(socket_ip,socket_port, query,site,machine):
     raise 
          Exception: SyntaxError,socket error 
     """
-    my_site  = var_dir.split('/')[3]
-    #my_machine = nagios_user.split('_')[0]
-    if site == my_site:
-	socket_path = "/omd/dev_slave/%s/var/run/live" % site
+
+    my_machine = nagios_user.split('_')[0]
+    if site == nagios_user:
+	s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	s.connect(livestatus_unix_socket)
+    elif machine == my_machine:
+	socket_path = "/omd/sites/%s/tmp/run/live" % site
 	s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 	s.connect(socket_path)
     else:
@@ -58,22 +93,11 @@ def get_from_socket(socket_ip,socket_port, query,site,machine):
     s.settimeout(60.0)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
-    output = ''
-    while True:
-     try:
-        out = s.recv(100000000)
-     except socket.timeout,e:
-        break
-     out.strip()
-     if not len(out):
-        break
-     output += out
-
-    #try:
-    #	output = s.recv(100000000)
-    #	output.strip("\n")
-    #except:
-    # 	output=None
+    try:
+    	output = s.recv(100000000)
+    	output.strip("\n")
+    except:
+	output=None
     return output
 
 
@@ -94,6 +118,52 @@ def live_query_dl_rssi(mac):
 				dl_rssi = int(value_list[1])
 			except:
 				dl_rssi = None
+		if not dl_rssi:
+			try:
+				key1 = mac + "_topology"
+				ss_params = memc.get(key1)
+			except:
+				pass 
+	if not dl_rssi:
+		if not ss_params: 
+        		host_name = extract_host_from_wimax_topology(mac)
+			try:
+				bs_hostname = host_name[0][0]
+				bs_site = host_name[0][1]
+			except:
+				bs_hostname = None
+			if memc:
+				if bs_hostname:
+					try:
+						arg_list = []
+						arg_list.append(bs_hostname,bs_site)
+						key = mac + "_topology"
+						memc.set(key,arg_list,360)
+					except:
+						pass
+		else:
+			bs_hostname = ss_params[0]
+			bs_site = ss_params[1]			
+        	try:
+                	if bs_hostname:
+                        	query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("wimax_topology",bs_hostname)
+			
+
+				site = bs_site
+                        	machine_name = site.split('_')[0]
+                        	socket_ip = _LIVESTATUS[machine_name]['host']
+                        	socket_port = _LIVESTATUS[machine_name][site]['port']
+
+                        	query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
+                        	if query_output[0][0]:
+                                	plugin_output = str(query_output[0][0].split('OK -')[1])
+                                	plugin_output = [entry for entry in plugin_output.split(' ')]
+                                	entry=filter(lambda x: mac in x.lower(), plugin_output)
+                                	dl_rssi = int(entry[0].split('=')[1].split(',')[0])
+
+		except:
+                	dl_rssi= None
         return dl_rssi
 
 

@@ -1,14 +1,7 @@
 #!/usr/bin/python
 import re
 import time
-try:
-    from mysql_connection_1 import db_connection
-    memc = db_connection().memcache_connect
-except Exception,e:
-    memc = None
-
-
-
+from mysql_connection import memc
 """
 Downlink utilizationPoller script.
 
@@ -73,7 +66,7 @@ def check_radwin_dl_utilization(item, _no_params, info):
 			rate = (rate * 8)/(1024.0 * 1024)
 		except MKCounterWrapped:
 			wrapped=True
-                status_list.append((if_name,"%.2f" % rate))
+		status_list.append((if_name,"%.2f" % rate))
 		try:
 			if memc:
 				key = g_hostname + "_dl"

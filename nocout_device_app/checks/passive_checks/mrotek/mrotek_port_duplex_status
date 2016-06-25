@@ -80,19 +80,11 @@ def check_mrotek_port_duplex_status(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
-    duplex_list = []
+    status_list = []
     port_string = "fe_"
     try:
 	infotext = ""	
-	#duplex_list =extract_port_duplex_status_from_live(g_hostname)
-	try:
-		if memc:
-			key = g_hostname + "_port_params"
-			duplex_list = memc.get(key)
-			duplex_list = duplex_list[1] 
-	except:
-		pass
-
+	duplex_list =extract_port_duplex_status_from_live(g_hostname)
 	if duplex_list:
 		for index in range(len(duplex_list)):
 			status_list.append((port_string + str(index + 1) +"_state",duplex_list[index]))

@@ -46,7 +46,7 @@ def check_cambium_data_rate_modulation_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
-    data_rate = ''
+    data_rate = None
 
     try:
         if info:
@@ -59,7 +59,7 @@ def check_cambium_data_rate_modulation_invent(item, _no_params, info):
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
-    return (state, infotext,[("data_rate_modulation",data_rate)])
+    return (state, infotext)
 
 
 check_info["cambium_data_rate_modulation_invent"] = {

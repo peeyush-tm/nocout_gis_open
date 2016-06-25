@@ -72,13 +72,12 @@ def check_cambium_qos_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext,qos_list)
+    return (state, infotext)
 
 
 check_info["cambium_qos_invent"] = {
     'check_function': check_cambium_qos_invent,
     'service_description': 'cambium_qos_invent',
-    'has_perfdata' : True
 }
 
 #####################################################################

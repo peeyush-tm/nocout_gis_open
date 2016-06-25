@@ -24,6 +24,29 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
+def live_query_frame_length(host_name):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+
+        """
+        exit_value = 3
+        pmp1_fr_len, pmp2_fr_len = '', ''
+        try:
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK - ')[1])
+                        plugin_output = [entry for entry in plugin_output.split()]
+                        pmp1_fr_len, pmp2_fr_len = plugin_output[4].split('=')[1], plugin_output[5].split('=')[1]
+
+        except:
+                pass
+        return pmp1_fr_len, pmp2_fr_len
+
 
 def check_wimax_pmp_frame_length_invent(item, _no_params, info):
     """
@@ -53,13 +76,7 @@ def check_wimax_pmp_frame_length_invent(item, _no_params, info):
     pmp1_fr_len = ''
     pmp2_fr_len = ''
     try:
-	    if memc:
-		    value_list = memc.get('%s_bs_params' % g_hostname)
-		    if value_list:
-		    	pmp1_fr_len,pmp2_fr_len = (value_list[4],value_list[5]) 
-    except:
-	    pass
-    try:
+        pmp1_fr_len, pmp2_fr_len = live_query_frame_length(g_hostname)
         if pmp1_fr_len or pmp2_fr_len:
                 infotext = "pmp1_fr_len=%s pmp2_fr_len=%s" % (pmp1_fr_len, pmp2_fr_len)
                 state = 0

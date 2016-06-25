@@ -43,6 +43,52 @@ def live_query_for_ul_utilization(mac):
                 	except:
                         	ul_utilization = None
 		
+		if not ul_utilization:
+			try:
+				key1 = mac + "_topology"
+				ss_params = memc.get(key1)
+			except:
+				pass 
+	if not ul_utilization:
+		if not ss_params: 
+        		host_name = extract_host_from_wimax_topology(mac)
+			try:
+				bs_hostname = host_name[0][0]
+				bs_site = host_name[0][1]
+			except:
+				bs_hostname = None
+			if memc:
+				if bs_hostname:
+					try:
+						arg_list = []
+						arg_list.append(bs_hostname,bs_site)
+						key = mac + "_topology"
+						memc.set(key,arg_list,360)
+					except:
+						pass
+		else:
+			bs_hostname = ss_params[0]
+			bs_site = ss_params[1]			
+		try:
+			if bs_hostname:
+				site = bs_site
+				host = bs_hostname
+                		machine_name = site.split('_')[0]
+                		socket_ip = _LIVESTATUS[machine_name]['host']
+                		socket_port = _LIVESTATUS[machine_name][site]['port']
+
+                		query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" %("wimax_bs_ss_params",host)
+
+                		query_output = eval(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
+                		if query_output[0][0]:
+                        		plugin_output = str(query_output[0][0].split('OK -')[1])
+                        		plugin_output = [entry for entry in plugin_output.split(' ')]
+                        		plugin_output = filter(lambda x: mac in x,plugin_output)
+                        		ul_utilization = plugin_output[0].split('=')[1].split(',')[0]
+
+        	except:
+                	ul_utilization = None
         return ul_utilization
 
                                 

@@ -43,7 +43,6 @@ def check_cambium_ss_frequency_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
-    ss_frequency = ''
     try:
         if info:
             if info[0][0]:
@@ -51,22 +50,19 @@ def check_cambium_ss_frequency_invent(item, _no_params, info):
                 if frequency < 0:
                     state = 0
                     infotext = "invalid_value_%d" % frequency
-		    ss_frequency = infotext
                 else:
                     state = 0
                     infotext = "%.3f" % frequency
-		    ss_frequency = infotext
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
-    return (state, infotext,[("frequency",ss_frequency)])
+    return (state, infotext)
 
 
 check_info["cambium_ss_frequency_invent"] = {
     'check_function': check_cambium_ss_frequency_invent,
     'service_description': 'cambium_ss_frequency_invent',
-    'has_perfdata' : True
 }
 
 #########################################################################

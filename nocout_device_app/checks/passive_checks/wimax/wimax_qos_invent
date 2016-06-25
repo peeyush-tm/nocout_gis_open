@@ -26,6 +26,43 @@ Device on which Frequency operating is sent to device application
 
 
 
+
+
+
+def live_query_qos(host_name,mac,site):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+
+        """
+        exit_value = 3
+        ul_qos = None
+        dl_qos = None
+        try:
+		machine_name = site.split('_')[0]
+               	socket_ip = _LIVESTATUS[machine_name]['host']
+                socket_port = _LIVESTATUS[machine_name][site]['port']
+
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_bs_ss_params",host_name)
+
+                query_output = eval(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK -')[1])
+                        plugin_output = [entry for entry in plugin_output.split(' ')]
+			plugin_output = filter(lambda x: mac in x,plugin_output)
+			ul_qos = plugin_output[0].split('=')[1].split(',')[2]
+			dl_qos = plugin_output[0].split('=')[1].split(',')[3]
+
+        except:
+                dl_qos = None
+		ul_qos = None
+        return ul_qos,dl_qos
+
+
+
+
 def check_wimax_qos_invent(item, _no_params, info):
     """
             check_wimax_qos_invent function calcdlates the operating ptx
@@ -74,6 +111,10 @@ def check_wimax_qos_invent(item, _no_params, info):
 				except:
 					ul_qos = None
 					dl_qos = None
+		if not ul_qos and not dl_qos:	
+			host_name = extract_host_from_wimax_topology(ss_mac)
+			if host_name[0][0]:
+				ul_qos,dl_qos =live_query_qos(host_name[0][0],ss_mac,host_name[0][1])
 		if dl_qos and ul_qos:
 			dl_qos = float(dl_qos)/(1000.0*1000)
 			ul_qos = float(ul_qos)/(1000.0*1000)

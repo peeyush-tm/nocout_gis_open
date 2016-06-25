@@ -18,15 +18,35 @@ IP information is sent to device application
 
 
 def extract_host_ip_from_cambium_topology(ss_host_ip):
-    data = None
+
     try:
         if memc:
-	    key = ss_host_ip+ "_t_discover"
-            data = memc.get(key)   
-    except:
-        data = None
+            try :
+		key = ss_host_ip+ "_t_discover"
+                data = memc.get(key)
+                #return data
+            except :
+                data =None 
+
+        if not data:
+            try:
+                query = """
+                select ip_address from performance_topology where connected_device_ip ='%s' """ %(ss_host_ip)
+                db = mysql_conn()
+                cur = db.cursor()
+                cur.execute(query)
+                data = cur.fetchall()
+                cur.close()
+                db.close()
+		data = data[0][0]
+                #return data[0][0]
+            except :
+                data =None
+
+	return data
+
+    except :
         pass
-    return data
 
 
 def check_cambium_ss_connected_bs_ip_invent(item, _no_params, info):
@@ -54,7 +74,6 @@ def check_cambium_ss_connected_bs_ip_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
-    bs_ip = ''
     try:
         if info:
             if info[0][0]:
@@ -65,13 +84,12 @@ def check_cambium_ss_connected_bs_ip_invent(item, _no_params, info):
                 infotext = "%s" % bs_ip
     except:
         infotext = "unknown_value"
-    return (state, infotext,[("ss_connected_bs_ip",bs_ip)])
+    return (state, infotext)
 
 
 check_info["cambium_ss_connected_bs_ip_invent"] = {
     'check_function': check_cambium_ss_connected_bs_ip_invent,
     'service_description': 'cambium_ss_connected_bs_ip_invent',
-    'has_perfdata' : True
 }
 
 #################################################################

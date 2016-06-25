@@ -42,17 +42,16 @@ def check_wimax_pmp1_sector_id_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
-    new_bs_mac = ''
     try:
         if info:
             if info[0][0]:
-                bs_mac = info[0][0]
+		bs_mac = info[0][0]
 		bs_mac = binascii.b2a_hex(bs_mac)
-                n = 2
-                new_bs_mac=(':').join([bs_mac[i:i+2] for i in range(0, len(bs_mac), n)])
+		n = 2
+		new_bs_mac=(':').join([bs_mac[i:i+2] for i in range(0, len(bs_mac), n)])
 		new_bs_mac = new_bs_mac.lower()
-                state = 0
-                infotext = "%s" % new_bs_mac
+		state = 0
+		infotext = "%s" % new_bs_mac
 		key = g_hostname + "_pmp1_sec"
 		try:
 			if memc:
@@ -61,13 +60,12 @@ def check_wimax_pmp1_sector_id_invent(item, _no_params, info):
 			pass
     except:
         infotext = "unknown_value"
-    return (state, infotext,[("pmp1_sector_id",new_bs_mac)])
+    return (state, infotext)
 
 
 check_info["wimax_pmp1_sector_id_invent"] = {
     'check_function': check_wimax_pmp1_sector_id_invent,
     'service_description': 'wimax_pmp1_sector_id_invent',
-    'has_perfdata' : True,
 }
 
 #################################################################

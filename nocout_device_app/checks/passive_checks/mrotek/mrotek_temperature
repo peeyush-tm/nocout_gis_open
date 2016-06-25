@@ -18,7 +18,7 @@ all ports status are sent to device application
 #####################################################################################
 
 
-def check_mrotek_temperature(item, _no_params, info):
+def check_mrotek_temperature(item, params, info):
     """
                 check_mrotek_temperature function calculates the link ethernet status of the port 
 

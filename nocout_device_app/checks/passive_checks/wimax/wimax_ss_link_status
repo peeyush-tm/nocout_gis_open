@@ -24,6 +24,28 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
+def live_query_ss_link(host_name):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+
+        """
+        exit_value = 3
+        ss_link = None
+        try:
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_ss_port_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK -')[1])
+                        plugin_output = [entry for entry in plugin_output.split(',')]
+                        ss_link = plugin_output[5].split('=')[1]
+
+        except:
+                ss_link = None
+        return ss_link
 
 
 
@@ -52,15 +74,9 @@ def check_wimax_ss_link_status(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
-    ss_link= ''
+    ss_link= None
     try:
-	    if memc:
-		    value_list = memc.get('%s_ss_port_params' % g_hostname)
-		    if value_list:
-		    	ss_link = value_list[5]
-    except:
-	    pass
-    try:
+	ss_link =live_query_ss_link(g_hostname)
 	if ss_link:
 		ss_link = ss_link.strip('\r')
 		infotext = "SS ethernet link is %s" % ss_link	

@@ -23,6 +23,37 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
+def live_query_pmp_bw(host_name):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+
+        """
+        exit_value = 3
+        pmp1_bw, pmp2_bw = '', ''
+	try:
+	    if memc:
+		    value_list = memc.get('%s_bs_params' % host_name)
+		    if value_list:
+			pmp1_bw,pmp2_bw = (value_list[11],value_list[12])
+	except:
+	    pass
+	if not pmp1_bw or not pmp2_bw:
+	    try:
+		query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+				"service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
+
+		query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+		if query_output[0][0]:
+			plugin_output = str(query_output[0][0].split('OK - ')[1])
+			plugin_output = [entry for entry in plugin_output.split()]
+			pmp1_bw, pmp2_bw = plugin_output[11].split('=')[1], plugin_output[12].split('=')[1]
+
+	    except:
+		pass
+        return pmp1_bw, pmp2_bw
+
                                 
 
 def check_wimax_pmp_bw_invent(item, _no_params, info):
@@ -53,14 +84,7 @@ def check_wimax_pmp_bw_invent(item, _no_params, info):
     pmp1_bw= ''
     pmp2_bw = ''
     try:
-	    if memc:
-		    value_list = memc.get('%s_bs_params' % g_hostname)
-		    value_list = eval(value_list)
-		    if value_list:
-		    	pmp1_bw,pmp2_bw = (value_list[11],value_list[12])
-    except:
-	    pass
-    try:
+        pmp1_bw, pmp2_bw = live_query_pmp_bw(g_hostname)
 	if pmp1_bw or pmp2_bw:
 		infotext = "pmp1_bw=%s pmp2_bw=%s" % (pmp1_bw,pmp2_bw)
 		state = 0
@@ -70,7 +94,6 @@ def check_wimax_pmp_bw_invent(item, _no_params, info):
 				memc.set(key,pmp1_bw)
 				key = g_hostname + "_pmp2_bw"
 				memc.set(key,pmp2_bw)
-				
 		except:
 			pass
     except ValueError:

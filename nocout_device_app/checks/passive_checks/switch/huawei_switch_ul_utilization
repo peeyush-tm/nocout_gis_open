@@ -3,6 +3,7 @@ import re
 import time
 from operator import itemgetter
 import memcache
+from mysql_connection import memc
 """
 uplink utilizationPoller script.
 

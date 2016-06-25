@@ -25,6 +25,8 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
+
+
 def connection_telnet_for_params(host_ip, port):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
@@ -59,7 +61,7 @@ def connection_telnet_for_params(host_ip, port):
 		if data:
 			params_dict,data= extract_svc_cls_index(params_dict,data)
 	        	params_dict=extract_session_uptime(params_dict,data)
-	except Exception,e:
+	except:
 		params_dict = {}
 	return params_dict
 def extract_session_uptime(params_dict,data):
@@ -149,12 +151,10 @@ def extract_svc_class(data,temp_mac_index_map,params_dict):
 def check_wimax_bs_ss_params(item, _no_params, info):
     state = 3
     service_tag = '_params'
-    infotext = "unknow"
+    infotext = "unknown_value"
     try:
         if info:
                 if info[0][0]:
-			#db_obj = db_connection()
-			#memc = db_obj.memcache_connect
                         bs_ip = info[0][0]
                         params_dict =connection_telnet_for_params(bs_ip, 23)
 			
@@ -181,8 +181,7 @@ def check_wimax_bs_ss_params(item, _no_params, info):
                                                 uptime = params_dict.get(entry)[4]
                                         except:
                                                 uptime = ""
-                                        infotext += str(entry.lower()) +"=" + str(ul_utilization) +","+ str(dl_utilization) + \
-						 "," + str(ul_qos) +"," + \
+                                        infotext += str(entry.lower()) +"=" + str(ul_utilization) +","+ str(dl_utilization) + "," + str(ul_qos) +"," +\
                                                  str(dl_qos) +","+ str(uptime) + " "
 					try:
 						if memc:
@@ -197,7 +196,7 @@ def check_wimax_bs_ss_params(item, _no_params, info):
                                 state = 0
     except ValueError:
         infotext = "type_mismatch_value"
-    except Exception,e:
+    except:
         infotext = "unknown_value"
 
     return (state, infotext)
