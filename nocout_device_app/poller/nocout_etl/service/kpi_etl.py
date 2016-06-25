@@ -1633,9 +1633,9 @@ def extract_cambium_bs_ul_issue_data(bs_ul_issue_data,**args):
     rds_cli = RedisInterface()
     bs_service_dict_list = []
     for (ul_issue_list, host_name, site, ip, sect_id) in bs_ul_issue_data :
-            perf = ''
-            sec_ul_issue = ''
-            state_string = 'unknown'
+	    perf = ''
+	    sec_ul_issue = ''
+	    state_string = 'unknown'
 	    for service_dict in ul_issue_list:
 		try:
 		    value = int(service_dict['perf_data'].split('=')[1])
