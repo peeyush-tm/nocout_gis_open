@@ -121,9 +121,26 @@ def splitter(perf, delimiters, indexes):
 def get_passive_checks_output(**opt):
     INVENTORY_DB = 3
     service_threshold = {}
+    ss_port_service_threshold = {}
     opts = {'site_name': opt.get('site_name')}
+    try :
+        ends_with = opt.get('ends_with')
+    except :
+        ends_with = None
     topology_related_services = ['wimax_dl_cinr','wimax_dl_rssi','wimax_ul_cinr','wimax_ul_rssi','wimax_dl_intrf','wimax_ul_intrf','wimax_modulation_dl_fec','wimax_modulation_ul_fec']
     
+    bs_ss_params_related_services = ['wimax_ss_ul_utilization' , 'wimax_ss_dl_utilization' , 'wimax_ss_session_uptime' ] #'wimax_qos_invent'
+
+    ss_port_params_services = ["wimax_ss_speed_status" ,"wimax_ss_autonegotiation_status" ,"wimax_ss_duplex_status","wimax_ss_uptime" ,"wimax_ss_link_status"]  #"wimax_dl_modulation_change_invent"
+    if ends_with is None :
+        topology_related_services = filter(lambda x:x.split('_')[-1] not in ['invent','status'],topology_related_services)
+        bs_ss_params_related_services = filter(lambda x:x.split('_')[-1] not in ['invent','status'],bs_ss_params_related_services)
+        ss_port_params_services = filter(lambda x:x.split('_')[-1] not in ['invent','status'],ss_port_params_services)
+
+    else :
+        topology_related_services = filter(lambda x:x.split('_')[-1] in ends_with,topology_related_services)
+        bs_ss_params_related_services = filter(lambda x:x.split('_')[-1] in ends_with,bs_ss_params_related_services)
+        ss_port_params_services = filter(lambda x:x.split('_')[-1] in ends_with,ss_port_params_services)
 
     rds_cli_invent = RedisInterface(custom_conf={'db': INVENTORY_DB})
     redis_cnx = rds_cli_invent.redis_cnx
@@ -139,6 +156,20 @@ def get_passive_checks_output(**opt):
         service_threshold[war_key]  =  redis_cnx.get(war_key)
         service_threshold[crit_key]  =  redis_cnx.get(crit_key)
     #error('thresholds: {0}'.format(service_threshold))
+
+    for service_name in ss_port_params_services:
+        war_key  = service_name + ':war'
+        crit_key  = service_name + ':crit'
+        try :
+            ss_port_service_threshold[war_key]  =  redis_cnx.get(war_key)
+        except Exception,e :
+            ss_port_service_threshold[war_key]  = None
+        try :
+            ss_port_service_threshold[crit_key]  =  redis_cnx.get(crit_key)
+        except Exception,e :
+            ss_port_service_threshold[crit_key]  = None
+    #error('ss_port thresholds: {0}'.format(ss_port_service_threshold))
+
     extract_values_from_main_function(
             wimax_ss_key,
             topology_related_services,
@@ -146,9 +177,23 @@ def get_passive_checks_output(**opt):
             site_name=opt.get('site_name'),
             func='extract_wimax_topology_fields_value'
             )
+    extract_values_from_main_function(
+            wimax_ss_key,
+            bs_ss_params_related_services,
+            {},
+            site_name=opt.get('site_name'),
+            func='extract_wimax_bs_ss_params_fields_value'
+            )
+    extract_values_from_main_function(
+            wimax_ss_key,
+            ss_port_params_services,
+            ss_port_service_threshold,
+            site_name=opt.get('site_name'),
+            func='extract_wimax_ss_port_params_value'
+            )
 
-@app.task(base=DatabaseTask, name='age_since_last_state')
-def age_since_last_state(host, service, state):
+@app.task(base=DatabaseTask, name='age_since_last_stored_state')
+def age_since_last_stored_state(host, service, state):
     """ Calculates the age since when service
     was in the given state
     """
@@ -157,10 +202,10 @@ def age_since_last_state(host, service, state):
     key = prefix + host + ':' + service
     # memc connection to get the state
     #memc = memcache.Client(['10.133.19.165:11211'])
-    memc = age_since_last_state.memc_cnx
+    memc = age_since_last_stored_state.memc_cnx
     out = memc.get(str(key))
     set_key = True
-
+    add_to_events = True
     now = datetime.now().strftime('%s')
     age = now
     value = state + ',' + age
@@ -171,12 +216,13 @@ def age_since_last_state(host, service, state):
         time_since = out[1]
         # dont update the existing state if not changed
         if old_state == state:
+	    add_to_events = False
             set_key = False
             age = time_since
     if set_key:
         memc.set(str(key), value)
 
-    return int(age)
+    return int(age),add_to_events
 
 @app.task(base=DatabaseTask, name='extract_values_from_main_function')
 def extract_values_from_main_function(hosts, services, services_thresholds, site_name=None, func=None, batch=500):
@@ -190,18 +236,26 @@ def extract_values_from_main_function(hosts, services, services_thresholds, site
 	for service in services:
 	    args = {}
 	    memc = extract_values_from_main_function.memc_cnx
-	    war = services_thresholds[service + ':war']
-	    crit = services_thresholds[service + ':crit']
-	    local_cnx = RedisInterface()
-	    war = war.strip()
-	    crit = crit.strip()
+	    try:
+	    	war = services_thresholds[service + ':war']
+		war = war.strip()
+	    except Exception,exp:
+                war = None
+
+            try :
+                crit = services_thresholds[service + ':crit']
+                crit = crit.strip()
+            except Exception,exp:
+                crit = None
+
+	    #local_cnx = RedisInterface()
 	    args = {
 		    'host_info': host_params,
 		    'site_name': site_name,
 		    'service': service,
 		    'war': war,
 		    'crit': crit,
-		    'redis': local_cnx,
+		    #'redis': local_cnx,
 		    'memc': memc,
 		    'my_function': func
 	    }
@@ -213,6 +267,7 @@ def extract_values_from_main_function(hosts, services, services_thresholds, site
 def call_passive_check_output(**opt):
 	my_function = eval(opt['my_function'])
 	my_function(**opt)
+
 def make_service_dict(
         perf, state, hostname, site, 
         ip_address, age_of_state, **args):    
@@ -227,6 +282,52 @@ def make_service_dict(
     service_dict['service_description']=args['service']
     service_dict['age']= age_of_state
     return service_dict
+
+def make_event_dict(
+        perf, state, hostname, site,
+        ip_address, age_of_state, **args):
+
+    perf_description = {
+    'wimax_dl_rssi' : 'downlink signal strength indication',
+    'wimax_ul_rssi' : 'uplink signal strength indication',
+    'wimax_dl_cinr' : 'downlink cinr',
+    'wimax_ul_cinr' : 'uplink cinr',
+    'wimax_dl_intrf' : 'dl intrf',
+    'wimax_ul_intrf' : 'ul intrf',
+    'wimax_modulation_dl_fec' : 'downlink modulation FEC',
+    'wimax_modulation_ul_fec' : 'uplink modulation FEC',
+    }
+
+    event_state = {'ok' : 'OK',
+    'critical' : 'CRIT',
+    'warning' : 'WARN',
+    'unknown' : 'UNKNOWN',
+    }
+
+    event_dict = {}
+
+    current_value = 'Unknown' if state is 'unknown' else perf.split("=")[1].split(";")[0]
+
+    event_dict['device_name'] = hostname
+    event_dict['ip_address'] = ip_address
+    event_dict['site_name'] = site
+    event_dict['description'] = '%s - Device %s is %s' % (event_state[state],perf_description[args['service']],current_value) ##Make description format
+    event_dict['severity']  = state.upper()
+    event_dict['sys_timestamp'] = time.time()
+    event_dict['check_timestamp'] = time.time()
+    event_dict['service_name']= args['service']
+    event_dict['data_source']= args['service'].split('_',1)[1]
+    #event_dict['age']= age_of_state
+    event_dict['machine_name'] = site.split('_')[0]
+    event_dict['min_value'] = 0
+    event_dict['max_value'] = 0
+    event_dict['avg_value'] = 0
+    event_dict['current_value'] = 0
+    event_dict['warning_threshold'] = 0
+    event_dict['critical_threshold'] = 0
+
+    return event_dict
+
 
 @app.task(name='extract_wimax_topology_fields_value',ignore_result=True)
 def extract_wimax_topology_fields_value(**args):
@@ -246,6 +347,10 @@ def extract_wimax_topology_fields_value(**args):
         t_stmp = t_stmp.replace(second=0,microsecond=0)
         current_time =int(time.mktime(t_stmp.timetuple()))
 	prefix = service_name.split('_',1)[1]
+	event_list = []
+	event_columns = ['sys_timestamp','device_name','severity','description','min_value', 'max_value', 'avg_value','current_value',\
+                        'data_source','warning_threshold','critical_threshold','check_timestamp','ip_address','service_name',\
+                        'site_name','machine_name']
 	for entry in host_info:
 	    value = ''
 	    state = 3
@@ -310,20 +415,188 @@ def extract_wimax_topology_fields_value(**args):
 				state = 3
 				state_string = 'unknown'
 		
-			error('perf: {0} {1}'.format(args['war'],args['crit']))
+			#error('perf: {0} {1}'.format(args['war'],args['crit']))
 		perf = '%s' %(prefix) + "=%s;%s;%s" % (value,args['war'],args['crit'])
 	    except Exception ,e:
-		error('Error in wimax services: {0}, {1} {2}'.format(e,ip,service_name))
+		#error('Error in wimax services: {0}, {1} {2}'.format(e,ip,service_name))
 		perf = '%s' %(prefix) + "=%s" % ('')
 		pass
 	
-	    age_of_state = age_since_last_state(host_name, service_name, state_string)
+	    age_of_state,add_to_events = age_since_last_stored_state(host_name, service_name, state_string)
             service_dict = make_service_dict(
 	        perf, state_string, host_name, site, ip, age_of_state, **args)
             service_list.append(service_dict)
+	    if add_to_events :
+		event_dict = make_event_dict(
+                    perf, state_string, host_name, site, ip, age_of_state, **args)
+                event_list.append(event_dict)
 	#error('len wimax services: {0}'.format(service_list))
         if len(service_list) > 0:     
 	    build_export.s(args['site_name'], service_list).apply_async()
+	if len(event_list) > 0:
+	    try :
+                mysql_insert_handler.s(event_list,'performance_eventservice','performance_eventservicestatus',None,site.split('_')[0],columns=event_columns).apply_async()
+            except Exception ,e :
+                print "Event insert error",e
+
+@app.task(name='extract_wimax_bs_ss_params_fields_value',ignore_result=True)
+def extract_wimax_bs_ss_params_fields_value(**args):
+        wimax_services = ['wimax_ss_ul_utilization' , 'wimax_ss_dl_utilization' , 'wimax_qos_invent' , 'wimax_ss_session_uptime' ]
+        wimax_utilization_service = ['wimax_ss_ul_utilization','wimax_ss_dl_utilization']
+        wimax_qos_service = ['wimax_qos_invent']
+        service_name = args['service']
+        host_info = args['host_info']
+        memc = args['memc']
+        state_string = 'unknown'
+        this_time = datetime.now()
+        service_list = []
+        event_list = []
+
+        event_columns = ['sys_timestamp','device_name','severity','description','min_value', 'max_value', 'avg_value','current_value',\
+                        'data_source','warning_threshold','critical_threshold','check_timestamp','ip_address','service_name',\
+                        'site_name','machine_name']
+        t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+        t_stmp = t_stmp.replace(second=0,microsecond=0)
+        current_time =int(time.mktime(t_stmp.timetuple()))
+        prefix = service_name.split('_',2)[-1]
+        for entry in host_info:
+            value = ''
+            state = 3
+            state_string = 'unknown'
+            perf = None
+            try:
+                host_name,site,ip = eval(entry[0])
+                key = "%s_mac" % host_name
+                mac = memc.get(str(key))
+                #error('Wimax mac: {0}'.format(mac))
+                key1 = str(mac) + '_params'
+                value_list = memc.get(key1)
+                #error('Wimax output: {0} {1}'.format(value_list,ip))
+                #state = 0
+                #state_string = 'ok'
+                #value = 0
+                if service_name in wimax_utilization_service :
+                    value = value_list[wimax_utilization_service.index(service_name)]
+                    value = float(value)/1024.0
+                    value = round(value,2)
+                    perf = '%s' %(prefix) + "=%s" % str(value)
+		    state_string = 'ok'
+		    state = 0
+
+                elif service_name in wimax_qos_service :
+                    value = value_list[2:4]
+                    dl_qos = float(value[0])/(1000.0*1000)
+                    prefix1 = 'dl_qos'
+                    ul_qos = float(value[1])/(1000.0*1000)
+                    prefix2 = 'ul_qos'
+                    perf = '%s' %(prefix1) + "=%s " % str(dl_qos) + '%s' %(prefix2) + "=%s" % str(ul_qos)
+		    state_string = 'ok'
+		    state = 0
+                else :
+                    value = value_list[wimax_services.index(service_name) + 1]
+                    perf = '%s' %(prefix) + "=%s" % str(value)
+                    state_string = 'ok'
+		    state = 0
+
+            except Exception,e:
+                #print e
+                #error('Error in wimax bs ss param services: {0}, {1} {2}'.format(e,ip,service_name))
+                #continue
+		if service_name in wimax_qos_service:
+		    perf = 'dl_qos' % + "=%s " % ('') + 'ul_qos' + "=%s" % ('')
+		else :
+                    perf ='%s' %(prefix) + "=%s" % ('')
+                pass
+
+            age_of_state,create_event = age_since_last_stored_state(host_name, service_name, state_string)
+            service_dict = make_service_dict(
+                            perf, state_string, host_name, site, ip, age_of_state, **args)
+
+            service_list.append(service_dict)
+
+        if len(service_list) > 0:
+            build_export.s(args['site_name'], service_list).apply_async()
+
+@app.task(name='extract_wimax_ss_port_params_value',ignore_result=True)
+def extract_wimax_ss_port_params_value(**args):
+        wimax_services = ["wimax_ss_speed_status" ,"wimax_ss_autonegotiation_status" ,"wimax_ss_duplex_status" ,\
+                                                "wimax_ss_uptime" ,"wimax_dl_modulation_change_invent" ,"wimax_ss_link_status"]
+
+        comparison_services = ['wimax_dl_modulation_change_invent']
+
+        prefix_dict = {'wimax_ss_speed_status'  : 'ss_speed' ,
+                       'wimax_ss_autonegotiation_status' : 'autonegotiation' ,
+                       'wimax_ss_duplex_status' : 'duplex' ,
+                       'wimax_ss_uptime' : 'uptime' ,
+                       'wimax_dl_modulation_change_invent' : 'dl_modulation_change' ,
+                       'wimax_ss_link_status' : 'link_state'
+                      }
+
+        service_name = args['service']
+        host_info = args['host_info']
+        memc = args['memc']
+        state_string = 'unknown'
+        this_time = datetime.now()
+        service_list = []
+        event_list = []
+        event_columns = ['sys_timestamp','device_name','severity','description','min_value', 'max_value', 'avg_value','current_value',\
+                        'data_source','warning_threshold','critical_threshold','check_timestamp','ip_address','service_name',\
+                        'site_name','machine_name']
+        t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+        t_stmp = t_stmp.replace(second=0,microsecond=0)
+        current_time =int(time.mktime(t_stmp.timetuple()))
+        prefix = prefix_dict[service_name]
+        for entry in host_info:
+            value = ''
+            state = 3
+            state_string = 'unknown'
+            try:
+                host_name,site,ip = eval(entry[0])
+                key = "%s_ss_port_params" %  str(host_name)
+                #error('Wimax mac: {0}'.format(mac))
+                value_list = memc.get(key)
+                #error('Wimax ss_port_params output: {0} {1}'.format(value_list,ip))
+                value = str(value_list[wimax_services.index(service_name)])
+
+                if service_name in comparison_services :
+                        value = int(value)
+                        if value > int(args['crit']):
+                                state  = 2
+                                state_string = 'critical'
+                        elif  value >= int(args['war']):
+                                state = 1
+                                state_string = 'warning'
+                        else:
+                                state = 0
+                                state_string = 'ok'
+
+                elif service_name in wimax_services :
+                        value = value.replace(" ","_")
+                        state = 0
+                        state_string = 'ok'
+
+                #else:
+                #        state = 3
+                #        state_string = 'unknown'
+
+                #error('perf: {0} {1}'.format(args['war'],args['crit']))
+                if args['war'] is not None :
+                    perf = '%s' %(prefix) + "=%s;%s;%s" % (value,args['war'],args['crit'])
+                else :
+                     perf = '%s' %(prefix) + "=%s" %(value)
+            except Exception ,e:
+                #error('Error in wimax services: {0}, {1} {2}'.format(e,ip,service_name))
+                perf = '%s' %(prefix) + "=%s" % ('')
+		pass
+                #continue
+            age_of_state,add_to_events = age_since_last_stored_state(host_name, service_name, state_string)
+            service_dict = make_service_dict(
+                perf, state_string, host_name, site, ip, age_of_state, **args)
+            service_list.append(service_dict)
+        #error('len wimax services: {0}'.format(service_list))
+        if len(service_list) > 0:
+            build_export.s(args['site_name'], service_list).apply_async()
+	
 
 # TODO: don't process data for down BS devices
 def update_topology(li, data_values, name_ip_mapping, delete_old_topology, site):
@@ -336,6 +609,7 @@ def update_topology(li, data_values, name_ip_mapping, delete_old_topology, site)
 		device_name = str(data_values.get('host_name'))
 		service_name = str(data_values.get('service_description'))
 		now = datetime.now()
+		check_time = datetime.fromtimestamp(float(data_values.get('last_chk')))
 		key = 'device_inventory:' + device_name
 		ip_address = str(name_ip_mapping.get(key))
 		delete_old_topology[0].add(device_name)
@@ -343,8 +617,11 @@ def update_topology(li, data_values, name_ip_mapping, delete_old_topology, site)
 		try:
 			plugin_output = perf_out.split('- ')[1]
 			ss_sec_ids, ss_ports = [], []
+			bs_mac = None
 			if service_name.startswith('cambium'):
 				bs_mac, ss_sec_id, perf = plugin_output.split(' ', 2)
+				if ip_address == None or ip_address == 'None':
+				    ip_address = ss_sec_id.split('_')[0]
 				ss_wise_values = perf.split()
 				ss_macs = splitter(ss_wise_values, ('/',), (1,))
 				[ss_sec_ids.append(ss_sec_id) for i, _ in enumerate(ss_macs)]
@@ -357,27 +634,37 @@ def update_topology(li, data_values, name_ip_mapping, delete_old_topology, site)
 				ss_sec_ids = splitter(ss_wise_values, ('=', ','), (1, 8))
 				ss_ips = splitter(ss_wise_values, ('=', ','), (1, 9))
 				ss_ports = splitter(ss_wise_values, ('=', ','), (1, -1))
+			elif service_name.startswith('rad5k'):
+				bs_mac,ip,ss_sec_id,perf =plugin_output.split(' ',3) 
+				if ip_address == None or ip_address == 'None':
+				    ip_address = ip
+				ss_wise_values  = perf.split()
+				ss_ips = splitter(ss_wise_values, ('=','/'), (1,-1))
+				ss_macs = splitter(ss_wise_values, ('=',), (0,))
+				[ss_sec_ids.append(ss_sec_id) for i, _ in enumerate(ss_macs)]
+				[ss_ports.append(None) for i, _ in enumerate(ss_macs)]
+
 		except Exception as exc:
-			#error('Error in topology output: {0}, {1}'.format(exc,ss_wise_values))
+			error('Error in topology output: {0}, {1}'.format(exc,ss_wise_values))
 			pass
 		else:
 			machine_name = site[:-8]
-			for i, ss_ip in enumerate(ss_ips):
+			for i, ss_ip in enumerate(set(ss_ips)):
 				delete_old_topology[1].add(ss_ip)
 				d.update({
 					'device_name': device_name,
 					'ip_address': ip_address,
 					'service_name': service_name,
 					'data_source': 'topology',
-					'sys_timestamp': now,
-					'check_timestamp': now,
+					'sys_timestamp': check_time,
+					'check_timestamp': check_time,
 					'sector_id': ss_sec_ids[i],
 					'connected_device_ip': ss_ip,
 					'connected_device_mac': ss_macs[i],
 					'refer': ss_ports[i],
 					'site_name': site,
 					'machine_name': site,
-					'mac_address': None,
+					'mac_address': bs_mac if bs_mac else None,
 				})
 				li.append(d)
 				d = {}
@@ -389,7 +676,7 @@ def build_export(site, perf_data):
 
 	# contains one dict value for each service data source
 	serv_data = []
-	warning('build_export site {0}'.format(site))
+	#error('build_export site {0} {1}'.format(site,perf_data[0:1]))
 	# topology perf data
 	topology_serv_data = []
 	# util services data
@@ -408,8 +695,11 @@ def build_export(site, perf_data):
 					'wimax_pmp1_ul_util_bgp', 'wimax_pmp2_ul_util_bgp']
 	# keep last 2 values for severity these services in Redis, kpi checks
 	# need their values as input
-	kpi_helper_services = ['wimax_ul_cinr', 'wimax_ul_intrf', 'cambium_ul_jitter',
-	                'cambium_rereg_count']
+
+	# Removing cambium services as they are being monitored on both omd/shieken
+	kpi_helper_services = ['wimax_dl_intrf', 'wimax_ul_intrf']
+	#kpi_helper_services = ['wimax_dl_intrf', 'wimax_ul_intrf', 'cambium_ul_jitter',
+	#                'cambium_rereg_count']
 	# helper services for ss provisioning - keep last two values of field current_value
 	ss_provis_helper_service = ['cambium_ul_rssi', 'cambium_dl_rssi',
 					'cambium_dl_jitter', 'cambium_ul_jitter',
@@ -422,7 +712,6 @@ def build_export(site, perf_data):
 	keys = rds_cli.redis_cnx.keys(pattern='device_inventory:*')
 	[p.get(k) for k in keys]
 	name_ip_mapping = dict([t for t in zip(keys, p.execute())])
-
 	for chk_val in perf_data:
 		dict_perf = {}
 		if not chk_val:
@@ -474,7 +763,6 @@ def build_export(site, perf_data):
 				'service_name': service_name,
 				'current_value': dict_perf.get('current_value')
 			})
-
 	# send insert/update tasks
 	send_db_tasks.s(serv_data=serv_data,
 	                interface_serv_data=interface_serv_data,
@@ -578,12 +866,13 @@ def manage_check_result():
 	host_valid_attrs = ['address', 'state', 'last_chk', 
 				'last_state_change', 'host_name', 'perf_data']
 	service_valid_attrs = host_valid_attrs + ['service_description']
-	need_plugin_out = ['wimax_topology', 'cambium_topology']
+	need_plugin_out = ['wimax_topology', 'cambium_topology_discover','rad5k_topology_discover']
 	host_valid_broks = ['host_check_result']
 	service_valid_broks = ['service_check_result']
+	rds_cnx=rds_cli.redis_cnx
 	#info('[%s] Start manage_service_check_result_brok' % self.name)
 	for brok in check_results:
-		#warning('manage service check {0}'.format(brok) )
+		#error('manage service check {0}'.format(brok) )
 		#brok = eval(brok)
 		if brok.get('type') in service_valid_broks:
 			#info('[%s] brok: %s' % (self.name, brok.data))
@@ -598,7 +887,7 @@ def manage_check_result():
 				# for load testing purposes
 				li = []
 				[li.append(msg.copy()) for _ in range(1)]
-				rds_cli.redis_cnx.rpush('q:perf:service', *li)
+				rds_cnx.rpush('q:perf:service', *li)
 			except Exception as exc:
 				error('Problem with service brok: '
 						     '%s' % (exc))
@@ -643,7 +932,7 @@ def get_service_checks_output(site_name=None):
 	# pulling 2000 values from queue, at a time
 	queue = RedisInterface(perf_q='q:perf:service')
 	check_results = queue.get(0, -1)
-	warning('Queue len, size of obj: {0}, {1}'.format(
+	error('Queue len, size of obj: {0}, {1}'.format(
 		len(check_results), sys.getsizeof(check_results)))
 	if check_results:
 		build_export.s(site_name, check_results).apply_async()
@@ -658,7 +947,7 @@ def get_ul_issue_service_checks_output(site_name=None):
 	site_name = conf.get('machine','machine_name')
 	queue = RedisInterface(perf_q='queue:ul_issue')
 	check_results = queue.get(0, -1)
-	warning('ul_issue Queue len: {0}'.format(len(check_results)))
+	#warning('ul_issue Queue len: {0}'.format(len(check_results)))
 	if check_results:
 		build_export.s(site_name, check_results).apply_async()
 
@@ -673,7 +962,7 @@ def send_db_tasks(**kw):
 	                        'connected_device_mac', 'mac_address','data_source')
 	#warning('send-db-send**********')
 	site = kw.get('site')
-	warning('site name: {0}'.format(site))
+	#error('site name: {0}'.format(site))
 	# tasks to be sent
 	tasks = []
 	rds_cli = RedisInterface()
@@ -916,7 +1205,7 @@ def pivot_timestamp_fwd(timestamp):
 
 
 @app.task(name='service-main')
-def main(**opts):
+def service_main(**opts):
 	# srv_etl = ServiceEtl()
 	DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
 	conf = ConfigParser()
@@ -926,5 +1215,5 @@ def main(**opts):
 	get_service_checks_output.s(**opts).apply_async()
 
 
-if __name__ == '__main__':
-	main()
+#if __name__ == '__main__':
+#	main()
