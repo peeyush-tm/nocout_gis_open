@@ -91,7 +91,7 @@ def send_task_message(sentinels):
 		'service_name': 'mymaster',
 		'sentinels': sentinels,
 		'min_other_sentinels': 2,
-		'db':15 
+		'db':10 
 		}
 		BROKER_URL = 'redis-sentinel://'
 	celery = Celery()
