@@ -2373,12 +2373,15 @@ class RFOAnalysisList(BaseDatatableView):
 
 
     def filter_queryset(self, qs):
-        """ If search['value'] is provided then filter all searchable columns using istartswith
+        """
+        If search['value'] is provided then filter all searchable columns using istartswith
         """
         # get global search value
         sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
+            if sSearch == 'NA':
+                sSearch = ''
             # Get Base Queryset
             base_qs = self.get_base_queryset()
             query = []
@@ -2529,6 +2532,8 @@ class RFOAnalysisSummationList(BaseDatatableView):
         sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
+            if sSearch == 'NA':
+                sSearch = ''
             # Get Base Queryset
             base_qs = self.get_base_queryset()
             query = []

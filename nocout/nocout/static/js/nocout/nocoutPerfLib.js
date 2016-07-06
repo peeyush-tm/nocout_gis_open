@@ -765,78 +765,6 @@ function nocoutPerfLib() {
                                 $("#" + service_key + " .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
                             }
                         }
-
-                        /*Bind click event on tabs*/
-                        $('.inner_tab_container .panel-body .tabs-left').delegate('ul.nav-tabs > li > a', 'click', function (e) {
-                            // show loading spinner
-                            // showSpinner();
-                            var current_target = e.currentTarget,
-                                current_attr = current_target.attributes,
-                                serviceId = current_target.id.slice(0, -4),
-                                splitted_local_id = current_attr.href.value.split("#"),
-                                tab_content_dom_id = splitted_local_id.length > 1 ? splitted_local_id[1] : splitted_local_id[0];
-                            
-                            //@TODO: all the ursl must end with a / - django style
-                            var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
-                                serviceDataUrl = "";
-
-                            if(serviceId.indexOf('_status_') == -1 || serviceId.indexOf('_inventory_') == -1) {
-                                if ($('.top_perf_tabs > li.active a').attr('id').indexOf('bird') == -1) {
-                                    // Hide display type option from only table tabs
-                                    if ($("#display_type_container").hasClass("hide")) {
-                                        $("#display_type_container").removeClass("hide")
-                                    }
-                                }
-                            }
-
-                            if (service_data_url_val) {
-                                if (service_data_url_val[0] != "/") {
-                                    serviceDataUrl = "/" + service_data_url_val;
-                                } else {
-                                    serviceDataUrl = service_data_url_val;
-                                }
-                            }
-
-                            if ($("#last_updated_" + tab_content_dom_id).length > 0) {
-                                perf_that.resetLivePolling(tab_content_dom_id);
-                                // add 'only_service' param to querystring if unified view
-                                var view_type = $.trim($('input[name="service_view_type"]:checked').val());
-                                if (view_type == 'unified') {
-                                    if (serviceDataUrl.indexOf('?') > -1) {
-                                        serviceDataUrl += '&only_service=1';
-                                    } else {
-                                        serviceDataUrl += '?only_service=1';
-                                    }
-                                }
-                                // get the service status for that service
-                                perfInstance.getServiceStatus(serviceDataUrl, is_exact_url, function(response_type,data_obj) {
-                                    if (response_type == 'success') {
-                                        // Call function to populate latest status for this service
-                                        populateServiceStatus_nocout("last_updated_" + tab_content_dom_id,data_obj);
-                                    } else {
-                                        $("#last_updated_" + tab_content_dom_id).html("");
-                                    }
-                                });
-                            }
-
-                            if (
-                                (
-                                    !show_historical_on_performance
-                                    &&
-                                    !is_perf_polling_enabled
-                                )
-                                ||
-                                serviceId.indexOf('availability') > -1
-                                ||
-                                serviceId.indexOf('utilization_top') > -1
-                                ||
-                                serviceId.indexOf('topology') > -1
-                                ||
-                                serviceId.indexOf('power_content') > -1
-                            ) {
-                                perfInstance.initGetServiceData(serviceDataUrl, serviceId, current_device);
-                            }
-                        });
                     }
                 } else {
                     $(".inner_tab_container").html("<p>" + result.message + "</p>");
@@ -2002,7 +1930,6 @@ $('#item_type_ul li a').click(function(e) {
  * @event Click
  */
 $('#service_view_type_ul li a').click(function(e) {
-
     // Prevent default functionality
     e.preventDefault();
 
@@ -2203,6 +2130,80 @@ $('#live_hist_report_btn').click(function(e) {
     });
 });
 
+/**
+ * This event triggers when inner left tab clicked
+ * @event click
+ */
+$('.inner_tab_container .panel-body .tabs-left').delegate('ul.nav-tabs > li > a', 'click', function (e) {
+    // show loading spinner
+    // showSpinner();
+    var current_target = e.currentTarget,
+        current_attr = current_target.attributes,
+        serviceId = current_target.id.slice(0, -4),
+        splitted_local_id = current_attr.href.value.split("#"),
+        tab_content_dom_id = splitted_local_id.length > 1 ? splitted_local_id[1] : splitted_local_id[0];
+    
+    //@TODO: all the ursl must end with a / - django style
+    var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
+        serviceDataUrl = "";
+
+    if(serviceId.indexOf('_status_') == -1 || serviceId.indexOf('_inventory_') == -1) {
+        if ($('.top_perf_tabs > li.active a').attr('id').indexOf('bird') == -1) {
+            // Hide display type option from only table tabs
+            if ($("#display_type_container").hasClass("hide")) {
+                $("#display_type_container").removeClass("hide")
+            }
+        }
+    }
+
+    if (service_data_url_val) {
+        if (service_data_url_val[0] != "/") {
+            serviceDataUrl = "/" + service_data_url_val;
+        } else {
+            serviceDataUrl = service_data_url_val;
+        }
+    }
+
+    if ($("#last_updated_" + tab_content_dom_id).length > 0) {
+        perf_that.resetLivePolling(tab_content_dom_id);
+        // add 'only_service' param to querystring if unified view
+        var view_type = $.trim($('input[name="service_view_type"]:checked').val());
+        if (view_type == 'unified') {
+            if (serviceDataUrl.indexOf('?') > -1) {
+                serviceDataUrl += '&only_service=1';
+            } else {
+                serviceDataUrl += '?only_service=1';
+            }
+        }
+        // get the service status for that service
+        perfInstance.getServiceStatus(serviceDataUrl, is_exact_url, function(response_type,data_obj) {
+            if (response_type == 'success') {
+                // Call function to populate latest status for this service
+                populateServiceStatus_nocout("last_updated_" + tab_content_dom_id,data_obj);
+            } else {
+                $("#last_updated_" + tab_content_dom_id).html("");
+            }
+        });
+    }
+
+    if (
+        (
+            !show_historical_on_performance
+            &&
+            !is_perf_polling_enabled
+        )
+        ||
+        serviceId.indexOf('availability') > -1
+        ||
+        serviceId.indexOf('utilization_top') > -1
+        ||
+        serviceId.indexOf('topology') > -1
+        ||
+        serviceId.indexOf('power_content') > -1
+    ) {
+        perfInstance.initGetServiceData(serviceDataUrl, serviceId, current_device);
+    }
+});
 
 $.urlParam = function (name) {
     var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href),
