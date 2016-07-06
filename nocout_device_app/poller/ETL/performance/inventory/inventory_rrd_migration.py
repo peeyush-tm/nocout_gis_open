@@ -20,7 +20,6 @@ from operator import itemgetter
 from datetime import datetime, timedelta
 
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
-mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
@@ -69,7 +68,7 @@ def get_ss(host=None, interface=None):
 
 
 
-def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
+def inventory_perf_data(site,hostlist):
 	"""
 	inventory_perf_data : Function for collecting the data for inventory serviecs.Service state is also retunred for those services
 	Args: site (site on poller on which devices are monitored)
@@ -82,11 +81,9 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	invent_check_list = []
 	invent_data_list = []
 	invent_service_dict = {}
-	matching_criteria = {}
 	multiple_ds_services = []
 	interface_oriented_service= ['cambium_ss_connected_bs_ip_invent']
 	ss_provis_helper_service = ['wimax_ss_ptx_invent']
-	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output perf_data\n"+\
                             "Filter: service_description ~ _invent\n"+\
                             "OutputFormat: json\n" 
@@ -97,9 +94,6 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	device_down_list =[str(item) for sublist in device_down_output for item in sublist]
 	s_device_down_list = set(device_down_list)
 	
-	unknown_svc_data = filter(lambda x: x[4] == 3,query_output)
-	unknwn_state_svc_data = filter(lambda x: x[0] not in s_device_down_list,unknown_svc_data)
-	unknwn_state_svc_data  = calculate_avg_value(unknwn_state_svc_data,db)
 	ss_provis_helper_serv_data = []
 	for entry in query_output:
 		if str(entry[0]) in s_device_down_list:
@@ -158,12 +152,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 				data_source=ds_list[index],severity=service_state,site_name=site,warning_threshold=0,
 				critical_threshold=0,ip_address=host_ip)
 				
-				matching_criteria.update({'device_name':str(host),'service_name':service,
-				'data_source':ds_list[index]})
-					
-				mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
 				invent_data_list.append(invent_service_dict)
-				matching_criteria ={}
 				invent_service_dict = {}
 		elif ('rad5k' in service):
 			warning_t=0
@@ -173,28 +162,13 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 			ds = ds_l[0]
 			perf_data2 = perf_data1[ds]
 			value = perf_data2.get('cur','')
-			if perf_data2['war'] == '':
-				warning_t=0
-			else :
-				warning_t= perf_data2.get('war',0)
-			if perf_data2['cric'] == '':
-				critical_t=0
-			else :
-				critical_t= perf_data2.get('cric',0)
-			if  service=='rad5k_dl_mod_invent':
-				try:
-					value = rad5k_dl_mod_invent_convert_dict.get(int(value),'')
-					#print value
-				except :
-					pass
+                        warning_t= perf_data2.get('war','')
+                        critical_t= perf_data2.get('cric','')
 			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=host,
                                         service_name=service,current_value=value,min_value=0,max_value=0,avg_value=0,
                                         data_source=ds,severity=service_state,site_name=site,warning_threshold=warning_t,
                                         critical_threshold=critical_t,ip_address=host_ip)
-			matching_criteria.update({'device_name':host,'service_name':service,'data_source':ds})
-			mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
 			invent_data_list.append(invent_service_dict)
-			matching_criteria ={}
 			invent_service_dict = {}
 			
 		else:
@@ -218,12 +192,8 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 					service_name=service,current_value=value,min_value=0,max_value=0,avg_value=0,
 					data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
 					critical_threshold=0,ip_address=host_ip)
-			matching_criteria.update({'device_name':host,'service_name':service,'data_source':ds})
-			#mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
 			invent_data_list.append(invent_service_dict)
-			matching_criteria ={}
 			invent_service_dict = {}
-	#mongo_module.mongo_db_insert(db,invent_data_list,"inventory_services")
 
 	##########################
 	# Storing the value in memcache
@@ -270,61 +240,6 @@ def get_from_socket(site_name, query):
     return output
 
 
-
-def calculate_avg_value(unknwn_state_svc_data,db):
-        end_time = datetime.now()
-        start_time = end_time - timedelta(days=10)
-
-	start_epoch = int(time.mktime(start_time.timetuple()))
-	end_epoch = int(time.mktime(end_time.timetuple()))
-        host_svc_ds_dict ={}
-        svc_host_key={}
-        host_list = []
-        avg = None
-        service_list = []
-	#print unknwn_state_svc_data
-        for doc in unknwn_state_svc_data:
-                host_list.append(str(doc[0]))
-                service_list.append(str(doc[3]))
-	host_list = list(set(host_list))
-	service_list = list(set(service_list))
-	#print unknwn_state_svc_data
-        query_results = db.nocout_inventory_service_perf_data.aggregate([
-        {
-         "$match" :{"device_name": {"$in": host_list},"service_name":{"$in": service_list},"sys_timestamp":{"$gte":start_epoch,"$lte":end_epoch} }
-
-
-        }
-        ])
-	#print query_results
-	for key,entry in groupby(sorted(query_results['result'],key=itemgetter('device_name','service_name','data_source')),
-                key=itemgetter('device_name','service_name','data_source')):
-                doc_list = list(entry)
-                try:
-                        value_list =[str(x['current_value']) for x in doc_list if x['current_value'] != '']
-			#print x['service_name'], x['device_name'],value_list
-                        #print len(doc_list),doc_list[len(doc_list)-1]['host'],doc_list[len(doc_list)-1]['service_name'],value_list
-                        if '_invent' in  x['service_name'] :
-                                # calculating the Maximum number of times value has occured
-				c = defaultdict(int)
-				for item in value_list:
-					c[item] += 1
-				if len(value_list):
-					avg= max(c.iteritems(), key=itemgetter(1))
-					avg =avg[0]
-		except Exception,e:
-			avg= None
-                        #print e, x['service_name'], x['device_name'],value_list
-			continue
-                #svc_host_key[key]=avg
-		if key not in host_svc_ds_dict:
-			if avg:
-				host_svc_ds_dict[key] =avg
-		avg= None
-                #svc_host_key={}
-        #print host_svc_ds_dict
-        return host_svc_ds_dict
-
 def get_threshold(perf_data):
 	threshold_values = {}
 	if not len(perf_data):
@@ -367,18 +282,14 @@ def inventory_perf_data_main():
 		desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
 		desired_config = configs.get(desired_site)
 		site = desired_config.get('site')
-		mongo_host = desired_config.get('host')
-                mongo_port = desired_config.get('port')
-                mongo_db_name = desired_config.get('nosql_db')
 		query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
 		output = json.loads(utility_module.get_from_socket(site,query))
-		inventory_perf_data(site,output,mongo_host,int(mongo_port),mongo_db_name)
+		inventory_perf_data(site,output)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))
 	except socket.error, msg:
 		raise MKGeneralException(("Failed to create socket. Error code %s Error Message %s:") % (str(msg[0]), msg[1]))
 if __name__ == '__main__':
-	rad5k_dl_mod_invent_convert_dict = {007:'64QAM FEC 5/6', 107:'64QAM FEC 5/6', 207:'64QAM FEC 5/6', 006: '64QAM FEC 3/4', 106: '64QAM FEC 3/4', 206: '64QAM FEC 3/4', 005: '64QAM FEC 2/3', 105:'64QAM FEC 2/3', 205:'64QAM FEC 2/3', 004:'16QAM FEC 3/4', 104: '16QAM FEC 3/4', 204: '16QAM FEC 3/4', 003:'16QAM FEC 1/2', 103:'16QAM FEC 1/2', 203:'16QAM FEC 1/2',002:'QPSK FEC 3/4', 102:'QPSK FEC 3/4', 202:'QPSK FEC 3/4', 001:'QPSK FEC 1/2', 101:'QPSK FEC 1/2', 201:'QPSK FEC 1/2', 000:'BPSK FEC 1/2', 100:'BPSK FEC 1/2', 200:'BPSK FEC 1/2' }
 
 	inventory_perf_data_main()	
 

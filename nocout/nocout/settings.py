@@ -504,7 +504,7 @@ CELERYBEAT_SCHEDULE = {
     #PTP-BH upttime Average from Daily Network availability data.
     'calculate_avg_availability_ptpbh': {
         'task': 'performance.tasks.calculate_avg_availability_ptpbh',
-         'schedule': crontab(day_of_month=1, hour=2)
+        'schedule': crontab(day_of_month='1', hour=2)
     },
     #'scheduled_email_report_task': {
     #    'task': 'download_center.tasks.scheduled_email_report',
