@@ -117,7 +117,7 @@
                 state_list = [],
                 month_list = [];
             try {
-                city_list = $.parseJSON('{{ city_data|safe }}')
+                city_list = $.parseJSON('{{ city_data|safe }}'.split('\n').join(''))
             } catch(e) {
                 // console.error(e);
             }
