@@ -54,6 +54,7 @@ def check_wimax_idu_type_invent(item, _no_params, info):
     try:
 	    if memc:
 		    value_list = memc.get('%s_bs_params' % g_hostname)
+		    value_list = eval(value_list)
 		    if value_list:
 		    	idu_type = value_list[8]
     except:

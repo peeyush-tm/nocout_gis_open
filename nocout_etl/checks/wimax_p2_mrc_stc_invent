@@ -54,6 +54,7 @@ def check_wimax_p2_mrc_stc_invent(item, _no_params, info):
     try:
 	    if memc:
 		    value_list = memc.get('%s_bs_params' % g_hostname)
+		    value_list = eval(value_list)
 		    if value_list:
 		    	pmp2_mrc,pmp2_stc = (value_list[15],value_list[16])
     except:

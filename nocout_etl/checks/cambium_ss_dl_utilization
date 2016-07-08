@@ -61,7 +61,7 @@ def check_cambium_ss_dl_utilization(item, _no_params, info):
                 except MKCounterWrapped:
                        	wrapped=True
                 status_list.append(("dl_utilization","%.2f" % (rate)))
-		infotext = "Downlink utilization %s " % (rate)
+		infotext = "Downlink utilization [time=%s count=%s] " % (this_time,dl_utilization)
 		state= 0
 	else:
 	    infotext = "No interface present"

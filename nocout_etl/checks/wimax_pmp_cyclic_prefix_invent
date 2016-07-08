@@ -55,6 +55,7 @@ def check_wimax_pmp_cyclic_prefix_invent(item, _no_params, info):
     try:
 	    if memc:
 		    value_list = memc.get('%s_bs_params' % g_hostname)
+		    value_list = eval(value_list)
 		    if value_list:
 		    	pmp1_prefix,pmp2_prefix = (value_list[0],value_list[1]) 
     except:

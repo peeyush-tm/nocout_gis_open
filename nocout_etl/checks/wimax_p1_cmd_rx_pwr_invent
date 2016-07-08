@@ -54,6 +54,7 @@ def check_wimax_p1_cmd_rx_pwr_invent(item, params, info):
     try:
 	    if memc:
 		    value_list = memc.get('%s_bs_params' % g_hostname)
+		    value_list =eval(value_list)
 		    if value_list:
 		    	p1_rx_pwr = value_list[9]
     except:

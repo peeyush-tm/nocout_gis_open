@@ -224,7 +224,7 @@ def check_wimax_aggregate_bs_params(item, _no_params, info):
 				odu_serial_2,idu_type, p1_rx_pwr, p2_rx_pwr, pmp1_bw, pmp2_bw,pmp1_mrc, pmp1_stc, pmp2_mrc, pmp2_stc])
 		try:
 			if memc:
-				memc.set("%s_bs_params" % g_hostname, params_list)
+				memc.set("%s_bs_params" % g_hostname, str(params_list))
 		except:
 			pass
     except:

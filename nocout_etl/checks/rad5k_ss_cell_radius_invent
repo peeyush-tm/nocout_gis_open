@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from mysql_connection import memc
 import sys
 from telnetlib import Telnet
 import socket

@@ -82,14 +82,14 @@ def check_rici_port_speed_status(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     speed_list = []
+    status_list = []
     port_string = "fe_"
     try:
 	infotext = ""	
-	#speed_list =extract_port_speed_status_from_live(g_hostname)
 	try:
 		if memc:
-			key = g_hostname + "_port_params"
-			speed_list = memc.get(key)
+			key = g_hostname + "_rici_port_params"
+			speed_list = eval(memc.get(key))
 			speed_list = speed_list[0] 
 	except:
 		pass

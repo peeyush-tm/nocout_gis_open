@@ -6,8 +6,13 @@ import socket
 import json
 import os
 import memcache
-from mysql_connection import memc
 import re
+try:
+    from mysql_connection_1 import db_connection
+    db_obj = db_connection()
+    memc = db_obj.memcache_connect
+except:
+    memc = None
 """
 operating Frequency of ss device  Poller script.
 
@@ -146,15 +151,15 @@ def connection_telnet_bs_for_topology(hostname, port,pmp1_sec_id,pmp2_sec_id):
   					value_list= []
 					value_list.extend([ss_mac,dl_rssi,ul_rssi,dl_cinr,ul_cinr,dl_intrf,
 					ul_intrf,dl_fec,ul_fec,sector_id,ss_ip,pmp_port,hostname])
-                			memc.set(ss_mac,value_list,360)
-					sec_ss_ip[pmp_port].append(ss_ip)		
+                			memc.set(ss_mac,value_list,1200)
+					sec_ss_ip[pmp_port].append(ss_ip)
     			except:
         			pass
 		try:
 			if memc:
-				ss_ip_list.append(sec_ss_ip)
-				key = "%s_conn_ss" % g_hostname
-				memc.set(key,ss_ip_list)
+				#ss_ip_list.append(sec_ss_ip)
+				key1 = "%s_conn_ss" % g_hostname
+				memc.set(key1,sec_ss_ip,1200)
 		except:
 			pass
 

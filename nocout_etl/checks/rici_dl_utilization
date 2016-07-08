@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import re
 import time
-from mysql_connection import memc
 """
 Downlink utilizationPoller script.
 
@@ -76,7 +75,7 @@ def check_rici_dl_utilization(item, _no_params, info):
 		try:
 			if memc:
 				key = str(g_hostname) + "_dl"
-				memc.set(key,status_list,300)
+				memc.set(key,str(status_list),300)
 		except:
 			pass
 

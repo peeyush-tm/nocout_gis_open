@@ -43,7 +43,7 @@ def check_wimax_transmit_power_pmp1_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
-    transmit_power = ""
+    transmit_power = None
     try:
         if info:
             if info[0][0]:
@@ -60,6 +60,7 @@ def check_wimax_transmit_power_pmp1_invent(item, _no_params, info):
 check_info["wimax_transmit_power_pmp1_invent"] = {
     'check_function': check_wimax_transmit_power_pmp1_invent,
     'service_description': 'wimax_transmit_power_pmp1_invent',
+    'has_perfdata':True,
 }
 
 #########################################################################

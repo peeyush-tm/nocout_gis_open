@@ -72,6 +72,10 @@ def check_wimax_ul_rssi(item, params, info):
     infotext = "unknown_value"
     warn,crit = params
     ul_rssi = None
+    this_time = datetime.now()
+    t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+    t_stmp = t_stmp.replace(second=0,microsecond=0)
+    current_time =int(time.mktime(t_stmp.timetuple()))
     try:
 
 	mac_info = sum(info,[])
@@ -91,6 +95,9 @@ def check_wimax_ul_rssi(item, params, info):
 				state = 1
 			else:
 				state = 0
+			if memc:
+				key1 = str(g_hostname) + "_ul_rssi" + "_" + str(current_time)
+				memc.set(key1,ul_rssi,600)
 			infotext = "Device downlink signal strength indication is %s " % ul_rssi
     except ValueError:
         infotext = "type_mismatch_value"

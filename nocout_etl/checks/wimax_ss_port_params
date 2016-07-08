@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 import sys
 from telnetlib import Telnet
 import socket
@@ -137,6 +136,7 @@ def check_wimax_ss_port_params(item, _no_params, info):
 	try:
 		if memc:
 			memc.set("%s_ss_port_params" % g_hostname,ss_params)
+
 	except:
 		pass
     except ValueError:

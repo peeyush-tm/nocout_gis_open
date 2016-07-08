@@ -76,6 +76,7 @@ def check_wimax_ul_cinr(item, params, info):
     infotext = "unknown_value"
     warn,crit = params
     ul_cinr = None
+    state_string = ""
     try:
 	mac_info = sum(info,[])
         mac_list=map(lambda x: convert(x),mac_info)
@@ -90,10 +91,31 @@ def check_wimax_ul_cinr(item, params, info):
 		if isinstance(ul_cinr,int):
 			if ul_cinr < crit:
 				state  = 2
+				state_string ="critical"
 			elif ul_cinr >= crit and ul_cinr <= warn:
 				state = 1
+				state_string ="warning"
 			else:
 				state = 0
+				state_string ="ok"
+			try:
+				if memc:
+					value_list= []
+					key = g_hostname + "_wimax_ul_cinr_sev"
+					value = memc.get(key)
+					if value and type(value) is list and len(value) == 1:
+						value_list.append(value[0])	
+						value_list.append(state_string)	
+					elif value and type(value) is list and len(value) == 2:
+						value_list.append(value[1])
+						value_list.append(state_string)
+					elif not value:
+						value_list.append(state_string)
+					memc.set(key,value_list,360)
+			except:
+				pass
+					
+					
 			infotext = "Device downlink cinr  is %s " % ul_cinr
     except ValueError:
         infotext = "type_mismatch_value"
