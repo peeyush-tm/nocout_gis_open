@@ -697,9 +697,8 @@ def build_export(site, perf_data):
 	# need their values as input
 
 	# Removing cambium services as they are being monitored on both omd/shieken
-	kpi_helper_services = ['wimax_dl_intrf', 'wimax_ul_intrf']
-	#kpi_helper_services = ['wimax_dl_intrf', 'wimax_ul_intrf', 'cambium_ul_jitter',
-	#                'cambium_rereg_count']
+	kpi_helper_services = ['wimax_dl_intrf', 'wimax_ul_intrf', 'cambium_ul_jitter',
+	                'cambium_rereg_count']
 	# helper services for ss provisioning - keep last two values of field current_value
 	ss_provis_helper_service = ['cambium_ul_rssi', 'cambium_dl_rssi',
 					'cambium_dl_jitter', 'cambium_ul_jitter',
@@ -899,7 +898,8 @@ def manage_check_result():
 				if rds_cli.redis_cnx.get(host_key):
 					continue
 				else:
-					rds_cli.redis_cnx.setex(host_key, 300, 1)
+					# Expire key time changed to 300->290
+					rds_cli.redis_cnx.setex(host_key, 290, 1)
 
 				msg = dict([(k, v) for  k, v in brok.get('data').iteritems() if 
 					k in host_valid_attrs])
