@@ -199,7 +199,7 @@ class AlertCenterListing(ListView):
         pmp_wimax_datatable_headers += common_headers
         pmp_wimax_datatable_headers += polled_headers
 
-        if SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT:
+        if SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT and page_type == 'network':
             pmp_wimax_datatable_headers += [{
                 'mData': 'customer_count',
                 'sTitle': 'Customer Count',
