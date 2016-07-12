@@ -1,1 +1,5 @@
-10.167.236.21 root telsimawl
+StarmaxSS root telsimawl
+CanopySM100SS wireset wireset
+CanopyPM100SS wireset wireset
+Radwin2KBS admin netman
+Radwin2KSS admin netman
