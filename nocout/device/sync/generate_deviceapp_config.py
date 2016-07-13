@@ -227,7 +227,6 @@ def prepare_hosts_file():
     wimax_bs_devices, cambium_bs_devices = [], []
     # find services, which has been disabled by user
     disabled_services = get_disabled_services()
-    warning('disabled_services: {0}'.format(disabled_services))
     # This file contains device names, to be updated in configuration db
     open('hosts.txt', 'w').close()
     bs_devices = make_BS_data(disabled_services)
@@ -323,6 +322,10 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     processed = []
     cisco_juniper = ['cisco','juniper']
     hosts_only = open('hosts.txt', 'a')
+    memc_obj1=db_ops_module.MemcacheInterface()
+    memc =memc_obj1.memc_conn
+    device_name_ip_map = {}
+
     for device in data:
         if str(device[2].lower()) == 'cisco':
         	port_wise_capacities = [0]*26
@@ -400,7 +403,12 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
             'site': str(device[5]),
             'tag_agent': str(device[4])
             }})
+	device_name_ip_map[str(device[1])] = str(device[0])
 
+    try:
+        memc.set_multi(device_name_ip_map)
+    except Exception as exc:
+	error('Error in memc inventory loading... {0}'.format(exc))
     hosts_only.close()
     T.all_hosts, T.ipaddresses = all_hosts, ipaddresses
     T.host_attributes = host_attributes
@@ -492,7 +500,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     #host name | device type | mac | parent _ name | dr: dr_host_name | wan | prod | agent tags | site | wato
     cur = db.cursor() 
     cur.execute(query) 
-    data = cur.fetchall() 
+    data = cur.fetchall()
     # Removing duplicate entries for devices having more than one Ckt-ids
     unq_device_data = []
     device_ips = set(map(lambda e: e[0], data))
@@ -616,7 +624,6 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
 	final_radwin_devices_entry.append((e[0][0], e[0][1], e[1]))
 
     T1.radwin_bs_devices = final_radwin_devices_entry
-
     return T1
 
 
@@ -675,7 +682,7 @@ def eval_qos(vals, out=None):
 
 
 def write_hosts_file(all_hosts, ipaddresses, host_attributes):
-    with open('hosts.mk', 'w') as f:
+    with open('/omd/shinken_nocout/nocout_shinken/nocout/device/sync/hosts.mk', 'w') as f:
         f.write("# encoding: utf-8\n\n")
         f.write("\nhost_contactgroups += []\n\n\n")
         f.write("all_hosts += %s\n" % pformat(all_hosts))
@@ -840,7 +847,6 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
 
 def prepare_rules(devices):
     settings_out = get_settings()
-
     #print settings_out.active_checks_thresholds
     ac_chks1 = util_active_checks(
             devices, 
