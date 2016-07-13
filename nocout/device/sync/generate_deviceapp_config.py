@@ -747,7 +747,7 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
     where device_device.is_deleted=0 and
     device_device.host_state <> 'Disable' and device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') and device_devicetype.name in ('Radwin2KSS', 'CanopyPM100SS', 'CanopySM100SS', 'StarmaxSS','Radwin5KSS')) as dupli
     )
-    on (original.id = dupli.matcher);
+    on (original.id = dupli.matcher)
         """
         #host name | device type | mac | parent _ name | wan | prod | agent tags | site | wato
     cur = db.cursor()
