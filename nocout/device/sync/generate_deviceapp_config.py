@@ -228,7 +228,7 @@ def prepare_hosts_file():
     # find services, which has been disabled by user
     disabled_services = get_disabled_services()
     # This file contains device names, to be updated in configuration db
-    open('hosts.txt', 'w').close()
+    open('/omd/shinken_nocout/nocout_shinken/nocout/device/sync/hosts.txt', 'w').close()
     bs_devices = make_BS_data(disabled_services)
     ss_devices = make_SS_data(bs_devices.all_hosts, bs_devices.ipaddresses, 
             bs_devices.host_attributes, disabled_services)
@@ -321,7 +321,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     mrotek_devices, rici_devices, cisco_switch_devices, juniper_switch_devices = [], [], [],[]
     processed = []
     cisco_juniper = ['cisco','juniper']
-    hosts_only = open('hosts.txt', 'a')
+    hosts_only = open('/omd/shinken_nocout/nocout_shinken/nocout/device/sync/hosts.txt', 'a')
     memc_obj1=db_ops_module.MemcacheInterface()
     memc =memc_obj1.memc_conn
     device_name_ip_map = {}
@@ -524,7 +524,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     dr_configured_on_devices = get_dr_configured_on_devices(device_ids=dr_configured_on_ids)
     final_dr_devices = zip(dr_en_devices, dr_configured_on_devices)
 
-    hosts_only = open('hosts.txt', 'a')
+    hosts_only = open('/omd/shinken_nocout/nocout_shinken/nocout/device/sync/hosts.txt', 'a')
 
     for entry in final_dr_devices:
         if (str(entry[0][1]) in processed) or (str(entry[1][0]) in processed):
@@ -759,7 +759,7 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
         'all_hosts', 'ipaddresses', 'host_attributes',
         'radwin_ss_devices', 'wimax_ss_devices', 'cambium_ss_devices'])
     processed = []
-    hosts_only = open('hosts.txt', 'a')
+    hosts_only = open('/omd/shinken_nocout/nocout_shinken/nocout/device/sync/hosts.txt', 'a')
     for device in data:
         if str(device[4]) in processed:
             continue
@@ -813,7 +813,7 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
     db = mysql_conn()
     if update_device_table:
         hosts = []
-        with open('hosts.txt', 'r') as f:
+        with open('/omd/shinken_nocout/nocout_shinken/nocout/device/sync/hosts.txt', 'r') as f:
             hosts = map(lambda t: t.strip(), list(f))
         if hosts:
             query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
@@ -903,7 +903,7 @@ ON
 	OR
 	lower(sds.alias) = lower(replace(bs.bh_port_name, '/', '_'))
 WHERE
-	lower(dtype.name) in ('juniper', 'cisco', 'huawei')
+	lower(dtype.name) in ('juniper', 'cisco', 'huawei','pine')
 group by
 	bh_device.id;
 """ 

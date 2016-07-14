@@ -6,6 +6,13 @@
 #
 # Output: service state ,plugin output
 # ######################################################################
+try:
+    from mysql_connection_1 import db_connection
+    db_obj = db_connection()
+    memc = db_obj.memcache_connect
+except:
+    memc = None
+
 
 def live_query_for_rad5k_dl_rssi(serial_number):
         """
