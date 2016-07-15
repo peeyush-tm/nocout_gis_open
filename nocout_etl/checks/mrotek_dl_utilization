@@ -1,6 +1,11 @@
 #!/usr/bin/python
 import re
 import time
+try:
+    from mysql_connection_1 import db_connection
+    memc = db_connection().memcache_connect
+except Exception,e:
+    memc = None
 """
 Downlink utilizationPoller script.
 

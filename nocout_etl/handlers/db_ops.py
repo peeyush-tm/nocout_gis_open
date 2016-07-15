@@ -20,7 +20,7 @@ from pymongo import MongoClient
 from redis import StrictRedis
 from redis.sentinel import Sentinel
 from time import sleep
-
+import socket
 from celery import Task
 from celery.contrib.methods import task_method
 from celery.utils.log import get_task_logger
@@ -278,7 +278,7 @@ def store_threshold_for_kpi_services(self):
 	")"
 	"where devicetype.name <> 'Default' and service.name like '%_kpi' or service.name in " + str(topology_services) +";"
 	)
-	error('sample {0}'.format(query))
+	#error('sample {0}'.format(query))
 	cur = store_threshold_for_kpi_services.mysql_cnx('historical').cursor()
 	cur.execute(query)
 	out = cur.fetchall()
@@ -457,7 +457,7 @@ def load_inventory(self):
 	 machine_machine.id = bh_device.machine_id and site_instance_siteinstance.id = bh_device.site_instance_id
 	)
 	WHERE
-		lower(dtype.name) in ('juniper', 'cisco')
+		lower(dtype.name) in ('juniper', 'cisco','huawei')
 	group by
 		bh_device.id;
 	"""
@@ -495,14 +495,17 @@ def load_inventory(self):
 	# keeping extra iteration for name and ip map
 	for d in out:
 		device_name_ip_map[d[0]] = d[2]
-	for d in backhaul_out:
-		device_name_ip_map[d[0]] = d[2]
-
+	#for d in backhaul_out:
+	#	count = count+1
+	#	device_name_ip_map[d[0]] = d[2]
+	#for d in switch_output:
+	#	count = count+1
+	#	device_name_ip_map[d[0]] = d[2]
 	# group based on device technologies and load the devices info to redis
 	out = sorted(out, key=itemgetter(3))
 	backhaul_out = sorted(backhaul_out, key=itemgetter(3))
 	switch_out = sorted(switch_output, key=itemgetter(2))
-
+	
 	for grp, grp_vals in groupby(out, key=itemgetter(3)):
 		grouped_devices = list(grp_vals)
 		if grouped_devices[0][3] == 'StarmaxIDU':
@@ -554,7 +557,7 @@ def store_ping_threshold(data_values,p,ping_threshold_dict):
 def load_switch_data(data_values, p, extra=None):
 	t = data_values[0]
 	processed = []
-	error('PORT-Data: {0}'.format(data_values))
+	#error('PORT-Data: {0}'.format(data_values))
 	# key:: <device-tech>:<device-type>:<site-name>:<ip>
 	key = '%s:%s:%s:%s' % (str(t[3]).lower(),
 					'ss' if t[3].endswith('SS') else 'bs',
@@ -568,63 +571,58 @@ def load_switch_data(data_values, p, extra=None):
 			port_wise_capacities = [0]*26
 		elif str(device[3].lower()) == 'juniper':
 			port_wise_capacities = [0]*52
+		elif str(device[3].lower()) == 'huawei':
+                        port_wise_capacities = [0]*28
+
+
+
 		if  str(device[0]) in processed:
 		    continue
 		if str(device[3].lower()) == 'cisco':
 		    try :
-			int_ports = map(lambda x: x.split('/')[-1], device[4].split(','))
+			int_ports = map(lambda x: x.split('/')[-1], device[4].split(','))  
 			int_ports = map(lambda x: int(x), int_ports)   #convert int type
 			int_string = map(lambda x: x.split('/')[0], device[4].split(','))
 			for i in xrange(len(int_string)):
 			    #if int_string[i]== 'Gi0':
 			    if 'gi' in int_string[i].lower():
 				int_ports[i]= int_ports[i]+24
-			#capacities = device[6].split(',') if device[6] else device[6]
-			if ',' in device[6]:    # case when two capacities are given like '6,8'  when one switch connected to two different base station
-				capacities = device[6].split(',')
-			elif len(int_ports)>1:  # when ports are two 'Fa0/21,Fa0/23' but capacity only one like '10', ring case
-				capacities = []
-				capacities.append(device[6])  # two time append single capacity 
-				capacities.append(device[6]) 
-			else :				# when sigle port and single capacity are given 
-				capacities = []  
-				capacities.append(device[6])
-			#if len(int_string)>1:  # to multiple kpi for ring ports
-			#    capacities.append(capacities[0])
+			capacities = device[6].split(',') if device[6] else device[6]
+			if len(int_string)>1:  # to multiple kpi for ring ports
+                            capacities.append(capacities[0])
 			for p_n, p_cap in zip(int_ports, capacities):
-			    port_wise_capacities[int(p_n)-1] = p_cap
+                            port_wise_capacities[int(p_n)-1] = p_cap
 
 		    except Exception as e:
 			#error('ERR-Data -cisco: {0} {1}'.format(e,device[2]))
 			port_wise_capacities = [0]*8
 		if str(device[3].lower()) == 'juniper':
 		   try:
-		       int_ports = map(lambda x: x.split('/')[-1], device[4].split(','))
-		       int_ports = map(lambda x: int(x), int_ports)   #convert int type
-		       int_ports_s = map(lambda x: x.split('/')[-2], device[4].split(','))
-		       int_ports_s = map(lambda x: int(x), int_ports_s)
-		       for i in xrange(len(int_ports_s)):
-			   if int_ports_s[i]== 1:
-			       int_ports[i]=int_ports[i]+48
-		       #capacities = device[6].split(',') if device[6] else device[6]
-		       if ',' in device[6]:    # case when two capacities are given like '6,8'  when one switch connected to two different base station
-                               capacities = device[6].split(',')
-                       elif len(int_ports)>1:  # when ports are two 'Fa0/21,Fa0/23' but capacity only one like '10', ring case
-                               capacities = []
-                               capacities.append(device[6])  # two time append single capacity 
-                               capacities.append(device[6])
-                       else :                          # when sigle port and single capacity are given 
-                               capacities = []
-                               capacities.append(device[6])
+		       int_ports = map(lambda x: x.split('/')[-1], device[4].split(',')) #port like 'gi-0/0/1,gi-0/1/1' int_ports= ['1','1']
+		       int_ports = map(lambda x: int(x), int_ports)   #convert int type [1,1]
+		       int_ports_s = map(lambda x: x.split('/')[-2], device[4].split(',')) # int_ports_s = ['0','1']
+		       int_ports_s = map(lambda x: int(x), int_ports_s)  # int_ports_s = [0,1]
+		       for i in xrange(len(int_ports_s)):                
+			   if int_ports_s[i]== 1:                   
+			       int_ports[i]=int_ports[i]+48      # [1,49]
 
-		       #if len(int_string)>1: # for ring port extra capcity added
-		       #	    capacities.append(capacities[0])
-		       for p_n, p_cap in zip(int_ports, capacities):
-			   #error('ERR-Data -cisco -2: {0},{1},{2}'.format(p_n,p_cap,port_wise_capacities))
-			   port_wise_capacities[int(p_n)] = p_cap
+		       capacities = device[6].split(',') if device[6] else device[6]
+                       if len(int_ports)>1: # for ring port extra capcity added
+                           capacities.append(capacities[0])
+                       for p_n, p_cap in zip(int_ports, capacities):
+                           port_wise_capacities[int(p_n)] = p_cap
 		   except Exception as e:
-		       #error('ERR-Data -juniper: {0}{1}'.format(e,device[2]))
-		       port_wise_capacities = [0]*8
+			port_wise_capacities = [0]*8
+
+		if str(device[3].lower()) == 'huawei':
+                        try:
+                                capacities = device[6].split(',') if device[6] else device[6]
+                                for i in xrange(len(capacities)):
+                                        port_wise_capacities[i]=capacities[i]
+                        except Exception as e:
+                                port_wise_capacities = [0]*8
+
+
 		p.set(invent_key % device[0], device[2])
 		device_attr.extend([device[0],device[1],device[2]])
 		device_attr.append(port_wise_capacities)
@@ -638,7 +636,7 @@ def load_switch_data(data_values, p, extra=None):
 def load_backhaul_data(data_values, p, extra=None):
 	t = data_values[0]
 	processed = []
-	error('PORT-Data: {0}'.format(data_values))
+	#error('PORT-Data: {0}'.format(data_values))
 	# key:: <device-tech>:<device-type>:<site-name>:<ip>
 	key = '%s:%s:%s:%s' % (str(t[3]).lower(),
 					'ss' if t[3].endswith('SS') else 'bs',
@@ -788,6 +786,7 @@ def mysql_update(self, table, data_values, site, columns=None):
 	p3 = ' , '.join(map(lambda x: x + ' = VALUES(' + x + ')', columns))
 	updt_qry = p0 + p1 + ' VALUES (' + p2 + ') ON DUPLICATE KEY UPDATE ' + p3
 
+	#error('site {0} {1}'.format(site,table))
 	try:
 		lcl_cnx = mysql_update.mysql_cnx(site)
 		cur = lcl_cnx.cursor()
@@ -819,6 +818,7 @@ def mysql_insert(self, table, data_values, mongo_col, site, columns=None):
 	p1 = ' (%s) ' % ','.join(columns)
 	p2 = ' , '.join(map(lambda x: ' %('+ x + ')s', columns))
 	query = p0 + p1 + ' VALUES (' + p2 + ') '
+	#error('site {0} {1}'.format(site,table))
 	try:
 		lcl_cnx = mysql_insert.mysql_cnx(site)
 		cur = lcl_cnx.cursor()
@@ -831,7 +831,7 @@ def mysql_insert(self, table, data_values, mongo_col, site, columns=None):
 		error('Error in mysql_insert task, {0}'.format(db_exc))
 		#if self.request.retries >= self.max_retries:
 		# store the data into mongo, as a backup
-		mongo_insert.s(data_values, mongo_col, site).apply_async()
+		#mongo_insert.s(data_values, mongo_col, site).apply_async()
 		# else:
 		#	# perform a retry before taking data backup in mongo
 		#	raise self.retry(exc=db_exc)

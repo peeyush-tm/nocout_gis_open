@@ -30,7 +30,6 @@ def main(**kw):
 	 "value": [] # The current values for the desired service data sources
 	}
 	"""
-	logger.warning('kw: {0}'.format(kw))
 	response = {
 			"success": 1,
 			"message": "Data fetched successfully",
@@ -67,8 +66,6 @@ def poll_device(**kw):
 		is_first_call = kw.get('is_first_call')
 	except Exception as exc:
 		logger.error('Problem with request params: {0}'.format(exc))
-	logger.info('device_list: {0}'.format(device_list))
-	logger.info('service_list: {0}'.format(service_list))
 	try:
 		data_source_list = kw.get('ds')
 	except Exception as exc:
@@ -256,13 +253,12 @@ def get_current_value(
 		if service.lower() == 'ping':
 			# Get the device ip from device name
 			 try:
-			 	 memc = memcache.Client(['10.133.19.165:11211'])
+				 memc = memcache.Client(['10.133.19.165:11211','10.133.12.163:11211'])
 			 	 ip = memc.get(str(device))
 				 logger.info('ip: {0}'.format(ip))
 			 except Exception as exc:
 			 	 logger.info('Error in getting ip from memc : {0}'.format(exc))
 			 cmd = 'ping -w 2 -c 1 %s' % ip
-		logger.info('cmd: {0}'.format(cmd))
 		#start = datetime.daetime.now()
 		# Fork a subprocess
 		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
@@ -335,7 +331,6 @@ def get_current_value(
 						data_value = []
 						q.put(data_dict)
 
-					logger.error(filtered_ss_data)
 				except Exception as exc:
 					logger.error('Empty check_output: {0}'.format(exc))
 					for host_name,mac_value in ss_name_mac_mapping.items():
@@ -348,7 +343,7 @@ def get_current_value(
 					data_value = []
 					check_output = filter(lambda t: 'wimax_bs_ss_params' in t, check_output.split('\n'))
 					check_output = check_output[0].split('- ')[1].split(' ')
-					logger.error('wimax_ss_service Final check_output : ' + pformat(check_output))
+					#logger.error('Final check_output : ' + pformat(check_output))
 					for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
 						filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t,check_output)
 						filtered_ss_data.extend(filtered_ss_output)
@@ -363,8 +358,9 @@ def get_current_value(
 								index = index + 3
 						if str(old_service) == 'wimax_ss_session_uptime':
 							index = index + 3
-					    except:
-						logger.error('ss_params: ' + pformat(index))
+					    except Exception as e:
+						logger.error("Error:{0}".format(e))
+						#logger.error('ss_params: ' + pformat(index))
 					#logger.error('ss_params: ' + pformat(index))
 					for entry in filtered_ss_data:
 						value = entry.split('=')[1].split(',')[index]
