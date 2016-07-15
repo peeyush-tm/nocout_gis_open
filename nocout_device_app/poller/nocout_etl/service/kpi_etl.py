@@ -377,6 +377,7 @@ def extract_wimax_bs_ul_issue_data(wimax_bs_ul_issue_data,**args):
     state_string = 'unknown'
     #warning('wimax ss entry: {0}'.format(ul_issue_list))
     rds_cli = RedisInterface()
+    redis_cnx = rds_cli.redis_cnx
     bs_service_dict_list = []
     for (ul_issue_list, host_name, site, ip, sect_id, sec_type) in wimax_bs_ul_issue_data :
             perf = ''
@@ -424,7 +425,7 @@ def extract_wimax_bs_ul_issue_data(wimax_bs_ul_issue_data,**args):
 	    bs_service_dict['refer'] =sect_id
 	    ul_issue_list.append(bs_service_dict)        
 	    #warning('wimax bs ul issue: {0}'.format(len(ul_issue_list)))
-	    rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
+	    redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
 	    #bs_service_dict_list.append((bs_service_dict, site))
     #insert_bs_ul_issue_data_to_redis(bs_service_dict)
 
@@ -1408,6 +1409,7 @@ def extract_radwin_ss_provis_data(host_params,**args):
     state_string = 'unknown'
     service_list= []
     #warning('radwin ss entry: {0}'.format(host_params))
+    redis_cnx = args['redis'].redis_cnx
     for entry in host_params:
         rssi = uas = None
         perf = ''
@@ -1418,13 +1420,13 @@ def extract_radwin_ss_provis_data(host_params,**args):
         else:
             break
         try:
-            rssi = args['redis'].redis_cnx.get("provis:%s:%s" % (host,'radwin_rssi'))
+            rssi = redis_cnx.get("provis:%s:%s" % (host,'radwin_rssi'))
             if rssi != None:
                 rssi = eval(rssi)
         except:
             rssi = None
 	try:
-            uas = args['redis'].redis_cnx.get("provis:%s:%s" % (host,'radwin_uas'))
+            uas = redis_cnx.get("provis:%s:%s" % (host,'radwin_uas'))
         except:
             uas = None
 	try:
@@ -1461,6 +1463,7 @@ def extract_cambium_ss_provis_data(host_params,**args):
     state_string = 'unknown'
     service_list= []
     #warning('cambium ss entry: {0}'.format(host_params))
+    redis_cnx  = args['redis'].redis_cnx
     for entry in host_params:
         ul_rssi = dl_rssi = ul_jitter = dl_jitter = rereg_count = None
         perf = ''
@@ -1470,35 +1473,35 @@ def extract_cambium_ss_provis_data(host_params,**args):
         else:
             break
         try:
-            ul_rssi = args['redis'].redis_cnx.get("provis:%s:%s" % (
+            ul_rssi = redis_cnx.get("provis:%s:%s" % (
                 host,'cambium_ul_rssi'))
             if ul_rssi != None:
                 ul_rssi = eval(ul_rssi)
         except:
             ul_rssi = None
         try:
-            dl_rssi = args['redis'].redis_cnx.get("provis:%s:%s" % (
+            dl_rssi = redis_cnx.get("provis:%s:%s" % (
                 host,'cambium_dl_rssi'))
             if dl_rssi != None:
                 dl_rssi = eval(dl_rssi)
         except:
             dl_rssi = None
         try:
-            dl_jitter = args['redis'].redis_cnx.get("provis:%s:%s" % (
+            dl_jitter = redis_cnx.get("provis:%s:%s" % (
                 host,'cambium_dl_jitter'))
             if dl_jitter != None:
                 dl_jitter = eval(dl_jitter)
         except:
             dl_jitter = None
         try:
-            ul_jitter = args['redis'].redis_cnx.get("provis:%s:%s" % (
+            ul_jitter = redis_cnx.get("provis:%s:%s" % (
                 host,'cambium_ul_jitter'))
             if ul_jitter != None:
                 ul_jitter = eval(ul_jitter)
         except:
             ul_jitter = None
         try:
-            rereg_count = args['redis'].redis_cnx.get("provis:%s:%s" % (
+            rereg_count = redis_cnx.get("provis:%s:%s" % (
                 host,'cambium_rereg_count'))
             if rereg_count != None:
                 rereg_count = eval(rereg_count)
@@ -1544,6 +1547,7 @@ def extract_cambium_ss_provis_data(host_params,**args):
 def extract_wimax_ss_provis_data(host_params,**args):
     service_state_out = []
     service_list = []
+    redis_cnx = args['redis'].redis_cnx
     for entry in host_params:
         perf =  ss_state = ''
         ul_rssi = dl_rssi = ss_ptx = dl_cinr = None
@@ -1553,28 +1557,28 @@ def extract_wimax_ss_provis_data(host_params,**args):
         else:
             break
         try:
-            ul_rssi = args['redis'].redis_cnx.get("provis:%s:%s" % (
+            ul_rssi = redis_cnx.get("provis:%s:%s" % (
                 host,'wimax_ul_rssi'))
             if ul_rssi != None:
                 ul_rssi = eval(ul_rssi)
         except:
             ul_rssi = None
         try:
-            dl_rssi = args['redis'].redis_cnx.get("provis:%s:%s" % (
+            dl_rssi = redis_cnx.get("provis:%s:%s" % (
                 host,'wimax_dl_rssi'))
             if dl_rssi != None:
                 dl_rssi = eval(dl_rssi)
         except:
             dl_rssi = None
         try:
-            dl_cinr = args['redis'].redis_cnx.get("provis:%s:%s" % (
+            dl_cinr = redis_cnx.get("provis:%s:%s" % (
                 host,'wimax_dl_cinr'))
             if dl_cinr != None:
                 dl_cinr = eval(dl_cinr)
         except:
             dl_cinr = None    
         try:
-            ss_ptx = args['redis'].redis_cnx.get("provis:%s:%s" % (
+            ss_ptx = redis_cnx.get("provis:%s:%s" % (
                 host,'wimax_ss_ptx_invent'))
             if ss_ptx != None:
                 ss_ptx = eval(ss_ptx)
@@ -1631,6 +1635,7 @@ def extract_cambium_bs_ul_issue_data(bs_ul_issue_data,**args):
     state_string = 'uknown'
     #warning('cambium ss entry: {0}'.format(ul_issue_list))
     rds_cli = RedisInterface()
+    redis_cnx = rds_cli.redis_cnx
     bs_service_dict_list = []
     for (ul_issue_list, host_name, site, ip, sect_id) in bs_ul_issue_data :
             perf = ''
@@ -1674,7 +1679,7 @@ def extract_cambium_bs_ul_issue_data(bs_ul_issue_data,**args):
 	    bs_service_dict['refer'] =sect_id
 	    ul_issue_list.append(bs_service_dict)
 	    #warning('cambium bs entry: {0}'.format(len(ul_issue_list)))
-	    rds_cli.redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
+	    redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
 	    #bs_service_dict_list.append((bs_service_dict, site))
     #insert_bs_ul_issue_data_to_redis(bs_service_dict_list)
 
@@ -1688,7 +1693,8 @@ def extract_wimax_ul_issue_data(**args):
     pmp2_ss_info = []
     pmp_data_dict = []
     rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
-    p = rds_cli.redis_cnx.pipeline()
+    redis_cnx = rds_cli.redis_cnx
+    p = redis_cnx.pipeline()
     args['memc']  = ''
     redis_conn =args['redis']
     args['redis'] = ''
@@ -1705,9 +1711,9 @@ def extract_wimax_ul_issue_data(**args):
         pmp1_sect_id,pmp2_sect_id = extract_wimax_bs_sec_id(host_name,memc_conn)
         pmp1_conn_ss_ip,pmp2_conn_ss_ip = extract_wimax_connected_ss(host_name,dr_slave,memc_conn)
         pmp2_ss_key = map(lambda x: 
-                rds_cli.redis_cnx.keys(pattern="wimax:ss:*:%s" %x) ,pmp2_conn_ss_ip)
+                redis_cnx.keys(pattern="wimax:ss:*:%s" %x) ,pmp2_conn_ss_ip)
         pmp1_ss_key = map(lambda x: 
-                rds_cli.redis_cnx.keys(pattern="wimax:ss:*:%s" %x)  ,pmp1_conn_ss_ip)
+                redis_cnx.keys(pattern="wimax:ss:*:%s" %x)  ,pmp1_conn_ss_ip)
 
         [p.lrange(k[0], 0 , -1) for k  in pmp2_ss_key if k]
         pmp2_ss_info = p.execute()
@@ -1748,7 +1754,8 @@ def extract_cambium_ul_issue_data(**args):
     service_list = []
     ss_info = []
     rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
-    p = rds_cli.redis_cnx.pipeline()
+    redis_cnx = rds_cli.redis_cnx
+    p = redis_cnx.pipeline()
     memc_conn  = extract_cambium_ul_issue_data.memc_cnx
     args['memc'] = ''
     redis_conn =args['redis']
@@ -1766,7 +1773,7 @@ def extract_cambium_ul_issue_data(**args):
         #warning('cambium conn_ss {0} '.format(conn_ss_ip))
         #ss_key = rds_cli.redis_cnx.keys(pattern="pmp:ss:*:10.172.26.18")
         if conn_ss_ip:
-            ss_key = map(lambda x: rds_cli.redis_cnx.keys(pattern="pmp:ss:*:%s" %x) ,conn_ss_ip)
+            ss_key = map(lambda x: redis_cnx.keys(pattern="pmp:ss:*:%s" %x) ,conn_ss_ip)
             [p.lrange(k[0], 0 , -1) for k  in ss_key if k]
             ss_info = p.execute()
             ss_ul_issue_data.append((ss_info,host_name,site_name,ip_address,sect_id,None))
