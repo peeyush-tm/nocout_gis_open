@@ -520,6 +520,14 @@
                 enable_reboot_btn = true;
             {% endif %}
 
+            {% if settings.SHOW_LINK_STATUS %}
+                show_link_status = true;
+            {% endif %}
+
+            {% if settings.SHOW_LINK_STATUS_RAD5 %}
+                show_link_status_rad5 = true;
+            {% endif %}
+
             try {
                 deviceName = "{{ device_name }}";
                 // Is user super admin or admin

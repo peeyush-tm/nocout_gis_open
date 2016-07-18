@@ -181,6 +181,14 @@
             enable_reboot_btn = true;
         {% endif %}
 
+        {% if settings.SHOW_LINK_STATUS %}
+            show_link_status = true;
+        {% endif %}
+
+        {% if settings.SHOW_LINK_STATUS_RAD5 %}
+            show_link_status_rad5 = true;
+        {% endif %}
+
         try {
 
             var wmap_config = '{{ settings.WHITE_MAP_CONFIGURATION|safe }}';
