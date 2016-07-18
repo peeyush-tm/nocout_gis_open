@@ -197,7 +197,9 @@
         tech_type_api = "",
         device_reboot_url = '',
         save_power_log_url = '',
-        enable_reboot_btn = false;
+        enable_reboot_btn = false,
+        show_link_status = false,
+        show_link_status_rad5 = false;
 
     $(document).ready(function (e) {
         
@@ -208,6 +210,14 @@
         save_power_log_url = "{% url 'save_power_log' %}";
         {% if settings.ENABLE_DEVICE_REBOOT_BTN %}
             enable_reboot_btn = true;
+        {% endif %}
+
+        {% if settings.SHOW_LINK_STATUS %}
+            show_link_status = true;
+        {% endif %}
+
+        {% if settings.SHOW_LINK_STATUS_RAD5 %}
+            show_link_status_rad5 = true;
         {% endif %}
 
         try {
