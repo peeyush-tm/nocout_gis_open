@@ -42,7 +42,7 @@ if [[ $TESTING -eq 0 ]]; then
 			;;
 		"ospf2") SERVER="tmadmin@115.114.79.38"
 			;;
-		"ospf3") SERVER="tmadmin@115.114.79.39"
+		"ospf3") SERVER="tmadmin@115.114.79.41"
 			;;
 		"ospf4") SERVER="tmadmin@115.114.79.40"
 			;;
