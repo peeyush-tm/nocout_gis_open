@@ -262,10 +262,11 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            if in_group(self.request.user, 'admin'):
-                organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
-            else:
-                organizations = [self.request.user.userprofile.organization]
+            # if in_group(self.request.user, 'admin'):
+            #     organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
+            # else:
+            #     organizations = [self.request.user.userprofile.organization]
+            organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
 
             return self.get_initial_query_set_data(organizations=organizations)
 
