@@ -180,7 +180,7 @@ def prepare_hosts_file():
     wimax_bs_devices, cambium_bs_devices = [], []
     # find services, which has been disabled by user
     disabled_services = get_disabled_services()
-    print disabled_services
+    #print disabled_services
     # This file contains device names, to be updated in configuration db
     open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
     #try:
@@ -877,7 +877,7 @@ ON
 	OR
 	lower(sds.alias) = lower(replace(bs.bh_port_name, '/', '_'))
 WHERE
-	lower(dtype.name) in ('juniper', 'cisco', 'huawei')
+	lower(dtype.name) in ('juniper', 'cisco', 'huawei','pine')
 group by
 	bh_device.id;
 """ 
@@ -903,6 +903,7 @@ group by
 	#print "data ", data1
 	cur.execute(query2)
 	data2 = cur.fetchall()  # from basestation
+        #print data2
         cur.close()
         #logger.debug('data in get_settings: ' + pformat(data))
     except Exception, exp:
@@ -1453,9 +1454,9 @@ def main():
             len(hosts_out.cambium_ss_devices), len(hosts_out.radwin_bs_devices), len(hosts_out.radwin_ss_devices), \
             len(hosts_out.mrotek_devices), len(hosts_out.rici_devices), len(hosts_out.cisco_switch_devices), len(hosts_out.juniper_switch_devices)
     prepare_rules(hosts_out)
-
+    call_load_inventory()
 
 if __name__ == '__main__':
     main()
     # call load inventory tasks by sending message to brokers on Prd servers
-    call_load_inventory()
+    #call_load_inventory()
