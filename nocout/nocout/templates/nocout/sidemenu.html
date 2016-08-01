@@ -60,6 +60,13 @@
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
+                            {% if settings.SHOW_RFO_TRENDS_DASHBOARD %}
+                            <li>
+                                <a href="{% url 'dashboard-rfo-trends' %}">
+                                    <span class="sub-menu-text">RFO Trends</span>
+                                </a>
+                            </li>
+                            {% endif %}
                             {% if settings.SHOW_INC_TICKET_DASHBOARD %}
                             <li>
                                 <a href="{% url 'inc-ticket-rate' %}">

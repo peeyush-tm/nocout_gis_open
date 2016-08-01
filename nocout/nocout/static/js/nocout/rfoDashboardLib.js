@@ -544,8 +544,10 @@ function updateFiltersContent(dataset, filter_name, filter_title) {
     if ($(selector_id).length) {
         var direct_values_filter = ['severity'];
         
-        var selectbox_html = '<option value="">Select '+filter_title+'</option>';
-        if (direct_values_filter.indexOf(filter_name) > -1) {
+        var selectbox_html = '<option value="">Select '+filter_title+'</option>',
+            is_rfo_trend_page = window.location.pathname.indexOf('/rfo_trends/') > -1;
+
+        if (direct_values_filter.indexOf(filter_name) > -1 && !is_rfo_trend_page) {
             var selectbox_html = '';
         }
 

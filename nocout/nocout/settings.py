@@ -883,7 +883,8 @@ SETTINGS_EXPORT = [
     'SHOW_CUSTOMER_FAULT_REPORT',
     'SHOW_BH_SUMMARY_REPORT',
     'SHOW_LINK_STATUS',
-    'SHOW_LINK_STATUS_RAD5'
+    'SHOW_LINK_STATUS_RAD5',
+    'SHOW_RFO_TRENDS_DASHBOARD'
 ]
 
 # Dashbaord Settings
@@ -1349,6 +1350,7 @@ SHOW_CUSTOMER_FAULT_REPORT = False
 SHOW_BH_SUMMARY_REPORT = False
 SHOW_LINK_STATUS  = False
 SHOW_LINK_STATUS_RAD5 = False
+SHOW_RFO_TRENDS_DASHBOARD = False
 
 # Import the local_settings.py file to override global settings
 try:
