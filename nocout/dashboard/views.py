@@ -33,7 +33,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, \
     MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, \
     DashboardSeverityStatusDaily, DashboardRangeStatusDaily, RFOAnalysis, CustomerFaultAnalysis, \
-    SectorSummaryStatus, BackhaulSummaryStatus, NetworkUptimeMonthly, PTPBHUptime
+    SectorSummaryStatus, BackhaulSummaryStatus, NetworkUptimeMonthly, PTPBHUptime, RFOTrends
 
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, \
@@ -3795,6 +3795,387 @@ class PTPBHUptimeListing(BaseDatatableView):
         total_display_records = 0
         if qs.count() > 0:
             total_display_records = qs.count() / len(set(qs.values_list('timestamp', flat=True)))
+
+        qs = self.ordering(qs)
+        
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+def get_rfo_trends_context():
+    """
+    This function returns context data required for RFO dashboards
+    """
+
+    # Fetch states from RFOTrends model
+    states_data = list(RFOTrends.objects.extra({
+        'id': 'REPLACE(state, " ", "_")',
+        'value': 'state'
+    }).filter(
+        state__isnull=False
+    ).values('value', 'id').distinct().order_by('value'))
+
+    # Fetch cities from RFOTrends model
+    city_data = list(RFOTrends.objects.extra({
+        'id': 'REPLACE(city, " ", "_")',
+        'value': 'city',
+        'state_id': 'REPLACE(state, " ", "_")',
+    }).filter(
+        city__isnull=False,
+        state__isnull=False
+    ).values('value', 'id', 'state_id').distinct().order_by('value'))
+
+    # Fetch month data from RFOTrends model
+    months_data = list(RFOTrends.objects.extra({
+        'id': 'CAST(unix_timestamp(timestamp) * 1000 AS CHAR)'
+    }).values('id').distinct().order_by('id'))
+
+    # Fetch severity data from RFOTrends model
+    severity_data = list(RFOTrends.objects.extra({
+        'id': 'REPLACE(severity, " ", "_|_|_|_")',
+        'value': 'severity'
+    }).filter(
+        severity__isnull=False
+    ).values('value', 'id').distinct().order_by('value'))
+
+    context = {
+        'states_data': json.dumps(states_data),
+        'city_data': json.dumps(city_data),
+        'months_data': json.dumps(months_data),
+        'severity_data': json.dumps(severity_data)
+    }
+
+    return context
+
+
+class RFOTrendsView(ListView):
+    """
+    This class populates RFO Trends dashboard template
+    """
+    template_name = 'rfo_dashboard/rfo_trends.html'
+    model = RFOTrends
+    def get_context_data(self, *args, **kwargs):
+
+        context = super(RFOTrendsView, self).get_context_data(**kwargs)
+
+        context_dict = get_rfo_trends_context()
+
+        for key in context_dict:
+            context[key] = context_dict[key]
+
+        context['summation_headers'] = json.dumps([
+            {'mData': 'master_causecode', 'sTitle': 'Master Cause Code'},
+            {'mData': 'actual_downtime', 'sTitle': 'Total Minutes'}
+        ])
+
+        context['all_data_headers'] = json.dumps([
+            {'mData': 'master_causecode', 'sTitle': 'Master Cause Code'},
+            {'mData': 'sub_causecode', 'sTitle': 'Cause Code'},
+            {'mData': 'actual_downtime', 'sTitle': 'Total Minutes'}
+        ])
+
+        return context
+
+
+outage_minutes_casting = 'CAST(actual_downtime AS DECIMAL(15,2))'
+
+class RFOTrendsList(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Trends all data listing
+    """
+    model = RFOTrends
+    columns = [
+        'master_causecode',
+        'sub_causecode'
+    ]
+
+    order_columns = [
+        'master_causecode',
+        'sub_causecode',
+        'actual_downtime'
+    ]
+
+    def get_initial_queryset(self):
+        """
+
+        """
+        try:
+            base_qs = self.get_base_queryset()
+            qs = base_qs.values(
+                'master_causecode', 'sub_causecode'
+            ).annotate(
+                actual_downtime=Sum('actual_downtime')
+            )
+        except Exception, e:
+            qs = self.model.objects.filter(id=0).values(*self.columns)
+
+        return qs
+
+    def get_base_queryset(self):
+        """
+
+        """
+        month = self.request.GET.get('month')
+        state_name = self.request.GET.get('state_name')
+        city_name = self.request.GET.get('city_name')
+        severity = self.request.GET.get('severity')
+
+        if state_name:
+            state_name = state_name.replace('_', ' ')
+
+        if city_name:
+            city_name = city_name.replace('_', ' ')
+
+        if severity:
+            severity = severity.replace('_|_|_|_', ' ')
+
+        try:
+            where_condition = Q()
+            where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
+            if state_name:
+                where_condition &= Q(state__exact=state_name)
+            
+            if city_name:
+                where_condition &= Q(city__exact=city_name)
+
+            if severity:
+                where_condition &= Q(severity__exact=severity)
+
+            qs = RFOTrends.objects.extra({
+                'actual_downtime': outage_minutes_casting,
+                'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+            }).filter(where_condition)
+        except Exception, e:
+            qs = self.model.objects.filter(id=0)
+
+        return qs        
+
+
+    def filter_queryset(self, qs):
+        """
+        If search['value'] is provided then filter all searchable columns using istartswith
+        """
+        # get global search value
+        sSearch = self.request.GET.get('search[value]', None)
+
+        if sSearch:
+            if sSearch == 'NA':
+                sSearch = ''
+            # Get Base Queryset
+            base_qs = self.get_base_queryset()
+            query = []
+            exec_query = "base_qs = base_qs.filter("
+            if not self.request.GET.get('request_for_chart'):
+                for column in self.columns[:-1]:
+                    # avoid search on 'added_on'
+                    if column == 'timestamp':
+                        continue
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            else:
+                # in case of chart data only filter with master cause code
+                query = ['Q(master_causecode__iexact="%s")' % sSearch]
+            
+            exec_query += " | ".join(query)
+            exec_query += ")"
+            
+            exec exec_query
+
+            qs = base_qs.values(
+                'master_causecode', 'sub_causecode'
+            ).annotate(
+                actual_downtime=Sum('actual_downtime')
+            )
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = [{
+            key: round(val, 2) if key == 'actual_downtime' and val else val for key, val in dct.items()
+        } for dct in qs]
+
+        return json_data
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+
+        if not self.request.GET.get('request_for_chart'):
+            qs = self.paging(qs)
+
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+
+        return ret
+
+
+class RFOTrendsSummationList(BaseDatatableView):
+    """
+    This class defines BaseDatatableView for RFO Trends all data listing
+    """
+    model = RFOTrends
+    columns = [
+        'master_causecode',
+        'actual_downtime'
+    ]
+    order_columns = [
+        'master_causecode',
+        'actual_downtime'
+    ]
+    pre_camel_case_notation = False
+
+    def get_initial_queryset(self):
+        """
+
+        """
+        try:
+            base_qs = self.get_base_queryset()
+            qs = base_qs.values('master_causecode').annotate(
+                actual_downtime=Sum('actual_downtime')
+            )
+        except Exception, e:
+            qs = self.model.objects.filter(id=0).values(*self.columns)
+
+        return qs
+
+    def get_base_queryset(self):
+
+        month = self.request.GET.get('month')
+        state_name = self.request.GET.get('state_name')
+        city_name = self.request.GET.get('city_name')
+
+        if state_name:
+            state_name = state_name.replace('_', ' ')
+
+        if city_name:
+            city_name = city_name.replace('_', ' ')
+
+        try:
+            timestamp_obj = datetime.datetime.fromtimestamp(float(month))
+            where_condition = Q()
+            where_condition &= Q(timestamp=timestamp_obj)
+            # where_condition &= Q(master_causecode__isnull=False)
+            # where_condition &= Q(sub_causecode__isnull=False)
+
+            if state_name and city_name:
+                where_condition &= Q(state__iexact=state_name)
+                where_condition &= Q(city__iexact=city_name)
+            elif state_name and not city_name:
+                where_condition &= Q(state__iexact=state_name)
+            elif not state_name and city_name:
+                where_condition &= Q(city__iexact=city_name)
+            else:
+                pass
+
+            qs = self.model.objects.extra({
+                'actual_downtime': outage_minutes_casting,
+                'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
+                'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
+            }).exclude(
+                # master_causecode__exact='',
+                # sub_causecode__exact=''
+            ).filter(where_condition)
+        except Exception, e:
+            qs = self.model.objects.filter(id=0).values(*self.columns)
+
+        return qs
+
+    def filter_queryset(self, qs):
+        """ If search['value'] is provided then filter all searchable columns using istartswith
+        """
+        # get global search value
+        sSearch = self.request.GET.get('search[value]', None)
+
+        if sSearch:
+            if sSearch == 'NA':
+                sSearch = ''
+            # Get Base Queryset
+            base_qs = self.get_base_queryset()
+            query = []
+            exec_query = "base_qs = base_qs.filter("
+            if not self.request.GET.get('request_for_chart'):
+                for column in self.columns[:-1]:
+                    # avoid search on 'added_on'
+                    if column == 'added_on':
+                        continue
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            else:
+                # in case of chart data only filter with master cause code
+                query = ['Q(master_causecode__iexact="%s")' % sSearch]
+            
+            exec_query += " | ".join(query)
+            exec_query += ")"
+            
+            exec exec_query
+
+            qs = base_qs.values('master_causecode').annotate(
+                actual_downtime=Sum('actual_downtime')
+            )
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = [{
+            key: round(float(val), 2) if key == 'actual_downtime' and val else val for key, val in dct.items()
+        } for dct in qs]
+
+        return json_data
+
+
+    def get_context_data(self, *args, **kwargs):
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
 
         qs = self.ordering(qs)
         

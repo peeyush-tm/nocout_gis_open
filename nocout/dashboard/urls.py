@@ -392,5 +392,20 @@ urlpatterns = patterns('',
         r'^ptpbh_uptime/listing/$',
         views.PTPBHUptimeListing.as_view(),
         name='ptpbh_uptime_listing'
-    )
+    ),
+    url(
+        r'^rfo_trends/$',
+        views.RFOTrendsView.as_view(),
+        name='dashboard-rfo-trends'
+    ),
+    url(
+        r'^rfo_trends/all_listing/$',
+        views.RFOTrendsList.as_view(),
+        name='rfo-trends-data'
+    ),
+    url(
+        r'^rfo_trends/summation_listing/$',
+        views.RFOTrendsSummationList.as_view(),
+        name='rfo-trends-summation-data'
+    ),
 )
