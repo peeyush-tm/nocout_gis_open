@@ -56,6 +56,7 @@ function initRfoDashboard() {
         selected_month = $('select[name="month_selector"]').val(),
         selected_state = $('select[name="state_selector"]').val(),
         selected_city = $('select[name="city_selector"]').val(),
+        is_rfo_trend_page = window.location.pathname.indexOf('/rfo_trends/') > -1,
         load_table = true,
         load_chart = false;
 
@@ -102,38 +103,64 @@ function initRfoDashboard() {
         }
     }
 
+    var table_title = 'PB TT RFO Analysis',
+        header_class = 'RFOAnalysisView',
+        all_data_class = 'RFOAnalysisList',
+        selected_severity = '',
+        summation_data_class = 'RFOAnalysisSummationList',
+        all_data_api_url = all_data_url + '?month=' + String(selected_month)+'&state_name=' + selected_state + '&city_name='+ selected_city,
+        summation_api_url = summation_url + '?month=' + String(selected_month)+'&state_name=' + selected_state + '&city_name='+ selected_city;
+
+    if (is_rfo_trend_page) {
+        selected_severity = $('select[name="severity_selector"]').val();
+
+        all_data_api_url += '&severity='+ selected_severity;
+        summation_api_url += '&severity='+ selected_severity;
+
+        table_title = 'RFO Trends';
+        header_class = 'RFOTrendsView';
+        all_data_class = 'RFOTrendsList';
+        summation_data_class = 'RFOTrendsSummationList'
+    }
+
     if (load_table) {
         // Load All data datatables
         dataTableInstance.createDataTable(
             'rfo_data_table',
             all_data_headers,
-            all_data_url + '?month=' + String(selected_month)+'&state_name=' + selected_state + '&city_name='+ selected_city,
+            all_data_api_url,
             false,
-            'PB TT RFO Analysis',
+            table_title,
             'dashboard',
-            'RFOAnalysisView',
-            'RFOAnalysisList',
+            header_class,
+            all_data_class,
             "{'headers_data_key': 'all_data_headers', "+common_param+"}",
-            "{'month': '"+selected_month+"', 'report_title': 'PB TT RFO Analysis', 'state_name': '"+selected_state+"', 'city_name': '"+selected_city+"', "+common_param+"}"
+            "{'severity': '"+selected_severity+"', 'month': '"+selected_month+"', 'report_title': '"+table_title+"', 'state_name': '"+selected_state+"', 'city_name': '"+selected_city+"', "+common_param+"}"
         );
 
         // Load Summation data datatables
         dataTableInstance.createDataTable(
             'rfo_summation_table',
             summation_headers,
-            summation_url + '?month=' + String(selected_month)+'&state_name=' + selected_state + '&city_name='+ selected_city,
+            summation_api_url,
             false,
-            'PB TT RFO Analysis',
+            table_title,
             'dashboard',
-            'RFOAnalysisView',
-            'RFOAnalysisSummationList',
+            header_class,
+            summation_data_class,
             "{'headers_data_key': 'summation_headers', "+common_param+"}",
-            "{'month': '"+selected_month+"', 'report_title': 'PB TT RFO Analysis', 'state_name': '"+selected_state+"', 'city_name': '"+selected_city+"', "+common_param+"}"
+            "{'severity': '"+selected_severity+"', 'month': '"+selected_month+"', 'report_title': '"+table_title+"', 'state_name': '"+selected_state+"', 'city_name': '"+selected_city+"', "+common_param+"}"
         );
     }
 
     if (load_chart) {
-        loadRFOColumnChart(summation_url,String(selected_month), selected_state, selected_city);
+        if (is_rfo_trend_page) {
+            loadRFOTrendsChart(summation_api_url, {
+                'is_normal': true
+            });
+        } else {
+            loadRFOColumnChart(summation_url,String(selected_month), selected_state, selected_city);
+        }
     }
 }
 
@@ -1686,6 +1713,205 @@ function loadUptimeChart(ajax_url, dom_id_prefix, page_type) {
 }
 
 /**
+ * This function fetch & load RFO trends chart
+ * @method loadRFOTrendsChart
+ */
+function loadRFOTrendsChart(ajax_url, extra_info) {
+
+    $.ajax({
+        url: ajax_url+'&request_for_chart=1',
+        type: 'GET',
+        success: function(response) {
+
+            if (typeof(response) == 'string') {
+                response = JSON.parse(response);
+            }
+
+            if (response['result'] == 'ok') {
+                var month = $('select[name="month_selector"]').val(),
+                    current_dateobj = new Date(Number(month) * 1000),
+                    month_txt = month_dict[current_dateobj.getMonth()],
+                    year_txt = current_dateobj.getFullYear(),
+                    year_month_str = month_txt && year_txt ? month_txt + ' ' + year_txt : '',
+                    column_series_data = [],
+                    categories = [],
+                    chart_dom_id = '',
+                    name_key = 'master_causecode',
+                    dataset = response['aaData'];
+
+                if (!extra_info['is_normal']) {
+                    name_key = 'sub_causecode';
+                    var sub_total_minutes = 0;
+                } else {
+                    var master_total_minutes = 0;
+                }
+
+                dataset = dataset.filter(function(item) {
+                    item['y'] = item['actual_downtime'];
+                    item['name'] = item[name_key];
+                    if (extra_info['is_normal']) {
+                        master_total_minutes += item['actual_downtime'];
+                    } else {
+                        sub_total_minutes += item['actual_downtime'];
+                    }
+                    return true;
+                });
+
+                var chart_legends = middle_legends;
+
+                // If more items in chart then show legends in right side(vertically)
+                if (dataset.length > 5) {
+                    chart_legends = side_legends;
+                }
+
+                if (extra_info['is_normal']) {
+                    chart_dom_id = 'rfo_trends_chart_container';
+                } else {
+                    chart_dom_id = 'rfo_trends_detail_chart_container';
+
+                    var bootbox_html = '';
+
+                    bootbox_html += '<div id="' + chart_dom_id + '" align="center">\
+                                        <div id="fault_pie_chart"></div>\
+                                    </div>';
+
+                    bootbox.dialog({
+                        message: bootbox_html,
+                        title: '<i class="fa fa-bar-chart">&nbsp;</i> RFO Trends - ' + extra_info['series_name']
+                    });
+
+                    // Update Modal width to 90%;
+                    $(".modal-dialog").css("width","90%");
+                }
+
+                // Initialize column chart for master cause code
+                $('#'+ chart_dom_id).highcharts({
+                    chart: {
+                        type: 'pie'
+                    },
+                    exporting:{
+                        enabled : true,
+                        allowHTML: true,
+                        sourceWidth: 950,
+                        sourceHeight: 375
+                    },
+                    colors: chart_colors_list,
+                    title: {
+                        text: '',
+                        align: 'left'
+                    },
+                    tooltip: {
+                        formatter: function () {
+                            var series_name = this.point.name ? $.trim(this.point.name) : "Value",
+                                tooltip_html = "",
+                                total_minutes = 0;
+
+                            if (extra_info['is_normal']) {
+                                tooltip_html += '<ul><li><b>RFO Trends</b></li><br/>';
+                                total_minutes = master_total_minutes;
+                            } else {
+                                tooltip_html += '<ul><li><b>' + extra_info['series_name'] + '</b></li><br/>';
+                                total_minutes = sub_total_minutes;
+                            }
+
+                            var point_percent = '';
+                            try {
+                                point_percent = ((this.point.y/total_minutes) * 100).toFixed(2);
+                            } catch(e) {
+                                // console.error(e);
+                            }
+                            tooltip_html += '<li>'+series_name+' : '+this.point.y+' Minutes</li><br/>';
+                            if (point_percent && total_minutes) {
+                                tooltip_html += '<li>'+series_name+'(%) : '+point_percent+'%</li><br/>';
+                            }
+                            tooltip_html += '</ul>';
+
+                            return tooltip_html;
+                        }
+                    },
+                    legend: chart_legends,
+                    credits: {
+                        enabled: false
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: false
+                            },
+                            showInLegend: true
+                        },
+                        series: {
+                            point: {
+                                events: {
+                                    click: function(e) {
+                                        if (extra_info['is_normal']) {
+                                            // Show Loading Spinner
+                                            showSpinner();
+                                            var series_name = this.name,
+                                                all_data_api_url = all_data_url,
+                                                selected_month = $('select[name="month_selector"]').val(),
+                                                selected_state = $('select[name="state_selector"]').val(),
+                                                selected_city = $('select[name="city_selector"]').val(),
+                                                selected_severity = $('select[name="severity_selector"]').val();
+
+                                            if (selected_month) {
+                                                selected_month = Number(selected_month) / 1000;
+                                            }
+
+                                            all_data_api_url += '?month=' + String(selected_month);
+                                            all_data_api_url += '&state_name=' + String(selected_state);
+                                            all_data_api_url += '&city_name='+ String(selected_city);
+                                            all_data_api_url += '&severity=' + String(selected_severity);
+                                            all_data_api_url += '&master_causecode=' + String(series_name);
+                                            all_data_api_url += '&request_for_chart=1';
+
+                                            // Call "createFaultPieChart" to show pie chart in popup
+                                            loadRFOTrendsChart(
+                                                all_data_api_url,
+                                                {
+                                                    'series_name': series_name
+                                                }
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    series: [{
+                        // 'name': ,
+                        'data': dataset
+                    }],
+                    noData: {
+                        style: {
+                            fontWeight: 'bold',
+                            fontSize: '20px',
+                            color: '#539fb8',
+                        }
+                    }
+                });
+                
+                if (!extra_info['is_normal']) {
+                    setTimeout(function() {
+                        $(window).resize();
+                    }, 250);
+                }
+            }
+
+            // Hide Loading Spinner
+            hideSpinner();
+        },
+        error: function(err) {
+            // console.log(err.statusText);
+            // Hide Loading Spinner
+            hideSpinner();
+        }
+    });
+}
+
+/**
  * This event trigger when any filter control selectbox value changed
  * @event Change
  */
@@ -1713,10 +1939,13 @@ $('.filter_controls').change(function(e) {
             $('select[name="city_selector"]').val('');
         }
         initMTTRDashboard()
-    } else if (location_pathname.indexOf('/rfo_analysis/') > -1) {
+    } else if (location_pathname.indexOf('/rfo_analysis/') > -1 || location_pathname.indexOf('/rfo_trends/') > -1) {
         if ($(this).attr('name').indexOf('month') > -1) {
             $('select[name="state_selector"]').val('');
             $('select[name="city_selector"]').val('');
+            if (location_pathname.indexOf('/rfo_trends/') > -1) {
+                $('select[name="severity_selector"]').val('');
+            }
         }
         initRfoDashboard();
     } else if (location_pathname.indexOf('/inc_ticket_rate/') > -1) {
@@ -1763,3 +1992,4 @@ $('input[name="target_selector"]').keyup(function(e) {
         initINCTicketDashboard();
     }
 });
+

@@ -3891,7 +3891,7 @@ class RFOTrendsView(ListView):
         return context
 
 
-outage_minutes_casting = 'CAST(actual_downtime AS DECIMAL(15,2))'
+actual_downtime_casting = 'CAST(actual_downtime AS DECIMAL(15,2))'
 
 class RFOTrendsList(BaseDatatableView):
     """
@@ -3933,6 +3933,7 @@ class RFOTrendsList(BaseDatatableView):
         state_name = self.request.GET.get('state_name')
         city_name = self.request.GET.get('city_name')
         severity = self.request.GET.get('severity')
+        master_causecode = self.request.GET.get('master_causecode')
 
         if state_name:
             state_name = state_name.replace('_', ' ')
@@ -3947,20 +3948,27 @@ class RFOTrendsList(BaseDatatableView):
             where_condition = Q()
             where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
             if state_name:
-                where_condition &= Q(state__exact=state_name)
+                where_condition &= Q(state__iexact=state_name)
             
             if city_name:
-                where_condition &= Q(city__exact=city_name)
+                where_condition &= Q(city__iexact=city_name)
 
             if severity:
-                where_condition &= Q(severity__exact=severity)
+                where_condition &= Q(severity__iexact=severity)
 
-            qs = RFOTrends.objects.extra({
-                'actual_downtime': outage_minutes_casting,
+            if master_causecode:
+                if master_causecode == 'NA':
+                    master_causecode = ''
+                where_condition &= Q(master_causecode__iexact=master_causecode)
+
+            qs = self.model.objects.extra({
+                'actual_downtime': actual_downtime_casting,
                 'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
                 'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
             }).filter(where_condition)
         except Exception, e:
+            print 'Exception'
+            print e
             qs = self.model.objects.filter(id=0)
 
         return qs        
@@ -4082,6 +4090,7 @@ class RFOTrendsSummationList(BaseDatatableView):
         month = self.request.GET.get('month')
         state_name = self.request.GET.get('state_name')
         city_name = self.request.GET.get('city_name')
+        severity = self.request.GET.get('severity')
 
         if state_name:
             state_name = state_name.replace('_', ' ')
@@ -4089,31 +4098,29 @@ class RFOTrendsSummationList(BaseDatatableView):
         if city_name:
             city_name = city_name.replace('_', ' ')
 
+        if severity:
+            severity = severity.replace('_|_|_|_', ' ')
+
         try:
             timestamp_obj = datetime.datetime.fromtimestamp(float(month))
             where_condition = Q()
             where_condition &= Q(timestamp=timestamp_obj)
-            # where_condition &= Q(master_causecode__isnull=False)
-            # where_condition &= Q(sub_causecode__isnull=False)
 
-            if state_name and city_name:
+            if state_name:
                 where_condition &= Q(state__iexact=state_name)
+            
+            if city_name:
                 where_condition &= Q(city__iexact=city_name)
-            elif state_name and not city_name:
-                where_condition &= Q(state__iexact=state_name)
-            elif not state_name and city_name:
-                where_condition &= Q(city__iexact=city_name)
-            else:
-                pass
+
+            if severity:
+                where_condition &= Q(severity__iexact=severity)
 
             qs = self.model.objects.extra({
-                'actual_downtime': outage_minutes_casting,
+                'actual_downtime': actual_downtime_casting,
                 'master_causecode': 'IF(isnull(master_causecode) or master_causecode = "", "NA", master_causecode)',
                 'sub_causecode': 'IF(isnull(sub_causecode) or sub_causecode = "", "NA", sub_causecode)'
-            }).exclude(
-                # master_causecode__exact='',
-                # sub_causecode__exact=''
-            ).filter(where_condition)
+            }).filter(where_condition)
+
         except Exception, e:
             qs = self.model.objects.filter(id=0).values(*self.columns)
 
@@ -4135,7 +4142,7 @@ class RFOTrendsSummationList(BaseDatatableView):
             if not self.request.GET.get('request_for_chart'):
                 for column in self.columns[:-1]:
                     # avoid search on 'added_on'
-                    if column == 'added_on':
+                    if column == 'timestamp':
                         continue
                     query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -4196,3 +4203,4 @@ class RFOTrendsSummationList(BaseDatatableView):
         }
 
         return ret
+
