@@ -111,20 +111,19 @@ function initRfoDashboard() {
         all_data_api_url = all_data_url + '?month=' + String(selected_month)+'&state_name=' + selected_state + '&city_name='+ selected_city,
         summation_api_url = summation_url + '?month=' + String(selected_month)+'&state_name=' + selected_state + '&city_name='+ selected_city;
 
+    if (is_rfo_trend_page) {
+        selected_severity = $('select[name="severity_selector"]').val();
+
+        all_data_api_url += '&severity='+ selected_severity;
+        summation_api_url += '&severity='+ selected_severity;
+
+        table_title = 'RFO Trends';
+        header_class = 'RFOTrendsView';
+        all_data_class = 'RFOTrendsList';
+        summation_data_class = 'RFOTrendsSummationList'
+    }
+
     if (load_table) {
-
-        if (is_rfo_trend_page) {
-            selected_severity = $('select[name="severity_selector"]').val();
-
-            all_data_api_url += '&severity='+ selected_severity;
-            summation_api_url += '&severity='+ selected_severity;
-
-            table_title = 'RFO Trends';
-            header_class = 'RFOTrendsView';
-            all_data_class = 'RFOTrendsList';
-            summation_data_class = 'RFOTrendsSummationList'
-        }
-
         // Load All data datatables
         dataTableInstance.createDataTable(
             'rfo_data_table',
