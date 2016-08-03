@@ -211,7 +211,8 @@ $("#global_search_btn").click(function(e) {
 			}
 
 			if (search_by == 'ip_address') {
-				$.cookie("activeTabId", "", {path: '/', secure : true});
+				$.cookie("activeTabId", "network_perf_tab_0_8_tab", {path: '/'});
+				$.cookie("parent_tab_id", "network_perf", {path: '/'});
 			}
 
 			$(".global_search_container #redirect_link_container").html(link_html);
