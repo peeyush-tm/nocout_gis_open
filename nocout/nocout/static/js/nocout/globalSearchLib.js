@@ -210,6 +210,11 @@ $("#global_search_btn").click(function(e) {
 				link_html += "<button class='btn btn-default btn-sm' title='Reset' id='reset_global_search'><i class='fa fa-refresh'></i></button>"
 			}
 
+			if (search_by == 'ip_address') {
+				$.cookie("activeTabId", "network_perf_tab_0_8_tab", {path: '/'});
+				$.cookie("parent_tab_id", "network_perf", {path: '/'});
+			}
+
 			$(".global_search_container #redirect_link_container").html(link_html);
 		});
 	} else {

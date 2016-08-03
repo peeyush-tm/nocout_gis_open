@@ -2970,10 +2970,11 @@ class ResolutionEfficiencyInit(ListView):
             used_slabs.append(downtime_slab)
 
             downtime_slab_key = downtime_slab.lower().replace(' ', '_')
-            downtime_slab_title = downtime_slab.replace('More Than', '>')
-            downtime_slab_title = downtime_slab_title.replace('Less Than', '<')
-
-            downtime_slab_title = downtime_slab_title.replace('Greater Than', '>')
+            downtime_slab_title = downtime_slab.lower().replace('more than', '>')
+            downtime_slab_title = downtime_slab_title.lower().replace('less than', '<')
+            downtime_slab_title = downtime_slab_title.lower().replace('under', '<')
+            downtime_slab_title = downtime_slab_title.lower().replace('greater than', '>')
+            downtime_slab_title = downtime_slab_title.lower().replace('over', '>')
             
             datatable_headers.append({
                 'mData': downtime_slab_key,
@@ -3032,6 +3033,7 @@ class ResolutionEfficiencyListing(BaseDatatableView):
         month = self.request.GET.get('month')
         try:
             where_condition = Q()
+            where_condition = Q(downtime_slab__isnull=False)
             # If month present in GET params then filter by it else return last 6 months data
             if month:
                 where_condition &= Q(timestamp=datetime.datetime.fromtimestamp(float(month)))
@@ -3044,6 +3046,8 @@ class ResolutionEfficiencyListing(BaseDatatableView):
                 select={
                     'timestamp': 'unix_timestamp(timestamp)'
                 }
+            ).exclude(
+                downtime_slab=''
             ).filter(where_condition).values(
                 'downtime_slab',
                 'timestamp'
@@ -3069,6 +3073,16 @@ class ResolutionEfficiencyListing(BaseDatatableView):
         downtime_slab_wise_count = {}
         current_timestamp = datetime.datetime.now()
         temp_dict = {}
+
+        try:
+            downtime_slab_list = set(CustomerFaultAnalysis.objects.values_list(
+                'downtime_slab', flat=True
+            ))
+
+            updated_slabs = filter(None, map(lambda x:x.lower().replace(' ', '_'), downtime_slab_list))
+        except Exception, e:
+            updated_slabs = []
+
         for data in json_data:
             tt_count = data['tt_count']
             if data['timestamp'] not in temp_dict:
@@ -3077,6 +3091,11 @@ class ResolutionEfficiencyListing(BaseDatatableView):
                     'month': '',
                     'total_count': ''
                 }
+
+                for slab in updated_slabs:
+                    if slab and slab not in temp_dict[data['timestamp']]:
+                        temp_dict[data['timestamp']][slab] = 0
+                        temp_dict[data['timestamp']][slab+'_percent'] = 0
 
             if not temp_dict[data['timestamp']]['month']:
                 try:
@@ -3089,14 +3108,20 @@ class ResolutionEfficiencyListing(BaseDatatableView):
                 try:
                     temp_dict[data['timestamp']]['total_count'] = self.model.objects.extra({
                         'timestamp': 'unix_timestamp(timestamp)'
-                    }).filter(
+                    }).exclude(
+                        downtime_slab=''
+                    ).filter(
+                        downtime_slab__isnull=False,
                         timestamp=datetime.datetime.fromtimestamp(float(data['timestamp']))
                     ).count()
                 except Exception, e:
                     temp_dict[data['timestamp']]['total_count'] = self.model.objects.filter(id=0).count()
 
             total_count = temp_dict[data['timestamp']]['total_count']
-                
+
+            if not data['downtime_slab']:
+                continue
+
             hrs_percent = round((float(tt_count) / float(total_count)) * 100, 2)
 
             downtime_slab_key = data['downtime_slab'].lower().replace(' ', '_')
@@ -3117,19 +3142,19 @@ class ResolutionEfficiencyListing(BaseDatatableView):
         # number of records before filtering
         total_records = 0
         if qs.count() > 0:
-            total_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
+            total_records = len(set(qs.values_list('timestamp', flat=True)))
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = 0
         if qs.count() > 0:
-            total_display_records = qs.count() / len(set(qs.values_list('downtime_slab', flat=True)))
+            total_display_records = len(set(qs.values_list('timestamp', flat=True)))
 
         qs = self.ordering(qs)
 
-        if not self.request.GET.get('request_for_chart'):
-            qs = self.paging(qs)
+        # if not self.request.GET.get('request_for_chart'):
+        #     qs = self.paging(qs)
 
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
