@@ -348,9 +348,9 @@ class DeviceSyncHistory(models.Model):
 
 class DeviceTicket(models.Model):
 
-    ip_address = models.CharField(max_length=128)
-    ticket_number = models.CharField(max_length=128)
-    alarm_id = models.CharField(max_length=128, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=128)
+    ticket_number = models.CharField('Ticket Number', max_length=128)
+    alarm_id = models.CharField('Alarm id', max_length=128, null=True, blank=True)
     is_active = models.IntegerField(null=True,blank=True)
 
 
