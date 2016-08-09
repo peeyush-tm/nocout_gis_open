@@ -1351,6 +1351,7 @@ SHOW_BH_SUMMARY_REPORT = False
 SHOW_LINK_STATUS  = False
 SHOW_LINK_STATUS_RAD5 = False
 SHOW_RFO_TRENDS_DASHBOARD = False
+SHOW_TICKET_NUMBER = False
 
 # Import the local_settings.py file to override global settings
 try:

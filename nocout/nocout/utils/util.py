@@ -9,7 +9,8 @@ from dateutil import tz
 from django.db import connections
 from django.db.models import Q
 from operator import itemgetter
-from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME, MAX_SUGGESTION_COUNT, DATATABLE_SEARCHTXT_KEY, SHOW_CUSTOMER_COUNT_IN_ALERT_LIST
+from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME, MAX_SUGGESTION_COUNT, DATATABLE_SEARCHTXT_KEY, SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, \
+SHOW_TICKET_NUMBER
 
 date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
@@ -1956,7 +1957,7 @@ def fetch_sector_inventory(monitored_only=True, technology=None, device_name_lis
         device_name_list=device_name_list,
         grouped_query=grouped_query
     )
-
+    
     result_list = fetch_raw_result(sector_query)
 
     return create_specific_key_dict(
@@ -2028,6 +2029,8 @@ def get_inventory_sector_query(
     device_condition = " device_info.DEVICE_ID = sector.sector_configured_on_id "
     grouping_condition = ""
     concat_values = ""
+    fetch_cutomer_count_query_1 = ''
+    fetch_cutomer_count_query_2 = ''
 
     if monitored_only:
         nms_device_condition = ' AND device.is_added_to_nms > 0 '
@@ -2071,14 +2074,20 @@ def get_inventory_sector_query(
     if SHOW_CUSTOMER_COUNT_IN_ALERT_LIST:
         fetch_cutomer_count_query_1 = "IF(not isnull(customer_count_sec.count_of_customer), customer_count_sec.count_of_customer, 0) AS CUSTOMER_COUNT,"
         fetch_cutomer_count_query_2 =   '''
-                                            LEFT JOIN
+                                             LEFT JOIN
                                                 download_center_customer_count_sector AS customer_count_sec
                                             ON 
-                                                customer_count_sec.sector_id = sector_info.SECTOR_SECTOR_ID
+                                                customer_count_sec.sector_id = sector_info.SECTOR_SECTOR_ID 
                                         '''
-    else:
-        fetch_cutomer_count_query_1 = ''
-        fetch_cutomer_count_query_2 = ''
+
+    if SHOW_TICKET_NUMBER:
+        fetch_cutomer_count_query_1 += "IF(not isnull(device_ticket.ticket_number), device_ticket.ticket_number, 'NA') AS TICKET_NUMBER,"
+        fetch_cutomer_count_query_2 +=  '''
+                                             LEFT JOIN
+                                                device_deviceticket AS device_ticket
+                                            ON
+                                                sector_info.SECTOR_CONF_ON_IP = device_ticket.ip_address 
+                                        '''
 
     sector_query = '''
         SELECT 
@@ -2164,9 +2173,9 @@ def get_inventory_sector_query(
             device_deviceport AS device_port
         ON
             device_port.id = sector_info.sector_port_id
-        {8}
         and
             not isnull(sector_info.sector_port_id)
+        {8}
         {6};
 
         '''.format(
