@@ -35,7 +35,7 @@ from django.utils.dateformat import format
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME, \
-SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT
+SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT, SHOW_TICKET_NUMBER
 
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
@@ -206,6 +206,9 @@ class AlertCenterListing(ListView):
                 'sWidth': 'auto',
                 'bSortable': True
             }]
+
+        if SHOW_TICKET_NUMBER and page_type == 'network' and data_source == 'down':
+            pmp_wimax_datatable_headers += [{'mData': 'ticket_no', 'sTitle': 'Alarm PB TT No.', 'sWidth': 'auto', 'bSortable': True}]
 
         pmp_wimax_datatable_headers += other_headers
 
