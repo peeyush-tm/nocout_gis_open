@@ -7,7 +7,7 @@ Provide celery tasks for Alarm Escalation.
 """
 
 from celery import task, group
-from django.utils import timezone
+# from django.utils import timezone
 from django.utils.dateformat import format
 #email
 from django.core.mail import send_mail
@@ -15,6 +15,7 @@ from django.core.mail import EmailMessage, EmailMultiAlternatives
 #email end
 from django.conf import settings
 from django.template.loader import render_to_string
+from pytz import timezone
 import datetime
 import time
 
@@ -496,7 +497,11 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/bad_message.html', context_dict)
-    email_datetime = datetime.datetime.now().strftime(EMAIL_DATE_FORMAT)
+    # email_datetime = datetime.datetime.now().strftime(EMAIL_DATE_FORMAT)
+    datetime_obj  = datetime.datetime.now()
+    datetime_obj_utc = datetime_obj.replace(tzinfo=timezone('Asia/Calcutta'))
+    datetime_obj_utc = datetime_obj_utc - datetime.timedelta(hours=5, minutes=30)
+    email_datetime = datetime_obj_utc.strftime(EMAIL_DATE_FORMAT) #datetime.datetime.now().strftime(EMAIL_DATE_FORMAT)
     header_info = {
         'date': email_datetime
     }
@@ -637,7 +642,11 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/good_message.html', context_dict)
-    email_datetime = datetime.datetime.now().strftime(EMAIL_DATE_FORMAT)
+    # email_datetime = datetime.datetime.now().strftime(EMAIL_DATE_FORMAT)
+    datetime_obj  = datetime.datetime.now()
+    datetime_obj_utc = datetime_obj.replace(tzinfo=timezone('Asia/Calcutta'))
+    datetime_obj_utc = datetime_obj_utc - datetime.timedelta(hours=5, minutes=30)
+    email_datetime = datetime_obj_utc.strftime(EMAIL_DATE_FORMAT) #datetime.datetime.now().strftime(EMAIL_DATE_FORMAT)
     header_info = {
         'date': email_datetime
     }
