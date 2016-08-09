@@ -3010,13 +3010,25 @@ class ResolutionEfficiencyListing(BaseDatatableView):
     """
     model = CustomerFaultAnalysis
     columns = [
-        'timestamp',
         'id',
-        'severity',
-        'city'
+        'timestamp',
+        'downtime_slab'
     ]
+
     order_columns = [
         'timestamp',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
+        'tt_count',
         'tt_count',
         'tt_count',
         'tt_count',
@@ -3144,7 +3156,7 @@ class ResolutionEfficiencyListing(BaseDatatableView):
         if qs.count() > 0:
             total_records = len(set(qs.values_list('timestamp', flat=True)))
 
-        qs = self.filter_queryset(qs)
+        # qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = 0
