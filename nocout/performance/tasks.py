@@ -818,6 +818,12 @@ def calculate_avg_availability_ptpbh():
         # Datetime object to Epoch time conversion.
         last_month_start_epoch = int(last_month_start.strftime('%s'))
         last_month_end_epoch = int(last_month_end.strftime('%s'))
+
+        #Delete the last month entry if exists already and Update with new One.
+        PTPBHUptime.objects.filter(
+            timestamp__gte = last_month_start
+        ).delete()
+
         # Insert Entry for latest month
         for machine in machines_dict:
             devices = machines_dict.get(machine)
@@ -859,10 +865,12 @@ def calculate_avg_availability_ptpbh():
                 if month>12:
                     year = year+1
                     month = 1
-
+    # Sorting datetime keys and inserting entries in order.
+    date_keys = resultset.keys()
+    date_keys = sorted(date_keys)
     bulk_bh_entry = [PTPBHUptime(timestamp=date_time,
-                                 uptime_percent=percent) \
-                for date_time,percent in resultset.iteritems()]
+                                 uptime_percent=resultset.get(date_time)) \
+                for date_time in date_keys]
 
     g_jobs = list()
 
