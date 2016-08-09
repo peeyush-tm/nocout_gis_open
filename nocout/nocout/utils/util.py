@@ -1957,8 +1957,7 @@ def fetch_sector_inventory(monitored_only=True, technology=None, device_name_lis
         device_name_list=device_name_list,
         grouped_query=grouped_query
     )
-
-    print sector_query
+    
     result_list = fetch_raw_result(sector_query)
 
     return create_specific_key_dict(
