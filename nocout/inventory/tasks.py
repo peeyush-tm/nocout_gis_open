@@ -14769,6 +14769,7 @@ def update_topology():
                 update_ss_list.append(ss)
             except Exception as e:
                 pass
+
             # Update sub station device.
             try:
                 ss_device = circuit.sub_station.device
@@ -14780,6 +14781,7 @@ def update_topology():
                 update_device_list.append(ss_device)
             except Exception as e:
                 pass
+
             # Update sector device.
             try:
                 sector_device = bs_devices_mapper[info['ip_address']]
@@ -14795,15 +14797,18 @@ def update_topology():
                 logger.error(e)
                 logger.error('BS Device Exception -----')
                 pass
+
             # Update circuit.
             try:
-                if radwin5k_ss_ips.get(info['connected_device_ip']):
+                if radwin5k_sectors_mapper.get(info['ip_address'].strip()):
                     circuit.sector = radwin5k_sectors_mapper[info['ip_address'].strip()]
                 else:
                     circuit.sector = sectors_mapper[info['sector_id'].strip().lower() + "|" + info['ip_address'].strip()]
                 update_circuit_list.append(circuit)
             except Exception as e:
-                pass
+                logger.error('Circuit Sector Exception -----')
+                logger.error(e)
+                logger.error('Circuit Sector Exception -----')
 
     g_jobs = list()
 
@@ -14822,7 +14827,7 @@ def update_topology():
     job = group(g_jobs)
     result = job.apply_async()
     logger.error('Update Topology Task -------- END')
-    return result
+    return True # result
 
 
 def compare_lists_of_dicts(list1, list2):
