@@ -1208,7 +1208,7 @@ function devicePlottingClass_gmap() {
 					sector_polarization = bs_sectors[y].polarization ? $.trim(bs_sectors[y].polarization.toLowerCase()) : "",
 					sector_antena_type = bs_sectors[y].antenna_type ? $.trim(bs_sectors[y].antenna_type.toLowerCase()) : "";
 
-				if(technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0) {
+				if(technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0 || antena_type_filter.length > 0) {
 					var advance_filter_condition1 = technology_filter.length > 0 ? technology_filter.indexOf(sector_technology) > -1 : true,
 						advance_filter_condition2 = vendor_filter.length > 0 ? vendor_filter.indexOf(sector_vendor) > -1 : true,
 						frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1,

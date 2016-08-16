@@ -3,6 +3,8 @@ from django.db import models
 from inventory.models import Sector
 from device.models import Device, DeviceTechnology
 from user_profile.models import UserProfile
+from machine.models import Machine
+from site_instance.models import SiteInstance
 from service.models import ServiceDataSource,Service
 
 
@@ -2093,3 +2095,20 @@ class DSCustomDashboard(models.Model):
     data_source = models.ForeignKey(ServiceDataSource)
     custom_dashboard = models.ForeignKey(CustomDashboard)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+
+class PingStabilityTest(models.Model):
+    """
+    This model stores ping stability test data
+    """
+    user_profile = models.ForeignKey(UserProfile)
+    machine = models.ForeignKey(Machine)
+    site_instance = models.ForeignKey(SiteInstance)
+    ip_address = models.GenericIPAddressField('IP Address', null=True, blank=True)
+    technology = models.ForeignKey(DeviceTechnology)
+    time_duration = models.IntegerField('Time Duration', default=1)
+    file_path = models.CharField('File', max_length=512, null=True, blank=True)
+    status = models.BooleanField('Status', default=False)
+    email_ids = models.CharField('Email IDs', null=True, blank=True, max_length=512)
+    is_deleted = models.BooleanField('Is Deleted',default=False)
+    created_at = models.DateTimeField(auto_now_add=True)

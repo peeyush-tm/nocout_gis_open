@@ -221,6 +221,11 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
     escalation_status_data = EscalationStatus.objects.all()
 
     for service_status in service_status_list:
+
+        # If their is blank or unknown severity then skip this
+        if not service_status.severity or service_status.severity == 'unknown':
+            continue
+            
         # Get EscalationStatus to process.
         # if severity of service_status is 'ok', set the old_status and new_status 'Good' for defaults.
         if service_status.severity == 'ok':
