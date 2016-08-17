@@ -1340,16 +1340,31 @@ class InventoryDeviceStatus(View):
 
                 # If SS device & of PMP or Wimax Technology then fetch the qos_bandwidth from distributed DB
                 if page_type == 'customer' and lowered_device_tech in ['pmp', 'wimax']:
+                    
+                    list_devices_invent_info[0]['polled_sector_id'] = ''
+
                     service_name = ''
                     ds_name = ''
+                    model_name = InventoryStatus
+                    invent_machine_name = machine_name
+                    sector_id_service_name = ''
+                    sector_id_ds_name = ''
                     
                     # GET Service & DS as per the technology
                     if lowered_device_tech in ['pmp']:
                         service_name = 'cambium_qos_invent'
                         ds_name = 'bw_dl_sus_rate'
+
+                        sector_id_service_name = 'cambium_ss_sector_id_invent'
+                        sector_id_ds_name = 'ss_sector_id'
+
                     elif lowered_device_tech in ['wimax']:
                         service_name = 'wimax_qos_invent'
                         ds_name = 'dl_qos'
+
+                        model_name = ServiceStatus
+                        sector_id_service_name = 'wimax_ss_sector_id'
+                        sector_id_ds_name = 'ss_sector_id'
 
                     # If we have device_name, machine_name, service & db only then proceed
                     if device_name and machine_name and service_name and ds_name:
@@ -1361,6 +1376,18 @@ class InventoryDeviceStatus(View):
 
                         if invent_status_obj and invent_status_obj[0].current_value:
                             list_devices_invent_info[0]['qos_bw'] = invent_status_obj[0].current_value
+
+                    if model_name and device_name and invent_machine_name and sector_id_service_name and sector_id_ds_name:
+                        sector_invent_obj = model_name.objects.filter(
+                            device_name=device_name,
+                            service_name__iexact=sector_id_service_name,
+                            data_source__iexact=sector_id_ds_name
+                        ).order_by('-sys_timestamp').using(
+                            alias=invent_machine_name
+                        )
+
+                        if sector_invent_obj:
+                            list_devices_invent_info[0]['polled_sector_id'] = sector_invent_obj[0].current_value
 
         # Format fetched inventory data in desired format
         resultant_data = self.prepareInventoryStatusResult(
@@ -7247,7 +7274,13 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
                 "value": "NA",
                 "url": ""
             },
-            polled_freq_obj
+            polled_freq_obj,
+            {
+                "name": "polled_sector_id",
+                "title": "Sector ID",
+                "value": "NA",
+                "url": ""
+            }
         ]
 
     elif type_of_device in ['backhaul', 'other']:
