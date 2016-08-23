@@ -114,7 +114,6 @@ function FullScreenControl(map) {
 	
 	// Setup the click event listener
 	google.maps.event.addDomListener(controlUI, 'click', function() {
-		console.log('in here')
 		if (!fullScreen) {
 			if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length) {
                 $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].b[0]).addClass('hide');
