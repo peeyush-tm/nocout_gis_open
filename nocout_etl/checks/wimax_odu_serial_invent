@@ -54,6 +54,7 @@ def check_wimax_odu_serial_invent(item, _no_params, info):
     try:
 	    if memc:
 		    value_list = memc.get('%s_bs_params' % g_hostname)
+		    value_list = eval(value_list)
 		    if value_list:
 		    	odu_serial_1,odu_serial_2 = (value_list[6],value_list[7]) 
     except:

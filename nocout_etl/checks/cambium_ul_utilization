@@ -61,12 +61,13 @@ def check_cambium_ul_utilization(item, _no_params, info):
                 	except MKCounterWrapped:
                         	wrapped=True
                 	status_list.append(("ul_utilization", "%.2f" % (rate)))
-			infotext = "Uplink utilization %s " % (rate)
+			#infotext = "Uplink utilization %s " % (rate)
+			infotext = "Uplink utilization [time=%s count=%s] " % (this_time,ul_utilization)
 			state= 0
 			key = g_hostname + "_ul"
 			try:
 				if memc:
-					memc.set(key,"%.2f" % rate)
+					memc.set(key,"%.2f" % rate,600)
 			except: 
 				pass
 		else:

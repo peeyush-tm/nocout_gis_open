@@ -6,7 +6,6 @@ import socket
 import json
 import os
 
-from mysql_connection import memc
 """
 operating Frequency of ss device  Poller script.
 

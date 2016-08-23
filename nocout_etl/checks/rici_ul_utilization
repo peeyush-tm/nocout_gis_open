@@ -75,7 +75,7 @@ def check_rici_ul_utilization(item, _no_params, info):
 		try:
 			if memc:
 				key = str(g_hostname) + "_ul"
-				memc.set(key,status_list,300)
+				memc.set(key,str(status_list),300)
 		except:
 			pass
     except ValueError:

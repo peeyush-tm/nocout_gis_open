@@ -1,5 +1,13 @@
 #!/usr/bin/python
 import binascii
+import datetime
+try:
+    from mysql_connection_1 import db_connection
+    db_obj = db_connection()
+    memc = db_obj.memcache_connect
+except:
+    memc = None
+
 """
 IDU serial number Poller script.
 
@@ -48,7 +56,7 @@ def check_cambium_topology_discover(item, params, info):
         if info:
 	    infotext = ""
 	    for i in range(len(info)):
-		
+		ss_value =[]	
 		if i == 0:
 			ap_ip = info[i][1]
 			ap_mac = info[i][0]
@@ -92,6 +100,8 @@ def check_cambium_topology_discover(item, params, info):
 			try:
 				if memc:
 					memc.set(connected_ss_mac,ss_value)
+					key = connected_ss_ip+ "_t_discover"
+					memc.set(key,ap_ip)
 			except:
 				pass
 			

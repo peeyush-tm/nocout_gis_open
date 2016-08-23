@@ -61,7 +61,7 @@ def check_wimax_pmp1_dl_util_bgp(item, _no_params, info):
                 	except MKCounterWrapped:
                         	wrapped=True
                 	status_list.append(("pmp1_dl_util", "%.2f" % (rate)))
-			infotext = "pmp1 dl utilization %s " % (rate)
+			infotext = "pmp1 dl utilization %s [time=%s count=%s]" % (rate ,this_time,dl_utilization)
 			state= 0
 			key = g_hostname + "_pmp1_dl_util"
 			try:

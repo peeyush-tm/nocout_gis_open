@@ -24,6 +24,43 @@ SS mac information is sent to device application
 # #####################################################################
 
 
+def live_query_ss_sector_id(mac):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+    
+        """
+
+        exit_value = 3
+        ss_sector_id = None
+        if memc:
+            try :
+                value_list = memc.get(mac)
+                ss_sector_id= value_list[6]
+            except :
+                ss_sector_id= None
+        if not ss_sector_id  :
+
+            host_name = extract_host_from_cambium_topology(mac)
+            try:
+                if host_name[0][0]:
+                        query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("cambium_topology_discover",host_name[0][0])
+			site = host_name[0][1]
+			machine_name = host_name[0][1].split('_')[0]
+			socket_ip = _LIVESTATUS[machine_name]['host']
+			socket_port = _LIVESTATUS[machine_name][site]['port']
+                        query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string,site,machine_name).strip())
+                        if query_output[0][0]:
+                                plugin_output = str(query_output[0][0].split('- ')[1])
+                                plugin_output = [entry for entry in plugin_output.split(' ')]
+                                ss_sector_id= plugin_output[1]
+					
+            except:
+		ss_sector_id= None	
+	return ss_sector_id	
+
 
 
 def check_cambium_ss_sector_id_invent(item, _no_params, info):

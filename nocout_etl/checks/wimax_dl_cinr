@@ -6,7 +6,13 @@ import socket
 import json
 import os
 import binascii
-import mysql.connector
+from datetime import datetime,timedelta
+try:
+    from mysql_connection_1 import db_connection
+    db_obj = db_connection()
+    memc = db_obj.memcache_connect
+except:
+    memc = None
 """
 operating Frequency of ss device  Poller script.
 
@@ -76,6 +82,10 @@ def check_wimax_dl_cinr(item, params, info):
     infotext = "unknown_value"
     warn,crit = params
     dl_cinr = None
+    this_time = datetime.now()
+    t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+    t_stmp = t_stmp.replace(second=0,microsecond=0)
+    current_time =int(time.mktime(t_stmp.timetuple()))
     try:
 	mac_info = sum(info,[])
         mac_list=map(lambda x: convert(x),mac_info)
@@ -94,6 +104,9 @@ def check_wimax_dl_cinr(item, params, info):
 				state = 1
 			else:
 				state = 0
+			if memc:
+				key1 = str(g_hostname) + "_dl_cinr" + "_" + str(current_time)
+				memc.set(key1,dl_cinr,600)
 			infotext = "Device downlink cinr  is %s " % dl_cinr
     except ValueError:
         infotext = "type_mismatch_value"

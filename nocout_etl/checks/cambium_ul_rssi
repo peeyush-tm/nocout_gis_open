@@ -6,6 +6,7 @@ import socket
 import json
 import os
 import mysql.connector
+from datetime import datetime
 """
 service on SS,which calculates the ss mac.
 
@@ -91,6 +92,11 @@ def check_cambium_ul_rssi(item, params, info):
     ul_rssi = None
     infotext = "unknown_value"
     warn,crit = params
+    ss_list = []
+    this_time = datetime.now()
+    t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+    t_stmp = t_stmp.replace(second=0,microsecond=0)
+    current_time =int(time.mktime(t_stmp.timetuple()))
     try:
         if info:
             if info[0][0]:
@@ -98,6 +104,7 @@ def check_cambium_ul_rssi(item, params, info):
 		a=binascii.b2a_hex(ss_mac)
                 n = 2
                 ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
+		
 		if ss_mac:
 			try:
 				if memc:
@@ -113,7 +120,10 @@ def check_cambium_ul_rssi(item, params, info):
 					state = 1
 				else:
 					state = 0
-	infotext = "Device uplink signal strength indication is %s " % ul_rssi
+				if memc:
+					key1 = str(g_hostname) + "_ul_rssi" + "_" + str(current_time)
+					memc.set(key1,ul_rssi,600)
+	infotext = "Device uplink signal strength indication is %s" % (ul_rssi)
     except ValueError:
         infotext = "type_mismatch_value"
     except:

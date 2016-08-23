@@ -12,6 +12,11 @@ try:
 except Exception as exp:
     print exp
 """
+try:
+    from mysql_connection import memc
+except Exception,e:
+    print e
+    pass
 service on SS,which calculates the ss mac.
 
 This is part of device application. 
@@ -73,6 +78,11 @@ def check_cambium_rereg_count(item, params, info):
     rereg_count = None
     infotext = "unknown_value"
     warn,crit = params
+    this_time = datetime.now()
+    t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+    t_stmp = t_stmp.replace(second=0,microsecond=0)
+    current_time =int(time.mktime(t_stmp.timetuple()))
+    state_string = ""
     try:
         if info:
             if info[0][0]:
@@ -91,10 +101,31 @@ def check_cambium_rereg_count(item, params, info):
 			if rereg_count != None:
 				if rereg_count > crit:
 					state  = 2
+					state_string = "critical"
 				elif rereg_count <= crit and rereg_count >= warn:
 					state = 1
+					state_string = "warning"
 				else:
 					state = 0
+					state_string = "ok"
+				try:
+					if memc:
+						key1 = str(g_hostname) + "_rereg_count" + "_" + str(current_time)
+						memc.set(key1,rereg_count,600)
+						value_list= []
+						key = g_hostname + "_rereg_count_sev"
+						value = memc.get(key)
+						if value and type(value) is list and len(value) == 1:
+							value_list.append(value[0])	
+							value_list.append(state_string)	
+						elif value and type(value) is list and len(value) == 2:
+							value_list.append(value[1])
+							value_list.append(state_string)
+						elif not value:
+							value_list.append(state_string)
+						memc.set(key,value_list,360)
+				except:
+					pass
 	infotext = "Device rereg_count is %s " % rereg_count
     except ValueError:
         infotext = "type_mismatch_value"

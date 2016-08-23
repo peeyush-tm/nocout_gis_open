@@ -6,6 +6,14 @@ import socket
 import json
 import os
 import mysql.connector
+
+#from mysql_connection import db
+try:
+    import nocout_settings
+    from nocout_settings import _DATABASES, _LIVESTATUS
+except Exception as exp:
+    print exp
+
 """
 service on SS,which calculates the ss mac.
 
@@ -23,46 +31,72 @@ SS mac information is sent to device application
 # Output: service state and plugin output
 # #####################################################################
 
-def get_from_socket(socket_ip,socket_port, query,site,machine):
-    """
-    Function_name : get_from_socket (collect the query data from the socket)
 
-    Args: site_name (poller on which monitoring data is to be collected)
+def live_query_ul_jitter(mac):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+    
+        """
+        ul_jitter = None
+	ss_params= None
+	if memc:
+		value_list = memc.get(mac)
+		if value_list:
+			try:
+				ul_jitter = int(value_list[3])
+			except:
+				ul_jitter = None
+		if not ul_jitter:
+			try:
+				key1 = mac + "_topology"
+				ss_params = memc.get(key1)
+			except:
+				pass
+	if not ul_jitter:
+		if not ss_params: 
+        	    host_name = extract_host_from_cambium_topology(mac)
+		    try:
+			bs_hostname = host_name[0][0]
+			bs_site = host_name[0][1]
+		    except:
+			bs_hostname = None
+		    if memc:
+			if bs_hostname:
+			    try:
+				arg_list = []
+				arg_list.append(bs_hostname)
+				arg_list.append(bs_site)
+				key = mac + "_topology"
+				memc.set(key,arg_list,360)
+			    except:
+				pass
+		else:
+		    bs_hostname = ss_params[0]
+		    bs_site = ss_params[1]
+        	try:
+                    if bs_hostname:
+			query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("cambium_topology_discover",bs_hostname)
+			site = bs_site
+			machine_name = site.split('_')[0]
+			socket_ip = _LIVESTATUS[machine_name]['host']
+			socket_port = _LIVESTATUS[machine_name][site]['port']
+			query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string,site,machine_name).strip())
+			if query_output[0][0]:
+				plugin_output = str(query_output[0][0].split('- ')[1])
+				plugin_output = [entry for entry in plugin_output.split(' ')]
+				ss_params = filter(lambda x: '/' in x,plugin_output)
+				ss_matched_params = filter(lambda x: mac in x,ss_params)
+				ul_jitter= map(lambda x: x.split('/')[3],ss_matched_params)
+				if ((ul_jitter != 'None') and  (ul_jitter != None)):
+                                	ul_jitter= int(ul_jitter[0])
+        	except:
+			ul_jitter= None	
+	return ul_jitter	
 
-    Kwargs: query (query for which data to be collectes from nagios.)
 
-    Return : None
-
-    raise
-         Exception: SyntaxError,socket error
-    """
-
-
-
-
-    #my_machine = nagios_user.split('_')[0]
-    my_site  = var_dir.split('/')[3]
-    if site == my_site:
-        socket_path = "/omd/sites/dev_slave/slave_2/var/run/live" 
-        s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.connect(socket_path)
-    else:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((socket_ip,socket_port))
-    s.settimeout(60.0)
-    s.send(query)
-    s.shutdown(socket.SHUT_WR)
-    output = ''
-    while True:
-    	try:
-        	out = s.recv(100000000)
-	except socket.timeout ,e:
-		break
-        out.strip()
-	if not len(out):
-		break
-        output += out
-    return output
 
 def check_cambium_ul_jitter(item, params, info):
     """
@@ -91,6 +125,11 @@ def check_cambium_ul_jitter(item, params, info):
     ul_jitter = None
     infotext = "unknown_value"
     warn,crit = params
+    this_time = datetime.now()
+    t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+    t_stmp = t_stmp.replace(second=0,microsecond=0)
+    current_time =int(time.mktime(t_stmp.timetuple()))
+    state_string = ""
     try:
         if info:
             if info[0][0]:
@@ -99,25 +138,46 @@ def check_cambium_ul_jitter(item, params, info):
                 n = 2
                 ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		if ss_mac:
+		    try:
+			if memc:
+			    ss_list=memc.get(ss_mac)
+			    if ss_list:
+				ul_jitter = int(ss_list[3])
+		    except:
+			pass
+		if ul_jitter != None:
+			if ul_jitter > crit:
+				state  = 2
+				state_string = "critical"
+			elif ul_jitter <= crit and ul_jitter >= warn:
+				state = 1
+				state_string = "warning"
+			else:
+				state = 0
+				state_string = "ok"
 			try:
 				if memc:
-					ss_list=memc.get(ss_mac)
-					if ss_list:
-						ul_jitter = int(ss_list[3])
+					value_list = []
+					key1 = str(g_hostname) + "_ul_jitter" + "_" + str(current_time)
+					memc.set(key1,ul_jitter,600)
+					key = g_hostname + "_ul_jitter_sev"
+					value = memc.get(key)
+					if value and type(value) is list and len(value) == 1:
+						value_list.append(value[0])	
+						value_list.append(state_string)	
+					elif value and type(value) is list and len(value) == 2:
+						value_list.append(value[1])
+						value_list.append(state_string)
+					elif not value:
+						value_list.append(state_string)
+					memc.set(key,value_list,360)
 			except:
 				pass
-			if ul_jitter != None:
-				if ul_jitter < crit:
-					state  = 2
-				elif ul_jitter > crit and ul_jitter < warn:
-					state = 1
-				else:
-					state = 0
-	infotext = "Device uplink signal strength indication is %s " % ul_jitter
+	infotext = "Device uplink jitter is %s " % ul_jitter
     except ValueError:
         infotext = "type_mismatch_value"
     except:
-        infotext = "unknown"
+        infotext = "unknown_value"
     return (state, infotext, [("ul_jitter", ul_jitter, warn, crit)])
 
 

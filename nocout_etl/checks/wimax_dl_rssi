@@ -11,7 +11,6 @@ from ast import literal_eval
 #from mysql_connection import db
 #from mysql_connection import con_pool
 
-from mysql_connection import memc
 
 
 """
@@ -126,6 +125,10 @@ def check_wimax_dl_rssi(item, params, info):
     infotext = "unknown_value"
     warn,crit = params
     dl_rssi = None
+    this_time = datetime.now()
+    t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+    t_stmp = t_stmp.replace(second=0,microsecond=0)
+    current_time =int(time.mktime(t_stmp.timetuple()))
     try:
 	mac_info = sum(info,[])
         mac_list=map(lambda x: convert(x),mac_info)
@@ -144,6 +147,9 @@ def check_wimax_dl_rssi(item, params, info):
 				state = 1
 			else:
 				state = 0
+			if memc:
+				key1 = str(g_hostname) + "_dl_rssi" + "_" + str(current_time)
+				memc.set(key1,dl_rssi,600)
         		infotext = "Device downlink signal strength indication is %s " % dl_rssi
     except ValueError:
         infotext = "type_mismatch_value"

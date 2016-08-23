@@ -55,6 +55,7 @@ def check_wimax_pmp_bw_invent(item, _no_params, info):
     try:
 	    if memc:
 		    value_list = memc.get('%s_bs_params' % g_hostname)
+		    value_list = eval(value_list)
 		    if value_list:
 		    	pmp1_bw,pmp2_bw = (value_list[11],value_list[12])
     except:

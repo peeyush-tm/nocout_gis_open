@@ -86,11 +86,30 @@ def check_wimax_ul_intrf(item, params, info):
 		if ul_intrf:
 			if ul_intrf.lower()  == crit.lower():
 				state  = 2
+				state_string = "critical"
 			elif ul_intrf.lower()  == warn.lower():
 				state = 1
+				state_string = "warning"
 			elif ul_intrf.lower() == "Norm".lower():
 				state = 0
+				state_string = "ok"
         		infotext = "Device ul intrf is %s " % ul_intrf
+			try:
+				if memc:
+					value_list= []
+					key = g_hostname + "_wimax_ul_intrf_sev"
+					value = memc.get(key)
+					if value and type(value) is list and len(value) == 1:
+						value_list.append(value[0])	
+						value_list.append(state_string)	
+					elif value and type(value) is list and len(value) == 2:
+						value_list.append(value[1])
+						value_list.append(state_string)
+					elif not value:
+						value_list.append(state_string)
+					memc.set(key,value_list,360)
+			except:
+				pass
     except ValueError:
         infotext = "type_mismatch_value"
     except:
