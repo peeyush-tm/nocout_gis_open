@@ -114,20 +114,21 @@ function FullScreenControl(map) {
 	
 	// Setup the click event listener
 	google.maps.event.addDomListener(controlUI, 'click', function() {
+		console.log('in here')
 		if (!fullScreen) {
 			if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length) {
-                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].j[0]).addClass('hide');
+                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].b[0]).addClass('hide');
                 if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length == 3) {
-                	$(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].j[2]).addClass('hide');
+                	$(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].b[2]).addClass('hide');
                 }
             }
 			goFullScreen();
 		}
 		else {
 			if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length) {
-                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].j[0]).removeClass('hide');
+                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].b[0]).removeClass('hide');
                 if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length == 3) {
-                	$(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].j[2]).removeClass('hide');
+                	$(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].b[2]).removeClass('hide');
                 }
             }
 			exitFullScreen();
