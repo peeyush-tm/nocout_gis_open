@@ -32,7 +32,8 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     PerformanceNetworkDaily, PerformanceNetworkWeekly, PerformanceNetworkMonthly, PerformanceNetworkYearly, \
     PerformanceStatusDaily, PerformanceStatusWeekly, PerformanceStatusMonthly, PerformanceStatusYearly, \
     PerformanceInventoryDaily, PerformanceInventoryWeekly, PerformanceInventoryMonthly, PerformanceInventoryYearly,\
-    UtilizationBiHourly, UtilizationHourly, UtilizationDaily, UtilizationWeekly, UtilizationMonthly, UtilizationYearly,CustomDashboard,DSCustomDashboard
+    UtilizationBiHourly, UtilizationHourly, UtilizationDaily, UtilizationWeekly, UtilizationMonthly, UtilizationYearly, \
+    CustomDashboard, DSCustomDashboard, PingStabilityTest
 
 from dashboard.utils import MultiQuerySet
 # Import nocout utils gateway class
@@ -9260,3 +9261,143 @@ class GetBSTelnet(View):
 
         return HttpResponse(json.dumps(result), content_type="application/json")
         
+class InitStabilityTest(ListView):
+    """
+    A generic class view to load ping stability test listing
+
+    """
+    model = PingStabilityTest
+    template_name = 'performance/stability_test.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        :param kwargs:
+        """
+        context = super(InitStabilityTest, self).get_context_data(**kwargs)
+
+        datatable_headers = [
+            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'user_profile__username', 'sTitle': 'Username', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'time_duration', 'sTitle': 'Time Duration', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'created_at', 'sTitle': 'Started At', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'email_ids', 'sTitle': 'Email Address', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False},
+        ]
+
+        tech_list = list(DeviceTechnology.objects.exclude(
+            name__iexact='default'
+        ).values(
+            'id', 'alias', 'name'
+        ))
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        context['tech_list'] = tech_list
+        return context
+
+
+class PingStabilityTestListing(BaseDatatableView):
+    """
+    Render JQuery datatables for listing of device type fields
+    """
+    model = PingStabilityTest
+    columns = [
+        'status',
+        'user_profile__username',
+        'ip_address',
+        'technology__alias',
+        'time_duration',
+        'created_at',
+        'email_ids'
+    ]
+    order_columns = columns
+
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+        """
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
+            query_object = Q()
+            for column in self.search_columns:
+                query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
+
+            qs = qs.filter(query_object)
+        return qs
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        return self.model.objects.values(*self.columns + ['id']).order_by('-id')
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+        """
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        for dct in qs:
+            dct['action'] = ''
+            if dct.get('status') == 1:
+                dct['status'] = 'Success'
+                if dct.get('file_path'):
+                    dct.update(
+                        action='<a href="{0}" target="_blank"><i class="fa fa-download text-dark"> \
+                                </i></a>'.format(dct.get('file_path'))
+                    )
+            else:
+                dct['status'] = 'Pending'
+
+            created_at = dct.get('created_at')
+            if created_at:
+                dct['created_at'] = created_at.strftime(DATE_TIME_FORMAT)
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        order_columns = self.get_order_columns()
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret

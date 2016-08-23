@@ -1,0 +1,227 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Performance" "javascript:;" %}
+    {% breadcrumb_safe "Ping Stability Test" "ping_stability_test" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content %}
+    <style type="text/css">
+        .ping_test_form_container .form-group {
+            margin-right: 10px;
+        }
+    </style>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>PING STABILITY TEST</h4>
+        </div>
+        <div id="tableContainer" class="box-body">
+            <div class="form-inline ping_test_form_container" role="form" align="center">
+                <div class="form-group">
+                    <label class="sr-only" for="ip_address">IP Address</label>
+                    <input type="text" class="form-control input-sm" id="ip_address" placeholder="Enter IP Address">
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="technology">Password</label>
+                    <select class="form-control input-sm" id="technology">
+                        <option value="">Select Technology</option>
+                        {% for tech in tech_list %}
+                            <option value="{{ tech.id }}" techname="{{ tech.name }}">{{ tech.alias }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="time_duration">Time Duration</label>
+                    <select class="form-control input-sm" id="time_duration">
+                        <option value="">Select Time Duration</option>
+                        {% for i in 'XXXXXXXXXXXXXXXXXXXXXXXX' %}
+                            <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="email_ids">Email IDs</label>
+                    <input type="text" class="form-control input-sm" id="email_ids" placeholder="Enter ',' seperated email ids">
+                </div>
+                <button type="button" id="test_submit_btn" name="test_submit_btn" class="btn btn-default btn-sm">Submit</button>
+                <div class="clearfix"></div>
+            </div>
+            <div align="center" class="text-danger form_status_msg hide">(*)Please fill mandatory fields to proceed.</div>
+            <div align="center" class="text-danger ip_error_msg hide">Please enter valid ip address.</div>
+            <hr/>
+            <table class="datatable table table-striped table-bordered table-hover" id="ping_stability_test_listing">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        var dataTableInstance = '',
+            gridHeadersObj = [],
+            ajax_url = '',
+            ping_test_url = '';
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+            
+            /*Grid headers object*/
+            gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            
+            /*Ajax url to get grid data*/
+            ajax_url = '{% url "ping_test_listing" %}';
+
+            ping_test_url = '{% url "start_ping_stability_test" %}';
+            
+            dataTableInstance.createDataTable(
+                "ping_stability_test_listing",
+                gridHeadersObj,
+                ajax_url,
+                false
+            );
+        });
+
+        /**
+         * This event trigger when 'Submit' button clicked 
+         * @event click
+         */
+        $('#test_submit_btn').click(function(e) {
+            var ip_address = $.trim($('#ip_address').val()),
+                tech_id = $.trim($('#technology').val()),
+                duration = $.trim($('#time_duration').val()),
+                email_ids = $.trim($('#email_ids').val());
+
+            if (ip_address && tech_id && duration) {
+                if (!validateIPaddress(ip_address)) {
+                    $('.ip_error_msg').removeClass('hide');
+                } else {
+                    $('#ip_address').closest('.form-group').removeClass('has-error');
+                    $('#technology').closest('.form-group').removeClass('has-error');
+                    $('#time_duration').closest('.form-group').removeClass('has-error');
+                    $('.form_status_msg').addClass('hide');
+                    $('.ip_error_msg').addClass('hide');
+
+                    // show loading spinner
+                    showSpinner();
+
+                    var tech_name = $('#technology option:selected').attr('techname');
+
+                    // Make POST call to start ping stability test as per selected values
+                    $.ajax({
+                        url: ping_test_url,
+                        type: 'POST',
+                        data: {
+                            'ip_address': ip_address,
+                            'tech_id': tech_id,
+                            'tech_name': tech_name,
+                            'duration': duration,
+                            'email_ids': email_ids
+                        },
+                        success: function(response) {
+
+                            if (typeof response == 'string') {
+                                try {
+                                    response = JSON.parse(response);
+                                } catch(e) {
+                                    // console.error(e);
+                                }
+                            }
+
+                            if(response['success']) {
+                                // Reset Values
+                                $('#ip_address').val('');
+                                $('#technology').val('');
+                                $('#time_duration').val('');
+                                $('#email_ids').val('');
+
+                                // Refresh datatable
+                                dataTableInstance.createDataTable(
+                                    "ping_stability_test_listing",
+                                    gridHeadersObj,
+                                    ajax_url,
+                                    false
+                                );
+                            } else {
+                                $.gritter.add({
+                                    // (string | mandatory) the heading of the notification
+                                    title: 'Ping Stability Test',
+                                    // (string | mandatory) the text inside the notification
+                                    text: response.message,
+                                    // (bool | optional) if you want it to fade out on its own or just sit there
+                                    sticky: false
+                                });
+                            }
+                        },
+                        error: function(err) {
+                            $.gritter.add({
+                                // (string | mandatory) the heading of the notification
+                                title: 'Ping Stability Test',
+                                // (string | mandatory) the text inside the notification
+                                text: err.statusText,
+                                // (bool | optional) if you want it to fade out on its own or just sit there
+                                sticky: false
+                            });
+                        },
+                        complete: function() {
+                            // hide loading spinner
+                            hideSpinner();
+                        }
+                    });
+                }
+            } else {
+                if (!ip_address) {
+                    $('#ip_address').closest('.form-group').addClass('has-error');
+                } else {
+                    if (!validateIPaddress(ip_address)) {
+                        $('.ip_error_msg').removeClass('hide');
+                        $('#ip_address').closest('.form-group').addClass('has-error');
+                    } else {
+                        $('.ip_error_msg').addClass('hide');
+                        $('#ip_address').closest('.form-group').removeClass('has-error');
+                    }
+                }
+
+                if (!tech_id) {
+                    $('#technology').closest('.form-group').addClass('has-error');
+                } else {
+                    $('#technology').closest('.form-group').removeClass('has-error');
+                }
+
+                if (!duration) {
+                    $('#time_duration').closest('.form-group').addClass('has-error');
+                } else {
+                    $('#time_duration').closest('.form-group').removeClass('has-error');
+                }
+
+                $('.form_status_msg').removeClass('hide');
+            }
+
+            /**
+             * This function validates given param for valid ip address.
+             * @method validateIPaddress
+             * @param ip_address {String}, It contains the ip address string which has to be validated. 
+             */
+            function validateIPaddress(ip_address) {
+                var ip_validation_regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
+                    is_valid = false;
+
+                if (ip_validation_regex.test(ip_address)) {
+                    is_valid = true;
+                }
+
+                return is_valid;
+            }
+        });
+    </script>
+{% endblock %}

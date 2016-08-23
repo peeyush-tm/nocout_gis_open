@@ -888,7 +888,7 @@ def prepare_gis_devices_optimized(
                     "cust_id": 0,
                     "qos_bw": "NA",
                     "polled_frequency": "NA",
-                    "freq_id": 0
+                    "freq_id": 0,
                 })
 
                 device_name = data.get('device_name')
@@ -929,7 +929,7 @@ def prepare_gis_devices_optimized(
                         "cust_id" : inventory_row.get('CUSTID', 0),
                         "qos_bw" : inventory_row.get('CKT_QOS', "NA"),
                         "polled_frequency" : inventory_row.get('FREQUENCY', "NA"),
-                        "freq_id" : inventory_row.get('FREQ_ID', 0)
+                        "freq_id" : inventory_row.get('FREQ_ID', 0),
                     })
 
                     # append the deep copied dict
@@ -1007,7 +1007,7 @@ def prepare_gis_devices_optimized(
                         "cust_id" : inventory_row.get('CUSTID', 0),
                         "qos_bw" : inventory_row.get('CKT_QOS', 0),
                         "polled_frequency" : inventory_row.get('FREQUENCY', "NA"),
-                        "freq_id" : inventory_row.get('FREQ_ID', 0)
+                        "freq_id" : inventory_row.get('FREQ_ID', 0),
                     })
 
                     # append the deep copied dict
@@ -1099,7 +1099,7 @@ def prepare_gis_devices_optimized(
                         "cust_id" : inventory_row.get('CUSTID', 0),
                         "polled_frequency" : inventory_row.get('FREQUENCY', "NA"),
                         "freq_id" : inventory_row.get('FREQ_ID', 0),
-                        "planned_frequency": inventory_row.get('SECTOR_PLANNED_FREQUENCY', 'NA')
+                        "planned_frequency": inventory_row.get('SECTOR_PLANNED_FREQUENCY', 'NA'),
                     })
 
                     # append the deep copied dict
@@ -1167,7 +1167,8 @@ def prepare_gis_devices_optimized(
                     "polled_frequency" : "NA",
                     "freq_id" : 0,
                     "planned_frequency": "NA",
-                    "customer_count": 0
+                    "customer_count": 0,
+                    "ticket_no": "NA"
                 })
 
 
@@ -1212,6 +1213,7 @@ def prepare_gis_devices_optimized(
                         "freq_id" : inventory_row.get('FREQ_ID', 0),
                         "planned_frequency": inventory_row.get('SECTOR_PLANNED_FREQUENCY', 'NA'),
                         "customer_count": inventory_row.get('CUSTOMER_COUNT', 0),
+                        "ticket_no": inventory_row.get('TICKET_NUMBER', "NA"),
                     })
                     
                     # append the deep copied dict
@@ -1244,7 +1246,7 @@ def prepare_gis_devices_optimized(
                 "city_id": 0,
                 "state_id": 0,
                 "tech_id": 0,
-                "type_id": 0
+                "type_id": 0,
             })
 
 
