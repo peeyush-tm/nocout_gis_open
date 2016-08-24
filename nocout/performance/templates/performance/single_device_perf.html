@@ -5,7 +5,11 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-bar-chart'></i> Performance Reports" "javascript:;" %}
-    {% breadcrumb_safe page_type|title|add:" Live" "performance_listing" page_type %}
+    {% if page_type == 'pe' %}
+        {% breadcrumb_safe "PE Live" "performance_listing" page_type %}
+    {% else %}
+        {% breadcrumb_safe page_type|title|add:" Live" "performance_listing" page_type %}
+    {% endif %}
 
     {% if page_type == 'network' and device_technology|upper == 'P2P'  %}
         {% breadcrumb_safe "PTP BH" "performance_listing" page_type  %}

@@ -1542,6 +1542,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
     ospf4_ospf5_machine_and_site_info = get_machine_details('ospf', [4, 5])
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -1629,6 +1630,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
             aggregation_switch = ""
             bs_converter = ""
             pop_converter = ""
+            pe_ip_device = ""
             substation_antenna = ""
             backhaul = ""
             basestation = ""
@@ -2177,6 +2179,95 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
                 pop_converter = ""
 
             try:
+                # -------------------------------- PE IP ---------------------------
+                # get machine and site
+                machine_and_site = ""
+                try:
+                    machine_and_site = get_machine_and_site(ospf2_machine_and_site_info)
+                except Exception as e:
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
+                    site = ""
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in ospf2_machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
+
+                if ip_sanitizer(row['PE IP']):
+
+                    try:
+                        pe_device_type = row.get('PE Device Type')
+                        if pe_device_type:
+                            pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
+                            pe_device_type_id = pe_dtype_obj.id
+                            
+                            pe_model_obj = pe_dtype_obj.devicemodel_set.all()[0]
+                            pe_device_model_id = pe_model_obj.id
+
+                            pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
+                            pe_device_vendor_id = pe_vendor_obj.id
+                            
+                            pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
+                            pe_device_tech_id = pe_tech_obj.id
+                    except Exception, e:
+                        pe_device_type_id = None
+                        pe_device_model_id = None
+                        pe_device_vendor_id = None
+                        pe_device_tech_id = None
+                        pass
+
+                    if pe_device_type_id and pe_device_model_id and pe_device_vendor_id and pe_device_tech_id:
+                        # PE IP data
+                        pe_data = {
+                            'device_name': device_latest_id,
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': pe_device_tech_id,
+                            'device_vendor': pe_device_vendor_id,
+                            'device_model': pe_device_model_id,
+                            'device_type': pe_device_type_id,
+                            'ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'mac': "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'PE IP created on {}.'.format(full_time)
+                        }
+
+                        # PE IP object
+                        pe_ip_device = create_device(pe_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
+                else:
+                    pe_ip_device = ""
+            except Exception as e:
+                pe_ip_device = ""
+
+            try:
                 # ------------------------------- Sector Antenna -------------------------------
                 # initialize name
                 name = ""
@@ -2259,7 +2350,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
                             'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
                             'aggregator_port': 0,
                             'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                            'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'pe_ip': pe_ip_device,
                             'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                             'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
                             'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
@@ -2665,6 +2756,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
             aggregation_switch = ""
             bs_converter = ""
             pop_converter = ""
+            pe_ip_device = ""
             substation_antenna = ""
             backhaul = ""
             basestation = ""
@@ -3112,6 +3204,96 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
             except Exception as e:
                 pop_converter = ""
 
+
+            try:
+                # -------------------------------- PE IP ---------------------------
+                # get machine and site
+                machine_and_site = ""
+                try:
+                    machine_and_site = get_machine_and_site(ospf2_machine_and_site_info)
+                except Exception as e:
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
+                    site = ""
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in ospf2_machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
+
+                if ip_sanitizer(row['PE IP']):
+
+                    try:
+                        pe_device_type = row.get('PE Device Type')
+                        if pe_device_type:
+                            pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
+                            pe_device_type_id = pe_dtype_obj.id
+                            
+                            pe_model_obj = pe_dtype_obj.devicemodel_set.all()[0]
+                            pe_device_model_id = pe_model_obj.id
+
+                            pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
+                            pe_device_vendor_id = pe_vendor_obj.id
+                            
+                            pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
+                            pe_device_tech_id = pe_tech_obj.id
+                    except Exception, e:
+                        pe_device_type_id = None
+                        pe_device_model_id = None
+                        pe_device_vendor_id = None
+                        pe_device_tech_id = None
+                        pass
+
+                    if pe_device_type_id and pe_device_model_id and pe_device_vendor_id and pe_device_tech_id:
+                        # PE IP data
+                        pe_data = {
+                            'device_name': device_latest_id,
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': pe_device_tech_id,
+                            'device_vendor': pe_device_vendor_id,
+                            'device_model': pe_device_model_id,
+                            'device_type': pe_device_type_id,
+                            'ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'mac': "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'PE IP created on {}.'.format(full_time)
+                        }
+
+                        # PE IP object
+                        pe_ip_device = create_device(pe_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
+                else:
+                    pe_ip_device = ""
+            except Exception as e:
+                pe_ip_device = ""
+
             try:
                 # ------------------------------- Sector Antenna -------------------------------
                 # initialize name
@@ -3195,7 +3377,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
                             'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
                             'aggregator_port': 0,
                             'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                            'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'pe_ip': pe_ip_device,
                             'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                             'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
                             'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
@@ -3602,6 +3784,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
             aggregation_switch = ""
             bs_converter = ""
             pop_converter = ""
+            pe_ip_device = ""
             backhaul = ""
             basestation = ""
             sector = ""
@@ -3996,6 +4179,95 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
                 pop_converter = ""
 
             try:
+                # -------------------------------- PE IP ---------------------------
+                # get machine and site
+                machine_and_site = ""
+                try:
+                    machine_and_site = get_machine_and_site(ospf2_machine_and_site_info)
+                except Exception as e:
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
+                    site = ""
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in ospf2_machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
+
+                if ip_sanitizer(row['PE IP']):
+
+                    try:
+                        pe_device_type = row.get('PE Device Type')
+                        if pe_device_type:
+                            pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
+                            pe_device_type_id = pe_dtype_obj.id
+                            
+                            pe_model_obj = pe_dtype_obj.devicemodel_set.all()[0]
+                            pe_device_model_id = pe_model_obj.id
+
+                            pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
+                            pe_device_vendor_id = pe_vendor_obj.id
+                            
+                            pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
+                            pe_device_tech_id = pe_tech_obj.id
+                    except Exception, e:
+                        pe_device_type_id = None
+                        pe_device_model_id = None
+                        pe_device_vendor_id = None
+                        pe_device_tech_id = None
+                        pass
+
+                    if pe_device_type_id and pe_device_model_id and pe_device_vendor_id and pe_device_tech_id:
+                        # PE IP data
+                        pe_data = {
+                            'device_name': device_latest_id,
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': pe_device_tech_id,
+                            'device_vendor': pe_device_vendor_id,
+                            'device_model': pe_device_model_id,
+                            'device_type': pe_device_type_id,
+                            'ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'mac': "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'PE IP created on {}.'.format(full_time)
+                        }
+
+                        # PE IP object
+                        pe_ip_device = create_device(pe_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
+                else:
+                    pe_ip_device = ""
+            except Exception as e:
+                pe_ip_device = ""
+
+            try:
                 # ------------------------------- Sector Antenna -------------------------------
                 # initialize name
                 name = ""
@@ -4047,7 +4319,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
                     'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
                     'aggregator_port': 0,
                     'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                    'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                    'pe_ip': pe_ip_device,
                     'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
                     'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                     'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
@@ -4682,6 +4954,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
     ospf4_ospf5_machine_and_site_info = get_machine_details('ospf', [4, 5])
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -4768,6 +5041,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
             aggregation_switch = ""
             bs_converter = ""
             pop_converter = ""
+            pe_ip_device = ""
             backhaul = ""
             basestation = ""
             sector = ""
@@ -5198,6 +5472,95 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                 pop_converter = ""
 
             try:
+                # -------------------------------- PE IP ---------------------------
+                # get machine and site
+                machine_and_site = ""
+                try:
+                    machine_and_site = get_machine_and_site(ospf2_machine_and_site_info)
+                except Exception as e:
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
+                    site = ""
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in ospf2_machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
+
+                if ip_sanitizer(row['PE IP']):
+
+                    try:
+                        pe_device_type = row.get('PE Device Type')
+                        if pe_device_type:
+                            pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
+                            pe_device_type_id = pe_dtype_obj.id
+                            
+                            pe_model_obj = pe_dtype_obj.devicemodel_set.all()[0]
+                            pe_device_model_id = pe_model_obj.id
+
+                            pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
+                            pe_device_vendor_id = pe_vendor_obj.id
+                            
+                            pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
+                            pe_device_tech_id = pe_tech_obj.id
+                    except Exception, e:
+                        pe_device_type_id = None
+                        pe_device_model_id = None
+                        pe_device_vendor_id = None
+                        pe_device_tech_id = None
+                        pass
+
+                    if pe_device_type_id and pe_device_model_id and pe_device_vendor_id and pe_device_tech_id:
+                        # PE IP data
+                        pe_data = {
+                            'device_name': device_latest_id,
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': pe_device_tech_id,
+                            'device_vendor': pe_device_vendor_id,
+                            'device_model': pe_device_model_id,
+                            'device_type': pe_device_type_id,
+                            'ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'mac': "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'PE IP created on {}.'.format(full_time)
+                        }
+
+                        # PE IP object
+                        pe_ip_device = create_device(pe_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
+                else:
+                    pe_ip_device = ""
+            except Exception as e:
+                pe_ip_device = ""
+
+            try:
                 # ------------------------------- Sector Antenna -------------------------------
                 # initialize name
                 name = ""
@@ -5248,7 +5611,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                     'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
                     'aggregator_port': 0,
                     'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                    'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                    'pe_ip': pe_ip_device,
                     'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
                     'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                     'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
@@ -6010,6 +6373,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
     ospf4_ospf5_machine_and_site_info = get_machine_details('ospf', [4, 5])
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -6059,6 +6423,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
             aggregation_switch = ""
             bs_converter = ""
             pop_converter = ""
+            pe_ip_device = ""
             backhaul = ""
             basestation = ""
 
@@ -6488,6 +6853,95 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
             except Exception as e:
                 pop_converter = ""
 
+            try:
+                # -------------------------------- PE IP ---------------------------
+                # get machine and site
+                machine_and_site = ""
+                try:
+                    machine_and_site = get_machine_and_site(ospf2_machine_and_site_info)
+                except Exception as e:
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
+                    site = ""
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in ospf2_machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
+
+                if ip_sanitizer(row['PE IP']):
+
+                    try:
+                        pe_device_type = row.get('PE Device Type')
+                        if pe_device_type:
+                            pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
+                            pe_device_type_id = pe_dtype_obj.id
+                            
+                            pe_model_obj = pe_dtype_obj.devicemodel_set.all()[0]
+                            pe_device_model_id = pe_model_obj.id
+
+                            pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
+                            pe_device_vendor_id = pe_vendor_obj.id
+                            
+                            pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
+                            pe_device_tech_id = pe_tech_obj.id
+                    except Exception, e:
+                        pe_device_type_id = None
+                        pe_device_model_id = None
+                        pe_device_vendor_id = None
+                        pe_device_tech_id = None
+                        pass
+
+                    if pe_device_type_id and pe_device_model_id and pe_device_vendor_id and pe_device_tech_id:
+                        # PE IP data
+                        pe_data = {
+                            'device_name': device_latest_id,
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': pe_device_tech_id,
+                            'device_vendor': pe_device_vendor_id,
+                            'device_model': pe_device_model_id,
+                            'device_type': pe_device_type_id,
+                            'ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'mac': "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'PE IP created on {}.'.format(full_time)
+                        }
+
+                        # PE IP object
+                        pe_ip_device = create_device(pe_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
+                else:
+                    pe_ip_device = ""
+            except Exception as e:
+                pe_ip_device = ""
+
             # backhaul configured on 'port name' and 'port number'
             bh_port = row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else ""
             bh_port_name = ""
@@ -6528,7 +6982,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
                             'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
                             'aggregator_port': 0,
                             'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                            'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'pe_ip': pe_ip_device,
                             'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                             'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
                             'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
@@ -11969,7 +12423,7 @@ def get_selected_ptp_inventory(base_station, sector):
 
             # pe ip
             try:
-                ptp_row['PE IP'] = backhaul.pe_ip
+                ptp_row['PE IP'] = backhaul.pe_ip.ip_address
             except Exception as e:
                 logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12715,7 +13169,7 @@ def get_selected_pmp_inventory(base_station, sector):
 
     # pe ip
     try:
-        pmp_bs_row['PE IP'] = backhaul.pe_ip
+        pmp_bs_row['PE IP'] = backhaul.pe_ip.ip_address
     except Exception as e:
         logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -13477,7 +13931,7 @@ def get_selected_wimax_inventory(base_station, sector):
 
     # pe ip
     try:
-        wimax_bs_row['PE IP'] = backhaul.pe_ip
+        wimax_bs_row['PE IP'] = backhaul.pe_ip.ip_address
     except Exception as e:
         logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
 

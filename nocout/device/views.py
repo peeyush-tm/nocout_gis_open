@@ -1688,33 +1688,40 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView, 
         qs_query = DeviceTechnology.objects.prefetch_related()
         qs = list()
         for dtechnology in qs_query:
-            dct = dict()
-            for dtechnology_vendor in dtechnology.device_vendors.values_list('name', flat=True):
-                dct = {
-                    'id': dtechnology.id, 'name': dtechnology.name, 'alias': dtechnology.alias,
-                    'device_vendor': dtechnology_vendor
-                }
-                dvendor = DeviceVendor.objects.get(name=dtechnology_vendor)
+            # dct = dict()
+            dct = {
+                'id': dtechnology.id,
+                'name': dtechnology.name,
+                'alias': dtechnology.alias,
+                'device_vendor': ', '.join(dtechnology.device_vendors.values_list('alias', flat=True)),
+                'device_vendor__model__name': '',
+                'device_vendor__model_type__name': ''
 
-                dct['device_vendor__model__name'] = ', '.join(dvendor.device_models.values_list('name', flat=True))
+            }
+            models_list = list()
+            dtype_list = list()
+
+            for dvendor in dtechnology.device_vendors.all():
+                models_list.append(', '.join(dvendor.device_models.values_list('alias', flat=True)))
 
                 for dmodel in dvendor.device_models.prefetch_related():
-                    dct['device_vendor__model_type__name'] = ', '.join(
-                        dmodel.device_types.values_list('name', flat=True))
+                    dtype_list.append(', '.join(dmodel.device_types.values_list('alias', flat=True)))
 
-                qs.append(dct)
+            dct['device_vendor__model__name'] = ', '.join(models_list)
+            dct['device_vendor__model_type__name'] = ', '.join(dtype_list)
+
+            qs.append(dct)
         return qs
 
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/technology/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/technology/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                dct.pop('id')))
+            dct.update(
+                actions='<a href="/technology/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                         <a href="/technology/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id'))
+            )
         return qs
 
     def ordering(self, qs):
@@ -1749,11 +1756,13 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView, 
 
         # prepare output data
         aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
         }
+
         return ret
 
 

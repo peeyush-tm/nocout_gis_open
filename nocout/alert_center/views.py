@@ -1016,6 +1016,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
 
         page_type = self.request.GET.get('page_type', "network")
+        include_pe = self.request.GET.get('include_pe', False)
 
         if self.request.GET.get("data_source"):
             tab_id = self.request.GET.get("data_source")
@@ -1094,6 +1095,14 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                     required_value_list=required_value_list,
                     other_type=other_type
                 )
+
+                device_list += inventory_utils.filter_devices(
+                    organizations=organizations,
+                    page_type='pe',
+                    required_value_list=required_value_list,
+                    other_type=other_type
+                )
+
                 if is_other:
                     other_type = "other"
                     device_list += inventory_utils.filter_devices(
