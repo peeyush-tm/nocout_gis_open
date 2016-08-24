@@ -24,15 +24,21 @@
                     <i class="red-dot">Last Sync Run At: Yet to be run. | </i>
                 {% endif %}
             </div>
-            <div class="btn-group">
-                {% if deadlock_status == 'yes' %}
+            {% if deadlock_status == 'yes' %}
+                <div class="btn-group">
                     <i class="red-dot">Sync Status: <a class="" href="#" onclick="remove_sync_deadlock();"><i class="fa fa-times-circle red-dot" title="Remove deadlock in sync process."></i></a> | </i>
+                </div>
+                <div class="btn-group">
                     <i class="red-dot">Run Sync: </i><a class="" href="#" > <i class="fa fa-refresh red-dot" title="Something is wrong. Can't run sync right now."></i></a>
-                {% else %}
+                </div>
+            {% else %}
+                <div class="btn-group">
                     <i class="green-dot">Sync Status: <a class=""><i class="fa fa-check-circle green-dot " title="No deadlock exist in sync process."></i></a> | </i>
+                </div>
+                <div class="btn-group">
                     <i class="green-dot">Run Sync: </i><a class="" href="#" onclick="sync_devices();"> <i class="fa fa-refresh green-dot" title="Sync device for monitoring."></i></a>
-                {% endif %}
-            </div>
+                </div>
+            {% endif %}
         </span>
     {% endif %}
 {% endblock %}
