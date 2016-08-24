@@ -228,8 +228,8 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
-            device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
-            device_tech_qs = DeviceTechnology.objects.filter(name__icontains=sSearch)
+            device_type_qs = DeviceType.objects.filter(alias__icontains=sSearch)
+            device_tech_qs = DeviceTechnology.objects.filter(alias__icontains=sSearch)
 
             query_object = Q()
             for column in self.search_columns:
@@ -259,8 +259,8 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         device_type_data = list()
         device_tech_data = list()
         if len(json_data):
-            device_type_data = list(DeviceType.objects.all().values('id', 'name'))
-            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+            device_type_data = list(DeviceType.objects.all().values('id', 'name', 'alias'))
+            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name', 'alias'))
 
         is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
         is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
@@ -283,7 +283,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 dtype = filter(
                     lambda dtype: dtype if dtype.get('id') == int(dct['device_type']) else '',
                     device_type_data
-                )[0].get('name')
+                )[0].get('alias')
                 dct['device_type__name'] = dtype
             except Exception as e:
                 dct['device_type__name'] = ""
@@ -293,7 +293,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 dtech = filter(
                     lambda dtech: dtech if dtech.get('id') == int(dct['device_technology']) else '',
                     device_tech_data
-                )[0].get('name')
+                )[0].get('alias')
                 dct['device_technology__name'] = dtech
             except Exception as e:
                 dct['device_technology__name'] = ""
@@ -447,8 +447,8 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
         if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
-            device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
-            device_tech_qs = DeviceTechnology.objects.filter(name__icontains=sSearch)
+            device_type_qs = DeviceType.objects.filter(alias__icontains=sSearch)
+            device_tech_qs = DeviceTechnology.objects.filter(alias__icontains=sSearch)
 
             query_object = Q()
             for column in self.search_columns:
@@ -477,8 +477,8 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
         device_type_data = list()
         device_tech_data = list()
         if len(json_data):
-            device_type_data = list(DeviceType.objects.all().values('id', 'name'))
-            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+            device_type_data = list(DeviceType.objects.all().values('id', 'name', 'alias'))
+            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name', 'alias'))
 
         is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
         is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
@@ -501,9 +501,9 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             try:
                 # dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
                 dtype = filter(
-                    lambda dtype: dtype.get('name') if dtype.get('id') == int(dct['device_type']) else '',
+                    lambda dtype: dtype.get('alias') if dtype.get('id') == int(dct['device_type']) else '',
                     device_type_data
-                )[0].get('name')
+                )[0].get('alias')
                 dct['device_type__name'] = dtype
             except Exception as e:
                 dct['device_type__name'] = ""
@@ -512,9 +512,9 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             try:
                 # dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name if dct['device_technology'] else ''
                 dtech = filter(
-                    lambda dtech: dtech.get('name') if dtech.get('id') == int(dct['device_technology']) else '',
+                    lambda dtech: dtech.get('alias') if dtech.get('id') == int(dct['device_technology']) else '',
                     device_tech_data
-                )[0].get('name')
+                )[0].get('alias')
                 dct['device_technology__name'] = dtech
             except Exception as e:
                 dct['device_technology__name'] = ""
@@ -643,8 +643,8 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
-            device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
-            device_tech_qs = DeviceTechnology.objects.filter(name__icontains=sSearch)
+            device_type_qs = DeviceType.objects.filter(alias__icontains=sSearch)
+            device_tech_qs = DeviceTechnology.objects.filter(alias__icontains=sSearch)
 
             query_object = Q()
             for column in self.search_columns:
@@ -673,8 +673,8 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         device_type_data = list()
         device_tech_data = list()
         if len(json_data):
-            device_type_data = list(DeviceType.objects.all().values('id', 'name'))
-            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+            device_type_data = list(DeviceType.objects.all().values('id', 'name', 'alias'))
+            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name', 'alias'))
 
         is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
         is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
@@ -697,9 +697,9 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             try:
                 # dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
                 dtype = filter(
-                    lambda dtype: dtype.get('name') if dtype.get('id') == int(dct['device_type']) else '',
+                    lambda dtype: dtype.get('alias') if dtype.get('id') == int(dct['device_type']) else '',
                     device_type_data
-                )[0].get('name')
+                )[0].get('alias')
                 dct['device_type__name'] = dtype
             except Exception as e:
                 dct['device_type__name'] = ""
@@ -708,9 +708,9 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             try:
                 # dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name if dct['device_technology'] else ''
                 dtech = filter(
-                    lambda dtech: dtech.get('name') if dtech.get('id') == int(dct['device_technology']) else '',
+                    lambda dtech: dtech.get('alias') if dtech.get('id') == int(dct['device_technology']) else '',
                     device_tech_data
-                )[0].get('name')
+                )[0].get('alias')
                 dct['device_technology__name'] = dtech
             except Exception as e:
                 dct['device_technology__name'] = ""
@@ -839,8 +839,8 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
-            device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
-            device_tech_qs = DeviceTechnology.objects.filter(name__icontains=sSearch)
+            device_type_qs = DeviceType.objects.filter(alias__icontains=sSearch)
+            device_tech_qs = DeviceTechnology.objects.filter(alias__icontains=sSearch)
 
             query_object = Q()
             for column in self.search_columns:
@@ -869,8 +869,8 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         device_type_data = list()
         device_tech_data = list()
         if len(json_data):
-            device_type_data = list(DeviceType.objects.all().values('id', 'name'))
-            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+            device_type_data = list(DeviceType.objects.all().values('id', 'name', 'alias'))
+            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name', 'alias'))
 
         # device object
         device = None
@@ -893,9 +893,9 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             try:
                 # dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
                 dtype = filter(
-                    lambda dtype: dtype.get('name') if dtype.get('id') == int(dct['device_type']) else '',
+                    lambda dtype: dtype.get('alias') if dtype.get('id') == int(dct['device_type']) else '',
                     device_type_data
-                )[0].get('name')
+                )[0].get('alias')
                 dct['device_type__name'] = dtype
             except Exception as e:
                 dct['device_type__name'] = ""
@@ -904,9 +904,9 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             try:
                 # dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name if dct['device_technology'] else ''
                 dtech = filter(
-                    lambda dtech: dtech.get('name') if dtech.get('id') == int(dct['device_technology']) else '',
+                    lambda dtech: dtech.get('alias') if dtech.get('id') == int(dct['device_technology']) else '',
                     device_tech_data
-                )[0].get('name')
+                )[0].get('alias')
                 dct['device_technology__name'] = dtech
             except Exception as e:
                 dct['device_technology__name'] = ""
@@ -1003,8 +1003,8 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
         if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
-            device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
-            device_tech_qs = DeviceTechnology.objects.filter(name__icontains=sSearch)
+            device_type_qs = DeviceType.objects.filter(alias__icontains=sSearch)
+            device_tech_qs = DeviceTechnology.objects.filter(alias__icontains=sSearch)
 
             query_object = Q()
             for column in self.search_columns:
@@ -1033,8 +1033,8 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
         device_type_data = list()
         device_tech_data = list()
         if len(json_data):
-            device_type_data = list(DeviceType.objects.all().values('id', 'name'))
-            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name'))
+            device_type_data = list(DeviceType.objects.all().values('id', 'name', 'alias'))
+            device_tech_data = list(DeviceTechnology.objects.all().values('id', 'name', 'alias'))
 
         is_edit_perm = in_group(self.request.user, 'admin', 'change_device')
         is_delete_perm = in_group(self.request.user, 'admin', 'delete_device')
@@ -1059,7 +1059,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
                 dtype = filter(
                     lambda dtype: dtype if dtype.get('id') == int(dct['device_type']) else '',
                     device_type_data
-                )[0].get('name')
+                )[0].get('alias')
                 dct['device_type__name'] = dtype
             except Exception as e:
                 dct['device_type__name'] = ""
@@ -1070,7 +1070,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
                 dtech = filter(
                     lambda dtech: dtech if dtech.get('id') == int(dct['device_technology']) else '',
                     device_tech_data
-                )[0].get('name')
+                )[0].get('alias')
                 dct['device_technology__name'] = dtech
             except Exception as e:
                 dct['device_technology__name'] = ""
