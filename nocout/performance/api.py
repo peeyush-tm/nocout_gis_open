@@ -35,8 +35,9 @@ from IPy import IP
 import logging
 
 import ast
-from copy import deepcopy
+# from copy import deepcopy
 import requests
+# from multiprocessing import Queue
 
 logger = logging.getLogger(__name__)
 
@@ -295,9 +296,8 @@ class StartPingStabilityTest(APIView):
                 )
                 r = requests.post(url, data=encoded_data)
                 response_dict = ast.literal_eval(r.text)
-                if len(response_dict):
-                    temp_dict = deepcopy(response_dict)
-                    q.put(temp_dict)
+                # if len(response_dict):
+                #     temp_dict = deepcopy(response_dict)
             except Exception as e:
                 logger.error('Stability Test Request Exception')
                 logger.error(e)
