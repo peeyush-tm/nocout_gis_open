@@ -267,7 +267,8 @@ class StartPingStabilityTest(APIView):
                         'ip_address': ip_address,
                         'time_interval': duration,
                         'id': ping_stability_instance.id
-                    }]
+                    }],
+                    'mode': 'ping_test'
                 }
             }
 
