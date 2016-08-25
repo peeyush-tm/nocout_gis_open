@@ -1867,10 +1867,10 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
                     device_info.DEVICE_ID AS DEVICE_ID,
                     device_info.SS_DEVICE_ID AS SS_DEVICE_ID,
                     
-                    devicetype.name AS DEVICE_TYPE,
+                    devicetype.alias AS DEVICE_TYPE,
                     devicetype.id AS TYPEID,
                     
-                    technology.name AS DEVICE_TECH,
+                    technology.alias AS DEVICE_TECH,
                     technology.id AS TECHID
                 FROM (
                     SELECT
@@ -2104,7 +2104,7 @@ def get_inventory_sector_query(
         from
             (
                 select
-                    devicetype.name as DEVICE_TYPE,
+                    devicetype.alias as DEVICE_TYPE,
                     
                     sector.base_station_id AS BSID,
                     sector.sector_id as SECTOR_SECTOR_ID,
@@ -2114,7 +2114,7 @@ def get_inventory_sector_query(
                     sector.sector_configured_on_port_id as sector_port_id,
                     sector.frequency_id AS FREQ_ID,
 
-                    technology.name as DEVICE_TECH,
+                    technology.alias as DEVICE_TECH,
                     technology.id as TECHID,
                     devicetype.id as TYPEID,
 
@@ -2267,7 +2267,7 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                     sector_device_info.*
                 FROM(
                         SELECT
-                            devicetype.name AS DEVICE_TYPE,
+                            devicetype.alias AS DEVICE_TYPE,
                             sector.id AS SECT_ID,
                             sector.base_station_id AS BSID,
                             sector.sector_id AS SECTOR_SECTOR_ID,
@@ -2277,7 +2277,7 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                             sector.planned_frequency AS SECTOR_PLANNED_FREQUENCY,
                             sector.sector_configured_on_port_id AS sector_port_id,
 
-                            technology.name AS DEVICE_TECH,
+                            technology.alias AS DEVICE_TECH,
                             technology.id AS TECHID,
                             devicetype.id AS TYPEID,
 
@@ -2424,8 +2424,8 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
         FROM 
             (
                 select
-                    technology.name AS DEVICE_TECH,
-                    devicetype.name AS DEVICE_TYPE,
+                    technology.alias AS DEVICE_TECH,
+                    devicetype.alias AS DEVICE_TYPE,
                         
                     bh.id AS BHID,
                     bh.bh_connectivity AS BH_CONNECTIVITY,
