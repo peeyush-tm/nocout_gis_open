@@ -12,7 +12,16 @@ from multiprocessing import Process, Queue
 from ast import literal_eval
 #import Queue
 from nocout_live import get_current_value, nocout_log
-
+from itertools import groupby
+from operator import itemgetter
+from nocout import get_parent
+import signal
+from subprocess import Popen, PIPE
+from threading import Timer
+#import multiprocessing
+import time as t
+import pexpect
+import mysql.connector
 logger = nocout_log()
 
 def main():
@@ -37,6 +46,12 @@ def main():
     action = html.var('mode')
     if action == 'live':
         response['value'] = poll_device()
+
+    elif action == 'ping_test':
+        ping_conf_get()
+	
+
+
     else:
         response.update({
             "message": "No data",
@@ -44,6 +59,118 @@ def main():
         })
 
     html.write(pformat(response))
+
+
+
+def ping_status_update(id):
+	try:
+		db = mysql.connector.connect(
+			user='root',
+			password='TAta12#$',
+			host='10.133.12.182',
+			port='3600',
+			db='nocout_dev'
+							)
+		cur = db.cursor()
+	
+		data_values = ('1',id)
+		table = "performance_pingstabilitytest"
+		query = "UPDATE `%s` " % table
+		query += "SET `status`=%s WHERE `id`=%s"
+		cur.execute(query, data_values)
+		db.commit()
+	except Exception as e :
+		logger.error('in ping status: ' + pformat(e))
+	finally :
+		cur.close()
+		db.close()
+	
+
+
+def file_send(file_name):
+	try:
+		#filepath = "/home/tmadmin/NITIN/mohit_code/mohit_file"
+		#hostname = " tmadmin@121.244.255.107:"   # for production
+
+		SSH_NEWKEY = r'Are you sure you want to continue connecting \(yes/no\)\?'
+		hostname = " tmadmin@10.133.12.182:"
+		#remote_path = "/home/tmadmin/NITIN/mohit_code"
+		remote_path = "/home/tmadmin/mohit_code"
+		cmd = "scp -P 5522 "+file_name+hostname+remote_path
+		child = pexpect.spawn(cmd)
+		i = child.expect( [ pexpect.TIMEOUT, SSH_NEWKEY, pexpect.EOF])
+		if i == 1:
+			child.sendline('yes')
+	                child.expect("password:",timeout=120)
+        	        child.sendline('TTpl12#$')   #   password
+                	child.expect(pexpect.EOF, timeout=10)
+                	logger.info('file sent' )  #logger replaced
+
+		else:
+
+		#res = os.system(cmd)
+			child.expect("password:",timeout=120)
+			child.sendline('TTpl12#$')   #   password
+			child.expect(pexpect.EOF, timeout=10)
+			logger.info('file sent' )  #logger replaced
+
+	except Exception as e:
+		logger.error('in ping file sending: ' + pformat(e))   # change with the looger
+
+
+
+
+def ping1(id, ip, time):
+	try :
+		child = Popen(['ping', ip], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+		Timer(time, child.send_signal, [signal.SIGINT]).start()  # like ctrl+c to process after time time
+		out, err = child.communicate() 
+		find1 = out.find("statistics")   # index value of statitics 
+	
+		str1 = ("--- %s ping statistics ---" %(ip))
+		time2 = t.time()
+		# to give the name to file use epoch + ip_address
+		epoch_time = int(time2)
+		file_name = ip+"_"+str(epoch_time)
+		file_path = "/omd/ping_test/"
+		file_name = file_path+file_name
+		file_txt = open(file_name, "w")
+		file_txt.write(str1)
+		file_txt.write(out[find1+14:])
+		file_txt.close()
+		logger.info(pformat(str1))
+		str2=   out[find1+14:]
+		logger.info(pformat(str2))
+		file_send(file_name)
+		ping_status_update(id)
+		#print(err.decode())
+	except Exception as e :	
+		logger.error('in ping1: ' + pformat(e))
+
+
+def ping_conf_get():
+	logger.info("ping started")
+	list1 = literal_eval(html.var('data'))
+	logger.info(list1)
+	logger.info(type(list1))
+	
+	for each in list1:
+		try:
+			ip= each["ip_address"]
+			id= each["id"]
+			time = int(each["time_interval"])
+			#time = time*3600
+			process = Process(target=ping1, args=(id,ip, time))
+			process.start()
+		except Exception as e :
+			logger.error('in ping_conf_get: ' + pformat(e))
+	
+
+
+
+
+
+
 
 
 def poll_device():
