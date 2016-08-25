@@ -7665,7 +7665,7 @@ class GetTopology(View):
                         IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                         IF(isnull(bs.backhaul_id), 'NA', bs.backhaul_id) AS bh_id,
                         IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                        IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                        IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                         IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                         IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
@@ -7726,6 +7726,10 @@ class GetTopology(View):
                         inventory_backhaul AS backhaul
                     ON
                         bs.backhaul_id = backhaul.id
+                    LEFT JOIN
+                        device_device AS bh_pe_device
+                    ON
+                        backhaul.pe_ip_id = bh_pe_device.id
                     LEFT JOIN
                         device_device AS bs_convertor_device
                     ON
@@ -7876,7 +7880,7 @@ class GetTopology(View):
                         IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                         IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                         IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                        IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                        IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                         IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                         IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
@@ -7923,6 +7927,10 @@ class GetTopology(View):
                         inventory_backhaul AS backhaul
                     ON
                         bs.backhaul_id = backhaul.id
+                    LEFT JOIN
+                        device_device AS bh_pe_device
+                    ON
+                        backhaul.pe_ip_id = bh_pe_device.id
                     LEFT JOIN
                         device_device AS bs_convertor_device
                     ON
@@ -8018,7 +8026,7 @@ class GetTopology(View):
                     IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                     IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                     IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                    IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                    IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                     IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                     IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                     IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
@@ -8068,6 +8076,10 @@ class GetTopology(View):
                     inventory_backhaul AS backhaul
                 ON
                     bs.backhaul_id = backhaul.id
+                LEFT JOIN
+                    device_device AS bh_pe_device
+                ON
+                    backhaul.pe_ip_id = bh_pe_device.id
                 LEFT JOIN
                     device_device AS bs_convertor_device
                 ON
@@ -8197,7 +8209,7 @@ class GetTopology(View):
                     IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                     IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                     IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                    IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                    IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                     IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                     IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                     IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
@@ -8247,6 +8259,10 @@ class GetTopology(View):
                     inventory_backhaul AS backhaul
                 ON
                     bs.backhaul_id = backhaul.id
+                LEFT JOIN
+                    device_device AS bh_pe_device
+                ON
+                    backhaul.pe_ip_id = bh_pe_device.id
                 LEFT JOIN
                     device_device AS bs_convertor_device
                 ON
