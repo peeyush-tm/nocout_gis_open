@@ -494,15 +494,33 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
     :param organizations:
     :return list of network devices
     """
+    if other_type == 'pe':
+        try:
+            pe_tech_id = DeviceTechnology.objects.filter(
+                name__iexact='pe'
+            ).values_list('id', flat=True)
 
-    backhaul_devices = Device.objects.filter(
-        backhaul__isnull=False,
-        is_added_to_nms__gt=0,
-        # is_added_to_nms=1,
-        is_deleted=0,
-        organization__in=organizations
-    ).prefetch_related('backhaul')
-
+            backhaul_devices = Device.objects.filter(
+                pe_ip__isnull=False,
+                is_added_to_nms__gt=0,
+                device_technology__in=pe_tech_id,
+                is_deleted=0,
+                organization__in=organizations
+            ).prefetch_related('backhaul')
+        except Exception, e:
+            backhaul_devices = list()
+            log.error('PE Device Tech Filtering Error')
+            log.error(e)
+            pass
+    else:
+        backhaul_devices = Device.objects.filter(
+            backhaul__isnull=False,
+            is_added_to_nms__gt=0,
+            # is_added_to_nms=1,
+            is_deleted=0,
+            organization__in=organizations
+        ).prefetch_related('backhaul')
+    
     if others:
         backhaul_objects = Backhaul.objects.filter(
             bh_configured_on_id__in=backhaul_devices.values_list('id', flat=True)
@@ -534,7 +552,7 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
             is_deleted=0,
             organization__in=organizations
         )
-
+    
     return backhaul_devices.annotate(dcount=Count('id'))
 
 
@@ -592,12 +610,13 @@ def filter_devices(
         ).values(*device_value_list)
     elif page_type == "other":
         is_other = False
-        if other_type != "backhaul":
+        if other_type not in ["backhaul", "pe"]:
             is_other = True
         
         device_list = organization_backhaul_devices(
             organizations,
-            others=is_other
+            others=is_other,
+            other_type=other_type
         ).values(*device_value_list)
 
     else:

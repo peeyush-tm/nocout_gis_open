@@ -484,6 +484,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
             type_rf = 'sector'
         elif page_type == 'customer':
             type_rf = 'ss'
+        elif page_type == 'pe':
+            type_rf = 'pe'
         else:
             type_rf = other_type
                 
@@ -536,10 +538,15 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         """
         
         page_type = self.request.GET['page_type']
+        other_type = self.request.GET.get('other_type')
         alert_page_type = page_type
 
         # In case of other page update page type to 'network' for alert center link
         if page_type not in ["customer", "network"]:
+            alert_page_type = 'network'
+
+        if other_type == 'pe':
+            page_type = 'pe'
             alert_page_type = 'network'
 
         if qs:
@@ -1210,6 +1217,10 @@ class InventoryDeviceStatus(View):
             type_of_device = "backhaul"
             type_rf = 'backhaul'
             page_type = 'other'
+        elif device.pe_ip.exists():
+            type_of_device = "other"
+            type_rf = 'pe'
+            page_type = 'pe'
         elif device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists():
             is_other = True
             type_of_device = "other"
@@ -1275,7 +1286,7 @@ class InventoryDeviceStatus(View):
                     device_name_list.append(sector_device_name[0]['sector_configured_on__device_name'])
 
         if devices_info_list:
-            if device_tech in ['WiMAX'] or page_type == 'other':
+            if device_tech in ['WiMAX'] or page_type in ['other', 'pe']:
                 is_single_call = True
             else:
                 is_single_call = False
@@ -1288,8 +1299,6 @@ class InventoryDeviceStatus(View):
                 device_name_list=device_name_list,
                 is_single_call=is_single_call
             )
-
-            # list_devices_invent_info = perf_utils.prepare_gis_devices(devices_info_list, page_type=None)
 
             if list_devices_invent_info:
                 lowered_device_tech = list_devices_invent_info[0]['device_technology'].lower()
@@ -1698,8 +1707,8 @@ class InventoryDeviceServiceDataSource(View):
                         result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
         
-        result['data']['objects']['availability_tab']["info"].append(
-            {
+        if not device.pe_ip.exists():
+            result['data']['objects']['availability_tab']["info"].append({
                 'name': 'availability',
                 'title': 'Availability',
                 'url': 'performance/service/availability/service_data_source/availability/device/' +
@@ -1707,20 +1716,22 @@ class InventoryDeviceServiceDataSource(View):
                 'active': 0
             })
 
-        result['data']['objects']['topology_tab']["info"].append({
-            'name': 'topology',
-            'title': 'Topology',
-            'url': 'performance/service/topology/service_data_source/topology/device/' +
-                   str(device_id),
-            'active': 0
-        })
+        if not device.pe_ip.exists():
+            result['data']['objects']['topology_tab']["info"].append({
+                'name': 'topology',
+                'title': 'Topology',
+                'url': 'performance/service/topology/service_data_source/topology/device/' +
+                       str(device_id),
+                'active': 0
+            })
 
-        result['data']['objects']['utilization_top_tab']["info"].append({
-            'name': 'utilization_top',
-            'title': 'Utilization',
-            'url': 'performance/servicedetail/util/device/'+str(device_id),
-            'active': 0
-        })
+        if not device.pe_ip.exists():
+            result['data']['objects']['utilization_top_tab']["info"].append({
+                'name': 'utilization_top',
+                'title': 'Utilization',
+                'url': 'performance/servicedetail/util/device/'+str(device_id),
+                'active': 0
+            })
         
         custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))       
 
