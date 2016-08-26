@@ -36,6 +36,7 @@ function convertToVis(response, required_dom_id) {
 	fe_edge_color = '#468847', //edge originating from Far End
 	fe_bs_sw_edge_color = '#468847', //edge originating from Near End BS Switch
 	fe_bs_edge_color = '#468847', //edge originating from Far End Base Station
+	idu_edge_color = '#468847', //edge originating from IDU Device
 	sec_edge_color = '#468847'
 
 	var sector_up_image_url = '/static/img/icons/green.png',
@@ -44,6 +45,7 @@ function convertToVis(response, required_dom_id) {
 		converter_image = '/static/img/icons/converter.png',
 		switch_image = '/static/img/icons/switch.png',
 		router_image = '/static/img/icons/router.png',
+		idu_image = '/static/img/icons/router.png',
 		far_end_image = '/static/img/icons/far_end.png',
 		near_end_image = '/static/img/icons/near_end.png',
 		ss_image = '/static/img/icons/ss.png'
@@ -214,6 +216,15 @@ function convertToVis(response, required_dom_id) {
 		    		'PE Hostname : ' + response_data.pe_hostname,
 		    image: router_image,
 		    shape: 'image',
+		 //    shape: 'circularImage',
+		 //    shapeProperties : {
+			// 	useBorderWithImage : true
+			// },
+			// borderWidth : 8,
+			// color: {
+			// 	border: '#FF0000',
+			// 	background: '#ffffff',
+			// },
 		    // title: '<span style="color:'+bh_color_info_object.color+'"><i class="fa '+bh_color_info_object.icon+'""></i> ' +severity + ' - ' + polled_val + '</span>'
 		});
 		pe_exist = true
@@ -280,11 +291,21 @@ function convertToVis(response, required_dom_id) {
 	// *** Here BACKHAUL refers to BS Switch ***
 	// *****************************************
 	if (response_data.bh_ip != 'NA'){
+
 		nodes.add({
 		    id: 'ne_sw_' + response_data.bs_switch_name,
 		    label: createNodeLabel(response_data.bh_ip, response_data.bs_switch_port, bs_switch_pl, bs_switch_latency, 'BS Switch'),
 		    image: switch_image,
 		    shape: 'image',
+		 //    shapeProperties : {
+			// 	useBorderWithImage : true
+			// },
+			// borderWidth : 8,
+			// color: {
+			// 	border: '#468847',
+			// 	background: '#ffffff',
+			// },
+
 		    title: '<span style="color:'+bs_switch_color_info_object.color+'"><i class="fa '+bs_switch_color_info_object.icon+'""></i> ' + bs_switch_severity + ' - ' + bs_switch_polled_val + '</span>'
 		});
 		backhaul_exist = true
@@ -535,23 +556,46 @@ function convertToVis(response, required_dom_id) {
 			var sectors = far_end_base_station_list[i].sectors;
 			
 			if (!limit_till_bs) {
+				var idu_id_list = [];
 				for(j=0; j<sectors.length; j++){
+
 				    var sector_severity = sectors[j].pl_info.severity ? sectors[j].pl_info.severity.toUpperCase() : 'NA',
 				    	sector_pl = sectors[j].pl_info.packet_loss ? sectors[j].pl_info.packet_loss : 'NA',
 				    	sector_latency = sectors[j].pl_info.latency ? sectors[j].pl_info.latency : 'NA',
 				    	sect_color_info_object = nocout_getSeverityColorIcon(sector_severity),
-				    	sector_polled_val = sectors[j].pl_info.value
+				    	sector_polled_val = sectors[j].pl_info.value,
+				    	idu_id = 'idu_' + sectors[j].ip_address,
+				    	bs_device_type = sectors[j].device_tech.toLowerCase().indexOf('wimax') > -1 ? 'IDU' : 'ODU';
 
-				    // if sector's severity is down then change edge color to red.
-				    if (severity_check.indexOf(sector_severity.toLowerCase()) > -1) {
-				    	sec_edge_color = '#b94a48';
-				    	sector_image_url = sector_down_image_url
+				    if (typeof sector_polled_val == 'undefined' || sector_polled_val == '') {
+						sector_polled_val = 'NA';
+					}
+
+				    if (idu_id_list.indexOf(idu_id) == -1){
+
+				    	var idu_label = bs_device_type + '\n' +
+										 '\nIP Address : ' + sectors[j].ip_address + 
+										 '\nPacket Drop : ' + sector_pl +
+										 '\nLatency : ' + sector_latency;
+
+				    	nodes.add({
+					    	id: idu_id,
+					    	label: idu_label,
+					        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
+					        shape: 'image',
+					        image: idu_image
+					    });
+
+				    	idu_id_list.push(idu_id)
 				    }
 
 
-					if (typeof sector_polled_val == 'undefined' || sector_polled_val == '') {
-						sector_polled_val = 'NA';
-					}
+				    // if sector's severity is down then change edge color to red.
+				    if (severity_check.indexOf(sector_severity.toLowerCase()) > -1) {
+				    	sec_edge_color = idu_edge_color = '#b94a48';
+				    	sector_image_url = sector_down_image_url
+				    }
+
 
 				    nodes.add({
 				    	id: 'sec_' + sectors[j].sect_ip_id_title,
@@ -582,8 +626,20 @@ function convertToVis(response, required_dom_id) {
 				    edges.add({
 				    	// from: 'BASESTATION_'+i,
 				    	from: 'far_end_base_station',
-				    	to: 'sec_' + sectors[j].sect_ip_id_title,
+				    	to: idu_id,//'sec_' + sectors[j].sect_ip_id_title,
 				    	color: bs_edge_color,
+				    	smooth: {
+							type: 'cubicBezier',
+							forceDirection: 'horizontal',
+							roundness : 0.5
+						}
+				    });
+
+				    edges.add({
+				    	// from: 'BASESTATION_'+i,
+				    	from: idu_id,
+				    	to: 'sec_' + sectors[j].sect_ip_id_title,
+				    	color: idu_edge_color,
 				    	smooth: {
 							type: 'cubicBezier',
 							forceDirection: 'horizontal',
@@ -668,18 +724,21 @@ function convertToVis(response, required_dom_id) {
 				}
 			}
 
-			var sectors = base_station_list[i].sectors;
-			
+			var sectors = base_station_list[i].sectors,
+				idu_id_list = [];
+
 			for(j=0; j<sectors.length; j++){
 			    var sector_severity = sectors[j].pl_info.severity ? sectors[j].pl_info.severity.toUpperCase() : 'NA',
 			    	sector_pl = sectors[j].pl_info.packet_loss ? sectors[j].pl_info.packet_loss : 'NA',
 			    	sector_latency = sectors[j].pl_info.latency ? sectors[j].pl_info.latency : 'NA',
 			    	sect_color_info_object = nocout_getSeverityColorIcon(sector_severity),
-			    	sector_polled_val = sectors[j].pl_info.value
+			    	sector_polled_val = sectors[j].pl_info.value,
+			    	idu_id = 'idu_' + sectors[j].ip_address,
+			    	bs_device_type = sectors[j].device_tech.toLowerCase().indexOf('wimax') > -1 ? 'IDU' : 'ODU';
 
 			    // if sector's severity is down then change edge color to red.
 			    if (severity_check.indexOf(sector_severity.toLowerCase()) > -1) {
-			    	sec_edge_color = '#b94a48';
+			    	sec_edge_color = idu_edge_color = '#b94a48';
 			    	sector_image_url = sector_down_image_url
 			    }
 
@@ -687,6 +746,24 @@ function convertToVis(response, required_dom_id) {
 				if (typeof sector_polled_val == 'undefined' || sector_polled_val == '') {
 					sector_polled_val = 'NA';
 				}
+
+				if (idu_id_list.indexOf(idu_id) == -1){
+
+			    	var idu_label = bs_device_type + '\n' +
+									'\nIP Address : ' + sectors[j].ip_address + 
+									'\nPacket Drop : ' + sector_pl +
+									'\nLatency : ' + sector_latency;
+
+					nodes.add({
+						id: idu_id,
+						label: idu_label,
+						title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
+						shape: 'image',
+						image: idu_image
+				    });
+
+			    	idu_id_list.push(idu_id)
+			    }
 
 			    nodes.add({
 			    	id: 'sec_' + sectors[j].sect_ip_id_title,
@@ -713,14 +790,26 @@ function convertToVis(response, required_dom_id) {
 				}
 			    edges.add({
 			    	from: 'BASESTATION_'+i,
-			    	to: 'sec_' + sectors[j].sect_ip_id_title,
+			    	to: idu_id,
 			    	color: bs_edge_color,
 			    	smooth: {
 						type: 'cubicBezier',
 						forceDirection: 'horizontal',
 						roundness : 0.5
 					}
-			    })
+			    });
+
+			    edges.add({
+				    	// from: 'BASESTATION_'+i,
+				    	from: idu_id,
+				    	to: 'sec_' + sectors[j].sect_ip_id_title,
+				    	color: idu_edge_color,
+				    	smooth: {
+							type: 'cubicBezier',
+							forceDirection: 'horizontal',
+							roundness : 0.5
+						}
+				    })
 
 
 			    for(k=0; k<sectors[j].sub_station.length; k++) {
