@@ -4,6 +4,7 @@ import json
 
 from django.db.models import Q
 from django.http import HttpResponse
+from device.models import DeviceTechnology
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 
@@ -24,6 +25,7 @@ class Select2Mixin(object):
         qs = super(Select2Mixin, self).get_queryset()
         org_id = self.request.GET.get('org', '0')
         sSearch = self.request.GET.get('sSearch', None)
+        tech_name = self.request.GET.get('tech_name', None)
         if str(org_id) == "0":
             # Create instance of 'NocoutUtilsGateway' class
             nocout_utils = NocoutUtilsGateway()
@@ -45,15 +47,29 @@ class Select2Mixin(object):
                 #we have a search for sector
                 #search for sector can happen on
                 #sector id, sector configured on
-                qs = qs.filter(Q(**{"%s__icontains" % self.obj_alias: sSearch})
-                               |
-                               Q(**{"sector_configured_on__ip_address__icontains" : sSearch})
-                               |
-                               Q(**{"sector_id__icontains" : sSearch})
+                qs = qs.filter(
+                    Q(**{
+                        "%s__icontains" % self.obj_alias: sSearch
+                    })
+                    |
+                    Q(**{
+                        "sector_configured_on__ip_address__icontains" : sSearch
+                    })
+                    |
+                    Q(**{
+                        "sector_id__icontains" : sSearch
+                    })
                 )
 
             else:
                 qs = qs.filter(Q(**{"%s__icontains" % self.obj_alias: sSearch}))
+
+        if tech_name:
+            try:
+                tech_id = DeviceTechnology.objects.get(name__iexact=tech_name).id
+                qs = qs.filter(device_technology=tech_id)
+            except Exception, e:
+                pass
 
         qs = qs.values(*required_values)
         return qs
@@ -61,7 +77,7 @@ class Select2Mixin(object):
     def get(self, request, *args, **kwargs):
         qs = self.get_queryset()
         if str(qs.model.__name__).strip().lower() == 'sector':
-            if 'obj_id' in self.request.GET:
+            if int(self.request.GET.get('obj_id', 0)):
                 sector_object = qs.get(id=self.request.GET['obj_id'])
                 response = [
                     "{0} ({1}) {2}".format(sector_object[self.obj_alias],
@@ -84,7 +100,7 @@ class Select2Mixin(object):
                     "items": list(qs)
                 }
         else:
-            if 'obj_id' in self.request.GET:
+            if int(self.request.GET.get('obj_id', 0)):
                 if str(qs.model.__name__).strip().lower() == 'device':
                     response = [qs.get(id=self.request.GET['obj_id'])[self.obj_alias], qs.get(id=self.request.GET['obj_id'])['ip_address']]
                 else:

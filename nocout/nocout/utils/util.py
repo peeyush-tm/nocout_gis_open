@@ -2402,6 +2402,10 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
                             bh.bh_switch_id = device_info.DEVICE_ID ) AND \
                         not isnull(bh.bh_configured_on_id) "
 
+    if type_rf == 'pe':
+        is_bh_condition = " (bh.pe_ip_id = device_info.DEVICE_ID) AND \
+                        not isnull(bh.bh_configured_on_id) "
+
     if not grouped_query:
         grouping_condition = ""
 
@@ -2639,7 +2643,7 @@ def get_maps_initial_data_query(bs_id=[]):
                 IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name), '|',
                 IF(isnull(ss.name), 'NA', ss.name), '|',
                 IF(isnull(customer.alias), 'NA', customer.alias), '|',
-                IF(isnull(backhaul.pe_ip), 'NA', backhaul.pe_ip), '|',
+                IF(isnull(bh_pe_device.ip_address) or bh_pe_device.ip_address = '', 'NA', bh_pe_device.ip_address), '|',
                 IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth), '|',
                 IF(isnull(ss_antenna.polarization), 'NA', ss_antenna.polarization), '|',
                 IF(isnull(ss_antenna.mount_type), 'NA', ss_antenna.mount_type), '|',
@@ -2703,6 +2707,10 @@ def get_maps_initial_data_query(bs_id=[]):
             device_device AS bh_device
         ON
             backhaul.bh_configured_on_id = bh_device.id
+        LEFT JOIN
+            device_device AS bh_pe_device
+        ON
+            backhaul.pe_ip_id = bh_pe_device.id
         LEFT JOIN
             device_devicetechnology AS bh_tech
         ON
@@ -2816,7 +2824,7 @@ def getBSInventoryInfo(base_station_id=None):
             IF(isnull(bh.bh_circuit_id), 'NA', bh.bh_circuit_id) AS bh_circuit_id,
             IF(isnull(bh.ttsl_circuit_id), 'NA', bh.ttsl_circuit_id) AS bh_ttsl_circuit_id,
             IF(isnull(bh.pe_hostname), 'NA', bh.pe_hostname) AS bh_pe_hostname,
-            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bh_pe_device.ip_address) or bh_pe_device.ip_address = '', 'NA', bh_pe_device.ip_address) AS pe_ip,
             IF(isnull(bs.bs_switch_id), 'NA', bs_switch_device.ip_address) AS bs_switch_ip,
             IF(isnull(bh.aggregator_id), 'NA', aggr_switch.ip_address) AS aggregation_switch,
             IF(isnull(bh.aggregator_port_name), 'NA', bh.aggregator_port_name) AS aggregation_switch_port,
@@ -2863,6 +2871,10 @@ def getBSInventoryInfo(base_station_id=None):
             device_device AS pop_device
         ON
             bh.pop_id = pop_device.id
+        LEFT JOIN
+            device_device AS bh_pe_device
+        ON
+            bh.pe_ip_id = bh_pe_device.id
         WHERE
             {0}
         '''.format(where_condition)
@@ -2893,7 +2905,7 @@ def getBHInventoryInfo(backhaul_id=None):
             IF(isnull(bh.bh_circuit_id), 'NA', bh.bh_circuit_id) AS bh_circuit_id,
             IF(isnull(bh.ttsl_circuit_id), 'NA', bh.ttsl_circuit_id) AS bh_ttsl_circuit_id,
             IF(isnull(bh.pe_hostname), 'NA', bh.pe_hostname) AS bh_pe_hostname,
-            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bh_pe_device.ip_address) or bh_pe_device.ip_address = '', 'NA', bh_pe_device.ip_address) AS pe_ip,
             IF(isnull(bs.bs_switch_id), 'NA', bs_switch_device.ip_address) AS bs_switch_ip,
             IF(isnull(bh.aggregator_id), 'NA', aggr_switch.ip_address) AS aggregation_switch,
             IF(isnull(bh.aggregator_port_name), 'NA', bh.aggregator_port_name) AS aggregation_switch_port,
@@ -2940,6 +2952,10 @@ def getBHInventoryInfo(backhaul_id=None):
             device_device AS pop_device
         ON
             bh.pop_id = pop_device.id
+        LEFT JOIN
+            device_device AS bh_pe_device
+        ON
+            bh.pe_ip_id = bh_pe_device.id
         WHERE
             {0}
         '''.format(where_condition)
@@ -2966,7 +2982,7 @@ def getSSInventoryInfo(sub_station_id=None):
             IF(isnull(ss.device_id), 'NA', ss_device.ip_address) AS ss_ip,
             IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS cktid,
             IF(isnull(customer.alias), 'NA', customer.alias) AS customer_alias,
-            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bh_pe_device.ip_address) or bh_pe_device.ip_address = '', 'NA', bh_pe_device.ip_address) AS pe_ip,
             IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth) AS qos_bandwidth,
             IF(isnull(antenna.height), 'NA', antenna.height) AS antenna_height,
             IF(isnull(antenna.polarization), 'NA', antenna.polarization) AS polarisation,
@@ -3015,6 +3031,10 @@ def getSSInventoryInfo(sub_station_id=None):
             inventory_backhaul AS bh
         ON
             bs.backhaul_id = bh.id
+        LEFT JOIN
+            device_device AS bh_pe_device
+        ON
+            bh.pe_ip_id = bh_pe_device.id
         LEFT JOIN
             inventory_customer AS customer
         ON
@@ -3065,7 +3085,7 @@ def getSectorInventoryInfo(sector_id=None):
             IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS cktid,
             IF(isnull(customer.alias), 'NA', customer.alias) AS customer_alias,
             IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth) AS qos_bandwidth,
-            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bh_pe_device.ip_address) or bh_pe_device.ip_address = '', 'NA', bh_pe_device.ip_address) AS pe_ip,
             IF(isnull(ss_antenna.mount_type), 'NA', ss_antenna.mount_type) AS mount_type,
             IF(isnull(ss.cable_length), 'NA', ss.cable_length) AS cable_length,
             IF((isnull(ss.ethernet_extender) OR ss.ethernet_extender = ' '), 'NA', ss.ethernet_extender) AS ethernet_extender,
@@ -3099,6 +3119,10 @@ def getSectorInventoryInfo(sector_id=None):
             inventory_backhaul AS bh
         ON
             bs.backhaul_id = bh.id
+        LEFT JOIN
+            device_device AS bh_pe_device
+        ON
+            bh.pe_ip_id = bh_pe_device.id
         LEFT JOIN
             device_deviceport AS sector_port
         ON

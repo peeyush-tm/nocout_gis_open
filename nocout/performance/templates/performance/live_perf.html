@@ -5,7 +5,11 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-bar-chart'></i> Performance Reports" "javascript:;" %}
-    {% breadcrumb_safe page_type|title|add:" Live" "performance_listing" page_type %}
+    {% if page_type == 'pe' %}
+        {% breadcrumb_safe "PE Live" "performance_listing" page_type %}
+    {% else %}
+        {% breadcrumb_safe page_type|title|add:" Live" "performance_listing" page_type %}
+    {% endif %}
     {% breadcrumb_safe "PTP" "performance_listing" page_type %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -22,7 +26,7 @@
             <h4><i class="fa fa-table"></i> {{ page_type|upper }} LISTING</h4>
         </div>
 
-        {% ifequal page_type 'other' %}
+        {% if page_type == 'other' %}
             <div id="tableContainer" class="box-body">
                 <div class="tabbable header-tabs">
                     <ul class="nav nav-tabs">
@@ -57,7 +61,13 @@
                     </div>
                 </div>
             </div>
-
+        {% elif page_type == 'pe' %}
+            <div id="tableContainer" class="box-body">
+                <table id="{{ page_type|slugify|lower }}_performancelist" class="datatable table table-striped table-bordered table-hover">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         {% else %}
             <div id="tableContainer" class="box-body">
                 <div class="tabbable header-tabs">
@@ -100,7 +110,7 @@
                     </div>
                 </div>
             </div>
-        {% endifequal %}
+        {% endif %}
 
     </div>
     <div class="clearfix"></div>
@@ -171,7 +181,23 @@
                     /*Trigger click event on active tab to load its data*/
                     $("#" + ajax_url_get_parameter + "_backhaul_tab").trigger('click', true);
                 }
+            } else if(ajax_url_get_parameter == 'pe') {
+                var new_ajax_url_get_parameter = 'other';
+                var ajax_url = '{% url "LivePerformanceListing" %}' + '?page_type=' + new_ajax_url_get_parameter + '&other_type=pe';
 
+                // Call 'createDataTable' to populate PE performance listing
+                dataTableInstance.createDataTable(
+                    ajax_url_get_parameter+"_performancelist",
+                    gridHeadersObj,
+                    ajax_url,
+                    destroy,
+                    'PE Listing',
+                    'performance',
+                    'LivePerformance',
+                    'LivePerformanceListing',
+                    "{'page_type': '"+new_ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                    "{'page_type': '"+new_ajax_url_get_parameter+"', 'other_type': 'pe', 'report_title' : 'PE Listing', 'download_excel': 'yes' }"
+                );
             } else {
 
                 var network_wifi_title = "Network Live - WiMAX",

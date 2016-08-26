@@ -210,6 +210,50 @@ $(document).ready(function() {
             return device.device_alias;
         }
     });
+    
+    $("#id_pe_ip").select2({
+        placeholder: "Search for a device.",
+        minimumInputLength: 2,
+        width: "resolve",
+        ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+            url: "/device/select2/elements/",
+            dataType: 'json',
+            quietMillis: 250,
+            data: function (term, page) {
+                var org_id = $("#id_organization").val();
+                return {
+                    sSearch: term, // search term
+                    org: org_id,
+                    tech_name: 'pe'
+                };
+            },
+            results: function (data, page) { // parse the results into the format expected by Select2.
+                // since we are using custom formatting functions we do not need to alter the remote JSON data
+                return { results: data.items };
+            },
+            cache: false
+        },
+        initSelection: function(element, callback) {
+            // the input tag has a value attribute preloaded that points to a preselected repository's id
+            // this function resolves that id attribute to an object that select2 can render
+            // using its formatResult renderer - that way the repository name is shown preselected
+            var id = $(element).val();
+            if (id !== "") {
+                $.ajax("/device/select2/elements/", {
+                    dataType: "json",
+                    data: {'obj_id': id}
+                }).done(function(data) {
+                    callback({id: id, device_alias: data[0]});
+                });
+            }
+        },
+        formatResult: function(device) {
+            return device.device_alias;
+        },
+        formatSelection: function(device) {
+            return device.device_alias;
+        }
+    });
 });
 
 /**

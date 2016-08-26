@@ -180,12 +180,14 @@ class BackhaulForm(forms.ModelForm):
         self.fields['bh_switch'].empty_label = 'Select'
         self.fields['pop'].empty_label = 'Select'
         self.fields['aggregator'].empty_label = 'Select'
+        self.fields['pe_ip'].empty_label = 'Select'
         self.fields['bh_configured_on'].required = True
 
         self.fields['bh_configured_on'].widget = forms.HiddenInput()
         self.fields['bh_switch'].widget = forms.HiddenInput()
         self.fields['pop'].widget = forms.HiddenInput()
         self.fields['aggregator'].widget = forms.HiddenInput()
+        self.fields['pe_ip'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
@@ -1633,6 +1635,8 @@ class WizardBackhaulForm(BackhaulForm):
         super(WizardBackhaulForm, self).__init__(*args, **kwargs)
 
         self.fields.pop('dr_site')
+        # self.fields['pe_ip'].empty_label = 'Select'
+        # self.fields['pe_ip'].widget = forms.HiddenInput()
 
     class Meta:
         """

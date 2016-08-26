@@ -484,6 +484,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
             type_rf = 'sector'
         elif page_type == 'customer':
             type_rf = 'ss'
+        elif page_type == 'pe':
+            type_rf = 'pe'
         else:
             type_rf = other_type
                 
@@ -536,10 +538,15 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         """
         
         page_type = self.request.GET['page_type']
+        other_type = self.request.GET.get('other_type')
         alert_page_type = page_type
 
         # In case of other page update page type to 'network' for alert center link
         if page_type not in ["customer", "network"]:
+            alert_page_type = 'network'
+
+        if other_type == 'pe':
+            page_type = 'pe'
             alert_page_type = 'network'
 
         if qs:
@@ -1210,6 +1217,10 @@ class InventoryDeviceStatus(View):
             type_of_device = "backhaul"
             type_rf = 'backhaul'
             page_type = 'other'
+        elif device.pe_ip.exists():
+            type_of_device = "other"
+            type_rf = 'pe'
+            page_type = 'pe'
         elif device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists():
             is_other = True
             type_of_device = "other"
@@ -1275,7 +1286,7 @@ class InventoryDeviceStatus(View):
                     device_name_list.append(sector_device_name[0]['sector_configured_on__device_name'])
 
         if devices_info_list:
-            if device_tech in ['WiMAX'] or page_type == 'other':
+            if device_tech in ['WiMAX'] or page_type in ['other', 'pe']:
                 is_single_call = True
             else:
                 is_single_call = False
@@ -1288,8 +1299,6 @@ class InventoryDeviceStatus(View):
                 device_name_list=device_name_list,
                 is_single_call=is_single_call
             )
-
-            # list_devices_invent_info = perf_utils.prepare_gis_devices(devices_info_list, page_type=None)
 
             if list_devices_invent_info:
                 lowered_device_tech = list_devices_invent_info[0]['device_technology'].lower()
@@ -1340,16 +1349,31 @@ class InventoryDeviceStatus(View):
 
                 # If SS device & of PMP or Wimax Technology then fetch the qos_bandwidth from distributed DB
                 if page_type == 'customer' and lowered_device_tech in ['pmp', 'wimax']:
+                    
+                    list_devices_invent_info[0]['polled_sector_id'] = ''
+
                     service_name = ''
                     ds_name = ''
+                    model_name = InventoryStatus
+                    invent_machine_name = machine_name
+                    sector_id_service_name = ''
+                    sector_id_ds_name = ''
                     
                     # GET Service & DS as per the technology
                     if lowered_device_tech in ['pmp']:
                         service_name = 'cambium_qos_invent'
                         ds_name = 'bw_dl_sus_rate'
+
+                        sector_id_service_name = 'cambium_ss_sector_id_invent'
+                        sector_id_ds_name = 'ss_sector_id'
+
                     elif lowered_device_tech in ['wimax']:
                         service_name = 'wimax_qos_invent'
                         ds_name = 'dl_qos'
+
+                        model_name = ServiceStatus
+                        sector_id_service_name = 'wimax_ss_sector_id'
+                        sector_id_ds_name = 'ss_sector_id'
 
                     # If we have device_name, machine_name, service & db only then proceed
                     if device_name and machine_name and service_name and ds_name:
@@ -1361,6 +1385,18 @@ class InventoryDeviceStatus(View):
 
                         if invent_status_obj and invent_status_obj[0].current_value:
                             list_devices_invent_info[0]['qos_bw'] = invent_status_obj[0].current_value
+
+                    if model_name and device_name and invent_machine_name and sector_id_service_name and sector_id_ds_name:
+                        sector_invent_obj = model_name.objects.filter(
+                            device_name=device_name,
+                            service_name__iexact=sector_id_service_name,
+                            data_source__iexact=sector_id_ds_name
+                        ).order_by('-sys_timestamp').using(
+                            alias=invent_machine_name
+                        )
+
+                        if sector_invent_obj:
+                            list_devices_invent_info[0]['polled_sector_id'] = sector_invent_obj[0].current_value
 
         # Format fetched inventory data in desired format
         resultant_data = self.prepareInventoryStatusResult(
@@ -1671,8 +1707,8 @@ class InventoryDeviceServiceDataSource(View):
                         result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
         
-        result['data']['objects']['availability_tab']["info"].append(
-            {
+        if not device.pe_ip.exists():
+            result['data']['objects']['availability_tab']["info"].append({
                 'name': 'availability',
                 'title': 'Availability',
                 'url': 'performance/service/availability/service_data_source/availability/device/' +
@@ -1680,20 +1716,22 @@ class InventoryDeviceServiceDataSource(View):
                 'active': 0
             })
 
-        result['data']['objects']['topology_tab']["info"].append({
-            'name': 'topology',
-            'title': 'Topology',
-            'url': 'performance/service/topology/service_data_source/topology/device/' +
-                   str(device_id),
-            'active': 0
-        })
+        if not device.pe_ip.exists():
+            result['data']['objects']['topology_tab']["info"].append({
+                'name': 'topology',
+                'title': 'Topology',
+                'url': 'performance/service/topology/service_data_source/topology/device/' +
+                       str(device_id),
+                'active': 0
+            })
 
-        result['data']['objects']['utilization_top_tab']["info"].append({
-            'name': 'utilization_top',
-            'title': 'Utilization',
-            'url': 'performance/servicedetail/util/device/'+str(device_id),
-            'active': 0
-        })
+        if not device.pe_ip.exists():
+            result['data']['objects']['utilization_top_tab']["info"].append({
+                'name': 'utilization_top',
+                'title': 'Utilization',
+                'url': 'performance/servicedetail/util/device/'+str(device_id),
+                'active': 0
+            })
         
         custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))       
 
@@ -7247,7 +7285,13 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
                 "value": "NA",
                 "url": ""
             },
-            polled_freq_obj
+            polled_freq_obj,
+            {
+                "name": "polled_sector_id",
+                "title": "Sector ID",
+                "value": "NA",
+                "url": ""
+            }
         ]
 
     elif type_of_device in ['backhaul', 'other']:
@@ -7621,7 +7665,7 @@ class GetTopology(View):
                         IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                         IF(isnull(bs.backhaul_id), 'NA', bs.backhaul_id) AS bh_id,
                         IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                        IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                        IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                         IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                         IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
@@ -7682,6 +7726,10 @@ class GetTopology(View):
                         inventory_backhaul AS backhaul
                     ON
                         bs.backhaul_id = backhaul.id
+                    LEFT JOIN
+                        device_device AS bh_pe_device
+                    ON
+                        backhaul.pe_ip_id = bh_pe_device.id
                     LEFT JOIN
                         device_device AS bs_convertor_device
                     ON
@@ -7832,7 +7880,7 @@ class GetTopology(View):
                         IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                         IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                         IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                        IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                        IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                         IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                         IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
@@ -7879,6 +7927,10 @@ class GetTopology(View):
                         inventory_backhaul AS backhaul
                     ON
                         bs.backhaul_id = backhaul.id
+                    LEFT JOIN
+                        device_device AS bh_pe_device
+                    ON
+                        backhaul.pe_ip_id = bh_pe_device.id
                     LEFT JOIN
                         device_device AS bs_convertor_device
                     ON
@@ -7974,7 +8026,7 @@ class GetTopology(View):
                     IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                     IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                     IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                    IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                    IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                     IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                     IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                     IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
@@ -8024,6 +8076,10 @@ class GetTopology(View):
                     inventory_backhaul AS backhaul
                 ON
                     bs.backhaul_id = backhaul.id
+                LEFT JOIN
+                    device_device AS bh_pe_device
+                ON
+                    backhaul.pe_ip_id = bh_pe_device.id
                 LEFT JOIN
                     device_device AS bs_convertor_device
                 ON
@@ -8153,7 +8209,7 @@ class GetTopology(View):
                     IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                     IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                     IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                    IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                    IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                     IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                     IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                     IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
@@ -8203,6 +8259,10 @@ class GetTopology(View):
                     inventory_backhaul AS backhaul
                 ON
                     bs.backhaul_id = backhaul.id
+                LEFT JOIN
+                    device_device AS bh_pe_device
+                ON
+                    backhaul.pe_ip_id = bh_pe_device.id
                 LEFT JOIN
                     device_device AS bs_convertor_device
                 ON
