@@ -9355,7 +9355,8 @@ class PingStabilityTestListing(BaseDatatableView):
         'technology__alias',
         'time_duration',
         'created_at',
-        'email_ids'
+        'email_ids',
+        'file_path'
     ]
     order_columns = columns
 
@@ -9394,8 +9395,16 @@ class PingStabilityTestListing(BaseDatatableView):
             if dct.get('status') == 1:
                 dct['status'] = 'Success'
                 if dct.get('file_path'):
+                    if '/media/' in dct.get('file_path'):
+                        try:
+                            dct['file_path'] = '/media/'+dct.get('file_path').split('/media/')[1]
+                        except Exception, e:
+                            dct['file_path'] = ''
+                    else:
+                        dct['file_path'] = ''
+
                     dct.update(
-                        action='<a href="{0}" target="_blank"><i class="fa fa-download text-dark"> \
+                        action='<a href="{0}" target="_blank"><i class="fa fa-download text-primary"> \
                                 </i></a>'.format(dct.get('file_path'))
                     )
             else:
