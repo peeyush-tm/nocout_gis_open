@@ -48,7 +48,7 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 	"""
 
 
-        db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
+        #db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
         service = "availability"
 	availability_list= []
         end_time = datetime.now()
@@ -84,12 +84,15 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 	try:
 		redis_obj = db_ops_module.RedisInterface()
 		key = nocout_site_name + "_network"
+		print "Before redis ",time.ctime()
 		result=redis_obj.zrangebyscore_dcompress(key,start_time,end_time)
+		print "After redis ",time.ctime()
 	except Exception,e:
 		print e
 	host_down_result = {}
-	down_devices = filter(lambda x: x.get('data')[0].get('value') == "100" ,result)
-        for entry in result:
+	pl_devices = filter(lambda x: x.get('ds') == "pl" ,result)
+        print start_time,end_time
+        for entry in pl_devices:
 		if (entry['host'],entry['ip_address']) in host_down_result:
 			if entry.get('data')[0].get('value') == "100":
 				host_down_result[(entry['host'],entry['ip_address'])] =  host_down_result.get((entry['host'],entry['ip_address'])) + 1
@@ -116,10 +119,12 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 						data_source=ds,severity=host_state,site_name=site,warning_threshold=0,
 						critical_threshold=0,ip_address=str(key[1]))
 		availability_list.append(availability_dict)	
+	print "After for loop ",time.ctime()
 	key = nocout_site_name + "_availability" 
 	doc_len_key = key + "_len" 
 	memc_obj=db_ops_module.MemcacheInterface()
 	exp_time =1440 # 1 day
+	print time.ctime()
 	print len(availability_list)
 	memc_obj.store(key,availability_list,doc_len_key,exp_time,chunksize=1000)
 		#mongo_module.mongo_db_insert(db,availability_dict,"availability")
