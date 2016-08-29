@@ -1706,15 +1706,13 @@ class InventoryDeviceServiceDataSource(View):
                     else:
                         result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
-        
-        if not device.pe_ip.exists():
-            result['data']['objects']['availability_tab']["info"].append({
-                'name': 'availability',
-                'title': 'Availability',
-                'url': 'performance/service/availability/service_data_source/availability/device/' +
-                       str(device_id),
-                'active': 0
-            })
+        result['data']['objects']['availability_tab']["info"].append({
+            'name': 'availability',
+            'title': 'Availability',
+            'url': 'performance/service/availability/service_data_source/availability/device/' +
+                   str(device_id),
+            'active': 0
+        })
 
         if not device.pe_ip.exists():
             result['data']['objects']['topology_tab']["info"].append({
