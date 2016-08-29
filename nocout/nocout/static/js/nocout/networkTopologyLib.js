@@ -66,6 +66,7 @@ function convertToVis(response, required_dom_id) {
 	        hierarchical: {
 	          enabled:true,
 	          levelSeparation: 400,
+	          nodeSpacing: 200,
 	          direction: 'LR',   // UD, DU, LR, RL
 	          sortMethod: 'directed' // hubsize, directed
 	      }
