@@ -5299,6 +5299,8 @@ def getPageType(deviceObj):
                 page_type = 'network'
             else:
                 page_type = 'customer'
+        elif deviceObj.pe_ip.exists():
+            page_type = 'pe'
         else:
             page_type = 'other'
 

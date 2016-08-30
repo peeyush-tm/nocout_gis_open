@@ -1706,15 +1706,13 @@ class InventoryDeviceServiceDataSource(View):
                     else:
                         result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
-        
-        if not device.pe_ip.exists():
-            result['data']['objects']['availability_tab']["info"].append({
-                'name': 'availability',
-                'title': 'Availability',
-                'url': 'performance/service/availability/service_data_source/availability/device/' +
-                       str(device_id),
-                'active': 0
-            })
+        result['data']['objects']['availability_tab']["info"].append({
+            'name': 'availability',
+            'title': 'Availability',
+            'url': 'performance/service/availability/service_data_source/availability/device/' +
+                   str(device_id),
+            'active': 0
+        })
 
         if not device.pe_ip.exists():
             result['data']['objects']['topology_tab']["info"].append({
@@ -7700,6 +7698,7 @@ class GetTopology(View):
                         'NA' AS far_end_ss_device_type,
                         'NA' AS far_end_ss_device_name,
                         'NA' AS far_end_ss_device_ip,
+                        IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
                         IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
                         IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
                         IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
@@ -7880,6 +7879,7 @@ class GetTopology(View):
                         IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                         IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                         IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
+                        IF(isnull(bh_pe_device.id), 'NA', bh_pe_device.id) AS pe_id,
                         IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                         IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
@@ -7905,6 +7905,7 @@ class GetTopology(View):
                         'NA' AS ss_device_type,
                         'NA' AS ss_device_name,
                         'NA' AS ss_device_ip,
+                        IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
                         IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
                         IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
                         IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
@@ -8026,6 +8027,7 @@ class GetTopology(View):
                     IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                     IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                     IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
+                    IF(isnull(bh_pe_device.id), 'NA', bh_pe_device.id) AS pe_id,
                     IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                     IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                     IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
@@ -8053,6 +8055,7 @@ class GetTopology(View):
                     IF(isnull(ss_device_type.name), 'NA', ss_device_type.name) AS ss_device_type,
                     IF(isnull(ss_device.device_name), 'NA', ss_device.device_name) AS ss_device_name,
                     IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address) AS ss_device_ip,
+                    IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
                     IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
                     IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
                     IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
@@ -8209,6 +8212,7 @@ class GetTopology(View):
                     IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                     IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                     IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
+                    IF(isnull(bh_pe_device.id), 'NA', bh_pe_device.id) AS pe_id,
                     IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                     IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                     IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
@@ -8237,6 +8241,7 @@ class GetTopology(View):
                     'NA' AS ss_device_type,
                     'NA' AS ss_device_name,
                     'NA' AS ss_device_ip,
+                    IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
                     IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
                     IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
                     IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
@@ -8347,6 +8352,14 @@ class GetTopology(View):
 
         is_init = False
 
+        # In case of No PL Info available
+        blank_pl_info = {
+            "severity" : "",
+            "value": "",
+            "packet_loss": "",
+            "latency": ""
+        }
+
         # converting query result in required format 
 
         if have_ptp_bh:
@@ -8358,6 +8371,21 @@ class GetTopology(View):
             for bs in result_of_query:
                 if bs.get('bs_id') not in bs_ids:
                     bs_ids.append(bs.get('bs_id'))
+                    if bs.get('pe_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('pe_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('pe_id')))
+                            pe_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            pe_pl_info = blank_pl_info
+                    else:
+                        pe_pl_info = blank_pl_info
+
                     if bs.get('bh_device_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
@@ -8369,12 +8397,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_pl_info = blank_pl_info
+                    else:
+                        bh_pl_info = blank_pl_info
+
                     if bs.get('bh_aggregator_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_aggregator_id')))
@@ -8386,12 +8412,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_aggr_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_aggr_pl_info = blank_pl_info
+                    else:
+                        bh_aggr_pl_info = blank_pl_info
+
                     if bs.get('bh_pop_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_pop_id')))
@@ -8403,12 +8427,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_pop_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_pop_pl_info = blank_pl_info
+                    else:
+                        bh_pop_pl_info = blank_pl_info
+
                     if bs.get('bs_convertor_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bs_convertor_id')))
@@ -8420,12 +8442,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bs_convertor_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bs_convertor_pl_info = blank_pl_info
+                    else:
+                        bs_convertor_pl_info = blank_pl_info
+
                     if bs.get('far_end_bs_switch_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('far_end_bs_switch_id')))
@@ -8437,12 +8457,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            far_end_bs_switch_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            far_end_bs_switch_pl_info = blank_pl_info
+                    else:
+                        far_end_bs_switch_pl_info = blank_pl_info
+
                     if bs.get('near_end_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('near_end_id')))
@@ -8454,12 +8472,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            near_end_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            near_end_pl_info = blank_pl_info
+                    else:
+                        near_end_pl_info = blank_pl_info
+
                     if bs.get('far_end_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('far_end_id')))
@@ -8471,12 +8487,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            far_end_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            far_end_pl_info = blank_pl_info
+                    else:
+                        far_end_pl_info = blank_pl_info
+
                     if not is_init:
                         resultant_dict = {
                             "bh_id": bs.get('bh_id'),
@@ -8500,6 +8514,7 @@ class GetTopology(View):
                             "far_end_ip" : bs.get('far_end_ip'),
                             "near_end_ip" : bs.get('near_end_ip'),
                             "bs_switch_pl_info": bh_pl_info,
+                            "pe_pl_info": pe_pl_info,
                             "bh_aggr_pl_info": bh_aggr_pl_info,
                             "bh_pop_pl_info": bh_pop_pl_info,
                             "bs_convertor_pl_info": bs_convertor_pl_info,
@@ -8507,6 +8522,7 @@ class GetTopology(View):
                             "near_end_pl_info" : near_end_pl_info,
                             "far_end_pl_info" : far_end_pl_info,
                             "bs_switch_name" : bs.get('bs_switch_name'),
+                            "pe_name" : bs.get('pe_name'),
                             "bs_convertor_device_name" : bs.get('bs_convertor_device_name'),
                             "bh_aggregator_device_name" : bs.get('bh_aggregator_device_name'),
                             "bh_pop_device_name" : bs.get('bh_pop_device_name'),
@@ -8548,12 +8564,9 @@ class GetTopology(View):
                                     "latency" : latency if latency else 'NA'
                                 }
                             except Exception, e:
-                                far_end_sect_pl_info = {
-                                    "severity" : "",
-                                    "value": "",
-                                    "packet_loss": "",
-                                    "latency": ""
-                                }
+                                far_end_sect_pl_info = blank_pl_info
+                        else:
+                            far_end_sect_pl_info = blank_pl_info
                         
 
                         sector_dict[str(bs.get('far_end_sect_id'))] = {
@@ -8582,12 +8595,9 @@ class GetTopology(View):
                                     "latency" : latency if latency else 'NA'
                                 }
                             except Exception, e:
-                                far_end_ss_pl_info = {
-                                    "severity" : "",
-                                    "value": "",
-                                    "packet_loss": "",
-                                    "latency": ""
-                                }
+                                far_end_ss_pl_info = blank_pl_info
+                        else:
+                            far_end_ss_pl_info = blank_pl_info
                         # Only appending the selected substaion
                         if bs.get('far_end_ss_device_id') == current_device_id:
                             sector_dict[str(bs.get('far_end_sect_id'))]['sub_station'].append({
@@ -8629,9 +8639,25 @@ class GetTopology(View):
                 })            
 
         else:
+
             for bs in result_of_query:
                 if bs.get('bs_id') not in bs_ids:
                     bs_ids.append(bs.get('bs_id'))
+                    if bs.get('pe_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('pe_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('pe_id')))
+                            pe_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            pe_pl_info = blank_pl_info
+                    else:
+                        pe_pl_info = blank_pl_info
+
                     if bs.get('bh_device_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
@@ -8643,12 +8669,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_pl_info = blank_pl_info
+                    else:
+                        bh_pl_info = blank_pl_info
+
                     if bs.get('bh_aggregator_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_aggregator_id')))
@@ -8660,12 +8684,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_aggr_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_aggr_pl_info = blank_pl_info
+                    else:
+                        bh_aggr_pl_info = blank_pl_info
+
                     if bs.get('bh_pop_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_pop_id')))
@@ -8677,12 +8699,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_pop_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_pop_pl_info = blank_pl_info
+                    else:
+                        bh_pop_pl_info = blank_pl_info
+
                     if bs.get('bs_convertor_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bs_convertor_id')))
@@ -8694,12 +8714,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bs_convertor_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bs_convertor_pl_info = blank_pl_info
+                    else:
+                        bs_convertor_pl_info = blank_pl_info
+
                     if not is_init:
                         resultant_dict = {
                             "bh_id": bs.get('bh_id'),
@@ -8718,10 +8736,12 @@ class GetTopology(View):
                             "bs_convertor_port" : bs.get('bs_convertor_port'),
                             "bs_switch_port" : bs.get('bs_switch_port'),
                             "far_end_bs_switch_port" : bs.get('far_end_bs_switch_port'),
+                            "pe_pl_info": pe_pl_info,
                             "bs_switch_pl_info": bh_pl_info,
                             "bh_aggr_pl_info": bh_aggr_pl_info,
                             "bh_pop_pl_info": bh_pop_pl_info,
                             "bs_convertor_pl_info": bs_convertor_pl_info,
+                            "pe_name" : bs.get('pe_name'),
                             "bs_switch_name" : bs.get('bs_switch_name'),
                             "bs_convertor_device_name" : bs.get('bs_convertor_device_name'),
                             "bh_aggregator_device_name" : bs.get('bh_aggregator_device_name'),
@@ -8759,12 +8779,9 @@ class GetTopology(View):
                                     "latency" : latency if latency else 'NA'
                                 }
                             except Exception, e:
-                                sect_pl_info = {
-                                    "severity" : "",
-                                    "value": "",
-                                    "packet_loss": "",
-                                    "latency": ""
-                                }
+                                sect_pl_info = blank_pl_info
+                        else:
+                            sect_pl_info = blank_pl_info
                         
 
                         sector_dict[str(bs.get('sect_id'))] = {
@@ -8793,12 +8810,9 @@ class GetTopology(View):
                                     "latency" : latency if latency else 'NA'
                                 }
                             except Exception, e:
-                                ss_pl_info = {
-                                    "severity" : "",
-                                    "value": "",
-                                    "packet_loss": "",
-                                    "latency": ""
-                                }
+                                ss_pl_info = blank_pl_info
+                        else:
+                            ss_pl_info = blank_pl_info
                         # Only appending the selected substaion
                         if bs.get('ss_device_id') == current_device_id:
                             sector_dict[str(bs.get('sect_id'))]['sub_station'].append({
@@ -9371,7 +9385,8 @@ class PingStabilityTestListing(BaseDatatableView):
         'technology__alias',
         'time_duration',
         'created_at',
-        'email_ids'
+        'email_ids',
+        'file_path'
     ]
     order_columns = columns
 
@@ -9410,8 +9425,16 @@ class PingStabilityTestListing(BaseDatatableView):
             if dct.get('status') == 1:
                 dct['status'] = 'Success'
                 if dct.get('file_path'):
+                    if '/media/' in dct.get('file_path'):
+                        try:
+                            dct['file_path'] = '/media/'+dct.get('file_path').split('/media/')[1]
+                        except Exception, e:
+                            dct['file_path'] = ''
+                    else:
+                        dct['file_path'] = ''
+
                     dct.update(
-                        action='<a href="{0}" target="_blank"><i class="fa fa-download text-dark"> \
+                        action='<a href="{0}" target="_blank"><i class="fa fa-download text-primary"> \
                                 </i></a>'.format(dct.get('file_path'))
                     )
             else:
