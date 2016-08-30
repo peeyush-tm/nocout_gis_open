@@ -674,6 +674,7 @@ class GetPerfomance(View):
         bs_alias = None
         bs_id = list()
         is_radwin5 = 0
+        is_others_other_tab = 0
         is_viewer_flag = 0
         user_role = self.request.user
         sector_configured_on_id = []
@@ -683,6 +684,17 @@ class GetPerfomance(View):
                 is_radwin5 = 1
         except Exception, e:
             is_radwin5 = 0
+
+        '''
+        This flag is needed because if device is in Other Live's Other tab
+        then hide Topology view tab
+        '''
+        try:
+            backhaul_qs = Backhaul.objects.filter(bh_configured_on__id=device.id)
+            if not backhaul_qs.exists():
+                is_others_other_tab = 1
+        except Exception, e:
+            pass
 
         try:
             if in_group(self.request.user, 'viewer'):
@@ -835,6 +847,7 @@ class GetPerfomance(View):
             'device': device,
             'realdevice': realdevice,
             'bs_alias' : bs_alias,
+            'is_others_other_tab': is_others_other_tab,
             'bs_id' : json.dumps(bs_id),
             'sector_configured_on_id' : json.dumps(sector_configured_on_id),
             'get_status_url': inventory_status_url,
