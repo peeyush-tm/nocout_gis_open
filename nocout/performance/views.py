@@ -8371,7 +8371,6 @@ class GetTopology(View):
             for bs in result_of_query:
                 if bs.get('bs_id') not in bs_ids:
                     bs_ids.append(bs.get('bs_id'))
-                    print bs.get('pe_id')
                     if bs.get('pe_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('pe_id')))
