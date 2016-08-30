@@ -175,7 +175,7 @@ function convertToVis(response, required_dom_id) {
 	   PE -> Aggr_Switch -> Pop_Convertor -> Bs_Convertor -> Bs_Switch -> BS -> Sectors -> Sub-stations */
 
 	if (severity_check.indexOf(pe_severity.toLowerCase()) > -1){
-		aggr_sw_edge_color = '#b94a48';
+		pe_edge_color = '#b94a48';
 	}
 
 	if (severity_check.indexOf(bh_aggr_switch_severity.toLowerCase()) > -1){
