@@ -753,6 +753,7 @@ function convertToVis(response, required_dom_id) {
 			    	sector_latency = sectors[j].pl_info.latency ? sectors[j].pl_info.latency : 'NA',
 			    	sect_color_info_object = nocout_getSeverityColorIcon(sector_severity),
 			    	sector_polled_val = sectors[j].pl_info.value,
+			    	show_sector = true,
 			    	idu_id = 'idu_' + sectors[j].ip_address;
 			    
 			    if(sectors[j].device_tech.toLowerCase().indexOf('wimax') > -1){
@@ -761,6 +762,7 @@ function convertToVis(response, required_dom_id) {
 			    	var bs_device_type = 'ODU';
 			    } else if(['ptp', 'p2p', 'P2P'].indexOf(sectors[j].device_tech.toLowerCase()) > -1){
 			    	var bs_device_type = 'Near End';
+			    		show_sector = false
 			    }
 
 			    // if sector's severity is down then change edge color to red.
@@ -792,13 +794,15 @@ function convertToVis(response, required_dom_id) {
 			    	idu_id_list.push(idu_id)
 			    }
 
-			    nodes.add({
-			    	id: 'sec_' + sectors[j].sect_ip_id_title,
-			    	label: createNodeLabel(sectors[j].sect_ip_id_title, sectors[j].sect_port, sector_pl, sector_latency),
-			        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
-			        shape: 'image',
-			        image: sector_image_url
-			    })
+			    if (show_sector){
+				    nodes.add({
+				    	id: 'sec_' + sectors[j].sect_ip_id_title,
+				    	label: createNodeLabel(sectors[j].sect_ip_id_title, sectors[j].sect_port, sector_pl, sector_latency),
+				        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
+				        shape: 'image',
+				        image: sector_image_url
+				    });
+			    }
 
 			    // sectors are on configured on same IDU device so they have same device id
 			    if (pl_device_list.indexOf(sectors[j].device_name) ==-1) {
@@ -826,17 +830,17 @@ function convertToVis(response, required_dom_id) {
 					}
 			    });
 
-			    edges.add({
-				    	// from: 'BASESTATION_'+i,
-				    	from: idu_id,
-				    	to: 'sec_' + sectors[j].sect_ip_id_title,
-				    	color: idu_edge_color,
-				    	smooth: {
-							type: 'cubicBezier',
-							forceDirection: 'horizontal',
-							roundness : 0.5
-						}
-				    })
+			  //   edges.add({
+			  //   	// from: 'BASESTATION_'+i,
+			  //   	from: idu_id,
+			  //   	to: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : 
+			  //   	color: idu_edge_color,
+			  //   	smooth: {
+					// 	type: 'cubicBezier',
+					// 	forceDirection: 'horizontal',
+					// 	roundness : 0.5
+					// }
+			  //   });
 
 
 			    for(k=0; k<sectors[j].sub_station.length; k++) {
@@ -860,6 +864,10 @@ function convertToVis(response, required_dom_id) {
 						image:  ss_image //sectors[j].sub_station[k].icon
 					})
 
+					if (!show_sector){
+						var unique_ss_id = 'ss_' + sectors[j].sub_station[k].device_name;
+					}
+
 					pl_device_list.push(sectors[j].sub_station[k].device_name)
 					device_nodeId_mapping[sectors[j].sub_station[k].device_name] = 'ss_' + sectors[j].sub_station[k].device_name
 					ip_port_dict['ss_' + sectors[j].sub_station[k].device_name] = {
@@ -872,8 +880,23 @@ function convertToVis(response, required_dom_id) {
 			        	highlight_id = sectors[j].sub_station[k].device_name
 					}
 
-			        edges.add({from: 'sec_' + sectors[j].sect_ip_id_title, to: 'ss_' + sectors[j].sub_station[k].device_name, color: sec_edge_color})
+			        edges.add({
+			        	from: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : idu_id,
+			        	to: 'ss_' + sectors[j].sub_station[k].device_name,
+			        	color: sec_edge_color
+			        })
 			    }
+			    edges.add({
+			    	// from: 'BASESTATION_'+i,
+			    	from: idu_id,
+			    	to: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : unique_ss_id,
+			    	color: idu_edge_color,
+			    	smooth: {
+						type: 'cubicBezier',
+						forceDirection: 'horizontal',
+						roundness : 0.5
+					}
+			    });
 			}
 		}		
 	}
