@@ -690,9 +690,9 @@ class GetPerfomance(View):
         then hide Topology view tab
         '''
         try:
-            backhaul_qs = Backhaul.objects.filter(bh_configured_on__id=device.id)
-            if not backhaul_qs.exists():
-                is_others_other_tab = 1
+            if page_type not in ['network', 'customer']:
+                if not device.backhaul.exists():
+                    is_others_other_tab = 1
         except Exception, e:
             pass
 
@@ -7910,7 +7910,7 @@ class GetTopology(View):
                         IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
                         IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
                         IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
-                        IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
+                        IF(not isnull(sect.sector_id), sect.sector_id, device.ip_address) AS sect_ip_id_title,
                         'NA' AS ss_circuit_id,
                         'NA' AS ss_id,
                         'NA' AS ss_device_id,

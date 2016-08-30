@@ -75,7 +75,7 @@ function convertToVis(response, required_dom_id) {
 
 	    nodes : {
 	        // shape : 'image',
-	        size : 50
+	        size : 40
 	    },
 	    edges: {
 	        width : 2,
@@ -584,6 +584,8 @@ function convertToVis(response, required_dom_id) {
 				    	var bs_device_type = 'ODU';
 				    } else if(['ptp', 'p2p', 'P2P'].indexOf(sectors[j].device_tech.toLowerCase()) > -1){
 				    	var bs_device_type = 'Near End';
+				    } else {
+				    	var bs_device_type = 'BS Device';
 				    }
 
 
@@ -619,7 +621,7 @@ function convertToVis(response, required_dom_id) {
 
 				    nodes.add({
 				    	id: 'sec_' + sectors[j].sect_ip_id_title,
-				    	label: createNodeLabel(sectors[j].sect_ip_id_title, sectors[j].sect_port, sector_pl, sector_latency),
+				    	label: 'Sector ID : '+sectors[j].sect_ip_id_title,
 				        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
 				        shape: 'image',
 				        image: sector_image_url
@@ -761,8 +763,12 @@ function convertToVis(response, required_dom_id) {
 			    } else if(sectors[j].device_tech.toLowerCase().indexOf('pmp') > -1) {
 			    	var bs_device_type = 'ODU';
 			    } else if(['ptp', 'p2p', 'P2P'].indexOf(sectors[j].device_tech.toLowerCase()) > -1){
-			    	var bs_device_type = 'Near End';
+			    	var bs_device_type = 'Near End',
+			    		bs_device_icon = near_end_image,
+			    		ss_device_icon = far_end_image;
 			    		show_sector = false
+			    } else {
+			    	var bs_device_type = 'BS Device';
 			    }
 
 			    // if sector's severity is down then change edge color to red.
@@ -788,7 +794,7 @@ function convertToVis(response, required_dom_id) {
 						label: idu_label,
 						title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
 						shape: 'image',
-						image: idu_image
+						image: !show_sector ? bs_device_icon : idu_image
 				    });
 
 			    	idu_id_list.push(idu_id)
@@ -797,7 +803,7 @@ function convertToVis(response, required_dom_id) {
 			    if (show_sector){
 				    nodes.add({
 				    	id: 'sec_' + sectors[j].sect_ip_id_title,
-				    	label: createNodeLabel(sectors[j].sect_ip_id_title, sectors[j].sect_port, sector_pl, sector_latency),
+				    	label: 'Sector ID : '+sectors[j].sect_ip_id_title,
 				        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
 				        shape: 'image',
 				        image: sector_image_url
@@ -854,14 +860,20 @@ function convertToVis(response, required_dom_id) {
 						ss_polled_val = 'NA';
 					}
 
+					if(!show_sector){
+						fe_label = 'Far End\n\n'+createNodeLabel(sectors[j].sub_station[k].ip_address, '', ss_pl, ss_latency)
+					} else {
+						fe_label = createNodeLabel(sectors[j].sub_station[k].ip_address, '', ss_pl, ss_latency)
+					}
+
 			        nodes.add({
 	        			id: 'ss_' + sectors[j].sub_station[k].device_name,
-	         			label: createNodeLabel(sectors[j].sub_station[k].ip_address, '', ss_pl, ss_latency),//sectors[j].sub_station[k].ip_address,
+	         			label: fe_label,//sectors[j].sub_station[k].ip_address,
 					    title: '<span style="color:'+ss_color_info_object.color+'"><i class="fa '+ss_color_info_object.icon+'""></i> ' +
 					            ss_severity + ' - ' + ss_polled_val + '</span>' ,
-					    size: 30,
+					    // size: 30,
 					    shape: 'image',
-						image:  ss_image //sectors[j].sub_station[k].icon
+						image: !show_sector ? ss_device_icon : ss_image //sectors[j].sub_station[k].icon
 					})
 
 					if (!show_sector){
