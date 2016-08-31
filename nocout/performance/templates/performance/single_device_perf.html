@@ -545,6 +545,7 @@
             power_sms_url = '',
             save_power_log_url = '',
             device_reboot_url = '',
+            is_others_other_tab = 0,
             is_topo_tab_clicked = false,
             enable_reboot_btn = false;
 
@@ -559,6 +560,7 @@
             is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
             is_viewer = "{{is_viewer_flag }}" ? Number($.trim("{{ is_viewer_flag }}")) : 0;
             bs_id = '{{ bs_id|safe }}' ? '{{ bs_id|safe }}' : [];
+            is_others_other_tab = "{{ is_others_other_tab }}" ? Number($.trim("{{ is_others_other_tab }}")) : 0;
             sector_configured_on_id = '{{ sector_configured_on_id|safe }}' ? '{{ sector_configured_on_id|safe }}' : '';
             perf_base_url = "{{ perf_base_url }}" ? $.trim("{{ perf_base_url }}") : "";
             non_poll_sds = '{{ settings.NO_ONDEMAND_POLL_SDS|safe }}' ? JSON.parse('{{ settings.NO_ONDEMAND_POLL_SDS|safe }}') : [];
@@ -578,7 +580,7 @@
             power_listing_headers = '{{ power_listing_headers }}' ? $.parseJSON('{{ power_listing_headers|safe }}') : [];
 
             // Hide topo view tab if no bs id exists in context
-            if ((typeof(bs_id) == 'string' && bs_id == '[]') || typeof(bs_id) != 'str' && bs_id.length == 0) {
+            if (is_others_other_tab || is_radwin5 || (typeof(bs_id) == 'string' && bs_id == '[]') || typeof(bs_id) != 'str' && bs_id.length == 0) {
                 $('#topo_view').addClass('hide');
                 $('#topo_view_tab').addClass('hide');
             }

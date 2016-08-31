@@ -674,6 +674,7 @@ class GetPerfomance(View):
         bs_alias = None
         bs_id = list()
         is_radwin5 = 0
+        is_others_other_tab = 0
         is_viewer_flag = 0
         user_role = self.request.user
         sector_configured_on_id = []
@@ -683,6 +684,17 @@ class GetPerfomance(View):
                 is_radwin5 = 1
         except Exception, e:
             is_radwin5 = 0
+
+        '''
+        This flag is needed because if device is in Other Live's Other tab
+        then hide Topology view tab
+        '''
+        try:
+            if page_type not in ['network', 'customer']:
+                if not device.backhaul.exists():
+                    is_others_other_tab = 1
+        except Exception, e:
+            pass
 
         try:
             if in_group(self.request.user, 'viewer'):
@@ -835,6 +847,7 @@ class GetPerfomance(View):
             'device': device,
             'realdevice': realdevice,
             'bs_alias' : bs_alias,
+            'is_others_other_tab': is_others_other_tab,
             'bs_id' : json.dumps(bs_id),
             'sector_configured_on_id' : json.dumps(sector_configured_on_id),
             'get_status_url': inventory_status_url,
@@ -7897,7 +7910,7 @@ class GetTopology(View):
                         IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
                         IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
                         IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
-                        IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
+                        IF(not isnull(sect.sector_id), sect.sector_id, device.ip_address) AS sect_ip_id_title,
                         'NA' AS ss_circuit_id,
                         'NA' AS ss_id,
                         'NA' AS ss_device_id,
