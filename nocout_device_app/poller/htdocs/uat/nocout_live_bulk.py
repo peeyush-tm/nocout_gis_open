@@ -23,8 +23,14 @@ import time
 import pexpect
 import mysql.connector
 import requests
+from configobj import ConfigObj
+from os.path import expanduser
 logger = nocout_log()
 
+config_file = "/omd/versions/1.10/lib/python/handlers/redis_config.ini"
+configs =ConfigObj(config_file)
+db_conf = configs.get('historical')
+ping_conf = configs.get('ping_stability_test')
 def main():
     """
     Entry point for all the functions
@@ -67,7 +73,7 @@ def main():
 def ping_test_mail_sent(id):
 	try:
 		#url = 'https://121.244.255.107/escalation/email/'   # for prod
-		url = 'https://10.133.12.182/download_center/processedreportemail/' #API URL to send the email
+		url = ping_conf.get('email_url') #API URL to send the email
 		data1 = {'pk' : id, 'report_type' : 'ping'}
 		r = requests.post(url, data = data1, verify=False)
 		if r.status_code == 200:
@@ -81,26 +87,27 @@ def ping_test_mail_sent(id):
 
 def ping_status_update(id,file_name):   # The function change the status(0 to 1) pending to success on db
 	try:
-		db = mysql.connector.connect(
-			user='root',
-			password='TAta12#$',
-			host='10.133.12.182',
-			port='3600',
-			db='nocout_dev'
-							)
-		cur = db.cursor()
-		file_path = "/omd/tmp/media/download_excels/"+file_name
+		db_conn = mysql.connector.connect(
+			user=db_conf.get('user'),
+			password=db_conf.get('password'),
+			host=db_conf.get('host'),
+			port=int(db_conf.get('port')),
+			db=db_conf.get('database')
+			)
+		cur = db_conn.cursor()
+		file_path = ping_conf.get('remote_file_path')+file_name
 		data_values = ('1',file_path,id)
-		table = "performance_pingstabilitytest"
+		table = ping_conf.get('table')
 		query = "UPDATE `%s` " % table
 		query += "SET `status`=%s,`file_path`=%s WHERE `id`=%s"
 		cur.execute(query, data_values)
-		db.commit()
+		db_conn.commit()
+		logger.info("Status update")
 	except Exception as e :
 		logger.error('in ping status: ' + pformat(e))
 	finally :
 		cur.close()
-		db.close()
+		db_conn.close()
 	
 
 
@@ -109,22 +116,23 @@ def ping_file_send(file_name):
 		#hostname = " tmadmin@121.244.255.107:"   # for production
 
 		SSH_NEWKEY = r'Are you sure you want to continue connecting \(yes/no\)\?'
-		hostname = " tmadmin@10.133.12.182:"
-		remote_path = "/omd/tmp/media/download_excels/"
+		hostname = " "+ping_conf.get('scp_host')+":"
+		remote_path = ping_conf.get('remote_file_path')
 		cmd = "scp -P 5522 "+file_name+hostname+remote_path
 		child = pexpect.spawn(cmd)
 		i = child.expect( [ pexpect.TIMEOUT, SSH_NEWKEY, pexpect.EOF])
 		if i == 1:
 			child.sendline('yes')
 	                child.expect("password:",timeout=120)
-        	        child.sendline('TTpl12#$')   #   password
+        	        child.sendline(ping_conf.get('scp_password'))   #   password
                 	child.expect(pexpect.EOF, timeout=10)
                 	logger.info('file sent' )  
 
 		else:
 
 			child.expect("password:",timeout=120)
-			child.sendline('TTpl12#$')   #   password
+			child.sendline(ping_conf.get('scp_password'))
+			#child.sendline('TTpl12#$')   #   password
 			child.expect(pexpect.EOF, timeout=10)
 			logger.info('file sent' )  
 
@@ -134,7 +142,7 @@ def ping_file_send(file_name):
 
 
 
-def ping1(id, ip, time1):   
+def ping_test(id, ip, time1):   
 	try :
 		child = Popen(['ping', ip], stdin=PIPE, stdout=PIPE, stderr=PIPE)
 		Timer(time1, child.send_signal, [signal.SIGINT]).start()  # like ctrl+c to process after time time
@@ -146,15 +154,18 @@ def ping1(id, ip, time1):
 		# to give the name to file use epoch + ip_address
 		epoch_time = int(time2)
 		file_name1 = ip+"_"+str(epoch_time)
-		file_path = "/omd/ping_test/"    # own system path where file will be stored
+		home1 = expanduser("~")
+		file_path = home1+ping_conf.get('local_file_path')
+		if not os.access(file_path, os.F_OK):
+			os.mkdir(file_path)
+
+	
 		file_name = file_path+file_name1
 		file_txt = open(file_name, "w")
 		file_txt.write(str1)
 		file_txt.write(out[find1+14:])
 		file_txt.close()
-		logger.info(pformat(str1))
 		str2=   out[find1+14:]
-		logger.info(pformat(str2))
 		ping_file_send(file_name)
 		ping_status_update(id,file_name1)
 		time.sleep(8)
@@ -178,7 +189,7 @@ def ping_conf_get():
 			id= each.get("id")
 			time1 = int(each.get("time_interval"))
 			#time1 = time1*3600
-			process = Process(target=ping1, args=(id,ip, time1))  # call ping1 function with arguments
+			process = Process(target=ping_test, args=(id,ip, time1))  # call ping1 function with arguments
 			process.start()
 		except Exception as e :
 			logger.error('in ping_conf_get: ' + pformat(e))
