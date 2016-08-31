@@ -21,6 +21,7 @@ function convertToVis(response, required_dom_id) {
 	severity_check = ['down']
 	is_ptp_bh = response['have_ptp_bh']
 	limit_till_bs = response['limit_till_bs']
+	show_ports = false
 
 	// creating two seperate datasets for Nodes and Edges
 	nodes = new vis.DataSet();
@@ -45,7 +46,7 @@ function convertToVis(response, required_dom_id) {
 		converter_image = '/static/img/icons/converter.png',
 		switch_image = '/static/img/icons/switch.png',
 		router_image = '/static/img/icons/router.png',
-		idu_image = '/static/img/icons/router.png',
+		idu_image = '/static/img/icons/idu.png',
 		far_end_image = '/static/img/icons/far_end.png',
 		near_end_image = '/static/img/icons/near_end.png',
 		ss_image = '/static/img/icons/ss.png'
@@ -66,6 +67,7 @@ function convertToVis(response, required_dom_id) {
 	        hierarchical: {
 	          enabled:true,
 	          levelSeparation: 400,
+	          nodeSpacing: 200,
 	          direction: 'LR',   // UD, DU, LR, RL
 	          sortMethod: 'directed' // hubsize, directed
 	      }
@@ -73,7 +75,7 @@ function convertToVis(response, required_dom_id) {
 
 	    nodes : {
 	        // shape : 'image',
-	        size : 50
+	        size : 40
 	    },
 	    edges: {
 	        width : 2,
@@ -105,6 +107,13 @@ function convertToVis(response, required_dom_id) {
 
 	// create a network
 	var container = document.getElementById(required_dom_id);
+
+	// severity and color info for PE device
+	var pe_severity = response_data.pe_pl_info.severity ? response_data.pe_pl_info.severity.toUpperCase() : 'NA',
+		pe_pl = response_data.pe_pl_info.packet_loss ? response_data.pe_pl_info.packet_loss : 'NA',
+		pe_latency = response_data.pe_pl_info.latency ? response_data.pe_pl_info.latency : 'NA';
+	var pe_color_info_object = nocout_getSeverityColorIcon(pe_severity),
+		pe_polled_val = response_data.pe_pl_info.value;
 
 	// severity and color info for bs_switch
 	var bs_switch_severity = response_data.bs_switch_pl_info.severity ? response_data.bs_switch_pl_info.severity.toUpperCase() : 'NA',
@@ -165,6 +174,10 @@ function convertToVis(response, required_dom_id) {
 	   device connection anatomy is :-> 
 	   PE -> Aggr_Switch -> Pop_Convertor -> Bs_Convertor -> Bs_Switch -> BS -> Sectors -> Sub-stations */
 
+	if (severity_check.indexOf(pe_severity.toLowerCase()) > -1){
+		pe_edge_color = '#b94a48';
+	}
+
 	if (severity_check.indexOf(bh_aggr_switch_severity.toLowerCase()) > -1){
 		aggr_sw_edge_color = '#b94a48';
 
@@ -211,23 +224,22 @@ function convertToVis(response, required_dom_id) {
 	if (response_data.pe_ip != 'NA'){
 		nodes.add({
 		    id: 'PE',
-		    label:  'PE Router\n\n' +
-		    		'PE IP : ' + response_data.pe_ip + '\n' +
-		    		'PE Hostname : ' + response_data.pe_hostname,
+		    // label:  'PE Router\n\n' +
+		    // 		'PE IP : ' + response_data.pe_ip + '\n' +
+		    // 		'PE Hostname : ' + response_data.pe_hostname,
+		    label: createNodeLabel(response_data.pe_ip, '', pe_pl, pe_latency, 'PE Router'),
 		    image: router_image,
 		    shape: 'image',
-		 //    shape: 'circularImage',
-		 //    shapeProperties : {
-			// 	useBorderWithImage : true
-			// },
-			// borderWidth : 8,
-			// color: {
-			// 	border: '#FF0000',
-			// 	background: '#ffffff',
-			// },
-		    // title: '<span style="color:'+bh_color_info_object.color+'"><i class="fa '+bh_color_info_object.icon+'""></i> ' +severity + ' - ' + polled_val + '</span>'
+		    title: '<span style="color:'+pe_color_info_object.color+'"><i class="fa '+pe_color_info_object.icon+'""></i> ' + pe_severity + ' - ' + pe_polled_val + '</span>'
 		});
 		pe_exist = true
+		pl_device_list.push(response_data.pe_name)
+		device_nodeId_mapping[response_data.pe_name] = 'PE'
+		ip_port_dict['PE'] = {
+			'ip_address' : response_data.pe_ip,
+			'port' : '',
+			'node_name' : 'PE Router'
+		}
 	}
 
 	// Adding Aggregation Switch only if it exists
@@ -564,8 +576,18 @@ function convertToVis(response, required_dom_id) {
 				    	sector_latency = sectors[j].pl_info.latency ? sectors[j].pl_info.latency : 'NA',
 				    	sect_color_info_object = nocout_getSeverityColorIcon(sector_severity),
 				    	sector_polled_val = sectors[j].pl_info.value,
-				    	idu_id = 'idu_' + sectors[j].ip_address,
-				    	bs_device_type = sectors[j].device_tech.toLowerCase().indexOf('wimax') > -1 ? 'IDU' : 'ODU';
+				    	idu_id = 'idu_' + sectors[j].ip_address;
+
+				    if(sectors[j].device_tech.toLowerCase().indexOf('wimax') > -1){
+				    	var bs_device_type = 'IDU';
+				    } else if(sectors[j].device_tech.toLowerCase().indexOf('pmp') > -1) {
+				    	var bs_device_type = 'ODU';
+				    } else if(['ptp', 'p2p', 'P2P'].indexOf(sectors[j].device_tech.toLowerCase()) > -1){
+				    	var bs_device_type = 'Near End';
+				    } else {
+				    	var bs_device_type = 'BS Device';
+				    }
+
 
 				    if (typeof sector_polled_val == 'undefined' || sector_polled_val == '') {
 						sector_polled_val = 'NA';
@@ -599,7 +621,7 @@ function convertToVis(response, required_dom_id) {
 
 				    nodes.add({
 				    	id: 'sec_' + sectors[j].sect_ip_id_title,
-				    	label: createNodeLabel(sectors[j].sect_ip_id_title, sectors[j].sect_port, sector_pl, sector_latency),
+				    	label: 'Sector ID : '+sectors[j].sect_ip_id_title,
 				        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
 				        shape: 'image',
 				        image: sector_image_url
@@ -733,8 +755,21 @@ function convertToVis(response, required_dom_id) {
 			    	sector_latency = sectors[j].pl_info.latency ? sectors[j].pl_info.latency : 'NA',
 			    	sect_color_info_object = nocout_getSeverityColorIcon(sector_severity),
 			    	sector_polled_val = sectors[j].pl_info.value,
-			    	idu_id = 'idu_' + sectors[j].ip_address,
-			    	bs_device_type = sectors[j].device_tech.toLowerCase().indexOf('wimax') > -1 ? 'IDU' : 'ODU';
+			    	show_sector = true,
+			    	idu_id = 'idu_' + sectors[j].ip_address;
+			    
+			    if(sectors[j].device_tech.toLowerCase().indexOf('wimax') > -1){
+			    	var bs_device_type = 'IDU';
+			    } else if(sectors[j].device_tech.toLowerCase().indexOf('pmp') > -1) {
+			    	var bs_device_type = 'ODU';
+			    } else if(['ptp', 'p2p', 'P2P'].indexOf(sectors[j].device_tech.toLowerCase()) > -1){
+			    	var bs_device_type = 'Near End',
+			    		bs_device_icon = near_end_image,
+			    		ss_device_icon = far_end_image;
+			    		show_sector = false
+			    } else {
+			    	var bs_device_type = 'BS Device';
+			    }
 
 			    // if sector's severity is down then change edge color to red.
 			    if (severity_check.indexOf(sector_severity.toLowerCase()) > -1) {
@@ -759,19 +794,21 @@ function convertToVis(response, required_dom_id) {
 						label: idu_label,
 						title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
 						shape: 'image',
-						image: idu_image
+						image: !show_sector ? bs_device_icon : idu_image
 				    });
 
 			    	idu_id_list.push(idu_id)
 			    }
 
-			    nodes.add({
-			    	id: 'sec_' + sectors[j].sect_ip_id_title,
-			    	label: createNodeLabel(sectors[j].sect_ip_id_title, sectors[j].sect_port, sector_pl, sector_latency),
-			        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
-			        shape: 'image',
-			        image: sector_image_url
-			    })
+			    if (show_sector){
+				    nodes.add({
+				    	id: 'sec_' + sectors[j].sect_ip_id_title,
+				    	label: 'Sector ID : '+sectors[j].sect_ip_id_title,
+				        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
+				        shape: 'image',
+				        image: sector_image_url
+				    });
+			    }
 
 			    // sectors are on configured on same IDU device so they have same device id
 			    if (pl_device_list.indexOf(sectors[j].device_name) ==-1) {
@@ -799,17 +836,17 @@ function convertToVis(response, required_dom_id) {
 					}
 			    });
 
-			    edges.add({
-				    	// from: 'BASESTATION_'+i,
-				    	from: idu_id,
-				    	to: 'sec_' + sectors[j].sect_ip_id_title,
-				    	color: idu_edge_color,
-				    	smooth: {
-							type: 'cubicBezier',
-							forceDirection: 'horizontal',
-							roundness : 0.5
-						}
-				    })
+			  //   edges.add({
+			  //   	// from: 'BASESTATION_'+i,
+			  //   	from: idu_id,
+			  //   	to: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : 
+			  //   	color: idu_edge_color,
+			  //   	smooth: {
+					// 	type: 'cubicBezier',
+					// 	forceDirection: 'horizontal',
+					// 	roundness : 0.5
+					// }
+			  //   });
 
 
 			    for(k=0; k<sectors[j].sub_station.length; k++) {
@@ -823,15 +860,25 @@ function convertToVis(response, required_dom_id) {
 						ss_polled_val = 'NA';
 					}
 
+					if(!show_sector){
+						fe_label = 'Far End\n\n'+createNodeLabel(sectors[j].sub_station[k].ip_address, '', ss_pl, ss_latency)
+					} else {
+						fe_label = createNodeLabel(sectors[j].sub_station[k].ip_address, '', ss_pl, ss_latency)
+					}
+
 			        nodes.add({
 	        			id: 'ss_' + sectors[j].sub_station[k].device_name,
-	         			label: createNodeLabel(sectors[j].sub_station[k].ip_address, '', ss_pl, ss_latency),//sectors[j].sub_station[k].ip_address,
+	         			label: fe_label,//sectors[j].sub_station[k].ip_address,
 					    title: '<span style="color:'+ss_color_info_object.color+'"><i class="fa '+ss_color_info_object.icon+'""></i> ' +
 					            ss_severity + ' - ' + ss_polled_val + '</span>' ,
-					    size: 30,
+					    // size: 30,
 					    shape: 'image',
-						image:  ss_image //sectors[j].sub_station[k].icon
+						image: !show_sector ? ss_device_icon : ss_image //sectors[j].sub_station[k].icon
 					})
+
+					if (!show_sector){
+						var unique_ss_id = 'ss_' + sectors[j].sub_station[k].device_name;
+					}
 
 					pl_device_list.push(sectors[j].sub_station[k].device_name)
 					device_nodeId_mapping[sectors[j].sub_station[k].device_name] = 'ss_' + sectors[j].sub_station[k].device_name
@@ -845,8 +892,23 @@ function convertToVis(response, required_dom_id) {
 			        	highlight_id = sectors[j].sub_station[k].device_name
 					}
 
-			        edges.add({from: 'sec_' + sectors[j].sect_ip_id_title, to: 'ss_' + sectors[j].sub_station[k].device_name, color: sec_edge_color})
+			        edges.add({
+			        	from: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : idu_id,
+			        	to: 'ss_' + sectors[j].sub_station[k].device_name,
+			        	color: sec_edge_color
+			        })
 			    }
+			    edges.add({
+			    	// from: 'BASESTATION_'+i,
+			    	from: idu_id,
+			    	to: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : unique_ss_id,
+			    	color: idu_edge_color,
+			    	smooth: {
+						type: 'cubicBezier',
+						forceDirection: 'horizontal',
+						roundness : 0.5
+					}
+			    });
 			}
 		}		
 	}
@@ -1275,6 +1337,9 @@ function createNodeLabel(ip_addr, port, pack_drop, latency, node_name) {
 		node_name = node_name + '\n\n'
 	}
 
+	// showing ports if Flag is true
+	port_str = show_ports ? port_str : ''
+
 	result_str = node_name +
 				 'IP Address : ' + ip_addr + 
 				 port_str +
@@ -1327,6 +1392,11 @@ function updateNetworkPeriodically(pl_info_list) {
 				current_port = ip_port_dict[id].port ? ip_port_dict[id].port : 'NA',
 				current_node_name = ip_port_dict[id].node_name;
 
+			if (id.indexOf('PE') > -1) {
+				if (severity_check.indexOf(device_severity.toLowerCase()) > -1){
+					pe_edge_color = '#b94a48';
+				}
+			}
 			if (id.indexOf('aggr_') > -1) {
 				if (severity_check.indexOf(device_severity.toLowerCase()) > -1){
 					aggr_sw_edge_color = '#b94a48';
