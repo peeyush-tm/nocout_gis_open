@@ -1542,7 +1542,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
     ospf4_ospf5_machine_and_site_info = get_machine_details('ospf', [4, 5])
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
-    ospf2_machine_and_site_info = get_machine_details('ospf', [2])
+    # ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -2183,7 +2183,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
                 # get machine and site
                 machine_and_site = ""
                 try:
-                    machine_and_site = get_machine_and_site(ospf2_machine_and_site_info)
+                    machine_and_site = get_machine_and_site(ospf4_ospf3_machine_and_site_info)
                 except Exception as e:
                     logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
@@ -2202,7 +2202,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
                     try:
                         site = machine_and_site['site']
                         site_name = site.name
-                        for site_dict in ospf2_machine_and_site_info[machine_name]:
+                        for site_dict in ospf4_ospf3_machine_and_site_info[machine_name]:
                             # 'k' is site name and 'v' is number of associated devices with that site
                             for k, v in site_dict.iteritems():
                                 if k == site_name:
@@ -3210,7 +3210,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
                 # get machine and site
                 machine_and_site = ""
                 try:
-                    machine_and_site = get_machine_and_site(ospf2_machine_and_site_info)
+                    machine_and_site = get_machine_and_site(ospf4_ospf3_machine_and_site_info)
                 except Exception as e:
                     logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
@@ -3229,7 +3229,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
                     try:
                         site = machine_and_site['site']
                         site_name = site.name
-                        for site_dict in ospf2_machine_and_site_info[machine_name]:
+                        for site_dict in ospf4_ospf3_machine_and_site_info[machine_name]:
                             # 'k' is site name and 'v' is number of associated devices with that site
                             for k, v in site_dict.iteritems():
                                 if k == site_name:
@@ -3691,7 +3691,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
 
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    ospf2_machine_and_site_info = get_machine_details('ospf', [2])
+    # ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     ospf1_machine_and_site_info = get_machine_details('ospf', [1])
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
@@ -4183,7 +4183,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
                 # get machine and site
                 machine_and_site = ""
                 try:
-                    machine_and_site = get_machine_and_site(ospf2_machine_and_site_info)
+                    machine_and_site = get_machine_and_site(ospf4_ospf3_machine_and_site_info)
                 except Exception as e:
                     logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
@@ -4202,7 +4202,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
                     try:
                         site = machine_and_site['site']
                         site_name = site.name
-                        for site_dict in ospf2_machine_and_site_info[machine_name]:
+                        for site_dict in ospf4_ospf3_machine_and_site_info[machine_name]:
                             # 'k' is site name and 'v' is number of associated devices with that site
                             for k, v in site_dict.iteritems():
                                 if k == site_name:
@@ -4954,7 +4954,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
     ospf4_ospf5_machine_and_site_info = get_machine_details('ospf', [4, 5])
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
-    ospf2_machine_and_site_info = get_machine_details('ospf', [2])
+    # ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -5476,7 +5476,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                 # get machine and site
                 machine_and_site = ""
                 try:
-                    machine_and_site = get_machine_and_site(ospf2_machine_and_site_info)
+                    machine_and_site = get_machine_and_site(ospf4_ospf3_machine_and_site_info)
                 except Exception as e:
                     logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
@@ -5495,7 +5495,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                     try:
                         site = machine_and_site['site']
                         site_name = site.name
-                        for site_dict in ospf2_machine_and_site_info[machine_name]:
+                        for site_dict in ospf4_ospf3_machine_and_site_info[machine_name]:
                             # 'k' is site name and 'v' is number of associated devices with that site
                             for k, v in site_dict.iteritems():
                                 if k == site_name:
@@ -6373,7 +6373,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
     ospf4_ospf5_machine_and_site_info = get_machine_details('ospf', [4, 5])
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
-    ospf2_machine_and_site_info = get_machine_details('ospf', [2])
+    # ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -6858,7 +6858,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
                 # get machine and site
                 machine_and_site = ""
                 try:
-                    machine_and_site = get_machine_and_site(ospf2_machine_and_site_info)
+                    machine_and_site = get_machine_and_site(ospf4_ospf3_machine_and_site_info)
                 except Exception as e:
                     logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
@@ -6877,7 +6877,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
                     try:
                         site = machine_and_site['site']
                         site_name = site.name
-                        for site_dict in ospf2_machine_and_site_info[machine_name]:
+                        for site_dict in ospf4_ospf3_machine_and_site_info[machine_name]:
                             # 'k' is site name and 'v' is number of associated devices with that site
                             for k, v in site_dict.iteritems():
                                 if k == site_name:
