@@ -166,14 +166,19 @@ class LivePerformance(ListView):
         hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
+        name_key = 'bs_name'
+        name_title = 'BS Name'
+
+        if page_type == 'pe':
+            name_key = 'pe_hostname'
+            name_title = 'PE Hostname'
 
         common_headers = [
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': name_key, 'sTitle': name_title, 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
-
         ]
 
         polled_headers = [
@@ -1299,7 +1304,7 @@ class InventoryDeviceStatus(View):
                     device_name_list.append(sector_device_name[0]['sector_configured_on__device_name'])
 
         if devices_info_list:
-            if device_tech in ['WiMAX'] or page_type in ['other', 'pe']:
+            if device_tech in ['WiMAX'] or page_type in ['other']:
                 is_single_call = True
             else:
                 is_single_call = False
@@ -7306,6 +7311,17 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
         ]
 
     elif type_of_device in ['backhaul', 'other']:
+        if page_type == 'pe':
+            bs_name_obj = {
+                "name": "pe_hostname",
+                "title": "PE Hostname",
+                "value": "NA",
+                "url": "",
+                "app_name": inventory_app,
+                "url_name": "backhaul_edit",
+                "kwargs_name": 'pk',
+                'pk_key' : 'bh_id'
+            }
         headers_list = [
             ip_obj,
             tech_name_obj,

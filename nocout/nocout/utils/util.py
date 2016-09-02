@@ -2430,6 +2430,7 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
                     bh.id AS BHID,
                     bh.bh_connectivity AS BH_CONNECTIVITY,
                     bh.alias AS BH_ALIAS,
+                    bh.pe_hostname AS PE_HOSTNAME,
                     
                     devicetype.id AS TYPEID,
                     

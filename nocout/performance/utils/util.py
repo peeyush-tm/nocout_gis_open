@@ -1247,6 +1247,7 @@ def prepare_gis_devices_optimized(
                 "state_id": 0,
                 "tech_id": 0,
                 "type_id": 0,
+                "pe_hostname": "NA"
             })
 
 
@@ -1280,7 +1281,8 @@ def prepare_gis_devices_optimized(
                     "city_id": inventory_row.get('BSCITYID', 0),
                     "state_id": inventory_row.get('BSSTATEID', 0),
                     "tech_id": inventory_row.get('TECHID', 0),
-                    "type_id": inventory_row.get('TYPEID', 0)
+                    "type_id": inventory_row.get('TYPEID', 0),
+                    "pe_hostname": inventory_row.get('PE_HOSTNAME', "NA")
                 })
                 
                 # append the deep copied dict
