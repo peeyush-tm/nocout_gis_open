@@ -974,10 +974,10 @@ function convertToVis(response, required_dom_id) {
 	    Becuase BS is not a device so it's back edge color
 	    should be depends on the IDU device
 	*/
-	for(bs_id in bs_back_edges_dict){
+	for(base_station_id in bs_back_edges_dict){
 		edges.update({
-			from: bs_back_edges_dict[bs_id],
-			to: bs_id,
+			from: bs_back_edges_dict[base_station_id],
+			to: base_station_id,
 			color: bs_edge_color
 		})
 	}
