@@ -2216,7 +2216,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
                 if ip_sanitizer(row['PE IP']):
 
                     try:
-                        pe_device_type = row.get('PE Device Type')
+                        pe_device_type = 'PE' #row.get('PE Device Type')
                         if pe_device_type:
                             pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
                             pe_device_type_id = pe_dtype_obj.id
@@ -2226,7 +2226,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
 
                             pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
                             pe_device_vendor_id = pe_vendor_obj.id
-                            
+
                             pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
                             pe_device_tech_id = pe_tech_obj.id
                     except Exception, e:
@@ -3243,7 +3243,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
                 if ip_sanitizer(row['PE IP']):
 
                     try:
-                        pe_device_type = row.get('PE Device Type')
+                        pe_device_type = 'PE' #row.get('PE Device Type')
                         if pe_device_type:
                             pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
                             pe_device_type_id = pe_dtype_obj.id
@@ -3253,7 +3253,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
 
                             pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
                             pe_device_vendor_id = pe_vendor_obj.id
-                            
+
                             pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
                             pe_device_tech_id = pe_tech_obj.id
                     except Exception, e:
@@ -4216,7 +4216,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
                 if ip_sanitizer(row['PE IP']):
 
                     try:
-                        pe_device_type = row.get('PE Device Type')
+                        pe_device_type = 'PE' #row.get('PE Device Type')
                         if pe_device_type:
                             pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
                             pe_device_type_id = pe_dtype_obj.id
@@ -4226,7 +4226,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
 
                             pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
                             pe_device_vendor_id = pe_vendor_obj.id
-                            
+
                             pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
                             pe_device_tech_id = pe_tech_obj.id
                     except Exception, e:
@@ -5509,7 +5509,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                 if ip_sanitizer(row['PE IP']):
 
                     try:
-                        pe_device_type = row.get('PE Device Type')
+                        pe_device_type = 'PE' #row.get('PE Device Type')
                         if pe_device_type:
                             pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
                             pe_device_type_id = pe_dtype_obj.id
@@ -5519,7 +5519,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
 
                             pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
                             pe_device_vendor_id = pe_vendor_obj.id
-                            
+
                             pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
                             pe_device_tech_id = pe_tech_obj.id
                     except Exception, e:
@@ -6891,7 +6891,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
                 if ip_sanitizer(row['PE IP']):
 
                     try:
-                        pe_device_type = row.get('PE Device Type')
+                        pe_device_type = 'PE' #row.get('PE Device Type')
                         if pe_device_type:
                             pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
                             pe_device_type_id = pe_dtype_obj.id
@@ -6901,7 +6901,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
 
                             pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
                             pe_device_vendor_id = pe_vendor_obj.id
-                            
+
                             pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
                             pe_device_tech_id = pe_tech_obj.id
                     except Exception, e:
