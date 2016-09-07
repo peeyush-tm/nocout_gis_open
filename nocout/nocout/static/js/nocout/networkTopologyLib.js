@@ -8,7 +8,7 @@ function convertToVis(response, required_dom_id) {
 	// checking size of BS_ID_LIST
 	bs_list_len = typeof bs_id != 'undefined' ? (JSON.parse(bs_id)).length : 0;
 	updatedSize = 50;
-	backhaul_exist = true
+	backhaul_exist = false
 	pe_exist = false
 	aggr_switch_exist = false
 	pop_convertor_exist = false
@@ -305,29 +305,20 @@ function convertToVis(response, required_dom_id) {
 	// *****************************************
 	// *** Here BACKHAUL refers to BS Switch ***
 	// *****************************************
-	if (response_data.bh_ip != 'NA'){
+	if (response_data.bs_switch_ip != 'NA'){
 
 		nodes.add({
 		    id: 'ne_sw_' + response_data.bs_switch_name,
-		    label: createNodeLabel(response_data.bh_ip, response_data.bs_switch_port, bs_switch_pl, bs_switch_latency, 'BS Switch'),
+		    label: createNodeLabel(response_data.bs_switch_ip, response_data.bs_switch_port, bs_switch_pl, bs_switch_latency, 'BS Switch'),
 		    image: switch_image,
 		    shape: 'image',
-		 //    shapeProperties : {
-			// 	useBorderWithImage : true
-			// },
-			// borderWidth : 8,
-			// color: {
-			// 	border: '#468847',
-			// 	background: '#ffffff',
-			// },
-
 		    title: '<span style="color:'+bs_switch_color_info_object.color+'"><i class="fa '+bs_switch_color_info_object.icon+'""></i> ' + bs_switch_severity + ' - ' + bs_switch_polled_val + '</span>'
 		});
 		backhaul_exist = true
 		pl_device_list.push(response_data.bs_switch_name)
 		device_nodeId_mapping[response_data.bs_switch_name] = 'ne_sw_' + response_data.bs_switch_name
 		ip_port_dict['ne_sw_' + response_data.bs_switch_name] = {
-																	'ip_address' : response_data.bh_ip,
+																	'ip_address' : response_data.bs_switch_ip,
 																	'port' : response_data.bs_switch_port,
 																	'node_name' : 'BS Switch'
 																}

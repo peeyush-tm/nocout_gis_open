@@ -8754,6 +8754,7 @@ class GetTopology(View):
                             "bh_device_id": bs.get('bh_device_id'),
                             "bh_device_tech": bs.get('bh_device_tech'),
                             "bh_device_type": bs.get('bh_device_type'),
+                            "bs_switch_ip": bs.get('bs_switch_ip'),
                             "bh_ip": bs.get('bh_ip'),
                             "pe_ip" : bs.get('pe_ip'),
                             "pe_hostname" : bs.get('pe_hostname'),
