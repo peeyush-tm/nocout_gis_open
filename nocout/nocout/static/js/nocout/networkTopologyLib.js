@@ -618,7 +618,10 @@ function convertToVis(response, required_dom_id) {
 				    if (severity_check.indexOf(sector_severity.toLowerCase()) > -1) {
 				    	sec_edge_color = idu_edge_color = bs_edge_color ='#b94a48';
 				    	sector_image_url = sector_down_image_url
-				    }
+				    } else {
+						sec_edge_color = idu_edge_color ='#468847',
+						sector_image_url = sector_up_image_url
+					}
 
 
 				    nodes.add({
@@ -786,11 +789,6 @@ function convertToVis(response, required_dom_id) {
 			    	var bs_device_type = 'BS Device';
 			    }
 
-			    // if sector's severity is down then change edge color to red.
-			    if (severity_check.indexOf(sector_severity.toLowerCase()) > -1) {
-			    	sec_edge_color = idu_edge_color = bs_edge_color =  '#b94a48';
-			    	sector_image_url = sector_down_image_url
-			    }
 
 
 				if (typeof sector_polled_val == 'undefined' || sector_polled_val == '') {
@@ -814,6 +812,15 @@ function convertToVis(response, required_dom_id) {
 
 			    	idu_id_list.push(idu_id)
 			    }
+			    
+			    // if sector's severity is down then change edge color to red.
+			    if (severity_check.indexOf(sector_severity.toLowerCase()) > -1) {
+			    	sec_edge_color = idu_edge_color = bs_edge_color =  '#b94a48';
+			    	sector_image_url = sector_down_image_url
+			    } else {
+					sec_edge_color = idu_edge_color ='#468847',
+					sector_image_url = sector_up_image_url
+				}
 
 			    if (show_sector){
 				    nodes.add({
