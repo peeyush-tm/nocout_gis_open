@@ -192,12 +192,19 @@ class LivePerformance(ListView):
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
 
+        rad5_specific_headers = [
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},
+            # {'mData': 'min_latency', 'sTitle': 'SE to PE Latency Min', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False}
+        ]
+
         if page_type in ["network"]:
             specific_headers = [
                 {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
                 {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'bSortable': True},
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
             ]
+
+            specific_headers += rad5_specific_headers
 
         elif page_type in ["customer"]:
             specific_headers = [
@@ -206,6 +213,8 @@ class LivePerformance(ListView):
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
                 {'mData': 'near_end_ip', 'sTitle': 'Near End Ip', 'sWidth': 'auto', 'bSortable': True},
             ]
+
+            specific_headers += rad5_specific_headers
 
         else:
             specific_headers = [
@@ -232,6 +241,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
     is_ordered = False
     is_polled = False
     is_searched = False
+    is_rad5 = False
     is_initialised = True
     
     # Create instance of 'InventoryUtilsGateway' class
@@ -244,6 +254,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         'customer_name',
         'near_end_ip',
         'ip_address',
+        'region',
+        # 'min_latency',
         'device_type',
         'bs_name',
         'city',
@@ -287,6 +299,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         page_type = self.request.GET.get('page_type')
 
         other_type = self.request.GET.get('other_type', None)
+        is_rad5 = int(self.request.GET.get('is_rad5', 0))
 
         required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
 
@@ -295,10 +308,12 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         devices = self.inventory_utils.filter_devices(
             organizations=kwargs['organizations'],
             data_tab=device_tab_technology,
+            is_rad5=is_rad5,
             page_type=page_type,
             other_type=other_type,
             required_value_list=required_value_list
         )
+        print devices
 
         # preparing machine list
         machines = self.inventory_utils.prepare_machines(
@@ -600,6 +615,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                     packet_loss = round(float(dct.get('packet_loss')), 3)
                 except Exception, e:
                     packet_loss = dct.get('packet_loss')
+
+
 
                 dct.update(
                     latency=latency,
