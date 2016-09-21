@@ -371,7 +371,6 @@ def extract_wimax_bs_sec_id(hostname,memc_conn):
 
 @app.task(base=DatabaseTask, name ='extract_wimax_bs_ul_issue_data')
 def extract_wimax_bs_ul_issue_data(wimax_bs_ul_issue_data,**args):
-    count = 0
     perf = ''
     sec_ul_issue = ''
     state_string = 'unknown'
@@ -383,6 +382,7 @@ def extract_wimax_bs_ul_issue_data(wimax_bs_ul_issue_data,**args):
             perf = ''
             sec_ul_issue = ''
     	    state_string = 'unknown'
+	    count = 0
 	    for service_dict in ul_issue_list:
 		try:
 		    value = int(service_dict['perf_data'].split('=')[1].split(';')[0])
