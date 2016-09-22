@@ -203,6 +203,31 @@
                                 </a>
                             </li>
                             {% endif %}
+                            {% if settings.SHOW_ALL_IN_NETWORK_ALERT_CENTER %}
+                            <li class="has-sub-sub">
+                                <a href="javascript:;">
+                                    <span class="sub-menu-text">All</span>
+                                    <span class="arrow"></span>
+                                </a>
+                                <ul class="sub-sub-sub">
+                                    <li>
+                                        <a href="{% url 'all_traps' 'packet_drop' %}">
+                                            <span class="sub-sub-menu-text">Packet Drop</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'all_traps' 'latency' %}">
+                                            <span class="sub-sub-menu-text">Latency</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'all_traps' 'down' %}">
+                                            <span class="sub-sub-menu-text">Down</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            {% endif %}
                         </ul>
                     </li>
                     <li class="has-sub-sub">
