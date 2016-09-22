@@ -301,7 +301,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         other_type = self.request.GET.get('other_type', None)
         is_rad5 = int(self.request.GET.get('is_rad5', 0))
 
-        required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
+        required_value_list = ['id', 'machine__name', 'device_name', 'ip_address', 'organization__alias']
 
         device_tab_technology = self.request.GET.get('data_tab')
         

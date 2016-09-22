@@ -619,7 +619,8 @@ def filter_devices(
             'id', 
             'machine__name', 
             'device_name', 
-            'ip_address'
+            'ip_address',
+            'organization__alias'
         ]
 
     device_tab_technology = data_tab
@@ -667,7 +668,8 @@ def filter_devices(
             'machine_name': device['machine__name'],
             'id': device['id'],
             'ip_address': device['ip_address'],
-            'organization_id' : device.get('organization__id')
+            'organization_id' : device.get('organization__id'),
+            'region': device.get('organization__alias', 'NA')
         }
         for device in device_list
     ]
