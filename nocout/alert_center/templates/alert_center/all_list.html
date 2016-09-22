@@ -1,0 +1,140 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-bell-o'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "Network Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "All" "javascript:;" %}
+    {% breadcrumb_safe data_source_title "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block page_setting_block %}
+<div class="date-range pull-right">
+    <div class="btn-group">
+        <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
+            <li>
+                <input type="radio" name="alarm_type" style="vertical-align:sub;" value="current" checked=""> Current
+            </li>
+            <li>
+                <input type="radio" name="alarm_type" style="vertical-align:sub;" value="clear"> Clear
+            </li>
+            <li>
+                <input type="radio" name="alarm_type" style="vertical-align:sub;" value="history"> History
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+    {% if not settings.ENABLE_ADVANCE_FILTERS %}
+        <!-- Include advance filter block HTML Start -->
+        {% include 'alert_center/advance_filter_block.html' %}
+        <!-- Include advance filter block HTML End -->
+    {% endif %}
+    <div class="clearfix"></div>
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-bell-o"></i>{{ data_source_title }}</h4>
+        </div>
+
+        <div class="box-body" style="overflow:auto;">
+            <table class="datatable table table-striped table-bordered table-hover" id="snmp_all_table">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}
+{% block jquery %}
+    <!-- Custom library create jquery datatable -->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        var dataTableInstance = '',
+            gridHeadersObj = '',
+            ajax_url = '',
+            table_title = '',
+            show_customer_count = false,
+            data_source = '';
+
+        $(document).ready(function (e) {
+            {% if settings.SHOW_CUSTOMER_COUNT_IN_TRAPS %}
+                show_customer_count = true;
+            {% endif %}
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+
+            /*Grid headers object*/
+            var alarm_type = $('input[name="alarm_type"]:checked').val();
+
+            data_source = '{{ data_source|safe }}'
+            gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            ajax_url = '{% url "all_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=all'+'&data_source='+ data_source;
+            table_title = "All ("+ '{{ data_source_title }}'+")";
+
+            // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
+            var common_extra_param = "'download_excel': 'yes'",
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+", 'data_source': '"+data_source+"'}";
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable(
+                "snmp_all_table",
+                gridHeadersObj,
+                ajax_url,
+                false,
+                table_title,
+                'alert_center',
+                'AllSiaListing',
+                'AllSiaListingTable',
+                extra_param,
+                extra_param
+            );
+        });
+
+        /**
+         * This event trigger when alarm_type radio input changed
+         * @event change
+         */
+        $('input[name="alarm_type"]').change(function(e) {
+            var alarm_type = $(this).val(),
+                new_get_param = 'alarm_type='+alarm_type,
+                current_url = ajax_url,
+                updated_url = "";
+
+            // Update converter url
+            var array1 = current_url ? current_url.split("?") : [],
+                array2 = array1 && array1.length > 1 ? array1[1].split("&") : [];
+
+            // Update All url
+            array2[0] = new_get_param
+            array1[1] = array2.join('&');
+            updated_url = array1.join('?')
+
+            var common_extra_param = "'download_excel': 'yes'",
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}";
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable(
+                "snmp_all_table",
+                gridHeadersObj,
+                updated_url,
+                false,
+                table_title,
+                'alert_center',
+                'AllSiaListing',
+                'AllSiaListingTable',
+                extra_param,
+                extra_param
+            );
+        });
+    </script>
+{% endblock %}
