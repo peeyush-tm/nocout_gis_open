@@ -26,6 +26,7 @@ from ast import literal_eval
 #from handlers.db_ops import *
 from itertools import groupby
 from operator import itemgetter
+import cPickle 
 #sys.path.append('/omd/sites/%s/nocout/utils' % nocout_site_name)
 #from nocout.utils.handlers.db_ops import *
 try:
@@ -134,6 +135,13 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	device_first_down ={}
 	# Process network perf data
         nw_qry_output = network_result
+	try:
+		pickle_file = open("state_change.dat",'r') 
+		state_change_dict = cPickle.load(pickle_file)
+		pickle_file.close()
+	except Exception as e: 
+		print e 
+		state_change_dict= {}
 	file_path = "/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk" % site
 	host_var = load_file(file_path)
 	host_list = [str(index[0]) for index in nw_qry_output]
@@ -206,6 +214,24 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					device_first_down_map[str(entry[0])] = device_first_down
 				except Exception,e:
 					refer = ''
+
+				try:
+					pre_host_severity=state_change_dict.get(str(entry[1]))[0]
+					if pre_host_severity and pre_host_severity!= host_severity:
+						age = int(time.time())
+
+					else :
+						age = state_change_dict.get(str(entry[1]))[1]						
+
+					state_change_dict[str(entry[1])]=(host_severity,age)
+
+				except Exception as e :
+					print e, "in state change dict"
+					state_change_dict[str(entry[1])]=(host_severity,age)
+                                        
+
+
+
 			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
 			if ds == 'rta':
 				try:
@@ -259,6 +285,15 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		refer = ''
 		device_first_down = {}
 	after = int(time.time())
+
+        try:
+                pickle_file = open("state_change.dat",'w')
+                cPickle.dump(state_change_dict,pickle_file)
+                pickle_file.close()
+        except Exception as e:
+                print e
+
+
 	#print len(device_first_down_list)
 	#print len(first_down_crit_list)
 	elapsed = after -current
