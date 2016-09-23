@@ -2103,6 +2103,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     is_searched = False
 
     up_since_format_array = [
+        'Day',
         'Hour',
         'Minute',
         'Second',
@@ -2394,8 +2395,20 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         formatted_string = ''
 
         for i in range(len(splitted_uptime)):
+            suffix_val = str(self.up_since_format_array[i])
+            timestamp_val = splitted_uptime[i]
+            try:
+                if not int(timestamp_val):
+                    continue
+            except Exception, e:
+                pass
 
-            formatted_string += ' ' + str(splitted_uptime[i]) +' '+ str(self.up_since_format_array[i]) + ' '
+            try:
+                if int(timestamp_val) > 1:
+                    suffix_val += 's'
+            except Exception, e:
+                pass
+            formatted_string += ' {} {} '.format(str(timestamp_val), suffix_val)
 
         return formatted_string
 
@@ -2990,8 +3003,20 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         formatted_string = ''
 
         for i in range(len(splitted_uptime)):
+            suffix_val = str(self.up_since_format_array[i])
+            timestamp_val = splitted_uptime[i]
+            try:
+                if not int(timestamp_val):
+                    continue
+            except Exception, e:
+                pass
 
-            formatted_string += ' ' + str(splitted_uptime[i]) +' '+ str(self.up_since_format_array[i]) + ' '
+            try:
+                if int(timestamp_val) > 1:
+                    suffix_val += 's'
+            except Exception, e:
+                pass
+            formatted_string += ' {} {} '.format(str(timestamp_val), suffix_val)
 
         return formatted_string
 
