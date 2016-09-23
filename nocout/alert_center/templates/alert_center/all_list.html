@@ -59,7 +59,8 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
         var dataTableInstance = '',
-            gridHeadersObj = '',
+            current_headers = '',
+            clear_history_headers = '',
             ajax_url = '',
             table_title = '',
             show_customer_count = false,
@@ -76,8 +77,9 @@
             /*Grid headers object*/
             var alarm_type = $('input[name="alarm_type"]:checked').val();
 
+            current_headers = $.parseJSON('{{ datatable_headers|safe }}');
+            clear_history_headers = $.parseJSON('{{ clear_history_headers|safe }}');
             data_source = '{{ data_source|safe }}'
-            gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             ajax_url = '{% url "all_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=all'+'&data_source='+ data_source;
             table_title = "All ("+ '{{ data_source_title }}'+")";
 
@@ -88,7 +90,7 @@
             /*Call createDataTable function of ourDataTableWidget class*/
             dataTableInstance.createDataTable(
                 "snmp_all_table",
-                gridHeadersObj,
+                current_headers,
                 ajax_url,
                 false,
                 table_title,
@@ -108,6 +110,7 @@
             var alarm_type = $(this).val(),
                 new_get_param = 'alarm_type='+alarm_type,
                 current_url = ajax_url,
+                datatable_headers = '',
                 updated_url = "";
 
             // Update converter url
@@ -122,10 +125,16 @@
             var common_extra_param = "'download_excel': 'yes'",
                 extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}";
 
+            if (alarm_type == 'current') {
+                datatable_headers = current_headers;
+            } else {
+                datatable_headers = clear_history_headers;
+            }
+
             /*Call createDataTable function of ourDataTableWidget class*/
             dataTableInstance.createDataTable(
                 "snmp_all_table",
-                gridHeadersObj,
+                datatable_headers,
                 updated_url,
                 false,
                 table_title,
