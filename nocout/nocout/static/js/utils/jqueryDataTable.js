@@ -79,10 +79,14 @@ function ourDataTableWidget() {
 
         destroy = typeof destroy !== 'undefined' ? destroy : true;
 
-        var page_length_val = [[10, 25, 50, 100], [10, 25, 50, 100]];
+        if(typeof specific_page_length != 'undefined') {
+            var page_length_val = specific_page_length;
+        } else {
+            var page_length_val = [[10, 25, 50, 100], [10, 25, 50, 100]];
 
-        if(ajax_url == '/download_center/citycharter/listing/yes/' || ajax_url == '/dashboard/dfr-reports-main/table/') {
-            page_length_val = [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]];            
+            if(ajax_url == '/download_center/citycharter/listing/yes/' || ajax_url == '/dashboard/dfr-reports-main/table/') {
+                page_length_val = [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]];            
+            }
         }
 
         var default_selected_page_length = page_length_val[0][0] ? page_length_val[0][0] : 10;
