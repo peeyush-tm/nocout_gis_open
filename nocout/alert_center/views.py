@@ -697,10 +697,13 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         ]
 
         starting_columns = []
+        tkt_column = []
         if data_tab in ['P2P', 'PTP', 'PTP-BH', 'PTP_BH']:
             starting_columns += ckt_customer_column
         else:
             starting_columns += ['sector_id']
+            if page_type == 'network' and data_source == "down":
+                tkt_column += ['ticket_no']
 
         if page_type == 'customer':
             near_ip_column = ['near_end_ip']
@@ -728,6 +731,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         if data_tab in ['PMP', 'WiMAX', 'all'] and SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT:
             other_columns = ['customer_count']
 
+        other_columns += tkt_column
         other_columns += [
             'sys_timestamp',
             'age',
@@ -740,7 +744,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         self.columns += common_columns
         self.columns += polled_columns
         self.columns += other_columns
-
+        
         self.order_columns = self.columns
 
         return True
