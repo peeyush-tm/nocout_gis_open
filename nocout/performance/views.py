@@ -313,7 +313,6 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
             other_type=other_type,
             required_value_list=required_value_list
         )
-        print devices
 
         # preparing machine list
         machines = self.inventory_utils.prepare_machines(

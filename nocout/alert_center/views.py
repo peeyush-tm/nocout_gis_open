@@ -110,6 +110,17 @@ class AlertCenterListing(ListView):
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
         ]
 
+        rad5_headers = [
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},            
+        ]
+
+        if page_type == 'network':
+            rad5_headers += [{
+                'mData': 'customer_count', 
+                'sTitle': 'Customer Count',
+                'sWidth': 'auto',
+                'bSortable': True
+            }]
         # If customer page then add near end ip column to all stating columns list
         if page_type == 'customer':
             near_ip_column = [{
