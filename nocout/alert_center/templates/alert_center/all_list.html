@@ -43,10 +43,16 @@
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-bell-o"></i>{{ data_source_title }}</h4>
+            <div class="tools" style="margin-bottom: 0px;">
+                <button class="btn btn-sm btn-default normal_screen" id="manual_refresh" title="Refresh Data">
+                    <i class="fa fa-refresh"></i>
+                </button>
+            </div>
+            <div class="clearfix"></div>
         </div>
 
         <div class="box-body" style="overflow:auto;">
-            <table class="datatable table table-striped table-bordered table-hover" id="snmp_all_table">
+            <table class="datatable table table-striped table-bordered table-hover" id="all_listing">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -59,10 +65,14 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
         var dataTableInstance = '',
-            gridHeadersObj = '',
+            reload_timeout_instance = '',
+            current_headers = '',
+            clear_history_headers = '',
             ajax_url = '',
+            specific_page_length = [[100, 150, 200, 250], [100, 150, 200, 250]],
             table_title = '',
             show_customer_count = false,
+            refresh_time = 300,
             data_source = '';
 
         $(document).ready(function (e) {
@@ -76,28 +86,13 @@
             /*Grid headers object*/
             var alarm_type = $('input[name="alarm_type"]:checked').val();
 
+            current_headers = $.parseJSON('{{ datatable_headers|safe }}');
+            clear_history_headers = $.parseJSON('{{ clear_history_headers|safe }}');
             data_source = '{{ data_source|safe }}'
-            gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             ajax_url = '{% url "all_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=all'+'&data_source='+ data_source;
             table_title = "All ("+ '{{ data_source_title }}'+")";
 
-            // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
-            var common_extra_param = "'download_excel': 'yes'",
-                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+", 'data_source': '"+data_source+"'}";
-
-            /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable(
-                "snmp_all_table",
-                gridHeadersObj,
-                ajax_url,
-                false,
-                table_title,
-                'alert_center',
-                'AllSiaListing',
-                'AllSiaListingTable',
-                extra_param,
-                extra_param
-            );
+            initAllListing();
         });
 
         /**
@@ -108,6 +103,7 @@
             var alarm_type = $(this).val(),
                 new_get_param = 'alarm_type='+alarm_type,
                 current_url = ajax_url,
+                datatable_headers = '',
                 updated_url = "";
 
             // Update converter url
@@ -122,10 +118,16 @@
             var common_extra_param = "'download_excel': 'yes'",
                 extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}";
 
+            if (alarm_type == 'current') {
+                datatable_headers = current_headers;
+            } else {
+                datatable_headers = clear_history_headers;
+            }
+
             /*Call createDataTable function of ourDataTableWidget class*/
             dataTableInstance.createDataTable(
-                "snmp_all_table",
-                gridHeadersObj,
+                "all_listing",
+                datatable_headers,
                 updated_url,
                 false,
                 table_title,
@@ -136,5 +138,50 @@
                 extra_param
             );
         });
+
+        /**
+         * This event triggers when manual refresh button clicked. It reload the table data
+         * @event click
+         */
+        $('#manual_refresh').click(function(e) {
+            initAllListing();
+        });
+
+        /**
+         * This function call function to create datatable as per available params
+         * @method initAllListing
+         */
+        function initAllListing() {
+            // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
+            var common_extra_param = "'download_excel': 'yes'",
+                search_val = $('#all_listing_filter input[type="search"]').val(),
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+", 'data_source': '"+data_source+"'}";
+
+            if (search_val) {
+                $('#all_listing_search_btn').trigger('click');
+            } else {
+                /*Call createDataTable function of ourDataTableWidget class*/
+                dataTableInstance.createDataTable(
+                    "all_listing",
+                    current_headers,
+                    ajax_url,
+                    false,
+                    table_title,
+                    'alert_center',
+                    'AllSiaListing',
+                    'AllSiaListingTable',
+                    extra_param,
+                    extra_param
+                );
+            }
+
+            if(reload_timeout_instance) {
+                clearTimeout(reload_timeout_instance);
+            }
+
+            reload_timeout_instance = setTimeout(function(e) {
+                initAllListing();
+            }, refresh_time * 1000);
+        }
     </script>
 {% endblock %}

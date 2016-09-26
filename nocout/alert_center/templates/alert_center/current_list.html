@@ -61,11 +61,6 @@
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                    <!-- <li>
-                        <a href="#snmp_converter_block" id="snmp_converter_tab" data-toggle="tab">
-                            Converter
-                        </a>
-                    </li> -->
                     <li>
                         <a href="#snmp_pmp_block" id="snmp_pmp_tab" data-toggle="tab">
                             PMP
@@ -101,12 +96,6 @@
                             <tbody></tbody>
                         </table>
                     </div>
-                    <!-- <div class="tab-pane" id="snmp_converter_block">
-                        <table id="snmp_converter_table" class="datatable table table-striped table-bordered table-hover">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div> -->
                 </div>
 
                 <div class="clearfix"></div>
@@ -130,7 +119,9 @@
             endDate = '',
             date_range_picker_html = '',
             filter_api_url = '',
-            show_customer_count = false;
+            show_customer_count = false,
+            current_headers = '',
+            clear_history_headers = '';
 
         $(document).ready(function (e) {
             refresh_time = 300; //Refresh SIA page in every 5 minutes 5*60 = 300
@@ -142,6 +133,9 @@
             {% if settings.SHOW_CUSTOMER_COUNT_IN_TRAPS %}
                 show_customer_count = true;
             {% endif %}
+
+            current_headers = '{{ datatable_headers|safe }}';
+            clear_history_headers = '{{ clear_history_headers|safe }}';
 
             date_range_picker_html = '<input type="text" name="filter_date" id="filter_date" class="form-control" value=""/>';
 
@@ -156,28 +150,17 @@
             var alarm_type = $('input[name="alarm_type"]:checked').val(),
                 ajax_url_all = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=all',
                 ajax_url_pmp = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=pmp',
-                ajax_url_wimax = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=wimax',
-                ajax_url_converter = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=switch';
+                ajax_url_wimax = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=wimax';
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
             var common_extra_param = "'download_excel': 'yes'",
-                converter_title = "Device Alarms - Converter ({1})",
                 pmp_title = "Device Alarms - PMP ({1})",
                 wimax_title = "Device Alarms - WiMAX ({1})",
                 all_title = "Device Alarms - All ({1})",
-                fetch_data_class = "SIAListingTable",
-                converter_tab_param = "";
+                fetch_data_class = "SIAListingTable";
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
 
             tables_info = {
-                "snmp_converter_tab" : {
-                    "app_name" : "alert_center",
-                    "table_title" : converter_title,
-                    "header_class_name" : "SIAListing",
-                    "data_class_name" : fetch_data_class,
-                    "header_extra_param" : "{'headers_data_key' : 'converter_datatable_headers', "+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+converter_title+"', 'alarm_type': '{0}', 'tech_name': 'switch', "+common_extra_param+"}"
-                },
                 "snmp_pmp_tab" : {
                     "app_name" : "alert_center",
                     "table_title" : pmp_title,
@@ -205,17 +188,14 @@
             };
 
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
-            // $("#snmp_converter_tab").attr("data_url", ajax_url_converter);
-            // $("#snmp_converter_tab").attr("data_header", '{{ converter_datatable_headers|safe }}');
-
             $("#snmp_pmp_tab").attr("data_url", ajax_url_pmp);
-            $("#snmp_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#snmp_pmp_tab").attr("data_header", current_headers);
 
             $("#snmp_wimax_tab").attr("data_url", ajax_url_wimax);
-            $("#snmp_wimax_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#snmp_wimax_tab").attr("data_header", current_headers);
 
             $("#snmp_all_tab").attr("data_url", ajax_url_all);
-            $("#snmp_all_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#snmp_all_tab").attr("data_header", current_headers);
 
             show_hide_count_column();
             

@@ -47,24 +47,21 @@ $('input[name="alarm_type"]').change(function(e) {
     var alarm_type = $(this).val(),
         new_get_param = 'alarm_type='+alarm_type,
         active_tab_id = $('.nav-tabs li.active a').attr('id'),
-        converter_url = $("#snmp_converter_tab").attr("data_url"),
         pmp_url = $("#snmp_pmp_tab").attr("data_url"),
+        headers = '',
         wimax_url = $("#snmp_wimax_tab").attr("data_url"),
         all_url = $("#snmp_all_tab").attr("data_url"),
-        updated_url_converter = "",
         updated_url_pmp = "",
         updated_url_wimax = "",
         updated_url_all = "";
 
     show_hide_count_column();
 
-    // Update converter url
-    var array1 = converter_url ? converter_url.split("?") : [],
-        array2 = array1 && array1.length > 1 ? array1[1].split("&") : [];
-
-    array2[0] = new_get_param
-    array1[1] = array2.join('&');
-    updated_url_converter = array1.join('?')
+    if (alarm_type == 'current') {
+        headers = current_headers;
+    } else {
+        headers = clear_history_headers;
+    }
 
     // Update PMP url
     var array1 = pmp_url.split("?"),
@@ -88,10 +85,13 @@ $('input[name="alarm_type"]').change(function(e) {
     updated_url_all = array1.join('?')
 
     // Update the 'data_url' attribute of all tabs
-    $("#snmp_converter_tab").attr("data_url", updated_url_converter);
     $("#snmp_pmp_tab").attr("data_url", updated_url_pmp);
     $("#snmp_wimax_tab").attr("data_url", updated_url_wimax);
     $("#snmp_all_tab").attr("data_url", updated_url_all);
+
+    $("#snmp_pmp_tab").attr("data_header", headers);
+    $("#snmp_wimax_tab").attr("data_header", headers);
+    $("#snmp_all_tab").attr("data_header", headers);
 
     // Trigger click event on active tab
     $("#" + active_tab_id).trigger('click', true);

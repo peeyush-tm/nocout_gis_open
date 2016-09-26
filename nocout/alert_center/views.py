@@ -2050,6 +2050,10 @@ class SIAListing(ListView):
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
         ]
 
+        action_columns = [
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
         datatable_headers = list()
         datatable_headers += starting_columns
         datatable_headers += specific_invent_columns
@@ -2062,8 +2066,9 @@ class SIAListing(ListView):
         converter_datatable_headers += common_columns
 
 
-        context['datatable_headers'] = json.dumps(datatable_headers)
-        context['converter_datatable_headers'] = json.dumps(converter_datatable_headers)
+        context['datatable_headers'] = json.dumps(datatable_headers + action_columns)
+        # context['converter_datatable_headers'] = json.dumps(converter_datatable_headers)
+        context['clear_history_headers'] = json.dumps(datatable_headers)
 
         return context
 
@@ -2103,6 +2108,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     is_searched = False
 
     up_since_format_array = [
+        'Day',
         'Hour',
         'Minute',
         'Second',
@@ -2155,11 +2161,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             tech_type_filter_condition = ''
             not_condition_sign = ''
         else:
-            # ip_address_list = list(Device.objects.filter(
-            #     device_technology__in=tech_name_id
-            # ).values_list('ip_address', flat=True))
             tech_type_filter_condition = 'Q(technology__iexact="{0}"),'.format(self.tech_name)
-
 
         if filter_condition:
             query = "queryset = self.model.objects.exclude( \
@@ -2394,8 +2396,20 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         formatted_string = ''
 
         for i in range(len(splitted_uptime)):
+            suffix_val = str(self.up_since_format_array[i])
+            timestamp_val = splitted_uptime[i]
+            try:
+                if not int(timestamp_val):
+                    continue
+            except Exception, e:
+                pass
 
-            formatted_string += ' ' + str(splitted_uptime[i]) +' '+ str(self.up_since_format_array[i]) + ' '
+            try:
+                if int(timestamp_val) > 1:
+                    suffix_val += 's'
+            except Exception, e:
+                pass
+            formatted_string += ' {} {} '.format(str(timestamp_val), suffix_val)
 
         return formatted_string
 
@@ -2410,7 +2424,20 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 severity = dct.get('severity')
                 severity_icon = alert_utils.common_get_severity_icon(severity)
                 uptime = dct.get('uptime')
+                ticket_number = dct.get('ticket_number')
+                is_manual = dct.get('is_manual')
+                action = ''
                 formatted_uptime = uptime
+
+                try:
+
+                    if not ticket_number:
+                        action += '<a href="javascript:;" title="Generate Manual Ticket"><i class="fa fa-sign-in"></i></a>'
+
+                    if is_manual:
+                        action += '&nbsp;&nbsp;<a href="javascript:;" class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></a>'
+                except Exception, e:
+                    pass
 
                 try:
                     first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
@@ -2426,6 +2453,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     formatted_uptime = self.format_uptime_value(uptime)
 
                 dct.update(
+                    action=action,
                     severity=severity_icon,
                     uptime=formatted_uptime,
                     first_occurred=first_occurred,
@@ -2626,22 +2654,20 @@ class AllSiaListing(ListView):
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
         ]
 
+        action_columns = [
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
         datatable_headers = list()
         datatable_headers += starting_columns
         datatable_headers += specific_invent_columns
         datatable_headers += invent_columns
         datatable_headers += common_columns
 
-        converter_datatable_headers = list()
-        converter_datatable_headers += starting_columns
-        converter_datatable_headers += invent_columns
-        converter_datatable_headers += common_columns
-
-
-        context['datatable_headers'] = json.dumps(datatable_headers)
+        context['datatable_headers'] = json.dumps(datatable_headers + action_columns)
+        context['clear_history_headers'] = json.dumps(datatable_headers)
         context['data_source'] = data_source
         context['data_source_title'] = data_source_title
-        context['converter_datatable_headers'] = json.dumps(converter_datatable_headers)
 
         return context
 
@@ -2990,8 +3016,20 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         formatted_string = ''
 
         for i in range(len(splitted_uptime)):
+            suffix_val = str(self.up_since_format_array[i])
+            timestamp_val = splitted_uptime[i]
+            try:
+                if not int(timestamp_val):
+                    continue
+            except Exception, e:
+                pass
 
-            formatted_string += ' ' + str(splitted_uptime[i]) +' '+ str(self.up_since_format_array[i]) + ' '
+            try:
+                if int(timestamp_val) > 1:
+                    suffix_val += 's'
+            except Exception, e:
+                pass
+            formatted_string += ' {} {} '.format(str(timestamp_val), suffix_val)
 
         return formatted_string
 
@@ -3006,7 +3044,20 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 severity = dct.get('severity')
                 severity_icon = alert_utils.common_get_severity_icon(severity)
                 uptime = dct.get('uptime')
+                ticket_number = dct.get('ticket_number')
+                is_manual = dct.get('is_manual')
+                action = ''
                 formatted_uptime = uptime
+
+                try:
+
+                    if not ticket_number:
+                        action += '<a href="javascript:;" title="Generate Manual Ticket"><i class="fa fa-sign-in"></i></a>'
+
+                    if is_manual:
+                        action += '&nbsp;&nbsp;<a href="javascript:;" class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></a>'
+                except Exception, e:
+                    pass
 
                 try:
                     first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
@@ -3022,6 +3073,7 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     formatted_uptime = self.format_uptime_value(uptime)
 
                 dct.update(
+                    action='',
                     bh_status=severity,
                     severity=severity_icon,
                     uptime=formatted_uptime,

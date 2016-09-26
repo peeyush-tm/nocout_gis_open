@@ -1,7 +1,7 @@
 /* Colors */
 /* Primary colors */
 #page {
-    /*#CA1E25*/
+	/*#CA1E25*/
   background: none #FFFFFF;
 }
 #page_content_div
@@ -117,7 +117,8 @@
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset;
 }
 .sidebar-menu > ul > li > ul.sub > li:before,
-.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li:before {
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li:before,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li > ul.sub-sub-sub li:before {
   border-top: 1px dotted #CA1E25;
 }
 .sidebar-menu > ul > li > ul.sub:before,

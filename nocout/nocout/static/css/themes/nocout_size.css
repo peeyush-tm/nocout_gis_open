@@ -386,6 +386,7 @@ table.dataTable thead th, table.dataTable tfoot th {
 .sidebar-menu > ul > li.has-sub,
 .sidebar-menu > ul > li.has-sub .sub,
 .sidebar-menu > ul > li.has-sub > .sub > li.has-sub-sub .sub-sub,
+.sidebar-menu > ul > li.has-sub > .sub > li.has-sub-sub .sub-sub > li.has-sub-sub-sub .sub-sub-sub,
 .mini-menu#sidebar #quicklaunch {
   position: relative;
 }
@@ -402,7 +403,8 @@ table.dataTable thead th, table.dataTable tfoot th {
   text-shadow: none;
 }
 .sidebar-menu > ul > li > ul.sub:before,
-.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub:before {
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub:before,
+.sidebar-menu > ul > li > ul.sub > li > ul.sub-sub > li > ul.sub-sub-sub:before {
   -moz-border-bottom-colors: none;
   -moz-border-left-colors: none;
   -moz-border-right-colors: none;
