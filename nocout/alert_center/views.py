@@ -36,7 +36,8 @@ from django.utils.dateformat import format
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME, \
-SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT, SHOW_TICKET_NUMBER
+SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT, SHOW_TICKET_NUMBER, \
+ENABLE_MANUAL_TICKETING
 
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
@@ -2054,9 +2055,11 @@ class SIAListing(ListView):
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
         ]
 
-        action_columns = [
-            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
-        ]
+        action_columns = []
+        if ENABLE_MANUAL_TICKETING:
+            action_columns = [
+                {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
+            ]
 
         datatable_headers = list()
         datatable_headers += starting_columns
@@ -2434,12 +2437,12 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 formatted_uptime = uptime
 
                 try:
+                    if ENABLE_MANUAL_TICKETING:
+                        if not ticket_number:
+                            action += '<a href="javascript:;" title="Generate Manual Ticket"><i class="fa fa-sign-in"></i></a>'
 
-                    if not ticket_number:
-                        action += '<a href="javascript:;" title="Generate Manual Ticket"><i class="fa fa-sign-in"></i></a>'
-
-                    if is_manual:
-                        action += '&nbsp;&nbsp;<a href="javascript:;" class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></a>'
+                        if is_manual:
+                            action += '&nbsp;&nbsp;<a href="javascript:;" class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></a>'
                 except Exception, e:
                     pass
 
@@ -2658,9 +2661,11 @@ class AllSiaListing(ListView):
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
         ]
 
-        action_columns = [
-            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
-        ]
+        action_columns = []
+        if ENABLE_MANUAL_TICKETING:
+            action_columns = [
+                {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
+            ]
 
         datatable_headers = list()
         datatable_headers += starting_columns
@@ -3054,12 +3059,12 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 formatted_uptime = uptime
 
                 try:
+                    if ENABLE_MANUAL_TICKETING:
+                        if not ticket_number:
+                            action += '<a href="javascript:;" title="Generate Manual Ticket"><i class="fa fa-sign-in"></i></a>'
 
-                    if not ticket_number:
-                        action += '<a href="javascript:;" title="Generate Manual Ticket"><i class="fa fa-sign-in"></i></a>'
-
-                    if is_manual:
-                        action += '&nbsp;&nbsp;<a href="javascript:;" class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></a>'
+                        if is_manual:
+                            action += '&nbsp;&nbsp;<a href="javascript:;" class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></a>'
                 except Exception, e:
                     pass
 

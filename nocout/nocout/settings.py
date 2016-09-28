@@ -1360,6 +1360,7 @@ MAX_PARALLEL_STABILITY_TESTS = 6
 ENABLE_PE_PERF = False
 # Enable/Disable All tab in alert center
 SHOW_ALL_IN_NETWORK_ALERT_CENTER = False
+ENABLE_MANUAL_TICKETING = False
 
 # Import the local_settings.py file to override global settings
 try:
