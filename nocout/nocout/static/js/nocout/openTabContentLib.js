@@ -120,7 +120,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                     }
                 }
             }
-
+            
             // For radwin5k specific columns.
             if (is_rad5 > 0){
                 for (var i = 0; i < grid_headers.length; i++) {

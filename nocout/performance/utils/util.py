@@ -29,6 +29,8 @@ from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
 from django.http import HttpRequest
 
 from device.models import Device
+from inventory.models import Sector, Circuit
+from performance.models import NetworkStatus
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
@@ -231,6 +233,16 @@ class PerformanceUtilsGateway:
             device_name_list=device_name_list,
             is_single_call=is_single_call
         )
+
+        return param1
+
+    def get_se_to_pe_min_latency(self, device_id=0, page_type='network'):
+        """
+
+        :param device_id
+        :param page_type
+        """
+        param1 = get_se_to_pe_min_latency(device_id, page_type)
 
         return param1
 
@@ -1707,3 +1719,42 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
     except Exception as e:
         log.exception(e.message)
 
+def get_se_to_pe_min_latency(device_id=0, page_type='network'):
+    """
+    This method is for getting device's SE to PE min latency
+    param device_id: id of device
+    param page_type: Type of page i.e. 'Network', 'Customer'
+    return: min_latency(SE TO PE Min. latency of device)
+    """
+    if not device_id:
+        return 'NA'
+
+    if page_type == 'network':
+        try:
+            pe_device = Sector.objects.get(
+                    sector_configured_on_id=device_id
+                ).base_station.backhaul.pe_ip
+        except Exception, e:
+            return 'NA'
+    elif page_type == 'customer':
+        try:
+            pe_device = Circuit.objects.get(
+                    sub_station__device_id=device_id
+                ).sector.base_station.backhaul.pe_ip
+        except Exception, e:
+            return 'NA'
+    else:
+        pass
+
+    try:
+        min_latency = NetworkStatus.objects.get(
+                ip_address=pe_device.ip_address,
+                data_source='rta',
+                service='ping'
+            ).using(
+                pe_device.machine.name
+            ).min_value
+    except Exception, err:
+        return 'NA'
+
+    return min_latency

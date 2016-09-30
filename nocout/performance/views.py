@@ -194,7 +194,7 @@ class LivePerformance(ListView):
 
         rad5_specific_headers = [
             {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},
-            # {'mData': 'min_latency', 'sTitle': 'SE to PE Latency Min', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False}
+            {'mData': 'min_latency', 'sTitle': 'SE to PE Latency Min', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
         ]
 
         if page_type in ["network"]:
@@ -255,7 +255,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         'near_end_ip',
         'ip_address',
         'region',
-        # 'min_latency',
+        'min_latency',
         'device_type',
         'bs_name',
         'city',
@@ -378,6 +378,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'circuit_id',
                 'customer_name',
                 'near_end_ip',
+                'region',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -394,6 +395,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'sector_id',
                 'circuit_id',
                 'customer_name',
+                'region',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -560,6 +562,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         other_type = self.request.GET.get('other_type')
         alert_page_type = page_type
 
+        is_rad5 = int(self.request.GET.get('is_rad5', 0))
         # In case of other page update page type to 'network' for alert center link
         if page_type not in ["customer", "network"]:
             alert_page_type = 'network'
@@ -568,8 +571,13 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
             page_type = 'pe'
             alert_page_type = 'network'
 
+        min_latency = ''
         if qs:
             for dct in qs:
+                # for getting SE to PE min. latency
+                if is_rad5:
+                    device_id = dct.get('id', 0)
+                    min_latency = perf_utils.get_se_to_pe_min_latency(device_id, page_type)
 
                 try:
                     if int(dct['packet_loss']) == 100:
@@ -618,6 +626,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
 
 
                 dct.update(
+                    min_latency= min_latency if min_latency else 'NA',
                     latency=latency,
                     packet_loss=packet_loss,
                     actions='<a href="' + performance_url + '" title="Device Performance">\
@@ -861,9 +870,15 @@ class GetPerfomance(View):
         if bh_perf_url:
             bh_perf_url += '?is_util=1'
 
+        if device_technology.lower() == 'pmp':
+            breadcrumb_title = 'Radwin5k' if is_radwin5 else 'Cambium'
+        else:
+            breadcrumb_title = device_technology
+
         page_data = {
             'page_title': page_type.capitalize(),
             'device_technology': device_technology,
+            'breadcrumb_title': breadcrumb_title,
             'device_type': device_type,
             'device': device,
             'realdevice': realdevice,
