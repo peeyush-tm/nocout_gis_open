@@ -10,7 +10,7 @@ from django.core.urlresolvers import reverse
 from django.views.generic import ListView, View
 from django.http import HttpResponse
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device.models import Device, DeviceTechnology,DeviceType
+from device.models import Device, DeviceTechnology, DeviceType, DeviceTicket
 # For SIA Listing
 from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
 from performance.models import EventNetwork, EventService
@@ -2658,7 +2658,8 @@ class AllSiaListing(ListView):
         ]
 
         specific_invent_columns = [
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': False},
         ]
 
         action_columns = []
@@ -3337,7 +3338,7 @@ def prepare_snmp_gis_data(qs, tech_name):
 
     return qs_list
 
-@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
+# @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_snmp_gis_data_all_tab(qs, tech_name):
     """
     This function fetched GIS Inventory data as per the given param & 
@@ -3355,6 +3356,12 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
 
     sectors_data_qs, dr_data_qs = '', ''
     converter_mapped_data = {}
+
+    # Fetch ticket number for given ips
+    tickets_dataset = DeviceTicket.objects.filter(
+        ip_address__in=ip_address_list
+    ).values('ticket_number', 'ip_address')
+
     if tech_name in ['pmp', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
@@ -3570,6 +3577,11 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         'dr_configured_on__ip_address'
     )
 
+    tickets_dict = inventory_utils.list_to_indexed_dict(
+        list(tickets_dataset),
+        'ip_address'
+    )
+
     mapped_result = mapped_sector_result.copy()
     mapped_result.update(mapped_dr_result)
     mapped_result.update(converter_mapped_data)
@@ -3589,7 +3601,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             bs_conv_ip='NA',
             pop_conv_ip='NA',
             aggr_sw_ip='NA',
-            pe_ip='NA'
+            pe_ip='NA',
+            ticket_number='NA'
         )
 
         if not ip_address:
@@ -3600,6 +3613,16 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         except Exception, e:
             sector_dct = None
             pass
+
+        try:
+            ticket_number = tickets_dict.get(ip_address).get('ticket_number', 'NA')
+        except Exception, e:
+            ticket_number = 'NA'
+
+        data.update(
+            ticket_number=ticket_number
+        )
+
         if sector_dct:
             pe_ip = sector_dct.get('base_station__backhaul__pe_ip__ip_address') if sector_dct.get('base_station__backhaul__pe_ip__ip_address') else 'NA'
             bh_ckt_id= sector_dct.get('base_station__backhaul__bh_circuit_id') if sector_dct.get('base_station__backhaul__bh_circuit_id') else 'NA'
