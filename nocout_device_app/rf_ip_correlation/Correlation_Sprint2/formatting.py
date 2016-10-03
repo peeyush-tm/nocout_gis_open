@@ -8,7 +8,7 @@ from collections import defaultdict
 import imp
 from itertools import izip_longest
 import json
-ih_count = 5000
+ih_count = 10000
 ip_id = {}
 class inventory(object):
     global ip_id
@@ -35,6 +35,7 @@ class inventory(object):
 	#for pair in mapping.iteritems():
 	#	items.extend(pair)
 	mapping = self.dicts(mapping) 
+	logger.error("mapping**********",mapping)
 	try: 
 	    [rds_cnx.set(pair[0],pair[1] ) for pair in mapping.iteritems()]  
 	except Exception as e:
@@ -103,6 +104,7 @@ class inventory(object):
 	self.insert_data_in_redis(ip_invent_mapping)
     def prepare_raw_result(self,resultset=None, ptp_farend_ip_list=None,inventory_id_list=None,is_active=0,ptp_bh_dict=None):
 	# list will carry bs resultset for PTP_BH type hierarchy.
+	bs_parenttype = ''
 	far_end_resultset = list()
 	total_inventory = dict() 
 	obj_count = 0
@@ -140,8 +142,8 @@ class inventory(object):
 		resource_name = 'POPConverter'
 		conv_switch_data_dict=self.create_conv_switch_data_dict(bs,conv_switch_data_dict,obj_count,
 									resource_name,is_active,ptp_bh_dict)
-		#bs parent ip will update if POPconverter is available.
 		bs_parentip = bs.get('POPconverterIP')
+		bs_parenttype = 'Converter'
 		    
 	    if bs.get('BTSconverterIP') and bs.get('BTSconverterIP') != 'NA':
 		inventory_hierarchy[bs.get('BTSconverterIP')]=ih_count
@@ -154,6 +156,7 @@ class inventory(object):
 									resource_name,is_active,ptp_bh_dict)
 		#bs parent ip will update if BTSconverter is available.
 	        bs_parentip = bs.get('BTSconverterIP')
+		bs_parenttype = 'Converter'
 	    if bs.get('BSswitchIP') and bs.get('BSswitchIP') != 'NA':
 		inventory_hierarchy[bs.get('BSswitchIP')]=ih_count
 		ih_dynamic[ih_count]
@@ -163,11 +166,13 @@ class inventory(object):
 		resource_name = 'BSSwitch'
 		conv_switch_data_dict=self.create_conv_switch_data_dict(bs,conv_switch_data_dict,obj_count,
 									resource_name,is_active,ptp_bh_dict)
+	        bs_parentip = bs.get('BSSwitch')
+		bs_parenttype = 'Switch'
 
 	    params = self.create_ss_dict(bs,ss_data_dict,obj_count,inventory_hierarchy,ih_dynamic,ptp_farend_ip_list,ptp_bh_dict,is_active)
 	    ss_data_dict,inventory_hierarchy,ih_dynamic,ptp_parent_child_dict,ptp_bh_dict =  params
 
-	    bs_parent = (bs_parentip,'Converter','')
+	    bs_parent = (bs_parentip,bs_parenttype,'')
 	    bs_data_dict,inventory_hierarchy,ih_dynamic = self.create_sect_dict(bs,bs_data_dict,obj_count,inventory_hierarchy,ih_dynamic,
 									   ptp_parent_child_dict,ptp_bh_dict,is_active,bs_parent)
 	    if inventory_hierarchy and is_active == 0:
@@ -331,7 +336,7 @@ class inventory(object):
 		      pass
 		   if 'starmax' in tech.lower():
 		       data_dict[bs_key]['technology'] = 'wimax'
-		       data_dict[bs_key]['coverage'] = 'Telisma'
+		       data_dict[bs_key]['coverage'] = 'Telsima'
 		       data_dict[bs_key]['resource_type'] = 'IDU'
 		       data_dict[bs_key]['resource_name'] = 'BS'
 		   if 'canopy' in tech.lower():
@@ -453,36 +458,44 @@ class inventory(object):
 	for each unique key('rf_ip_'+alarm_name+'_'+severity) value contains the alarm information from mysql table of master_alarm_table.
 	mat_data dictionary data structure is stored in Redis database.
 	"""
+	logger.error('in file')
 	mat_data = dict()
-	for alarm_info in resultset:
-	    alarm_name = alarm_info.get('alarm_name','')
-	    severity = alarm_info.get('severity','')
-	    key = (alarm_name,severity)
-	    mat_data[key] = dict()
-	    mat_data[key]['alarm_name'] = alarm_info.get('alarm_name', '') 
-	    mat_data[key]['oid'] = alarm_info.get('oid', '')
-	    mat_data[key]['severity'] = alarm_info.get('severity', '')
-	    mat_data[key]['device_type'] = alarm_info.get('device_type', '')
-	    mat_data[key]['alarm_mode'] = alarm_info.get('alarm_mode', '')
-	    mat_data[key]['alarm_type'] = alarm_info.get('alarm_type', '')
-	    mat_data[key]['sia'] = alarm_info.get('sia', '')
-	    mat_data[key]['auto_tt'] = alarm_info.get('auto_tt', '')
-	    mat_data[key]['correlation'] = alarm_info.get('correlation', '')
-	    mat_data[key]['to_monolith'] = alarm_info.get('to_monolith', '')
-	    mat_data[key]['mail'] = alarm_info.get('mail', '')
-	    mat_data[key]['sms'] = alarm_info.get('sms', '')
-	    mat_data[key]['coverage'] = alarm_info.get('coverage' , '')
-	    mat_data[key]['resource_name'] = alarm_info.get('resource_name', '')
-	    mat_data[key]['resource_type'] = alarm_info.get('resource_type', '')
-	    mat_data[key]['support_organization'] = alarm_info.get('support_organization', '')
-	    mat_data[key]['bearer_organization'] = alarm_info.get('bearer_organization', '')
-	    mat_data[key]['priority'] = alarm_info.get('priority', '')
-	    # Type conversion str -> Set
-	    mat_data[key]['category'] = eval(alarm_info.get('alarm_category', 'set([])'))
-	    mat_data[key]['refer'] = alarm_info.get('refer', '')
-	rds_obj = RedisInterface(custom_conf={'db': 5}) 
-	redis_conn = rds_obj.redis_cnx	
-	redis_conn.set('mat_data',mat_data)
+	try:
+	    for alarm_info in resultset:
+		logger.error('alarm info {0}'.format(alarm_info))
+		alarm_name = alarm_info.get('alarm_name','')
+		severity = alarm_info.get('severity','')
+		key = (alarm_name,severity)
+		mat_data[key] = dict()
+		mat_data[key]['alarm_name'] = alarm_info.get('alarm_name', '') 
+		mat_data[key]['oid'] = alarm_info.get('oid', '')
+		mat_data[key]['severity'] = alarm_info.get('severity', '')
+		mat_data[key]['device_type'] = alarm_info.get('device_type', '')
+		mat_data[key]['alarm_mode'] = alarm_info.get('alarm_mode', '')
+		mat_data[key]['alarm_type'] = alarm_info.get('alarm_type', '')
+		mat_data[key]['sia'] = alarm_info.get('sia', '')
+		mat_data[key]['auto_tt'] = alarm_info.get('auto_tt', '')
+		mat_data[key]['correlation'] = alarm_info.get('correlation', '')
+		mat_data[key]['to_monolith'] = alarm_info.get('to_monolith', '')
+		mat_data[key]['mail'] = alarm_info.get('mail', '')
+		mat_data[key]['sms'] = alarm_info.get('sms', '')
+		mat_data[key]['coverage'] = alarm_info.get('coverage' , '')
+		mat_data[key]['resource_name'] = alarm_info.get('resource_name', '')
+		mat_data[key]['resource_type'] = alarm_info.get('resource_type', '')
+		mat_data[key]['support_organization'] = alarm_info.get('support_organization', '')
+		mat_data[key]['bearer_organization'] = alarm_info.get('bearer_organization', '')
+		mat_data[key]['priority'] = alarm_info.get('priority', '')
+		# Type conversion str -> Set
+		mat_data[key]['category'] = eval(alarm_info.get('alarm_category', "set(['Down'])"))
+		mat_data[key]['alarm_group'] = alarm_info.get('alarm_group','NA')
+		mat_data[key]['refer'] = alarm_info.get('refer', '')
+		logger.error('mat data with key {0}'.format(mat_data[key]))
+	    logger.error('mat data {0}'.format(mat_data))
+	    rds_obj = RedisInterface(custom_conf={'db': 5}) 
+	    redis_conn = rds_obj.redis_cnx	
+	    redis_conn.set('mat_data',mat_data)
+	except Exception as e:
+	    logger.error('insert_mat_data_in_redis {0}'.format(e))
 
 
 
