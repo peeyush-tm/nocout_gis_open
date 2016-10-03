@@ -2626,14 +2626,20 @@ class AllSiaListing(ListView):
             data_source_title = data_source
 
         starting_columns = [
-            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         invent_columns = [
-            {'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
+        invent_columns_2 = [
+            {'mData': 'bh_status', 'sTitle': 'BH Status', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
+        specific_invent_columns = [
             {'mData': 'bh_connectivity', 'sTitle': 'BH Connectivity', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_ckt_id', 'sTitle': 'BH Circuit ID', 'sWidth': 'auto', 'bSortable': True},
@@ -2642,24 +2648,24 @@ class AllSiaListing(ListView):
             {'mData': 'pop_conv_ip', 'sTitle': 'POP Convertor IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'aggr_sw_ip', 'sTitle': 'Aggregation Switch IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'pe_ip', 'sTitle': 'PE IP', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_status', 'sTitle': 'BH Status', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         common_columns = [
-            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
+        common_columns_2 = [
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
-        ]
-
-        specific_invent_columns = [
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': False},
+            # {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         action_columns = []
@@ -2670,9 +2676,11 @@ class AllSiaListing(ListView):
 
         datatable_headers = list()
         datatable_headers += starting_columns
-        datatable_headers += specific_invent_columns
-        datatable_headers += invent_columns
         datatable_headers += common_columns
+        datatable_headers += invent_columns
+        datatable_headers += invent_columns_2
+        datatable_headers += common_columns_2
+        datatable_headers += specific_invent_columns
 
         context['datatable_headers'] = json.dumps(datatable_headers + action_columns)
         context['clear_history_headers'] = json.dumps(datatable_headers)
@@ -2769,6 +2777,12 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         active_filter_condition = ''
         if self.alarm_type in ['current', 'clear']:
             active_filter_condition = ' Q(is_active= 1),'
+            # three_month_filter_condition = ''
+            three_month_before_date = 0
+        else:
+            current_date = datetime.datetime.now()
+            three_month_before_date = current_date - datetime.timedelta(days=90)
+            # three_month_filter_condition = Q(traptime__gte=three_month_before_date)
 
         for tech_name in tech_name_list:                
             if tech_name in device_technology_dict:
@@ -2792,36 +2806,50 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
             # ).values_list('ip_address', flat=True))
             tech_type_filter_condition = 'Q(technology__iexact="{0}"),'.format(self.tech_name)
 
-
+        str_to_date_condition = "STR_TO_DATE(traptime, '%%Y-%%m-%%d %%H:%%i:%%S')"
+        field_name = {
+            "traptime": str_to_date_condition
+        }
         if filter_condition:
-            query = "queryset = self.model.objects.filter( \
+            query = "queryset = self.model.objects.extra({6}).filter(\
                             {0}{4}\
                             ({1}) ,\
                             {3}\
-                            {5}\
+                            {5},\
                         ).using(TRAPS_DATABASE).order_by('-traptime').values(*{2})".format(
                             not_condition_sign,
                             filter_condition,
                             model_columns,
                             active_filter_condition,
                             tech_type_filter_condition,
-                            eventname_condition
+                            eventname_condition,
+                            field_name
                         )
 
         else:
-            query = "queryset = self.model.objects.filter( \
-                    {0}{3}\
-                    {2}\
-                    {4}\
-                ).using(TRAPS_DATABASE).order_by('-traptime').values(*{1})".format(
-                    not_condition_sign,
-                    model_columns,
-                    active_filter_condition,
-                    tech_type_filter_condition,
-                    eventname_condition
-                )                   
-
+            try:
+                query = "queryset = self.model.objects.extra({5}).filter(\
+                                {0}{3}\
+                                {2}\
+                                {4},\
+                            ).using(TRAPS_DATABASE).order_by('-traptime').values(*{1})".format(
+                                not_condition_sign,
+                                model_columns,
+                                active_filter_condition,
+                                tech_type_filter_condition,
+                                eventname_condition,
+                                field_name,
+                            )                   
+            except Exception, e:
+                logger.error(e)
+                pass
+        
         exec query
+
+        # filtering queryset for 3 only last 3 months traps
+        if self.alarm_type == 'history':
+            queryset = queryset.filter(traptime__gte=three_month_before_date)
+        
         return queryset
 
     def filter_queryset(self, qs):
@@ -2871,11 +2899,12 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         inventory_columns = []
         if self.tech_name in ['pmp', 'wimax', 'all']:
             self.order_columns = [
-                'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                'bs_state', 'bh_connectivity', 'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id',
-                'bs_conv_ip', 'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'bh_status',
-                'device_type', 'eventname', 'traptime', 'uptime','alarm_count',
-                'first_occurred','last_occurred', 'customer_count', 'sia'
+                'severity', 'traptime', 'eventname', 'ip_address',
+                'sector_id', 'device_type', 'bs_alias', 'bh_status',
+                'bs_state', 'bs_city', 'customer_count', 'alarm_count',
+                'first_occurred', 'last_occurred', 'ticket_number', 'sia',
+                'bh_connectivity', 'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id',
+                'bs_conv_ip', 'pop_conv_ip', 'aggr_sw_ip', 'pe_ip'
             ]
 
         # Number of columns that are used in sorting
