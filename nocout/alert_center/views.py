@@ -51,6 +51,9 @@ inventory_utils = InventoryUtilsGateway()
 # Create instance of 'AlertCenterUtilsGateway' class
 alert_utils = AlertCenterUtilsGateway()
 
+# Create instance of 'AlertCenterUtilsGateway' class
+perf_utils = PerformanceUtilsGateway()
+
 # Create instance of 'SchedulingManagementGateway' class
 scheduling_utils = SchedulingManagementGateway()
 
@@ -3119,7 +3122,6 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
                 dct.update(
                     action='',
-                    bh_status=severity,
                     severity=severity_icon,
                     uptime=formatted_uptime,
                     first_occurred=first_occurred,
@@ -3392,6 +3394,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
     sectors_data_qs, dr_data_qs = '', ''
     converter_mapped_data = {}
 
+    device_list = []
+
     # Fetch ticket number for given ips
     tickets_dataset = DeviceTicket.objects.filter(
         ip_address__in=ip_address_list
@@ -3400,14 +3404,18 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
     if tech_name in ['pmp', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
-        ).extra(
-            select={'device_type' : 'device_device.device_type'}
+        ).annotate(
+            machine_name=F('base_station__backhaul__bh_configured_on__machine__name'),
+            device_name=F('base_station__backhaul__bh_configured_on__device_name'),
+            device_type=F('base_station__backhaul__bh_configured_on__device_type')
         ).values(
             'sector_id',
             'sector_configured_on__ip_address',
             'base_station__alias',
             'base_station__city__city_name',
             'base_station__state__state_name',
+            'machine_name',
+            'device_name',
             'base_station__backhaul__bh_type',
             'base_station__backhaul__bh_connectivity',
             'base_station__backhaul__bh_circuit_id',
@@ -3419,18 +3427,24 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'device_type'
         ).distinct()
 
+        device_list += sectors_data_qs.values('machine_name', 'device_name')
+
         # If wimax only then check for DR device
         if tech_name in ['wimax', 'all']:
             dr_data_qs =  Sector.objects.filter(
                 dr_configured_on__ip_address__in=ip_address_list
-            ).extra(
-                select={'device_type' : 'device_device.device_type'}
+            ).annotate(
+                machine_name=F('base_station__backhaul__bh_configured_on__machine__name'),
+                device_name=F('base_station__backhaul__bh_configured_on__device_name'),
+                device_type=F('base_station__backhaul__bh_configured_on__device_type')
             ).values(
                 'sector_id',
                 'base_station__alias',
                 'base_station__city__city_name',
                 'base_station__state__state_name',
                 'dr_configured_on__ip_address',
+                'machine_name',
+                'device_name',
                 'base_station__backhaul__bh_circuit_id',
                 'base_station__backhaul__ttsl_circuit_id',
                 'base_station__backhaul__bh_switch__ip_address',
@@ -3439,6 +3453,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
                 'base_station__backhaul__pe_ip__ip_address',
                 'device_type'
             ).distinct()
+
+        device_list += dr_data_qs.values('machine_name', 'device_name')
 
     # If requert from converter or all tab only then check Backhaul model
     if tech_name in ['switch', 'converter', 'all']:
@@ -3451,7 +3467,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'device_device.device_type'
+                #'device_type': 'device_device.device_type'
             }
         ).annotate(
             base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
@@ -3459,7 +3475,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
             base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
             base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
+            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') ,
+            machine_name=F('backhaul__bh_configured_on__machine__name'),
+            device_name=F('backhaul__bh_configured_on__device_name'),
+            device_type=F('backhaul__bh_configured_on__device_type')
         ).filter(
             backhaul__bh_configured_on__ip_address__in=ip_address_list
         ).values(
@@ -3468,6 +3487,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
+            'machine_name',
+            'device_name',
             'backhaul__bh_configured_on__ip_address',
             'base_station__backhaul__bh_circuit_id',
             'base_station__backhaul__ttsl_circuit_id',
@@ -3477,13 +3498,15 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'base_station__backhaul__pe_ip__ip_address',
             'device_type'
         ).distinct()
+
+        device_list += bh_conf_data_qs.values('machine_name', 'device_name')
         
         bh_switch_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'T4.device_type'
+                # 'device_type': 'T4.device_type'
             }
         ).annotate(
             base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
@@ -3491,7 +3514,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
             base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
             base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
+            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+            machine_name=F('backhaul__bh_configured_on__machine__name'),
+            device_name=F('backhaul__bh_configured_on__device_name'),
+            device_type=F('backhaul__bh_configured_on__device_type')
         ).filter(
             backhaul__bh_configured_on__isnull=False,
             backhaul__bh_switch__ip_address__in=ip_address_list
@@ -3501,6 +3527,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
+            'machine_name',
+            'device_name',
             'backhaul__bh_switch__ip_address',
             'base_station__backhaul__bh_circuit_id',
             'base_station__backhaul__ttsl_circuit_id',
@@ -3508,15 +3536,17 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'base_station__backhaul__pop__ip_address',
             'base_station__backhaul__aggregator__ip_address',
             'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
+            'device_type',
         ).distinct()
+
+        device_list += bh_switch_data_qs.values('machine_name', 'device_name')
 
         pop_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'device_device.device_type'
+                # 'device_type': 'device_device.device_type'
             }
         ).annotate(
             base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
@@ -3524,7 +3554,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
             base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
             base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
+            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+            machine_name=F('backhaul__bh_configured_on__machine__name'),
+            device_name=F('backhaul__bh_configured_on__device_name'),
+            device_type=F('backhaul__bh_configured_on__device_type')
         ).filter(
             backhaul__bh_configured_on__isnull=False,
             backhaul__pop__ip_address__in=ip_address_list
@@ -3534,6 +3567,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
+            'machine_name',
+            'device_name',
             'backhaul__pop__ip_address',
             'base_station__backhaul__bh_circuit_id',
             'base_station__backhaul__ttsl_circuit_id',
@@ -3544,12 +3579,14 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'device_type'
         ).distinct()
 
+        device_list += pop_data_qs.values('machine_name', 'device_name')
+
         aggr_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'T4.device_type'
+                # 'device_type': 'T4.device_type'
             }
         ).annotate(
             base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
@@ -3557,7 +3594,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
             base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
             base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
+            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+            machine_name=F('backhaul__bh_configured_on__machine__name'),
+            device_name=F('backhaul__bh_configured_on__device_name'),
+            device_type=F('backhaul__bh_configured_on__device_type')
         ).filter(
             backhaul__bh_configured_on__isnull=False,
             backhaul__aggregator__ip_address__in=ip_address_list
@@ -3569,6 +3609,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'state__state_name',
             'backhaul__aggregator__ip_address',
             'base_station__backhaul__bh_circuit_id',
+            'machine_name',
+            'device_name',
             'base_station__backhaul__ttsl_circuit_id',
             'base_station__backhaul__bh_switch__ip_address',
             'base_station__backhaul__pop__ip_address',
@@ -3576,6 +3618,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'base_station__backhaul__pe_ip__ip_address',
             'device_type'
         ).distinct()
+
+        device_list += aggr_data_qs.values('machine_name', 'device_name')
 
         mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
             list(bh_conf_data_qs),
@@ -3617,12 +3661,21 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         'ip_address'
     )
 
+    machine_device_dict = inventory_utils.prepare_machines(device_list, 'machine_name')
+
+    perf_result = {}
+    for machine_name in machine_device_dict:
+        if machine_name and machine_device_dict[machine_name]:
+            result = perf_utils.get_performance_data(machine_device_dict[machine_name], machine_name, None)
+            perf_result.update(result)
+
     mapped_result = mapped_sector_result.copy()
     mapped_result.update(mapped_dr_result)
     mapped_result.update(converter_mapped_data)
    
     for data in qs_list:
         ip_address = data.get('ip_address')
+
         data.update(
             bs_alias='NA',
             bs_city='NA',
@@ -3631,6 +3684,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             device_type='NA',
             bh_connectivity='NA',
             bh_type='NA',
+            bh_status='NA',
             bh_ckt_id='NA',
             bh_ttsl_ckt_id='NA',
             bs_conv_ip='NA',
@@ -3665,6 +3719,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             bs_conv_ip= sector_dct.get('base_station__backhaul__bh_switch__ip_address') if sector_dct.get('base_station__backhaul__bh_switch__ip_address') else 'NA'
             pop_conv_ip= sector_dct.get('base_station__backhaul__pop__ip_address') if sector_dct.get('base_station__backhaul__pop__ip_address') else 'NA'
             aggr_sw_ip= sector_dct.get('base_station__backhaul__aggregator__ip_address') if sector_dct.get('base_station__backhaul__aggregator__ip_address') else 'NA'
+            device_name = sector_dct.get('device_name', 'NA')
+
+            packet_loss = perf_result.get(device_name, {}).get('packet_loss', None)
+            bh_status = ('DOWN' if packet_loss == 100 else 'UP') if packet_loss not in [None, ''] else "NA"
 
             data.update(
                 sector_id=sector_dct.get('sector_id', 'NA'),
@@ -3672,6 +3730,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
                 bs_city=sector_dct.get('base_station__city__city_name', 'NA'),
                 bs_state=sector_dct.get('base_station__state__state_name', 'NA'),
                 bh_connectivity=sector_dct.get('base_station__backhaul__bh_connectivity', 'NA'),
+                bh_status=bh_status,
                 bh_type=sector_dct.get('base_station__backhaul__bh_type', 'NA'),
                 device_type=device_type_dict.get(sector_dct.get('device_type')),
                 bh_ckt_id= bh_ckt_id,
