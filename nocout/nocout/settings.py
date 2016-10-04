@@ -886,7 +886,8 @@ SETTINGS_EXPORT = [
     'SHOW_LINK_STATUS_RAD5',
     'SHOW_RFO_TRENDS_DASHBOARD',
     'ENABLE_PING_TEST',
-    'ENABLE_PE_PERF'
+    'ENABLE_PE_PERF',
+    'SHOW_ALL_IN_NETWORK_ALERT_CENTER'
 ]
 
 # Dashbaord Settings
@@ -1357,6 +1358,9 @@ SHOW_TICKET_NUMBER = False
 ENABLE_PING_TEST = False
 MAX_PARALLEL_STABILITY_TESTS = 6
 ENABLE_PE_PERF = False
+# Enable/Disable All tab in alert center
+SHOW_ALL_IN_NETWORK_ALERT_CENTER = False
+ENABLE_MANUAL_TICKETING = False
 
 # Import the local_settings.py file to override global settings
 try:
