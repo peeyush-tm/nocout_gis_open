@@ -2626,63 +2626,42 @@ class AllSiaListing(ListView):
             data_source_title = data_source
 
         starting_columns = [
-            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True}
-        ]
-
-        invent_columns = [
-            {'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True}
-        ]
-
-        invent_columns_2 = [
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
+            # {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
+            # {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_status', 'sTitle': 'BH Status', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True}
-        ]
-
-        specific_invent_columns = [
-            {'mData': 'bh_connectivity', 'sTitle': 'BH Connectivity', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_ckt_id', 'sTitle': 'BH Circuit ID', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_ttsl_ckt_id', 'sTitle': 'BH TTSL Circuit ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+            # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'bh_connectivity', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_type', 'sTitle': 'BH Media Type', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_ckt_id', 'sTitle': 'TCL BH CKT ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_ttsl_ckt_id', 'sTitle': 'BH BSO CKT ID', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_conv_ip', 'sTitle': 'BS Convertor IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'pop_conv_ip', 'sTitle': 'POP Convertor IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'aggr_sw_ip', 'sTitle': 'Aggregation Switch IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'pe_ip', 'sTitle': 'PE IP', 'sWidth': 'auto', 'bSortable': True},
-        ]
-
-        common_columns = [
-            {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True}
-        ]
-
-        common_columns_2 = [
-            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': False},
-            # {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
+            # {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         action_columns = []
         if ENABLE_MANUAL_TICKETING:
             action_columns = [
-                {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
+                {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False}
             ]
 
         datatable_headers = list()
         datatable_headers += starting_columns
-        datatable_headers += common_columns
-        datatable_headers += invent_columns
-        datatable_headers += invent_columns_2
-        datatable_headers += common_columns_2
-        datatable_headers += specific_invent_columns
 
-        context['datatable_headers'] = json.dumps(datatable_headers + action_columns)
+        context['datatable_headers'] = json.dumps(action_columns + datatable_headers)
         context['clear_history_headers'] = json.dumps(datatable_headers)
         context['data_source'] = data_source
         context['data_source_title'] = data_source_title
@@ -2725,6 +2704,21 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
     is_ordered = False
     is_searched = False
+
+    severity_icon_dict = {
+        'latency': {
+            'major': 'red-dot',
+            'clear': 'green-dot'
+        },
+        'packet_drop': {
+            'major': 'red-dot',
+            'clear': 'green-dot'
+        },
+        'down': {
+            'critical': 'red-dot',
+            'clear': 'green-dot'
+        }
+    }
 
     up_since_format_array = [
         'Day',
@@ -2898,13 +2892,18 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         """
         inventory_columns = []
         if self.tech_name in ['pmp', 'wimax', 'all']:
-            self.order_columns = [
-                'severity', 'traptime', 'eventname', 'ip_address',
-                'sector_id', 'device_type', 'bs_alias', 'bh_status',
-                'bs_state', 'bs_city', 'customer_count', 'alarm_count',
-                'first_occurred', 'last_occurred', 'ticket_number', 'sia',
-                'bh_connectivity', 'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id',
-                'bs_conv_ip', 'pop_conv_ip', 'aggr_sw_ip', 'pe_ip'
+            self.order_columns = []
+
+            if ENABLE_MANUAL_TICKETING:
+                self.order_columns += ['action']
+
+            self.order_columns += [
+                'severity', 'traptime', 'ip_address', 'device_type',
+                'bs_alias', 'bh_status', 'bs_state', 'bs_city',
+                'ticket_number', 'bh_connectivity', 'bh_type',
+                'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip',
+                'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'alarm_count',
+                'first_occurred', 'last_occurred' 
             ]
 
         # Number of columns that are used in sorting
@@ -3081,12 +3080,19 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         else:
             for dct in  qs:
                 severity = dct.get('severity')
-                severity_icon = alert_utils.common_get_severity_icon(severity)
+                # severity_icon = alert_utils.common_get_severity_icon(severity)
                 uptime = dct.get('uptime')
                 ticket_number = dct.get('ticket_number')
                 is_manual = dct.get('is_manual')
                 action = ''
                 formatted_uptime = uptime
+                data_source = (self.request.GET.get('data_source', None))
+
+                # severity icon according to user requirement
+                # Change Color "RED" in Current and "Green" in Clear. Same in History Tab
+                dot_color = self.severity_icon_dict.get(data_source, {}).get(severity, 'grey-dot')
+                severity_icon = '<i class="fa fa-circle {1}" title="{0}">\
+                                    <span style="display:none">{0}</span></i>'.format(severity, dot_color)
 
                 try:
                     if ENABLE_MANUAL_TICKETING:
