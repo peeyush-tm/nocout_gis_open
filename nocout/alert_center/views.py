@@ -12,7 +12,6 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceTechnology,DeviceType
 # For SIA Listing
 from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
-
 from performance.models import EventNetwork, EventService
 
 from operator import itemgetter
@@ -35,7 +34,8 @@ from nocout.utils.util import NocoutUtilsGateway
 from django.utils.dateformat import format
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME
+from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME, \
+SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT, SHOW_TICKET_NUMBER
 
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
@@ -198,6 +198,18 @@ class AlertCenterListing(ListView):
         pmp_wimax_datatable_headers += pmp_wimax_starting_headers
         pmp_wimax_datatable_headers += common_headers
         pmp_wimax_datatable_headers += polled_headers
+
+        if SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT and page_type == 'network':
+            pmp_wimax_datatable_headers += [{
+                'mData': 'customer_count',
+                'sTitle': 'Customer Count',
+                'sWidth': 'auto',
+                'bSortable': True
+            }]
+
+        if SHOW_TICKET_NUMBER and page_type == 'network' and data_source == 'down':
+            pmp_wimax_datatable_headers += [{'mData': 'ticket_no', 'sTitle': 'Alarm PB TT No.', 'sWidth': 'auto', 'bSortable': True}]
+
         pmp_wimax_datatable_headers += other_headers
 
         # Pass bh_datatable_headers only in case of 'network' page
@@ -255,7 +267,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         'max_value',
         'avg_value',
         'age',
-        'sys_timestamp'
+        'sys_timestamp',
+        'customer_count'
     ]
 
     main_qs = []
@@ -710,8 +723,12 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 'max_value',
                 'min_value'
             ]
+        other_columns = []
+        
+        if data_tab in ['PMP', 'WiMAX', 'all'] and SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT:
+            other_columns = ['customer_count']
 
-        other_columns = [
+        other_columns += [
             'sys_timestamp',
             'age',
             'action'
@@ -806,6 +823,11 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'refer', 'sTitle': 'Affected Sectors', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True}
+            # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
+        ul_issue_specific_headers_2 = [
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         bh_dt_specific_headers = [
@@ -827,6 +849,7 @@ class NetworkAlertDetailHeaders(ListView):
 
         polled_headers = [
             {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'bSortable': True},
+            # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto',
              'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"}
         ]
@@ -857,6 +880,8 @@ class NetworkAlertDetailHeaders(ListView):
         ul_issue_datatable_headers += ul_issue_specific_headers
         ul_issue_datatable_headers += common_headers
         ul_issue_datatable_headers += polled_headers
+        if SHOW_CUSTOMER_COUNT_IN_ALERT_LIST:
+            ul_issue_datatable_headers += ul_issue_specific_headers_2
         ul_issue_datatable_headers += other_headers
 
         bh_dt_headers = []
@@ -967,6 +992,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
     table_name = "performance_servicestatus"
 
     polled_value_columns = [
+        'customer_count',
         'min_value',
         'max_value',
         'current_value',
@@ -990,6 +1016,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
 
         page_type = self.request.GET.get('page_type', "network")
+        include_pe = self.request.GET.get('include_pe', False)
 
         if self.request.GET.get("data_source"):
             tab_id = self.request.GET.get("data_source")
@@ -1068,6 +1095,14 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                     required_value_list=required_value_list,
                     other_type=other_type
                 )
+
+                device_list += inventory_utils.filter_devices(
+                    organizations=organizations,
+                    page_type='pe',
+                    required_value_list=required_value_list,
+                    other_type=other_type
+                )
+
                 if is_other:
                     other_type = "other"
                     device_list += inventory_utils.filter_devices(
@@ -1380,6 +1415,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'state',
                 'data_source_name',
                 'current_value',
+                'customer_count',
                 'sys_timestamp',
                 'age'
             ]
@@ -1477,6 +1513,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         total_records = len(qs)
 
         qs = self.filter_queryset(qs)
+
 
         # number of records after filtering
         total_display_records = len(qs)
@@ -2005,7 +2042,7 @@ class SIAListing(ListView):
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
-            # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
@@ -2121,7 +2158,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             # ip_address_list = list(Device.objects.filter(
             #     device_technology__in=tech_name_id
             # ).values_list('ip_address', flat=True))
-            tech_type_filter_condition = 'Q(technology__iexact="{{0}}"),'.format(self.tech_name)
+            tech_type_filter_condition = 'Q(technology__iexact="{0}"),'.format(self.tech_name)
 
 
         if filter_condition:

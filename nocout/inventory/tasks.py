@@ -9,7 +9,7 @@ import requests
 from site_instance.models import SiteInstance
 from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency, DeviceType, ModelType, VendorModel, \
     Country, TechnologyVendor, DeviceVendor, DeviceModel
-from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload
+from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload, BaseStationPpsMapper
 from organization.models import Organization
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT, TRAPS_DATABASE
@@ -1542,6 +1542,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
     ospf4_ospf5_machine_and_site_info = get_machine_details('ospf', [4, 5])
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    # ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -1629,6 +1630,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
             aggregation_switch = ""
             bs_converter = ""
             pop_converter = ""
+            pe_ip_device = ""
             substation_antenna = ""
             backhaul = ""
             basestation = ""
@@ -2177,6 +2179,95 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
                 pop_converter = ""
 
             try:
+                # -------------------------------- PE IP ---------------------------
+                # get machine and site
+                machine_and_site = ""
+                try:
+                    machine_and_site = get_machine_and_site(ospf4_ospf3_machine_and_site_info)
+                except Exception as e:
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
+                    site = ""
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in ospf4_ospf3_machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
+
+                if ip_sanitizer(row['PE IP']):
+
+                    try:
+                        pe_device_type = row.get('PE Device Type')
+                        if pe_device_type:
+                            pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
+                            pe_device_type_id = pe_dtype_obj.id
+                            
+                            pe_model_obj = pe_dtype_obj.devicemodel_set.all()[0]
+                            pe_device_model_id = pe_model_obj.id
+
+                            pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
+                            pe_device_vendor_id = pe_vendor_obj.id
+                            
+                            pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
+                            pe_device_tech_id = pe_tech_obj.id
+                    except Exception, e:
+                        pe_device_type_id = None
+                        pe_device_model_id = None
+                        pe_device_vendor_id = None
+                        pe_device_tech_id = None
+                        pass
+
+                    if pe_device_type_id and pe_device_model_id and pe_device_vendor_id and pe_device_tech_id:
+                        # PE IP data
+                        pe_data = {
+                            'device_name': device_latest_id,
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': pe_device_tech_id,
+                            'device_vendor': pe_device_vendor_id,
+                            'device_model': pe_device_model_id,
+                            'device_type': pe_device_type_id,
+                            'ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'mac': "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'PE IP created on {}.'.format(full_time)
+                        }
+
+                        # PE IP object
+                        pe_ip_device = create_device(pe_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
+                else:
+                    pe_ip_device = ""
+            except Exception as e:
+                pe_ip_device = ""
+
+            try:
                 # ------------------------------- Sector Antenna -------------------------------
                 # initialize name
                 name = ""
@@ -2259,7 +2350,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
                             'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
                             'aggregator_port': 0,
                             'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                            'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'pe_ip': pe_ip_device,
                             'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                             'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
                             'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
@@ -2665,6 +2756,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
             aggregation_switch = ""
             bs_converter = ""
             pop_converter = ""
+            pe_ip_device = ""
             substation_antenna = ""
             backhaul = ""
             basestation = ""
@@ -3112,6 +3204,96 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
             except Exception as e:
                 pop_converter = ""
 
+
+            try:
+                # -------------------------------- PE IP ---------------------------
+                # get machine and site
+                machine_and_site = ""
+                try:
+                    machine_and_site = get_machine_and_site(ospf4_ospf3_machine_and_site_info)
+                except Exception as e:
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
+                    site = ""
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in ospf4_ospf3_machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
+
+                if ip_sanitizer(row['PE IP']):
+
+                    try:
+                        pe_device_type = row.get('PE Device Type')
+                        if pe_device_type:
+                            pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
+                            pe_device_type_id = pe_dtype_obj.id
+                            
+                            pe_model_obj = pe_dtype_obj.devicemodel_set.all()[0]
+                            pe_device_model_id = pe_model_obj.id
+
+                            pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
+                            pe_device_vendor_id = pe_vendor_obj.id
+                            
+                            pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
+                            pe_device_tech_id = pe_tech_obj.id
+                    except Exception, e:
+                        pe_device_type_id = None
+                        pe_device_model_id = None
+                        pe_device_vendor_id = None
+                        pe_device_tech_id = None
+                        pass
+
+                    if pe_device_type_id and pe_device_model_id and pe_device_vendor_id and pe_device_tech_id:
+                        # PE IP data
+                        pe_data = {
+                            'device_name': device_latest_id,
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': pe_device_tech_id,
+                            'device_vendor': pe_device_vendor_id,
+                            'device_model': pe_device_model_id,
+                            'device_type': pe_device_type_id,
+                            'ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'mac': "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'PE IP created on {}.'.format(full_time)
+                        }
+
+                        # PE IP object
+                        pe_ip_device = create_device(pe_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
+                else:
+                    pe_ip_device = ""
+            except Exception as e:
+                pe_ip_device = ""
+
             try:
                 # ------------------------------- Sector Antenna -------------------------------
                 # initialize name
@@ -3195,7 +3377,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
                             'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
                             'aggregator_port': 0,
                             'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                            'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'pe_ip': pe_ip_device,
                             'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                             'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
                             'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
@@ -3509,7 +3691,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
 
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    ospf2_machine_and_site_info = get_machine_details('ospf', [2])
+    # ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     ospf1_machine_and_site_info = get_machine_details('ospf', [1])
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
@@ -3602,6 +3784,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
             aggregation_switch = ""
             bs_converter = ""
             pop_converter = ""
+            pe_ip_device = ""
             backhaul = ""
             basestation = ""
             sector = ""
@@ -3616,7 +3799,15 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
             bs_device_type = 6
 
             if 'Vendor' in row.keys():
-                if row['Vendor'] == 'Radwin5K':
+                try:
+                    vendor_in_sheet = str(row['Vendor']).lower()
+                except Exception, e:
+                    logger.error('Vendor LowerCase error')
+                    logger.error(row['Vendor'])
+                    logger.error(e)
+                    vendor_in_sheet = row['Vendor']
+
+                if vendor_in_sheet == 'radwin5k':
                     bs_device_vendor = 11
                     bs_device_model = 14
                     bs_device_type = 16
@@ -3988,6 +4179,95 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
                 pop_converter = ""
 
             try:
+                # -------------------------------- PE IP ---------------------------
+                # get machine and site
+                machine_and_site = ""
+                try:
+                    machine_and_site = get_machine_and_site(ospf4_ospf3_machine_and_site_info)
+                except Exception as e:
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
+                    site = ""
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in ospf4_ospf3_machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
+
+                if ip_sanitizer(row['PE IP']):
+
+                    try:
+                        pe_device_type = row.get('PE Device Type')
+                        if pe_device_type:
+                            pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
+                            pe_device_type_id = pe_dtype_obj.id
+                            
+                            pe_model_obj = pe_dtype_obj.devicemodel_set.all()[0]
+                            pe_device_model_id = pe_model_obj.id
+
+                            pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
+                            pe_device_vendor_id = pe_vendor_obj.id
+                            
+                            pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
+                            pe_device_tech_id = pe_tech_obj.id
+                    except Exception, e:
+                        pe_device_type_id = None
+                        pe_device_model_id = None
+                        pe_device_vendor_id = None
+                        pe_device_tech_id = None
+                        pass
+
+                    if pe_device_type_id and pe_device_model_id and pe_device_vendor_id and pe_device_tech_id:
+                        # PE IP data
+                        pe_data = {
+                            'device_name': device_latest_id,
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': pe_device_tech_id,
+                            'device_vendor': pe_device_vendor_id,
+                            'device_model': pe_device_model_id,
+                            'device_type': pe_device_type_id,
+                            'ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'mac': "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'PE IP created on {}.'.format(full_time)
+                        }
+
+                        # PE IP object
+                        pe_ip_device = create_device(pe_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
+                else:
+                    pe_ip_device = ""
+            except Exception as e:
+                pe_ip_device = ""
+
+            try:
                 # ------------------------------- Sector Antenna -------------------------------
                 # initialize name
                 name = ""
@@ -4039,7 +4319,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
                     'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
                     'aggregator_port': 0,
                     'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                    'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                    'pe_ip': pe_ip_device,
                     'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
                     'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                     'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
@@ -4322,7 +4602,14 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto=''):
             ss_device_type = 9
 
             if 'Vendor' in row.keys():
-                if row['Vendor'] == 'Radwin5K':
+                try:
+                    vendor_in_sheet = str(row['Vendor']).lower()
+                except Exception, e:
+                    logger.error('SS Vendor LowerCase error')
+                    logger.error(row['Vendor'])
+                    logger.error(e)
+                    vendor_in_sheet = row['Vendor']
+                if vendor_in_sheet == 'radwin5k':
                     ss_device_vendor = 11
                     ss_device_model = 14
                     ss_device_type = 17
@@ -4667,6 +4954,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
     ospf4_ospf5_machine_and_site_info = get_machine_details('ospf', [4, 5])
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    # ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -4753,6 +5041,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
             aggregation_switch = ""
             bs_converter = ""
             pop_converter = ""
+            pe_ip_device = ""
             backhaul = ""
             basestation = ""
             sector = ""
@@ -5183,6 +5472,95 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                 pop_converter = ""
 
             try:
+                # -------------------------------- PE IP ---------------------------
+                # get machine and site
+                machine_and_site = ""
+                try:
+                    machine_and_site = get_machine_and_site(ospf4_ospf3_machine_and_site_info)
+                except Exception as e:
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
+                    site = ""
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in ospf4_ospf3_machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
+
+                if ip_sanitizer(row['PE IP']):
+
+                    try:
+                        pe_device_type = row.get('PE Device Type')
+                        if pe_device_type:
+                            pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
+                            pe_device_type_id = pe_dtype_obj.id
+                            
+                            pe_model_obj = pe_dtype_obj.devicemodel_set.all()[0]
+                            pe_device_model_id = pe_model_obj.id
+
+                            pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
+                            pe_device_vendor_id = pe_vendor_obj.id
+                            
+                            pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
+                            pe_device_tech_id = pe_tech_obj.id
+                    except Exception, e:
+                        pe_device_type_id = None
+                        pe_device_model_id = None
+                        pe_device_vendor_id = None
+                        pe_device_tech_id = None
+                        pass
+
+                    if pe_device_type_id and pe_device_model_id and pe_device_vendor_id and pe_device_tech_id:
+                        # PE IP data
+                        pe_data = {
+                            'device_name': device_latest_id,
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': pe_device_tech_id,
+                            'device_vendor': pe_device_vendor_id,
+                            'device_model': pe_device_model_id,
+                            'device_type': pe_device_type_id,
+                            'ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'mac': "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'PE IP created on {}.'.format(full_time)
+                        }
+
+                        # PE IP object
+                        pe_ip_device = create_device(pe_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
+                else:
+                    pe_ip_device = ""
+            except Exception as e:
+                pe_ip_device = ""
+
+            try:
                 # ------------------------------- Sector Antenna -------------------------------
                 # initialize name
                 name = ""
@@ -5233,7 +5611,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                     'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
                     'aggregator_port': 0,
                     'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                    'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                    'pe_ip': pe_ip_device,
                     'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
                     'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                     'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
@@ -5995,6 +6373,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
     ospf4_ospf3_machine_and_site_info = get_machine_details('ospf', [4, 3])
     ospf4_ospf5_machine_and_site_info = get_machine_details('ospf', [4, 5])
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    # ospf2_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -6044,6 +6423,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
             aggregation_switch = ""
             bs_converter = ""
             pop_converter = ""
+            pe_ip_device = ""
             backhaul = ""
             basestation = ""
 
@@ -6473,6 +6853,95 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
             except Exception as e:
                 pop_converter = ""
 
+            try:
+                # -------------------------------- PE IP ---------------------------
+                # get machine and site
+                machine_and_site = ""
+                try:
+                    machine_and_site = get_machine_and_site(ospf4_ospf3_machine_and_site_info)
+                except Exception as e:
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
+                    site = ""
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in ospf4_ospf3_machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
+
+                if ip_sanitizer(row['PE IP']):
+
+                    try:
+                        pe_device_type = row.get('PE Device Type')
+                        if pe_device_type:
+                            pe_dtype_obj = DeviceType.objects.get(alias__iexact=pe_device_type)
+                            pe_device_type_id = pe_dtype_obj.id
+                            
+                            pe_model_obj = pe_dtype_obj.devicemodel_set.all()[0]
+                            pe_device_model_id = pe_model_obj.id
+
+                            pe_vendor_obj = pe_model_obj.devicevendor_set.all()[0]
+                            pe_device_vendor_id = pe_vendor_obj.id
+                            
+                            pe_tech_obj = pe_vendor_obj.devicetechnology_set.all()[0]
+                            pe_device_tech_id = pe_tech_obj.id
+                    except Exception, e:
+                        pe_device_type_id = None
+                        pe_device_model_id = None
+                        pe_device_vendor_id = None
+                        pe_device_tech_id = None
+                        pass
+
+                    if pe_device_type_id and pe_device_model_id and pe_device_vendor_id and pe_device_tech_id:
+                        # PE IP data
+                        pe_data = {
+                            'device_name': device_latest_id,
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': pe_device_tech_id,
+                            'device_vendor': pe_device_vendor_id,
+                            'device_model': pe_device_model_id,
+                            'device_type': pe_device_type_id,
+                            'ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'mac': "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'PE IP created on {}.'.format(full_time)
+                        }
+
+                        # PE IP object
+                        pe_ip_device = create_device(pe_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
+                else:
+                    pe_ip_device = ""
+            except Exception as e:
+                pe_ip_device = ""
+
             # backhaul configured on 'port name' and 'port number'
             bh_port = row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else ""
             bh_port_name = ""
@@ -6513,7 +6982,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
                             'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
                             'aggregator_port': 0,
                             'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                            'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'pe_ip': pe_ip_device,
                             'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                             'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
                             'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
@@ -11156,6 +11625,7 @@ def get_machine_and_site(machines_dict):
     """
 
     if machines_dict:
+        machine_limit_reached = True
         for machine, sites in machines_dict.iteritems():
             try:
                 current_machine = machine
@@ -11165,15 +11635,23 @@ def get_machine_and_site(machines_dict):
                 current_machine = Machine.objects.get(name=machine)
                 for site in sites:
                     for name, number_of_devices in site.iteritems():
-                        if number_of_devices < 1400:
+                        if number_of_devices < 1500:
+                            machine_limit_reached = False
                             current_site = SiteInstance.objects.get(name=name)
                             return {'machine': current_machine, 'site': current_site}
-                        else:
-                            logger.error("******************** Machine/Sites limit reached.")
-                            return ""            
+                        # else:
+                        #     logger.error("******************** Machine/Sites limit reached.")
+                        #     return ""
             except Exception as e:
                 logger.info("******************** M/C Exception: ", e.message)
                 return ""
+
+        if machine_limit_reached:
+            logger.error("******************** Machine/Sites limit reached.")
+            return ""
+    else:
+        logger.error("******************** Machine/Sites limit reached.")
+        return ""
 
 
 def get_ip_network(ip):
@@ -11662,7 +12140,11 @@ def get_selected_ptp_inventory(base_station, sector):
     if circuits:
         for circuit in circuits:
             # sub station
-            sub_station = circuit.sub_station
+            sub_station = None
+            try:
+                sub_station = circuit.sub_station
+            except Exception as e:
+                logger.error("Sub station not found. Exception: ",e.message)
 
             # sub station device name
             ss_device_name = ""
@@ -11941,7 +12423,7 @@ def get_selected_ptp_inventory(base_station, sector):
 
             # pe ip
             try:
-                ptp_row['PE IP'] = backhaul.pe_ip
+                ptp_row['PE IP'] = backhaul.pe_ip.ip_address
             except Exception as e:
                 logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12112,13 +12594,13 @@ def get_selected_ptp_inventory(base_station, sector):
             try:
                 ptp_row['SS City'] = sub_station.city.city_name
             except Exception as e:
-                logger.info("SS City not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS City not exist for sub station ({}).".format(e.message))
 
             # ss state
             try:
                 ptp_row['SS State'] = sub_station.state.state_name
             except Exception as e:
-                logger.info("SS State not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS State not exist for sub station ({}).".format(e.message))
 
             # ss circuit id
             try:
@@ -12129,142 +12611,133 @@ def get_selected_ptp_inventory(base_station, sector):
                 else:
                     pass
             except Exception as e:
-                logger.info("SS Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Circuit ID not exist for sub station ({}).".format(e.message))
 
             # ss customer name
             try:
                 ptp_row['SS Customer Name'] = customer.alias
             except Exception as e:
-                logger.info("SS Customer Name not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Customer Name not exist for sub station ({}).".format(e.message))
 
             # ss customer address
             try:
                 ptp_row['SS Customer Address'] = customer.address
             except Exception as e:
-                logger.info("SS Customer Address not exist for sub station ({}).".format(sub_station.name,
-                                                                                         e.message))
+                logger.info("SS Customer Address not exist for sub station ({}).".format(e.message))
 
             # ss bs name
             try:
                 ptp_row['SS BS Name'] = base_station.alias
             except Exception as e:
-                logger.info("SS BS Name not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS BS Name not exist for sub station ({}).".format(e.message))
 
             # ss qos bandwidth
             try:
                 ptp_row['SS QOS (BW)'] = circuit.qos_bandwidth
             except Exception as e:
-                logger.info("SS QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS QOS (BW) not exist for sub station ({}).".format(e.message))
 
             # ss latitude
             try:
                 ptp_row['SS Latitude'] = sub_station.latitude
             except Exception as e:
-                logger.info("SS Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Latitude not exist for sub station ({}).".format(e.message))
 
             # ss longitude
             try:
                 ptp_row['SS Longitude'] = sub_station.longitude
             except Exception as e:
-                logger.info("SS Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Longitude not exist for sub station ({}).".format(e.message))
 
             # ss antenna height
             try:
                 ptp_row['SS Antenna Height'] = sub_station.antenna.height
             except Exception as e:
-                logger.info("SS Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Antenna Height not exist for sub station ({}).".format(e.message))
 
             # ss antenna type
             try:
                 ptp_row['SS Antenna Type'] = sub_station.antenna.antenna_type
             except Exception as e:
-                logger.info("SS Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Antenna Type not exist for sub station ({}).".format(e.message))
 
             # ss antenna gain
             try:
                 ptp_row['SS Antenna Gain'] = sub_station.antenna.gain
             except Exception as e:
-                logger.info("SS Antenna Gain not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Antenna Gain not exist for sub station ({}).".format(e.message))
 
             # ss antenna mount type
             try:
                 ptp_row['SS Antenna Mount Type'] = sub_station.antenna.mount_type
             except Exception as e:
-                logger.info("SS Antenna Mount Type not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
+                logger.info("SS Antenna Mount Type not exist for sub station ({}).".format(e.message))
 
             # ss ethernet extender
             try:
                 ptp_row['SS Ethernet Extender'] = sub_station.ethernet_extender
             except Exception as e:
-                logger.info("SS Ethernet Extender not exist for sub station ({}).".format(sub_station.name,
-                                                                                          e.message))
+                logger.info("SS Ethernet Extender not exist for sub station ({}).".format(e.message))
 
             # ss building height
             try:
                 ptp_row['SS Building Height'] = sub_station.building_height
             except Exception as e:
-                logger.info("SS Building Height not exist for sub station ({}).".format(sub_station.name,
-                                                                                        e.message))
+                logger.info("SS Building Height not exist for sub station ({}).".format(e.message))
 
             # ss tower or pole height
             try:
                 ptp_row['SS Tower/Pole Height'] = sub_station.tower_height
             except Exception as e:
-                logger.info("SS Tower/Pole Height not exist for sub station ({}).".format(sub_station.name,
-                                                                                          e.message))
+                logger.info("SS Tower/Pole Height not exist for sub station ({}).".format(e.message))
 
             # ss cable length
             try:
                 ptp_row['SS Cable Length'] = sub_station.cable_length
             except Exception as e:
-                logger.info("SS Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Cable Length not exist for sub station ({}).".format(e.message))
 
             # ss rssi during acceptance
             try:
                 ptp_row['SS RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
             except Exception as e:
-                logger.info("SS RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                               e.message))
+                logger.info("SS RSSI During Acceptance not exist for sub station ({}).".format(e.message))
 
             # ss throughput during acceptance
             try:
                 ptp_row['SS Throughput During Acceptance'] = circuit.throughput_during_acceptance
             except Exception as e:
-                logger.info("SS Throughput During Acceptance not exist for sub station ({}).".format(
-                    sub_station.name,
-                    e.message))
+                logger.info("SS Throughput During Acceptance not exist for sub station ({}).".format(e.message))
 
             # ss date of acceptance
             try:
                 ptp_row['SS Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
             except Exception as e:
-                logger.info("SS Date Of Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
+                logger.info("SS Date Of Acceptance not exist for sub station ({}).".format(e.message))
 
             # ss bh bso
             try:
                 ptp_row['SS BH BSO'] = base_station.bh_bso
             except Exception as e:
-                logger.info("SS BH BSO not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS BH BSO not exist for sub station ({}).".format(e.message))
 
             # ss ip
             try:
                 ptp_row['SS IP'] = sub_station.device.ip_address
             except Exception as e:
-                logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS IP not exist for sub station ({}).".format(e.message))
 
             # ss mac
             try:
                 ptp_row['SS MAC'] = sub_station.device.mac_address
             except Exception as e:
-                logger.info("SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS MAC not exist for sub station ({}).".format(e.message))
 
             # ss polarization
             try:
                 ptp_row['SS Polarization'] = sub_station.antenna.polarization
             except Exception as e:
-                logger.info("SS Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Polarization not exist for sub station ({}).".format(e.message))
 
             # ********************************* PTP SS Perf Info *************************************
             pl = ""
@@ -12275,7 +12748,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                    alias=ss_machine_name)[0].current_value
                 ptp_row['SS PD'] = pl
             except Exception as e:
-                logger.info("SS PD not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS PD not exist for sub station ({}).".format(e.message))
 
             # ss latency
             try:
@@ -12283,7 +12756,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                      data_source='rta').using(
                                                                      alias=ss_machine_name)[0].current_value
             except Exception as e:
-                logger.info("SS Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Latency not exist for sub station ({}).".format(e.message))
 
             if pl != "100":
                 # ss auto negotiation
@@ -12293,8 +12766,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                            data_source='1').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Auto Negotiation not exist for sub station ({}).".format(sub_station.name,
-                                                                                             e.message))
+                    logger.info("SS Auto Negotiation not exist for sub station ({}).".format(e.message))
 
                 # mimo/diversity
                 try:
@@ -12311,7 +12783,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                                 data_source='producttype').using(
                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Product Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Product Type not exist for sub station ({}).".format(e.message))
 
                 # ss frequency
                 try:
@@ -12319,7 +12791,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                              data_source='frequency').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Frequency not exist for sub station ({}).".format(e.message))
 
                 # ss uas
                 try:
@@ -12327,7 +12799,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                      data_source='uas').using(
                                                                      alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS UAS not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS UAS not exist for sub station ({}).".format(e.message))
 
                 # ss rssi
                 try:
@@ -12335,7 +12807,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                       data_source='rssi').using(
                                                                       alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS RSSI not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS RSSI not exist for sub station ({}).".format(e.message))
 
                 # ss estimated throughput
                 try:
@@ -12344,8 +12816,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                         data_source='service_throughput').using(
                                                                         alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Estimated Throughput not exist for sub station ({}).".format(sub_station.name,
-                                                                                                 e.message))
+                    logger.info("SS Estimated Throughput not exist for sub station ({}).".format(e.message))
 
                 # ss utilization dl
                 try:
@@ -12354,8 +12825,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                         data_source='Management_Port_on_Odu').using(
                                                                         alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Utilisation DL not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
+                    logger.info("SS Utilisation DL not exist for sub station ({}).".format(e.message))
 
                 # ss utilization ul
                 try:
@@ -12364,8 +12834,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                         data_source='Management_Port_on_Odu').using(
                                                                         alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Utilisation UL not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
+                    logger.info("SS Utilisation UL not exist for sub station ({}).".format(e.message))
 
                 # ss uptime
                 try:
@@ -12375,7 +12844,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                         alias=ss_machine_name)[0].current_value
                     ptp_row['SS Uptime'] = display_time(ss_uptime)
                 except Exception as e:
-                    logger.info("SS Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Uptime not exist for sub station ({}).".format(e.message))
 
                 # ss link distance
                 try:
@@ -12383,8 +12852,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                                  data_source='link_distance').using(
                                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Link Distance not exist for sub station ({}).".format(sub_station.name,
-                                                                                          e.message))
+                    logger.info("SS Link Distance not exist for sub station ({}).".format(e.message))
 
                 # ss cbw
                 try:
@@ -12392,7 +12860,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                        data_source='cbw').using(
                                                                        alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS CBW not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS CBW not exist for sub station ({}).".format(e.message))
 
                 # ss duplex
                 try:
@@ -12401,7 +12869,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                  data_source='1').using(
                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Duplex not exist for sub station ({}).".format(e.message))
 
                 # ss speed
                 try:
@@ -12410,7 +12878,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                 data_source='1').using(
                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Speed not exist for sub station ({}).".format(e.message))
 
                 # ss link
                 try:
@@ -12419,7 +12887,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                data_source='Management_Port_on_Odu').using(
                                                                alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("SS Link not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("SS Link not exist for sub station ({}).".format(e.message))
 
             # filter 'ptp' and 'ptp bh' rows
             if circuit.circuit_type == "Customer":
@@ -12701,7 +13169,7 @@ def get_selected_pmp_inventory(base_station, sector):
 
     # pe ip
     try:
-        pmp_bs_row['PE IP'] = backhaul.pe_ip
+        pmp_bs_row['PE IP'] = backhaul.pe_ip.ip_address
     except Exception as e:
         logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12823,8 +13291,11 @@ def get_selected_pmp_inventory(base_station, sector):
 
         for circuit in circuits:
             # sub station
-            sub_station = circuit.sub_station
-
+            sub_station = None
+            try:
+                sub_station = circuit.sub_station
+            except Exception as e:
+                logger.error("Sub station not found ",e.message)
             # sub station device name
             ss_device_name = ""
             try:
@@ -12860,13 +13331,13 @@ def get_selected_pmp_inventory(base_station, sector):
             try:
                 pmp_sm_row['Customer Name'] = customer.alias
             except Exception as e:
-                logger.info("Customer Name not exist for base station ({}).".format(sub_station.name, e.message))
+                logger.info("Customer Name not exist for base station ({}).".format(e.message))
 
             # circuit id
             try:
                 pmp_sm_row['Circuit ID'] = circuit.circuit_id
             except Exception as e:
-                logger.info("Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Circuit ID not exist for sub station ({}).".format(e.message))
 
             # site id
             try:
@@ -12884,105 +13355,103 @@ def get_selected_pmp_inventory(base_station, sector):
             try:
                 pmp_sm_row['SS IP'] = sub_station.device.ip_address
             except Exception as e:
-                logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS IP not exist for sub station ({}).".format(e.message))
 
             # qos bandwidth
             try:
                 pmp_sm_row['QOS (BW)'] = circuit.qos_bandwidth
             except Exception as e:
-                logger.info("QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("QOS (BW) not exist for sub station ({}).".format(e.message))
 
             # latitude
             try:
                 pmp_sm_row['Latitude'] = sub_station.latitude
             except Exception as e:
-                logger.info("Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Latitude not exist for sub station ({}).".format(e.message))
 
             # longitude
             try:
                 pmp_sm_row['Longitude'] = sub_station.longitude
             except Exception as e:
-                logger.info("Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Longitude not exist for sub station ({}).".format(e.message))
 
             # mac address
             try:
                 pmp_sm_row['MAC'] = sub_station.mac_address
             except Exception as e:
-                logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("MAC not exist for sub station ({}).".format(e.message))
 
             # building height
             try:
                 pmp_sm_row['Building Height'] = sub_station.building_height
             except Exception as e:
-                logger.info("Building Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Building Height not exist for sub station ({}).".format(e.message))
 
             # tower/pole height
             try:
                 pmp_sm_row['Tower/Pole Height'] = sub_station.tower_height
             except Exception as e:
-                logger.info("Tower/Pole Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Tower/Pole Height not exist for sub station ({}).".format(e.message))
 
             # antenna height
             try:
                 pmp_sm_row['Antenna Height'] = sub_station.antenna.height
             except Exception as e:
-                logger.info("Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Height not exist for sub station ({}).".format(e.message))
 
             # antenna beamwidth
             try:
                 pmp_sm_row['Antenna Beamwidth'] = sub_station.antenna.beam_width
             except Exception as e:
-                logger.info("Antenna Beamwidth not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Beamwidth not exist for sub station ({}).".format(e.message))
 
             # polarization
             try:
                 pmp_sm_row['Polarization'] = sub_station.antenna.polarization
             except Exception as e:
-                logger.info("Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Polarization not exist for sub station ({}).".format(e.message))
 
             # antenna type
             try:
                 pmp_sm_row['Antenna Type'] = sub_station.antenna.antenna_type
             except Exception as e:
-                logger.info("Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Type not exist for sub station ({}).".format(e.message))
 
             # ss mount type
             try:
                 pmp_sm_row['SS Mount Type'] = sub_station.antenna.mount_type
             except Exception as e:
-                logger.info("SS Mount Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Mount Type not exist for sub station ({}).".format(e.message))
 
             # ethernet extender
             try:
                 pmp_sm_row['Ethernet Extender'] = sub_station.ethernet_extender
             except Exception as e:
-                logger.info("Ethernet Extender not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Ethernet Extender not exist for sub station ({}).".format(e.message))
 
             # cable length
             try:
                 pmp_sm_row['Cable Length'] = sub_station.cable_length
             except Exception as e:
-                logger.info("Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Cable Length not exist for sub station ({}).".format(e.message))
 
             # rssi during acceptance
             try:
                 pmp_sm_row['RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
             except Exception as e:
-                logger.info("RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
+                logger.info("RSSI During Acceptance not exist for sub station ({}).".format(e.message))
 
             # cinr during acceptance
             try:
                 pmp_sm_row['CINR During Acceptance'] = circuit.dl_cinr_during_acceptance
             except Exception as e:
-                logger.info("CINR During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
+                logger.info("CINR During Acceptance not exist for sub station ({}).".format(e.message))
 
             # Customer Address
             try:
                 pmp_sm_row['Customer Address'] = customer.address
             except Exception as e:
-                logger.info("Customer Address not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Customer Address not exist for sub station ({}).".format(e.message))
 
             # date of acceptance
             try:
@@ -13000,7 +13469,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                   alias=ss_machine_name)[0].current_value
                 pmp_sm_row['PD'] = pl
             except Exception as e:
-                logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("PD not exist for sub station ({}).".format(e.message))
 
             # latency
             try:
@@ -13008,7 +13477,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                      data_source='rta').using(
                                                                      alias=ss_machine_name)[0].current_value
             except Exception as e:
-                logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Latency not exist for sub station ({}).".format(e.message))
 
             if pl != "100":
                 # frequency
@@ -13017,7 +13486,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                              data_source='frequency').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Frequency not exist for sub station ({}).".format(e.message))
 
                 # dl rssi
                 try:
@@ -13025,7 +13494,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                          data_source='dl_rssi').using(
                                                                          alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("RSSI DL not exist for sub station ({}).".format(e.message))
 
                 # ul rssi
                 try:
@@ -13033,7 +13502,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                          data_source='ul_rssi').using(
                                                                          alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("RSSI UL not exist for sub station ({}).".format(e.message))
 
                 # dl jitter
                 try:
@@ -13041,7 +13510,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                            data_source='dl_jitter').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Jitter DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Jitter DL not exist for sub station ({}).".format(e.message))
 
                 # ul jitter
                 try:
@@ -13049,7 +13518,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                            data_source='ul_jitter').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Jitter UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Jitter UL not exist for sub station ({}).".format(e.message))
 
                 # transmit power
                 try:
@@ -13057,7 +13526,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                                   data_source='transmit_power').using(
                                                                                   alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Transmit Power not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Transmit Power not exist for sub station ({}).".format(e.message))
 
                 # polles ss ip
                 try:
@@ -13065,7 +13534,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                                 data_source='ss_ip').using(
                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled SS IP not exist for sub station ({}).".format(e.message))
 
                 # polled ss mac
                 try:
@@ -13073,7 +13542,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                                  data_source='ss_mac').using(
                                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled SS MAC not exist for sub station ({}).".format(e.message))
 
                 # polled bs ip
                 try:
@@ -13081,7 +13550,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                                 data_source='bs_ip').using(
                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled BS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled BS IP not exist for sub station ({}).".format(e.message))
 
                 # polles bs mac
                 try:
@@ -13097,7 +13566,7 @@ def get_selected_pmp_inventory(base_station, sector):
                             data_source='ss_connected_bs_mac').using(
                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled BS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled BS MAC not exist for sub station ({}).".format(e.message))
 
                 # uptime
                 try:
@@ -13115,7 +13584,7 @@ def get_selected_pmp_inventory(base_station, sector):
                         pmp_sm_row['Session Uptime'] = display_time(session_uptime)
 
                 except Exception as e:
-                    logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Session Uptime not exist for sub station ({}).".format(e.message))
 
                 # dl utilization
                 try:
@@ -13133,7 +13602,7 @@ def get_selected_pmp_inventory(base_station, sector):
                             alias=ss_machine_name)[0].current_value
 
                 except Exception as e:
-                    logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Utilization DL not exist for sub station ({}).".format(e.message))
 
                 # ul utilization
                 try:
@@ -13150,7 +13619,7 @@ def get_selected_pmp_inventory(base_station, sector):
                             data_source='ul_utilization').using(
                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Utilization UL not exist for sub station ({}).".format(e.message))
 
                 # auto negotiation
                 try:
@@ -13158,7 +13627,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                            data_source='autonegotiation').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Auto Negotiation not exist for sub station ({}).".format(e.message))
 
                 # duplex
                 try:
@@ -13166,7 +13635,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                  data_source='duplex').using(
                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Duplex not exist for sub station ({}).".format(e.message))
 
                 # speed
                 try:
@@ -13174,7 +13643,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                 data_source='ss_speed').using(
                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Speed not exist for sub station ({}).".format(e.message))
 
                 # link state
                 try:
@@ -13182,7 +13651,7 @@ def get_selected_pmp_inventory(base_station, sector):
                                                                data_source='link_state').using(
                                                                alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Link not exist for sub station ({}).".format(e.message))
 
             # append 'pmp_bs_row' dictionary in 'pmp_bs_rows'
             pmp_bs_rows.append(pmp_bs_row)
@@ -13462,7 +13931,7 @@ def get_selected_wimax_inventory(base_station, sector):
 
     # pe ip
     try:
-        wimax_bs_row['PE IP'] = backhaul.pe_ip
+        wimax_bs_row['PE IP'] = backhaul.pe_ip.ip_address
     except Exception as e:
         logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -13599,7 +14068,11 @@ def get_selected_wimax_inventory(base_station, sector):
     if circuits:
         for circuit in circuits:
             # sub station
-            sub_station = circuit.sub_station
+            sub_station = None
+            try:
+                sub_station = circuit.sub_station
+            except Exception as e:
+                logger.error("Sub station not Found, Exception: ",e.message)
 
             # sub station device name
             ss_device_name = ""
@@ -13627,13 +14100,13 @@ def get_selected_wimax_inventory(base_station, sector):
             try:
                 wimax_ss_row['Customer Name'] = customer.alias
             except Exception as e:
-                logger.info("Customer Name not exist for base station ({}).".format(sub_station.name, e.message))
+                logger.info("Customer Name not exist for base station ({}).".format(e.message))
 
             # circuit id
             try:
                 wimax_ss_row['Circuit ID'] = circuit.circuit_id
             except Exception as e:
-                logger.info("Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Circuit ID not exist for sub station ({}).".format(e.message))
 
             # sector id
             try:
@@ -13645,111 +14118,109 @@ def get_selected_wimax_inventory(base_station, sector):
             try:
                 wimax_ss_row['SS IP'] = sub_station.device.ip_address
             except Exception as e:
-                logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS IP not exist for sub station ({}).".format(e.message))
 
             # ss vendor
             try:
                 wimax_ss_row['Vendor'] = DeviceVendor.objects.get(id=sub_station.device.device_vendor).alias
             except Exception as e:
-                logger.info("Vendor not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Vendor not exist for sub station ({}).".format(e.message))
 
             # qos bandwidth
             try:
                 wimax_ss_row['QOS (BW)'] = circuit.qos_bandwidth
             except Exception as e:
-                logger.info("QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("QOS (BW) not exist for sub station ({}).".format(e.message))
 
             # latitude
             try:
                 wimax_ss_row['Latitude'] = sub_station.latitude
             except Exception as e:
-                logger.info("Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Latitude not exist for sub station ({}).".format(e.message))
 
             # longitude
             try:
                 wimax_ss_row['Longitude'] = sub_station.longitude
             except Exception as e:
-                logger.info("Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Longitude not exist for sub station ({}).".format(e.message))
 
             # mac address
             try:
                 wimax_ss_row['MAC'] = sub_station.device.mac_address
             except Exception as e:
-                logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("MAC not exist for sub station ({}).".format(e.message))
 
             # building height
             try:
                 wimax_ss_row['Building Height'] = sub_station.building_height
             except Exception as e:
-                logger.info("Building Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Building Height not exist for sub station ({}).".format(e.message))
 
             # tower/pole height
             try:
                 wimax_ss_row['Tower/Pole Height'] = sub_station.tower_height
             except Exception as e:
-                logger.info("Tower/Pole Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Tower/Pole Height not exist for sub station ({}).".format(e.message))
 
             # antenna height
             try:
                 wimax_ss_row['Antenna Height'] = sub_station.antenna.height
             except Exception as e:
-                logger.info("Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Height not exist for sub station ({}).".format(e.message))
 
             # antenna beamwidth
             try:
                 wimax_ss_row['Antenna Beamwidth'] = sub_station.antenna.beam_width
             except Exception as e:
-                logger.info("Antenna Beamwidth not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Beamwidth not exist for sub station ({}).".format(e.message))
 
             # polarization
             try:
                 wimax_ss_row['Polarization'] = sub_station.antenna.polarization
             except Exception as e:
-                logger.info("Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Polarization not exist for sub station ({}).".format(e.message))
 
             # antenna type
             try:
                 wimax_ss_row['Antenna Type'] = sub_station.antenna.antenna_type
             except Exception as e:
-                logger.info("Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Antenna Type not exist for sub station ({}).".format(e.message))
 
             # ss mount type
             try:
                 wimax_ss_row['SS Mount Type'] = sub_station.antenna.mount_type
             except Exception as e:
-                logger.info("SS Mount Type not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("SS Mount Type not exist for sub station ({}).".format(e.message))
 
             # ethernet extender
             try:
                 wimax_ss_row['Ethernet Extender'] = sub_station.ethernet_extender
             except Exception as e:
-                logger.info("Ethernet Extender not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Ethernet Extender not exist for sub station ({}).".format(e.message))
 
             # cable length
             try:
                 wimax_ss_row['Cable Length'] = sub_station.cable_length
             except Exception as e:
-                logger.info("Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Cable Length not exist for sub station ({}).".format(e.message))
 
             # rssi during acceptance
             try:
                 wimax_ss_row['RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
             except Exception as e:
-                logger.info("RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
+                logger.info("RSSI During Acceptance not exist for sub station ({}).".format(e.message))
 
             # cinr during acceptance
             try:
                 wimax_ss_row['CINR During Acceptance'] = circuit.dl_cinr_during_acceptance
             except Exception as e:
-                logger.info("CINR During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
+                logger.info("CINR During Acceptance not exist for sub station ({}).".format(e.message))
 
             # Customer Address
             try:
                 wimax_ss_row['Customer Address'] = customer.address
             except Exception as e:
-                logger.info("Customer Address not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Customer Address not exist for sub station ({}).".format(e.message))
 
             # date of acceptance
             try:
@@ -13767,7 +14238,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                   alias=ss_machine_name)[0].current_value
                 wimax_ss_row['PD'] = pl
             except Exception as e:
-                logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("PD not exist for sub station ({}).".format(e.message))
 
             # latency
             try:
@@ -13775,7 +14246,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                        data_source='rta').using(
                                                                        alias=ss_machine_name)[0].current_value
             except Exception as e:
-                logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+                logger.info("Latency not exist for sub station ({}).".format(e.message))
 
             if pl != "100":
                 # frequency
@@ -13785,7 +14256,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                              data_source='frequency').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Frequency not exist for sub station ({}).".format(e.message))
 
                 # sector id
                 try:
@@ -13801,7 +14272,7 @@ def get_selected_wimax_inventory(base_station, sector):
                     else:
                         pass
                 except Exception as e:
-                    logger.info("Sector ID not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Sector ID not exist for sub station ({}).".format(e.message))
 
                 # polled ss ip
                 try:
@@ -13809,7 +14280,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                                 data_source='ss_ip').using(
                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled SS IP not exist for sub station ({}).".format(e.message))
 
                 # polled ss mac
                 try:
@@ -13817,7 +14288,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                              data_source='ss_mac').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Polled SS MAC not exist for sub station ({}).".format(e.message))
 
                 # rssi dl
                 try:
@@ -13825,7 +14296,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                            data_source='dl_rssi').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("RSSI DL not exist for sub station ({}).".format(e.message))
 
                 # rssi ul
                 try:
@@ -13833,7 +14304,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                            data_source='ul_rssi').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("RSSI UL not exist for sub station ({}).".format(e.message))
 
                 # cinr dl
                 try:
@@ -13841,7 +14312,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                            data_source='dl_cinr').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("CINR DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("CINR DL not exist for sub station ({}).".format(e.message))
 
                 # cinr ul
                 try:
@@ -13849,7 +14320,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                            data_source='ul_cinr').using(
                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("CINR UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("CINR UL not exist for sub station ({}).".format(e.message))
 
                 # intrf dl
                 try:
@@ -13857,7 +14328,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='dl_intrf').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("INTRF DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("INTRF DL not exist for sub station ({}).".format(e.message))
 
                 # intrf ul
                 try:
@@ -13865,7 +14336,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='ul_intrf').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("INTRF UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("INTRF UL not exist for sub station ({}).".format(e.message))
 
                 # ptx
                 try:
@@ -13873,7 +14344,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                          data_source='ss_ptx').using(
                                                                          alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("PTX not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("PTX not exist for sub station ({}).".format(e.message))
 
                 # session uptime
                 try:
@@ -13882,7 +14353,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                   alias=ss_machine_name)[0].current_value
                     wimax_ss_row['Session Uptime'] = display_time(system_uptime)
                 except Exception as e:
-                    logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Session Uptime not exist for sub station ({}).".format(e.message))
 
                 # device uptime
                 try:
@@ -13891,7 +14362,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                               alias=ss_machine_name)[0].current_value
                     wimax_ss_row['Device Uptime'] = display_time(device_uptime)
                 except Exception as e:
-                    logger.info("Device Uptime  not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Device Uptime  not exist for sub station ({}).".format(e.message))
 
                 # modulation dl fec
                 try:
@@ -13899,7 +14370,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='modulation_dl_fec').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Modulation DL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Modulation DL FEC not exist for sub station ({}).".format(e.message))
 
                 # modulation ul fec
                 try:
@@ -13907,7 +14378,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='modulation_ul_fec').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Modulation UL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Modulation UL FEC not exist for sub station ({}).".format(e.message))
 
                 # utilization dl
                 try:
@@ -13915,7 +14386,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='dl_utilization').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Utilization DL not exist for sub station ({}).".format(e.message))
 
                 # utilization ul
                 try:
@@ -13923,7 +14394,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                             data_source='ul_utilization').using(
                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Utilization UL not exist for sub station ({}).".format(e.message))
 
                 # auto negotiation
                 try:
@@ -13931,7 +14402,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                              data_source='autonegotiation').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Auto Negotiation not exist for sub station ({}).".format(e.message))
 
                 # duplex
                 try:
@@ -13939,7 +14410,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                    data_source='duplex').using(
                                                                    alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Duplex not exist for sub station ({}).".format(e.message))
 
                 # speed
                 try:
@@ -13947,7 +14418,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                    data_source='ss_speed').using(
                                                                    alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Speed not exist for sub station ({}).".format(e.message))
 
                 # link
                 try:
@@ -13955,7 +14426,7 @@ def get_selected_wimax_inventory(base_station, sector):
                                                                  data_source='link_state').using(
                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
-                    logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
+                    logger.info("Link not exist for sub station ({}).".format(e.message))
 
             # append 'wimax_bs_row' dictionary in 'wimax_bs_rows'
             wimax_bs_rows.append(wimax_bs_row)
@@ -14752,6 +15223,7 @@ def update_topology():
                 update_ss_list.append(ss)
             except Exception as e:
                 pass
+
             # Update sub station device.
             try:
                 ss_device = circuit.sub_station.device
@@ -14763,6 +15235,7 @@ def update_topology():
                 update_device_list.append(ss_device)
             except Exception as e:
                 pass
+
             # Update sector device.
             try:
                 sector_device = bs_devices_mapper[info['ip_address']]
@@ -14778,15 +15251,18 @@ def update_topology():
                 logger.error(e)
                 logger.error('BS Device Exception -----')
                 pass
+
             # Update circuit.
             try:
-                if radwin5k_ss_ips.get(info['connected_device_ip']):
+                if radwin5k_sectors_mapper.get(info['ip_address'].strip()):
                     circuit.sector = radwin5k_sectors_mapper[info['ip_address'].strip()]
                 else:
                     circuit.sector = sectors_mapper[info['sector_id'].strip().lower() + "|" + info['ip_address'].strip()]
                 update_circuit_list.append(circuit)
             except Exception as e:
-                pass
+                logger.error('Circuit Sector Exception -----')
+                logger.error(e)
+                logger.error('Circuit Sector Exception -----')
 
     g_jobs = list()
 
@@ -14805,7 +15281,7 @@ def update_topology():
     job = group(g_jobs)
     result = job.apply_async()
     logger.error('Update Topology Task -------- END')
-    return result
+    return True # result
 
 
 def compare_lists_of_dicts(list1, list2):
@@ -14833,23 +15309,68 @@ def check_alarms_for_no_pps(alarm_type=None):
     if alarm_type.lower() == 'current':
         current_model  = CurrentAlarms
         pps_flag = True
+
+        ip_address_list = list(current_model.objects.filter(
+            eventname='Synchronization_problem__no_PPS',
+            is_active=1
+        ).using(TRAPS_DATABASE).values_list('ip_address', flat=True))
+
     elif alarm_type.lower() == 'clear':
-        current_model  = ClearAlarms
+        current_model  = CurrentAlarms #ClearAlarms
         pps_flag = False
+
+        ip_address_list = list(current_model.objects.filter(
+            eventname='Synchronization_problem__no_PPS'
+        ).using(TRAPS_DATABASE).values_list('ip_address', flat=True))
+
     else:
         return False
 
-    ip_address_list = list(current_model.objects.filter(eventname='Synchronization_problem__no_PPS', is_active=1).using(TRAPS_DATABASE).values_list('ip_address', flat=True))
-    wimax_tech_id = DeviceTechnology.objects.filter(name='WiMAX').values_list('id', flat=True)
 
-    bs_id_list = Sector.objects.filter(sector_configured_on__ip_address__in=ip_address_list, sector_configured_on__device_technology__in=wimax_tech_id).values_list('base_station__id', flat=True)
+    wimax_tech_id = DeviceTechnology.objects.filter(name='WiMAX').values_list('id', flat=True)
+    
+    bs_id_list = Sector.objects.filter(
+        sector_configured_on__ip_address__in=ip_address_list,
+        sector_configured_on__device_technology__in=wimax_tech_id
+    ).values_list('base_station__id', flat=True).distinct()
 
     if bs_id_list.exists():
         try:
-            BaseStation.objects.filter(id__in=bs_id_list).update(has_pps_alarm=pps_flag)
+            # In Case of Current Alarms
+            if pps_flag:
+                for bs_id in bs_id_list:
+
+                    mapper_obj, newly_created = BaseStationPpsMapper.objects.get_or_create(base_station_id=bs_id)
+                    if newly_created:
+                        mapper_obj.has_pps_alarm = True
+                        mapper_obj.save(update_fields=['has_pps_alarm'])
+                    else:
+                        update_pps_flg(mapper_obj, pps_flag)
+            else:
+                # In case of Clear Alarms
+                for bs_id in bs_id_list:
+                    try:
+                        mapper_obj = BaseStationPpsMapper.objects.get(base_station_id=bs_id)
+                        update_pps_flg(mapper_obj, pps_flag)
+                    except Exception, e:
+                        continue
         except Exception, e:
             logger.error('Check Alarms Exception')
             logger.error(e)
-        
+
+    return True
+
+def update_pps_flg(mapper_instance, current_pps_flag):
+    """
+    Set has_pps_alarm for given model object.
+    """
+    current_timestamp = datetime.datetime.now()
+    mapper_timestamp = mapper_instance.updated_at
+
+    time_diff = current_timestamp - mapper_timestamp
+    
+    if time_diff.days >= 2:
+        mapper_instance.has_pps_alarm = current_pps_flag
+        mapper_instance.save()
 
     return True

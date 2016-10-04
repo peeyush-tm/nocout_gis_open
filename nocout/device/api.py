@@ -94,7 +94,7 @@ from performance.formulae import display_time, rta_null
 # Import service utils gateway class
 from service.utils.util import ServiceUtilsGateway
 from sitesearch.views import prepare_raw_bs_result
-from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME, \
+from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME,\
     PING_RTA_WARNING, PING_RTA_CRITICAL, \
     PING_PL_WARNING, PING_PL_CRITICAL, \
     SERVICE_DATA_SOURCE
@@ -158,6 +158,7 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}, b
         return ss_dict
 
     for data in ss_dataset:
+
         data_list = data.split('|')
         if len(data_list) > 1:
             if data_list[0] not in ss_dict:
@@ -360,7 +361,7 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}, b
                     'show_link': 1,
                     'link_color': '',
                     'label_str': label_str
-                }
+                }                
 
                 ss_dict[data_list[0]]['ss_list'].append(ss_info)
                 ss_dict[data_list[0]]['ip_list'].append(ip_address)
@@ -443,7 +444,7 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
             'bh_device_type': bs.get('BHDEVICETYPE'),
             'bh_device_tech': bs.get('BHDEVICETECH'),
             'maintenance_status': bs.get('BSMAINTENANCESTATUS'),
-            'has_pps_alarm' : bs.get('PPSALARMFLAG'),
+            'has_pps_alarm' : bs.get('has_pps'),
             'tech_str': '',
             'vendor_str': '',
             'freq_str': '',

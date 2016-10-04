@@ -627,7 +627,7 @@ class Config:
 		# historical clean
 		'hist-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(day_of_week='tue', minute=0, hour=7),
+        		'schedule': crontab(day_of_week='sat', minute=0, hour=7),
         		'kwargs': {
 			    'type': 'historical',
 			},
@@ -635,7 +635,7 @@ class Config:
 		# poller clean
 		'ospf1-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(day_of_week='tue', minute=30, hour=7),
+        		'schedule': crontab(day_of_week='sat', minute=30, hour=7),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'ospf1'
@@ -643,7 +643,7 @@ class Config:
     		},
 		'ospf2-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(day_of_week='tue', minute=0, hour=8),
+        		'schedule': crontab(day_of_week='sat', minute=0, hour=8),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'ospf2'
@@ -651,7 +651,7 @@ class Config:
     		},
 		'ospf3-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(day_of_week='tue', minute=30, hour=8),
+        		'schedule': crontab(day_of_week='sat', minute=30, hour=8),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'ospf3'
@@ -659,7 +659,7 @@ class Config:
     		},
 		'ospf4-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(day_of_week='tue', minute=45, hour=8),
+        		'schedule': crontab(day_of_week='sat', minute=45, hour=8),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'ospf4'
@@ -667,7 +667,7 @@ class Config:
     		},
 		'ospf5-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(day_of_week='tue', minute=0, hour=9),
+        		'schedule': crontab(day_of_week='sat', minute=0, hour=9),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'ospf5'
@@ -675,7 +675,7 @@ class Config:
     		},
 		'vrfprv-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(day_of_week='tue', minute=30, hour=9),
+        		'schedule': crontab(day_of_week='sat', minute=30, hour=9),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'vrfprv'
@@ -683,7 +683,7 @@ class Config:
     		},
 		'pub-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(day_of_week='tue', minute=45, hour=9),
+        		'schedule': crontab(day_of_week='sat', minute=45, hour=9),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'pub'

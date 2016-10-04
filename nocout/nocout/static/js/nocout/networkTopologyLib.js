@@ -21,6 +21,9 @@ function convertToVis(response, required_dom_id) {
 	severity_check = ['down']
 	is_ptp_bh = response['have_ptp_bh']
 	limit_till_bs = response['limit_till_bs']
+	show_ports = false,
+	// this is for updating that from which bs which device is connected backside
+	bs_back_edges_dict = {}
 
 	// creating two seperate datasets for Nodes and Edges
 	nodes = new vis.DataSet();
@@ -36,7 +39,9 @@ function convertToVis(response, required_dom_id) {
 	fe_edge_color = '#468847', //edge originating from Far End
 	fe_bs_sw_edge_color = '#468847', //edge originating from Near End BS Switch
 	fe_bs_edge_color = '#468847', //edge originating from Far End Base Station
-	sec_edge_color = '#468847'
+	idu_edge_color = '#468847', //edge originating from IDU Device
+	sec_edge_color = '#468847',
+	ss_edge_color = '#468847'
 
 	var sector_up_image_url = '/static/img/icons/green.png',
 		sector_down_image_url = '/static/img/icons/red.png'
@@ -44,6 +49,7 @@ function convertToVis(response, required_dom_id) {
 		converter_image = '/static/img/icons/converter.png',
 		switch_image = '/static/img/icons/switch.png',
 		router_image = '/static/img/icons/router.png',
+		idu_image = '/static/img/icons/idu.png',
 		far_end_image = '/static/img/icons/far_end.png',
 		near_end_image = '/static/img/icons/near_end.png',
 		ss_image = '/static/img/icons/ss.png'
@@ -64,6 +70,7 @@ function convertToVis(response, required_dom_id) {
 	        hierarchical: {
 	          enabled:true,
 	          levelSeparation: 400,
+	          nodeSpacing: 200,
 	          direction: 'LR',   // UD, DU, LR, RL
 	          sortMethod: 'directed' // hubsize, directed
 	      }
@@ -71,7 +78,7 @@ function convertToVis(response, required_dom_id) {
 
 	    nodes : {
 	        // shape : 'image',
-	        size : 50
+	        size : 40
 	    },
 	    edges: {
 	        width : 2,
@@ -103,6 +110,13 @@ function convertToVis(response, required_dom_id) {
 
 	// create a network
 	var container = document.getElementById(required_dom_id);
+
+	// severity and color info for PE device
+	var pe_severity = response_data.pe_pl_info.severity ? response_data.pe_pl_info.severity.toUpperCase() : 'NA',
+		pe_pl = response_data.pe_pl_info.packet_loss ? response_data.pe_pl_info.packet_loss : 'NA',
+		pe_latency = response_data.pe_pl_info.latency ? response_data.pe_pl_info.latency : 'NA';
+	var pe_color_info_object = nocout_getSeverityColorIcon(pe_severity),
+		pe_polled_val = response_data.pe_pl_info.value;
 
 	// severity and color info for bs_switch
 	var bs_switch_severity = response_data.bs_switch_pl_info.severity ? response_data.bs_switch_pl_info.severity.toUpperCase() : 'NA',
@@ -163,6 +177,10 @@ function convertToVis(response, required_dom_id) {
 	   device connection anatomy is :-> 
 	   PE -> Aggr_Switch -> Pop_Convertor -> Bs_Convertor -> Bs_Switch -> BS -> Sectors -> Sub-stations */
 
+	if (severity_check.indexOf(pe_severity.toLowerCase()) > -1){
+		pe_edge_color = '#b94a48';
+	}
+
 	if (severity_check.indexOf(bh_aggr_switch_severity.toLowerCase()) > -1){
 		aggr_sw_edge_color = '#b94a48';
 
@@ -209,14 +227,22 @@ function convertToVis(response, required_dom_id) {
 	if (response_data.pe_ip != 'NA'){
 		nodes.add({
 		    id: 'PE',
-		    label:  'PE Router\n\n' +
-		    		'PE IP : ' + response_data.pe_ip + '\n' +
-		    		'PE Hostname : ' + response_data.pe_hostname,
+		    // label:  'PE Router\n\n' +
+		    // 		'PE IP : ' + response_data.pe_ip + '\n' +
+		    // 		'PE Hostname : ' + response_data.pe_hostname,
+		    label: createNodeLabel(response_data.pe_ip, '', pe_pl, pe_latency, 'PE Router'),
 		    image: router_image,
 		    shape: 'image',
-		    // title: '<span style="color:'+bh_color_info_object.color+'"><i class="fa '+bh_color_info_object.icon+'""></i> ' +severity + ' - ' + polled_val + '</span>'
+		    title: '<span style="color:'+pe_color_info_object.color+'"><i class="fa '+pe_color_info_object.icon+'""></i> ' + pe_severity + ' - ' + pe_polled_val + '</span>'
 		});
 		pe_exist = true
+		pl_device_list.push(response_data.pe_name)
+		device_nodeId_mapping[response_data.pe_name] = 'PE'
+		ip_port_dict['PE'] = {
+			'ip_address' : response_data.pe_ip,
+			'port' : '',
+			'node_name' : 'PE Router'
+		}
 	}
 
 	// Adding Aggregation Switch only if it exists
@@ -280,11 +306,21 @@ function convertToVis(response, required_dom_id) {
 	// *** Here BACKHAUL refers to BS Switch ***
 	// *****************************************
 	if (response_data.bh_ip != 'NA'){
+
 		nodes.add({
 		    id: 'ne_sw_' + response_data.bs_switch_name,
 		    label: createNodeLabel(response_data.bh_ip, response_data.bs_switch_port, bs_switch_pl, bs_switch_latency, 'BS Switch'),
 		    image: switch_image,
 		    shape: 'image',
+		 //    shapeProperties : {
+			// 	useBorderWithImage : true
+			// },
+			// borderWidth : 8,
+			// color: {
+			// 	border: '#468847',
+			// 	background: '#ffffff',
+			// },
+
 		    title: '<span style="color:'+bs_switch_color_info_object.color+'"><i class="fa '+bs_switch_color_info_object.icon+'""></i> ' + bs_switch_severity + ' - ' + bs_switch_polled_val + '</span>'
 		});
 		backhaul_exist = true
@@ -302,59 +338,59 @@ function convertToVis(response, required_dom_id) {
 
 	if(backhaul_exist){ //if backhaul exists
 		if(bs_convertor_exist){ //if backhaul and bs_convertor exists
-			edges.add({from: 'conv_' + response_data.bs_convertor_device_name, to: 'ne_sw_' + response_data.bs_switch_name, color: bs_conv_edge_color})
+			edges.add({from: 'conv_' + response_data.bs_convertor_device_name, to: 'ne_sw_' + response_data.bs_switch_name, color: bs_sw_edge_color})
 			if(pop_convertor_exist){ //if backhaul and bs_convertor and pop_convertor exists
-				edges.add({from: 'pop_' + response_data.bh_pop_device_name, to: 'conv_' + response_data.bs_convertor_device_name, color: pop_edge_color})
+				edges.add({from: 'pop_' + response_data.bh_pop_device_name, to: 'conv_' + response_data.bs_convertor_device_name, color: bs_conv_edge_color})
 				if(aggr_switch_exist){ //if backhaul, bs_convertor, pop_convertor and aggr_switch exists
-					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'pop_' + response_data.bh_pop_device_name, color: aggr_sw_edge_color})
+					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'pop_' + response_data.bh_pop_device_name, color: pop_edge_color})
 					if(pe_exist){ //if backhaul, bs_convertor, pop_convertor, aggr_switch and PE exists
-						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: aggr_sw_edge_color})
 					}
 				}
 				else{  //if backhaul, bs_convertor, pop_convertor exists but aggr_switch doesn't exist
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'pop_' + response_data.bh_pop_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'pop_' + response_data.bh_pop_device_name, color: pop_edge_color})
 					}
 				}
 			}
 			else{ //if backhaul, bs_convertor exists but pop_convertor doesn't exist
 				if(aggr_switch_exist){ //if backhaul, bs_convertor exists , pop_convertor doesn't exist but aggr_switch exists 
-					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'conv_' + response_data.bs_convertor_device_name, color: aggr_sw_edge_color})
+					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'conv_' + response_data.bs_convertor_device_name, color: bs_conv_edge_color})
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: aggr_sw_edge_color})
 					}
 				}
 				else{
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'conv_' + response_data.bs_convertor_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'conv_' + response_data.bs_convertor_device_name, color: bs_conv_edge_color})
 					}
 				}
 
 			}
 		} else { //if backhaul exists but bs_convertor doesn't
 			if(pop_convertor_exist){ //if bs_convertor doesn't exists butbackhaul and pop_convertor exists
-				edges.add({from: 'pop_' + response_data.bh_pop_device_name, to: 'ne_sw_' + response_data.bs_switch_name, color: pop_edge_color})
+				edges.add({from: 'pop_' + response_data.bh_pop_device_name, to: 'ne_sw_' + response_data.bs_switch_name, color: bs_sw_edge_color})
 				if(aggr_switch_exist){ //if bs_convertor doesn't exists butbackhaul, pop_convertor, aggr_switch exists
-					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'pop_' + response_data.bh_pop_device_name, color: aggr_sw_edge_color})
+					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'pop_' + response_data.bh_pop_device_name, color: pop_edge_color})
 					if(pe_exist){ //if bs_convertor doesn't exists butbackhaul, pop_convertor, aggr_switch, PE exists
-						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: aggr_sw_edge_color})
 					}
 				}
 				else{  //if backhaul, pop_convertor exists but bs_convertor, aggr_switch doesn't exist
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'pop_' + response_data.bh_pop_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'pop_' + response_data.bh_pop_device_name, color: pop_edge_color})
 					}
 				}
 			} else { //if backhaul exists but pop_convertor, bs_convertor doesn't exist
 				if(aggr_switch_exist){ //if backhaul, bs_convertor exists , pop_convertor doesn't exist but aggr_switch exists 
-					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'ne_sw_' + response_data.bs_switch_name, color: aggr_sw_edge_color})
+					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'ne_sw_' + response_data.bs_switch_name, color: bs_sw_edge_color})
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: aggr_sw_edge_color})
 					}
 				}
 				else{
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'ne_sw_' + response_data.bs_switch_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'ne_sw_' + response_data.bs_switch_name, color: bs_sw_edge_color})
 					}
 				}
 			}
@@ -362,29 +398,29 @@ function convertToVis(response, required_dom_id) {
 	} else { //if backhaul doesn't exist
 		if(bs_convertor_exist){ //if backhaul doesn't exist and bs_convertor exists
 			if(pop_convertor_exist){ //if backhaul doesn't exist and bs_convertor and pop_convertor exists
-				edges.add({from: 'pop_' + response_data.bh_pop_device_name, to: 'conv_' + response_data.bs_convertor_device_name, color: pop_edge_color})
+				edges.add({from: 'pop_' + response_data.bh_pop_device_name, to: 'conv_' + response_data.bs_convertor_device_name, color: bs_conv_edge_color})
 				if(aggr_switch_exist){ //if backhaul doesn't exist and bs_convertor, pop_convertor and aggr_switch exists
-					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'pop_' + response_data.bh_pop_device_name, color: aggr_sw_edge_color})
+					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'pop_' + response_data.bh_pop_device_name, color: pop_edge_color})
 					if(pe_exist){ //if backhaul doesn't exist and bs_convertor, pop_convertor, aggr_switch and PE exists
-						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: aggr_sw_edge_color})
 					}
 				}
 				else{  //if bs_convertor, pop_convertor exists but backhaul, aggr_switch doesn't exist
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'pop_' + response_data.bh_pop_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'pop_' + response_data.bh_pop_device_name, color: pop_edge_color})
 					}
 				}
 			}
 			else{ //if bs_convertor exists but pop_convertor, backhaul doesn't exist
 				if(aggr_switch_exist){ //if  bs_convertor exists, aggr_switch exists but backhaul, pop_convertor doesn't exist 
-					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'conv_' + response_data.bs_convertor_device_name, color: aggr_sw_edge_color})
+					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'conv_' + response_data.bs_convertor_device_name, color: bs_conv_edge_color})
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: aggr_sw_edge_color})
 					}
 				}
 				else{
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'conv_' + response_data.bs_convertor_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'conv_' + response_data.bs_convertor_device_name, color: bs_conv_edge_color})
 					}
 				}
 
@@ -393,26 +429,27 @@ function convertToVis(response, required_dom_id) {
 		else{ //backhaul, bs_convertor doesn't exist
 			if(pop_convertor_exist){ //if backhaul, bs_convertor doesn't exists but pop_convertor exists
 				if(aggr_switch_exist){ //if backhaul, bs_convertor doesn't exists but pop_convertor, aggr_switch exists
-					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'pop_' + response_data.bh_pop_device_name, color: aggr_sw_edge_color})
+					edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'pop_' + response_data.bh_pop_device_name, color: pop_edge_color})
 					if(pe_exist){ //if backhaul, bs_convertor doesn't exists but pop_convertor, aggr_switch, PE exists
-						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: aggr_sw_edge_color})
 					}
 				}
 				else{  //if pop_convertor exists but bs_convertor, backhaul, aggr_switch doesn't exist
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'pop_' + response_data.bh_pop_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'pop_' + response_data.bh_pop_device_name, color: pop_edge_color})
 					}
 				}
 			}
 			else{ //if backhaul, pop_convertor, bs_convertor doesn't exist
 				if(aggr_switch_exist){ //if bs_convertor exists , backhaul, pop_convertor doesn't exist but aggr_switch exists 
 					if(pe_exist){
-						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: pe_edge_color})
+						edges.add({from: 'PE', to: 'aggr_' + response_data.bh_aggregator_device_name, color: aggr_sw_edge_color})
 					}
 				}
 				else{
 					if(pe_exist){
 						edges.add({from: 'PE', to: 'BASESTATION_'+i, color: pe_edge_color})
+						bs_back_edges_dict['BASESTATION_'+i] = 'PE'
 					}
 				}
 
@@ -437,18 +474,23 @@ function convertToVis(response, required_dom_id) {
 
 			if(backhaul_exist){ //if backhaul exists
 				edges.add({from: 'ne_sw_' + response_data.bs_switch_name, to: 'BASESTATION_'+i, color: bs_sw_edge_color});
+				bs_back_edges_dict['BASESTATION_'+i] = 'ne_sw_' + response_data.bs_switch_name
 			} else { //if backhaul doesn't exist
 				if(bs_convertor_exist){ //if backhaul doesn't exist and bs_convertor exists
 					edges.add({from: 'conv_' + response_data.bs_convertor_device_name, to: 'BASESTATION_'+i, color: bs_conv_edge_color});
+					bs_back_edges_dict['BASESTATION_'+i] = 'conv_' + response_data.bs_convertor_device_name
 				} else { //backhaul, bs_convertor doesn't exist
 					if(pop_convertor_exist){ //if backhaul, bs_convertor doesn't exists but pop_convertor exists
 						edges.add({from: 'pop_' + response_data.bh_pop_device_name, to: 'BASESTATION_'+i, color: pop_edge_color});
+						bs_back_edges_dict['BASESTATION_'+i] = 'pop_' + response_data.bh_pop_device_name
 					} else { //if backhaul, pop_convertor, bs_convertor doesn't exist
 						if(aggr_switch_exist){ //if bs_convertor exists , backhaul, pop_convertor doesn't exist but aggr_switch exists 
 							edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'BASESTATION_'+i, color: aggr_sw_edge_color});
+							bs_back_edges_dict['BASESTATION_'+i] = 'aggr_' + response_data.bh_aggregator_device_name
 						} else {
 							if(pe_exist){
 								edges.add({from: 'PE', to: 'BASESTATION_'+i, color: pe_edge_color})
+									bs_back_edges_dict['BASESTATION_'+i] = 'PE'
 							}
 						}
 
@@ -520,42 +562,77 @@ function convertToVis(response, required_dom_id) {
 			    borderWidthSelected : 0
 			});
 
-			edges.add({from: 'BASESTATION_'+i, to: 'ne_' + response_data.near_end_device_name , color: bs_sw_edge_color});
-			edges.add({from: 'ne_' + response_data.near_end_device_name, to: 'fe_' + response_data.far_end_device_name , color: ne_edge_color});
+			edges.add({from: 'BASESTATION_'+i, to: 'ne_' + response_data.near_end_device_name , color: ne_edge_color});
+			edges.add({from: 'ne_' + response_data.near_end_device_name, to: 'fe_' + response_data.far_end_device_name , color: fe_edge_color});
 
 			if (far_end_bs_sw_exist) {
-				edges.add({from: 'fe_' + response_data.far_end_device_name, to: 'fe_sw_' + response_data.far_end_bs_switch_name , color: fe_edge_color});
-				edges.add({from: 'fe_sw_' + response_data.far_end_bs_switch_name, to: 'far_end_base_station' , color: fe_bs_sw_edge_color});	
+				edges.add({from: 'fe_' + response_data.far_end_device_name, to: 'fe_sw_' + response_data.far_end_bs_switch_name , color: fe_bs_sw_edge_color});
+				edges.add({from: 'fe_sw_' + response_data.far_end_bs_switch_name, to: 'far_end_base_station' , color: fe_bs_sw_edge_color});
+				bs_back_edges_dict['far_end_base_station'] = 'fe_sw_' + response_data.far_end_bs_switch_name
 			} 
 			else {
 				edges.add({from: 'fe_' + response_data.far_end_device_name, to: 'far_end_base_station' , color: fe_edge_color});
+				bs_back_edges_dict['far_end_base_station'] = 'fe_' + response_data.far_end_device_name
 			}
 			
 
 			var sectors = far_end_base_station_list[i].sectors;
 			
 			if (!limit_till_bs) {
+				var idu_id_list = [];
 				for(j=0; j<sectors.length; j++){
+
 				    var sector_severity = sectors[j].pl_info.severity ? sectors[j].pl_info.severity.toUpperCase() : 'NA',
 				    	sector_pl = sectors[j].pl_info.packet_loss ? sectors[j].pl_info.packet_loss : 'NA',
 				    	sector_latency = sectors[j].pl_info.latency ? sectors[j].pl_info.latency : 'NA',
 				    	sect_color_info_object = nocout_getSeverityColorIcon(sector_severity),
-				    	sector_polled_val = sectors[j].pl_info.value
+				    	sector_polled_val = sectors[j].pl_info.value,
+				    	idu_id = 'idu_' + sectors[j].ip_address;
+
+				    if(sectors[j].device_tech.toLowerCase().indexOf('wimax') > -1){
+				    	var bs_device_type = 'IDU';
+				    } else if(sectors[j].device_tech.toLowerCase().indexOf('pmp') > -1) {
+				    	var bs_device_type = 'ODU';
+				    } else if(['ptp', 'p2p', 'P2P'].indexOf(sectors[j].device_tech.toLowerCase()) > -1){
+				    	var bs_device_type = 'Near End';
+				    } else {
+				    	var bs_device_type = 'BS Device';
+				    }
+
+
+				    if (typeof sector_polled_val == 'undefined' || sector_polled_val == '') {
+						sector_polled_val = 'NA';
+					}
+
+				    if (idu_id_list.indexOf(idu_id) == -1){
+
+				    	var idu_label = bs_device_type + '\n' +
+										 '\nIP Address : ' + sectors[j].ip_address + 
+										 '\nPacket Drop : ' + sector_pl +
+										 '\nLatency : ' + sector_latency;
+
+				    	nodes.add({
+					    	id: idu_id,
+					    	label: idu_label,
+					        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
+					        shape: 'image',
+					        image: idu_image
+					    });
+
+				    	idu_id_list.push(idu_id)
+				    }
+
 
 				    // if sector's severity is down then change edge color to red.
 				    if (severity_check.indexOf(sector_severity.toLowerCase()) > -1) {
-				    	sec_edge_color = '#b94a48';
+				    	sec_edge_color = idu_edge_color = bs_edge_color ='#b94a48';
 				    	sector_image_url = sector_down_image_url
 				    }
 
 
-					if (typeof sector_polled_val == 'undefined' || sector_polled_val == '') {
-						sector_polled_val = 'NA';
-					}
-
 				    nodes.add({
 				    	id: 'sec_' + sectors[j].sect_ip_id_title,
-				    	label: createNodeLabel(sectors[j].sect_ip_id_title, sectors[j].sect_port, sector_pl, sector_latency),
+				    	label: 'Sector ID : '+sectors[j].sect_ip_id_title,
 				        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
 				        shape: 'image',
 				        image: sector_image_url
@@ -582,8 +659,20 @@ function convertToVis(response, required_dom_id) {
 				    edges.add({
 				    	// from: 'BASESTATION_'+i,
 				    	from: 'far_end_base_station',
+				    	to: idu_id,//'sec_' + sectors[j].sect_ip_id_title,
+				    	color: idu_edge_color,
+				    	smooth: {
+							type: 'cubicBezier',
+							forceDirection: 'horizontal',
+							roundness : 0.5
+						}
+				    });
+
+				    edges.add({
+				    	// from: 'BASESTATION_'+i,
+				    	from: idu_id,
 				    	to: 'sec_' + sectors[j].sect_ip_id_title,
-				    	color: bs_edge_color,
+				    	color: sec_edge_color,
 				    	smooth: {
 							type: 'cubicBezier',
 							forceDirection: 'horizontal',
@@ -602,6 +691,10 @@ function convertToVis(response, required_dom_id) {
 				        if (typeof ss_polled_val == 'undefined' || ss_polled_val == '') {
 							ss_polled_val = 'NA';
 						}
+
+						if (severity_check.indexOf(ss_severity.toLowerCase()) > -1) {
+					    	ss_edge_color = '#b94a48';
+					    }
 
 				        nodes.add({
 				        	id: 'ss_' + sectors[j].sub_station[k].device_name, 
@@ -625,7 +718,11 @@ function convertToVis(response, required_dom_id) {
 				        	highlight_id = sectors[j].sub_station[k].device_name
 						}
 
-				        edges.add({from: 'sec_' + sectors[j].sect_ip_id_title, to: 'ss_' + sectors[j].sub_station[k].device_name, color: sec_edge_color})
+				        edges.add({
+				        	from: 'sec_' + sectors[j].sect_ip_id_title,
+				        	to: 'ss_' + sectors[j].sub_station[k].device_name,
+				        	color: ss_edge_color
+				        })
 				    }
 				}
 			}
@@ -649,18 +746,23 @@ function convertToVis(response, required_dom_id) {
 
 			if(backhaul_exist){ //if backhaul exists
 				edges.add({from: 'ne_sw_' + response_data.bs_switch_name, to: 'BASESTATION_'+i, color: bs_sw_edge_color});
+				bs_back_edges_dict['BASESTATION_'+i] = 'ne_sw_' + response_data.bs_switch_name
 			} else { //if backhaul doesn't exist
 				if(bs_convertor_exist){ //if backhaul doesn't exist and bs_convertor exists
 					edges.add({from: 'conv_' + response_data.bs_convertor_device_name, to: 'BASESTATION_'+i, color: bs_conv_edge_color});
+					bs_back_edges_dict['BASESTATION_'+i] = 'conv_' + response_data.bs_convertor_device_name
 				} else { //backhaul, bs_convertor doesn't exist
 					if(pop_convertor_exist){ //if backhaul, bs_convertor doesn't exists but pop_convertor exists
 						edges.add({from: 'pop_' + response_data.bh_pop_device_name, to: 'BASESTATION_'+i, color: pop_edge_color});
+						bs_back_edges_dict['BASESTATION_'+i] = 'pop_' + response_data.bh_pop_device_name
 					} else { //if backhaul, pop_convertor, bs_convertor doesn't exist
 						if(aggr_switch_exist){ //if bs_convertor exists , backhaul, pop_convertor doesn't exist but aggr_switch exists 
 							edges.add({from: 'aggr_' + response_data.bh_aggregator_device_name, to: 'BASESTATION_'+i, color: aggr_sw_edge_color});
+							bs_back_edges_dict['BASESTATION_'+i] = 'aggr_' + response_data.bh_aggregator_device_name
 						} else {
 							if(pe_exist){
 								edges.add({from: 'PE', to: 'BASESTATION_'+i, color: pe_edge_color})
+								bs_back_edges_dict['BASESTATION_'+i] = 'PE'
 							}
 						}
 
@@ -668,18 +770,34 @@ function convertToVis(response, required_dom_id) {
 				}
 			}
 
-			var sectors = base_station_list[i].sectors;
-			
+			var sectors = base_station_list[i].sectors,
+				idu_id_list = [];
+
 			for(j=0; j<sectors.length; j++){
 			    var sector_severity = sectors[j].pl_info.severity ? sectors[j].pl_info.severity.toUpperCase() : 'NA',
 			    	sector_pl = sectors[j].pl_info.packet_loss ? sectors[j].pl_info.packet_loss : 'NA',
 			    	sector_latency = sectors[j].pl_info.latency ? sectors[j].pl_info.latency : 'NA',
 			    	sect_color_info_object = nocout_getSeverityColorIcon(sector_severity),
-			    	sector_polled_val = sectors[j].pl_info.value
+			    	sector_polled_val = sectors[j].pl_info.value,
+			    	show_sector = true,
+			    	idu_id = 'idu_' + sectors[j].ip_address;
+			    
+			    if(sectors[j].device_tech.toLowerCase().indexOf('wimax') > -1){
+			    	var bs_device_type = 'IDU';
+			    } else if(sectors[j].device_tech.toLowerCase().indexOf('pmp') > -1) {
+			    	var bs_device_type = 'ODU';
+			    } else if(['ptp', 'p2p', 'P2P'].indexOf(sectors[j].device_tech.toLowerCase()) > -1){
+			    	var bs_device_type = 'Near End',
+			    		bs_device_icon = near_end_image,
+			    		ss_device_icon = far_end_image;
+			    		show_sector = false
+			    } else {
+			    	var bs_device_type = 'BS Device';
+			    }
 
 			    // if sector's severity is down then change edge color to red.
 			    if (severity_check.indexOf(sector_severity.toLowerCase()) > -1) {
-			    	sec_edge_color = '#b94a48';
+			    	sec_edge_color = idu_edge_color = bs_edge_color =  '#b94a48';
 			    	sector_image_url = sector_down_image_url
 			    }
 
@@ -688,13 +806,33 @@ function convertToVis(response, required_dom_id) {
 					sector_polled_val = 'NA';
 				}
 
-			    nodes.add({
-			    	id: 'sec_' + sectors[j].sect_ip_id_title,
-			    	label: createNodeLabel(sectors[j].sect_ip_id_title, sectors[j].sect_port, sector_pl, sector_latency),
-			        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
-			        shape: 'image',
-			        image: sector_image_url
-			    })
+				if (idu_id_list.indexOf(idu_id) == -1){
+
+			    	var idu_label = bs_device_type + '\n' +
+									'\nIP Address : ' + sectors[j].ip_address + 
+									'\nPacket Drop : ' + sector_pl +
+									'\nLatency : ' + sector_latency;
+
+					nodes.add({
+						id: idu_id,
+						label: idu_label,
+						title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
+						shape: 'image',
+						image: !show_sector ? bs_device_icon : idu_image
+				    });
+
+			    	idu_id_list.push(idu_id)
+			    }
+
+			    if (show_sector){
+				    nodes.add({
+				    	id: 'sec_' + sectors[j].sect_ip_id_title,
+				    	label: 'Sector ID : '+sectors[j].sect_ip_id_title,
+				        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
+				        shape: 'image',
+				        image: sector_image_url
+				    });
+			    }
 
 			    // sectors are on configured on same IDU device so they have same device id
 			    if (pl_device_list.indexOf(sectors[j].device_name) ==-1) {
@@ -713,14 +851,26 @@ function convertToVis(response, required_dom_id) {
 				}
 			    edges.add({
 			    	from: 'BASESTATION_'+i,
-			    	to: 'sec_' + sectors[j].sect_ip_id_title,
-			    	color: bs_edge_color,
+			    	to: idu_id,
+			    	color: idu_edge_color,
 			    	smooth: {
 						type: 'cubicBezier',
 						forceDirection: 'horizontal',
 						roundness : 0.5
 					}
-			    })
+			    });
+
+			  //   edges.add({
+			  //   	// from: 'BASESTATION_'+i,
+			  //   	from: idu_id,
+			  //   	to: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : 
+			  //   	color: idu_edge_color,
+			  //   	smooth: {
+					// 	type: 'cubicBezier',
+					// 	forceDirection: 'horizontal',
+					// 	roundness : 0.5
+					// }
+			  //   });
 
 
 			    for(k=0; k<sectors[j].sub_station.length; k++) {
@@ -730,19 +880,33 @@ function convertToVis(response, required_dom_id) {
 			        	ss_color_info_object = nocout_getSeverityColorIcon(ss_severity),
 			        	ss_polled_val = sectors[j].sub_station[k].pl_info.value
 
+			        if (severity_check.indexOf(ss_severity.toLowerCase()) > -1) {
+				    	ss_edge_color = '#b94a48';
+				    }
+
 			        if (typeof ss_polled_val == 'undefined' || ss_polled_val == '') {
 						ss_polled_val = 'NA';
 					}
 
+					if(!show_sector){
+						fe_label = 'Far End\n\n'+createNodeLabel(sectors[j].sub_station[k].ip_address, '', ss_pl, ss_latency)
+					} else {
+						fe_label = createNodeLabel(sectors[j].sub_station[k].ip_address, '', ss_pl, ss_latency)
+					}
+
 			        nodes.add({
 	        			id: 'ss_' + sectors[j].sub_station[k].device_name,
-	         			label: createNodeLabel(sectors[j].sub_station[k].ip_address, '', ss_pl, ss_latency),//sectors[j].sub_station[k].ip_address,
+	         			label: fe_label,//sectors[j].sub_station[k].ip_address,
 					    title: '<span style="color:'+ss_color_info_object.color+'"><i class="fa '+ss_color_info_object.icon+'""></i> ' +
 					            ss_severity + ' - ' + ss_polled_val + '</span>' ,
-					    size: 30,
+					    // size: 30,
 					    shape: 'image',
-						image:  ss_image //sectors[j].sub_station[k].icon
+						image: !show_sector ? ss_device_icon : ss_image //sectors[j].sub_station[k].icon
 					})
+
+					if (!show_sector){
+						var unique_ss_id = 'ss_' + sectors[j].sub_station[k].device_name;
+					}
 
 					pl_device_list.push(sectors[j].sub_station[k].device_name)
 					device_nodeId_mapping[sectors[j].sub_station[k].device_name] = 'ss_' + sectors[j].sub_station[k].device_name
@@ -756,8 +920,23 @@ function convertToVis(response, required_dom_id) {
 			        	highlight_id = sectors[j].sub_station[k].device_name
 					}
 
-			        edges.add({from: 'sec_' + sectors[j].sect_ip_id_title, to: 'ss_' + sectors[j].sub_station[k].device_name, color: sec_edge_color})
+			        edges.add({
+			        	from: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : idu_id,
+			        	to: 'ss_' + sectors[j].sub_station[k].device_name,
+			        	color: ss_edge_color
+			        })
 			    }
+			    edges.add({
+			    	// from: 'BASESTATION_'+i,
+			    	from: idu_id,
+			    	to: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : unique_ss_id,
+			    	color: show_sector ? sec_edge_color : ss_edge_color,
+			    	smooth: {
+						type: 'cubicBezier',
+						forceDirection: 'horizontal',
+						roundness : 0.5
+					}
+			    });
 			}
 		}		
 	}
@@ -790,6 +969,19 @@ function convertToVis(response, required_dom_id) {
 	// });
 
 	// initialize your network
+
+	/* 	This is for updating the back edge of BS
+	    Becuase BS is not a device so it's back edge color
+	    should be depends on the IDU device
+	*/
+	for(base_station_id in bs_back_edges_dict){
+		edges.update({
+			from: bs_back_edges_dict[base_station_id],
+			to: base_station_id,
+			color: bs_edge_color
+		})
+	}
+
 	network = new vis.Network(container, data, options);
 
 
@@ -1186,6 +1378,9 @@ function createNodeLabel(ip_addr, port, pack_drop, latency, node_name) {
 		node_name = node_name + '\n\n'
 	}
 
+	// showing ports if Flag is true
+	port_str = show_ports ? port_str : ''
+
 	result_str = node_name +
 				 'IP Address : ' + ip_addr + 
 				 port_str +
@@ -1238,6 +1433,11 @@ function updateNetworkPeriodically(pl_info_list) {
 				current_port = ip_port_dict[id].port ? ip_port_dict[id].port : 'NA',
 				current_node_name = ip_port_dict[id].node_name;
 
+			if (id.indexOf('PE') > -1) {
+				if (severity_check.indexOf(device_severity.toLowerCase()) > -1){
+					pe_edge_color = '#b94a48';
+				}
+			}
 			if (id.indexOf('aggr_') > -1) {
 				if (severity_check.indexOf(device_severity.toLowerCase()) > -1){
 					aggr_sw_edge_color = '#b94a48';

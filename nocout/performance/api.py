@@ -15,17 +15,31 @@ Methods
 =======
 
 """
-
+import urllib
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
-from django.db.models import Q
+from django.db.models import Q, Count
 from rest_framework.response import Response
 from django.http.response import  HttpResponse
 from rest_framework import status
 from django.core import serializers
-from performance.models import CustomDashboard,UsersCustomDashboard,DSCustomDashboard
+from performance.models import CustomDashboard, UsersCustomDashboard, DSCustomDashboard, PingStabilityTest
+from device.models import DeviceTechnology
+from machine.models import Machine
+from site_instance.models import SiteInstance
 from service.models import ServiceDataSource
 from user_profile.models import UserProfile
+from nocout.settings import MAX_PARALLEL_STABILITY_TESTS
 import json
+from IPy import IP
+import logging
+
+import ast
+# from copy import deepcopy
+import requests
+# from multiprocessing import Queue
+
+logger = logging.getLogger(__name__)
 
 
 class CustomDashboardCreate(APIView):
@@ -146,8 +160,6 @@ class CustomDashboardList(APIView):
         return Response(result)
 
 
-
-
 class CustomDashboardDelete(APIView):
     """
     Delete all dashboards selected by user.
@@ -189,5 +201,176 @@ class CustomDashboardDelete(APIView):
         return Response(result)
        
        
+class StartPingStabilityTest(APIView):
+    """
+    This class starts ping stability testing for given ip address
+    """
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(StartPingStabilityTest, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """
+
+        """
+        result = {
+            'success': 0,
+            'message': 'Some error occured. Please try again later.'
+        }
+
+        total_pending_count = PingStabilityTest.objects.filter(
+            status=False
+        ).count()
+
+        # Not start parallel stability tests more than MAX_PARALLEL_STABILITY_TESTS
+        if total_pending_count >= MAX_PARALLEL_STABILITY_TESTS:
+            result.update(
+                message='Currently {} stability tests are running. Please try after some time.'.format(total_pending_count)
+            )
+            return Response(result)
+
+        ip_address = request.POST.get('ip_address')
+        duration = request.POST.get('duration', 1)
+        tech_id = request.POST.get('tech_id')
+        tech_name = request.POST.get('tech_name')
+        email_ids = request.POST.get('email_ids', '')
+
+        if not tech_name:
+            try:
+                tech_name = DeviceTechnology.objects.get(pk=tech_id).name
+            except Exception, e:
+                result.update(
+                    message='Invalid Data.'
+                )
+                return Response(result)
+
+        machine_site_info = get_machine_site(ip_address, tech_name, duration)
+
+        machine = machine_site_info.get('machine')
+        site = machine_site_info.get('site')
+
+        if machine and site:
+            ping_stability_instance = PingStabilityTest(
+                user_profile_id=self.request.user.id,
+                ip_address=ip_address,
+                time_duration=duration,
+                machine=machine,
+                site_instance=site,
+                technology=DeviceTechnology.objects.get(id=tech_id),
+                email_ids=email_ids
+            )
+            ping_stability_instance.save()
+
+            post_data = {
+                'username': site.username,
+                'password': site.password,
+                'port': site.web_service_port,
+                'machine': machine.machine_ip,
+                'site_name': site.name,
+                'params': {
+                    'data': [{
+                        'ip_address': ip_address,
+                        'time_interval': duration,
+                        'id': ping_stability_instance.id
+                    }],
+                    'mode': 'ping_test'
+                }
+            }
+
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(
+                post_data.get('username'),
+                post_data.get('password'),
+                post_data.get('machine'),
+                post_data.get('port'),
+                post_data.get('site_name')
+            )
+
+            # Encoding data.
+            encoded_data = urllib.urlencode(post_data.get('params'))
+
+            # Sending post request to nocout device app to start given IP ping stability testing
+            try:
+                result.update(
+                    success=1,
+                    message='Ping stability testing started.'
+                )
+                r = requests.post(url, data=encoded_data)
+                response_dict = ast.literal_eval(r.text)
+                # if len(response_dict):
+                #     temp_dict = deepcopy(response_dict)
+            except Exception as e:
+                logger.error('Stability Test Request Exception')
+                logger.error(e)
+                pass
+
+        return Response(result)
 
 
+def get_machine_site(ip_address, tech_name, duration):
+    '''
+
+    '''
+    info_obj = {
+        'machine': '',
+        'site': ''
+    }
+
+    OSPF_MACHINES = ['ospf1', 'ospf3', 'ospf4', 'ospf5']
+
+    if tech_name in ['P2P', 'PTP-BH']:
+        try:
+            # check whether IP is public or private
+            test_ip = IP(ip_address)
+            if test_ip.iptype() == 'PRIVATE':
+                info_obj['machine'] = Machine.objects.get(name='vrfprv')
+                info_obj['site'] = SiteInstance.objects.get(name='vrfprv_slave_1')
+            elif test_ip.iptype() == 'PUBLIC':
+                info_obj['machine'] = Machine.objects.get(name='pub')
+                info_obj['site'] = SiteInstance.objects.get(name='pub_slave_1')
+            else:
+                pass
+        except Exception as e:
+            logger.error('PTP machine site selection')
+            logger.error(e.message)
+    else:
+        used_ospf_machines = set(PingStabilityTest.objects.exclude(
+            machine__name__in=['vrfprv', 'pub']
+        ).filter(
+            status=False
+        ).values_list('machine__name', flat=True))
+
+        # Get list of machines which are not used yet
+        unused_machines = list(set(OSPF_MACHINES) - used_ospf_machines)
+
+        # If any of the ospf machine is not used yet then please use first item from this list
+        if len(unused_machines):
+            machine_name = unused_machines[0]
+            try:
+                info_obj['machine'] = Machine.objects.get(name=machine_name)
+                info_obj['site'] = SiteInstance.objects.get(name=str(machine_name)+'_slave_1')
+            except Exception, e:
+                logger.error('Machine Allotment Error 1')
+                logger.error(unused_machines)
+                logger.error(e)
+                pass
+        else:
+            machine_wise_active_tests = list(PingStabilityTest.objects.exclude(
+                machine__name__in=['vrfprv', 'pub']
+            ).filter(
+                status=False
+            ).values('machine__name').annotate(
+                mcount=Count('machine__name')
+            ).order_by('machine__name'))
+
+            least_ip_machine_name = machine_wise_active_tests[0]['machine__name']
+
+            try:
+                info_obj['machine'] = Machine.objects.get(name=least_ip_machine_name)
+                info_obj['site'] = SiteInstance.objects.get(name=str(least_ip_machine_name)+'_slave_1')
+            except Exception, e:
+                logger.error('Machine Allotment Error 2')
+                logger.error(machine_wise_active_tests)
+                logger.error(e)
+                pass
+
+    return info_obj

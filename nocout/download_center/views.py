@@ -20,6 +20,8 @@ from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
 from nocout.settings import SINGLE_REPORT_EMAIL, REPORT_EMAIL_PERM
 from django.views.decorators.csrf import csrf_exempt
+from performance.models import PingStabilityTest
+import itertools
 
 
 from django.http import HttpRequest
@@ -72,8 +74,15 @@ class DownloadCenter(ListView):
         except Exception, e:
             pass
 
+        show_daily_report = False
+
         if 'bs_outage_daily' in page_type:
+            show_daily_report = True
             report_title = 'Raw BS Outage Report'
+            self.template_name = 'download_center/bs_outage_list.html'
+
+        if 'backhaul_summary_weekly' in page_type:
+            report_title = 'Backhaul Summary Report'
             self.template_name = 'download_center/bs_outage_list.html'
 
         context = super(DownloadCenter, self).get_context_data(**kwargs)
@@ -92,6 +101,7 @@ class DownloadCenter(ListView):
         context['report_id'] = report_id
         context['report_title'] = report_title
         context['email_exists'] = email_exists
+        context['show_daily_report'] = show_daily_report
 
         return context
 
@@ -823,36 +833,77 @@ class ProcessedReportEmailAPI(View):
         return super(ProcessedReportEmailAPI, self).dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        result = None
         pk = request.POST.get('pk')
-        report_email_perm = json.loads(REPORT_EMAIL_PERM)
+        report_type = request.POST.get('report_type')
+        # report_email_perm = json.loads(REPORT_EMAIL_PERM)
         if pk:
+            if report_type == 'ping':
+                model_class = PingStabilityTest
+            else:
+                model_class = ProcessedReportDetails
             try:
-                processed_reports = ProcessedReportDetails.objects.get(id=pk)
+                processed_reports = model_class.objects.get(id=pk)
             except Exception, e:
                 processed_reports = None
+
             if processed_reports:
-                report_name = processed_reports.report_name
-                page_name = ReportSettings.objects.get(report_name=report_name).page_name
+                try:
+                    # If below conditions fail to gather information from table ProcessedReportDetails.
+                    # In Exception it will access information from PingStabilityTest table.
+                    report_name = processed_reports.report_name
+                    subject = report_name
+                    message = None
+                    # page_name = ReportSettings.objects.get(report_name=report_name).page_name
+                    file_path = processed_reports.path
+                    file_path = file_path.split()
 
-                file_path = processed_reports.path
-                file_path = file_path.split()
+                    emails = EmailReport.objects.filter(
+                        report_name=ReportSettings.objects.get(report_name=report_name)).values_list('email_list',flat=True)
+                    email_list = [email.split(',') for email in emails]
+                    email_list = list(itertools.chain(*email_list))
+                    email_list = [email.strip() for email in email_list]
 
-                email_list = EmailReport.objects.get(
-                    report_name=ReportSettings.objects.get(report_name=report_name)).email_list
-                email_list = email_list.split(",")
-                email_list = [email.strip() for email in email_list]
-
-                result = {
-                    "success": 0,
-                    "message": "Failed to send email.",
-                    "data": {
-                        "subject": report_name,
-                        "message": 'None',
-                        "from_email": settings.DEFAULT_FROM_EMAIL,
-                        "to_email": email_list,
-                        "attachment_path": file_path
+                    result = {
+                        "success": 0,
+                        "message": "Failed to send email.",
+                        "data": {
+                            "subject": subject,
+                            "message": message,
+                            "from_email": settings.DEFAULT_FROM_EMAIL,
+                            "to_email": email_list,
+                            "attachment_path": file_path
+                        }
                     }
-                }
+                except Exception, e:
+                    # Generated Email for PingStabilityTest Report.
+                    ip_address = processed_reports.ip_address
+                    created_at = processed_reports.created_at
+                    time_duration = processed_reports.time_duration
+
+                    email_ids = processed_reports.email_ids
+                    if email_ids:
+                        email_ids = str(email_ids)
+                        email_list = email_ids.split(',')
+                        email_list = [email.strip() for email in email_list]
+                    else:
+                        email_list = []
+
+                    subject = 'Ping Stability Test : {0}'.format(ip_address)
+                    message = "created at : {0}         time duration: {1}".format(created_at,time_duration)
+                    file_path = processed_reports.file_path
+                    file_path = file_path.split(',')
+                    result = {
+                        "success": 0,
+                        "message": "Failed to send email.",
+                        "data": {
+                            "subject": subject,
+                            "message": message,
+                            "from_email": settings.DEFAULT_FROM_EMAIL,
+                            "to_email": email_list,
+                            "attachment_path": file_path
+                        }
+                    }
                 # Verifying if email Report is enabled for this Report.
                 #if report_email_perm.get(page_name):
                 request_object = HttpRequest()
@@ -863,8 +914,8 @@ class ProcessedReportEmailAPI(View):
 
                 try:
                     email_sender.request.POST = {
-                        'subject': report_name,
-                        'message': '',
+                        'subject': subject,
+                        'message': message,
                         'to_email': email_list,
                         'attachment_path': file_path
                     }
@@ -873,9 +924,10 @@ class ProcessedReportEmailAPI(View):
                 try:
                     email_sender.post(email_sender)
                     result['success'] = 1
-                    result['message'] = 'Mail sent Sucessfully'
+                    result['message'] = 'Mail sent Successfully'
                     result['data']['message'] = 'Here is Your daily Report'
                 except Exception, e:
+                    print 'exception : ',e
                     logger.exception(e)
 
         return HttpResponse(json.dumps(result))

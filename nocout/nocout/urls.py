@@ -97,8 +97,9 @@ urlpatterns = patterns('',
                        url(r'^escalation/', include('alarm_escalation.urls')),
                        url(r'^global_search/', include('inventory.global_search_urls')),
                        url(r'^docs/', include('rest_framework_swagger.urls')),
-                       url(r'^power/', include('inventory.power_urls'))
-                       )
+                       url(r'^power/', include('inventory.power_urls')),
+                       url(r'^ping_stability_test/', include('performance.ping_test_urls'))
+)
 
 # if settings.DEBUG:
 #     import debug_toolbar

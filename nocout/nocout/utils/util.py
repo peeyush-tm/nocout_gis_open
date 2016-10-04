@@ -9,7 +9,8 @@ from dateutil import tz
 from django.db import connections
 from django.db.models import Q
 from operator import itemgetter
-from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME, MAX_SUGGESTION_COUNT, DATATABLE_SEARCHTXT_KEY
+from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME, MAX_SUGGESTION_COUNT, DATATABLE_SEARCHTXT_KEY, SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, \
+SHOW_TICKET_NUMBER
 
 date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
@@ -1866,10 +1867,10 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
                     device_info.DEVICE_ID AS DEVICE_ID,
                     device_info.SS_DEVICE_ID AS SS_DEVICE_ID,
                     
-                    devicetype.name AS DEVICE_TYPE,
+                    devicetype.alias AS DEVICE_TYPE,
                     devicetype.id AS TYPEID,
                     
-                    technology.name AS DEVICE_TECH,
+                    technology.alias AS DEVICE_TECH,
                     technology.id AS TECHID
                 FROM (
                     SELECT
@@ -1956,7 +1957,7 @@ def fetch_sector_inventory(monitored_only=True, technology=None, device_name_lis
         device_name_list=device_name_list,
         grouped_query=grouped_query
     )
-
+    
     result_list = fetch_raw_result(sector_query)
 
     return create_specific_key_dict(
@@ -2028,6 +2029,8 @@ def get_inventory_sector_query(
     device_condition = " device_info.DEVICE_ID = sector.sector_configured_on_id "
     grouping_condition = ""
     concat_values = ""
+    fetch_cutomer_count_query_1 = ''
+    fetch_cutomer_count_query_2 = ''
 
     if monitored_only:
         nms_device_condition = ' AND device.is_added_to_nms > 0 '
@@ -2068,6 +2071,24 @@ def get_inventory_sector_query(
         concat_values = " sector_info.SECTOR_SECTOR_ID AS SECTOR_PORT_SECTOR_ID , \
                          ".format(dr_sector_id_prefix)
 
+    if SHOW_CUSTOMER_COUNT_IN_ALERT_LIST:
+        fetch_cutomer_count_query_1 = "IF(not isnull(customer_count_sec.count_of_customer), customer_count_sec.count_of_customer, 0) AS CUSTOMER_COUNT,"
+        fetch_cutomer_count_query_2 =   '''
+                                             LEFT JOIN
+                                                download_center_customer_count_sector AS customer_count_sec
+                                            ON 
+                                                customer_count_sec.sector_id = sector_info.SECTOR_SECTOR_ID 
+                                        '''
+
+    if SHOW_TICKET_NUMBER:
+        fetch_cutomer_count_query_1 += "IF(not isnull(device_ticket.ticket_number), device_ticket.ticket_number, 'NA') AS TICKET_NUMBER,"
+        fetch_cutomer_count_query_2 +=  '''
+                                             LEFT JOIN
+                                                device_deviceticket AS device_ticket
+                                            ON
+                                                sector_info.SECTOR_CONF_ON_IP = device_ticket.ip_address 
+                                        '''
+
     sector_query = '''
         SELECT 
             IF(not isnull(bs.alias), bs.alias, 'NA') as BSALIAS,
@@ -2078,11 +2099,12 @@ def get_inventory_sector_query(
             bs.city_id as BSCITYID,
             bs.state_id as BSSTATEID,
             IF(not isnull(freq.value), freq.value, 'NA') AS FREQUENCY,
+            {7}
             sector_info.* 
         from
             (
                 select
-                    devicetype.name as DEVICE_TYPE,
+                    devicetype.alias as DEVICE_TYPE,
                     
                     sector.base_station_id AS BSID,
                     sector.sector_id as SECTOR_SECTOR_ID,
@@ -2092,7 +2114,7 @@ def get_inventory_sector_query(
                     sector.sector_configured_on_port_id as sector_port_id,
                     sector.frequency_id AS FREQ_ID,
 
-                    technology.name as DEVICE_TECH,
+                    technology.alias as DEVICE_TECH,
                     technology.id as TECHID,
                     devicetype.id as TYPEID,
 
@@ -2153,6 +2175,7 @@ def get_inventory_sector_query(
             device_port.id = sector_info.sector_port_id
         and
             not isnull(sector_info.sector_port_id)
+        {8}
         {6};
 
         '''.format(
@@ -2162,7 +2185,9 @@ def get_inventory_sector_query(
             concat_values,
             dr_device_condition,
             device_condition,
-            grouping_condition
+            grouping_condition,
+            fetch_cutomer_count_query_1,
+            fetch_cutomer_count_query_2
         )
 
     return sector_query
@@ -2242,7 +2267,7 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                     sector_device_info.*
                 FROM(
                         SELECT
-                            devicetype.name AS DEVICE_TYPE,
+                            devicetype.alias AS DEVICE_TYPE,
                             sector.id AS SECT_ID,
                             sector.base_station_id AS BSID,
                             sector.sector_id AS SECTOR_SECTOR_ID,
@@ -2252,7 +2277,7 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                             sector.planned_frequency AS SECTOR_PLANNED_FREQUENCY,
                             sector.sector_configured_on_port_id AS sector_port_id,
 
-                            technology.name AS DEVICE_TECH,
+                            technology.alias AS DEVICE_TECH,
                             technology.id AS TECHID,
                             devicetype.id AS TYPEID,
 
@@ -2377,6 +2402,10 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
                             bh.bh_switch_id = device_info.DEVICE_ID ) AND \
                         not isnull(bh.bh_configured_on_id) "
 
+    if type_rf == 'pe':
+        is_bh_condition = " (bh.pe_ip_id = device_info.DEVICE_ID) AND \
+                        not isnull(bh.bh_configured_on_id) "
+
     if not grouped_query:
         grouping_condition = ""
 
@@ -2395,12 +2424,13 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
         FROM 
             (
                 select
-                    technology.name AS DEVICE_TECH,
-                    devicetype.name AS DEVICE_TYPE,
+                    technology.alias AS DEVICE_TECH,
+                    devicetype.alias AS DEVICE_TYPE,
                         
                     bh.id AS BHID,
                     bh.bh_connectivity AS BH_CONNECTIVITY,
                     bh.alias AS BH_ALIAS,
+                    bh.pe_hostname AS PE_HOSTNAME,
                     
                     devicetype.id AS TYPEID,
                     
@@ -2614,7 +2644,7 @@ def get_maps_initial_data_query(bs_id=[]):
                 IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name), '|',
                 IF(isnull(ss.name), 'NA', ss.name), '|',
                 IF(isnull(customer.alias), 'NA', customer.alias), '|',
-                IF(isnull(backhaul.pe_ip), 'NA', backhaul.pe_ip), '|',
+                IF(isnull(bh_pe_device.ip_address) or bh_pe_device.ip_address = '', 'NA', bh_pe_device.ip_address), '|',
                 IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth), '|',
                 IF(isnull(ss_antenna.polarization), 'NA', ss_antenna.polarization), '|',
                 IF(isnull(ss_antenna.mount_type), 'NA', ss_antenna.mount_type), '|',
@@ -2633,7 +2663,7 @@ def get_maps_initial_data_query(bs_id=[]):
     query = '''
         SELECT
             bs.id AS BSID,
-            bs.has_pps_alarm AS PPSALARMFLAG,
+            IF(isnull(pps_mapper.has_pps_alarm),0, pps_mapper.has_pps_alarm) AS has_pps,
             IF(isnull(bs.name), 'NA', bs.name) AS BSNAME,
             IF(isnull(bs.alias), 'NA', bs.alias) AS BSALIAS,
             IF(isnull(bs.maintenance_status), 'NA', bs.maintenance_status) AS BSMAINTENANCESTATUS,
@@ -2667,6 +2697,10 @@ def get_maps_initial_data_query(bs_id=[]):
         FROM
             inventory_basestation AS bs
         LEFT JOIN
+            inventory_basestationppsmapper AS pps_mapper
+        ON
+            bs.id = pps_mapper.base_station_id
+        LEFT JOIN
             inventory_backhaul AS backhaul
         ON
             bs.backhaul_id = backhaul.id
@@ -2674,6 +2708,10 @@ def get_maps_initial_data_query(bs_id=[]):
             device_device AS bh_device
         ON
             backhaul.bh_configured_on_id = bh_device.id
+        LEFT JOIN
+            device_device AS bh_pe_device
+        ON
+            backhaul.pe_ip_id = bh_pe_device.id
         LEFT JOIN
             device_devicetechnology AS bh_tech
         ON
@@ -2750,7 +2788,7 @@ def get_maps_initial_data_query(bs_id=[]):
         GROUP BY
             bs.id
         '''.format(ss_group_concat_str, bs_where_condition)
-            
+        
     return query
 
 
@@ -2787,7 +2825,7 @@ def getBSInventoryInfo(base_station_id=None):
             IF(isnull(bh.bh_circuit_id), 'NA', bh.bh_circuit_id) AS bh_circuit_id,
             IF(isnull(bh.ttsl_circuit_id), 'NA', bh.ttsl_circuit_id) AS bh_ttsl_circuit_id,
             IF(isnull(bh.pe_hostname), 'NA', bh.pe_hostname) AS bh_pe_hostname,
-            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bh_pe_device.ip_address) or bh_pe_device.ip_address = '', 'NA', bh_pe_device.ip_address) AS pe_ip,
             IF(isnull(bs.bs_switch_id), 'NA', bs_switch_device.ip_address) AS bs_switch_ip,
             IF(isnull(bh.aggregator_id), 'NA', aggr_switch.ip_address) AS aggregation_switch,
             IF(isnull(bh.aggregator_port_name), 'NA', bh.aggregator_port_name) AS aggregation_switch_port,
@@ -2834,6 +2872,10 @@ def getBSInventoryInfo(base_station_id=None):
             device_device AS pop_device
         ON
             bh.pop_id = pop_device.id
+        LEFT JOIN
+            device_device AS bh_pe_device
+        ON
+            bh.pe_ip_id = bh_pe_device.id
         WHERE
             {0}
         '''.format(where_condition)
@@ -2864,7 +2906,7 @@ def getBHInventoryInfo(backhaul_id=None):
             IF(isnull(bh.bh_circuit_id), 'NA', bh.bh_circuit_id) AS bh_circuit_id,
             IF(isnull(bh.ttsl_circuit_id), 'NA', bh.ttsl_circuit_id) AS bh_ttsl_circuit_id,
             IF(isnull(bh.pe_hostname), 'NA', bh.pe_hostname) AS bh_pe_hostname,
-            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bh_pe_device.ip_address) or bh_pe_device.ip_address = '', 'NA', bh_pe_device.ip_address) AS pe_ip,
             IF(isnull(bs.bs_switch_id), 'NA', bs_switch_device.ip_address) AS bs_switch_ip,
             IF(isnull(bh.aggregator_id), 'NA', aggr_switch.ip_address) AS aggregation_switch,
             IF(isnull(bh.aggregator_port_name), 'NA', bh.aggregator_port_name) AS aggregation_switch_port,
@@ -2911,6 +2953,10 @@ def getBHInventoryInfo(backhaul_id=None):
             device_device AS pop_device
         ON
             bh.pop_id = pop_device.id
+        LEFT JOIN
+            device_device AS bh_pe_device
+        ON
+            bh.pe_ip_id = bh_pe_device.id
         WHERE
             {0}
         '''.format(where_condition)
@@ -2937,7 +2983,7 @@ def getSSInventoryInfo(sub_station_id=None):
             IF(isnull(ss.device_id), 'NA', ss_device.ip_address) AS ss_ip,
             IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS cktid,
             IF(isnull(customer.alias), 'NA', customer.alias) AS customer_alias,
-            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bh_pe_device.ip_address) or bh_pe_device.ip_address = '', 'NA', bh_pe_device.ip_address) AS pe_ip,
             IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth) AS qos_bandwidth,
             IF(isnull(antenna.height), 'NA', antenna.height) AS antenna_height,
             IF(isnull(antenna.polarization), 'NA', antenna.polarization) AS polarisation,
@@ -2986,6 +3032,10 @@ def getSSInventoryInfo(sub_station_id=None):
             inventory_backhaul AS bh
         ON
             bs.backhaul_id = bh.id
+        LEFT JOIN
+            device_device AS bh_pe_device
+        ON
+            bh.pe_ip_id = bh_pe_device.id
         LEFT JOIN
             inventory_customer AS customer
         ON
@@ -3036,7 +3086,7 @@ def getSectorInventoryInfo(sector_id=None):
             IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS cktid,
             IF(isnull(customer.alias), 'NA', customer.alias) AS customer_alias,
             IF(isnull(ckt.qos_bandwidth), 'NA', ckt.qos_bandwidth) AS qos_bandwidth,
-            IF(isnull(bh.pe_ip), 'NA', bh.pe_ip) AS pe_ip,
+            IF(isnull(bh_pe_device.ip_address) or bh_pe_device.ip_address = '', 'NA', bh_pe_device.ip_address) AS pe_ip,
             IF(isnull(ss_antenna.mount_type), 'NA', ss_antenna.mount_type) AS mount_type,
             IF(isnull(ss.cable_length), 'NA', ss.cable_length) AS cable_length,
             IF((isnull(ss.ethernet_extender) OR ss.ethernet_extender = ' '), 'NA', ss.ethernet_extender) AS ethernet_extender,
@@ -3070,6 +3120,10 @@ def getSectorInventoryInfo(sector_id=None):
             inventory_backhaul AS bh
         ON
             bs.backhaul_id = bh.id
+        LEFT JOIN
+            device_device AS bh_pe_device
+        ON
+            bh.pe_ip_id = bh_pe_device.id
         LEFT JOIN
             device_deviceport AS sector_port
         ON

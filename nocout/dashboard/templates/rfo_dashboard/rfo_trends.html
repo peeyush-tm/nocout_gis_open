@@ -1,0 +1,178 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-television'></i> Dashboard" "javascript:;" %}
+    {% breadcrumb_safe "Customer Fault Analysis" "javascript:;" %}
+    {% breadcrumb_safe "RFO Trends" "dashboard-rfo-trends" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content %}
+<style type="text/css">
+    .filter_controls {
+        min-width: 150px;
+    }
+</style>
+<div class="box border lite">
+    <div id="tableContainer_div" class="box-title">
+        <h4 class="pull-left"><i class="fa fa-television"></i> RFO Trends</h4>
+
+        <ul class="list-unstyled list-inline pull-right" style="margin-bottom:4px;">
+            <li>
+                <select name="display_selector" class="form-control input-sm filter_controls">
+                    <option value="table" selected="selected">Display Table</option>
+                    <option value="chart">Display Chart</option>
+                    <option value="both">Display Both</option>
+                </select>
+            </li>
+            <li>
+                <select name="severity_selector" class="form-control input-sm filter_controls">
+                    <option value="">Select Severity</option>
+                </select>
+            </li>
+            <li>
+                <select name="month_selector" class="form-control input-sm filter_controls">
+                    <option value="">Select Month</option>
+                </select>
+            </li>
+            <li>
+                <select name="state_selector" class="form-control input-sm filter_controls">
+                    <option value="">Select State</option>
+                </select>
+            </li>
+            <li>
+                <select name="city_selector" class="form-control input-sm filter_controls">
+                    <option value="">Select City</option>
+                </select>
+            </li>
+        </ul>
+        <div class="clearfix"></div>
+    </div>
+    <div class="box-body" style="">
+        <div class="table_view_container">
+            <div class="col-md-6">
+                <table class="datatable table table-striped table-bordered table-hover" id="rfo_summation_table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="clearfix"></div>
+            </div>
+            <div class="col-md-6" style="border-left: 1.5px solid #DDD;">
+                <table class="datatable table table-striped table-bordered table-hover" id="rfo_data_table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="clearfix"></div>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+        <div class="both_view_seperator" style="height: 1px; margin-bottom: 10px; width: 100%; background: #DDD;"></div>
+        <div class="chart_view_container">
+            <div id="rfo_trends_chart_container"></div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+{% endblock %}
+
+{% block load_js %}
+    <!--Highcharts Library-->
+    <script src={% static "js/highcharts.js" %}></script>
+    <!-- <script src={% static "js/highcharttheme.js" %}></script> -->
+    <script src={% static "js/highcharts-more.js" %}></script>
+    <!-- Solid Gauge Chart highcharts -->
+    <script src={% static "js/solid-gauge.js" %}></script>
+    <!-- no data for highcharts -->
+    <script src={% static "js/no-data-to-display.js" %}></script>
+    <!-- Highcharts Export Lib -->
+    <script src={% static "js/exporting.js" %}></script>
+    <!--Custom Script to load RFO dashboard -->
+    <script type="text/javascript" src={% static "js/nocout/rfoDashboardLib.js" %}></script>
+    <!-- Custom script for data table-->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        var month_dict = {
+                '0': 'January', '1': 'February', '2': 'March',
+                '3': 'April', '4': 'May', '5': 'June',
+                '6': 'July', '7': 'August', '8': 'September',
+                '9': 'October', '10': 'November', '11': 'December'
+            },
+            summation_headers = [],
+            all_data_headers = [],
+            all_data_url = '',
+            summation_url = '',
+            dataTableInstance = '';
+
+        $(document).ready(function(e) {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+
+            // Show Loading Spinner
+            showSpinner();
+
+            var city_list = [],
+                state_list = [],
+                month_list = [],
+                severity_list = [];
+            try {
+                city_list = $.parseJSON('{{ city_data|safe }}'.split('\n').join(''))
+            } catch(e) {
+                // console.error(e);
+            }
+
+            try {
+                state_list = $.parseJSON('{{ states_data|safe }}'.split('\n').join(''))
+            } catch(e) {
+                // console.error(e);
+            }
+
+            try {
+                month_list = $.parseJSON('{{ months_data|safe }}')
+            } catch(e) {
+                // console.error(e);
+            }
+
+            try {
+                severity_list = $.parseJSON('{{ severity_data|safe }}'.split('\n').join(''))
+            } catch(e) {
+                // console.error(e);
+            }
+
+            try {
+                summation_headers = $.parseJSON('{{ summation_headers|safe }}')
+            } catch(e) {
+                // console.error(e);
+            }
+
+            try {
+                all_data_headers = $.parseJSON('{{ all_data_headers|safe }}')
+            } catch(e) {
+                // console.error(e);
+            }
+
+            all_data_url = "{% url 'rfo-trends-data' %}";
+            summation_url = "{% url 'rfo-trends-summation-data' %}";
+
+
+            // Populate month, city & state dropdown
+            updateFiltersContent(month_list, 'month', 'Month');
+            updateFiltersContent(state_list, 'state', 'State');
+            updateFiltersContent(city_list, 'city', 'City');
+            updateFiltersContent(severity_list, 'severity', 'Severity');
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+
+            // call initRfoDashboard function to populate RFO dashboard data as per the selected filters
+            initRfoDashboard();
+        });
+    </script>
+{% endblock %}

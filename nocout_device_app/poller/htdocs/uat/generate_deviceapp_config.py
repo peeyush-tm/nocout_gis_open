@@ -191,7 +191,8 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     on
     (device_device.id = inventory_backhaul.bh_configured_on_id OR device_device.id = inventory_backhaul.aggregator_id OR
      device_device.id = inventory_backhaul.pop_id OR
-     device_device.id = inventory_backhaul.bh_switch_id)
+     device_device.id = inventory_backhaul.bh_switch_id OR
+     device_device.id = inventory_backhaul.pe_ip_id)
     left join
     (inventory_basestation)
     on
@@ -204,7 +205,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     device_device.is_deleted=0 and
     device_device.host_state <> 'Disable'
     and 
-    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE','Huawei')
+    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE','Huawei','cisco_router','ALU')
     group by device_device.ip_address
     ;
     """

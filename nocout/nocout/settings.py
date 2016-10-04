@@ -501,10 +501,15 @@ CELERYBEAT_SCHEDULE = {
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=25, hour=0)
     },
-    'scheduled_email_report_task': {
-        'task': 'download_center.tasks.scheduled_email_report',
-        'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    #PTP-BH upttime Average from Daily Network availability data.
+    'calculate_avg_availability_ptpbh': {
+        'task': 'performance.tasks.calculate_avg_availability_ptpbh',
+        'schedule': crontab(day_of_month='1', hour=2)
     },
+    #'scheduled_email_report_task': {
+    #    'task': 'download_center.tasks.scheduled_email_report',
+    #    'schedule': crontab(minute=0, hour=12),  # Execute daily at 12:00 p.m
+    #},
     'check_current_alarm_for_NO_PPS': {
         'task': 'inventory.tasks.check_alarms_for_no_pps',
         'schedule': crontab(minute='*/5'), #Execute at every 5 minute
@@ -513,7 +518,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'check_clear_alarm_for_NO_PPS': {
         'task': 'inventory.tasks.check_alarms_for_no_pps',
-        'schedule': crontab(minute='*/8'),
+        'schedule': crontab(hour='*/1'),
         'kwargs': {'alarm_type': 'clear'},
         # 'args' : ['clear'],
     }
@@ -871,7 +876,17 @@ SETTINGS_EXPORT = [
     'DASHBOARD_SECTOR_STATUS',
     'DASHBOARD_BACKHAUL_STATUS',
     'EXCLAMATION_NEEDED',
-    'ANTENA_TYPE_ADV_FILTER'
+    'ANTENA_TYPE_ADV_FILTER',
+    'SHOW_CUSTOMER_COUNT_IN_TRAPS',
+    'SHOW_CUSTOMER_COUNT_IN_ALERT_LIST',
+    'ENABLE_UPTIME_DASHBOARD',
+    'SHOW_CUSTOMER_FAULT_REPORT',
+    'SHOW_BH_SUMMARY_REPORT',
+    'SHOW_LINK_STATUS',
+    'SHOW_LINK_STATUS_RAD5',
+    'SHOW_RFO_TRENDS_DASHBOARD',
+    'ENABLE_PING_TEST',
+    'ENABLE_PE_PERF'
 ]
 
 # Dashbaord Settings
@@ -911,8 +926,8 @@ CACHE_TIME = {
 
 POWER_SMS_DICT = {
     'status' : 'Status',
-    'reset' : 'Reset',
-    'joji' : 'JOJI'
+    'reset' : 'RESET',
+    'joji' : 'Joji'
 }
 
 # Params for advance filters feature.
@@ -1290,6 +1305,8 @@ REPORT_EMAIL_PERM = json.dumps({
     'bs_daily_fault_report': 0,
     'bs_monthly_uptime_report': 0,
     'bh_polling_failure': 0,
+    'backhaul_summary_weekly':0,
+    'backhaul_summary_monthly':0,
 })
 
 # Global variable to show/hide single report mail option in download center listing
@@ -1327,6 +1344,19 @@ SHOW_SS_PERF_LINK_IA_TABLE = False
 DASHBOARD_SECTOR_STATUS = False
 DASHBOARD_BACKHAUL_STATUS = False
 ANTENA_TYPE_ADV_FILTER = False
+SHOW_CUSTOMER_COUNT_IN_TRAPS = False
+SHOW_CUSTOMER_COUNT_IN_ALERT_LIST = False
+SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT = False
+ENABLE_UPTIME_DASHBOARD = False
+SHOW_CUSTOMER_FAULT_REPORT = False
+SHOW_BH_SUMMARY_REPORT = False
+SHOW_LINK_STATUS  = False
+SHOW_LINK_STATUS_RAD5 = False
+SHOW_RFO_TRENDS_DASHBOARD = False
+SHOW_TICKET_NUMBER = False
+ENABLE_PING_TEST = False
+MAX_PARALLEL_STABILITY_TESTS = 6
+ENABLE_PE_PERF = False
 
 # Import the local_settings.py file to override global settings
 try:

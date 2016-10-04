@@ -32,7 +32,8 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     PerformanceNetworkDaily, PerformanceNetworkWeekly, PerformanceNetworkMonthly, PerformanceNetworkYearly, \
     PerformanceStatusDaily, PerformanceStatusWeekly, PerformanceStatusMonthly, PerformanceStatusYearly, \
     PerformanceInventoryDaily, PerformanceInventoryWeekly, PerformanceInventoryMonthly, PerformanceInventoryYearly,\
-    UtilizationBiHourly, UtilizationHourly, UtilizationDaily, UtilizationWeekly, UtilizationMonthly, UtilizationYearly,CustomDashboard,DSCustomDashboard
+    UtilizationBiHourly, UtilizationHourly, UtilizationDaily, UtilizationWeekly, UtilizationMonthly, UtilizationYearly, \
+    CustomDashboard, DSCustomDashboard, PingStabilityTest
 
 from dashboard.utils import MultiQuerySet
 # Import nocout utils gateway class
@@ -165,14 +166,19 @@ class LivePerformance(ListView):
         hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
+        name_key = 'bs_name'
+        name_title = 'BS Name'
+
+        if page_type == 'pe':
+            name_key = 'pe_hostname'
+            name_title = 'PE Hostname'
 
         common_headers = [
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': name_key, 'sTitle': name_title, 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
-
         ]
 
         polled_headers = [
@@ -262,10 +268,11 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            if in_group(self.request.user, 'admin'):
-                organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
-            else:
-                organizations = [self.request.user.userprofile.organization]
+            # if in_group(self.request.user, 'admin'):
+            #     organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
+            # else:
+            #     organizations = [self.request.user.userprofile.organization]
+            organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
 
             return self.get_initial_query_set_data(organizations=organizations)
 
@@ -482,6 +489,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
             type_rf = 'sector'
         elif page_type == 'customer':
             type_rf = 'ss'
+        elif page_type == 'pe':
+            type_rf = 'pe'
         else:
             type_rf = other_type
                 
@@ -534,10 +543,15 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         """
         
         page_type = self.request.GET['page_type']
+        other_type = self.request.GET.get('other_type')
         alert_page_type = page_type
 
         # In case of other page update page type to 'network' for alert center link
         if page_type not in ["customer", "network"]:
+            alert_page_type = 'network'
+
+        if other_type == 'pe':
+            page_type = 'pe'
             alert_page_type = 'network'
 
         if qs:
@@ -665,6 +679,7 @@ class GetPerfomance(View):
         bs_alias = None
         bs_id = list()
         is_radwin5 = 0
+        is_others_other_tab = 0
         is_viewer_flag = 0
         user_role = self.request.user
         sector_configured_on_id = []
@@ -674,6 +689,17 @@ class GetPerfomance(View):
                 is_radwin5 = 1
         except Exception, e:
             is_radwin5 = 0
+
+        '''
+        This flag is needed because if device is in Other Live's Other tab
+        then hide Topology view tab
+        '''
+        try:
+            if page_type not in ['network', 'customer']:
+                if not device.backhaul.exists():
+                    is_others_other_tab = 1
+        except Exception, e:
+            pass
 
         try:
             if in_group(self.request.user, 'viewer'):
@@ -826,6 +852,7 @@ class GetPerfomance(View):
             'device': device,
             'realdevice': realdevice,
             'bs_alias' : bs_alias,
+            'is_others_other_tab': is_others_other_tab,
             'bs_id' : json.dumps(bs_id),
             'sector_configured_on_id' : json.dumps(sector_configured_on_id),
             'get_status_url': inventory_status_url,
@@ -1208,6 +1235,10 @@ class InventoryDeviceStatus(View):
             type_of_device = "backhaul"
             type_rf = 'backhaul'
             page_type = 'other'
+        elif device.pe_ip.exists():
+            type_of_device = "other"
+            type_rf = 'pe'
+            page_type = 'pe'
         elif device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists():
             is_other = True
             type_of_device = "other"
@@ -1273,7 +1304,7 @@ class InventoryDeviceStatus(View):
                     device_name_list.append(sector_device_name[0]['sector_configured_on__device_name'])
 
         if devices_info_list:
-            if device_tech in ['WiMAX'] or page_type == 'other':
+            if device_tech in ['WiMAX'] or page_type in ['other']:
                 is_single_call = True
             else:
                 is_single_call = False
@@ -1286,8 +1317,6 @@ class InventoryDeviceStatus(View):
                 device_name_list=device_name_list,
                 is_single_call=is_single_call
             )
-
-            # list_devices_invent_info = perf_utils.prepare_gis_devices(devices_info_list, page_type=None)
 
             if list_devices_invent_info:
                 lowered_device_tech = list_devices_invent_info[0]['device_technology'].lower()
@@ -1338,16 +1367,31 @@ class InventoryDeviceStatus(View):
 
                 # If SS device & of PMP or Wimax Technology then fetch the qos_bandwidth from distributed DB
                 if page_type == 'customer' and lowered_device_tech in ['pmp', 'wimax']:
+                    
+                    list_devices_invent_info[0]['polled_sector_id'] = ''
+
                     service_name = ''
                     ds_name = ''
+                    model_name = InventoryStatus
+                    invent_machine_name = machine_name
+                    sector_id_service_name = ''
+                    sector_id_ds_name = ''
                     
                     # GET Service & DS as per the technology
                     if lowered_device_tech in ['pmp']:
                         service_name = 'cambium_qos_invent'
                         ds_name = 'bw_dl_sus_rate'
+
+                        sector_id_service_name = 'cambium_ss_sector_id_invent'
+                        sector_id_ds_name = 'ss_sector_id'
+
                     elif lowered_device_tech in ['wimax']:
                         service_name = 'wimax_qos_invent'
                         ds_name = 'dl_qos'
+
+                        model_name = ServiceStatus
+                        sector_id_service_name = 'wimax_ss_sector_id'
+                        sector_id_ds_name = 'ss_sector_id'
 
                     # If we have device_name, machine_name, service & db only then proceed
                     if device_name and machine_name and service_name and ds_name:
@@ -1359,6 +1403,18 @@ class InventoryDeviceStatus(View):
 
                         if invent_status_obj and invent_status_obj[0].current_value:
                             list_devices_invent_info[0]['qos_bw'] = invent_status_obj[0].current_value
+
+                    if model_name and device_name and invent_machine_name and sector_id_service_name and sector_id_ds_name:
+                        sector_invent_obj = model_name.objects.filter(
+                            device_name=device_name,
+                            service_name__iexact=sector_id_service_name,
+                            data_source__iexact=sector_id_ds_name
+                        ).order_by('-sys_timestamp').using(
+                            alias=invent_machine_name
+                        )
+
+                        if sector_invent_obj:
+                            list_devices_invent_info[0]['polled_sector_id'] = sector_invent_obj[0].current_value
 
         # Format fetched inventory data in desired format
         resultant_data = self.prepareInventoryStatusResult(
@@ -1668,30 +1724,30 @@ class InventoryDeviceServiceDataSource(View):
                     else:
                         result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
-        
-        result['data']['objects']['availability_tab']["info"].append(
-            {
-                'name': 'availability',
-                'title': 'Availability',
-                'url': 'performance/service/availability/service_data_source/availability/device/' +
-                       str(device_id),
-                'active': 0
-            })
-
-        result['data']['objects']['topology_tab']["info"].append({
-            'name': 'topology',
-            'title': 'Topology',
-            'url': 'performance/service/topology/service_data_source/topology/device/' +
+        result['data']['objects']['availability_tab']["info"].append({
+            'name': 'availability',
+            'title': 'Availability',
+            'url': 'performance/service/availability/service_data_source/availability/device/' +
                    str(device_id),
             'active': 0
         })
 
-        result['data']['objects']['utilization_top_tab']["info"].append({
-            'name': 'utilization_top',
-            'title': 'Utilization',
-            'url': 'performance/servicedetail/util/device/'+str(device_id),
-            'active': 0
-        })
+        if not device.pe_ip.exists():
+            result['data']['objects']['topology_tab']["info"].append({
+                'name': 'topology',
+                'title': 'Topology',
+                'url': 'performance/service/topology/service_data_source/topology/device/' +
+                       str(device_id),
+                'active': 0
+            })
+
+        if not device.pe_ip.exists():
+            result['data']['objects']['utilization_top_tab']["info"].append({
+                'name': 'utilization_top',
+                'title': 'Utilization',
+                'url': 'performance/servicedetail/util/device/'+str(device_id),
+                'active': 0
+            })
         
         custom_dashboard = CustomDashboard.objects.filter(Q(user_profile=self.request.user.pk) | Q(is_public=1))       
 
@@ -3968,6 +4024,11 @@ class GetServiceTypePerformanceData(View):
             counter = -1
             for ds in ds_list:
                 try:
+                    is_pl = False
+                    legend_color = ''
+                    if ds == 'pl':
+                        is_pl = True
+                        legend_color = 'transparent'
                     # Variables used for HISTORICAL data
                     data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
                     data_list_min, data_list_max, data_list_avg =  list(), list(), list()
@@ -4311,12 +4372,15 @@ class GetServiceTypePerformanceData(View):
                                 ]
 
                     if data_list and len(data_list) > 0 and sds_name not in ["availability"]:
+                        base_color = data_list[0]['color']
+                        if is_pl:
+                            base_color = legend_color
                         if is_dual_axis:
                             chart_data.append({
                                 'name': self.result['data']['objects']['display_name'],
                                 'data': data_list,
                                 'yAxis' : counter,
-                                'color' : data_list[0]['color'],
+                                'color' : base_color, #data_list[0]['color'],
                                 'type': self.result['data']['objects']['type'],
                                 'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                 'valuetext': self.result['data']['objects']['valuetext'],
@@ -4326,7 +4390,7 @@ class GetServiceTypePerformanceData(View):
                             chart_data.append({
                                 'name': self.result['data']['objects']['display_name'],
                                 'data': data_list,
-                                'color' : data_list[0]['color'],
+                                'color' : base_color, #data_list[0]['color'],
                                 'type': self.result['data']['objects']['type'],
                                 'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                 'valuetext': self.result['data']['objects']['valuetext'],
@@ -7237,10 +7301,27 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
                 "value": "NA",
                 "url": ""
             },
-            polled_freq_obj
+            polled_freq_obj,
+            {
+                "name": "polled_sector_id",
+                "title": "Sector ID",
+                "value": "NA",
+                "url": ""
+            }
         ]
 
     elif type_of_device in ['backhaul', 'other']:
+        if page_type == 'pe':
+            bs_name_obj = {
+                "name": "pe_hostname",
+                "title": "PE Hostname",
+                "value": "NA",
+                "url": "",
+                "app_name": inventory_app,
+                "url_name": "backhaul_edit",
+                "kwargs_name": 'pk',
+                'pk_key' : 'bh_id'
+            }
         headers_list = [
             ip_obj,
             tech_name_obj,
@@ -7611,7 +7692,7 @@ class GetTopology(View):
                         IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                         IF(isnull(bs.backhaul_id), 'NA', bs.backhaul_id) AS bh_id,
                         IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                        IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                        IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                         IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                         IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
@@ -7646,6 +7727,7 @@ class GetTopology(View):
                         'NA' AS far_end_ss_device_type,
                         'NA' AS far_end_ss_device_name,
                         'NA' AS far_end_ss_device_ip,
+                        IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
                         IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
                         IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
                         IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
@@ -7672,6 +7754,10 @@ class GetTopology(View):
                         inventory_backhaul AS backhaul
                     ON
                         bs.backhaul_id = backhaul.id
+                    LEFT JOIN
+                        device_device AS bh_pe_device
+                    ON
+                        backhaul.pe_ip_id = bh_pe_device.id
                     LEFT JOIN
                         device_device AS bs_convertor_device
                     ON
@@ -7822,7 +7908,8 @@ class GetTopology(View):
                         IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                         IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                         IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                        IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                        IF(isnull(bh_pe_device.id), 'NA', bh_pe_device.id) AS pe_id,
+                        IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                         IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                         IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                         IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
@@ -7839,7 +7926,7 @@ class GetTopology(View):
                         IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
                         IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
                         IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
-                        IF(sect_device_tech.name = 'WiMAX', CONCAT(device.ip_address, ' - ', sect.sector_id), device.ip_address) AS sect_ip_id_title,
+                        IF(not isnull(sect.sector_id), sect.sector_id, device.ip_address) AS sect_ip_id_title,
                         'NA' AS ss_circuit_id,
                         'NA' AS ss_id,
                         'NA' AS ss_device_id,
@@ -7847,6 +7934,7 @@ class GetTopology(View):
                         'NA' AS ss_device_type,
                         'NA' AS ss_device_name,
                         'NA' AS ss_device_ip,
+                        IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
                         IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
                         IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
                         IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
@@ -7869,6 +7957,10 @@ class GetTopology(View):
                         inventory_backhaul AS backhaul
                     ON
                         bs.backhaul_id = backhaul.id
+                    LEFT JOIN
+                        device_device AS bh_pe_device
+                    ON
+                        backhaul.pe_ip_id = bh_pe_device.id
                     LEFT JOIN
                         device_device AS bs_convertor_device
                     ON
@@ -7964,7 +8056,8 @@ class GetTopology(View):
                     IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                     IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                     IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                    IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                    IF(isnull(bh_pe_device.id), 'NA', bh_pe_device.id) AS pe_id,
+                    IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                     IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                     IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                     IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
@@ -7991,6 +8084,7 @@ class GetTopology(View):
                     IF(isnull(ss_device_type.name), 'NA', ss_device_type.name) AS ss_device_type,
                     IF(isnull(ss_device.device_name), 'NA', ss_device.device_name) AS ss_device_name,
                     IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address) AS ss_device_ip,
+                    IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
                     IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
                     IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
                     IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
@@ -8014,6 +8108,10 @@ class GetTopology(View):
                     inventory_backhaul AS backhaul
                 ON
                     bs.backhaul_id = backhaul.id
+                LEFT JOIN
+                    device_device AS bh_pe_device
+                ON
+                    backhaul.pe_ip_id = bh_pe_device.id
                 LEFT JOIN
                     device_device AS bs_convertor_device
                 ON
@@ -8143,7 +8241,8 @@ class GetTopology(View):
                     IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
                     IF(isnull(backhaul_id), 'NA', backhaul_id) AS bh_id,
                     IF(isnull(pe_hostname), 'NA', pe_hostname) AS pe_hostname,
-                    IF(isnull(pe_ip), 'NA', pe_ip) AS pe_ip,
+                    IF(isnull(bh_pe_device.id), 'NA', bh_pe_device.id) AS pe_id,
+                    IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
                     IF(isnull(bh_configured_on_id), 'NA', bh_configured_on_id) AS bh_device_id,
                     IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
                     IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
@@ -8171,6 +8270,7 @@ class GetTopology(View):
                     'NA' AS ss_device_type,
                     'NA' AS ss_device_name,
                     'NA' AS ss_device_ip,
+                    IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
                     IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
                     IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
                     IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
@@ -8193,6 +8293,10 @@ class GetTopology(View):
                     inventory_backhaul AS backhaul
                 ON
                     bs.backhaul_id = backhaul.id
+                LEFT JOIN
+                    device_device AS bh_pe_device
+                ON
+                    backhaul.pe_ip_id = bh_pe_device.id
                 LEFT JOIN
                     device_device AS bs_convertor_device
                 ON
@@ -8277,6 +8381,14 @@ class GetTopology(View):
 
         is_init = False
 
+        # In case of No PL Info available
+        blank_pl_info = {
+            "severity" : "",
+            "value": "",
+            "packet_loss": "",
+            "latency": ""
+        }
+
         # converting query result in required format 
 
         if have_ptp_bh:
@@ -8288,6 +8400,21 @@ class GetTopology(View):
             for bs in result_of_query:
                 if bs.get('bs_id') not in bs_ids:
                     bs_ids.append(bs.get('bs_id'))
+                    if bs.get('pe_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('pe_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('pe_id')))
+                            pe_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            pe_pl_info = blank_pl_info
+                    else:
+                        pe_pl_info = blank_pl_info
+
                     if bs.get('bh_device_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
@@ -8299,12 +8426,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_pl_info = blank_pl_info
+                    else:
+                        bh_pl_info = blank_pl_info
+
                     if bs.get('bh_aggregator_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_aggregator_id')))
@@ -8316,12 +8441,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_aggr_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_aggr_pl_info = blank_pl_info
+                    else:
+                        bh_aggr_pl_info = blank_pl_info
+
                     if bs.get('bh_pop_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_pop_id')))
@@ -8333,12 +8456,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_pop_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_pop_pl_info = blank_pl_info
+                    else:
+                        bh_pop_pl_info = blank_pl_info
+
                     if bs.get('bs_convertor_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bs_convertor_id')))
@@ -8350,12 +8471,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bs_convertor_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bs_convertor_pl_info = blank_pl_info
+                    else:
+                        bs_convertor_pl_info = blank_pl_info
+
                     if bs.get('far_end_bs_switch_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('far_end_bs_switch_id')))
@@ -8367,12 +8486,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            far_end_bs_switch_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            far_end_bs_switch_pl_info = blank_pl_info
+                    else:
+                        far_end_bs_switch_pl_info = blank_pl_info
+
                     if bs.get('near_end_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('near_end_id')))
@@ -8384,12 +8501,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            near_end_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            near_end_pl_info = blank_pl_info
+                    else:
+                        near_end_pl_info = blank_pl_info
+
                     if bs.get('far_end_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('far_end_id')))
@@ -8401,12 +8516,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            far_end_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            far_end_pl_info = blank_pl_info
+                    else:
+                        far_end_pl_info = blank_pl_info
+
                     if not is_init:
                         resultant_dict = {
                             "bh_id": bs.get('bh_id'),
@@ -8430,6 +8543,7 @@ class GetTopology(View):
                             "far_end_ip" : bs.get('far_end_ip'),
                             "near_end_ip" : bs.get('near_end_ip'),
                             "bs_switch_pl_info": bh_pl_info,
+                            "pe_pl_info": pe_pl_info,
                             "bh_aggr_pl_info": bh_aggr_pl_info,
                             "bh_pop_pl_info": bh_pop_pl_info,
                             "bs_convertor_pl_info": bs_convertor_pl_info,
@@ -8437,6 +8551,7 @@ class GetTopology(View):
                             "near_end_pl_info" : near_end_pl_info,
                             "far_end_pl_info" : far_end_pl_info,
                             "bs_switch_name" : bs.get('bs_switch_name'),
+                            "pe_name" : bs.get('pe_name'),
                             "bs_convertor_device_name" : bs.get('bs_convertor_device_name'),
                             "bh_aggregator_device_name" : bs.get('bh_aggregator_device_name'),
                             "bh_pop_device_name" : bs.get('bh_pop_device_name'),
@@ -8478,12 +8593,9 @@ class GetTopology(View):
                                     "latency" : latency if latency else 'NA'
                                 }
                             except Exception, e:
-                                far_end_sect_pl_info = {
-                                    "severity" : "",
-                                    "value": "",
-                                    "packet_loss": "",
-                                    "latency": ""
-                                }
+                                far_end_sect_pl_info = blank_pl_info
+                        else:
+                            far_end_sect_pl_info = blank_pl_info
                         
 
                         sector_dict[str(bs.get('far_end_sect_id'))] = {
@@ -8512,12 +8624,9 @@ class GetTopology(View):
                                     "latency" : latency if latency else 'NA'
                                 }
                             except Exception, e:
-                                far_end_ss_pl_info = {
-                                    "severity" : "",
-                                    "value": "",
-                                    "packet_loss": "",
-                                    "latency": ""
-                                }
+                                far_end_ss_pl_info = blank_pl_info
+                        else:
+                            far_end_ss_pl_info = blank_pl_info
                         # Only appending the selected substaion
                         if bs.get('far_end_ss_device_id') == current_device_id:
                             sector_dict[str(bs.get('far_end_sect_id'))]['sub_station'].append({
@@ -8559,9 +8668,25 @@ class GetTopology(View):
                 })            
 
         else:
+
             for bs in result_of_query:
                 if bs.get('bs_id') not in bs_ids:
                     bs_ids.append(bs.get('bs_id'))
+                    if bs.get('pe_id'):
+                        try:
+                            severity, other_detail = device_current_status(Device.objects.get(id=bs.get('pe_id')))
+                            pack_loss, latency = device_pl_latency_values(Device.objects.get(id=bs.get('pe_id')))
+                            pe_pl_info = {
+                                "severity" : severity if severity else 'NA',
+                                "value": other_detail['c_val'] if other_detail and 'c_val' in other_detail else 'NA',
+                                "packet_loss" : pack_loss if pack_loss else 'NA',
+                                "latency" : latency if latency else 'NA'
+                            }
+                        except Exception, e:
+                            pe_pl_info = blank_pl_info
+                    else:
+                        pe_pl_info = blank_pl_info
+
                     if bs.get('bh_device_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_device_id')))
@@ -8573,12 +8698,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_pl_info = blank_pl_info
+                    else:
+                        bh_pl_info = blank_pl_info
+
                     if bs.get('bh_aggregator_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_aggregator_id')))
@@ -8590,12 +8713,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_aggr_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_aggr_pl_info = blank_pl_info
+                    else:
+                        bh_aggr_pl_info = blank_pl_info
+
                     if bs.get('bh_pop_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bh_pop_id')))
@@ -8607,12 +8728,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bh_pop_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bh_pop_pl_info = blank_pl_info
+                    else:
+                        bh_pop_pl_info = blank_pl_info
+
                     if bs.get('bs_convertor_id'):
                         try:
                             severity, other_detail = device_current_status(Device.objects.get(id=bs.get('bs_convertor_id')))
@@ -8624,12 +8743,10 @@ class GetTopology(View):
                                 "latency" : latency if latency else 'NA'
                             }
                         except Exception, e:
-                            bs_convertor_pl_info = {
-                                "severity" : "",
-                                "value": "",
-                                "packet_loss": "",
-                                "latency": ""
-                            }
+                            bs_convertor_pl_info = blank_pl_info
+                    else:
+                        bs_convertor_pl_info = blank_pl_info
+
                     if not is_init:
                         resultant_dict = {
                             "bh_id": bs.get('bh_id'),
@@ -8648,10 +8765,12 @@ class GetTopology(View):
                             "bs_convertor_port" : bs.get('bs_convertor_port'),
                             "bs_switch_port" : bs.get('bs_switch_port'),
                             "far_end_bs_switch_port" : bs.get('far_end_bs_switch_port'),
+                            "pe_pl_info": pe_pl_info,
                             "bs_switch_pl_info": bh_pl_info,
                             "bh_aggr_pl_info": bh_aggr_pl_info,
                             "bh_pop_pl_info": bh_pop_pl_info,
                             "bs_convertor_pl_info": bs_convertor_pl_info,
+                            "pe_name" : bs.get('pe_name'),
                             "bs_switch_name" : bs.get('bs_switch_name'),
                             "bs_convertor_device_name" : bs.get('bs_convertor_device_name'),
                             "bh_aggregator_device_name" : bs.get('bh_aggregator_device_name'),
@@ -8689,12 +8808,9 @@ class GetTopology(View):
                                     "latency" : latency if latency else 'NA'
                                 }
                             except Exception, e:
-                                sect_pl_info = {
-                                    "severity" : "",
-                                    "value": "",
-                                    "packet_loss": "",
-                                    "latency": ""
-                                }
+                                sect_pl_info = blank_pl_info
+                        else:
+                            sect_pl_info = blank_pl_info
                         
 
                         sector_dict[str(bs.get('sect_id'))] = {
@@ -8723,12 +8839,9 @@ class GetTopology(View):
                                     "latency" : latency if latency else 'NA'
                                 }
                             except Exception, e:
-                                ss_pl_info = {
-                                    "severity" : "",
-                                    "value": "",
-                                    "packet_loss": "",
-                                    "latency": ""
-                                }
+                                ss_pl_info = blank_pl_info
+                        else:
+                            ss_pl_info = blank_pl_info
                         # Only appending the selected substaion
                         if bs.get('ss_device_id') == current_device_id:
                             sector_dict[str(bs.get('sect_id'))]['sub_station'].append({
@@ -9251,3 +9364,152 @@ class GetBSTelnet(View):
 
         return HttpResponse(json.dumps(result), content_type="application/json")
         
+class InitStabilityTest(ListView):
+    """
+    A generic class view to load ping stability test listing
+
+    """
+    model = PingStabilityTest
+    template_name = 'performance/stability_test.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        :param kwargs:
+        """
+        context = super(InitStabilityTest, self).get_context_data(**kwargs)
+
+        datatable_headers = [
+            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'user_profile__username', 'sTitle': 'Username', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'time_duration', 'sTitle': 'Time Duration', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'created_at', 'sTitle': 'Started At', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'email_ids', 'sTitle': 'Email Address', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False},
+        ]
+
+        tech_list = list(DeviceTechnology.objects.exclude(
+            name__iexact='default'
+        ).values(
+            'id', 'alias', 'name'
+        ))
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        context['tech_list'] = tech_list
+        return context
+
+
+class PingStabilityTestListing(BaseDatatableView):
+    """
+    Render JQuery datatables for listing of device type fields
+    """
+    model = PingStabilityTest
+    columns = [
+        'status',
+        'user_profile__username',
+        'ip_address',
+        'technology__alias',
+        'time_duration',
+        'created_at',
+        'email_ids',
+        'file_path'
+    ]
+    order_columns = columns
+
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+        """
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
+            query_object = Q()
+            for column in self.search_columns:
+                query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
+
+            qs = qs.filter(query_object)
+        return qs
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        return self.model.objects.values(*self.columns + ['id']).order_by('-id')
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+        """
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        for dct in qs:
+            dct['action'] = ''
+            if dct.get('status') == 1:
+                dct['status'] = 'Success'
+                if dct.get('file_path'):
+                    if '/media/' in dct.get('file_path'):
+                        try:
+                            dct['file_path'] = '/media/'+dct.get('file_path').split('/media/')[1]
+                        except Exception, e:
+                            dct['file_path'] = ''
+                    else:
+                        dct['file_path'] = ''
+
+                    dct.update(
+                        action='<a href="{0}" target="_blank"><i class="fa fa-download text-primary"> \
+                                </i></a>'.format(dct.get('file_path'))
+                    )
+            else:
+                dct['status'] = 'Pending'
+
+            created_at = dct.get('created_at')
+            if created_at:
+                dct['created_at'] = created_at.strftime(DATE_TIME_FORMAT)
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        order_columns = self.get_order_columns()
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret

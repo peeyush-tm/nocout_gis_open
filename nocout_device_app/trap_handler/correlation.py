@@ -95,21 +95,16 @@ class correlation(object):
     def __init__(self):
         pass
 
-
-    def find(self,key, invent_dict):
-	for k, v in invent_dict.iteritems():
-            if k == key:
-	        yield v     
-            elif isinstance(v, dict):
-                for result in self.find(key, v):
-                    yield result
-   
     def redis_conn(self):
         rds_cli = RedisInterface(custom_conf={'db': 5})
         redis_conn =  rds_cli.redis_cnx
     	return redis_conn 
  
     def update_redis_inventory_hiearachy(self,redis_conn,current_events):
+	""" Store event information to respective device
+	    Update inventory hierarchy.
+	    Send clear trap to monolith.
+	"""
 	event_dict = {}
         ih_dict = {}
 	my_useful_list = filter(lambda x: x[1] == 'Device_not_reachable',current_events )
@@ -156,7 +151,7 @@ class correlation(object):
 			        device_invent_dict={}
 				device_invent_dict['inventory_id'] = id
 			    event_dict[ih_count]=device_invent_dict
-			elif event[6] != 'clear' and device_invent_dict:
+			elif event[6] != 'clear' and device_invent_dict:    # Crating alarm dictionary
 			    device_invent_dict['alarm_name'] = event[1]
 			    device_invent_dict['alarm_description'] = event[2]
 			    device_invent_dict['timestamp'] = datetime.strptime(event[8],"%Y-%m-%d %H:%M:%S").strftime('%s')
@@ -184,6 +179,7 @@ class correlation(object):
         self.insert_events_into_redis(ih_dict)
 
     def insert_events_into_redis(self,event_dict,is_list=None):
+	""" Store Event informatio into redis database	"""
         p = self.redis_conn().pipeline()
         if is_list:
             [p.set(ih_count_id,event_entry) for event in event_dict for (ih_count_id,event_entry) in event.iteritems() ]
@@ -192,6 +188,7 @@ class correlation(object):
         p.execute()
     
     def make_dict_for_ckt(self,**kwargs):
+	""" Create trap for Circuit """
 	mapping_list = [
 	    'seq_num', 'parent_alrm_id', 'impacted_circuit_ids',
 	    'alrm_group', 'alrm_name', 'severity', 'additional_f_1','additional_f_2', 'last_trap'
@@ -210,7 +207,7 @@ class correlation(object):
 		    continue
 
 		event_trap_dict['seq_num'] = generateuuid()
-		if value.get('parent_alrm_id'):
+		if value.get('parent_alrm_id'):         
 		    alrm_id = value.get('parent_alrm_id')
 		else:
 		    alrm_id = value.get('alrm_id') 
@@ -226,8 +223,8 @@ class correlation(object):
 		event_trap_dict = {}
 	return final_ckt_list
 
-    # Creating Trap dictionary for SS and PTP
     def make_dict_for_ss_trap(self,**kwargs):
+	""" Creating Trap for SS and PTP device. """
 	event_trap_dict = {}
 	global ss_mapping_dict
 	down_device_dict = kwargs['down_device_dict']
@@ -267,11 +264,8 @@ class correlation(object):
 		    event_trap_dict[key][attr] = attr_value
 	return event_trap_dict
 
-    # Creating Trap dictionary for converter and swich.
     def make_dict_for_conv_swich_trap(self,**kwargs):
-	"""
-	Making dict
-	"""
+	""" Creating Trap for converter and switch."""
 	event_trap_dict = {}
 	down_device_dict = kwargs['down_device_dict']
 
@@ -308,8 +302,8 @@ class correlation(object):
 	alarm_id = event_trap_dict[key]['alrm_id']
 	return event_trap_dict,alarm_id
 
-    # Creating Trap dict for idu and odu
     def make_dict_for_idu_odu_trap(self,**kwargs):
+	"""Creating Trap dict for idu and odu."""
 	event_trap_dict = {}
 	global bs_mapping_dict
 	down_device_dict = kwargs['down_device_dict']
@@ -344,44 +338,8 @@ class correlation(object):
 		    event_trap_dict[key][attr] = attr_value
 	return event_trap_dict
    
-    # Fucntion return idu&odu for siteA and siteB and circuit list for inventory hierarchy.
-    def get_idu_odu_ckt(self,inventory_hierarchy,redis_conn):
-	"""This function return idu_odu_list and circuit dict for Inventory hierarchy.
-	    return siteA_idu_odu_list : list of idu_odu id's for siteA.
-		   siteB_idu_odu_list : list of idu_odu id's for siteB.
-		   ckt_dict : key value pair of dynamic_id as a key and circuit id as value.
-	    siteB_idu_odu_list will be empty in case on non PTP_BH scenario."""
-	siteA_idu_odu = list()
-	siteB_idu_odu = list()
-	ptp_bh_flag = 0	
-	ckt_dict = defaultdict(list)
-	inv_h_keys = inventory_hierarchy.keys()
-	special_keys = ['change_bit','ip_list','timestamp','id']
-	inv_h_keys = filter(lambda x: x not in special_keys,inv_h_keys)
-	for ip_address in inv_h_keys:
-	    dynamic_id = inventory_hierarchy[ip_address]
-	    key = 'static_' + ip_address
-	    static_data = redis_conn.get(key)
-	    if static_data:
-		static_data = eval(static_data)
-		parent_ip = static_data.get('parent_ip')
-		rs_type = static_data.get('resource_type')
-		if rs_type and (rs_type.lower() == 'idu' or rs_type.lower() == 'odu'):  
-		    if static_data.get('ptp_bh_flag'):
-			siteB_idu_odu.append(dynamic_id)
-		    else:
-			siteA_idu_odu.append(dynamic_id)
-		if rs_type and rs_type.lower() == 'ss':
-		    ss_parent_ip = static_data.get('parent_ip')
-		    if static_data.get('ptp_bh_flag'):
-			ptp_bh_flag = 1 
-		    if ss_parent_ip:
-			ss_parent_id = inventory_hirarchy.get(ss_parent_ip)
-			ckt_dict[ss_parent_id].append(static_data['circuit_id'])
-	return siteA_idu_odu,siteB_idu_odu,ckt_dict,ptp_bh_flag
-   
-    # Function returns switch/converter information connected to PTP-BH. 
     def get_siteB_switch_conv(self,backhaul_ended_switch_con_ip):
+	"""Returns switch/converter information connected to PTP-BH."""
 	redis_conn = self.redis_conn()
 	switch_conv_id,static_dict,dynamic_dict = None,None,None
 	if backhaul_ended_switch_con_ip:
@@ -397,7 +355,24 @@ class correlation(object):
 	return switch_conv_id,static_dict
 
     def max_value(self,inventory_hierarchy, down_device_id_list, down_device_dict, static_dict):
-	"Calculate root cause element of the down devices and send idu/odu and circuit of connected ss for sending traps"
+	"""Calculate root cause element of the down devices and send idu/odu and circuit of connected ss for sending traps
+	   Args:
+		inventory_hierarchy(dict): Information of devices connected in inventory topology.
+		down_device_id_list(list): List of down devices
+		down_device_dict(dict): Key value pair of device id and it's alarm information.
+		static_dict(dict): Dictionary of device information.
+	   
+	    return:
+		rc_element_id: rooc cause element device id(Either converter/Switch).
+		ckt_dict: circuit list for each idu/odu device down in topology.
+		flags: dictionary of variables to identify PTP_BH scenario and information needed in correlation.  
+		down_device_dict: Alarm information dictionary for down devices.
+		static_dict: Device information dictionary for down devices.
+		bs_list:  List of down BaseStation devices.
+		ss_list:  List of down SubStation devices.
+		del_ss: SS device list needs to be deleted.
+	   
+	"""
 	elements_ip_list = []
 	element_dict = defaultdict(list)
 	rc_element = None
@@ -505,6 +480,24 @@ class correlation(object):
 	return (down_device_dict,static_dict,rc_element,bs_list,ss_list,ckt_dict,flags),del_ss
 
     def create_traps(self,**params):
+	"""Create traps for Down devices according to Scenarios defined in document.
+
+	   :kwargs
+	  	params(dict): parameters to create trap for down devices
+		params['down_device_dict']: Alarm information dictionary for down devices.
+		params['static_dict']: Device information dictionary for down devices.
+		params['backhaul_id']: Device id for PTPBH(Nearend/Farend) if down any.
+		params['backhaul_ended_switch_con_ip']: SiteB swith/converter id.
+		params['ptp_bh_flag']: Flag to identify if PTP BH present in inventory toplogy.
+		params['is_backhaul']: Flag to identify if any PTP BH (Nearend/farend) id down.
+	        params['rc_element']: Conv/switch down information.
+		params['bs_list']:  List of down BaseStation devices.
+		params['ss_list']:  List of down SubStation devices.
+		params['bs_ss_dict']: bs ss parent child mapping.
+  	        params['ptp_list']: List of down PTP devices.
+	        params['ckt_dict']: Circuit list corrospoding to each idu/odu device down.
+		params['alarm_id']: Alarm Unique id
+	"""
 	backhaul_id = params['backhaul_id']
 	is_backhaul = params.get('is_backhaul')
 	rc_element = params['rc_element']
@@ -518,12 +511,15 @@ class correlation(object):
         ss_trap = {}
         bs_trap = {}
         rc_element_dict=None
+
+	# Case: Either Converter/Switch down or PTPBH device down As root Cause device.
 	if is_backhaul or rc_element:
-	    if is_backhaul:
-		if not siteb_switch_conv_id:
+	    if is_backhaul:				# If PTP BH device is down.
+		if not siteb_switch_conv_id:		# If siteB switch/converter Infomation is not there.
 		    siteb_switch_conv_id, siteb_switch_conv_static_data = self.get_siteB_switch_conv(params['backhaul_ended_switch_con_ip'])
 		    down_device_static_dict[siteb_switch_conv_id] = siteb_switch_conv_static_data
 		    params.update({'siteb_switch_conv_id': siteb_switch_conv_id})
+		# Updating Informatio accordingly to create PTP BH trap.
 		if down_device_static_dict[backhaul_id]['ptp_bh_type'] == 'fe':
 		    down_device_static_dict[siteb_switch_conv_id]['pop_ip'] = ''
 		down_device_static_dict[siteb_switch_conv_id]['parent_ip'] = down_device_static_dict[backhaul_id].get('parent_ip')
@@ -538,7 +534,7 @@ class correlation(object):
 	    bs_trap  = self.make_dict_for_idu_odu_trap(**params)
 
 	    # Trap for SS devices.
-	    ss_list = list(set(ss_list)-set(ptp_list))
+	    ss_list = list(set(ss_list)-set(ptp_list))	# Filtering Non PTP substation devices.
 	    params.update({'ss_list':ss_list})
 	    ss_trap = self.make_dict_for_ss_trap(**params)
 
@@ -557,6 +553,7 @@ class correlation(object):
 
 	    trap_list = rc_element_dict.values() + bs_trap.values() + ss_trap.values() + ckt_element_list
 
+	# Case: BaseStation device down As root Cause element.
 	elif params.get('bs_list'):
 	    bs_trap = self.make_dict_for_idu_odu_trap(**params)
 
@@ -566,6 +563,7 @@ class correlation(object):
 	    ckt_element_list = self.make_dict_for_ckt(**params)
 		
 	    trap_list = bs_trap.values() + ss_trap.values() + ckt_element_list
+	# Case: Only SubStaion devices are down.
 	elif params.get('ss_list'):
 	    ss_trap = self.make_dict_for_ss_trap(**params)
 	    trap_list = ss_trap.values()
@@ -573,14 +571,17 @@ class correlation(object):
 	
 @app.task(base=DatabaseTask, name='collect_down_events_from_redis')
 def collect_down_events_from_redis(event_list):
-    """ TODO: implement code to take values from redis"""
+    """Collect events and call method to update inventory hierarchy"""
     cor_obj=correlation()
     redis_cnx = cor_obj.redis_conn()
-    cor_obj.update_redis_inventory_hiearachy(redis_cnx,event_list)
+    cor_obj.update_redis_inventory_hiearachy(redis_cnx, event_list)
 
 @app.task(base=DatabaseTask, name='correlation_down_event')
 def correlation_down_event():
-    
+    """
+    Filter inventory hierarchy from redis database.
+    Creating device information and alarm information for down devices.
+    """ 
     inventory_list = list()
     cor_obj = correlation() 
     # redis Connection
@@ -599,8 +600,8 @@ def correlation_down_event():
     [p.get(k) for k  in range(5000)]
     invent_obj=p.execute()
  
-    # Extract those inventory on which any alarm has been updated for devices under them and their alarm is in range of 2 
-    # polling cycle
+    # Extract inventory on which any alarm has been occured for devices under them 
+    # And oldest alarm in inventory is two polling cycle old.
     invent_obj = [eval(entry) for entry in invent_obj if entry is not None]
     invent_obj = filter(lambda x: x['change_bit'] == 1 ,invent_obj)
     invent_obj_list = filter(lambda x:int(current_time) - int(x['timestamp']) > 300 and 
@@ -610,9 +611,7 @@ def correlation_down_event():
     invent_id_list = [inventory_hierarchy.get('id') for inventory_hierarchy in invent_obj_list]
     down_device_list = [inventory_hierarchy.get('ip_list') for inventory_hierarchy in invent_obj_list
 	 	  if inventory_hierarchy.get('ip_list')]
-    #down_device = [down_device_id for down_id_list in down_device_list for down_device_id in down_id_list ] 
     down_device = list(itertools.chain(*down_device_list))
-
 
     [p.get(dynamic_id) for dynamic_id in down_device]
     down_device_data = p.execute()
@@ -620,11 +619,11 @@ def correlation_down_event():
     down_device_dict = dict([ (dynamic_id,eval(alarm_data)) for dynamic_id,alarm_data in zip(down_device,down_device_data)])
     
     #Caluculate Static data for all down devices
-    down_device_ips = map(lambda x: x.get('ip_address'),down_device_dict.values()) 
+    down_device_ips = map(lambda x: x.get('ip_address'), down_device_dict.values()) 
     [p.get('static_' + str(ip)) for ip in down_device_ips]
     static_info = p.execute()
     # key-value pair for storing device redis key and their staitc data
-    static_dict = dict([ (dynamic_id,eval(static_entry)) for dynamic_id, static_entry in zip(down_device_dict.keys(), static_info)])
+    static_dict = dict([ (dynamic_id, eval(static_entry)) for dynamic_id, static_entry in zip(down_device_dict.keys(), static_info)])
 
     trap_list = []
     redis_keys = []
@@ -632,8 +631,8 @@ def correlation_down_event():
     for inventory_hierarchy in invent_obj_list:
 	index = invent_obj_list.index(inventory_hierarchy)
 	down_device = list(down_device_list[index])
-	invent_down_device_dict= dict([(id,down_device_dict[id]) for id in down_device])
-	invent_static_dict = dict([(id,static_dict[id]) for id in down_device])
+	invent_down_device_dict= dict([(id,down_device_dict[id]) for id in down_device])   # Alarm dict 
+	invent_static_dict = dict([(id,static_dict[id]) for id in down_device])		   # Device information dict 	
         max_value_params,del_ss= cor_obj.max_value(inventory_hierarchy, down_device, invent_down_device_dict, invent_static_dict)
 	trap_list.append(max_value_params)
 	if del_ss:
@@ -641,11 +640,10 @@ def correlation_down_event():
 		del down_device_dict[del_ss_key]
 
     params = trap_list,mat_entries,invent_id_list,redis_keys
-    #send_traps.s(trap_list, down_device_dict, static_dict, mat_entries, invent_id_list,redis_keys).apply_async()
     send_traps.s(params).apply_async()
 
 @app.task(base=DatabaseTask, name='delete_redis_key')
-def delete_redis_key(element_keys,invent_id_list):
+def delete_redis_key(element_keys, invent_id_list):
     """
     Deleting redis key from ip_list key in inventory dictionary for that tree
     Deleting the Redis alarm entry from the redis key for sent trap idu/odu/con/switch/ss
@@ -679,11 +677,19 @@ def delete_redis_key(element_keys,invent_id_list):
 	mod_element_dict[element_id] = element_dict 
     	final_element_list.append(mod_element_dict)
     cor_obj = correlation() 
-    cor_obj.insert_events_into_redis(final_invent_list,is_list=1)
-    cor_obj.insert_events_into_redis(final_element_list,is_list=1)
+    cor_obj.insert_events_into_redis(final_invent_list, is_list=1)
+    cor_obj.insert_events_into_redis(final_element_list, is_list=1)
 
 @app.task(base=DatabaseTask, name='send_traps')
 def send_traps(params):
+    """ Create traps for down device.
+	:Args:
+	   params(list)        : trap_list, mat_entries, invent_id_list, redis_keys. 
+	   trap_list(list)     : Required information for traps.
+	   mat_entries(dict)   : Master Alarm Table information.
+	   invent_id_list(list): List of inventory id for which Correlation required.
+	   redis_keys(list)    : List of Redis keys.
+    """
     trap_list,mat_entries,invent_id_list,redis_keys = params
     cor_obj = correlation()
     final_trap_list = []
@@ -694,7 +700,8 @@ def send_traps(params):
 	trap_list = []
 	sitea_trap_list = []
 	siteb_trap_list = []
-        down_device_dict,down_device_static_dict,rc_element,bs_down_list,ss_down_list,ckt_dict,flags = trap_params
+        down_device_dict, down_device_static_dict, rc_element, bs_down_list, ss_down_list, ckt_dict, flags = trap_params
+
         ptp_bh_flag = flags['ptp_bh_flag']
 	bs_ss_dict = flags['bs_ss_dict']
 	is_backhaul =flags['is_backhaul']
@@ -708,12 +715,11 @@ def send_traps(params):
 		       'is_backhaul': is_backhaul ,
 		       'ptp_bh_flag' : ptp_bh_flag
 	})
-        mat_entries = {}
-
 	# Removing bakchaul type ptp device from ss down list.
 	if backhaul_id and backhaul_id in ss_down_list:
 	    ss_down_list.remove(backhaul_id)
 
+	# Device filteration for SiteA and SiteB.
 	sitea_ptp_down_list = [ptp_down_device for ptp_down_device in ss_down_list
 				if down_device_static_dict[ptp_down_device].get('resource_type') == 'PTP'
 				and not down_device_static_dict[ptp_down_device].get('ptp_bh_flag')]
@@ -731,22 +737,32 @@ def send_traps(params):
 
 	sitea_params = deepcopy(params)
 	siteb_params = deepcopy(params)
-	sitea_params.update({	'rc_element':None,
-		     			'bs_list':sitea_bs_down_list,
-		     			'ss_list':sitea_ss_down_list,
-		     			'bs_ss_dict': bs_ss_dict,
-			 		'ptp_list': sitea_ptp_down_list,
-			 		'ckt_dict': ckt_dict,
-		     			'alarm_id': None,})
 
+	# Parameters for SiteA devices.
+	sitea_params.update({'rc_element':None,
+		     	     'bs_list':sitea_bs_down_list,
+			     'ss_list':sitea_ss_down_list,
+			     'bs_ss_dict': bs_ss_dict,
+			     'ptp_list': sitea_ptp_down_list,
+			     'ckt_dict': ckt_dict,
+			     'alarm_id': None,})
+
+	# Parameters for SiteB devices.
 	siteb_params.update({'rc_element':None,
-				     'bs_list': siteb_bs_down_list,
-				     'ss_list': siteb_ss_down_list,
-				     'ptp_list': siteb_ptp_down_list,
-				     'ckt_dict': ckt_dict,
-				     'bs_ss_dict': bs_ss_dict,
-				     'siteb_switch_conv_id':None,
-				     'alarm_id': None})
+			     'bs_list': siteb_bs_down_list,
+			     'ss_list': siteb_ss_down_list,
+			     'ptp_list': siteb_ptp_down_list,
+			     'ckt_dict': ckt_dict,
+			     'bs_ss_dict': bs_ss_dict,
+			     'siteb_switch_conv_id':None,
+			     'alarm_id': None})
+
+	# create_traps(**kwargs): create traps for devices connected to basestation.
+	#
+	# If PTP Backhaul present(ptp_bh_flag=1) in Inventory topology.
+	# call create_trap method with updated parameter for SiteB.
+        #
+	# Case: Root cause device is  Converter/Switch/PTP-BH.
         if rc_element:
 	    if not down_device_static_dict[rc_element].get('ptp_bh_flag'):
 	        sitea_params.update({'rc_element':rc_element})
@@ -756,26 +772,32 @@ def send_traps(params):
 	    if ptp_bh_flag:
 		siteb_params.update({'is_backhaul':is_backhaul})
 		#update alarm id with parent alarm id when connected PTP-BH is down.
-		if is_backhaul:
+		if is_backhaul:		# PTP BH fault device in inventory toplogy.
 		    siteb_params.update({'alarm_id':rc_alarm_id})
+
 		if down_device_static_dict[rc_element].get('ptp_bh_flag'):
 		    siteb_params.update({'rc_element':rc_element,
 					 'siteb_switch_conv_id':rc_element})
 		else:
 		    siteb_params.update({'rc_element':conv_switch_siteb})
+
 		rc_alarm_id,siteb_trap_list = cor_obj.create_traps(**siteb_params)
+	# Case: Root cause device is BaseStation/SubStation.
         else:
 	    if ptp_bh_flag:
 		alarm_id,siteb_trap_list = cor_obj.create_traps(**siteb_params)
 	    sitea_params.update({'is_backhaul':None})
 	    alarm_id,sitea_trap_list= cor_obj.create_traps(**sitea_params)
 
+        logger.error("final trap for siteA {0}\n".format(sitea_trap_list))
+        logger.error("final trap for siteB {0}\n".format(siteb_trap_list))
 	trap_list = sitea_trap_list + siteb_trap_list
 	final_trap_list = final_trap_list + sitea_trap_list + siteb_trap_list
  	
 	# Trap sender task will be called for each inventory seperately
         #trap_sender_task.s(trap_list).apply_async()
 
+    logger.error("Keys to be deleted {0} {1}\n".format(redis_keys, invent_id_list))
 
     """
     
@@ -795,6 +817,7 @@ def send_traps(params):
 
 @app.task(base=DatabaseTask, name='trap_sender_task')
 def trap_sender_task(traps):
+   """ Sends Traps to Monolith."""
    for trap in traps:
 	t = Trap(**trap)
 	t.start() 

@@ -5299,6 +5299,8 @@ def getPageType(deviceObj):
                 page_type = 'network'
             else:
                 page_type = 'customer'
+        elif deviceObj.pe_ip.exists():
+            page_type = 'pe'
         else:
             page_type = 'other'
 
@@ -5465,10 +5467,7 @@ def getSearchData(request, search_by="default", pk=0):
                         'SingleDeviceAlertsInit',
                         kwargs= {'page_type': alert_page_type, 'device_id': backhaul_device_id, 'data_source': 'down'},
                         current_app= 'alert_center'
-                    )              
-
-
-
+                    )
                 elif search_by in ['circuit_id']:
 
                     ss_device_obj = SubStation.objects.filter(pk=query_result[0].sub_station_id).values('device_id')
@@ -5502,6 +5501,8 @@ def getSearchData(request, search_by="default", pk=0):
 
                     if alert_page_type not in ['customer', 'network']:
                         alert_page_type = 'network'
+
+                    perf_page_url = perf_page_url + "?is_util=1"
 
                     # Single Device alert page url
                     alert_page_url = reverse(

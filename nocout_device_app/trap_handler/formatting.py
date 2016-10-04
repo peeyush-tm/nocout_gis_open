@@ -5,7 +5,6 @@ from handlers.db_ops import *
 logger = get_task_logger(__name__)
 info, warning, error = logger.info, logger.warning, logger.error
 from collections import defaultdict
-#from nocout_site_name import *
 import imp
 from itertools import izip_longest
 import json
@@ -116,12 +115,16 @@ class inventory(object):
 	    inventory_hierarchy = self.tree()
 	    sector_info_str = bs.get('SECT_STR', '')
 	    if is_active == 0:
+		# if switch/converter parent(ptp farend device) in ptp_far_ip_list, Skip the process.
+		# Inventory belongs to SiteB(PTP BH inventory) will be processed in next call to prepare_raw_result with is_active=1.
 		if bs.get('BSswitchParentIP') in ptp_farend_ip_list:
 		    far_end_resultset.append(bs)
 		    continue
 		elif bs.get('BTSconverterParentIP') in ptp_farend_ip_list:
 		    far_end_resultset.append(bs)
 		    continue
+	    # SiteB(PTP bh inventory).
+	    # Find inventory id of SiteA, create inventory and append into it.
 	    if is_active == 1:
 		index = resultset.index(bs)
 		inventory_id = inventory_id_list[index]
@@ -157,12 +160,11 @@ class inventory(object):
 		conv_switch_data_dict=self.create_conv_switch_data_dict(bs,conv_switch_data_dict,obj_count,
 									resource_name,is_active,ptp_bh_dict)
 
-	    params = self.create_ss_dict(bs,ss_data_dict,obj_count,inventory_hierarchy,ih_dynamic,
-						ptp_farend_ip_list,ptp_bh_dict,is_active)
+	    params = self.create_ss_dict(bs,ss_data_dict,obj_count,inventory_hierarchy,ih_dynamic,ptp_farend_ip_list,ptp_bh_dict,is_active)
 	    ss_data_dict,inventory_hierarchy,ih_dynamic,ptp_parent_child_dict,ptp_bh_dict =  params
 
-	    bs_data_dict,inventory_hierarchy,ih_dynamic = self.create_sect_dict(bs,bs_data_dict,obj_count,inventory_hierarchy,
-							   	        ih_dynamic,ptp_parent_child_dict,ptp_bh_dict,is_active)
+	    bs_data_dict,inventory_hierarchy,ih_dynamic = self.create_sect_dict(bs,bs_data_dict,obj_count,inventory_hierarchy,ih_dynamic,
+									   ptp_parent_child_dict,ptp_bh_dict,is_active)
 	    if inventory_hierarchy and is_active == 0:
 		inventory_hierarchy['change_bit'] = 0
 		inventory_hierarchy['ip_list'] = set()

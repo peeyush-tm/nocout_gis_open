@@ -60,6 +60,13 @@
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
+                            {% if settings.SHOW_RFO_TRENDS_DASHBOARD %}
+                            <li>
+                                <a href="{% url 'dashboard-rfo-trends' %}">
+                                    <span class="sub-menu-text">RFO Trends</span>
+                                </a>
+                            </li>
+                            {% endif %}
                             {% if settings.SHOW_INC_TICKET_DASHBOARD %}
                             <li>
                                 <a href="{% url 'inc-ticket-rate' %}">
@@ -99,6 +106,27 @@
                                 </a>
                             </li>
                             {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+
+                    {% if settings.ENABLE_UPTIME_DASHBOARD %}
+                    <li class="has-sub-sub">
+                        <a href="javascript:;">
+                            <span class="sub-menu-text">Network Performance</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            <li>
+                                <a href="{% url 'init_network_uptime' %}">
+                                    <span class="sub-menu-text">Network Uptime</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'init_ptpbh_uptime' %}">
+                                    <span class="sub-menu-text">PTP Backhaul Uptime</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     {% endif %}
@@ -333,6 +361,22 @@
                             <span class="sub-menu-text">Other</span>
                         </a>
                     </li>
+                    {% if settings.ENABLE_PE_PERF %}
+                    <li>
+                        <a href="{% url 'performance_listing' 'pe' %}">
+                            <span class="sub-menu-text">PE</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if user.is_superuser or user.groups.all.0.name == 'admin' %}
+                        {% if settings.ENABLE_PING_TEST %}
+                            <li>
+                                <a href="{% url 'ping_stability_test' %}">
+                                    <span class="sub-menu-text">Ping Stability Test</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
                 </ul>
             </li>
             
@@ -401,6 +445,13 @@
                                     <span class="sub-menu-text">Latency Report</span>
                                 </a>
                             </li>
+                            {% if settings.SHOW_CUSTOMER_FAULT_REPORT %}
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'customer_fault_report' %}">
+                                    <span class="sub-menu-text">Customer Mapped Fault Report</span>
+                                </a>
+                            </li>
+                            {% endif %}
                             <li>
                                 <a href="{% url 'InventoryDownloadCenter' 'duplex_report' %}">
                                     <span class="sub-menu-text">Duplex Report</span>
@@ -484,6 +535,13 @@
                                     <span class="sub-menu-text">Sector Polling Failure</span>
                                 </a>
                             </li>
+                            {% if settings.SHOW_BH_SUMMARY_REPORT %}
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'backhaul_summary_weekly' %}">
+                                    <span class="sub-menu-text">Backhaul Summary Report</span>
+                                </a>
+                            </li>
+                            {% endif %}
                         </ul>
                     </li>
                     <li>

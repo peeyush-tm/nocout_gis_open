@@ -1109,10 +1109,10 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             try:
                 # we don't care about port, till it actually is mapped to a data source
                 data_source = ServiceDataSource.objects.get(
-                    name=DevicePort.objects.get(alias=bs.bh_port_name).name
+                    name__in=DevicePort.objects.filter(alias=bs.bh_port_name).values_list('name', flat=True)
                 ).name.lower()
             except Exception as e:
-                logger.debug('Back-hual Port {0}'.format(bs.bh_port_name))
+                logger.error('Back-hual Port {0} for {1} IP address'.format(bs.bh_port_name, bh_device.ip_address))
                 # logger.debug('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
                 pass
                 # if we don't have a port mapping

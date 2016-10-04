@@ -82,7 +82,8 @@ class Backhaul(models.Model):
     aggregator_port_name = models.CharField('Aggregator Port Name', max_length=40, null=True, blank=True)
     aggregator_port = models.IntegerField('Aggregator Port', null=True, blank=True)
     pe_hostname = models.CharField('PE Hostname', max_length=250, null=True, blank=True)
-    pe_ip = models.GenericIPAddressField('PE IP Address', null=True, blank=True)
+    # pe_ip = models.GenericIPAddressField('PE IP Address', null=True, blank=True)
+    pe_ip = models.ForeignKey(Device, null=True, blank=True, on_delete=models.SET_NULL, related_name='pe_ip')
     bh_connectivity = models.CharField('BH Connectivity', max_length=40, null=True, blank=True)
     bh_circuit_id = models.CharField('BH Circuit ID', max_length=250, null=True, blank=True)
     bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True, help_text='Enter a number.')
@@ -134,7 +135,7 @@ class BaseStation(models.Model):
     site_sap_id = models.CharField('Site SAP ID', max_length=250, null=True, blank=True)
     mgmt_vlan = models.CharField('MGMT VLAN', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    has_pps_alarm = models.BooleanField('Has PPS Alarm', default=False)
+    # has_pps_alarm = models.BooleanField('Has PPS Alarm', default=False)
 
     def __unicode__(self):
         return self.name
@@ -529,6 +530,14 @@ class GISExcelDownload(models.Model):
     def __unicode__(self):
         return unicode(self.file_path) or u''
 
+class BaseStationPpsMapper(models.Model):
+    """
+    This model works as a mapper between Base Stations and their
+    PPS Alarms.
+    """
+    base_station = models.ForeignKey(BaseStation)
+    has_pps_alarm = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
 
 # ********************* Connect Inventory Signals *******************
 pre_save.connect(inventory_signals.update_site_on_bs_bhport_change, sender=BaseStation)

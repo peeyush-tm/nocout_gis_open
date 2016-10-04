@@ -300,6 +300,7 @@ class CustomerFaultAnalysis(models.Model):
     docket_id = models.CharField('Docket ID', max_length=256, null=True, blank=True)
     severity = models.CharField('Severity', max_length=256, null=True, blank=True)
     downtime_slab = models.CharField('Downtime Slab', max_length=256, null=True, blank=True)
+    actual_downtime = models.CharField('Actual Downtime', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
 
@@ -334,5 +335,36 @@ class BackhaulSummaryStatus(models.Model):
     ageing_dl_sp = models.CharField('Ageing DL Stop Provisioning', max_length=256, null=True, blank=True)
     ageing_ul_na = models.CharField('Ageing ageing_ul_na Need Augmentation', max_length=256, null=True, blank=True)
     ageing_ul_sp = models.CharField('Ageing UL Stop Provisioning', max_length=256, null=True, blank=True)
+    timestamp = models.DateTimeField('Report Month', blank=True, null=True)
+
+
+class PTPBHUptime(models.Model):
+    """
+    Average uptime for a month for each device.
+    """
+    uptime_percent = models.CharField('Uptime percent', max_length=10, null=True, blank=True)
+    timestamp = models.DateTimeField('Time', max_length=100, null=True, blank=True)
+
+
+class NetworkUptimeMonthly(models.Model):
+    """
+    This model contains data for 'Sector Status Capacity Alerts Dashboard'
+    """
+    technology = models.CharField('Technology', max_length=256, null=True, blank=True)
+    uptime_percent = models.CharField('Uptime Percent', max_length=256)
+    timestamp = models.DateTimeField('Report Month')
+
+
+class RFOTrends(models.Model):
+    """
+    This model contains the RFO Dashboard Analysis data
+    """
+    docket_id = models.CharField('Docket ID', max_length=256, null=True, blank=True)
+    city = models.CharField('City', max_length=256, null=True, blank=True)
+    state = models.CharField('State', max_length=256, null=True, blank=True)
+    master_causecode = models.CharField('Master Cause Code', max_length=256, null=True, blank=True)
+    sub_causecode = models.CharField('Sub Cause Code', max_length=256, null=True, blank=True)
+    actual_downtime = models.CharField('Actual Downtime', max_length=256, null=True, blank=True)
+    severity = models.CharField('Severity', max_length=256, null=True, blank=True)
     timestamp = models.DateTimeField('Report Month', blank=True, null=True)
 
