@@ -87,13 +87,30 @@
             var alarm_type = $('input[name="alarm_type"]:checked').val();
 
             current_headers = $.parseJSON('{{ datatable_headers|safe }}');
-            clear_history_headers = $.parseJSON('{{ clear_history_headers|safe }}');
+            clear_headers = $.parseJSON('{{ clear_history_headers|safe }}');
+            history_headers = JSON.parse(JSON.stringify(clear_headers))
             data_source = '{{ data_source|safe }}'
             ajax_url = '{% url "all_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=all'+'&data_source='+ data_source;
             table_title = "All ("+ '{{ data_source_title }}'+")";
 
+            // Changing the column name recieved time according to alarm type
+            for (var i=0; i<current_headers.length; i++) {
+                if (current_headers[i].sTitle.indexOf('Received Time') > -1) {
+                    current_headers[i].sTitle = 'Outage Occurred Time'
+                }
+            }
+
+            for (var i=0; i<clear_headers.length; i++) {
+                if (clear_headers[i].sTitle.indexOf('Received Time') > -1) {
+                    clear_headers[i].sTitle = 'Outage Clear Time'
+                }
+            }
+            
+
             initAllListing();
         });
+
+
 
         /**
          * This event trigger when alarm_type radio input changed
@@ -116,12 +133,14 @@
             updated_url = array1.join('?')
 
             var common_extra_param = "'download_excel': 'yes'",
-                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}";
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+", 'data_source': '"+data_source+"', 'alarm_type': '"+ alarm_type+ "', 'tech_name': 'all'}";
 
             if (alarm_type == 'current') {
                 datatable_headers = current_headers;
+            } else if (alarm_type == 'clear') {
+                datatable_headers = clear_headers;
             } else {
-                datatable_headers = clear_history_headers;
+                datatable_headers = history_headers;
             }
 
             /*Call createDataTable function of ourDataTableWidget class*/
@@ -152,10 +171,40 @@
          * @method initAllListing
          */
         function initAllListing() {
+
+            var alarm_type = $('input[name="alarm_type"]:checked').val(),
+                new_get_param = 'alarm_type='+alarm_type,
+                current_url = ajax_url,
+                datatable_headers = '',
+                updated_url = "";
+
+            // Update converter url
+            var array1 = current_url ? current_url.split("?") : [],
+                array2 = array1 && array1.length > 1 ? array1[1].split("&") : [];
+
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
             var common_extra_param = "'download_excel': 'yes'",
                 search_val = $('#all_listing_filter input[type="search"]').val(),
                 extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+", 'data_source': '"+data_source+"'}";
+                
+            // Update All url
+            array2[0] = new_get_param
+            array1[1] = array2.join('&');
+            updated_url = array1.join('?')
+
+            var common_extra_param = "'download_excel': 'yes'",
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+", 'data_source': '"+data_source+"', 'alarm_type': '"+ alarm_type+ "', 'tech_name': 'all'}";
+
+            if (alarm_type == 'current') {
+                datatable_headers = current_headers;
+            } else if (alarm_type == 'clear') {
+                datatable_headers = clear_headers;
+            } else {
+                datatable_headers = history_headers;
+            }
+
+
+
 
             if (search_val) {
                 $('#all_listing_search_btn').trigger('click');
@@ -163,8 +212,8 @@
                 /*Call createDataTable function of ourDataTableWidget class*/
                 dataTableInstance.createDataTable(
                     "all_listing",
-                    current_headers,
-                    ajax_url,
+                    datatable_headers, //current_headers,
+                    updated_url, //ajax_url,
                     false,
                     table_title,
                     'alert_center',

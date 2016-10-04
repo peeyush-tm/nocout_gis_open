@@ -51,6 +51,9 @@ inventory_utils = InventoryUtilsGateway()
 # Create instance of 'AlertCenterUtilsGateway' class
 alert_utils = AlertCenterUtilsGateway()
 
+# Create instance of 'AlertCenterUtilsGateway' class
+perf_utils = PerformanceUtilsGateway()
+
 # Create instance of 'SchedulingManagementGateway' class
 scheduling_utils = SchedulingManagementGateway()
 
@@ -2627,54 +2630,41 @@ class AllSiaListing(ListView):
 
         starting_columns = [
             {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
+            # {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
-        ]
-
-        invent_columns = [
+            # {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_status', 'sTitle': 'BH Status', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_connectivity', 'sTitle': 'BH Connectivity', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_ckt_id', 'sTitle': 'BH Circuit ID', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_ttsl_ckt_id', 'sTitle': 'BH TTSL Circuit ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+            # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'bh_connectivity', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_type', 'sTitle': 'BH Media Type', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_ckt_id', 'sTitle': 'TCL BH CKT ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_ttsl_ckt_id', 'sTitle': 'BH BSO CKT ID', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_conv_ip', 'sTitle': 'BS Convertor IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'pop_conv_ip', 'sTitle': 'POP Convertor IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'aggr_sw_ip', 'sTitle': 'Aggregation Switch IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'pe_ip', 'sTitle': 'PE IP', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_status', 'sTitle': 'BH Status', 'sWidth': 'auto', 'bSortable': True}
-        ]
-
-        common_columns = [
-            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
-        ]
-
-        specific_invent_columns = [
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': False},
+            # {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         action_columns = []
         if ENABLE_MANUAL_TICKETING:
             action_columns = [
-                {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
+                {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False}
             ]
 
         datatable_headers = list()
         datatable_headers += starting_columns
-        datatable_headers += specific_invent_columns
-        datatable_headers += invent_columns
-        datatable_headers += common_columns
 
-        context['datatable_headers'] = json.dumps(datatable_headers + action_columns)
+        context['datatable_headers'] = json.dumps(action_columns + datatable_headers)
         context['clear_history_headers'] = json.dumps(datatable_headers)
         context['data_source'] = data_source
         context['data_source_title'] = data_source_title
@@ -2717,6 +2707,21 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
     is_ordered = False
     is_searched = False
+
+    severity_icon_dict = {
+        'latency': {
+            'major': 'red-dot',
+            'clear': 'green-dot'
+        },
+        'packet_drop': {
+            'major': 'red-dot',
+            'clear': 'green-dot'
+        },
+        'down': {
+            'critical': 'red-dot',
+            'clear': 'green-dot'
+        }
+    }
 
     up_since_format_array = [
         'Day',
@@ -2769,6 +2774,12 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         active_filter_condition = ''
         if self.alarm_type in ['current', 'clear']:
             active_filter_condition = ' Q(is_active= 1),'
+            # three_month_filter_condition = ''
+            three_month_before_date = 0
+        else:
+            current_date = datetime.datetime.now()
+            three_month_before_date = current_date - datetime.timedelta(days=90)
+            # three_month_filter_condition = Q(traptime__gte=three_month_before_date)
 
         for tech_name in tech_name_list:                
             if tech_name in device_technology_dict:
@@ -2792,36 +2803,50 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
             # ).values_list('ip_address', flat=True))
             tech_type_filter_condition = 'Q(technology__iexact="{0}"),'.format(self.tech_name)
 
-
+        str_to_date_condition = "STR_TO_DATE(traptime, '%%Y-%%m-%%d %%H:%%i:%%S')"
+        field_name = {
+            "traptime": str_to_date_condition
+        }
         if filter_condition:
-            query = "queryset = self.model.objects.filter( \
+            query = "queryset = self.model.objects.extra({6}).filter(\
                             {0}{4}\
                             ({1}) ,\
                             {3}\
-                            {5}\
+                            {5},\
                         ).using(TRAPS_DATABASE).order_by('-traptime').values(*{2})".format(
                             not_condition_sign,
                             filter_condition,
                             model_columns,
                             active_filter_condition,
                             tech_type_filter_condition,
-                            eventname_condition
+                            eventname_condition,
+                            field_name
                         )
 
         else:
-            query = "queryset = self.model.objects.filter( \
-                    {0}{3}\
-                    {2}\
-                    {4}\
-                ).using(TRAPS_DATABASE).order_by('-traptime').values(*{1})".format(
-                    not_condition_sign,
-                    model_columns,
-                    active_filter_condition,
-                    tech_type_filter_condition,
-                    eventname_condition
-                )                   
-
+            try:
+                query = "queryset = self.model.objects.extra({5}).filter(\
+                                {0}{3}\
+                                {2}\
+                                {4},\
+                            ).using(TRAPS_DATABASE).order_by('-traptime').values(*{1})".format(
+                                not_condition_sign,
+                                model_columns,
+                                active_filter_condition,
+                                tech_type_filter_condition,
+                                eventname_condition,
+                                field_name,
+                            )                   
+            except Exception, e:
+                logger.error(e)
+                pass
+        
         exec query
+
+        # filtering queryset for 3 only last 3 months traps
+        if self.alarm_type == 'history':
+            queryset = queryset.filter(traptime__gte=three_month_before_date)
+        
         return queryset
 
     def filter_queryset(self, qs):
@@ -2870,12 +2895,18 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         """
         inventory_columns = []
         if self.tech_name in ['pmp', 'wimax', 'all']:
-            self.order_columns = [
-                'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                'bs_state', 'bh_connectivity', 'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id',
-                'bs_conv_ip', 'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'bh_status',
-                'device_type', 'eventname', 'traptime', 'uptime','alarm_count',
-                'first_occurred','last_occurred', 'customer_count', 'sia'
+            self.order_columns = []
+
+            if ENABLE_MANUAL_TICKETING:
+                self.order_columns += ['action']
+
+            self.order_columns += [
+                'severity', 'traptime', 'ip_address', 'device_type',
+                'bs_alias', 'bh_status', 'bs_state', 'bs_city',
+                'ticket_number', 'bh_connectivity', 'bh_type',
+                'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip',
+                'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'alarm_count',
+                'first_occurred', 'last_occurred' 
             ]
 
         # Number of columns that are used in sorting
@@ -3052,12 +3083,19 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         else:
             for dct in  qs:
                 severity = dct.get('severity')
-                severity_icon = alert_utils.common_get_severity_icon(severity)
+                # severity_icon = alert_utils.common_get_severity_icon(severity)
                 uptime = dct.get('uptime')
                 ticket_number = dct.get('ticket_number')
                 is_manual = dct.get('is_manual')
                 action = ''
                 formatted_uptime = uptime
+                data_source = (self.request.GET.get('data_source', None))
+
+                # severity icon according to user requirement
+                # Change Color "RED" in Current and "Green" in Clear. Same in History Tab
+                dot_color = self.severity_icon_dict.get(data_source, {}).get(severity, 'grey-dot')
+                severity_icon = '<i class="fa fa-circle {1}" title="{0}">\
+                                    <span style="display:none">{0}</span></i>'.format(severity, dot_color)
 
                 try:
                     if ENABLE_MANUAL_TICKETING:
@@ -3084,7 +3122,6 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
                 dct.update(
                     action='',
-                    bh_status=severity,
                     severity=severity_icon,
                     uptime=formatted_uptime,
                     first_occurred=first_occurred,
@@ -3357,6 +3394,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
     sectors_data_qs, dr_data_qs = '', ''
     converter_mapped_data = {}
 
+    device_list = []
+
     # Fetch ticket number for given ips
     tickets_dataset = DeviceTicket.objects.filter(
         ip_address__in=ip_address_list
@@ -3365,14 +3404,18 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
     if tech_name in ['pmp', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
-        ).extra(
-            select={'device_type' : 'device_device.device_type'}
+        ).annotate(
+            machine_name=F('base_station__backhaul__bh_configured_on__machine__name'),
+            device_name=F('base_station__backhaul__bh_configured_on__device_name'),
+            device_type=F('base_station__backhaul__bh_configured_on__device_type')
         ).values(
             'sector_id',
             'sector_configured_on__ip_address',
             'base_station__alias',
             'base_station__city__city_name',
             'base_station__state__state_name',
+            'machine_name',
+            'device_name',
             'base_station__backhaul__bh_type',
             'base_station__backhaul__bh_connectivity',
             'base_station__backhaul__bh_circuit_id',
@@ -3384,18 +3427,24 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'device_type'
         ).distinct()
 
+        device_list += sectors_data_qs.values('machine_name', 'device_name')
+
         # If wimax only then check for DR device
         if tech_name in ['wimax', 'all']:
             dr_data_qs =  Sector.objects.filter(
                 dr_configured_on__ip_address__in=ip_address_list
-            ).extra(
-                select={'device_type' : 'device_device.device_type'}
+            ).annotate(
+                machine_name=F('base_station__backhaul__bh_configured_on__machine__name'),
+                device_name=F('base_station__backhaul__bh_configured_on__device_name'),
+                device_type=F('base_station__backhaul__bh_configured_on__device_type')
             ).values(
                 'sector_id',
                 'base_station__alias',
                 'base_station__city__city_name',
                 'base_station__state__state_name',
                 'dr_configured_on__ip_address',
+                'machine_name',
+                'device_name',
                 'base_station__backhaul__bh_circuit_id',
                 'base_station__backhaul__ttsl_circuit_id',
                 'base_station__backhaul__bh_switch__ip_address',
@@ -3404,6 +3453,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
                 'base_station__backhaul__pe_ip__ip_address',
                 'device_type'
             ).distinct()
+
+        device_list += dr_data_qs.values('machine_name', 'device_name')
 
     # If requert from converter or all tab only then check Backhaul model
     if tech_name in ['switch', 'converter', 'all']:
@@ -3416,7 +3467,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'device_device.device_type'
+                #'device_type': 'device_device.device_type'
             }
         ).annotate(
             base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
@@ -3424,7 +3475,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
             base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
             base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
+            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') ,
+            machine_name=F('backhaul__bh_configured_on__machine__name'),
+            device_name=F('backhaul__bh_configured_on__device_name'),
+            device_type=F('backhaul__bh_configured_on__device_type')
         ).filter(
             backhaul__bh_configured_on__ip_address__in=ip_address_list
         ).values(
@@ -3433,6 +3487,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
+            'machine_name',
+            'device_name',
             'backhaul__bh_configured_on__ip_address',
             'base_station__backhaul__bh_circuit_id',
             'base_station__backhaul__ttsl_circuit_id',
@@ -3442,13 +3498,15 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'base_station__backhaul__pe_ip__ip_address',
             'device_type'
         ).distinct()
+
+        device_list += bh_conf_data_qs.values('machine_name', 'device_name')
         
         bh_switch_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'T4.device_type'
+                # 'device_type': 'T4.device_type'
             }
         ).annotate(
             base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
@@ -3456,7 +3514,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
             base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
             base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
+            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+            machine_name=F('backhaul__bh_configured_on__machine__name'),
+            device_name=F('backhaul__bh_configured_on__device_name'),
+            device_type=F('backhaul__bh_configured_on__device_type')
         ).filter(
             backhaul__bh_configured_on__isnull=False,
             backhaul__bh_switch__ip_address__in=ip_address_list
@@ -3466,6 +3527,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
+            'machine_name',
+            'device_name',
             'backhaul__bh_switch__ip_address',
             'base_station__backhaul__bh_circuit_id',
             'base_station__backhaul__ttsl_circuit_id',
@@ -3473,15 +3536,17 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'base_station__backhaul__pop__ip_address',
             'base_station__backhaul__aggregator__ip_address',
             'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
+            'device_type',
         ).distinct()
+
+        device_list += bh_switch_data_qs.values('machine_name', 'device_name')
 
         pop_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'device_device.device_type'
+                # 'device_type': 'device_device.device_type'
             }
         ).annotate(
             base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
@@ -3489,7 +3554,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
             base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
             base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
+            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+            machine_name=F('backhaul__bh_configured_on__machine__name'),
+            device_name=F('backhaul__bh_configured_on__device_name'),
+            device_type=F('backhaul__bh_configured_on__device_type')
         ).filter(
             backhaul__bh_configured_on__isnull=False,
             backhaul__pop__ip_address__in=ip_address_list
@@ -3499,6 +3567,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'city__city_name',
             'base_station__state__state_name',
             'state__state_name',
+            'machine_name',
+            'device_name',
             'backhaul__pop__ip_address',
             'base_station__backhaul__bh_circuit_id',
             'base_station__backhaul__ttsl_circuit_id',
@@ -3509,12 +3579,14 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'device_type'
         ).distinct()
 
+        device_list += pop_data_qs.values('machine_name', 'device_name')
+
         aggr_data_qs =  BaseStation.objects.extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'T4.device_type'
+                # 'device_type': 'T4.device_type'
             }
         ).annotate(
             base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
@@ -3522,7 +3594,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
             base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
             base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
+            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+            machine_name=F('backhaul__bh_configured_on__machine__name'),
+            device_name=F('backhaul__bh_configured_on__device_name'),
+            device_type=F('backhaul__bh_configured_on__device_type')
         ).filter(
             backhaul__bh_configured_on__isnull=False,
             backhaul__aggregator__ip_address__in=ip_address_list
@@ -3534,6 +3609,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'state__state_name',
             'backhaul__aggregator__ip_address',
             'base_station__backhaul__bh_circuit_id',
+            'machine_name',
+            'device_name',
             'base_station__backhaul__ttsl_circuit_id',
             'base_station__backhaul__bh_switch__ip_address',
             'base_station__backhaul__pop__ip_address',
@@ -3541,6 +3618,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'base_station__backhaul__pe_ip__ip_address',
             'device_type'
         ).distinct()
+
+        device_list += aggr_data_qs.values('machine_name', 'device_name')
 
         mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
             list(bh_conf_data_qs),
@@ -3582,12 +3661,21 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         'ip_address'
     )
 
+    machine_device_dict = inventory_utils.prepare_machines(device_list, 'machine_name')
+
+    perf_result = {}
+    for machine_name in machine_device_dict:
+        if machine_name and machine_device_dict[machine_name]:
+            result = perf_utils.get_performance_data(machine_device_dict[machine_name], machine_name, None)
+            perf_result.update(result)
+
     mapped_result = mapped_sector_result.copy()
     mapped_result.update(mapped_dr_result)
     mapped_result.update(converter_mapped_data)
    
     for data in qs_list:
         ip_address = data.get('ip_address')
+
         data.update(
             bs_alias='NA',
             bs_city='NA',
@@ -3596,6 +3684,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             device_type='NA',
             bh_connectivity='NA',
             bh_type='NA',
+            bh_status='NA',
             bh_ckt_id='NA',
             bh_ttsl_ckt_id='NA',
             bs_conv_ip='NA',
@@ -3630,6 +3719,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             bs_conv_ip= sector_dct.get('base_station__backhaul__bh_switch__ip_address') if sector_dct.get('base_station__backhaul__bh_switch__ip_address') else 'NA'
             pop_conv_ip= sector_dct.get('base_station__backhaul__pop__ip_address') if sector_dct.get('base_station__backhaul__pop__ip_address') else 'NA'
             aggr_sw_ip= sector_dct.get('base_station__backhaul__aggregator__ip_address') if sector_dct.get('base_station__backhaul__aggregator__ip_address') else 'NA'
+            device_name = sector_dct.get('device_name', 'NA')
+
+            packet_loss = perf_result.get(device_name, {}).get('packet_loss', None)
+            bh_status = ('DOWN' if packet_loss == 100 else 'UP') if packet_loss not in [None, ''] else "NA"
 
             data.update(
                 sector_id=sector_dct.get('sector_id', 'NA'),
@@ -3637,6 +3730,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
                 bs_city=sector_dct.get('base_station__city__city_name', 'NA'),
                 bs_state=sector_dct.get('base_station__state__state_name', 'NA'),
                 bh_connectivity=sector_dct.get('base_station__backhaul__bh_connectivity', 'NA'),
+                bh_status=bh_status,
                 bh_type=sector_dct.get('base_station__backhaul__bh_type', 'NA'),
                 device_type=device_type_dict.get(sector_dct.get('device_type')),
                 bh_ckt_id= bh_ckt_id,
