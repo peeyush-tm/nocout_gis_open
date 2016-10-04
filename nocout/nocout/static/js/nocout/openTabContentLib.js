@@ -8,7 +8,8 @@ var tables_info = {},
     last_clicked_tab = "",
     timeOutId = "",
     ptp_list = ['ptp','p2p'],
-    pmp_list = ['pmp'],
+    pmp_list = ['pmp', 'rad5'],
+    rad5_list = ['rad5'],
     wimax_list = ['wimax','wifi','temp','ulissue','sectorutil'],
     other_list = ['converter','bh','backhaul','bhutil'],
     server_side_rendering = true,
@@ -53,11 +54,16 @@ $(".nav-tabs li a").click(function (e, isFirst) {
         grid_headers = header_attr && header_attr.value ? JSON.parse(header_attr.value) : "",
         isTab = $('.nav li.active .hidden-inline-mobile');
 
+
     if (table_id && ajax_url && grid_headers) {
         if (last_clicked_tab != e.currentTarget.id || second_condition) {
             var tab_id = table_id ? table_id.toLowerCase() : "";
 
+            console.log(tab_id);
             var isPtp = ptp_list.filter(function(list_val) {
+                    return tab_id.search(list_val) > -1
+                }).length,
+                is_rad5 = rad5_list.filter(function(list_val) {
                     return tab_id.search(list_val) > -1
                 }).length,
                 pmpLength = pmp_list.filter(function(list_val) {
@@ -110,6 +116,20 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                             column.sClass = "hide";
                         } else {
                             column["sClass"] = "hide";
+                        }
+                    }
+                }
+            }
+            
+            // For radwin5k specific columns.
+            if (is_rad5 > 0){
+                for (var i = 0; i < grid_headers.length; i++) {
+                    var column = grid_headers[i];
+                    if (column.mData.indexOf("region") > -1 || column.mData.indexOf("min_latency") > -1) {
+                        if (!column.bVisible) {
+                            column.bVisible = true;
+                        } else {
+                            column["bVisible"] = true;
                         }
                     }
                 }

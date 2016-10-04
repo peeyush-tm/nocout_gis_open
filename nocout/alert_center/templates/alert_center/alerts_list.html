@@ -39,8 +39,13 @@
                         </a>
                     </li>
                     <li>
+                        <a href="#network_rad5_block" id="network_rad5_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Radwin5k</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab">
-                            <span class="hidden-inline-mobile">PMP</span>
+                            <span class="hidden-inline-mobile">Cambium</span>
                         </a>
                     </li>
                     {% if settings.SHOW_ALL_TAB_IN_ALERTS %}
@@ -79,6 +84,12 @@
 
                     <div class="tab-pane" id="network_pmp_block">
                         <table id="network_pmp_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_rad5_block">
+                        <table id="network_rad5_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -162,7 +173,8 @@
 
             var report_title_base = page_type+" Alert ["+ds_name+"]",
                 ptp_report_title = report_title_base+" - "+ptp_tech_txt,
-                pmp_report_title = report_title_base+" - PMP",
+                pmp_report_title = report_title_base+" - Cambium",
+                rad5_report_title = report_title_base+" - Radwin5k",
                 wimax_report_title = report_title_base+" - WiMAX",
                 all_report_title = report_title_base+" - All (PMP/WiMAX)",
                 converter_report_title = report_title_base+" - Backhaul",
@@ -175,6 +187,8 @@
 
             var ajax_url_pmp = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=PMP' + '&page_type={{ page_type }}';
 
+            var ajax_url_rad5 = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=PMP' + '&page_type={{ page_type }}' + '&is_rad5=1';            
+
             var ajax_url_all = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=all' + '&page_type={{ page_type }}';
 
             var ajax_url_p2p = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'P2P' + '&page_type={{ page_type }}';
@@ -186,6 +200,8 @@
             var wimax_extra_param = "{'headers_data_key' : 'pmp_wimax_datatable_headers', 'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'WiMAX', 'page_type' : '{{ page_type }}', 'report_title' : '"+wimax_report_title+"', "+common_extra_param+" }";
             // PMP tab extra params
             var pmp_extra_param = "{'headers_data_key' : 'pmp_wimax_datatable_headers', 'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'PMP', 'page_type' : '{{ page_type }}', 'report_title' : '"+pmp_report_title+"', "+common_extra_param+" }";
+            // Radwin5k tab extra params
+            var rad5_extra_param = "{'headers_data_key' : 'pmp_wimax_datatable_headers', 'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'PMP', 'page_type' : '{{ page_type }}', 'report_title' : '"+rad5_report_title+"', "+common_extra_param+" }";
             // All (PMP/WiMAX) tab extra params
             var all_extra_param = "{'headers_data_key' : 'pmp_wimax_datatable_headers', 'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'all', 'page_type' : '{{ page_type }}', 'report_title' : '"+all_report_title+"', "+common_extra_param+" }";
             // PTP tab extra params
@@ -241,6 +257,15 @@
                     "data_extra_param" : pmp_extra_param,
                     "excluded" : "["+pmp_wimax_excluded_network+"]",
                 },
+                "network_rad5_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : rad5_report_title,
+                    "header_class_name" : "AlertCenterListing",
+                    "data_class_name" : "AlertListingTable",
+                    "header_extra_param" : rad5_extra_param,
+                    "data_extra_param" : rad5_extra_param,
+                    "excluded" : "["+pmp_wimax_excluded_network+"]",
+                },
                 "network_all_tab" : {
                     "app_name" : "alert_center",
                     "table_title" : all_report_title,
@@ -269,6 +294,9 @@
 
             $("#network_pmp_tab").attr("data_url", ajax_url_pmp);
             $("#network_pmp_tab").attr("data_header", '{{ pmp_wimax_datatable_headers|safe }}');
+
+            $("#network_rad5_tab").attr("data_url", ajax_url_rad5);
+            $("#network_rad5_tab").attr("data_header", '{{ pmp_wimax_datatable_headers|safe }}');
 
             $("#network_all_tab").attr("data_url", ajax_url_all);
             $("#network_all_tab").attr("data_header", '{{ pmp_wimax_datatable_headers|safe }}');

@@ -42,6 +42,7 @@ class InventoryUtilsGateway:
     def organization_customer_devices(
         self,
         organizations,
+        is_rad5 = False,
         technology=None, 
         specify_ptp_type='all'
     ):
@@ -53,6 +54,7 @@ class InventoryUtilsGateway:
         """
         param1 = organization_customer_devices(
             organizations,
+            is_rad5,
             technology=technology,
             specify_ptp_type=specify_ptp_type
         )
@@ -62,6 +64,7 @@ class InventoryUtilsGateway:
     def organization_network_devices(
         self, 
         organizations, 
+        is_rad5=False,
         technology=None, 
         specify_ptp_bh_type='all'
     ):
@@ -72,7 +75,8 @@ class InventoryUtilsGateway:
         :param specify_ptp_bh_type:
         """
         param1 = organization_network_devices(
-            organizations, 
+            organizations,
+            is_rad5,
             technology=technology, 
             specify_ptp_bh_type=specify_ptp_bh_type
         )
@@ -105,6 +109,7 @@ class InventoryUtilsGateway:
     def filter_devices(
         self, 
         organizations, 
+        is_rad5=False,
         data_tab=None, 
         page_type="customer", 
         other_type=None, 
@@ -124,6 +129,7 @@ class InventoryUtilsGateway:
 
         param1 = filter_devices(
             organizations, 
+            is_rad5,
             data_tab=data_tab, 
             page_type=page_type, 
             other_type=other_type, 
@@ -309,7 +315,7 @@ def ptp_device_circuit_backhaul(specify_type='all'):
     return device_list_with_circuit_type_backhaul
 
 
-def organization_customer_devices(organizations, technology=None, specify_ptp_type='all'):
+def organization_customer_devices(organizations, is_rad5=False, technology=None, specify_ptp_type='all'):
     """
     To result back the all the customer devices from the respective organization..
 
@@ -368,10 +374,23 @@ def organization_customer_devices(organizations, technology=None, specify_ptp_ty
                 device_technology=technology
             )
 
+            try:
+                rad5_device_type_id = DeviceType.objects.get(name='Radwin5KSS').id
+            except Exception, e:
+                rad5_device_type_id = None
+
+            # Filtering device queryset further for radwin devices
+            if is_rad5 and int(technology) == int(PMP.ID):
+                customer_devices = customer_devices.filter(device_type=rad5_device_type_id)
+            elif (not is_rad5) and (int(technology) == int(PMP.ID)):
+                customer_devices = customer_devices.exclude(device_type=rad5_device_type_id)
+            else:
+                pass
+
     return customer_devices
 
 
-def organization_network_devices(organizations, technology=None, specify_ptp_bh_type='all'):
+def organization_network_devices(organizations, is_rad5=False, technology=None, specify_ptp_bh_type='all'):
     """
     To result back the all the network devices from the respective organization..
 
@@ -381,7 +400,6 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
     :param organizations:
     :return list of network devices
     """
-
     if not technology and specify_ptp_bh_type:
         devices = Device.objects.filter(
             Q(id__in=ptp_device_circuit_backhaul())
@@ -479,6 +497,18 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
                 is_deleted=0,
                 organization__in=organizations
             ).annotate(dcount=Count('id'))
+            
+            try:
+                rad5_device_type_id = DeviceType.objects.get(name='Radwin5KBS').id
+            except Exception, e:
+                rad5_device_type_id = None
+
+            # Filtering device queryset further for radwin devices
+            if is_rad5:
+                devices = devices.filter(device_type=rad5_device_type_id)
+            else:
+                devices = devices.exclude(device_type=rad5_device_type_id)
+
 
     return devices
 
@@ -559,7 +589,8 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
 @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def filter_devices(
     organizations, 
-    data_tab=None, 
+    is_rad5,
+    data_tab=None,
     page_type="customer", 
     other_type=None, 
     required_value_list=None, 
@@ -588,11 +619,18 @@ def filter_devices(
             'id', 
             'machine__name', 
             'device_name', 
-            'ip_address'
+            'ip_address',
+            'organization__alias'
         ]
 
     device_tab_technology = data_tab
+    # This is for handling report download for radwin5 devices
+    # Because Radwin5 is device type and not technology.
+    if device_tab_technology and device_tab_technology.lower() == 'radwin5':
+        device_tab_technology = 'PMP'
+        is_rad5 = True
     device_technology_id = None
+
     try:
         device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
     except Exception as e:
@@ -601,12 +639,14 @@ def filter_devices(
     if page_type == "customer":
         device_list = organization_customer_devices(
             organizations,
+            is_rad5,
             device_technology_id
         ).values(*device_value_list)
     elif page_type == "network":
         device_list = organization_network_devices(
             organizations,
-            device_technology_id
+            is_rad5,
+            device_technology_id,
         ).values(*device_value_list)
     elif page_type == "other":
         is_other = False
@@ -628,7 +668,8 @@ def filter_devices(
             'machine_name': device['machine__name'],
             'id': device['id'],
             'ip_address': device['ip_address'],
-            'organization_id' : device.get('organization__id')
+            'organization_id' : device.get('organization__id'),
+            'region': device.get('organization__alias', 'NA')
         }
         for device in device_list
     ]

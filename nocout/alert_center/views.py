@@ -11,9 +11,10 @@ from django.views.generic import ListView, View
 from django.http import HttpResponse
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceTechnology, DeviceType, DeviceTicket
+from machine.models import Machine
 # For SIA Listing
 from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
-from performance.models import EventNetwork, EventService
+from performance.models import EventNetwork, EventService, InventoryStatus, ServiceStatus, UtilizationStatus
 
 from operator import itemgetter
 # Import performance utils gateway class
@@ -112,6 +113,18 @@ class AlertCenterListing(ListView):
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
         ]
 
+        rad5_headers = []
+        rad5_polled_col = []
+        rad5_headers += [
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},            
+        ]
+
+        # if Network page and data source is latency than add SE to PE min latency column.
+        if page_type in ['network','customer'] and data_source == 'latency':
+            rad5_headers += [
+                {'mData': 'min_latency', 'sTitle': 'Latency (Server to PE) min', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
+            ]
+
         # If customer page then add near end ip column to all stating columns list
         if page_type == 'customer':
             near_ip_column = [{
@@ -125,6 +138,22 @@ class AlertCenterListing(ListView):
 
             pmp_wimax_starting_headers += ckt_customer_headers
             pmp_wimax_starting_headers += near_ip_column
+
+            # For saving if else hassle we have used a dict over here
+            rad5_polled_col_dict = {
+                'packet_drop':[
+                    {'mData': 'dl_uas', 'sTitle': 'UAS DL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False},
+                    {'mData': 'ul_uas', 'sTitle': 'UAS UL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
+                ],
+                'latency': [
+                    {'mData': 'dl_utilization', 'sTitle': 'Utilisation DL%', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False},
+                    {'mData': 'ul_utilization', 'sTitle': 'Utilisation UL%', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
+                ],
+                'down': [
+                ],
+            }
+
+            rad5_polled_col += rad5_polled_col_dict.get(data_source, [])
 
         # List of common headers for all pages of alerts listing
         common_headers = [
@@ -199,7 +228,6 @@ class AlertCenterListing(ListView):
         pmp_wimax_datatable_headers += severity_headers
         pmp_wimax_datatable_headers += pmp_wimax_starting_headers
         pmp_wimax_datatable_headers += common_headers
-        pmp_wimax_datatable_headers += polled_headers
 
         if SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT and page_type == 'network':
             pmp_wimax_datatable_headers += [{
@@ -208,6 +236,10 @@ class AlertCenterListing(ListView):
                 'sWidth': 'auto',
                 'bSortable': True
             }]
+
+        pmp_wimax_datatable_headers += rad5_headers
+        pmp_wimax_datatable_headers += polled_headers
+        pmp_wimax_datatable_headers += rad5_polled_col
 
         if SHOW_TICKET_NUMBER and page_type == 'network' and data_source == 'down':
             pmp_wimax_datatable_headers += [{'mData': 'ticket_no', 'sTitle': 'Alarm PB TT No.', 'sWidth': 'auto', 'bSortable': True}]
@@ -244,6 +276,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
     is_initialised = True
     is_polled = False
     is_searched = False
+    is_rad5 = False
 
     model = EventNetwork
     columns = []
@@ -272,6 +305,21 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         'sys_timestamp',
         'customer_count'
     ]
+
+    # For saving if else hassle we have used a dict over here
+    rad5_polled_col_dict = {
+        'packet_drop':[
+            {'mData': 'dl_uas', 'sTitle': 'UAS DL', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},
+            {'mData': 'ul_uas', 'sTitle': 'UAS UL', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False}
+        ],
+        'latency': [
+            {'mData': 'dl_utilization', 'sTitle': 'Utilisation DL%', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False},
+            {'mData': 'ul_utilization', 'sTitle': 'Utilisation UL%', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
+        ],
+        'down': [
+            {'mData': 'device_uptime', 'sTitle': 'Device Uptime', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
+        ]
+    }
 
     main_qs = []
 
@@ -303,6 +351,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         page_type = self.request.GET.get('page_type', 'network')
 
         other_type = self.request.GET.get('other_type', None)
+        is_rad5 = int(self.request.GET.get('is_rad5', 0))
         
         device_tab_technology = self.request.GET.get('data_tab')
 
@@ -313,6 +362,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             devices += inventory_utils.filter_devices(
                 organizations=kwargs['organizations'],
                 data_tab='PMP',
+                is_rad5=is_rad5,
                 page_type=page_type,
                 other_type=other_type,
                 required_value_list=required_value_list
@@ -498,12 +548,81 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             else:
                 scheduling_type = ['devi', 'dety', 'cust', 'netw', 'back']
 
+            is_rad5 = int(self.request.GET.get('is_rad5', 0))
+            min_latency = ''
+            dl_uas = ''
+            ul_uas = ''
+            dl_utilization = ''
+            ul_utilization = ''
+            device_uptime = ''
             for dct in qs:
                 try:                
                     dct_device_name = dct.get('device_name')
                     dct_device_type = dct.get('device_type')
                 except Exception, err:
                     pass
+
+                # for getting SE to PE min. latency
+                if is_rad5:
+                    device_id = dct.get('id', 0)
+                    min_latency = perf_utils.get_se_to_pe_min_latency(device_id, page_type)
+
+                    # getting extra columns for rad5 devices
+                    if page_type == 'customer':
+                        try:
+                            machine_name = Machine.objects.get(id=dct.get('machine_id')).name
+                        except Exception, e:
+                            machine_name = ''
+
+                        if data_source == 'packet_drop':
+                            # Machine name for each device
+                            # getting UAS DL and UAS UL for each device
+                            dl_uas = InventoryStatus.objects.filter(
+                                    ip_address=dct.get('ip_address', None),
+                                    service_name='rad5k_dl_uas_invent',
+                                    data_source='dl_uas'
+                                ).using(machine_name).values_list(
+                                    'current_value',
+                                    flat=True
+                                    )[0]
+
+                            ul_uas = InventoryStatus.objects.filter(
+                                    ip_address=dct.get('ip_address', None),
+                                    service_name='rad5k_ul_uas_invent',
+                                    data_source='ul_uas'
+                                ).using(machine_name).values_list(
+                                    'current_value',
+                                    flat=True
+                                    )[0]
+                        elif data_source == 'latency':
+                            dl_utilization = UtilizationStatus.objects.filter(
+                                    ip_address=dct.get('ip_address', None),
+                                    service_name='rad5k_ss_dl_utilization',
+                                    data_source='dl_utilization'
+                                ).using(machine_name).values_list(
+                                    'current_value',
+                                    flat=True
+                                    )[0]
+
+                            ul_utilization = UtilizationStatus.objects.filter(
+                                    ip_address=dct.get('ip_address', None),
+                                    service_name='rad5k_ss_ul_utilization',
+                                    data_source='dl_utilization'
+                                ).using(machine_name).values_list(
+                                    'current_value',
+                                    flat=True
+                                    )[0]
+                        elif data_source == 'down':
+                            device_uptime = ServiceStatus.objects.filter(
+                                    ip_address=dct.get('ip_address', None),
+                                    service_name='rad5k_ss_device_uptime',
+                                    data_source='uptime'
+                                ).using(machine_name).values_list(
+                                    'current_value',
+                                    flat=True
+                                    )[0]
+                        else:
+                            pass
 
                 showIconBlue = scheduling_utils.get_onDate_status(
                     dct_device_name,
@@ -550,6 +669,12 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     dct.update(
                         sys_timestamp=datetime.datetime.fromtimestamp(dct.get('sys_timestamp')).strftime(DATE_TIME_FORMAT) if dct.get('sys_timestamp') else "",
                         age=datetime.datetime.fromtimestamp(dct.get('age')).strftime(DATE_TIME_FORMAT) if dct.get('age') else "",
+                        min_latency=min_latency if min_latency else 'N/A',
+                        dl_uas=dl_uas if dl_uas else 'N/A',
+                        ul_uas=ul_uas if ul_uas else 'N/A',
+                        dl_utilization=dl_utilization if dl_utilization else 'N/A',
+                        ul_utilization=ul_utilization if ul_utilization else 'N/A',
+                        device_uptime=device_uptime if device_uptime else 'N/A',
                         action='<a href="' + alert_url + '" title="Device Alerts">\
                                 <i class="fa fa-warning text-warning"></i></a>\
                                 <a href="' + performance_url + '" title="Device Performance">\
@@ -697,6 +822,10 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'state'
         ]
 
+        is_rad5 = int(self.request.GET.get('is_rad5', 0))
+
+        rad5_columns = []
+
         starting_columns = []
         tkt_column = []
         if data_tab in ['P2P', 'PTP', 'PTP-BH', 'PTP_BH']:
@@ -739,10 +868,14 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'action'
         ]
 
+        if is_rad5:
+            rad5_columns += ['region']
+ 
         self.columns = []
         self.columns += severity_columns
         self.columns += starting_columns
         self.columns += common_columns
+        self.columns += rad5_columns
         self.columns += polled_columns
         self.columns += other_columns
         
@@ -1623,6 +1756,15 @@ class SingleDeviceAlertsInit(ListView):
         device_alias = device_obj.device_alias + "(" + device_obj.ip_address + ")"
         #  GET Technology of current device
         device_technology_name = DeviceTechnology.objects.get(id=device_obj.device_technology).name
+        device_type = DeviceType.objects.get(id=device_obj.device_type).name
+
+        # This flag is for radwin5 devices
+        is_radwin5 = 0
+        try:
+            if 'radwin5' in device_type.lower():
+                is_radwin5 = 1
+        except Exception, e:
+            is_radwin5 = 0
         
         is_dr_device = device_obj.dr_configured_on.exists()
 
@@ -1688,6 +1830,14 @@ class SingleDeviceAlertsInit(ListView):
         context['current_device_name'] = device_name
 
         context['is_dr_device'] = is_dr_device
+
+        # Added for radwin5k devices breadcrumb 
+        # because radwin5 is a device type not device technology
+        if device_technology_name.lower() == 'pmp':
+            breadcrumb_title = 'Radwin5k' if is_radwin5 else 'Cambium'
+        else:
+            breadcrumb_title = device_technology_name
+        context['breadcrumb_title'] = breadcrumb_title
 
         return context
 
