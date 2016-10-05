@@ -7,6 +7,7 @@ import ujson as json
 from django.db.models.query import ValuesQuerySet, Q
 from django.db.models import F
 from django.core.urlresolvers import reverse
+from django.db.models.expressions import RawSQL
 from django.views.generic import ListView, View
 from django.http import HttpResponse
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -21,7 +22,7 @@ from performance.utils.util import PerformanceUtilsGateway
 
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
-from inventory.models import Sector, BaseStation
+from inventory.models import Sector, BaseStation, SubStation, Circuit, Backhaul
 
 # Import alert_center utils gateway class
 from alert_center.utils.util import AlertCenterUtilsGateway
@@ -2639,8 +2640,9 @@ class AllSiaListing(ListView):
             {'mData': 'bh_status', 'sTitle': 'BH Status', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'circle', 'sTitle': 'Circle', 'sWidth': 'auto', 'bSortable': True},
             # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_connectivity', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_type', 'sTitle': 'BH Media Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_ckt_id', 'sTitle': 'TCL BH CKT ID', 'sWidth': 'auto', 'bSortable': True},
@@ -2655,17 +2657,16 @@ class AllSiaListing(ListView):
             # {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
-        action_columns = []
-        if ENABLE_MANUAL_TICKETING:
-            action_columns = [
-                {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False}
-            ]
+        
+        action_columns = [
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False}
+        ]
 
         datatable_headers = list()
         datatable_headers += starting_columns
 
         context['datatable_headers'] = json.dumps(action_columns + datatable_headers)
-        context['clear_history_headers'] = json.dumps(datatable_headers)
+        context['clear_history_headers'] = json.dumps(action_columns + datatable_headers)
         context['data_source'] = data_source
         context['data_source_title'] = data_source_title
 
@@ -2694,10 +2695,10 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
     ]
 
     other_columns = [
-        'bs_alias', 'bs_city', 'bs_state',
+        'bs_alias', 'bs_city', 'bs_state', 'circle',
         'sector_id','device_type', 'bh_connectivity', 'bh_type',
         'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip', 
-        'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'bh_status'
+        'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'bh_status', 'ticket_number'
     ]
 
     # excluded_events = [
@@ -2741,6 +2742,29 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        # Fetch PTP-BH, PMP, WiMAX & BH Congfigured on devices ips from our inventory
+        pmp_wimax_ips = list(Sector.objects.filter(
+            sector_id__isnull=False,
+            sector_configured_on__ip_address__isnull=False
+        ).values_list('sector_configured_on__ip_address', flat=True))
+
+        bh_conf_ips = list(Backhaul.objects.filter(
+            bh_configured_on__isnull=False,
+            bh_configured_on__ip_address__isnull=False
+        ).values_list('bh_configured_on__ip_address', flat=True))
+
+        ptp_bh_ips = list(Circuit.objects.filter(
+            circuit_type__iexact='backhaul',
+            sector__sector_configured_on__ip_address__isnull=False
+        ).values_list('sector__sector_configured_on__ip_address', flat=True))
+
+        ptp_bh_ss_ips = list(Circuit.objects.filter(
+            circuit_type__iexact='backhaul',
+            sub_station__device__ip_address__isnull=False
+        ).values_list('sub_station__device__ip_address', flat=True))
+
+        inventory_ips_list = pmp_wimax_ips + bh_conf_ips + ptp_bh_ips + ptp_bh_ss_ips
 
         filter_condition = False
         ip_address_list = list()
@@ -2813,6 +2837,7 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                             ({1}) ,\
                             {3}\
                             {5},\
+                            ip_address__in=inventory_ips_list\
                         ).using(TRAPS_DATABASE).order_by('-traptime').values(*{2})".format(
                             not_condition_sign,
                             filter_condition,
@@ -2829,6 +2854,7 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                                 {0}{3}\
                                 {2}\
                                 {4},\
+                                ip_address__in=inventory_ips_list\
                             ).using(TRAPS_DATABASE).order_by('-traptime').values(*{1})".format(
                                 not_condition_sign,
                                 model_columns,
@@ -2897,14 +2923,11 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         if self.tech_name in ['pmp', 'wimax', 'all']:
             self.order_columns = []
 
-            if ENABLE_MANUAL_TICKETING:
-                self.order_columns += ['action']
-
             self.order_columns += [
-                'severity', 'traptime', 'ip_address', 'device_type',
-                'bs_alias', 'bh_status', 'bs_state', 'bs_city',
-                'ticket_number', 'bh_connectivity', 'bh_type',
-                'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip',
+                'action', 'severity', 'traptime', 'ip_address',
+                'device_type', 'bs_alias', 'bh_status', 'bs_state',
+                'bs_city', 'circle', 'ticket_number', 'bh_connectivity',
+                'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip',
                 'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'alarm_count',
                 'first_occurred', 'last_occurred' 
             ]
@@ -3119,15 +3142,52 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
                 if uptime:
                     formatted_uptime = self.format_uptime_value(uptime)
+		performance_url = alert_url = inventory_url = ''
+		dct['action'] = ''
+		if dct.get('device_id'):
+                    performance_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={
+                            'page_type': dct.get('page_type', 'network'), 
+                            'device_id': dct.get('device_id', 0)
+                        },
+                        current_app='performance'
+                    )
+
+                    alert_url = reverse(
+                        'SingleDeviceAlertsInit',
+                        kwargs={
+                            'page_type': dct.get('page_type', 'network'), 
+                            'data_source' : data_source.lower(), 
+                            'device_id': dct.get('device_id', 0)
+                        },
+                        current_app='alert_center'
+                    )
+		
+                    inventory_url = reverse(
+                        'device_edit',
+                        kwargs={
+                            'pk': dct.get('device_id', 0)
+                        },
+                        current_app='device'
+                    )
+
+
+                    dct.update(
+                        action='<a href="' + alert_url + '" title="Device Alerts">\
+                                <i class="fa fa-warning text-warning"></i></a>\
+                                <a href="' + performance_url + '" title="Device Performance">\
+                                <i class="fa fa-bar-chart-o text-info"></i></a>\
+                                <a href="' + inventory_url + '" title="Device Inventory">\
+                                <i class="fa fa-dropbox text-muted"></i></a>'
+                    )
 
                 dct.update(
-                    action='',
                     severity=severity_icon,
                     uptime=formatted_uptime,
                     first_occurred=first_occurred,
                     last_occurred=last_occurred
                 )
-
             return qs
     
     def get_context_data(self, *args, **kwargs):
@@ -3405,9 +3465,12 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
         ).annotate(
-            machine_name=F('base_station__backhaul__bh_configured_on__machine__name'),
-            device_name=F('base_station__backhaul__bh_configured_on__device_name'),
-            device_type=F('base_station__backhaul__bh_configured_on__device_type')
+            machine_name=F('sector_configured_on__machine__name'),
+            device_name=F('sector_configured_on__device_name'),
+            device_type=F('sector_configured_on__device_type'),
+            device_id=F('sector_configured_on_id'),
+            circle=F('sector_configured_on__organization__alias'),
+            page_type=RawSQL('SELECT "network"', ())
         ).values(
             'sector_id',
             'sector_configured_on__ip_address',
@@ -3424,37 +3487,102 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'base_station__backhaul__pop__ip_address',
             'base_station__backhaul__aggregator__ip_address',
             'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
+            'device_type',
+            'device_id',
+            'page_type',
+            'circle'
         ).distinct()
 
         device_list += sectors_data_qs.values('machine_name', 'device_name')
 
-        # If wimax only then check for DR device
-        if tech_name in ['wimax', 'all']:
-            dr_data_qs =  Sector.objects.filter(
-                dr_configured_on__ip_address__in=ip_address_list
-            ).annotate(
-                machine_name=F('base_station__backhaul__bh_configured_on__machine__name'),
-                device_name=F('base_station__backhaul__bh_configured_on__device_name'),
-                device_type=F('base_station__backhaul__bh_configured_on__device_type')
-            ).values(
-                'sector_id',
-                'base_station__alias',
-                'base_station__city__city_name',
-                'base_station__state__state_name',
-                'dr_configured_on__ip_address',
-                'machine_name',
-                'device_name',
-                'base_station__backhaul__bh_circuit_id',
-                'base_station__backhaul__ttsl_circuit_id',
-                'base_station__backhaul__bh_switch__ip_address',
-                'base_station__backhaul__pop__ip_address',
-                'base_station__backhaul__aggregator__ip_address',
-                'base_station__backhaul__pe_ip__ip_address',
-                'device_type'
-            ).distinct()
 
-        device_list += dr_data_qs.values('machine_name', 'device_name')
+        # Checking for SS Devices
+        ss_id_list =  SubStation.objects.filter(
+            device__ip_address__in=ip_address_list
+        ).values_list('id', flat=True)
+
+        ss_data_qs = Circuit.objects.filter(
+            circuit_type__iexact='backhaul',
+            sub_station__id__in=ss_id_list
+        ).annotate(
+            machine_name=F('sub_station__device__machine__name'),
+            device_name=F('sub_station__device__device_name'),
+            device_type=F('sub_station__device__device_type'),
+            device_id=F('sub_station__device__id'),
+            circle=F('sub_station__device__organization__alias'),
+            page_type=RawSQL('SELECT "customer"', ()),
+            base_station__alias=F('sector__base_station__alias'),
+            base_station__city__city_name=F('sector__base_station__city__city_name'),
+            base_station__state__state_name=F('sector__base_station__state__state_name'),
+            base_station__backhaul__bh_type=F('sector__base_station__backhaul__bh_type'),
+            base_station__backhaul__bh_connectivity=F('sector__base_station__backhaul__bh_connectivity'),
+            base_station__backhaul__bh_circuit_id=F('sector__base_station__backhaul__bh_circuit_id'),
+            base_station__backhaul__ttsl_circuit_id=F('sector__base_station__backhaul__ttsl_circuit_id'),
+            base_station__backhaul__bh_switch__ip_address=F('sector__base_station__backhaul__bh_switch__ip_address'),
+            base_station__backhaul__pop__ip_address=F('sector__base_station__backhaul__pop__ip_address'),
+            base_station__backhaul__aggregator__ip_address=F('sector__base_station__backhaul__aggregator__ip_address'),
+            base_station__backhaul__pe_ip__ip_address=F('sector__base_station__backhaul__pe_ip__ip_address'),
+            sector_id=F('sector__sector_id'),
+            sector_configured_on__ip_address=F('sector__sector_configured_on__ip_address'),
+        ).values(
+            'sector_id',
+            'sector_configured_on__ip_address',
+            'base_station__alias',
+            'sub_station__device__ip_address',
+            'machine_name',
+            'device_name',
+            'base_station__city__city_name',
+            'base_station__state__state_name',
+            'base_station__backhaul__bh_type',
+            'base_station__backhaul__bh_connectivity',
+            'base_station__backhaul__bh_circuit_id',
+            'base_station__backhaul__ttsl_circuit_id',
+            'base_station__backhaul__bh_switch__ip_address',
+            'base_station__backhaul__pop__ip_address',
+            'base_station__backhaul__aggregator__ip_address',
+            'base_station__backhaul__pe_ip__ip_address',
+            'device_type',
+            'device_id',
+            'circle',
+            'page_type'
+        ).distinct()
+	
+        device_list += ss_data_qs.values('machine_name', 'device_name')
+    
+        # if tech_name in ['wimax', 'all']:
+        #     dr_data_qs =  Sector.objects.filter(
+        #         dr_configured_on__ip_address__in=ip_address_list
+        #     ).annotate(
+        #         machine_name=F('dr_configured_on__machine__name'),
+        #         device_name=F('dr_configured_on__device_name'),
+        #         device_type=F('dr_configured_on__device_type'),
+        #         device_id=F('dr_configured_on_id'),
+        #         page_type=RawSQL('SELECT "network"', ()),
+        #         circle=F('dr_configured_on__organization__alias'),
+        #     ).values(
+        #         'sector_id',
+        #         'base_station__alias',
+        #         'base_station__city__city_name',
+        #         'base_station__state__state_name',
+        #         'dr_configured_on__ip_address',
+        #         'machine_name',
+        #         'device_name',
+        #         'base_station__backhaul__bh_type',
+        #         'base_station__backhaul__bh_connectivity',
+        #         'base_station__backhaul__bh_circuit_id',
+        #         'base_station__backhaul__ttsl_circuit_id',
+        #         'base_station__backhaul__bh_switch__ip_address',
+        #         'base_station__backhaul__pop__ip_address',
+        #         'base_station__backhaul__aggregator__ip_address',
+        #         'base_station__backhaul__pe_ip__ip_address',
+        #         'device_type',
+        #         'device_id',
+        #         'page_type',
+        #         'circle'
+        #     ).distinct()
+
+        # device_list += dr_data_qs.values('machine_name', 'device_name')
+	
 
     # If requert from converter or all tab only then check Backhaul model
     if tech_name in ['switch', 'converter', 'all']:
@@ -3476,9 +3604,14 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
             base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
             base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') ,
+            base_station__backhaul__bh_type=F('backhaul__bh_type'),
+            base_station__backhaul__bh_connectivity=F('backhaul__bh_connectivity'),
             machine_name=F('backhaul__bh_configured_on__machine__name'),
             device_name=F('backhaul__bh_configured_on__device_name'),
-            device_type=F('backhaul__bh_configured_on__device_type')
+            device_type=F('backhaul__bh_configured_on__device_type'),
+            device_id=F('backhaul__bh_configured_on_id'),
+            page_type=RawSQL('SELECT "other"', ()),
+            circle=F('backhaul__bh_configured_on__organization__alias'),
         ).filter(
             backhaul__bh_configured_on__ip_address__in=ip_address_list
         ).values(
@@ -3489,6 +3622,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'state__state_name',
             'machine_name',
             'device_name',
+            'base_station__backhaul__bh_type',
+            'base_station__backhaul__bh_connectivity',
             'backhaul__bh_configured_on__ip_address',
             'base_station__backhaul__bh_circuit_id',
             'base_station__backhaul__ttsl_circuit_id',
@@ -3496,164 +3631,203 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'base_station__backhaul__pop__ip_address',
             'base_station__backhaul__aggregator__ip_address',
             'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
+            'device_type',
+            'device_id',
+            'page_type',
+            'circle'
         ).distinct()
 
         device_list += bh_conf_data_qs.values('machine_name', 'device_name')
-        
-        bh_switch_data_qs =  BaseStation.objects.extra(
-            select={
-                'base_station__alias' : 'inventory_basestation.alias',
-                'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name',
-                # 'device_type': 'T4.device_type'
-            }
-        ).annotate(
-            base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
-            base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
-            base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
-            base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
-            base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
-            machine_name=F('backhaul__bh_configured_on__machine__name'),
-            device_name=F('backhaul__bh_configured_on__device_name'),
-            device_type=F('backhaul__bh_configured_on__device_type')
-        ).filter(
-            backhaul__bh_configured_on__isnull=False,
-            backhaul__bh_switch__ip_address__in=ip_address_list
-        ).values(
-            'base_station__alias',
-            'base_station__city__city_name',
-            'city__city_name',
-            'base_station__state__state_name',
-            'state__state_name',
-            'machine_name',
-            'device_name',
-            'backhaul__bh_switch__ip_address',
-            'base_station__backhaul__bh_circuit_id',
-            'base_station__backhaul__ttsl_circuit_id',
-            'base_station__backhaul__bh_switch__ip_address',
-            'base_station__backhaul__pop__ip_address',
-            'base_station__backhaul__aggregator__ip_address',
-            'base_station__backhaul__pe_ip__ip_address',
-            'device_type',
-        ).distinct()
 
-        device_list += bh_switch_data_qs.values('machine_name', 'device_name')
+        # bh_switch_data_qs =  BaseStation.objects.extra(
+        #     select={
+        #         'base_station__alias' : 'inventory_basestation.alias',
+        #         'base_station__city__city_name' : 'device_city.city_name',
+        #         'base_station__state__state_name' : 'device_state.state_name',
+        #         # 'device_type': 'T4.device_type'
+        #     }
+        # ).annotate(
+        #     base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
+        #     base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
+        #     base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
+        #     base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
+        #     base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
+        #     base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+        #     base_station__backhaul__bh_type=F('backhaul__bh_type'),
+        #     base_station__backhaul__bh_connectivity=F('backhaul__bh_connectivity') ,
+        #     machine_name=F('backhaul__bh_switch__machine__name'),
+        #     device_name=F('backhaul__bh_switch__device_name'),
+        #     device_type=F('backhaul__bh_switch__device_type'),
+        #     device_id=F('backhaul__bh_switch_id'),
+        #     page_type=RawSQL('SELECT "other"', ()),
+        #     circle=F('backhaul__bh_switch__organization__alias'),
+        # ).filter(
+        #     backhaul__bh_configured_on__isnull=False,
+        #     backhaul__bh_switch__ip_address__in=ip_address_list
+        # ).values(
+        #     'base_station__alias',
+        #     'base_station__city__city_name',
+        #     'city__city_name',
+        #     'base_station__state__state_name',
+        #     'state__state_name',
+        #     'machine_name',
+        #     'device_name',
+        #     'base_station__backhaul__bh_type',
+        #     'base_station__backhaul__bh_connectivity',
+        #     'backhaul__bh_switch__ip_address',
+        #     'base_station__backhaul__bh_circuit_id',
+        #     'base_station__backhaul__ttsl_circuit_id',
+        #     'base_station__backhaul__bh_switch__ip_address',
+        #     'base_station__backhaul__pop__ip_address',
+        #     'base_station__backhaul__aggregator__ip_address',
+        #     'base_station__backhaul__pe_ip__ip_address',
+        #     'device_type',
+        #     'device_id',
+        #     'page_type',
+        #     'circle'
+        # ).distinct()
 
-        pop_data_qs =  BaseStation.objects.extra(
-            select={
-                'base_station__alias' : 'inventory_basestation.alias',
-                'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name',
-                # 'device_type': 'device_device.device_type'
-            }
-        ).annotate(
-            base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
-            base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
-            base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
-            base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
-            base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
-            machine_name=F('backhaul__bh_configured_on__machine__name'),
-            device_name=F('backhaul__bh_configured_on__device_name'),
-            device_type=F('backhaul__bh_configured_on__device_type')
-        ).filter(
-            backhaul__bh_configured_on__isnull=False,
-            backhaul__pop__ip_address__in=ip_address_list
-        ).values(
-            'base_station__alias',
-            'base_station__city__city_name',
-            'city__city_name',
-            'base_station__state__state_name',
-            'state__state_name',
-            'machine_name',
-            'device_name',
-            'backhaul__pop__ip_address',
-            'base_station__backhaul__bh_circuit_id',
-            'base_station__backhaul__ttsl_circuit_id',
-            'base_station__backhaul__bh_switch__ip_address',
-            'base_station__backhaul__pop__ip_address',
-            'base_station__backhaul__aggregator__ip_address',
-            'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
-        ).distinct()
+        # device_list += bh_switch_data_qs.values('machine_name', 'device_name')
 
-        device_list += pop_data_qs.values('machine_name', 'device_name')
+        # pop_data_qs =  BaseStation.objects.extra(
+        #     select={
+        #         'base_station__alias' : 'inventory_basestation.alias',
+        #         'base_station__city__city_name' : 'device_city.city_name',
+        #         'base_station__state__state_name' : 'device_state.state_name',
+        #         # 'device_type': 'device_device.device_type'
+        #     }
+        # ).annotate(
+        #     base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
+        #     base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
+        #     base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
+        #     base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
+        #     base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
+        #     base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+        #     base_station__backhaul__bh_type=F('backhaul__bh_type'),
+        #     base_station__backhaul__bh_connectivity=F('backhaul__bh_connectivity') ,
+        #     machine_name=F('backhaul__pop__machine__name'),
+        #     device_name=F('backhaul__pop__device_name'),
+        #     device_type=F('backhaul__pop__device_type'),
+        #     device_id=F('backhaul__pop_id'),
+        #     page_type=RawSQL('SELECT "other"', ()),
+        #     circle=F('backhaul__pop__organization__alias'),
+        # ).filter(
+        #     backhaul__bh_configured_on__isnull=False,
+        #     backhaul__pop__ip_address__in=ip_address_list
+        # ).values(
+        #     'base_station__alias',
+        #     'base_station__city__city_name',
+        #     'city__city_name',
+        #     'base_station__state__state_name',
+        #     'state__state_name',
+        #     'machine_name',
+        #     'device_name',
+        #     'backhaul__pop__ip_address',
+        #     'base_station__backhaul__bh_type',
+        #     'base_station__backhaul__bh_connectivity',
+        #     'base_station__backhaul__bh_circuit_id',
+        #     'base_station__backhaul__ttsl_circuit_id',
+        #     'base_station__backhaul__bh_switch__ip_address',
+        #     'base_station__backhaul__pop__ip_address',
+        #     'base_station__backhaul__aggregator__ip_address',
+        #     'base_station__backhaul__pe_ip__ip_address',
+        #     'device_type',
+        #     'device_id',
+        #     'page_type',
+        #     'circle'
+        # ).distinct()
 
-        aggr_data_qs =  BaseStation.objects.extra(
-            select={
-                'base_station__alias' : 'inventory_basestation.alias',
-                'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name',
-                # 'device_type': 'T4.device_type'
-            }
-        ).annotate(
-            base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
-            base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
-            base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
-            base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
-            base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
-            machine_name=F('backhaul__bh_configured_on__machine__name'),
-            device_name=F('backhaul__bh_configured_on__device_name'),
-            device_type=F('backhaul__bh_configured_on__device_type')
-        ).filter(
-            backhaul__bh_configured_on__isnull=False,
-            backhaul__aggregator__ip_address__in=ip_address_list
-        ).values(
-            'base_station__alias',
-            'base_station__city__city_name',
-            'city__city_name',
-            'base_station__state__state_name',
-            'state__state_name',
-            'backhaul__aggregator__ip_address',
-            'base_station__backhaul__bh_circuit_id',
-            'machine_name',
-            'device_name',
-            'base_station__backhaul__ttsl_circuit_id',
-            'base_station__backhaul__bh_switch__ip_address',
-            'base_station__backhaul__pop__ip_address',
-            'base_station__backhaul__aggregator__ip_address',
-            'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
-        ).distinct()
+        # device_list += pop_data_qs.values('machine_name', 'device_name')
 
-        device_list += aggr_data_qs.values('machine_name', 'device_name')
+        # aggr_data_qs =  BaseStation.objects.extra(
+        #     select={
+        #         'base_station__alias' : 'inventory_basestation.alias',
+        #         'base_station__city__city_name' : 'device_city.city_name',
+        #         'base_station__state__state_name' : 'device_state.state_name',
+        #         # 'device_type': 'T4.device_type'
+        #     }
+        # ).annotate(
+        #     base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
+        #     base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
+        #     base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
+        #     base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
+        #     base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
+        #     base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+        #     base_station__backhaul__bh_type=F('backhaul__bh_type'),
+        #     base_station__backhaul__bh_connectivity=F('backhaul__bh_connectivity') ,
+        #     machine_name=F('backhaul__aggregator__machine__name'),
+        #     device_name=F('backhaul__aggregator__device_name'),
+        #     device_type=F('backhaul__aggregator__device_type'),
+        #     device_id=F('backhaul__aggregator_id'),
+        #     page_type=RawSQL('SELECT "other"', ()),
+        #     circle=F('backhaul__aggregator__organization__alias'),
+        # ).filter(
+        #     backhaul__bh_configured_on__isnull=False,
+        #     backhaul__aggregator__ip_address__in=ip_address_list
+        # ).values(
+        #     'base_station__alias',
+        #     'base_station__city__city_name',
+        #     'city__city_name',
+        #     'base_station__state__state_name',
+        #     'state__state_name',
+        #     'backhaul__aggregator__ip_address',
+        #     'base_station__backhaul__bh_circuit_id',
+        #     'base_station__backhaul__bh_type',
+        #     'base_station__backhaul__bh_connectivity',
+        #     'machine_name',
+        #     'device_name',
+        #     'base_station__backhaul__ttsl_circuit_id',
+        #     'base_station__backhaul__bh_switch__ip_address',
+        #     'base_station__backhaul__pop__ip_address',
+        #     'base_station__backhaul__aggregator__ip_address',
+        #     'base_station__backhaul__pe_ip__ip_address',
+        #     'device_type',
+        #     'device_id',
+        #     'page_type',
+        #     'circle'
+        # ).distinct()
 
+        # device_list += aggr_data_qs.values('machine_name', 'device_name')
+	
         mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
             list(bh_conf_data_qs),
             'backhaul__bh_configured_on__ip_address'
         )
 
-        mapped_bh_switch_result = inventory_utils.list_to_indexed_dict(
-            list(bh_switch_data_qs),
-            'backhaul__bh_switch__ip_address'
-        )
+        # mapped_bh_switch_result = inventory_utils.list_to_indexed_dict(
+        #     list(bh_switch_data_qs),
+        #     'backhaul__bh_switch__ip_address'
+        # )
 
-        mapped_pop_result = inventory_utils.list_to_indexed_dict(
-            list(pop_data_qs),
-            'backhaul__pop__ip_address'
-        )
+        # mapped_pop_result = inventory_utils.list_to_indexed_dict(
+        #     list(pop_data_qs),
+        #     'backhaul__pop__ip_address'
+        # )
 
-        mapped_aggr_result = inventory_utils.list_to_indexed_dict(
-            list(aggr_data_qs),
-            'backhaul__aggregator__ip_address'
-        )
-
+        # mapped_aggr_result = inventory_utils.list_to_indexed_dict(
+        #     list(aggr_data_qs),
+        #     'backhaul__aggregator__ip_address'
+        # )
+	
         converter_mapped_data = mapped_bh_conf_result.copy()
-        converter_mapped_data.update(mapped_bh_switch_result)
-        converter_mapped_data.update(mapped_pop_result)
-        converter_mapped_data.update(mapped_aggr_result)
+        #converter_mapped_data.update(mapped_bh_switch_result)
+        #converter_mapped_data.update(mapped_pop_result)
+        #converter_mapped_data.update(mapped_aggr_result)
 
     mapped_sector_result = inventory_utils.list_to_indexed_dict(
         list(sectors_data_qs),
         'sector_configured_on__ip_address'
     )
 
-    mapped_dr_result = inventory_utils.list_to_indexed_dict(
-        list(dr_data_qs),
-        'dr_configured_on__ip_address'
+    
+    # mapped_dr_result = inventory_utils.list_to_indexed_dict(
+    #     list(dr_data_qs),
+    #     'dr_configured_on__ip_address'
+    # )
+
+    mapped_ss_result = inventory_utils.list_to_indexed_dict(
+        list(ss_data_qs),
+        'sub_station__device__ip_address',
     )
 
     tickets_dict = inventory_utils.list_to_indexed_dict(
@@ -3670,11 +3844,12 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             perf_result.update(result)
 
     mapped_result = mapped_sector_result.copy()
-    mapped_result.update(mapped_dr_result)
+    #mapped_result.update(mapped_dr_result)
+    mapped_result.update(mapped_ss_result)
     mapped_result.update(converter_mapped_data)
    
     for data in qs_list:
-        ip_address = data.get('ip_address')
+        ip_address = data.get('ip_address', '').strip()
 
         data.update(
             bs_alias='NA',
@@ -3691,7 +3866,9 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             pop_conv_ip='NA',
             aggr_sw_ip='NA',
             pe_ip='NA',
-            ticket_number='NA'
+            ticket_number='NA',
+            page_type='network',
+            circle='NA'
         )
 
         if not ip_address:
@@ -3739,6 +3916,9 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
                 pop_conv_ip= pop_conv_ip,
                 aggr_sw_ip= aggr_sw_ip,
                 pe_ip=pe_ip,
+                page_type=sector_dct.get('page_type', 'network'),
+                circle=sector_dct.get('circle', 'NA'),
+                device_id=sector_dct.get('device_id', 0),
             )
 
     return qs_list
