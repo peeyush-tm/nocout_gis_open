@@ -180,15 +180,17 @@ class Config:
                           'ends_with' : 'status'
                          }
                },
-
 	     'load_customer_count_in_redis': {
 		'task': 'load_customer_count_in_redis',
 		'schedule' : crontab(minute=5)
 	     },
-
              'read_raw_traps': {
-                'task': 'read_raw_traps',
+                'task': 'read_traps',
                 'schedule' : crontab(minute='*/5')
+             },
+             'delete_traps': {
+                'task': 'delete_history_trap',
+                'schedule' : crontab(minute=31, hour=3)
              },
 
             }
