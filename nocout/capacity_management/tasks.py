@@ -120,7 +120,10 @@ tech_model_service = {
         },
         'val': {
             'model': 'performance_servicestatus',
-            'service_name': ['cambium_ul_utilization', 'cambium_dl_utilization'],
+            'service_name': [
+                'cambium_ul_utilization', 'cambium_dl_utilization', 
+                'rad5k_bs_ul_utilization', 'rad5k_bs_dl_utilization'
+            ],
             'data_source': ['ul_utilization', 'dl_utilization'],
             'values': ['current_value', 'age', 'severity', 'sys_timestamp'],
             'values_list': ['current_value']
@@ -559,7 +562,6 @@ def gather_sector_status(technology):
 
     return ret
 
-
 def get_higher_severity(severity_dict):
     """
 
@@ -580,7 +582,6 @@ def get_higher_severity(severity_dict):
         pass
 
     return s, a
-
 
 def compare_old_severity(old_severity, new_severity, old_age, new_age):
     """
@@ -609,7 +610,6 @@ def compare_old_severity(old_severity, new_severity, old_age, new_age):
         # severity must be existsting
         return new_severity, new_age
 
-
 def get_time():
     """
 
@@ -621,7 +621,6 @@ def get_time():
     start_date = format(end_time + datetime.timedelta(days=-1), 'U')
 
     return float(start_date), float(end_date)
-
 
 def calc_util_last_day():
     """
@@ -658,7 +657,6 @@ def get_sector_bw(devices, service_name, data_source, machine):
 
     return performance
 
-
 def get_sector_val(devices, service_name, data_source, machine):
     """
 
@@ -677,7 +675,6 @@ def get_sector_val(devices, service_name, data_source, machine):
 
     return performance
 
-
 def get_sector_kpi(devices, service_name, data_source, machine):
     """
 
@@ -694,7 +691,6 @@ def get_sector_kpi(devices, service_name, data_source, machine):
     ).order_by().using(alias=machine)
 
     return performance
-
 
 def get_sectors_cbw_val_kpi(devices, service_name, data_source, machine, getit):
     """
@@ -718,7 +714,6 @@ def get_sectors_cbw_val_kpi(devices, service_name, data_source, machine, getit):
         return performance
     except:
         return None
-
 
 def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
     """
@@ -788,7 +783,6 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
 
     return perf
 
-
 def get_peak_sectors_util(device, service, data_source, machine, max_value, getit):
     """
 
@@ -832,7 +826,6 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
     else:
         return 0, 0
 
-
 def get_average_sector_util(device_object, service, data_source, getit='val'):
     """
 
@@ -872,7 +865,6 @@ def get_average_sector_util(device_object, service, data_source, getit='val'):
         return float(perf['current_value__avg'])
     else:
         return 0
-
 
 def get_peak_sector_util(device_object, service, data_source, getit='val'):
     """
@@ -936,7 +928,6 @@ def get_peak_sector_util(device_object, service, data_source, getit='val'):
 
     else:
         return 0, 0
-
 
 @task()
 def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
@@ -1378,7 +1369,6 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
     # for r in result.get():
     #     ret |= r
     return True
-
 
 @task()
 def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_max_per):

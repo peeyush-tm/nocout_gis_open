@@ -271,6 +271,7 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
 					device_type_id = DeviceType.objects.get(name__iexact=self.technology).id
 					where_condition &= Q(sector__sector_configured_on__device_type=device_type_id)
 				except Exception, e:
+					return self.model.objects.filter(id=0)
 					pass
 			else:
 				try:
@@ -448,6 +449,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
 	is_searched = False
 	is_initialised = True
 	technology = 'ALL'
+	is_type = 0
 
 	columns = [
 		'id',
@@ -550,19 +552,32 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
 		if max_timestamp:
 			if self.technology == 'ALL':
 				sectors = self.model.objects.filter(
-					Q(organization__in=kwargs['organizations']),
-					Q(severity__in=['warning', 'critical']),
-					Q(sys_timestamp__gte=max_timestamp - 420)
-					# Q(age__lte = F('sys_timestamp') - 600)
+					sector__sector_configured_on__isnull=False,
+					organization__in=kwargs['organizations']
 				).prefetch_related(*self.related_columns).values(*self.columns)
 			else:
-				tech_id = DeviceTechnology.objects.get(name=self.technology).id
+				where_condition = Q()
+				where_condition &= Q(organization__in=kwargs['organizations'])
+				where_condition &= Q(sys_timestamp__gte=max_timestamp - 420)
+
+				if self.is_type:
+					try:
+						device_type_id = DeviceType.objects.get(name__iexact=self.technology).id
+						where_condition &= Q(sector__sector_configured_on__device_type=device_type_id)
+					except Exception, e:
+						return self.model.objects.filter(id=0)
+						pass
+				else:
+					try:
+						tech_id = DeviceTechnology.objects.get(name__iexact=self.technology).id
+						where_condition &= Q(sector__sector_configured_on__device_technology=tech_id)
+					except Exception, e:
+						pass
+
 				sectors = self.model.objects.filter(
-					Q(organization__in=kwargs['organizations']),
-					Q(sector__sector_configured_on__device_technology=tech_id),
-					Q(severity__in=['warning', 'critical']),
-					Q(sys_timestamp__gte=max_timestamp - 420)
-					# Q(age__lte = F('sys_timestamp') - 600)
+					where_condition
+					&
+					Q(severity__in=['warning', 'critical'])
 				).prefetch_related(*self.related_columns).values(*self.columns)
 		return sectors
 
@@ -609,6 +624,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
 		self.initialize(*args, **kwargs)
 
 		self.technology = request.GET['technology'] if 'technology' in request.GET else 'ALL'
+		self.is_type = request.GET.get('is_type', 0)
 
 		qs = self.get_initial_queryset()
 
