@@ -20,18 +20,23 @@ class RawTraps(object):
 
 	def exec_qry(self, qry, db_name):
 		try:
+			data = None
+			cur = None
+			data_list = []
 			mysql_cnx = self.conn_base.mysql_cnx(db_name=db_name)
-			cur = mysql_cnx.cursor()
+			cur = mysql_cnx.cursor(buffered=True)
 			cur.execute(qry)
-			data = cur.fetchall()
+			data_list = cur.fetchall()
 		except Exception as exc:
-			data = []
+			data_list = []
 			print 'Error executing qry: {0}'.format(exc)
-		finally:
-			cur.close()
-			mysql_cnx.close()
-
-		return data
+		try :
+			if cur :
+				cur.close()
+				mysql_cnx.close()
+		except  Exception as exc:
+			print 'Error executing qry: {0}'.format(exc)
+		return data_list
 
 	# TODO: move this along with update_id_info, to db_ops mod
 	def get_start_id(self):
@@ -45,14 +50,10 @@ class RawTraps(object):
 
 	def read_raw_traps(self):
 		""" Bulk read traps from snmptt database"""
-		if self.get_start_id() :
-			qry = """SELECT id, eventname, eventid, agentip, trapoid, category, 
-			severity, uptime, traptime, formatline FROM snmptt WHERE id > {0}
-			""".format(self.get_start_id())
-		else :
-			qry = """SELECT id, eventname, eventid, agentip, trapoid, category, 
-                        severity, uptime, traptime, formatline FROM snmptt"""
-
+		print self.get_start_id()
+		qry = """SELECT id, eventname, eventid, agentip, trapoid, category,
+		        severity, uptime, traptime, formatline FROM snmptt WHERE id > {0}
+		        """.format(self.get_start_id())
 		data = self.exec_qry(qry, 'snmptt_db')
 		#print data
 		if data:
@@ -82,7 +83,8 @@ class RawTraps(object):
 			except Exception as exc:
 				print 'Error in redis qry: {0}'.format(exc)
 
-@app.task(name='read_raw_traps')
+@app.task(name='read_traps')
 def read_traps():
     worker = RawTraps()
     worker.do_work()
+
