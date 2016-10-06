@@ -483,7 +483,7 @@ def gather_sector_status(technology):
                 ).annotate(Count('sector_id')
             )
         else:
-            logger.debug('No Technology from WiMAX and PMP')
+            logger.error('No Technology from WiMAX and PMP')
             return False
 
         if technology_low == 'pmp':
@@ -498,7 +498,7 @@ def gather_sector_status(technology):
             )
 
         else:
-            logger.debug('No Technology from WiMAX and PMP')
+            logger.error('No Technology from WiMAX and PMP')
             return False
 
         sector_val = None
@@ -1104,7 +1104,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 ).name.lower()
             except Exception as e:
                 logger.error('Back-hual Port {0} for {1} IP address'.format(bs.bh_port_name, bh_device.ip_address))
-                # logger.debug('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
+                # logger.error('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
                 pass
                 # if we don't have a port mapping
                 # do not query database
@@ -1439,7 +1439,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
         )
-
     else:
         return False
 
@@ -1471,7 +1470,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     sector_sector_id=sector.sector_id
                 )
             except Exception as e:
-                # logger.debug("WiMAX : {0}".format(e.message))
+                # logger.error("WiMAX : {0}".format(e.message))
                 pass
 
             if 'pmp1' in sector.sector_configured_on_port.name.lower():
@@ -1526,7 +1525,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             try:
                 sector_capacity = indexed_cbw[cbw_index][0]['current_value']
             except Exception as e:
-                # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
+                # logger.error("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
                 logger.error(e)
                 continue
 
@@ -1699,7 +1698,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     sector_sector_id=sector.sector_id
                 )
             except Exception as e:
-                logger.debug("PMP : {0}".format(e.message))
+                logger.error("PMP : {0}".format(e.message))
                 pass
                 # logger.error(e)
 
@@ -1730,7 +1729,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sector_capacity_in = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['dl']
                 sector_capacity_out = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['ul']
             except Exception as e:
-                # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
+                # logger.error("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
                 logger.error(e)
                 continue
 
