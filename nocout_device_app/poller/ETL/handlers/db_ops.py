@@ -81,28 +81,6 @@ class RedisInterface(object):
 
 		return self.redis_conn
 
-        @property
-        def redis_cnx_prd4(self):
-                #conf = ConfigParser()
-                #conf.read(DB_CONF)
-                # redis connection config
-                re_conf = {
-                        'port': int(config.get('redis_prd4').get('port')),
-                        'db': int(config.get('redis_prd4').get('db'))
-                }
-                #re_conf.update(self.custom_conf) if self.custom_conf else re_conf
-                service_name = config.get('redis_prd4').get('service_name')
-                try:
-                        #self.redis_conn = StrictRedis(**re_conf)
-                        SENTINELS = []
-                        sentinel_info = config.get('sentinel')
-                        SENTINELS.append((sentinel_info.get('prd4_host'),int(sentinel_info.get('prd4_port'))))
-                        sentinel = Sentinel(SENTINELS, **re_conf)
-                        self.redis_conn = sentinel.master_for(service_name)
-                except Exception as exc:
-                        print exc
-                return self.redis_conn
-
 	def get(self, start, end):
 		""" Get and remove values from redis list based on a range"""
 		p = self.redis_cnx.pipeline(transaction=True)

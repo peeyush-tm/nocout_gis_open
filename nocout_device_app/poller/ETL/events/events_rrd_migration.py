@@ -153,7 +153,7 @@ def service_perf_data_live_query(site, log_split, service_events_data, service_e
     return service_events_data, service_events_update_criteria
 
 
-def network_perf_data_live_query(site, log_split, network_events_data, network_events_update_criteria,modified_events_data):
+def network_perf_data_live_query(site, log_split, network_events_data, network_events_update_criteria):
     """
                 network_perf_data_live_query function live query to ping services and stores performance data and extracts and 
         stores the events data in mongodb.
@@ -209,28 +209,13 @@ def network_perf_data_live_query(site, log_split, network_events_data, network_e
                 check_timestamp=int(log_split[1]),
                 ip_address=host_ip,site_name=site,service_name='ping',age=age1)
         modified_host_dict = deepcopy(host_event_dict)
-	try:
-            if ds  == 'rta' and eval(host_cur) > eval(host_crit):
-	        modified_host_dict.update({'severity':'major'})
-		modified_events_data.append(modified_host_dict)
-            if ds == 'rta' and eval(host_cur) < eval(host_crit) and log_split[7].lower() == 'up':
-	        modified_host_dict.update({'severity':'UP'})
-		modified_events_data.append(modified_host_dict)
-	except Exception,e:
-	    print e
-	    continue
+        if ds  == 'rta' and eval(host_cur) > eval(host_war):
+	    modified_host_dict.update({'severity':'major'}) 
         # Check whether the host has breached RTA thresholds only, but not PL
         if ds == 'pl' and eval(host_cur) < eval(host_crit) and log_split[7].lower() != 'up':
             host_event_dict.update({'severity': 'UP'})
-        if ds == 'pl' and eval(host_cur) < eval(host_crit) and log_split[7].lower() == 'up':
-	    modified_host_dict.update({'severity':'UP'})
-	    modified_events_data.append(modified_host_dict)
-        if ds  == 'pl' and eval(host_cur) > eval(host_crit) and eval(host_cur) < 100 and log_split[7].lower() != 'up':
 	    modified_host_dict.update({'severity':'major'}) 
-	    modified_events_data.append(modified_host_dict)
-	if ds == 'pl' and eval(host_cur) == 100:
-	    modified_events_data.append(modified_host_dict)
-
+	    
         matching_criteria = {
                 'device_name': log_split[4],
                 'service_name': 'ping',
@@ -243,7 +228,7 @@ def network_perf_data_live_query(site, log_split, network_events_data, network_e
         network_events_data.append(host_event_dict)
         #mongo_module.mongo_db_insert(db,host_event_dict,"host_event")
 
-    return network_events_data, network_events_update_criteria,  modified_events_data
+    return network_events_data, network_events_update_criteria
 
 
 def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
@@ -323,7 +308,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
     service_events_data = []
     network_events_update_criteria = []
     service_events_update_criteria = []
-    modified_events_data = []
+
     for log_attr in output.split('\n'):
         log_split = [log_split for log_split in log_attr.split(';')]
         #print '---------------- log_split '
@@ -401,12 +386,15 @@ def insert_network_event_to_redis(network_events_data):
         rds_obj = db_ops_module.RedisInterface()
         #print "network_events_data",network_events_data
         machine_name = nocout_site_name.split('_')[0]
-	rds_obj.redis_cnx_prd4.rpush('q:network:snmptt:%s' % machine_name, *network_events_data)
-        #print rds_obj.redis_cnx_prd4.lrange('q:network:snmptt',0, -1)
+	rds_obj.redis_cnx.rpush('q:network:snmptt:%s' % machine_name, *network_events_data)
+        #print rds_obj.redis_cnx.lrange('q:network:snmptt',0, -1)
 
     except Exception,e :
         pass
         print "Error in Redis Insertion : %s \n" % str(e)
+
+
+
   
 if __name__ == '__main__':
     """
@@ -422,4 +410,3 @@ if __name__ == '__main__':
             mongo_db=desired_config.get('nosql_db'),
             mongo_port=int(desired_config.get('port'))
     )
-
