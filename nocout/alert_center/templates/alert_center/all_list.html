@@ -92,7 +92,7 @@
             history_headers = JSON.parse(JSON.stringify(clear_headers))
             data_source = '{{ data_source|safe }}'
             ajax_url = '{% url "all_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=all'+'&data_source='+ data_source;
-            table_title = "All ("+ '{{ data_source_title }}'+")";
+            table_title = "All ("+ '{{ data_source_title }}'+"): "+$.trim($('input[name="alarm_type"]:checked').parent().text());
 
             // Changing the column name recieved time according to alarm type
             for (var i=0; i<current_headers.length; i++) {
@@ -131,7 +131,9 @@
             // Update All url
             array2[0] = new_get_param
             array1[1] = array2.join('&');
-            updated_url = array1.join('?')
+	    updated_url = array1.join('?');
+
+	    table_title = table_title.split(': ')[0] + ': '+$.trim($('input[name="alarm_type"]:checked').parent().text());
 
             var common_extra_param = "'download_excel': 'yes'",
                 extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+", 'data_source': '"+data_source+"', 'alarm_type': '"+ alarm_type+ "', 'tech_name': 'all'}";
