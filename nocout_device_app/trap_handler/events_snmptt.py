@@ -30,7 +30,7 @@ def insert_network_event(**opt):
         #print "Data list network event",data_list
         worker = Eventmapper()
         worker.filter_events(data_list)
-	collect_down_events_from_redis.s(data_list).apply_async()
+	#collect_down_events_from_redis.s(data_list).apply_async()
 
 @app.task(name='insert_bs_ul_issue_event')
 def insert_bs_ul_issue_event(**opt):
@@ -47,8 +47,9 @@ def make_network_snmptt_data(machine_name):
     {'rta':'Latency_Threshold_Breach'}
     try:
         queue = RedisInterface(perf_q = 'q:network:snmptt:%s' % machine_name)
-        cur = queue.get(0, -1)
+        cursor = queue.get(0, -1)
         docs = []
+	cur = sorted(cursor, key=itemgetter('check_timestamp'))
         for doc in cur:
             severity = doc.get('severity').lower()
             ds  = doc.get('data_source')
@@ -75,11 +76,14 @@ def make_network_snmptt_data(machine_name):
                  time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(doc.get('check_timestamp')))),
                  ''
                  )
-                docs.append(t)
+		if t :
+                    docs.append(t)
+
                 event_name = 'Device_not_reachable'
-            elif ds == 'rta' and severity  == 'critical':
-                event_name = 'Latency_Threshold_Breach'
-                severity = 'major'
+
+            #elif ds == 'rta' and severity  == 'critical':
+            #    event_name = 'Latency_Threshold_Breach'
+            #    severity = 'major'
             elif  ds == 'rta':
                 event_name = 'Latency_Threshold_Breach'
             t = (
@@ -94,13 +98,14 @@ def make_network_snmptt_data(machine_name):
                  time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(doc.get('check_timestamp')))),
                  ''
                  )
-            docs.append(t)
+	    if t:
+                docs.append(t)
             t =()
-        return docs
+        #return docs
     except Exception,e :
         pass
-        print "Error in Redis Tuple : %s \n",str(e)
-
+        print "Error in Redis Tuple in %s : %s \n" % (machine_name,str(e))
+    return docs
 
 @app.task(name='make_bs_ul_issue_snmptt_data')
 def make_bs_ul_issue_snmptt_data(machine_name):
