@@ -5,7 +5,7 @@
 
 """
 # ######################################################################
-# Function: rad5k_bs_s_ver_invent
+# Function: rad5k_ss_hard_ver_invent
 #
 # Parameters: info (SNMP Ouput) _no_params (No Parameters)
 #
@@ -14,9 +14,9 @@
 
 """
 
-def rad5k_bs_s_ver_invent(item, _no_params, info):
+def rad5k_ss_hard_ver_invent(item, _no_params, info):
     """
-            rad5k_bs_s_ver_invent function calcdlates the operating ptx
+            rad5k_ss_hard_ver_invent function calcdlates the operating ptx
 
             Args:
                     item (str) Specific item on SNMP output on which we want to filter resdlts
@@ -51,16 +51,16 @@ def rad5k_bs_s_ver_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext,[("bs_software_version", version)])
+    return (state, infotext,[("ss_hardware_version", version)])
 
 
-check_info["rad5k_bs_s_ver_invent"] = {
-    'check_function': rad5k_bs_s_ver_invent,
-    'service_description': 'rad5k_bs_s_ver_invent',
+check_info["rad5k_ss_hard_ver_invent"] = {
+    'check_function': rad5k_ss_hard_ver_invent,
+    'service_description': 'rad5k_ss_hard_ver_invent',
     'has_perfdata' : True,
 }
 
 #########################################################################
 #	SNMP OID for the operating ptx
 #########################################################################
-snmp_info["rad5k_bs_s_ver_invent"] = ( ".1.3.6.1.4.1.4458.1000.1.1.3", ["0"] )
+snmp_info["rad5k_ss_hard_ver_invent"] = ( ".1.3.6.1.4.1.4458.1000.1.1.2", ["0"] )
