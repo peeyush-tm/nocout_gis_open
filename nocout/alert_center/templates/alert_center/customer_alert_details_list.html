@@ -38,12 +38,17 @@
                         <a href="#customer_wifi_block" id="customer_wifi_tab" data-toggle="tab">
                             <span class="hidden-inline-mobile">WiMAX</span>
                         </a>
-                        </li>
+                    </li>
+                    <li>
+                        <a href="#customer_rad5_block" id="customer_rad5_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Radwin5K</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="#customer_pmp_block" id="customer_pmp_tab" data-toggle="tab">
-                            <span class="hidden-inline-mobile">PMP</span>
+                            <span class="hidden-inline-mobile">Cambium</span>
                         </a>
-                        </li>
+                    </li>
                     <li class="active">
                         <a href="#customer_p2p_block" id="customer_ptp_tab" data-toggle="tab">
                             <span class="hidden-inline-mobile">PTP</span>
@@ -53,6 +58,12 @@
                 <div class="tab-content" style="overflow:auto;">
                     <div class="tab-pane in active" id="customer_p2p_block">
                         <table id="customer_p2p_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="customer_rad5_block">
+                        <table id="customer_rad5_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -147,10 +158,14 @@
 
             var ajax_url_wifi = '{% url "CustomerAlertDetails" %}' + '?' + common_get_params + '&data_tab=WiMAX',
                 ajax_url_pmp = '{% url "CustomerAlertDetails" %}' + '?' + common_get_params + '&data_tab=PMP',
+                ajax_url_rad5 = '{% url "CustomerAlertDetails" %}' + '?' + common_get_params + '&data_tab=PMP&is_rad5=1' , //Radwin5k is a device type but technology is PMP
                 ajax_url_p2p = '{% url "CustomerAlertDetails" %}' + '?' + common_get_params + '&data_tab=P2P';
 
             $("#customer_wifi_tab").attr("data_url", ajax_url_wifi);
             $("#customer_wifi_tab").attr("data_header", '{{ pmp_wimax_datatable_headers|safe }}');
+
+            $("#customer_rad5_tab").attr("data_url", ajax_url_rad5);
+            $("#customer_rad5_tab").attr("data_header", '{{ rad5_customer_detail_headers|safe }}');
 
             $("#customer_pmp_tab").attr("data_url", ajax_url_pmp);
             $("#customer_pmp_tab").attr("data_header", '{{ pmp_wimax_datatable_headers|safe }}');

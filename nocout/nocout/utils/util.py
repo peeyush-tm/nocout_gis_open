@@ -1831,6 +1831,7 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
             IF(not isnull(state.state_name), state.state_name, 'NA') as BSSTATE,
             bs.city_id as BSCITYID,
             bs.state_id as BSSTATEID,
+            IF(not isnull(bs.bs_site_id), bs.bs_site_id, 'NA') as SITEID,
             device_port.name as SECTOR_PORT,
             IF(
                 lower(ss_info.DEVICE_TECH) = 'wimax' and not isnull(device_port.name),
@@ -2094,6 +2095,7 @@ def get_inventory_sector_query(
             IF(not isnull(bs.alias), bs.alias, 'NA') as BSALIAS,
             IF(not isnull(city.city_name), city.city_name, 'NA') as BSCITY,
             IF(not isnull(state.state_name), state.state_name, 'NA') as BSSTATE,
+            IF(not isnull(bs.bs_site_id), bs.bs_site_id, 'NA') as SITEID,
             device_port.name as SECTOR_PORT,
             {3}
             bs.city_id as BSCITYID,
