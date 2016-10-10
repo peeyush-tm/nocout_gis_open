@@ -2744,7 +2744,9 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         # Fetch PTP-BH, PMP, WiMAX & BH Congfigured on devices ips from our inventory
-        pmp_wimax_ips = list(Sector.objects.filter(
+        pmp_wimax_ips = list(Sector.objects.exclude(
+            sector_id__iexact=''
+        ).filter(
             sector_id__isnull=False,
             sector_configured_on__ip_address__isnull=False
         ).values_list('sector_configured_on__ip_address', flat=True))
