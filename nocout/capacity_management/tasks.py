@@ -131,8 +131,13 @@ tech_model_service = {
         },
         'per': {
             'model': 'performance_utilizationstatus',
-            'service_name': ['cambium_ul_util_kpi', 'cambium_dl_util_kpi'],
-            'data_source': ['cam_ul_util_kpi', 'cam_dl_util_kpi'],
+            'service_name': [
+                'cambium_ul_util_kpi', 'cambium_dl_util_kpi',
+                'rad5k_bs_ul_util_kpi', 'rad5k_bs_dl_util_kpi'
+            ],
+            'data_source': [
+                'cam_ul_util_kpi', 'cam_dl_util_kpi'
+            ],
             'values': ['current_value', 'age', 'severity', 'sys_timestamp'],
             'values_list': None
         },
