@@ -4436,14 +4436,19 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto='', is_ra
             if errors:
                 error_rows.append(row)
 
+        error_sheet_name = 'PMP BS'
+        if is_rad5:
+            error_sheet_name = 'Radwin5K BS'
         # create error log workbook
-        excel_generator_for_new_column('Bulk Upload Errors',
-                                       'bulk_upload_errors',
-                                       keys_list,
-                                       error_rows,
-                                       'PMP BS',
-                                       file_path,
-                                       sheettype)
+        excel_generator_for_new_column(
+            'Bulk Upload Errors',
+            'bulk_upload_errors',
+            keys_list,
+            error_rows,
+            error_sheet_name,
+            file_path,
+            sheettype
+        )
 
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -4843,14 +4848,20 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto='', is_ra
             if errors:
                 error_rows.append(row)
 
+        error_sheet_name = 'PMP SM'
+        if is_rad5:
+            error_sheet_name = 'Radwin5K SS'
+            
         # create error log workbook
-        excel_generator_for_new_column('Bulk Upload Errors',
-                                       'bulk_upload_errors',
-                                       keys_list,
-                                       error_rows,
-                                       'PMP SM',
-                                       file_path,
-                                       sheettype)
+        excel_generator_for_new_column(
+            'Bulk Upload Errors',
+            'bulk_upload_errors',
+            keys_list,
+            error_rows,
+            error_sheet_name,
+            file_path,
+            sheettype
+        )
 
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -7491,7 +7502,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
             current_delta = ""
 
             # ********************************* BS DEVICE DELTA CHECK ********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Radwin5K BS', 'Wimax BS']:
                 if 'IP' in row:
                     if row['IP']:
                         bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IP']))
@@ -7501,7 +7512,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                             current_delta += "BS Device: Created \n"
                     else:
                         current_delta += "BS Device: NA \n"
-                if sheet_type in ['PMP BS']:
+                if sheet_type in ['PMP BS', 'Radwin5K BS']:
                     if 'ODU IP' in row:
                         if row['ODU IP']:
                             bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['ODU IP']))
@@ -7511,7 +7522,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                                 current_delta += "BS Device: Created \n"
                         else:
                             current_delta += "BS Device: NA \n"
-                if sheet_type in ['PMP BS']:
+                if sheet_type in ['Wimax BS']:
                     if 'IDU IP' in row:
                         if row['IDU IP']:
                             bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IDU IP']))
@@ -7523,7 +7534,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                             current_delta += "BS Device: NA \n"
 
             # ********************************* SS DEVICE DELTA CHECK ********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Radwin5K SS', 'Wimax SS']:
                 if 'SS IP' in row:
                     if row['SS IP']:
                         ss_device = Device.objects.filter(ip_address=ip_sanitizer(row['SS IP']))
@@ -7534,7 +7545,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                     else:
                         current_delta += "SS Device: NA \n"
 
-            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Radwin5K BS', 'Wimax BS', 'Backhaul']:
                 # ********************************** BS SWITCH DELTA CHECK **********************************
                 if 'BS Switch IP' in row:
                     if row['BS Switch IP']:
@@ -7580,7 +7591,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                         current_delta += "POP Converter Device: NA \n"
 
             # *********************************** SECTOR ANTENNA CHECK *********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Radwin5K BS', 'Wimax BS']:
                 # sector antenna name
                 sector_antenna_name = ""
 
@@ -7590,7 +7601,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                 elif sheet_type in ['PTP BH']:
                     sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
                         row['Circuit ID'] if 'Circuit ID' in row else "")
-                elif sheet_type in ['PMP BS']:
+                elif sheet_type in ['PMP BS', 'Radwin5K BS']:
                     sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
                         row['Sector ID'] if 'Sector ID' in row else "")
                 elif sheet_type in ['Wimax BS']:
@@ -7609,7 +7620,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                         current_delta += "Sector Antenna: Created \n"
 
             # ************************************* SS ANTENNA CHECK **********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Radwin5K SS', 'Wimax SS']:
                 # ss antenna name
                 ss_antenna_name = ""
 
@@ -7619,7 +7630,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                 elif sheet_type in ['PTP BH']:
                     ss_antenna_name = special_chars_name_sanitizer_with_lower_case(
                         row['SS Circuit ID'] if 'SS Circuit ID' in row else "")
-                elif sheet_type in ['PMP SM']:
+                elif sheet_type in ['PMP SM', 'Radwin5K SS']:
                     ss_antenna_name = special_chars_name_sanitizer_with_lower_case(
                         row['SS Circuit ID'] if 'SS Circuit ID' in row else "")
                 elif sheet_type in ['Wimax SS']:
@@ -7638,7 +7649,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                         current_delta += "SS Antenna: Created \n"
 
             # ************************************* BACKHAUL CHECK **********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Radwin5K BS', 'Wimax BS', 'Backhaul']:
                 backhaul_name = ip_sanitizer(
                     row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row else "")
 
@@ -7652,7 +7663,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                         current_delta += "Backhaul: Created \n"
 
             # *********************************** BASE STATION CHECK ********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Radwin5K BS', 'Wimax BS', 'Backhaul']:
                 # base station name
                 base_station_name = ""
                 bs_temp_name = special_chars_name_sanitizer_with_lower_case(
@@ -7676,14 +7687,14 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                         current_delta += "Base Station: Created \n"
 
             # ************************************* SECTOR CHECK ***********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Radwin5K BS', 'Wimax BS']:
                 # ss antenna name
                 sector_name = ""
 
                 if sheet_type in ['PTP', 'PTP BH']:
                     sector_name = special_chars_name_sanitizer_with_lower_case(
                         row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
-                elif sheet_type in ['PMP BS']:
+                elif sheet_type in ['PMP BS', 'Radwin5K BS']:
                     sector_name = '{}_{}'.format(special_chars_name_sanitizer_with_lower_case(
                         row['Sector ID']) if 'Sector ID' in row.keys() else "",
                         row['Sector Name'] if 'Sector Name' in row.keys() else "")
@@ -7715,14 +7726,14 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                         current_delta += "Sector: Created \n"
 
             # ************************************ SUBSTATION CHECK **********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Radwin5K SS', 'Wimax SS']:
                 # substation name
                 substation_name = ""
 
                 if sheet_type in ['PTP', 'PTP BH']:
                     substation_name = special_chars_name_sanitizer_with_lower_case(
                         row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
-                elif sheet_type in ['PMP SM', 'Wimax SS']:
+                elif sheet_type in ['PMP SM', 'Radwin5K SS', 'Wimax SS']:
                     substation_name = special_chars_name_sanitizer_with_lower_case(
                         row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
                 else:
@@ -7738,7 +7749,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                         current_delta += "Sub Station: Created \n"
 
             # ************************************ CUSTOMER CHECK ***********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Radwin5K SS', 'Wimax SS']:
                 # customer name
                 customer_name = ""
 
@@ -7748,7 +7759,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                             row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""),
                         special_chars_name_sanitizer_with_lower_case(
                             row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""))
-                elif sheet_type in ['PMP SM', 'Wimax SS']:
+                elif sheet_type in ['PMP SM', 'Radwin5K SS', 'Wimax SS']:
                     customer_name = "{}_{}".format(
                         special_chars_name_sanitizer_with_lower_case(
                             row['Customer Name'] if 'Customer Name' in row.keys() else ""),
@@ -7767,14 +7778,14 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                         current_delta += "Customer: Created \n"
 
             # ************************************ CIRCUIT CHECK ***********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Radwin5K SS', 'Wimax SS']:
                 # circuit name
                 circuit_name = ""
 
                 if sheet_type in ['PTP', 'PTP BH']:
                     circuit_name = special_chars_name_sanitizer_with_lower_case(
                         row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
-                elif sheet_type in ['PMP SM', 'Wimax SS']:
+                elif sheet_type in ['PMP SM', 'Radwin5K SS', 'Wimax SS']:
                     circuit_name = special_chars_name_sanitizer_with_lower_case(
                         row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
                 else:
@@ -7795,14 +7806,16 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
             delta_list.append(row)
 
         # create error log workbook
-        excel_generator_for_new_column('Current Delta',
-                                       'bulk_upload_deltas',
-                                       keys_list,
-                                       delta_list,
-                                       sheet_type,
-                                       file_path,
-                                       workbook_type,
-                                       1)
+        excel_generator_for_new_column(
+            'Current Delta',
+            'bulk_upload_deltas',
+            keys_list,
+            delta_list,
+            sheet_type,
+            file_path,
+            workbook_type,
+            1
+        )
 
     except Exception as e:
         logger.exception(e.message)
@@ -7881,7 +7894,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
 
             is_dr = False
             # ********************************* BS DEVICE DELETION ********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Radwin5K BS', 'Wimax BS']:
 
                 # PTP/ PTP BH
                 if 'IP' in row:
@@ -7897,7 +7910,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                         deleted_rows.insert(0, "BS Device: NA \n")
 
                 # PMP
-                if sheet_type in ['PMP BS']:
+                if sheet_type in ['PMP BS', 'Radwin5K BS']:
                     if 'ODU IP' in row:
                         if row['ODU IP']:
                             bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['ODU IP']))
@@ -7943,7 +7956,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                             deleted_rows.insert(0, "BS Device: NA \n")
 
             # *********************************** SECTOR ANTENNA DELETION *********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Radwin5K BS', 'Wimax BS']:
                 # sector antenna name
                 sector_antenna_name = ""
 
@@ -7953,7 +7966,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                 elif sheet_type in ['PTP BH']:
                     sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
                         row['Circuit ID'] if 'Circuit ID' in row else "")
-                elif sheet_type in ['PMP BS']:
+                elif sheet_type in ['PMP BS', 'Radwin5K BS']:
                     sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
                         row['Sector ID'] if 'Sector ID' in row else "")
                 elif sheet_type in ['Wimax BS']:
@@ -7976,11 +7989,11 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                         deleted_rows.insert(0, "Sector Antenna: Not Exist \n")
 
             # ************************************* SS ANTENNA DELETION **********************************
-            if sheet_type in ['PMP SM', 'Wimax SS']:
+            if sheet_type in ['PMP SM', 'Radwin5K SS', 'Wimax SS']:
                 # ss antenna name
                 ss_antenna_name = ""
 
-                if sheet_type in ['PMP SM']:
+                if sheet_type in ['PMP SM', 'Radwin5K SS']:
                     ss_antenna_name = special_chars_name_sanitizer_with_lower_case(
                         row['SS Circuit ID'] if 'SS Circuit ID' in row else "")
                 elif sheet_type in ['Wimax SS']:
@@ -8001,7 +8014,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                         deleted_rows.insert(0, "SS Antenna: Not Exist \n")
 
             # ********************************* SS DEVICE DELETION ********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Radwin5K SS', 'Wimax SS']:
                 if 'SS IP' in row:
                     if row['SS IP']:
                         ss_device = Device.objects.filter(ip_address=ip_sanitizer(row['SS IP']))
@@ -8014,7 +8027,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                     else:
                         deleted_rows.insert(0, "SS Device: NA \n")
 
-            # if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
+            # if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Radwin5K BS', 'Wimax BS', 'Backhaul']:
             #     # ********************************** BS SWITCH DELETION **********************************
             #     if 'BS Switch IP' in row:
             #         if row['BS Switch IP']:
@@ -8068,7 +8081,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
             #             deleted_rows.insert(0, "POP Converter Device: NA \n")
 
             # ************************************ CUSTOMER DELETION ***********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Radwin5K SS', 'Wimax SS']:
                 # customer name
                 customer_name = ""
 
@@ -8078,7 +8091,7 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                             row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""),
                         special_chars_name_sanitizer_with_lower_case(
                             row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""))
-                elif sheet_type in ['PMP SM', 'Wimax SS']:
+                elif sheet_type in ['PMP SM', 'Radwin5K SS', 'Wimax SS']:
                     customer_name = "{}_{}".format(
                         special_chars_name_sanitizer_with_lower_case(
                             row['Customer Name'] if 'Customer Name' in row.keys() else ""),
@@ -8099,14 +8112,14 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                         deleted_rows.insert(0, "Customer: Not Exist \n")
 
             # ************************************ CIRCUIT DELETION ***********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Radwin5K SS', 'Wimax SS']:
                 # circuit name
                 circuit_name = ""
 
                 if sheet_type in ['PTP', 'PTP BH']:
                     circuit_name = special_chars_name_sanitizer_with_lower_case(
                         row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
-                elif sheet_type in ['PMP SM', 'Wimax SS']:
+                elif sheet_type in ['PMP SM', 'Radwin5K SS', 'Wimax SS']:
                     circuit_name = special_chars_name_sanitizer_with_lower_case(
                         row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
                 else:
@@ -8124,14 +8137,14 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                         deleted_rows.insert(0, "Circuit: Not Exist \n")
 
             # ************************************ SUBSTATION DELETION **********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Radwin5K SS', 'Wimax SS']:
                 # substation name
                 substation_name = ""
 
                 if sheet_type in ['PTP', 'PTP BH']:
                     substation_name = special_chars_name_sanitizer_with_lower_case(
                         row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
-                elif sheet_type in ['PMP SM', 'Wimax SS']:
+                elif sheet_type in ['PMP SM', 'Radwin5K SS', 'Wimax SS']:
                     substation_name = special_chars_name_sanitizer_with_lower_case(
                         row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
                 else:
@@ -8148,14 +8161,14 @@ def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type, auto=''):
                         deleted_rows.insert(0, "Sub Station: Not Exist \n")
 
             # ************************************* SECTOR DELETION ***********************************
-            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Radwin5K BS', 'Wimax BS']:
                 # ss antenna name
                 sector_name = ""
 
                 if sheet_type in ['PTP', 'PTP BH']:
                     sector_name = special_chars_name_sanitizer_with_lower_case(
                         row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
-                elif sheet_type in ['PMP BS']:
+                elif sheet_type in ['PMP BS', 'Radwin5K BS']:
                     sector_name = '{}_{}'.format(special_chars_name_sanitizer_with_lower_case(
                         row['Sector ID']) if 'Sector ID' in row.keys() else "",
                         row['Sector Name'] if 'Sector Name' in row.keys() else "")
@@ -8390,7 +8403,11 @@ def validate_file_for_bulk_upload(op_type=''):
                 description = "Auto upload inventory on {}".format(full_time)
 
                 # Valid sheet names.
-                valid_sheets = ["Wimax BS", "Wimax SS", "PMP BS", "PMP SM", "Converter", "PTP", "PTP BH", "Backhaul"]
+                valid_sheets = [
+                    "Wimax BS", "Wimax SS", "PMP BS", 
+                    "PMP SM", 'Radwin5K BS', 'Radwin5K SS', 
+                    "Converter", "PTP", "PTP BH", "Backhaul"
+                ]
 
                 # Reading workbook using 'xlrd' module.
                 try:
@@ -8409,7 +8426,7 @@ def validate_file_for_bulk_upload(op_type=''):
                         # Get the technology of uploaded inventory sheet.
                         if "Wimax" in sheet_name:
                             technology = "Wimax"
-                        elif "PMP" in sheet_name:
+                        elif "PMP" in sheet_name or 'radwin5k' in sheet_name.lower():
                             technology = "PMP"
                         elif "PTP" in sheet_name:
                             technology = "PTP"
@@ -8510,12 +8527,44 @@ def process_file_for_bulk_upload():
                 elif sheet_name == 'PTP BH':
                     valid_result = bulk_upload_ptp_bh_inventory.delay(gis_obj.id, organization, 'valid' 'auto')
                     invalid_result = bulk_upload_ptp_bh_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
-                elif sheet_name == 'PMP BS':
-                    valid_result = bulk_upload_pmp_bs_inventory.delay(gis_obj.id, organization, 'valid', 'auto')
-                    invalid_result = bulk_upload_pmp_bs_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
-                elif sheet_name == 'PMP SM':
-                    valid_result = bulk_upload_pmp_sm_inventory.delay(gis_obj.id, organization, 'valid', 'auto')
-                    invalid_result = bulk_upload_pmp_sm_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
+                elif sheet_name in ['PMP BS', 'Radwin5K BS']:
+                    is_rad5_sheet = False
+                    if sheet_name == 'Radwin5K BS':
+                        is_rad5_sheet = True 
+                    
+                    valid_result = bulk_upload_pmp_bs_inventory.delay(
+                        gis_obj.id,
+                        organization,
+                        'valid',
+                        'auto',
+                        is_rad5=is_rad5_sheet
+                    )
+                    invalid_result = bulk_upload_pmp_bs_inventory.delay(
+                        gis_obj.id,
+                        organization,
+                        'invalid',
+                        'auto',
+                        is_rad5=is_rad5_sheet
+                    )
+                elif sheet_name in ['PMP SM', 'Radwin5K SS']:
+                    is_rad5_sheet = False
+                    if sheet_name == 'Radwin5K SS':
+                        is_rad5_sheet = True 
+                    
+                    valid_result = bulk_upload_pmp_sm_inventory.delay(
+                        gis_obj.id,
+                        organization,
+                        'valid',
+                        'auto',
+                        is_rad5=is_rad5_sheet
+                    )
+                    invalid_result = bulk_upload_pmp_sm_inventory.delay(
+                        gis_obj.id,
+                        organization,
+                        'invalid',
+                        'auto',
+                        is_rad5=is_rad5_sheet
+                    )
                 elif sheet_name == 'Wimax BS':
                     valid_result = bulk_upload_wimax_bs_inventory.delay(gis_obj.id, organization, 'valid', 'auto')
                     invalid_result = bulk_upload_wimax_bs_inventory.delay(gis_obj.id, organization, 'invalid', 'auto')
@@ -8552,7 +8601,7 @@ def process_file_for_bulk_delete():
                 except Exception as e:
                     logger.info(e.message)
 
-                if sheet_name in ['PTP', 'PTP BH', 'PMP BS', 'PMP SM', 'Wimax BS', 'Wimax SS', 'Backhaul']:
+                if sheet_name in ['PTP', 'PTP BH', 'PMP BS', 'PMP SM', 'Radwin5K BS', 'Radwin5K SS', 'Wimax BS', 'Wimax SS', 'Backhaul']:
                     valid_result = delete_gis_inventory.delay(gis_obj.id, 'valid', sheet_name, 'auto')
                     invalid_result = delete_gis_inventory.delay(gis_obj.id, 'invalid', sheet_name, 'auto')
                 else:
