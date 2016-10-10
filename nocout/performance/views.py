@@ -9429,7 +9429,7 @@ class PingStabilityTestListing(BaseDatatableView):
         sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             query_object = Q()
-            for column in self.search_columns:
+            for column in self.columns:
                 query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
             qs = qs.filter(query_object)
