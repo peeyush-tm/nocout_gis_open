@@ -3512,7 +3512,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             device_type=F('sub_station__device__device_type'),
             device_id=F('sub_station__device__id'),
             circle=F('sub_station__device__organization__alias'),
-            page_type=RawSQL('SELECT "customer"', ()),
+            page_type=RawSQL('SELECT "network"', ()),
             base_station__alias=F('sector__base_station__alias'),
             base_station__city__city_name=F('sector__base_station__city__city_name'),
             base_station__state__state_name=F('sector__base_station__state__state_name'),
