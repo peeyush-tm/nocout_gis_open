@@ -3621,7 +3621,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
 
 
 @task()
-def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
+def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto='', is_rad5=False):
     """ Uploading PMP BS inventory from excel sheet to database
 
         Parameters:
@@ -3798,19 +3798,10 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
             # BS device type
             bs_device_type = 6
 
-            if 'Vendor' in row.keys():
-                try:
-                    vendor_in_sheet = str(row['Vendor']).lower()
-                except Exception, e:
-                    logger.error('Vendor LowerCase error')
-                    logger.error(row['Vendor'])
-                    logger.error(e)
-                    vendor_in_sheet = row['Vendor']
-
-                if vendor_in_sheet == 'radwin5k':
-                    bs_device_vendor = 11
-                    bs_device_model = 14
-                    bs_device_type = 16
+            if is_rad5:
+                bs_device_vendor = 11
+                bs_device_model = 14
+                bs_device_type = 16
 
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
@@ -4467,7 +4458,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto=''):
 
 
 @task()
-def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto=''):
+def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto='', is_rad5=False):
     """ Uploading PMP SM inventory from excel sheet to database
 
         Parameters:
@@ -4601,18 +4592,10 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto=''):
             # SS device type
             ss_device_type = 9
 
-            if 'Vendor' in row.keys():
-                try:
-                    vendor_in_sheet = str(row['Vendor']).lower()
-                except Exception, e:
-                    logger.error('SS Vendor LowerCase error')
-                    logger.error(row['Vendor'])
-                    logger.error(e)
-                    vendor_in_sheet = row['Vendor']
-                if vendor_in_sheet == 'radwin5k':
-                    ss_device_vendor = 11
-                    ss_device_model = 14
-                    ss_device_type = 17
+            if is_rad5:
+                ss_device_vendor = 11
+                ss_device_model = 14
+                ss_device_type = 17
 
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
