@@ -44,7 +44,6 @@ network_data_values = []
 service_data_values = []
 network_update_list = []
 service_update_list = []
-device_first_down_map = {}
 ss_provis_helper_serv_data =[]
 kpi_helper_serv_data = []
 def load_file(file_path):
@@ -65,27 +64,21 @@ def load_file(file_path):
 def calculate_refer_field_for_host(device_first_down, host_name, ds_values, 
 		local_timestamp):
 	refer = ''
-	try:
+	try:                                                                 # device_first_down is a tuple like  (severity , time)
 		if not device_first_down and ds_values['cur'] == '100':
-			device_first_down = {}
-			device_first_down['host'] = host_name
-			device_first_down['severity'] = "down"
-			device_first_down['time'] = local_timestamp
-			#device_first_down_map[host_name]=device_first_down
-		elif (device_first_down and host_name ==  device_first_down['host'] and 
-			ds_values['cur'] != '100'):
-			device_first_down['severity'] = "up"
-			#device_first_down_map[host_name]['severity'] = "up"
-			#device_first_down_list[]
-		elif (device_first_down and host_name == device_first_down['host'] and 
-			device_first_down['severity'] == "up" and 
-				ds_values['cur'] == '100'):
-			device_first_down['severity'] = "down"
-			device_first_down['time'] = local_timestamp
-			#device_first_down_map[host_name]['severity'] = "down"
-			#device_first_down_map[host_name]['time'] = local_timestamp
+
+			device_first_down = ("down", local_timestamp)
+		elif (device_first_down  and ds_values['cur'] != '100'):  
+
+			device_first_down = ('up',device_first_down[1] )
+		
+		elif (device_first_down  and device_first_down[0] == "up" and ds_values['cur'] == '100'):
+
+			device_first_down = ("down", local_timestamp)
+
+		
 		if device_first_down:
-			refer = device_first_down['time']
+			refer = device_first_down[1]
 	except Exception as exc:
 		# printing the exc for now
 		print 'Exc in host refer field: ', exc
@@ -108,7 +101,6 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	global service_data_values
 	global network_update_list
 	global service_update_list
-	global device_first_down_map
 	global ss_provis_helper_serv_data
 	global kpi_helper_serv_data
         age = None
@@ -146,14 +138,12 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	host_var = load_file(file_path)
 	host_list = [str(index[0]) for index in nw_qry_output]
 	try:
-		redis_obj=db_ops_module.RedisInterface()
-		rds_cnx=redis_obj.redis_cnx
-		key = nocout_site_name + "_first_down"	
-		device_first_down_list=rds_cnx.get(key)
-		device_first_down_list =literal_eval(device_first_down_list)
-		for down_device_dict in device_first_down_list:
-			if down_device_dict and down_device_dict.get('host'):
-				device_first_down_map[down_device_dict['host']] = down_device_dict
+		pickle_file = open("device_down_dict_pickle.txt",'r')
+		device_first_down_map = cPickle.load(pickle_file)
+		pickle_file.close()
+
+	except IOError : 
+		device_first_down_map = {}
 	except Exception,e:
 		print e
 	#print device_first_down_map
@@ -510,8 +500,13 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		except:
 			continue
 	elap = int(time.time()) - current1
+	print datetime.now()
 	print 'service_data_values'
 	print len(service_data_values)
+	pickle_file = open("device_down_dict_pickle.txt","w") 
+	cPickle.dump(device_first_down_map,pickle_file) 
+	pickle_file.close()
+
 	# Bulk insert the values into Mongodb
 	#try:
 	#	mongo_module.mongo_db_insert(db, service_data_values, 'serv_perf_data')
@@ -521,7 +516,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 
 
 
-def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_first_down_map,db):
+def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
 	#db = mongo_module.mongo_conn(
 	#    host=mongo_host,
 	#    port=int(mongo_port),
@@ -575,9 +570,6 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_f
 		rds_obj.zadd_compress(set_name,current_time,net_values)
 		set_name = nocout_site_name + "_service"
 		rds_obj.zadd_compress(set_name,current_time,serv_values)
-		key = nocout_site_name + "_first_down"
-		device_first_down_info = device_first_down_map.values()
-		rds_obj.redis_cnx.set(key,device_first_down_info)
 		rds_obj.multi_set(ss_provis_helper_serv_data, perf_type='provis')
 		rds_obj.redis_update(kpi_helper_serv_data, update_queue=True,
                                                perf_type='ul_issue')
@@ -1288,5 +1280,5 @@ if __name__ == '__main__':
     get_host_services_name(
     site_name=site
     )
-    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,device_first_down_map,db)
+    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,db)
 
