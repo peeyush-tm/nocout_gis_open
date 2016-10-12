@@ -1,6 +1,6 @@
 from django.db import models
 
-from device.models import DeviceTechnology
+from device.models import DeviceTechnology, DeviceType
 from dashboard.config import dashboards
 
 from organization.models import Organization
@@ -29,6 +29,7 @@ class DashboardSetting(models.Model):
 
     page_name = models.CharField('Page Name', max_length=30, choices=PAGE_NAME_CHOICES)
     technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
+    device_type = models.ForeignKey(DeviceType, null=True, blank=True)
     is_bh = models.BooleanField(default=False)
     name = models.CharField('Dashboard Name', max_length=250, choices=get_dashboard_name_choices())
     dashboard_type = models.CharField('Dashboard Type', max_length=3, choices=(('INT', 'Numeric'), ('STR', 'String')))
