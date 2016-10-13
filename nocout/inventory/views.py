@@ -2926,18 +2926,20 @@ class GISInventoryBulkImportView(FormView):
         except Exception as e:
             logger.info(e.message)
 
+
         # reading workbook using 'xlrd' module
         try:
             book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read(), formatting_info=True)
         except Exception as e:
             logger.info("Workbook not uploaded. Exception: ", e.message)
-            return render_to_response('bulk_import/gis_bulk_validator.html', {'headers': "",
-                                                                              'filename': uploaded_file.name,
-                                                                              'sheet_name': "",
-                                                                              'valid_rows': "",
-                                                                              'invalid_rows': "",
-                                                                              'error_message': "There is some internel error in sheet."},
-                                      context_instance=RequestContext(self.request))
+            return render_to_response('bulk_import/gis_bulk_validator.html', {
+                'headers': "",
+                'filename': uploaded_file.name,
+                'sheet_name': "",
+                'valid_rows': "",
+                'invalid_rows': "",
+                'error_message': "There is some internel error in sheet."
+            }, context_instance=RequestContext(self.request))
 
         # execute only if a valid sheet is selected from form
         if bs_sheet or ss_sheet or ptp_sheet or backhaul_sheet:
@@ -2960,7 +2962,7 @@ class GISInventoryBulkImportView(FormView):
             # get the technology of uploaded inventory sheet
             if "Wimax" in sheet_name:
                 technology = "Wimax"
-            elif "PMP" in sheet_name:
+            elif "PMP" in sheet_name or "radwin5k" in sheet_name.lower():
                 technology = "PMP"
             elif "PTP" in sheet_name:
                 technology = "PTP"
@@ -3000,8 +3002,14 @@ class GISInventoryBulkImportView(FormView):
             gis_bulk_obj.save()
             gis_bulk_id = gis_bulk_obj.id
 
-            result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id, complete_d, sheet_name, keys_list, full_time,
-                                                              uploaded_file.name)
+            result = validate_gis_inventory_excel_sheet.delay(
+                gis_bulk_id,
+                complete_d,
+                sheet_name,
+                keys_list,
+                full_time,
+                uploaded_file.name
+            )
             return HttpResponseRedirect('/bulk_import/')
         else:
             logger.info("No sheet is selected.")
@@ -3079,10 +3087,28 @@ class BulkUploadValidData(View):
                     result = bulk_upload_ptp_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 elif kwargs['sheetname'] == 'PTP BH':
                     result = bulk_upload_ptp_bh_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
-                elif kwargs['sheetname'] == 'PMP BS':
-                    result = bulk_upload_pmp_bs_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
-                elif kwargs['sheetname'] == 'PMP SM':
-                    result = bulk_upload_pmp_sm_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
+                elif kwargs['sheetname'] in ['PMP BS', 'Radwin5K BS']:
+                    is_rad5_sheet = False
+                    if kwargs['sheetname'] == 'Radwin5K BS':
+                        is_rad5_sheet = True
+
+                    result = bulk_upload_pmp_bs_inventory.delay(
+                        kwargs['id'],
+                        organization,
+                        kwargs['sheettype'],
+                        is_rad5=is_rad5_sheet
+                    )
+                elif kwargs['sheetname'] in ['PMP SM', 'Radwin5K SS']:
+                    is_rad5_sheet = False
+                    if kwargs['sheetname'] == 'Radwin5K SS':
+                        is_rad5_sheet = True
+
+                    result = bulk_upload_pmp_sm_inventory.delay(
+                        kwargs['id'],
+                        organization,
+                        kwargs['sheettype'],
+                        is_rad5=is_rad5_sheet
+                    )
                 elif kwargs['sheetname'] == 'Wimax BS':
                     result = bulk_upload_wimax_bs_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 elif kwargs['sheetname'] == 'Wimax SS':
@@ -3188,6 +3214,10 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView
         :return qs
         """
 
+        sheet_names_list = [
+            'PTP', 'PMP BS', 'PMP SM', 'Radwin5K BS', 'Radwin5K SS', 
+            'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul'
+        ]
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
         for dct in json_data:
@@ -3454,7 +3484,6 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView
                 dct.update(actions='')
 
             try:
-                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
                         dct.update(
@@ -3474,7 +3503,6 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView
             except Exception as e:
                 logger.info()
             try:
-                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
                         dct.update(
