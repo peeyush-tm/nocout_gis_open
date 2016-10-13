@@ -2292,7 +2292,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         model_columns = self.columns
 
         if self.tech_name == 'all':
-            tech_name_list = ['pmp', 'wimax']
+            tech_name_list = ['pmp', 'wimax', 'radwin5']
         else:
             tech_name_list = [self.tech_name]
         tech_name_id = list()
@@ -2306,7 +2306,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 tech_name_id.append(device_technology_dict.get(tech_name))
 
         not_condition_sign = ''
-        if self.tech_name not in ['pmp', 'wimax', 'all']:
+        if self.tech_name not in ['pmp', 'radwin5k', 'wimax', 'all']:
             tech_name_list = ['pmp', 'wimax']
             not_condition_sign = '~'
 
@@ -2334,7 +2334,6 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                             active_filter_condition,
                             tech_type_filter_condition
                         )
-
         else:
             query = "queryset = self.model.objects.exclude( \
                     eventname__in=self.excluded_events \
@@ -2346,7 +2345,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     model_columns,
                     active_filter_condition,
                     tech_type_filter_condition
-                )                   
+                )
 
         exec query
         return queryset
@@ -3304,7 +3303,7 @@ def prepare_snmp_gis_data(qs, tech_name):
 
     sectors_data_qs, dr_data_qs = '', ''
     converter_mapped_data = {}
-    if tech_name in ['pmp', 'wimax', 'all']:
+    if tech_name in ['pmp', 'radwin5k', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
         ).extra(

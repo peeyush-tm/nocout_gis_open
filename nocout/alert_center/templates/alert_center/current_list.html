@@ -63,7 +63,12 @@
                 <ul class="nav nav-tabs">
                     <li>
                         <a href="#snmp_pmp_block" id="snmp_pmp_tab" data-toggle="tab">
-                            PMP
+                            Cambium
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#snmp_rad5k_block" id="snmp_rad5k_tab" data-toggle="tab">
+                            Radwin5K
                         </a>
                     </li>
                     <li>
@@ -92,6 +97,12 @@
                     </div>
                     <div class="tab-pane" id="snmp_pmp_block">
                         <table id="snmp_pmp_table" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="snmp_rad5k_block">
+                        <table id="snmp_rad5k_table" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -150,11 +161,13 @@
             var alarm_type = $('input[name="alarm_type"]:checked').val(),
                 ajax_url_all = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=all',
                 ajax_url_pmp = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=pmp',
+                ajax_url_rad5k = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=radwin5k&is_rad5k=1',
                 ajax_url_wimax = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=wimax';
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
             var common_extra_param = "'download_excel': 'yes'",
-                pmp_title = "Device Alarms - PMP ({1})",
+                pmp_title = "Device Alarms - Cambium ({1})",
+                rad5k_title = "Device Alarms - Radwin5K ({1})",
                 wimax_title = "Device Alarms - WiMAX ({1})",
                 all_title = "Device Alarms - All ({1})",
                 fetch_data_class = "SIAListingTable";
@@ -168,6 +181,14 @@
                     "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{"+common_extra_param+"}",
                     "data_extra_param" : "{'report_title' : '"+pmp_title+"', 'alarm_type': '{0}', 'tech_name': 'pmp', "+common_extra_param+"}"
+                },
+                "snmp_rad5k_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : rad5k_title,
+                    "header_class_name" : "SIAListing",
+                    "data_class_name" : fetch_data_class,
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{'report_title' : '"+rad5k_title+"', 'alarm_type': '{0}', 'tech_name': 'radwin5k', 'is_rad5k': 1, "+common_extra_param+"}"
                 },
                 "snmp_wimax_tab" : {
                     "app_name" : "alert_center",
@@ -190,6 +211,9 @@
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
             $("#snmp_pmp_tab").attr("data_url", ajax_url_pmp);
             $("#snmp_pmp_tab").attr("data_header", current_headers);
+
+            $("#snmp_rad5k_tab").attr("data_url", ajax_url_rad5k);
+            $("#snmp_rad5k_tab").attr("data_header", current_headers);
 
             $("#snmp_wimax_tab").attr("data_url", ajax_url_wimax);
             $("#snmp_wimax_tab").attr("data_header", current_headers);
