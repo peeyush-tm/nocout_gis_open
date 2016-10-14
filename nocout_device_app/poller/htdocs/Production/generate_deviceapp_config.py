@@ -168,6 +168,37 @@ def get_sentinels_for_machine(m):
         return mapping.get(m)
 
 
+def correlation_redis_update():
+
+    """ Sends task message on appropriate broker"""
+    class CeleryConfig(object):
+        #BROKER_URL = 'redis://10.133.19.165:6381/15'
+        # options needed for celery broker connection
+        service_name = 'prd4'
+	sentinels= [('121.244.255.123', 26379),]
+        BROKER_TRANSPORT_OPTIONS = {
+                'service_name': service_name,
+                'sentinels': sentinels,
+                'min_other_sentinels': 0,
+                'db': 15
+        }
+        
+        #REDIS_PORT = 6379
+
+        #BROKER_URL = 'redis://121.244.255.123:' + str(REDIS_PORT) + "/" + str(15)
+        BROKER_URL = 'redis-sentinel://'
+    celery = Celery()
+    print '-----------------'
+    try:
+            celery.config_from_object(CeleryConfig)
+            celery.send_task('mysql_to_inventory_data')
+            print "_______sent_________________"
+    except Exception as exc:
+        print 'Error in calling task load-inventory123'
+        print exc
+    print '-----------------'
+
+
 def prepare_hosts_file():
     T = namedtuple('devices', 
             ['wimax_bs_devices', 'cambium_bs_devices',
@@ -243,7 +274,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     (device_device.id = inventory_backhaul.bh_configured_on_id OR device_device.id = inventory_backhaul.aggregator_id OR
      device_device.id = inventory_backhaul.pop_id OR
      device_device.id = inventory_backhaul.bh_switch_id OR
-     device_device.id = inventory_backhaul.pe_ip_id )
+     device_device.id = inventory_backhaul.pe_ip_id)
     left join
     (inventory_basestation)
     on
@@ -256,7 +287,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     device_device.is_deleted=0 and
     device_device.host_state <> 'Disable'
     and 
-    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE','Huawei','cisco_router','ALU')
+    device_devicetype.name in ('Cisco','Juniper','RiCi', 'PINE','Huawei','PE')
     group by device_device.ip_address
     ;
     """
@@ -1456,6 +1487,7 @@ def main():
             len(hosts_out.mrotek_devices), len(hosts_out.rici_devices), len(hosts_out.cisco_switch_devices), len(hosts_out.juniper_switch_devices)
     prepare_rules(hosts_out)
     call_load_inventory()
+    correlation_redis_update()
 
 if __name__ == '__main__':
     main()

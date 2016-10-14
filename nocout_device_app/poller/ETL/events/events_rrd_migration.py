@@ -153,7 +153,7 @@ def service_perf_data_live_query(site, log_split, service_events_data, service_e
     return service_events_data, service_events_update_criteria
 
 
-def network_perf_data_live_query(site, log_split, network_events_data, network_events_update_criteria):
+def network_perf_data_live_query(site, log_split, network_events_data, network_events_update_criteria,modified_events_data):
     """
                 network_perf_data_live_query function live query to ping services and stores performance data and extracts and 
         stores the events data in mongodb.
@@ -209,13 +209,28 @@ def network_perf_data_live_query(site, log_split, network_events_data, network_e
                 check_timestamp=int(log_split[1]),
                 ip_address=host_ip,site_name=site,service_name='ping',age=age1)
         modified_host_dict = deepcopy(host_event_dict)
-        if ds  == 'rta' and eval(host_cur) > eval(host_war):
-	    modified_host_dict.update({'severity':'major'}) 
+	try:
+            if ds  == 'rta' and eval(host_cur) > eval(host_crit):
+	        modified_host_dict.update({'severity':'major'})
+		modified_events_data.append(modified_host_dict)
+            if ds == 'rta' and eval(host_cur) < eval(host_crit) and log_split[7].lower() == 'up':
+	        modified_host_dict.update({'severity':'UP'})
+		modified_events_data.append(modified_host_dict)
+	except Exception,e:
+	    print e
+	    continue
         # Check whether the host has breached RTA thresholds only, but not PL
         if ds == 'pl' and eval(host_cur) < eval(host_crit) and log_split[7].lower() != 'up':
             host_event_dict.update({'severity': 'UP'})
+        if ds == 'pl' and eval(host_cur) < eval(host_crit) and log_split[7].lower() == 'up':
+	    modified_host_dict.update({'severity':'UP'})
+	    modified_events_data.append(modified_host_dict)
+        if ds  == 'pl' and eval(host_cur) > eval(host_crit) and eval(host_cur) < 100 and log_split[7].lower() != 'up':
 	    modified_host_dict.update({'severity':'major'}) 
-	    
+	    modified_events_data.append(modified_host_dict)
+	if ds == 'pl' and eval(host_cur) == 100:
+	    modified_events_data.append(modified_host_dict)
+
         matching_criteria = {
                 'device_name': log_split[4],
                 'service_name': 'ping',
@@ -228,7 +243,7 @@ def network_perf_data_live_query(site, log_split, network_events_data, network_e
         network_events_data.append(host_event_dict)
         #mongo_module.mongo_db_insert(db,host_event_dict,"host_event")
 
-    return network_events_data, network_events_update_criteria
+    return network_events_data, network_events_update_criteria,  modified_events_data
 
 
 def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
@@ -308,15 +323,16 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
     service_events_data = []
     network_events_update_criteria = []
     service_events_update_criteria = []
-
+    modified_events_data = []
     for log_attr in output.split('\n'):
         log_split = [log_split for log_split in log_attr.split(';')]
         #print '---------------- log_split '
         #print log_split
         try:
             if log_split[0] == 'HOST ALERT' or log_split[0] == 'INITIAL HOST STATE':
-                network_events_data, network_events_update_criteria = network_perf_data_live_query(site,log_split, 
-                        network_events_data, network_events_update_criteria)    
+                network_events_data, network_events_update_criteria,modified_events_data = network_perf_data_live_query(site,
+		log_split, network_events_data, network_events_update_criteria,modified_events_data)
+
             elif log_split[0] == 'SERVICE ALERT' or log_split[0] == 'INITIAL SERVICE STATE':
 		# We dont need Counter_wrapped events for utilization services
 		if 'wrapped' in log_split[11]:
@@ -353,7 +369,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 
         key = nocout_site_name + "_network_event1"    # for first cycle use this key to store data in memcache for network events
         doc_len_key = key + "_len"
-    #memc_obj=db_ops_module.MemcacheInterface()
+        #memc_obj=db_ops_module.MemcacheInterface()
         exp_time =170 # for above key  new data would come after 120 seconds. 
         memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
         key = nocout_site_name + "_service_event1"  #key for service events 
@@ -365,7 +381,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 
         key = nocout_site_name + "_network_event2"
         doc_len_key = key + "_len"
-    #memc_obj=db_ops_module.MemcacheInterface()
+        #memc_obj=db_ops_module.MemcacheInterface()
         exp_time =170 # 2 min
         memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
         key = nocout_site_name + "_service_event2"
@@ -375,8 +391,8 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
     else :
         memc_obj.memc_conn.set(attempt_key,1) # if no cycle defined.
 # after every 128 second event_migration would be run, it takes the data from from both keys _network_event1 and _network_event2 and store in databases. 
-    if network_events_data:
-	insert_network_event_to_redis(network_events_data)
+    if modified_events_data:
+	insert_network_event_to_redis(modified_events_data)
 
 """
 Method to format n/w trap and push to Redis
@@ -386,15 +402,12 @@ def insert_network_event_to_redis(network_events_data):
         rds_obj = db_ops_module.RedisInterface()
         #print "network_events_data",network_events_data
         machine_name = nocout_site_name.split('_')[0]
-	rds_obj.redis_cnx.rpush('q:network:snmptt:%s' % machine_name, *network_events_data)
-        #print rds_obj.redis_cnx.lrange('q:network:snmptt',0, -1)
+	rds_obj.redis_cnx_prd4.rpush('q:network:snmptt:%s' % machine_name, *network_events_data)
+        #print rds_obj.redis_cnx_prd4.lrange('q:network:snmptt',0, -1)
 
     except Exception,e :
         pass
         print "Error in Redis Insertion : %s \n" % str(e)
-
-
-
   
 if __name__ == '__main__':
     """
@@ -410,3 +423,4 @@ if __name__ == '__main__':
             mongo_db=desired_config.get('nosql_db'),
             mongo_port=int(desired_config.get('port'))
     )
+

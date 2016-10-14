@@ -70,7 +70,7 @@
 					try {
 						map[key] = fs.read(system.args[i + 1]).replace(/^\s+/, '');
 					} catch (e) {
-						// console.log('Error: cannot find file, ' + system.args[i + 1]);
+						console.log('Error: cannot find file, ' + system.args[i + 1]);
 						phantom.exit();
 					}
 				} else {
@@ -109,7 +109,7 @@
 		window.callbackParsed = false;
         
 		page.onConsoleMessage = function (msg) {
-			// console.log(msg);
+			console.log(msg);
             
 			/*
 			 * Ugly hack, but only way to get messages out of the 'page.evaluate()'
@@ -127,7 +127,7 @@
 		};
 
 		page.onAlert = function (msg) {
-			// console.log(msg);
+			console.log(msg);
 		};
 
 		/* scale and clip the page */
@@ -181,7 +181,7 @@
 					page.close();
 				}
 			} catch(e) {
-				// console.error(e);
+				console.error(e);
 			}
 			
 			exitCallback(result);
@@ -275,7 +275,7 @@
 					}
 				}
 			} catch (e) {
-				// console.log('ERROR: While rendering, ' + e);
+				console.log('ERROR: While rendering, ' + e);
 			}
 		};
 
@@ -325,7 +325,7 @@
 				$script.html('var ' + varStr + ' = ' + codeStr);
 				document.getElementsByTagName("head")[0].appendChild($script[0]);
 				if (window[varStr] !== undefined) {
-					// console.log('Highcharts.' + varStr + '.parsed');
+					console.log('Highcharts.' + varStr + '.parsed');
 				}
 			}
 
@@ -570,7 +570,7 @@
 	} else {
 		// presume commandline usage
 		render(args, function (msg) {
-			// console.log(msg);
+			console.log(msg);
 			phantom.exit();
 		});
 	}

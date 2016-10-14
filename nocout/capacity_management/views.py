@@ -311,6 +311,7 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                     DATE_TIME_FORMAT
                 ) if str(item['peak_in_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
             except Exception, e:
+                item['actions'] = ''
                 logger.exception(e)
                 continue
 
@@ -971,6 +972,7 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                                                                                        '0'] else 'NA'
 
             except Exception, e:
+                item['actions'] = ''
                 logger.exception(e)
                 continue
 
