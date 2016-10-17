@@ -3463,7 +3463,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
     sectors_data_qs, dr_data_qs = '', ''
     converter_mapped_data = {}
 
-    device_list = []
+    # device_list = []
+    bh_device_list = []
 
     # Fetch ticket number for given ips
     tickets_dataset = DeviceTicket.objects.filter(
@@ -3476,6 +3477,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         ).annotate(
             machine_name=F('sector_configured_on__machine__name'),
             device_name=F('sector_configured_on__device_name'),
+            bh_device_name=F('base_station__backhaul__bh_configured_on__device_name'),
+            bh_machine_name=F('base_station__backhaul__bh_configured_on__machine__name'),
             device_type=F('sector_configured_on__device_type'),
             device_id=F('sector_configured_on_id'),
             circle=F('sector_configured_on__organization__alias'),
@@ -3488,6 +3491,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'base_station__state__state_name',
             'machine_name',
             'device_name',
+            'bh_device_name',
+            'bh_machine_name',
+            # 'base_station__backhaul__bh_configured_on__device_name',
+            # 'base_station__backhaul__bh_configured_on__machine__name',
             'base_station__backhaul__bh_type',
             'base_station__backhaul__bh_connectivity',
             'base_station__backhaul__bh_circuit_id',
@@ -3502,7 +3509,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'circle'
         ).distinct()
 
-        device_list += sectors_data_qs.values('machine_name', 'device_name')
+        #device_list += sectors_data_qs.values('machine_name', 'device_name')
+        bh_device_list += sectors_data_qs.values('bh_device_name', 'bh_machine_name')
 
 
         # Checking for SS Devices
@@ -3519,7 +3527,9 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             device_type=F('sub_station__device__device_type'),
             device_id=F('sub_station__device__id'),
             circle=F('sub_station__device__organization__alias'),
-            page_type=RawSQL('SELECT "network"', ()),
+            page_type=RawSQL('SELECT "customer"', ()),
+            bh_device_name=F('sector__base_station__backhaul__bh_configured_on__device_name'),
+            bh_machine_name=F('sector__base_station__backhaul__bh_configured_on__machine__name'),
             base_station__alias=F('sector__base_station__alias'),
             base_station__city__city_name=F('sector__base_station__city__city_name'),
             base_station__state__state_name=F('sector__base_station__state__state_name'),
@@ -3540,6 +3550,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'sub_station__device__ip_address',
             'machine_name',
             'device_name',
+            'bh_device_name',
+            'bh_machine_name',
             'base_station__city__city_name',
             'base_station__state__state_name',
             'base_station__backhaul__bh_type',
@@ -3555,8 +3567,9 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'circle',
             'page_type'
         ).distinct()
-	
-        device_list += ss_data_qs.values('machine_name', 'device_name')
+    
+        #device_list += ss_data_qs.values('machine_name', 'device_name')
+        bh_device_list += ss_data_qs.values('bh_device_name', 'bh_machine_name')
     
         if tech_name in ['wimax', 'all']:
             dr_data_qs =  Sector.objects.filter(
@@ -3565,6 +3578,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
                 machine_name=F('dr_configured_on__machine__name'),
                 device_name=F('dr_configured_on__device_name'),
                 device_type=F('dr_configured_on__device_type'),
+                bh_device_name=F('base_station__backhaul__bh_configured_on__device_name'),
+                bh_machine_name=F('base_station__backhaul__bh_configured_on__machine__name'),
                 device_id=F('dr_configured_on_id'),
                 page_type=RawSQL('SELECT "network"', ()),
                 circle=F('dr_configured_on__organization__alias'),
@@ -3576,6 +3591,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
                 'dr_configured_on__ip_address',
                 'machine_name',
                 'device_name',
+                'bh_device_name',
+                'bh_machine_name',
                 'base_station__backhaul__bh_type',
                 'base_station__backhaul__bh_connectivity',
                 'base_station__backhaul__bh_circuit_id',
@@ -3590,8 +3607,10 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
                 'circle'
             ).distinct()
 
-        device_list += dr_data_qs.values('machine_name', 'device_name')
-	
+        #device_list += dr_data_qs.values('machine_name', 'device_name')
+        bh_device_list += dr_data_qs.values('bh_device_name', 'bh_machine_name')
+
+    
 
     # If requert from converter or all tab only then check Backhaul model
     if tech_name in ['switch', 'converter', 'all']:
@@ -3617,6 +3636,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             base_station__backhaul__bh_connectivity=F('backhaul__bh_connectivity'),
             machine_name=F('backhaul__bh_configured_on__machine__name'),
             device_name=F('backhaul__bh_configured_on__device_name'),
+            bh_machine_name=F('backhaul__bh_configured_on__machine__name'),
+            bh_device_name=F('backhaul__bh_configured_on__device_name'),
             device_type=F('backhaul__bh_configured_on__device_type'),
             device_id=F('backhaul__bh_configured_on_id'),
             page_type=RawSQL('SELECT "other"', ()),
@@ -3631,6 +3652,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'state__state_name',
             'machine_name',
             'device_name',
+            'bh_device_name',
+            'bh_machine_name',
             'base_station__backhaul__bh_type',
             'base_station__backhaul__bh_connectivity',
             'backhaul__bh_configured_on__ip_address',
@@ -3646,7 +3669,8 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             'circle'
         ).distinct()
 
-        device_list += bh_conf_data_qs.values('machine_name', 'device_name')
+        #device_list += bh_conf_data_qs.values('machine_name', 'device_name')
+        bh_device_list += bh_conf_data_qs.values('bh_device_name', 'bh_machine_name')
 
         # bh_switch_data_qs =  BaseStation.objects.extra(
         #     select={
@@ -3797,7 +3821,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         # ).distinct()
 
         # device_list += aggr_data_qs.values('machine_name', 'device_name')
-	
+    
         mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
             list(bh_conf_data_qs),
             'backhaul__bh_configured_on__ip_address'
@@ -3817,7 +3841,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         #     list(aggr_data_qs),
         #     'backhaul__aggregator__ip_address'
         # )
-	
+    
         converter_mapped_data = mapped_bh_conf_result.copy()
         #converter_mapped_data.update(mapped_bh_switch_result)
         #converter_mapped_data.update(mapped_pop_result)
@@ -3844,7 +3868,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         'ip_address'
     )
 
-    machine_device_dict = inventory_utils.prepare_machines(device_list, 'machine_name')
+    machine_device_dict = inventory_utils.prepare_machines(bh_device_list, 'bh_machine_name', 'bh_device_name')
 
     perf_result = {}
     for machine_name in machine_device_dict:
@@ -3853,7 +3877,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             perf_result.update(result)
 
     mapped_result = mapped_sector_result.copy()
-    mapped_result.update(mapped_dr_result)
+    #mapped_result.update(mapped_dr_result)
     mapped_result.update(mapped_ss_result)
     mapped_result.update(converter_mapped_data)
    
@@ -3906,8 +3930,9 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             pop_conv_ip= sector_dct.get('base_station__backhaul__pop__ip_address') if sector_dct.get('base_station__backhaul__pop__ip_address') else 'NA'
             aggr_sw_ip= sector_dct.get('base_station__backhaul__aggregator__ip_address') if sector_dct.get('base_station__backhaul__aggregator__ip_address') else 'NA'
             device_name = sector_dct.get('device_name', 'NA')
+            bh_device_name = sector_dct.get('bh_device_name', 'NA')
 
-            packet_loss = perf_result.get(device_name, {}).get('packet_loss', None)
+            packet_loss = perf_result.get(bh_device_name, {}).get('packet_loss', None)
             bh_status = ('DOWN' if packet_loss == 100 else 'UP') if packet_loss not in [None, ''] else "NA"
 
             data.update(
