@@ -82,6 +82,8 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 				ss_mac  = map(lambda x: x.split('=')[0],plugin_output)
 				ss_ip  = map(lambda x: x.split('=')[1].split(',')[9],plugin_output)
 				ss_sec_id  = map(lambda x: x.split('=')[1].split(',')[8],plugin_output)
+				port_number =  map(lambda x: x.split('=')[1].split(',')[10],plugin_output)
+				port_number = ['odu'+str(each)  for each in port_number]
 				ds="topology"
 			else:
 				continue
@@ -92,7 +94,7 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 		topology_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host),
 				service_name=service,sector_id=ss_sec_id,
 				connected_device_ip=ss_ip,
-				connected_device_mac=ss_mac,data_source=ds,site_name=site,ip_address=host_ip)
+				connected_device_mac=ss_mac,data_source=ds,site_name=site,ip_address=host_ip,refer=port_number)
 		matching_criteria.update({'device_name':str(host),'service_name':service})
 		topology_list.append(topology_dict)
 		#mongo_module.mongo_db_update(db,matching_criteria,topology_dict,"wimax_topology")
