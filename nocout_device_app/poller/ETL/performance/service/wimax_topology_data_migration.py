@@ -171,7 +171,8 @@ def build_data(doc):
 		doc.get('sector_id')[i],
 		doc.get('connected_device_ip')[i],
 		doc.get('connected_device_mac')[i],
-		None
+		None,
+		doc.get('refer')[i]
         	)
 		values_list.append(t)
 		t = ()
@@ -190,44 +191,46 @@ def insert_data(table, data_values, **kwargs):
 	insert_dict = {'0':[],'1':[]}
 	procesed_bs= []
 	db = mysql_connection(configs=kwargs.get('configs'))
+	cursor = db.cursor()
 	for i in range(len(data_values)):
 		if str(data_values[i][0]) not in procesed_bs:
 			query = "DELETE FROM %s " % table +\
                 		"WHERE `device_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][1])
         		try:
-    				cursor = db.cursor()
+    				#cursor = db.cursor()
                 		cursor.execute(query)
 			except mysql.connector.Error as err:
         			raise mysql.connector.Error, err
     			db.commit()
-			cursor.close()
+			#cursor.close()
 			procesed_bs.append(str(data_values[i][0]))
 
 		query = "DELETE FROM %s " % table +\
                 	"WHERE `connected_device_ip`='%s'" %(str(data_values[i][9]))
         	try:
-    			cursor = db.cursor()
+    			#cursor = db.cursor()
                 	cursor.execute(query)
 		except mysql.connector.Error as err:
         		raise mysql.connector.Error, err
 		db.commit()
-		cursor.close()
+		#cursor.close()
 		insert_dict['0'].append(data_values[i])
 
 	if len(insert_dict['0']):		
 		query = "INSERT INTO `%s`" % table
  		query+= """(device_name, service_name, machine_name, 
-            	site_name, data_source, sys_timestamp, check_timestamp,ip_address,sector_id,connected_device_ip,connected_device_mac,mac_address) 
-           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s)
+            	site_name, data_source, sys_timestamp, check_timestamp,ip_address,sector_id,connected_device_ip,connected_device_mac,mac_address,refer) 
+           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,%s)
 		"""
-    		cursor = db.cursor()
+    		#cursor = db.cursor()
     		try:
         		cursor.executemany(query,  insert_dict.get('0'))
     		except mysql.connector.Error as err:
 			raise mysql.connector.Error, err
     		db.commit()
-    		cursor.close()
-
+    		#cursor.close()
+	cursor.close()
+	db.close()
 
 
 if __name__ == '__main__':
