@@ -3,6 +3,9 @@ on device types. Creates and sends SNMP traps using pysnmp module"""
 import threading
 from pprint import pprint
 from pysnmp.hlapi import *
+from handlers.db_ops import *
+logger = get_task_logger(__name__)
+info, warning, error = logger.info, logger.warning, logger.error
 
 
 # variable binding data types
@@ -10,7 +13,7 @@ from pysnmp.hlapi import *
 data_types = {
      'severity': 'i','corr_req': 'i', 'tckt_req': 'i',
     'is_sia': 'i', 'impacted_sector_count': 'i',
-    'seq_num': 'i', 'last_trap': 'i'
+   
 }
 
 # Trap var binds
@@ -31,10 +34,10 @@ idu_or_odu_trap_vars = [
         'sector_ids', 'tech', 'alrm_grp', 'alrm_name', 'alrm_desc',
         'severity', 'time_stamp', 'bs_name', 'region', 
         'corr_req', 'tckt_req', 'is_sia', 'impacted_sector_count',
-        'categorization_tier_1', 'categorization_tier_2',
-        'alrm_category', 'coverage', 'resource_name', 'resource_type',
-        'parent_alrm_id', 'additional_f_1', 'additional_f_2', 'additional_f_3', 
-        'additional_f_4', 'additional_f_5', 'additional_f_6', 'additional_f_7',
+        'categorization_tier_1', 'categorization_tier_2', 'alrm_category',
+       'coverage', 'resource_name', 'resource_type', 'parent_alrm_id', 
+       'additional_f_1', 'additional_f_2', 'additional_f_3', 'additional_f_4', 
+       'additional_f_5', 'additional_f_6', 'additional_f_7','additional_f_8',
 ]
 ptp_or_ss_trap_vars = [
         'alrm_id', 'device_ip', 'parent_type', 'parent_ip', 
@@ -67,9 +70,9 @@ circuit_ids_partial = '.1.3.6.1.4.1.43900.2.2.1.0.3.3.1.'
 # OID listing based on trap type
 converter_or_ptpbh_oids = [''.join([converter_or_ptpbh_partial, str(x)])
                            for x in range(1, 33)]
-idu_or_odu_oids = [''.join([idu_or_odu_partial, str(x)]) for x in range(1, 33)]
+idu_or_odu_oids = [''.join([idu_or_odu_partial, str(x)]) for x in range(1, 34)]
 ptp_or_ss_oids = [''.join([ptp_or_ss_partial, str(x)]) for x in range(1, 27)]
-circuit_ids_oids = [''.join([ptp_or_ss_partial, str(x)]) for x in range(1, 10)]
+circuit_ids_oids = [''.join([circuit_ids_partial, str(x)]) for x in range(1, 10)]
 
 # (trap_attribute, OID) mapping for each trap type
 ## NOTE: can't use dict comprehension for python 2.6 compatibility
@@ -130,7 +133,9 @@ class Trap(threading.Thread):
         # community auth password
         comm_str = getattr(self, 'comm_str', 'public')
         # UDP transport target
-        target = UdpTransportTarget((getattr(self, 'target_ip', '10.133.19.165'),
+        #target = UdpTransportTarget((getattr(self, 'target_ip', '10.133.12.157'),
+        #        getattr(self, 'target_port', 162)))
+        target = UdpTransportTarget((getattr(self, 'target_ip', '121.244.255.122'),
                 getattr(self, 'target_port', 162)))
         snmp_engine = SnmpEngine()
         # community data
@@ -150,15 +155,15 @@ class Trap(threading.Thread):
         # varbinds - MIB variables returned in snmp response
         error_indication, error_status, error_index, varbinds = next(
                 send_notif)
-	print send_notif
-	print error_indication,error_status ,error_index,varbinds
+	#print send_notif
+	#print error_indication,error_status ,error_index,varbinds
     def get_trap_varbinds(self):
         return self._generate_varbinds()
 
     def _fill_defaults(self):
         """ Provides mandatory instance variables like 
         target_ip, target_port etc, if not provided already"""
-        defaults = (('target_ip', '127.0.0.1'), ('target_port', 162),
+        defaults = (('target_ip', '121.244.255.122'), ('target_port', 162),
                 ('time_ticks', 444555),)
         for t in defaults:
             # can't call hasattr() as we have already overrided __getattr__
@@ -172,18 +177,15 @@ class Trap(threading.Thread):
         tp = self.trap_type
         # default data type
         d_t = OctetString
-
         if tp == 'converter_or_ptpbh_trap':
             attr_oid_mapping = converter_or_ptpbh_varbinds
         elif tp == 'idu_or_odu_trap':
-            attr_oid_mapping = ptp_or_ss_varbinds
+            attr_oid_mapping = idu_or_odu_varbinds 
         elif tp == 'ptp_or_ss_trap':
             attr_oid_mapping = ptp_or_ss_varbinds
         elif tp == 'circuit_ids_trap':
             attr_oid_mapping = circuit_ids_varbinds
-
         for (attr, oid) in attr_oid_mapping.items():
-	    print 'attribute',attr
             if attr == 'time_ticks':
                 d_t = TimeTicks
                 # actual OID along with base trap oid
@@ -195,8 +197,12 @@ class Trap(threading.Thread):
             else:
                 # a str data type
                 d_t = OctetString
-            varbinds.append((oid, d_t(getattr(self, attr))))
-        pprint(varbinds)
+	    value = getattr(self,attr)
+	    if not value:
+		value = ''
+            #varbinds.append((oid, d_t(getattr(self, attr))))
+            varbinds.append((oid, d_t(value)))
+	logger.error('varbinds {0}'.format(varbinds))
         return varbinds
 
 
