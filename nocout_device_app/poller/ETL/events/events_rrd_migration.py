@@ -391,8 +391,8 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
     else :
         memc_obj.memc_conn.set(attempt_key,1) # if no cycle defined.
 # after every 128 second event_migration would be run, it takes the data from from both keys _network_event1 and _network_event2 and store in databases. 
-    if modified_events_data:
-	insert_network_event_to_redis(modified_events_data)
+    #if modified_events_data:
+	#insert_network_event_to_redis(modified_events_data)
 
 """
 Method to format n/w trap and push to Redis
