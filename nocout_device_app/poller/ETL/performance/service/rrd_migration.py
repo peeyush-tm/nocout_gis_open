@@ -576,8 +576,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	try:
 		rds_obj=db_ops_module.RedisInterface()
 		machine_name = nocout_site_name.split('_')[0]
-        	redis_key = 'q:network:snmptt:%s' % machine_name
-        	rds_obj.redis_cnx.rpush(redis_key, *events_pl_rta_list)
+        	redis_key = 'queue:network:snmptt:%s' % machine_name
+        	rds_obj.redis_cnx_prd4.rpush(redis_key, *events_pl_rta_list)
 	except Exception as e :
 		print e
 
