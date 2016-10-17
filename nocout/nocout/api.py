@@ -1,6 +1,7 @@
 from device.models import Country, State
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from dashboard.utils import get_unused_dashboards
 
 
 class GetStatesForCountry(APIView):
@@ -124,3 +125,24 @@ class GetCitiesForState(APIView):
 
         return Response(result)
 
+class GetUnusedDashboard(APIView):
+    """
+    Get dashboards which have no defined setting for them
+    on basis of device tech and device type
+    """
+    def get(self, request, device_type=None):
+        result = []
+
+        if not device_type:
+            return Response(result)
+
+        result = get_unused_dashboards(device_type_id=device_type)
+
+        for dashboard in result:
+            dashboard.update({
+                    'name': dashboard['dashboard_name'],
+                    'alias': dashboard['dashboard_name'],
+                    'id': dashboard['dashboard_name']
+                })
+
+        return Response(result)

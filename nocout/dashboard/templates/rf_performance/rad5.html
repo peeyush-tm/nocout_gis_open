@@ -6,15 +6,15 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-television'></i> Dashboard" "javascript:;" %}
-    {% breadcrumb_safe "RF Performance Dashboard: Cambium" "javascript:;" %}
+    {% breadcrumb_safe "RF Performance Dashboard: Radwin5K" "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
 
 {% load staticfiles %}
 {% block page_setting_block %} {% endblock %}
-{% block content_title %} RF Performance Dashboard: Cambium {% endblock %}
-{% block content_description %} RF Performance Dashboard: Cambium {% endblock %}
+{% block content_title %} RF Performance Dashboard: Radwin5K {% endblock %}
+{% block content_description %} RF Performance Dashboard: Radwin5K {% endblock %}
 
 {% block content %}
 <style type="text/css">
@@ -24,25 +24,25 @@
     .tab-content{
         margin-top:-30px;
     }
-    #pmp_block .box .box-title{
+    #rad5_block .box .box-title{
         border-bottom: 0px none !important;
     }
 </style>
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
-        <h4><i class="fa fa-television"></i> RF Performance Dashboard: Cambium</h4>
+        <h4><i class="fa fa-television"></i> RF Performance Dashboard: Radwin5K</h4>
     </div>
     <div id="tableContainer" class="box-body">
         <div class="tabbable header-tabs">
             <ul class="nav nav-tabs">
                 <li><a href="{% url 'dashboard-rf-performance-ptp-bh' %}" id="ptp_bh_tab"><span class="hidden-inline-mobile">PTP BH</span></a></li>
                 <li><a href="{% url 'dashboard-rf-performance-wimax' %}" id="wimax_tab"><span class="hidden-inline-mobile">Wimax</span></a></li>
-                <li><a href="{% url 'dashboard-rf-performance-rad5' %}" id="rad5_tab"><span class="hidden-inline-mobile">Radwin5K</span></a></li>
-                <li class="active"><a href="#pmp_block" id="pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">Cambium</span></a></li>
+                <li class="active"><a href="#rad5_block" id="rad5_tab" data-toggle="tab"><span class="hidden-inline-mobile">Radwin5K</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-pmp' %}" id="pmp_tab"><span class="hidden-inline-mobile">Cambium</span></a></li>
                 <li><a href="{% url 'dashboard-rf-performance-ptp' %}" id="ptp_tab"><span class="hidden-inline-mobile">PTP</span></a></li>
             </ul>
             <div class="tab-content" style="overflow-y:auto;">
-                <div class="tab-pane active" id="pmp_block">
+                <div class="tab-pane active" id="rad5_block">
                     <div class="tab-rf-perf">
                         <h4 class="bigger dashboard_headings">- Jitter</h4>
                         <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">

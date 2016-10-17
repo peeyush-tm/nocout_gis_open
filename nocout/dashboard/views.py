@@ -72,6 +72,7 @@ class DashbaordSettingsListView(TemplateView):
         datatable_headers = [
             {'mData': 'page_name', 'sTitle': 'Page Name', 'sWidth': 'auto', },
             {'mData': 'technology__name', 'sTitle': 'Technology Name', 'sWidth': 'auto', },
+            {'mData': 'device_type__alias', 'sTitle': 'Device Type', 'sWidth': 'auto', },
             {'mData': 'name', 'sTitle': 'Dashboard Name', 'sWidth': 'auto', },
             {'mData': 'range1', 'sTitle': 'Range 1', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'range2', 'sTitle': 'Range 2', 'sWidth': 'auto', 'bSortable': False},
@@ -99,7 +100,7 @@ class DashbaordSettingsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
     This view inherit many properties from DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView.
     """
     model = DashboardSetting
-    columns = ['page_name', 'name', 'technology__name', 'range1', 'range2', 'range3', 'range4', 'range5', 'range6',
+    columns = ['page_name', 'name', 'technology__name', 'device_type__alias',  'range1', 'range2', 'range3', 'range4', 'range5', 'range6',
                'range7', 'range8', 'range9', 'range10']
     keys = ['page_name', 'technology__name', 'name', 'range1_start', 'range2_start', 'range3_start', 'range4_start',
             'range5_start', 'range6_start', 'range7_start', 'range8_start', 'range9_start', 'range10_start',
@@ -107,8 +108,8 @@ class DashbaordSettingsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
             'range8_end', 'range9_end', 'range10_end', 'range1_color_hex_value', 'range2_color_hex_value',
             'range3_color_hex_value', 'range4_color_hex_value', 'range5_color_hex_value', 'range6_color_hex_value',
             'range7_color_hex_value', 'range8_color_hex_value', 'range9_color_hex_value', 'range10_color_hex_value']
-    order_columns = ['page_name', 'name', 'technology__name']
-    columns = ['page_name', 'technology__name', 'name', 'range1_start', 'range2_start', 'range3_start', 'range4_start',
+    order_columns = ['page_name', 'technology__name', 'device_type__alias', 'name']
+    columns = ['page_name', 'technology__name', 'name', 'device_type__alias', 'range1_start', 'range2_start', 'range3_start', 'range4_start',
                'range5_start', 'range6_start', 'range7_start', 'range8_start', 'range9_start', 'range10_start',
                'range1_end', 'range2_end', 'range3_end', 'range4_end', 'range5_end', 'range6_end', 'range7_end',
                'range8_end', 'range9_end', 'range10_end', 'range1_color_hex_value', 'range2_color_hex_value',
@@ -190,6 +191,11 @@ class DashbaordSettingsUpdateView(SuperUserRequiredMixin, UpdateView):
         technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
         technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
+        try:
+            context['current_dashboard'] = DashboardSetting.objects.get(id=self.object.id)
+        except Exception, e:
+            context['current_dashboard'] = ''
+        
         return context
 
 
@@ -327,6 +333,27 @@ class PMP_Performance_Dashboard(PerformanceDashboardMixin, View):
 
         return data_source_config, tech_name, is_bh
 
+class RAD5_Performance_Dashboard(PerformanceDashboardMixin, View):
+    """
+    The Class based View to get performance dashboard page requested.
+    """
+    template_name = 'rf_performance/rad5.html'
+    def get_init_data(self):
+        """
+        Provide data for mixin's get method.
+        """
+
+        data_source_config = {
+            'ul_jitter': {'service_name': 'cambium_ul_jitter', 'model': ServiceStatus},
+            'dl_jitter': {'service_name': 'cambium_dl_jitter', 'model': ServiceStatus},
+            'rereg_count': {'service_name': 'cambium_rereg_count', 'model': ServiceStatus},
+            'ul_rssi': {'service_name': 'cambium_ul_rssi', 'model': ServiceStatus},
+            'dl_rssi': {'service_name': 'cambium_dl_rssi', 'model': ServiceStatus},
+        }
+        tech_name = 'PMP'
+        is_bh = False
+
+        return data_source_config, tech_name, is_bh
 
 class PTP_Performance_Dashboard(PerformanceDashboardMixin, View):
     """
