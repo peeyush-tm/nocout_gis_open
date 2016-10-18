@@ -23,7 +23,7 @@ from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG, PERIODIC_POLL_PROCESS_COU
 from nocout.views import handler404
 
 from inventory.models import Sector
-from device.models import DeviceTechnology, Device
+from device.models import DeviceTechnology, Device, DeviceType
 from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, \
     Topology, NetworkStatus, RfNetworkAvailability
 
@@ -228,16 +228,28 @@ class PerformanceDashboardMixin(object):
         :return:
             Http response object:
         """
+        # Getting params from request
+        is_rad5 = int(self.request.GET.get('is_rad5', 0))
+
+
         # Getting parameters from child class
         data_source_config, tech_name, is_bh = self.get_init_data()
         template_dict = {
             'data_sources': json.dumps(data_source_config.keys()),
             'parallel_calling_count' : PERIODIC_POLL_PROCESS_COUNT
         }
+
+        filter_condition = ''
         try:
-            technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+            if is_rad5:
+                device_type = DeviceType.objects.get(name='Radwin5KSS').id
+                filter_condition = 'device_type={0}'.format(device_type)
+            else:
+                technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+                filter_condition = 'technology={0}'.format(technology)
         except Exception, e:
             technology = ""
+            device_type = ""
 
         data_source = request.GET.get('data_source')
         data_source=str(data_source)
@@ -256,8 +268,9 @@ class PerformanceDashboardMixin(object):
             return render(self.request, self.template_name, dictionary=template_dict)
 
         try:
-            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='rf_dashboard',
-                                                             name=data_source, is_bh=is_bh)
+            query = """dashboard_setting = DashboardSetting.objects.get({0}, page_name='rf_dashboard',
+                                                             name=data_source, is_bh=is_bh)""".format(filter_condition)
+            exec query
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
                 "message": "Corresponding dashboard setting is not available.",
@@ -344,11 +357,12 @@ class RAD5_Performance_Dashboard(PerformanceDashboardMixin, View):
         """
 
         data_source_config = {
-            'ul_jitter': {'service_name': 'cambium_ul_jitter', 'model': ServiceStatus},
-            'dl_jitter': {'service_name': 'cambium_dl_jitter', 'model': ServiceStatus},
-            'rereg_count': {'service_name': 'cambium_rereg_count', 'model': ServiceStatus},
-            'ul_rssi': {'service_name': 'cambium_ul_rssi', 'model': ServiceStatus},
-            'dl_rssi': {'service_name': 'cambium_dl_rssi', 'model': ServiceStatus},
+            'ul_rssi': {'service_name': 'rad5k_ul_rssi', 'model': ServiceStatus},
+            'dl_rssi': {'service_name': 'rad5k_dl_rssi', 'model': ServiceStatus},
+            'ul_uas': {'service_name': 'rad5k_ul_uas_invent', 'model': ServiceStatus},
+            'dl_uas': {'service_name': 'rad5k_dl_uas_invent', 'model': ServiceStatus},
+            'rad5k_ss_ul_modulation': {'service_name': 'rad5k_ss_ul_modulation', 'model': ServiceStatus},
+            'rad5k_ss_dl_modulation': {'service_name': 'rad5k_ss_dl_modulation', 'model': ServiceStatus},
         }
         tech_name = 'PMP'
         is_bh = False

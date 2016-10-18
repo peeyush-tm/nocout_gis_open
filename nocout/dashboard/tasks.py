@@ -861,7 +861,7 @@ def prepare_machines(device_list):
 
 #****************************RF Performance Dashboard
 @task()
-def calculate_RF_Performance_dashboards(technology, is_bh = False):
+def calculate_RF_Performance_dashboards(technology, is_rad5=False, is_bh = False):
     """
     This Function calls from settings file of Project and initialise the parameters for 
     all RF Performance dashboards and divide the celery tasks according to Number of 
@@ -893,7 +893,7 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
     inventory_utils = InventoryUtilsGateway()
 
     devices_method_to_call = inventory_utils.organization_customer_devices
-    devices_method_kwargs = dict(specify_ptp_type='all')
+    devices_method_kwargs = dict(specify_ptp_type='all', is_rad5=is_rad5)
     # Making of dashboard configs according to values of technology, is_bh
     if technology == 'WiMAX' and is_bh == False:
         dashboards = {
@@ -930,33 +930,67 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
         }
 
     elif technology == 'PMP' and is_bh == False:
-        dashboards = {
-            'ul_jitter':{
-                'model': ServiceStatus,
-                'data_source': ['ul_jitter'],
-                'service_name': ['cambium_ul_jitter']
-            },
-            'dl_jitter':{
-                'model': ServiceStatus,
-                'data_source': ['dl_jitter'],
-                'service_name': ['cambium_dl_jitter']
-            },
-            'rereg_count':{
-                'model': ServiceStatus,
-                'data_source': ['rereg_count'],
-                'service_name': ['cambium_rereg_count']
-            },
-            'ul_rssi':{
-                'model': ServiceStatus,
-                'data_source': ['ul_rssi'],
-                'service_name': ['cambium_ul_rssi','rad5k_ul_rssi']
-            },
-            'dl_rssi':{
-                'model': ServiceStatus,
-                'data_source': ['dl_rssi'],
-                'service_name': ['cambium_dl_rssi','rad5k_dl_rssi']
+        if is_rad5:
+            dashboards = {
+                'ul_rssi':{
+                    'model': ServiceStatus,
+                    'data_source': ['ul_rssi'],
+                    'service_name': ['rad5k_ul_rssi']
+                },
+                'dl_rssi':{
+                    'model': ServiceStatus,
+                    'data_source': ['dl_rssi'],
+                    'service_name': ['rad5k_dl_rssi']
+                },
+                'ul_uas':{
+                    'model': ServiceStatus,
+                    'data_source': ['ul_uas'],
+                    'service_name': ['rad5k_ul_uas_invent']
+                },
+                'dl_uas':{
+                    'model': ServiceStatus,
+                    'data_source': ['dl_uas'],
+                    'service_name': ['rad5k_dl_uas_invent']
+                },
+                'rad5k_ss_ul_modulation':{
+                    'model': ServiceStatus,
+                    'data_source': ['rad5k_ss_ul_modulation'],
+                    'service_name': ['rad5k_ss_ul_modulation']
+                },
+                'rad5k_ss_dl_modulation':{
+                    'model': ServiceStatus,
+                    'data_source': ['rad5k_ss_dl_modulation'],
+                    'service_name': ['rad5k_ss_dl_modulation']
+                }
             }
-        }
+        else:
+            dashboards = {
+                'ul_jitter':{
+                    'model': ServiceStatus,
+                    'data_source': ['ul_jitter'],
+                    'service_name': ['cambium_ul_jitter']
+                },
+                'dl_jitter':{
+                    'model': ServiceStatus,
+                    'data_source': ['dl_jitter'],
+                    'service_name': ['cambium_dl_jitter']
+                },
+                'rereg_count':{
+                    'model': ServiceStatus,
+                    'data_source': ['rereg_count'],
+                    'service_name': ['cambium_rereg_count']
+                },
+                'ul_rssi':{
+                    'model': ServiceStatus,
+                    'data_source': ['ul_rssi'],
+                    'service_name': ['cambium_ul_rssi','rad5k_ul_rssi']
+                },
+                'dl_rssi':{
+                    'model': ServiceStatus,
+                    'data_source': ['dl_rssi'],
+                    'service_name': ['cambium_dl_rssi','rad5k_dl_rssi']
+                }
+            }
 
     elif technology == 'P2P' and is_bh == False:
         dashboards = {
@@ -1008,7 +1042,8 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
                 devices_method_to_call = devices_method_to_call,
                 devices_method_kwargs = devices_method_kwargs,
                 technology=tech,
-                is_bh=is_bh
+                is_bh=is_bh,
+                is_rad5=is_rad5
             )
             
     return True
@@ -1021,7 +1056,8 @@ def prepare_Rf_dashboard_devices(organizations,
                                 devices_method_to_call,
                                 devices_method_kwargs,
                                 technology=None,
-                                is_bh=False
+                                is_bh=False,
+                                is_rad5=False
                             ):
     """
     This Function calls from settings file of Project and initialise the parameters for all RF 
@@ -1063,13 +1099,23 @@ def prepare_Rf_dashboard_devices(organizations,
     service_name = dashboard_config[dashboard_name]['service_name']
     data_source = dashboard_config[dashboard_name]['data_source']
 
+    # Handling Radwin5K Case
+    filter_condition = ''
+    if is_rad5:
+        device_type = DeviceType.objects.get(name='Radwin5KSS').id
+        filter_condition = 'device_type={0}'.format(device_type)
+    else:
+        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+        filter_condition = 'technology_id={0}'.format(technology_id)
+
     try:
-        dashboard_setting = DashboardSetting.objects.get(
-            technology_id=technology_id,
-            page_name='rf_dashboard',
-            name=dashboard_status_name,
-            is_bh=is_bh
-        )
+        query = """dashboard_setting = DashboardSetting.objects.get(
+                                    {0},
+                                    page_name='rf_dashboard',
+                                    name=dashboard_status_name,
+                                    is_bh=is_bh
+                        )""".format(filter_condition)
+        exec query
     except DashboardSetting.DoesNotExist as e:
         logger.exception(" Dashboard Setting of {0} is not available. {1}".format(dashboard_name, e))
         return False
