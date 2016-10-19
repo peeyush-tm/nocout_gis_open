@@ -15,6 +15,7 @@ import re
 from sys import path
 import sys
 import time
+import cPickle
 from celery import group
 
 from handlers.db_ops import *
@@ -98,7 +99,24 @@ def update_topology(li, data_values, name_ip_mapping, delete_old_topology, site)
 				d = {}
 
 
-@app.task(name='build-export-service')
+
+
+
+@app.task(base=DatabaseTask,name='inventorydata')
+def inventorydata():
+	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
+	p = rds_cli.redis_cnx.pipeline()
+	keys = rds_cli.redis_cnx.keys(pattern='device_inventory:*')
+	[p.get(k) for k in keys]
+	name_ip_mapiping = dict([t for t in zip(keys, p.execute())])
+	pickle_file = open("device_inventory_mapping.txt","w")
+	cPickle.dump(name_ip_mapiping,pickle_file)
+	#memc = inventorydata.memc_cnx
+	#memc.set("device_mapping",name_ip_mapiping)
+
+
+
+@app.task(base=DatabaseTask,name='build-export-service')
 def build_export(site, perf_data):
 	""" processes and prepares data for db insert"""
 
@@ -132,11 +150,21 @@ def build_export(site, perf_data):
 					'wimax_dl_rssi', 'wimax_dl_cinr', 'wimax_ss_ptx_invent']
 
 	# get device_name --> ip mappings from redis
-	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
-	p = rds_cli.redis_cnx.pipeline()
-	keys = rds_cli.redis_cnx.keys(pattern='device_inventory:*')
-	[p.get(k) for k in keys]
-	name_ip_mapping = dict([t for t in zip(keys, p.execute())])
+	#rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
+	#p = rds_cli.redis_cnx.pipeline()
+	#keys = rds_cli.redis_cnx.keys(pattern='device_inventory:*')
+	#[p.get(k) for k in keys]
+	#name_ip_mapping = dict([t for t in zip(keys, p.execute())])
+
+        try:
+	        #name_ip_mapping = build_export.memc_cnx.get("device_mapping")
+		pickle_file = open("device_inventory_mapping.txt",'r') 
+		name_ip_mapping = cPickle.load(pickle_file)
+	except Exception,e:
+		logger.error(e)
+							
+
+
 
 	for chk_val in perf_data:
 		dict_perf = {}

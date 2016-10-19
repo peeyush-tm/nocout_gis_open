@@ -8,7 +8,7 @@ from collections import defaultdict
 query1 = """
 SELECT
 	backhaul.id as BackhaulID,	
-	IF(isnull(backhaul.pe_ip), 'NA', backhaul.pe_ip) as PE_IP,
+	IF(isnull(pe_device.ip_address), 'NA', pe_device.ip_address) as PE_IP,
 	IF(isnull(aggregator_device.ip_address), 'NA', aggregator_device.ip_address) as AggregationSwitchIP,
 	IF(isnull(popconverter_device.ip_address), 'NA', popconverter_device.ip_address) as POPconverterIP,
 	IF(isnull(pop_device_tech.name), 'NA', pop_device_tech.name) as POPconverterTech,
@@ -28,7 +28,7 @@ SELECT
 	IF(isnull(bsswitch_device.parent_port), 'NA', bsswitch_device.parent_port) as BSswitchParentPort,
 	GROUP_CONCAT(CONCAT(
 		IF(isnull(bs.id), 'NA', bs.id), '|',
-		IF(isnull(bs.name), 'NA', bs.name), '|',
+		IF(isnull(bs.alias), 'NA', bs.alias), '|',
 		IF(isnull(bsswitch_device.ip_address), 'NA', bsswitch_device.ip_address), '|',
 		IF(isnull(city.city_name), 'NA', city.city_name), '|',
 		IF(isnull(state.state_name), 'NA', state.state_name), '|',
@@ -102,6 +102,10 @@ SELECT
 	on
 		bsconverter_device.id = backhaul.bh_switch_id
 	LEFT JOIN
+		device_device as pe_device
+	on
+		backhaul.pe_ip_id = pe_device.id
+	LEFT JOIN
 		device_devicetechnology AS bsconverter_device_tech
 	ON
 		bsconverter_device.device_technology = bsconverter_device_tech.id
@@ -137,8 +141,6 @@ SELECT
 		device_device AS device
 	ON
 		sect.sector_configured_on_id = device.id
-		AND
-		device.is_added_to_nms > 0
 	LEFT JOIN
 		device_device AS device_parent
 	ON
@@ -191,8 +193,6 @@ SELECT
 		device_device AS ss_device
 	ON
 		ss_device.id = ss.device_id
-		AND
-		ss_device.is_added_to_nms > 0
 	LEFT JOIN
 		device_devicetechnology AS ss_device_tech
 	ON
@@ -203,8 +203,6 @@ SELECT
 		ss_device.device_type = ss_device_type.id
 	WHERE
 		not isnull(backhaul.bh_configured_on_id)
-		AND
-		bh_device.is_added_to_nms > 0
 	GROUP BY
 		backhaul.bh_configured_on_id;
 	"""
@@ -234,7 +232,8 @@ select
 	IF(isnull(severity), 'NA', severity) as severity,
 	IF(isnull(device_type), 'NA', device_type) as device_type,
 	IF(isnull(alarm_mode), 'NA',alarm_mode ) as alarm_mode,
-	IF(isnull(alarm_category), 'set([])',alarm_category ) as alarm_category,
+	IF(isnull(alarm_category), "set(['Down'])",alarm_category ) as alarm_category,
+	IF(isnull(alarm_group), 'NA',alarm_group ) as alarm_group,
 	IF(isnull(alarm_type), 'NA', alarm_type) as alarm_type,
 	IF(isnull(sia), 'NA', sia) as sia, 
 	IF(isnull(auto_tt), 'NA', auto_tt) as auto_tt,
@@ -271,46 +270,60 @@ ON
 query_5 = """
 SELECT master.alarm_name,master.severity,master.priority from master_alarm_table as master
 """
-@app.task(base=DatabaseTask, name='mysql_to_inventory_data',queue='correlation')
+@app.task(base=DatabaseTask, name='mysql_to_inventory_data')
 def mysql_to_inventory_data():
-    alarm_mapping_dict = defaultdict(list)
-    alarm_priority_dict = {} 
-    inv = inventory()
-    ptp_farend = list()
-    conn_163 = mysql_to_inventory_data.mysql_cnx('historical')
-    cur = conn_163.cursor()
-    cur.execute(query2)
-    desc = cur.description
-    farend_list = cur.fetchall()
-    for ip_tuple in farend_list:
-	ptp_farend.append(ip_tuple[0])
-    cur.execute(query1)
-    desc =  cur.description
-    my_list = [dict(zip([col[0] for col in desc ],row)) for row in cur.fetchall()]
-    inv.create_inventory_data(my_list,ptp_farend)
-    conn_165 = mysql_to_inventory_data.mysql_cnx('snmptt')
-    cur = conn_165.cursor()
-    cur.execute(query3)
-    desc = cur.description
-    mat_list = [dict(zip([col[0] for col in desc ],row)) for row in cur.fetchall()]
-    inv.insert_mat_data_in_redis(mat_list)
+    try:
+	alarm_mapping_dict = defaultdict(list)
+	alarm_priority_dict = {} 
+	inv = inventory()
+	ptp_farend = list()
 
-    # Current Clear alarm mapping
-    cur.execute(query_4)
-    current_clear_mapping = cur.fetchall()
-    for (name,severity,mask_name,mask_severity) in current_clear_mapping:
-    	    alarm_mapping_dict[(name,severity)].append((mask_name,mask_severity))
-    alarm_mapping = {'alarm_mapping_dict':alarm_mapping_dict}
-    inv.insert_data_in_redis(alarm_mapping)
+	conn_historical = mysql_to_inventory_data.mysql_cnx('historical')
+	cur = conn_historical.cursor()
+	cur.execute(query2)
+	desc = cur.description
+	farend_list = cur.fetchall()
 
-    # Alarm - Priority mapping
-    cur.execute("SELECT master.alarm_name,master.severity,master.priority from master_alarm_table as master")
-    alarm_priority = cur.fetchall()
-    for (name,severity,priority) in alarm_priority:
-	alarm_priority_dict[(name,severity)] = priority
-    redis_alarm_priority = {'alarm_priority_dict':alarm_priority_dict}
-    inv.insert_data_in_redis(redis_alarm_priority)
+	for ip_tuple in farend_list:
+	    ptp_farend.append(ip_tuple[0])
+	cur.execute(query1)
+	desc =  cur.description
+	my_list = [dict(zip([col[0] for col in desc ],row)) for row in cur.fetchall()]
+	inv.create_inventory_data(my_list,ptp_farend)
+	cur.close()
+	conn_historical.close()
+    except Exception as e:
+	logger.error('Error in rf-ip msyql historical data \n Exception : {0}'.format(e))
+	    
+    try:
+	conn_snmptt = mysql_to_inventory_data.mysql_cnx('snmptt')
+	cur = conn_snmptt.cursor()
+	cur.execute(query3)
+	desc = cur.description
+	mat_list = [dict(zip([col[0] for col in desc ],row)) for row in cur.fetchall()]
+	inv.insert_mat_data_in_redis(mat_list)
 
+	# Current Clear alarm mapping
+	cur.execute(query_4)
+	current_clear_mapping = cur.fetchall()
+	for (name,severity,mask_name,mask_severity) in current_clear_mapping:
+		alarm_mapping_dict[(name,severity)].append((mask_name,mask_severity))
+	alarm_mapping = {'alarm_mapping_dict':alarm_mapping_dict}
+	inv.insert_data_in_redis(alarm_mapping)
+
+	# Alarm - Priority mapping
+	cur.execute("SELECT master.alarm_name,master.severity,master.priority from master_alarm_table as master")
+	alarm_priority = cur.fetchall()
+	for (name,severity,priority) in alarm_priority:
+	    alarm_priority_dict[(name,severity)] = priority
+	redis_alarm_priority = {'alarm_priority_dict':alarm_priority_dict}
+	inv.insert_data_in_redis(redis_alarm_priority)
+	conn_snmptt.close()
+	cur.close()
+    except Exception as e:
+	logger.error('Error in rf-ip msyql snmptt data \n Exception : {0}'.format(e))
 
 if __name__ == '__main__':
-    mysql_to_inventory_data.apply_async(queue='correlation')
+    mysql_to_inventory_data.apply_async()
+    #mysql_to_inventory_data()
+

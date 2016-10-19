@@ -128,12 +128,20 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	# Process network perf data
         nw_qry_output = network_result
 	try:
-		pickle_file = open("state_change.dat",'r') 
-		state_change_dict = cPickle.load(pickle_file)
-		pickle_file.close()
-	except Exception as e: 
-		print e 
-		state_change_dict= {}
+            pickle_file = open("state_change.dat",'r')
+            state_change_dict = cPickle.load(pickle_file)
+            pickle_file.close()
+
+            pickle_file1 = open("state_change_rta.dat",'r')
+            state_change_dict_rta = cPickle.load(pickle_file1)
+            pickle_file1.close()
+
+
+
+        except Exception as e:
+	    print e
+	    state_change_dict= {}	
+	    state_change_dict_rta= {}
 	file_path = "/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk" % site
 	host_var = load_file(file_path)
 	host_list = [str(index[0]) for index in nw_qry_output]
@@ -147,6 +155,9 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	except Exception,e:
 		print e
 	#print device_first_down_map
+	events_pl_rta_list = []
+	state_change_severity = None
+	event_name = None
 	for entry in nw_qry_output:
                 try:
 		    threshold_values = get_threshold(entry[-1])
@@ -191,10 +202,20 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					pl_crit = float(pl_crit)
 					if pl_cur < pl_war:
 						host_severity = "up"
+						state_change_severity = "clear"
+						event_name = "PD_threshold_breach"
 					elif pl_cur >= pl_war and pl_cur <= pl_crit:
 						host_severity = "warning"
+						state_change_severity = "major"
+						event_name = "PD_threshold_breach"
+					elif pl_cur > pl_crit and pl_cur < 100:
+						host_severity = "critical"
+						state_change_severity = "major"
+						event_name = "PD_threshold_breach"
 					else:
 						host_severity = "down"
+						state_change_severity = "critical"
+						event_name = "Device_not_reachable"
 				try:
 					#if device_first_down_map:
 					device_first_down = device_first_down_map.get(str(entry[0]))
@@ -206,21 +227,31 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					refer = ''
 
 				try:
-					pre_host_severity=state_change_dict.get(str(entry[1]))[0]
-					if pre_host_severity and pre_host_severity!= host_severity:
-						age = int(time.time())
+				    pre_host_severity=state_change_dict.get(str(entry[1]))[0]
+				    if pre_host_severity and pre_host_severity!= host_severity:
+					age = int(time.time())
+					
+					if host_severity == "up":
+					    if pre_host_severity == "down":
+						event_name = "Device_not_reachable"
+					t = ('', event_name, '',str(entry[1]),
+                     				'',
+                     				'',
+                     				state_change_severity,
+                     				'',
+						time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(check_time))),
+                     				''
+                     				)
+					events_pl_rta_list.append(t)
+				    else :
+					age = state_change_dict.get(str(entry[1]))[1]                                         
 
-					else :
-						age = state_change_dict.get(str(entry[1]))[1]						
-
-					state_change_dict[str(entry[1])]=(host_severity,age)
+				    state_change_dict[str(entry[1])]=(host_severity,age)
 
 				except Exception as e :
-					print e, "in state change dict"
-					state_change_dict[str(entry[1])]=(host_severity,age)
-                                        
-
-
+				    print e, "in state change dict"
+				    state_change_dict[str(entry[1])]=(host_severity,age)
+				    #state_change_dict[str(entry[1])]=host_severity
 
 			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
 			if ds == 'rta':
@@ -238,13 +269,48 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					rta_crit = float(rta_crit)
 					if rta_cur < rta_war:
 						host_severity = "up"
+						state_change_severity = "clear"
 					elif (rta_cur >= rta_war) and (rta_cur <= rta_crit):
 						host_severity = "warning"
+						state_change_severity = "major"
+					elif rta_cur > rta_crit:
+						host_severity = "critical"
+						state_change_severity = "major"
 					else:
 						host_severity = "down"
+						state_change_severity = "critical"
+
 					
 				rta_dict = {'min_value': rt_min, 'max_value': rt_max}
 				data_values[0].update(rta_dict)
+												# changes for rta
+                                try:
+                                    pre_host_severity=state_change_dict_rta.get(str(entry[1]))[0]
+                                    if pre_host_severity and pre_host_severity!= host_severity:
+                                        age = int(time.time())
+                                        pl_flag = 1
+                                        t1 = ('', 'Latency_Threshold_Breach', '',str(entry[1]),
+                                                '',
+                                                '',
+                                                state_change_severity,
+                                                '',
+                                                 time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(check_time)), #check_time,
+                                                ''
+                                                )
+                                        events_pl_rta_list.append(t1)
+                                    else :
+                                        age = state_change_dict_rta.get(str(entry[1]))[1]
+
+                                    state_change_dict_rta[str(entry[1])]=(host_severity,age)
+
+                                except Exception as e :
+                                    print e, "in state change dict"
+                                    state_change_dict_rta[str(entry[1])]=(host_severity,age)
+
+
+
+
+
 			data_dict.update({
 				'site': site,
 				'host': str(entry[0]),
@@ -275,13 +341,16 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		refer = ''
 		device_first_down = {}
 	after = int(time.time())
+	try:
+	    pickle_file = open("state_change.dat",'w')
+	    cPickle.dump(state_change_dict,pickle_file)
+	    pickle_file.close()
 
-        try:
-                pickle_file = open("state_change.dat",'w')
-                cPickle.dump(state_change_dict,pickle_file)
-                pickle_file.close()
-        except Exception as e:
-                print e
+	    pickle_file1 = open("state_change_rta.dat",'w')
+	    cPickle.dump(state_change_dict_rta,pickle_file1)
+	    pickle_file1.close()
+	except Exception as e:
+	    print e
 
 
 	#print len(device_first_down_list)
@@ -363,7 +432,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			try:
 				value =  ds_values.get('cur')
 			except:
-		        value=None
+		        	value=None
 				pass	
 			# Code has been Added to figure out if check is executed or not..if check not executed then take current value
 			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
@@ -502,7 +571,17 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	elap = int(time.time()) - current1
 	print datetime.now()
 	print 'service_data_values'
+	
 	print len(service_data_values)
+	try:
+		rds_obj=db_ops_module.RedisInterface()
+		machine_name = nocout_site_name.split('_')[0]
+        	redis_key = 'q:network:snmptt:%s' % machine_name
+        	rds_obj.redis_cnx.rpush(redis_key, *events_pl_rta_list)
+	except Exception as e :
+		print e
+
+
 	pickle_file = open("device_down_dict_pickle.txt","w") 
 	cPickle.dump(device_first_down_map,pickle_file) 
 	pickle_file.close()
@@ -535,8 +614,8 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
 	memc_obj=db_ops_module.MemcacheInterface()
 	exp_time =240 # 4 min
 	memc_obj.store(key,serv_values,doc_len_key,exp_time,chunksize=1000)
-	
-	key = nocout_site_name + "_network"
+	key = nocout_site_name + "_network"	
+	#key = nocout_site_name + "_network"
 	doc_len_key =  key + "_len"
 	memc_obj.store(key,net_values,doc_len_key,exp_time,chunksize=1000)
 

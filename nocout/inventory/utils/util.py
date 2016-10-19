@@ -134,13 +134,13 @@ class InventoryUtilsGateway:
 
         return param1
 
-    def prepare_machines(self, device_list, machine_key='device_machine'):
+    def prepare_machines(self, device_list, machine_key='device_machine', device_name_key='device_name'):
         """
 
         :param device_list:
         :param machine_key:
         """
-        param1 = prepare_machines(device_list, machine_key=machine_key)
+        param1 = prepare_machines(device_list, machine_key=machine_key, device_name_key=device_name_key)
 
         return param1
 
@@ -637,7 +637,7 @@ def filter_devices(
 
 
 @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
-def prepare_machines(device_list, machine_key='device_machine'):
+def prepare_machines(device_list, machine_key='device_machine', device_name_key='device_name'):
     """
 
 
@@ -651,7 +651,7 @@ def prepare_machines(device_list, machine_key='device_machine'):
     machine_dict = {}
     #Creating the machine as a key and device_name as a list for that machine.
     for machine in unique_device_machine_list:
-        machine_dict[machine] = [device['device_name'] for device in device_list if
+        machine_dict[machine] = [device[device_name_key] for device in device_list if
                                  device[machine_key] == machine]
 
     return machine_dict
