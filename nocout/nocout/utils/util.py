@@ -2253,6 +2253,7 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
             IF(not isnull(bs.id), bs.id, '0') AS BSID,
             IF(not isnull(city.city_name), city.city_name, 'NA') AS BSCITY,
             IF(not isnull(state.state_name), state.state_name, 'NA') AS BSSTATE,
+            IF(not isnull(bs.bs_site_id), bs.bs_site_id, 'NA') as SITEID,
             IF(not isnull(freq.value), freq.value, 'NA') AS FREQUENCY,
             bs.city_id AS BSCITYID,
             bs.state_id AS BSSTATEID,
@@ -2420,6 +2421,7 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
             IF(not isnull(bs.bh_port_name), bs.bh_port_name , 'NA') AS BHPORT,
             IF(not isnull(bs.city_id), bs.city_id , '0') AS BSCITYID,
             IF(not isnull(bs.state_id), bs.state_id , '0') AS BSSTATEID,
+            IF(not isnull(bs.bs_site_id), bs.bs_site_id, 'NA') as SITEID,
             IF(not isnull(city.city_name), city.city_name , 'NA') AS BSCITY,
             IF(not isnull(state.state_name), state.state_name , 'NA') AS BSSTATE,
             bh_info.* 

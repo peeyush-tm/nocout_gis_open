@@ -265,8 +265,6 @@ class AlertCenterListing(ListView):
                 'bSortable': True
             }]
 
-        print pmp_wimax_datatable_headers
-
         if page_type == 'customer':
             # These headers are for Alert Center -> Customer Details -> Radwin5K Tab
             rad5_customer_detail_headers += rad5_customer_start_headers
@@ -300,6 +298,19 @@ class AlertCenterListing(ListView):
         context['data_source'] = displayed_ds_name
         context['url_data_source'] = data_source
         context['page_type'] = page_type
+
+        print '-----------------------ptp_datatable_headers----------------'
+        print ptp_datatable_headers
+        print '-----------------------ptp_datatable_headers----------------\n'
+
+        print '-----------------------pmp_wimax_datatable_headers----------------'
+        print pmp_wimax_datatable_headers
+        print '-----------------------pmp_wimax_datatable_headers----------------\n'
+
+        print '-----------------------bh_datatable_headers----------------'
+        print bh_datatable_headers
+        print '-----------------------bh_datatable_headers----------------\n'
+
 
         return context
 
