@@ -370,6 +370,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         request = self.request
 
         page_type = request.GET['page_type']
+        is_rad5 = int(request.GET.get('is_rad5', 0))
 
         if page_type == 'customer':
             columns = [
@@ -379,6 +380,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'customer_name',
                 'near_end_ip',
                 'region',
+                'min_latency',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -387,7 +389,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'packet_loss',
                 'latency',
                 'last_updated',
-                'age'
+                'age',
             ]
         elif page_type == 'network':
             columns = [
@@ -396,6 +398,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'circuit_id',
                 'customer_name',
                 'region',
+                'min_latency',
                 'ip_address',
                 'device_type',
                 'bs_name',

@@ -54,6 +54,8 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         ||
                         column.mData.indexOf("min_latency") > -1
                         ||
+                        column.mData.indexOf("site_id") > -1
+                        ||
                         column.mData.indexOf("dl_uas") > -1
                         ||
                         column.mData.indexOf("ul_uas") > -1 

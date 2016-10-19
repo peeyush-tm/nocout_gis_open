@@ -163,6 +163,7 @@ class AlertCenterListing(ListView):
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'site_id', 'sTitle': 'SITE ID', 'sWidth': 'auto', 'bSortable': True, 'bVisible':False},
             {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
         ]
@@ -227,6 +228,7 @@ class AlertCenterListing(ListView):
             {'mData': 'ip_address', 'sTitle': 'HSU IP', 'bSortable': True, 'sWidth': 'auto'},
             {'mData': 'device_type', 'sTitle': 'Type', 'bSortable': True, 'sWidth': 'auto'},
             {'mData': 'bs_name', 'sTitle': 'BS Name', 'bSortable': True, 'sWidth': 'auto'},
+            {'mData': 'site_id', 'sTitle': 'SITE ID', 'sWidth': 'auto', 'bSortable': True, 'bVisible':False},
             {'mData': 'city', 'sTitle': 'City', 'bSortable': True, 'sWidth': 'auto'},
             {'mData': 'state', 'sTitle': 'State', 'bSortable': True, 'sWidth': 'auto'}
         ]
@@ -414,6 +416,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             devices = inventory_utils.filter_devices(
                 organizations=kwargs['organizations'],
                 data_tab=device_tab_technology,
+                is_rad5=is_rad5,
                 page_type=page_type,
                 other_type=other_type,
                 required_value_list=required_value_list

@@ -8,7 +8,7 @@ import datetime
 from nocout.settings import P2P, PMP, WiMAX, TCLPOP, DEBUG, SPEEDOMETER_DASHBAORDS
 
 from organization.models import Organization
-from device.models import DeviceTechnology, Device
+from device.models import DeviceTechnology, Device, DeviceType
 from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
 from performance.models import Topology, NetworkStatus, ServiceStatus, NetworkAvailabilityDaily
 from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, DashboardSeverityStatusHourly,
