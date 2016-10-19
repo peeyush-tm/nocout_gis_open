@@ -2111,8 +2111,10 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     ]
 
     excluded_events = [
-        'Latency_Threshold_Breach', 'Uplink_Issue_threshold_Breach',
-        'Device_not_reachable', 'PD_threshold_breach'
+        'PD_threshold_breach', 'PD_threshold_breach_warning', 'PD_threshold_breach_major',
+        'Latency_Threshold_Breach', 'Latency_Threshold_Breach_warning', 'Latency_Threshold_Breach_major',
+        'Uplink_Issue_threshold_Breach', 'Uplink_Issue_threshold_Breach_warning', 'Uplink_Issue_threshold_Breach_major',
+        'Device_not_reachable'
     ]
 
     is_ordered = False
