@@ -2711,10 +2711,12 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
     severity_icon_dict = {
         'latency': {
+            'warning': 'orange-dot',
             'major': 'red-dot',
             'clear': 'green-dot'
         },
         'packet_drop': {
+            'warning': 'orange-dot',
             'major': 'red-dot',
             'clear': 'green-dot'
         },
@@ -2787,9 +2789,9 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
         # set filter condition according to the data source
         if data_source and data_source.lower() in ['packet_drop']:
-            eventname_list = ['PD_threshold_breach']
+            eventname_list = ['PD_threshold_breach_warning', 'PD_threshold_breach_major']
         elif data_source and data_source.lower() in ['latency']:
-            eventname_list = ['Latency_Threshold_Breach']
+            eventname_list = ['Latency_Threshold_Breach_warning', 'Latency_Threshold_Breach_major']
         elif data_source and data_source.lower() in ['down']:
             eventname_list = ['Device_not_reachable']
         else:
@@ -3877,7 +3879,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             perf_result.update(result)
 
     mapped_result = mapped_sector_result.copy()
-    #mapped_result.update(mapped_dr_result)
+    mapped_result.update(mapped_dr_result)
     mapped_result.update(mapped_ss_result)
     mapped_result.update(converter_mapped_data)
    
