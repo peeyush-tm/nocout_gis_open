@@ -3879,7 +3879,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             perf_result.update(result)
 
     mapped_result = mapped_sector_result.copy()
-    #mapped_result.update(mapped_dr_result)
+    mapped_result.update(mapped_dr_result)
     mapped_result.update(mapped_ss_result)
     mapped_result.update(converter_mapped_data)
    
