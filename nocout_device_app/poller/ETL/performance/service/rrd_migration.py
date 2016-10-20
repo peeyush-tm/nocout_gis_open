@@ -158,6 +158,16 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	events_pl_rta_list = []
 	state_change_severity = None
 	event_name = None
+	pl_event_name_mapping ={
+	"down" : "Device_not_reachable",
+	"critical": "PD_threshold_breach_major",
+	"warning": "PD_threshold_breach_warning"
+	}
+	rta_event_name_mapping ={
+	"down" : "Device_not_reachable",
+	"critical": "Latency_Threshold_Breach_major",
+	"warning": "Latency_Threshold_Breach_warning"
+	}
 	for entry in nw_qry_output:
                 try:
 		    threshold_values = get_threshold(entry[-1])
@@ -206,12 +216,12 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 						event_name = "PD_threshold_breach"
 					elif pl_cur >= pl_war and pl_cur <= pl_crit:
 						host_severity = "warning"
-						state_change_severity = "major"
-						event_name = "PD_threshold_breach"
+						state_change_severity = "warning"
+						event_name = "PD_threshold_breach_warning"
 					elif pl_cur > pl_crit and pl_cur < 100:
 						host_severity = "critical"
 						state_change_severity = "major"
-						event_name = "PD_threshold_breach"
+						event_name = "PD_threshold_breach_major"
 					else:
 						host_severity = "down"
 						state_change_severity = "critical"
@@ -230,18 +240,32 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 				    pre_host_severity=state_change_dict.get(str(entry[1]))[0]
 				    if pre_host_severity and pre_host_severity!= host_severity:
 					age = int(time.time())
-					
+					# Adding changes for generating events based on the changed state of rta/pl
+					# Also Generating clear events for previous state	
 					if host_severity == "up":
-					    if pre_host_severity == "down":
-						event_name = "Device_not_reachable"
+					    if pl_event_name_mapping.get(pre_host_severity):	
+					        event_name = pl_event_name_mapping.get(pre_host_severity)
+					elif host_severity in ["warning","critical","down"] and pre_host_severity != "up":
+					    modified_event_name = pl_event_name_mapping.get(pre_host_severity)
+					    t2 = ('', modified_event_name, '',str(entry[1]),
+						    '',
+						    '',
+						    "clear",
+						    '',
+						     time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(local_timestamp)), #check_time,
+						    ''
+					    )
+                                            events_pl_rta_list.append(t2)
+					local_time = local_timestamp + 2
 					t = ('', event_name, '',str(entry[1]),
                      				'',
                      				'',
                      				state_change_severity,
                      				'',
-						time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(check_time))),
+						time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(local_time))),
                      				''
                      				)
+
 					events_pl_rta_list.append(t)
 				    else :
 					age = state_change_dict.get(str(entry[1]))[1]                                         
@@ -267,15 +291,18 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					rta_cur = float(rta_cur)
 					rta_war = float(rta_war)
 					rta_crit = float(rta_crit)
+					event_name = 'Latency_Threshold_Breach'
 					if rta_cur < rta_war:
 						host_severity = "up"
 						state_change_severity = "clear"
 					elif (rta_cur >= rta_war) and (rta_cur <= rta_crit):
 						host_severity = "warning"
-						state_change_severity = "major"
+						state_change_severity = "warning"
+						event_name = 'Latency_Threshold_Breach_warning'
 					elif rta_cur > rta_crit:
 						host_severity = "critical"
 						state_change_severity = "major"
+						event_name = 'Latency_Threshold_Breach_major'
 					else:
 						host_severity = "down"
 						state_change_severity = "critical"
@@ -289,12 +316,27 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
                                     if pre_host_severity and pre_host_severity!= host_severity:
                                         age = int(time.time())
                                         pl_flag = 1
-                                        t1 = ('', 'Latency_Threshold_Breach', '',str(entry[1]),
+					if host_severity == "up":
+					    if rta_event_name_mapping.get(pre_host_severity):	
+					        event_name = rta_event_name_mapping.get(pre_host_severity)
+					elif host_severity in ["warning","critical","down"] and pre_host_severity != "up":
+					    modified_event_name = rta_event_name_mapping.get(pre_host_severity)
+					    t2 = ('', modified_event_name, '',str(entry[1]),
+						    '',
+						    '',
+						    "clear",
+						    '',
+						     time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(local_timestamp)), #check_time,
+						    ''
+					    )
+                                            events_pl_rta_list.append(t2)
+					local_time = local_timestamp + 2
+                                        t1 = ('', event_name, '',str(entry[1]),
                                                 '',
                                                 '',
                                                 state_change_severity,
                                                 '',
-                                                 time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(check_time)), #check_time,
+                                                 time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(local_time)), #check_time,
                                                 ''
                                                 )
                                         events_pl_rta_list.append(t1)
@@ -571,13 +613,14 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	elap = int(time.time()) - current1
 	print datetime.now()
 	print 'service_data_values'
-	
+	#print events_pl_rta_list
 	print len(service_data_values)
+	# publishing data to server prd4 for processing the events
 	try:
 		rds_obj=db_ops_module.RedisInterface()
 		machine_name = nocout_site_name.split('_')[0]
-        	redis_key = 'q:network:snmptt:%s' % machine_name
-        	rds_obj.redis_cnx.rpush(redis_key, *events_pl_rta_list)
+        	redis_key = 'queue:network:snmptt:%s' % machine_name
+        	rds_obj.redis_cnx_prd4.rpush(redis_key, *events_pl_rta_list)
 	except Exception as e :
 		print e
 
