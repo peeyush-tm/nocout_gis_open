@@ -298,20 +298,7 @@ class AlertCenterListing(ListView):
         context['data_source'] = displayed_ds_name
         context['url_data_source'] = data_source
         context['page_type'] = page_type
-
-        print '-----------------------ptp_datatable_headers----------------'
-        print ptp_datatable_headers
-        print '-----------------------ptp_datatable_headers----------------\n'
-
-        print '-----------------------pmp_wimax_datatable_headers----------------'
-        print pmp_wimax_datatable_headers
-        print '-----------------------pmp_wimax_datatable_headers----------------\n'
-
-        print '-----------------------bh_datatable_headers----------------'
-        print bh_datatable_headers
-        print '-----------------------bh_datatable_headers----------------\n'
-
-
+        
         return context
 
 
@@ -794,6 +781,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
         order = []
         order_columns = self.get_order_columns()
+
         sort_using = ''
         reverse = ''
 
@@ -845,6 +833,160 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 return qs
         else:
             return qs
+
+    def find_order_columns(self, page_type='network', data_source='packet_drop', data_tab=None):
+        """
+        This method will return column list in which order sorting will work
+        """
+
+        # Getting key for searching in col_dict 
+        if data_tab in ['WiMAX', 'PMP']:
+            header_key = 'pmp_wimax_datatable_headers'
+        elif data_tab == 'P2P':
+            header_key = 'ptp_datatable_headers'
+        else:
+            header_key = 'bh_datatable_headers'
+
+        print page_type
+        print data_tab
+        print header_key
+        print data_source
+
+        # Changing data source according to right keys in col_dict in case of Backhaul
+        if data_source in ['packet_drop', 'Backhaul_PD']:
+            data_source = 'packet_drop'
+        elif data_source in ['down', 'Backhaul_Down']:
+            data_source = 'down'
+        elif data_source in ['latency', 'Backhaul_RTA']:
+            data_source = 'latency'
+        else:
+            data_source = '' 
+
+        print data_source
+
+        # Common Network Datatable headers used in ordering
+        common_network_ptp_headers = [
+            'severity',
+            'circuit_id',
+            'customer_name',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+        ]
+
+        common_network_bh_headers = [
+            'severity',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+            'bh_connectivity',
+            'current_value'
+        ]
+
+        common_network_pmp_wimax_headers = [
+            'severity',
+            'sector_id',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+            'customer_count',
+            'region',
+            'current_value',
+        ]
+
+        # Common Customer Datatable headers used in ordering
+        common_customer_ptp_headers = [
+            'severity',
+            'circuit_id',
+            'customer_name',
+            'near_end_ip',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+            'current_value',
+        ]
+
+        common_customer_pmp_wimax_headers = [
+            'severity',
+            'sector_id',
+            'circuit_id',
+            'customer_name',
+            'near_end_ip',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+            'region',
+        ]
+
+
+        network_pd_and_down_ptp_datatable_headers = common_network_ptp_headers + ['current_value', 'sys_timestamp', 'age', 'action']
+        network_pd_and_down_bh_datatable_headers = common_network_bh_headers +  ['sys_timestamp', 'age', 'action']
+        customer_pd_and_down_ptp_datatable_headers = common_customer_ptp_headers + ['sys_timestamp', 'age', 'action']
+
+        col_dict = {
+            'network' : {
+                'packet_drop' : {
+                    'ptp_datatable_headers': network_pd_and_down_ptp_datatable_headers,
+                    'bh_datatable_headers': network_pd_and_down_bh_datatable_headers,
+                    'pmp_wimax_datatable_headers': common_network_pmp_wimax_headers + ['sys_timestamp', 'age', 'action']
+                },
+
+                'down' : {
+                    'ptp_datatable_headers': network_pd_and_down_ptp_datatable_headers,
+                    'bh_datatable_headers': network_pd_and_down_bh_datatable_headers,
+                    'pmp_wimax_datatable_headers': common_network_pmp_wimax_headers + ['ticket_no', 'sys_timestamp', 'age', 'action']
+                },
+
+                'latency' : {
+                    'ptp_datatable_headers': common_network_ptp_headers + ['current_value', 'max_value', 'min_value', 'sys_timestamp', 'age', 'action'],
+                    'bh_datatable_headers': common_network_bh_headers + ['max_value', 'min_value', 'sys_timestamp', 'age', 'action'],
+                    'pmp_wimax_datatable_headers': common_network_pmp_wimax_headers + ['max_value', 'min_value', 'sys_timestamp', 'age', 'action']
+                }
+            }, 
+
+            'customer' : {
+                'packet_drop' : {
+                    'ptp_datatable_headers': customer_pd_and_down_ptp_datatable_headers,
+                    'bh_datatable_headers': [],
+                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers + ['current_value', 'dl_uas', 'ul_uas', 'sys_timestamp', 'age', 'action']
+                },
+
+                'down' : {
+                    'ptp_datatable_headers': customer_pd_and_down_ptp_datatable_headers,
+                    'bh_datatable_headers': [],
+                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers + ['current_value', 'sys_timestamp', 'age', 'action']
+                },
+
+                'latency' : {
+                    'ptp_datatable_headers': common_customer_ptp_headers + ['max_value', 'min_value', 'sys_timestamp', 'age', 'action'],
+                    'bh_datatable_headers': [],
+                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers + ['min_latency', 'current_value', 'max_value', 'min_value', 
+                                                                                        'dl_utilization', 'ul_utilization', 'sys_timestamp', 'age', 'action']
+                }
+            }
+        }
+
+        print '---------------------------------self.order_columns'
+        print col_dict.get(page_type, {}).get(data_source, {}).get(header_key)
+        print '---------------------------------self.order_columns'
+
+        # returning right columns for ordering
+        return col_dict.get(page_type, {}).get(data_source, {}).get(header_key)
 
     def prepare_initial_params(self):
         """
@@ -928,7 +1070,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         self.columns += polled_columns
         self.columns += other_columns
         
-        self.order_columns = self.columns
+        self.order_columns = self.find_order_columns(page_type, data_source, data_tab)
 
         return True
 
