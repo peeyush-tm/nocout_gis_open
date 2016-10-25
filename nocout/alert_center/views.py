@@ -25,7 +25,7 @@ from inventory.utils.util import InventoryUtilsGateway
 from inventory.models import Sector, BaseStation, SubStation, Circuit, Backhaul
 
 # Import alert_center utils gateway class
-from alert_center.utils.util import AlertCenterUtilsGateway
+from alert_center.utils.util import AlertCenterUtilsGateway, get_ping_status
 
 # Import scheduling_management utils gateway class
 from scheduling_management.utils.util import SchedulingManagementGateway
@@ -3875,7 +3875,7 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
     perf_result = {}
     for machine_name in machine_device_dict:
         if machine_name and machine_device_dict[machine_name]:
-            result = perf_utils.get_performance_data(machine_device_dict[machine_name], machine_name, None)
+            result = get_ping_status(machine_device_dict[machine_name], machine_name, None)
             perf_result.update(result)
 
     mapped_result = mapped_sector_result.copy()

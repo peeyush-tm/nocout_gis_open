@@ -8035,9 +8035,37 @@ class GetTopology(View):
                         {1} = {2}
                     GROUP by(sect_sector_id)
                 '''.format(', '.join(bs_id), query_filter_condition1 , current_device_id)
-
-        
         elif page_type == 'customer':
+
+            try:
+                bs_alias = BaseStation.objects.get(id=bs_id[0]).alias
+            except Exception, e:
+                bs_alias = ''
+
+            queryset = Circuit.objects.filter(circuit_id__icontains = bs_alias + '#')
+
+            if queryset.exists():
+                have_ptp_bh = True
+
+                circuit_id = queryset[0].circuit_id
+                # spliiting current circuit in case of having PTP-BH, because there we have Far-end and Near-End
+                splitted_circuit_id_list = circuit_id.split('#')
+                
+
+                if len(splitted_circuit_id_list) > 1:
+                    far_end_bs = splitted_circuit_id_list[0].lower().strip()
+                    near_end_bs = splitted_circuit_id_list[1].lower().strip()
+
+                    try:
+                        far_end_bs_id = BaseStation.objects.filter(alias__iexact=far_end_bs)[0].id
+                    except Exception, e:
+                        far_end_bs_id = 0
+
+                    try:
+                        near_end_bs_id = BaseStation.objects.filter(alias__iexact=near_end_bs[0]).id
+                    except Exception, e:
+                        near_end_bs_id = 0
+
             current_sector_device_id = 0
             if 'SS' in device_type.name:
                 queryset = list(Circuit.objects.filter(sub_station__device=device).values('sector__sector_configured_on__id'))
@@ -8046,158 +8074,431 @@ class GetTopology(View):
             else:
                 current_sector_device_id = current_device_id
 
-            topology_query = ''' 
-                SELECT
-                    IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
-                    IF(isnull(bs.name), 'NA', bs.name) AS bs_name,
-                    IF(isnull(bs.alias), 'NA', bs.alias) AS bs_alias,
-                    IF(isnull(bs_switch.id), 'NA', bs_switch.id) AS bs_switch_id, 
-                    IF(isnull(backhaul.bh_switch_id), 'NA', backhaul.bh_switch_id) AS bs_convertor_id,
-                    IF(isnull(backhaul.aggregator_id), 'NA', backhaul.aggregator_id) AS bh_aggregator_id,
-                    IF(isnull(backhaul.pop_id), 'NA', backhaul.pop_id) AS bh_pop_id,
-                    IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
-                    IF(isnull(bs.backhaul_id), 'NA', bs.backhaul_id) AS bh_id,
-                    IF(isnull(backhaul.pe_hostname), 'NA', backhaul.pe_hostname) AS pe_hostname,
-                    IF(isnull(bh_pe_device.id), 'NA', bh_pe_device.id) AS pe_id,
-                    IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
-                    IF(isnull(backhaul.bh_configured_on_id), 'NA', backhaul.bh_configured_on_id) AS bh_device_id,
-                    IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
-                    -- IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
-                    IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
-                    IF(isnull(backhaul.pop_port_name), 'NA', backhaul.pop_port_name) AS bh_pop_port,
-                    IF(isnull(bh_aggregator_device.ip_address), 'NA', bh_aggregator_device.ip_address) AS bh_aggregator_ip,
-                    IF(isnull(backhaul.aggregator_port_name), 'NA', backhaul.aggregator_port_name) AS bh_aggregator_port,
-                    IF(isnull(bh_device_type.name), 'NA', bh_device_type.name) AS bh_device_type,
-                    IF(isnull(bh_device_tech.name), 'NA', bh_device_tech.name) AS bh_device_tech,   
-                    IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS bh_ip,
-                    IF(isnull(sect.id), 'NA', sect.id) AS sect_id,
-                    IF(isnull(sect.sector_id), 'NA', sect.sector_id) AS sect_sector_id,
-                    IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
-                    IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
-                    IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
-                    IF(isnull(sector_port.alias), 'NA', sector_port.alias) AS sect_port,
-                    IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
-                    IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
-                    IF(not isnull(sect.sector_id), sect.sector_id, device.ip_address) AS sect_ip_id_title,
-                    IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS ss_circuit_id,
-                    IF(isnull(ckt.sub_station_id), 'NA', ckt.sub_station_id) AS ss_id,
-                    IF(isnull(ss.device_id), 'NA', ss.device_id) AS ss_device_id,
-                    IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name) AS ss_device_tech,
-                    IF(isnull(ss_device_type.name), 'NA', ss_device_type.name) AS ss_device_type,
-                    IF(isnull(ss_device.device_name), 'NA', ss_device.device_name) AS ss_device_name,
-                    IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address) AS ss_device_ip,
-                    IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
-                    IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
-                    IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
-                    IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
-                    IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
-                    IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
-                    ss_device_type.device_icon as ss_icon,
-                    sect_device_type.device_icon as sect_icon,
-                    bh_device_type.device_icon as bh_icon,
-                    sect_freq.color_hex_value as sect_color,
-                    IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
-                    IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
-                    IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port
+            sect_device = 'far_end_sect_device'
 
-                FROM
-                    inventory_basestation AS bs
-                LEFT JOIN
-                    device_device AS bs_switch
-                ON
-                    bs.bs_switch_id = bs_switch.id
-                LEFT JOIN
-                    inventory_backhaul AS backhaul
-                ON
-                    bs.backhaul_id = backhaul.id
-                LEFT JOIN
-                    device_device AS bh_pe_device
-                ON
-                    backhaul.pe_ip_id = bh_pe_device.id
-                LEFT JOIN
-                    device_device AS bs_convertor_device
-                ON
-                    backhaul.bh_switch_id = bs_convertor_device.id
-                LEFT JOIN
-                    device_device AS bh_aggregator_device
-                ON
-                    backhaul.aggregator_id = bh_aggregator_device.id
-                LEFT JOIN
-                    device_device AS bh_pop_device
-                ON
-                    backhaul.pop_id = bh_pop_device.id
-                LEFT JOIN
-                    device_device AS bh_device
-                ON
-                    backhaul.bh_configured_on_id = bh_device.id
-                LEFT JOIN 
-                    device_devicetechnology AS bh_device_tech
-                ON
-                    bh_device.device_technology = bh_device_tech.id
-                LEFT JOIN
-                    inventory_sector AS sect
-                ON
-                    bs.id = sect.base_station_id
-                LEFT JOIN
-                    device_deviceport AS sector_port
-                ON
-                    sect.sector_configured_on_port_id = sector_port.id
-                LEFT JOIN
-                    device_device AS device
-                ON
-                    sect.sector_configured_on_id = device.id
-                LEFT JOIN 
-                    device_devicetechnology AS sect_device_tech
-                ON
-                    device.device_technology = sect_device_tech.id
-                LEFT JOIN
-                    device_device as sect_device
-                ON
-                    sect.sector_configured_on_id = sect_device.id
-                LEFT JOIN
-                    inventory_circuit AS ckt
-                ON
-                    sect.id = ckt.sector_id
-                LEFT join
-                    inventory_substation as ss
-                ON
-                    ckt.sub_station_id = ss.id
-                LEFT JOIN
-                    device_device AS ss_device
-                ON
-                    ss.device_id = ss_device.id
-                LEFT JOIN 
-                    device_devicetechnology AS ss_device_tech
-                ON
-                    ss_device.device_technology = ss_device_tech.id
-                LEFT JOIN
-                    device_devicetype as sect_device_type
-                ON
-                    sect_device_type.id = device.device_type
-                LEFT JOIN
-                    device_devicetype as ss_device_type
-                ON
-                    ss_device_type.id = ss_device.device_type
-                LEFT JOIN
-                    device_devicetype as bh_device_type
-                ON
-                    bh_device_type.id = bh_device.device_type
-                LEFT JOIN
-                    device_devicefrequency as sect_freq
-                ON
-                    sect_freq.id = sect.frequency_id
-                LEFT JOIN
-                    device_device as current_device
-                ON
-                    current_device.id = {2}
-                where
-                    current_device.is_added_to_nms > 0
-                    AND
-                    bs.id in ({0})
-                    AND
-                    sect_device.id = {1}
-            '''.format(', '.join(bs_id), current_sector_device_id, current_device_id)
+            # if device_technology.lower() == 'p2p':
+            #     sect_device = 'sect_device'
+            # else:
+            #     sect_device = 'far_end_sect_device'
 
+
+            if have_ptp_bh :
+                topology_query = ''' 
+                    SELECT
+                        IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
+                        IF(isnull(bs.name), 'NA', bs.name) AS bs_name,
+                        IF(isnull(bs.alias), 'NA', bs.alias) AS bs_alias,
+                        IF(isnull(bs_switch.id), 'NA', bs_switch.id) AS bs_switch_id, 
+                        IF(isnull(backhaul.bh_switch_id), 'NA', backhaul.bh_switch_id) AS bs_convertor_id,
+                        IF(isnull(backhaul.aggregator_id), 'NA', backhaul.aggregator_id) AS bh_aggregator_id,
+                        IF(isnull(backhaul.pop_id), 'NA', backhaul.pop_id) AS bh_pop_id,
+                        IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
+                        IF(isnull(bs.backhaul_id), 'NA', bs.backhaul_id) AS bh_id,
+                        IF(isnull(backhaul.pe_hostname), 'NA', backhaul.pe_hostname) AS pe_hostname,
+                        IF(isnull(bh_pe_device.id), 'NA', bh_pe_device.id) AS pe_id,
+                        IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
+                        IF(isnull(backhaul.bh_configured_on_id), 'NA', backhaul.bh_configured_on_id) AS bh_device_id,
+                        IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
+                        -- IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
+                        IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
+                        IF(isnull(backhaul.pop_port_name), 'NA', backhaul.pop_port_name) AS bh_pop_port,
+                        IF(isnull(bh_aggregator_device.ip_address), 'NA', bh_aggregator_device.ip_address) AS bh_aggregator_ip,
+                        IF(isnull(backhaul.aggregator_port_name), 'NA', backhaul.aggregator_port_name) AS bh_aggregator_port,
+                        IF(isnull(bh_device_type.name), 'NA', bh_device_type.name) AS bh_device_type,
+                        IF(isnull(bh_device_tech.name), 'NA', bh_device_tech.name) AS bh_device_tech,   
+                        IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS bh_ip,
+                        IF(isnull(sect.id), 'NA', sect.id) AS sect_id,
+                        IF(isnull(sect.sector_id), 'NA', sect.sector_id) AS sect_sector_id,
+                        IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
+                        IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
+                        IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
+                        IF(isnull(sector_port.alias), 'NA', sector_port.alias) AS sect_port,
+                        IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
+                        IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
+                        IF(not isnull(sect.sector_id), sect.sector_id, device.ip_address) AS sect_ip_id_title,
+                        IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS ss_circuit_id,
+                        IF(isnull(ckt.sub_station_id), 'NA', ckt.sub_station_id) AS ss_id,
+                        IF(isnull(ss.device_id), 'NA', ss.device_id) AS ss_device_id,
+                        IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name) AS ss_device_tech,
+                        IF(isnull(ss_device_type.name), 'NA', ss_device_type.name) AS ss_device_type,
+                        IF(isnull(ss_device.device_name), 'NA', ss_device.device_name) AS ss_device_name,
+                        IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address) AS ss_device_ip,
+                        IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
+                        IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
+                        IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
+                        IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
+                        IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
+                        IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
+                        ss_device_type.device_icon as ss_icon,
+                        sect_device_type.device_icon as sect_icon,
+                        bh_device_type.device_icon as bh_icon,
+                        sect_freq.color_hex_value as sect_color,
+                        IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
+                        IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
+                        IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port,
+                        IF(isnull(far_end_bs.id), 'NA', far_end_bs.id) AS far_end_bs_id,
+                        IF(isnull(far_end_device.ip_address), 'NA', far_end_device.ip_address) AS far_end_ip,
+                        IF(isnull(far_end_device.id), 'NA', far_end_device.id) AS far_end_id,
+                        IF(isnull(far_end_bs.name), 'NA', far_end_bs.name) AS far_end_bs_name,
+                        IF(isnull(far_end_bs.alias), 'NA', far_end_bs.alias) AS far_end_bs_alias,
+                        IF(isnull(far_end_bs_switch.id), 'NA', far_end_bs_switch.id) AS far_end_bs_switch_id, 
+                        IF(isnull(far_end_bs_switch.ip_address), 'NA', far_end_bs_switch.ip_address) AS far_end_bs_switch_ip,
+                        IF(isnull(far_end_sect.id), 'NA', far_end_sect.id) AS far_end_sect_id,
+                        IF(isnull(far_end_sect.sector_id), 'NA', far_end_sect.sector_id) AS far_end_sect_sector_id,
+                        IF(isnull(far_end_sect.sector_configured_on_id), 'NA', far_end_sect.sector_configured_on_id) AS far_end_sect_device_id,
+                        IF(isnull(far_end_sect_device.device_name), 'NA', far_end_sect_device.device_name) AS far_end_sect_device_name,
+                        IF(isnull(far_end_sect_device_tech.name), 'NA', far_end_sect_device_tech.name) AS far_end_sect_device_tech,
+                        IF(isnull(far_end_sector_port.alias), 'NA', far_end_sector_port.alias) AS far_end_sect_port,
+                        IF(isnull(far_end_bs.bh_port_name), 'NA', far_end_bs.bh_port_name) AS far_end_bs_switch_port ,
+                        IF(isnull(far_end_sect_device_type.name), 'NA', far_end_sect_device_type.name) AS far_end_sect_device_type,
+                        IF(isnull(far_end_sect_device.ip_address), 'NA', far_end_sect_device.ip_address) AS far_end_sect_device_ip,
+                        IF(far_end_sect_device_tech.name = 'WiMAX', CONCAT(far_end_sect_device.ip_address, ' - ', far_end_sect.sector_id), far_end_sect_device.ip_address) AS far_end_sect_ip_id_title,
+                        IF(isnull(far_end_ckt.circuit_id), 'NA', far_end_ckt.circuit_id) AS far_end_ss_circuit_id,
+                        IF(isnull(far_end_ss.id), 'NA', far_end_ss.id) AS far_end_ss_id,
+                        IF(isnull(far_end_ss_device.id), 'NA', far_end_ss_device.id) AS far_end_ss_device_id,
+                        IF(isnull(far_end_ss_device_tech.name), 'NA', far_end_ss_device_tech.name) AS far_end_ss_device_tech,
+                        IF(isnull(far_end_ss_device_type.name), 'NA', far_end_ss_device_type.name) AS far_end_ss_device_type,
+                        IF(isnull(far_end_ss_device.device_name), 'NA', far_end_ss_device.device_name) AS far_end_ss_device_name,
+                        IF(isnull(far_end_ss_device.ip_address), 'NA', far_end_ss_device.ip_address) AS far_end_ss_device_ip,
+                        IF(isnull(far_end_bs_switch.device_name), 'NA', far_end_bs_switch.device_name) AS far_end_bs_switch_name,
+                        IF(isnull(far_end_device.device_name), 'NA', far_end_device.device_name) AS far_end_device_name,
+                        IF(isnull(far_end_sect_device.device_name), 'NA', far_end_sect_device.device_name) AS far_end_sect_device_name,
+                        IF(isnull(near_end_device.ip_address), 'NA', near_end_device.ip_address) AS near_end_ip,
+                        IF(isnull(near_end_device.id), 'NA', near_end_device.id) AS near_end_id,
+                        IF(isnull(near_end_device.device_name), 'NA', near_end_device.device_name) AS near_end_device_name
+                    FROM
+                        inventory_basestation AS bs
+                    LEFT JOIN
+                        device_device AS bs_switch
+                    ON
+                        bs.bs_switch_id = bs_switch.id
+                    LEFT JOIN
+                        inventory_backhaul AS backhaul
+                    ON
+                        bs.backhaul_id = backhaul.id
+                    LEFT JOIN
+                        device_device AS bh_pe_device
+                    ON
+                        backhaul.pe_ip_id = bh_pe_device.id
+                    LEFT JOIN
+                        device_device AS bs_convertor_device
+                    ON
+                        backhaul.bh_switch_id = bs_convertor_device.id
+                    LEFT JOIN
+                        device_device AS bh_aggregator_device
+                    ON
+                        backhaul.aggregator_id = bh_aggregator_device.id
+                    LEFT JOIN
+                        device_device AS bh_pop_device
+                    ON
+                        backhaul.pop_id = bh_pop_device.id
+                    LEFT JOIN
+                        device_device AS bh_device
+                    ON
+                        backhaul.bh_configured_on_id = bh_device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS bh_device_tech
+                    ON
+                        bh_device.device_technology = bh_device_tech.id
+                    LEFT JOIN
+                        inventory_sector AS sect
+                    ON
+                        bs.id = sect.base_station_id
+                    LEFT JOIN
+                        device_deviceport AS sector_port
+                    ON
+                        sect.sector_configured_on_port_id = sector_port.id
+                    LEFT JOIN
+                        device_device AS device
+                    ON
+                        sect.sector_configured_on_id = device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS sect_device_tech
+                    ON
+                        device.device_technology = sect_device_tech.id
+                    LEFT JOIN
+                        device_device as sect_device
+                    ON
+                        sect.sector_configured_on_id = sect_device.id
+                    LEFT JOIN
+                        inventory_circuit AS ckt
+                    ON
+                        sect.id = ckt.sector_id
+                    LEFT join
+                        inventory_substation as ss
+                    ON
+                        ckt.sub_station_id = ss.id
+                    LEFT JOIN
+                        device_device AS ss_device
+                    ON
+                        ss.device_id = ss_device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS ss_device_tech
+                    ON
+                        ss_device.device_technology = ss_device_tech.id
+                    LEFT JOIN
+                        device_devicetype as sect_device_type
+                    ON
+                        sect_device_type.id = device.device_type
+                    LEFT JOIN
+                        device_devicetype as ss_device_type
+                    ON
+                        ss_device_type.id = ss_device.device_type
+                    LEFT JOIN
+                        device_devicetype as bh_device_type
+                    ON
+                        bh_device_type.id = bh_device.device_type
+                    LEFT JOIN
+                        device_devicefrequency as sect_freq
+                    ON
+                        sect_freq.id = sect.frequency_id
+                    LEFT JOIN
+                        device_device as current_device
+                    ON
+                        current_device.id = {2}
+                    LEFT JOIN
+                        inventory_basestation as far_end_bs
+                    ON
+                        far_end_bs.id = {3}
+                    LEFT JOIN
+                        inventory_backhaul as far_end_backhaul
+                    ON
+                        far_end_bs.backhaul_id = far_end_backhaul.id
+                    LEFT JOIN
+                        device_device as far_end_bs_switch
+                    ON
+                        far_end_bs_switch.id = far_end_backhaul.bh_configured_on_id
+                    LEFT JOIN
+                        inventory_circuit as far_near_circuit
+                    ON 
+                        far_near_circuit.circuit_id = '{4}'
+                    LEFT JOIN
+                        inventory_sector as near_end
+                    ON
+                        near_end.id = far_near_circuit.sector_id
+                    LEFT JOIN
+                        device_device as near_end_device
+                    ON
+                        near_end.sector_configured_on_id = near_end_device.id
+                    LEFT JOIN
+                        inventory_substation as far_end
+                    ON
+                        far_end.id = far_near_circuit.sub_station_id
+                    LEFT JOIN
+                        device_device as far_end_device
+                    ON
+                        far_end.device_id = far_end_device.id
+                    LEFT JOIN
+                        inventory_sector AS far_end_sect
+                    ON
+                        far_end_bs.id = far_end_sect.base_station_id
+                    LEFT JOIN
+                        device_deviceport AS far_end_sector_port
+                    ON
+                        far_end_sect.sector_configured_on_port_id = far_end_sector_port.id
+                    LEFT JOIN
+                        device_device as far_end_sect_device
+                    ON
+                        far_end_sect.sector_configured_on_id = far_end_sect_device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS far_end_sect_device_tech
+                    ON
+                        far_end_sect_device.device_technology = far_end_sect_device_tech.id
+                    LEFT JOIN
+                        inventory_circuit AS far_end_ckt
+                    ON
+                        far_end_sect.id = far_end_ckt.sector_id
+                    LEFT JOIN
+                        device_devicetype as far_end_sect_device_type
+                    ON
+                        far_end_sect_device_type.id = far_end_sect_device.device_type
+                    LEFT JOIN
+                        device_devicefrequency as far_end_sect_freq
+                    ON
+                        far_end_sect_freq.id = far_end_sect.frequency_id
+                    LEFT join
+                        inventory_substation as far_end_ss
+                    ON
+                        far_end_ckt.sub_station_id = far_end_ss.id
+                    LEFT JOIN
+                        device_device AS far_end_ss_device
+                    ON
+                        far_end_ss.device_id = far_end_ss_device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS far_end_ss_device_tech
+                    ON
+                        far_end_ss_device.device_technology = far_end_ss_device_tech.id
+                    LEFT JOIN
+                        device_devicetype as far_end_ss_device_type
+                    ON
+                        far_end_ss_device_type.id = far_end_ss_device.device_type
+                    where
+                        current_device.is_added_to_nms > 0
+                        AND
+                        bs.id in ({0})
+                        AND
+                        {5}.id = {1}
+                '''.format(
+                        near_end_bs_id,
+                        current_sector_device_id,
+                        current_device_id,
+                        far_end_bs_id,
+                        circuit_id,
+                        sect_device
+                    )
+
+            else :
+                topology_query = ''' 
+                    SELECT
+                        IF(isnull(bs.id), 'NA', bs.id) AS bs_id,
+                        IF(isnull(bs.name), 'NA', bs.name) AS bs_name,
+                        IF(isnull(bs.alias), 'NA', bs.alias) AS bs_alias,
+                        IF(isnull(bs_switch.id), 'NA', bs_switch.id) AS bs_switch_id, 
+                        IF(isnull(backhaul.bh_switch_id), 'NA', backhaul.bh_switch_id) AS bs_convertor_id,
+                        IF(isnull(backhaul.aggregator_id), 'NA', backhaul.aggregator_id) AS bh_aggregator_id,
+                        IF(isnull(backhaul.pop_id), 'NA', backhaul.pop_id) AS bh_pop_id,
+                        IF(isnull(bs_switch.ip_address), 'NA', bs_switch.ip_address) AS bs_switch_ip,
+                        IF(isnull(bs.backhaul_id), 'NA', bs.backhaul_id) AS bh_id,
+                        IF(isnull(backhaul.pe_hostname), 'NA', backhaul.pe_hostname) AS pe_hostname,
+                        IF(isnull(bh_pe_device.id), 'NA', bh_pe_device.id) AS pe_id,
+                        IF(isnull(bh_pe_device.ip_address), 'NA', bh_pe_device.ip_address) AS pe_ip,
+                        IF(isnull(backhaul.bh_configured_on_id), 'NA', backhaul.bh_configured_on_id) AS bh_device_id,
+                        IF(isnull(bs_convertor_device.ip_address), 'NA', bs_convertor_device.ip_address) AS bs_convertor_ip,
+                        -- IF(isnull(switch_port_name), 'NA', switch_port_name) AS bs_convertor_port,
+                        IF(isnull(bh_pop_device.ip_address), 'NA', bh_pop_device.ip_address) AS bh_pop_ip,
+                        IF(isnull(backhaul.pop_port_name), 'NA', backhaul.pop_port_name) AS bh_pop_port,
+                        IF(isnull(bh_aggregator_device.ip_address), 'NA', bh_aggregator_device.ip_address) AS bh_aggregator_ip,
+                        IF(isnull(backhaul.aggregator_port_name), 'NA', backhaul.aggregator_port_name) AS bh_aggregator_port,
+                        IF(isnull(bh_device_type.name), 'NA', bh_device_type.name) AS bh_device_type,
+                        IF(isnull(bh_device_tech.name), 'NA', bh_device_tech.name) AS bh_device_tech,   
+                        IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) AS bh_ip,
+                        IF(isnull(sect.id), 'NA', sect.id) AS sect_id,
+                        IF(isnull(sect.sector_id), 'NA', sect.sector_id) AS sect_sector_id,
+                        IF(isnull(sect.sector_configured_on_id), 'NA', sect.sector_configured_on_id) AS sect_device_id,
+                        IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
+                        IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
+                        IF(isnull(sector_port.alias), 'NA', sector_port.alias) AS sect_port,
+                        IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
+                        IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
+                        IF(not isnull(sect.sector_id), sect.sector_id, device.ip_address) AS sect_ip_id_title,
+                        IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id) AS ss_circuit_id,
+                        IF(isnull(ckt.sub_station_id), 'NA', ckt.sub_station_id) AS ss_id,
+                        IF(isnull(ss.device_id), 'NA', ss.device_id) AS ss_device_id,
+                        IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name) AS ss_device_tech,
+                        IF(isnull(ss_device_type.name), 'NA', ss_device_type.name) AS ss_device_type,
+                        IF(isnull(ss_device.device_name), 'NA', ss_device.device_name) AS ss_device_name,
+                        IF(isnull(ss_device.ip_address), 'NA', ss_device.ip_address) AS ss_device_ip,
+                        IF(isnull(bh_pe_device.device_name), 'NA', bh_pe_device.device_name) AS pe_name,
+                        IF(isnull(bs_switch.device_name), 'NA', bs_switch.device_name) AS bs_switch_name,
+                        IF(isnull(bs_convertor_device.device_name), 'NA', bs_convertor_device.device_name) AS bs_convertor_device_name,
+                        IF(isnull(bh_aggregator_device.device_name), 'NA', bh_aggregator_device.device_name) AS bh_aggregator_device_name,
+                        IF(isnull(bh_pop_device.device_name), 'NA', bh_pop_device.device_name) AS bh_pop_device_name,
+                        IF(isnull(bh_device.device_name), 'NA', bh_device.device_name) AS bh_device_name,
+                        ss_device_type.device_icon as ss_icon,
+                        sect_device_type.device_icon as sect_icon,
+                        bh_device_type.device_icon as bh_icon,
+                        sect_freq.color_hex_value as sect_color,
+                        IF((backhaul.bh_configured_on_id = backhaul.bh_switch_id), backhaul.bh_port_name,'NA') AS bs_convertor_port,
+                        IF((backhaul.bh_configured_on_id = bs.bs_switch_id), backhaul.bh_port_name,'NA') AS bs_switch_port,
+                        IF((backhaul.bh_configured_on_id = backhaul.pop_id), backhaul.bh_port_name,'NA') AS bh_pop_port
+
+                    FROM
+                        inventory_basestation AS bs
+                    LEFT JOIN
+                        device_device AS bs_switch
+                    ON
+                        bs.bs_switch_id = bs_switch.id
+                    LEFT JOIN
+                        inventory_backhaul AS backhaul
+                    ON
+                        bs.backhaul_id = backhaul.id
+                    LEFT JOIN
+                        device_device AS bh_pe_device
+                    ON
+                        backhaul.pe_ip_id = bh_pe_device.id
+                    LEFT JOIN
+                        device_device AS bs_convertor_device
+                    ON
+                        backhaul.bh_switch_id = bs_convertor_device.id
+                    LEFT JOIN
+                        device_device AS bh_aggregator_device
+                    ON
+                        backhaul.aggregator_id = bh_aggregator_device.id
+                    LEFT JOIN
+                        device_device AS bh_pop_device
+                    ON
+                        backhaul.pop_id = bh_pop_device.id
+                    LEFT JOIN
+                        device_device AS bh_device
+                    ON
+                        backhaul.bh_configured_on_id = bh_device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS bh_device_tech
+                    ON
+                        bh_device.device_technology = bh_device_tech.id
+                    LEFT JOIN
+                        inventory_sector AS sect
+                    ON
+                        bs.id = sect.base_station_id
+                    LEFT JOIN
+                        device_deviceport AS sector_port
+                    ON
+                        sect.sector_configured_on_port_id = sector_port.id
+                    LEFT JOIN
+                        device_device AS device
+                    ON
+                        sect.sector_configured_on_id = device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS sect_device_tech
+                    ON
+                        device.device_technology = sect_device_tech.id
+                    LEFT JOIN
+                        device_device as sect_device
+                    ON
+                        sect.sector_configured_on_id = sect_device.id
+                    LEFT JOIN
+                        inventory_circuit AS ckt
+                    ON
+                        sect.id = ckt.sector_id
+                    LEFT join
+                        inventory_substation as ss
+                    ON
+                        ckt.sub_station_id = ss.id
+                    LEFT JOIN
+                        device_device AS ss_device
+                    ON
+                        ss.device_id = ss_device.id
+                    LEFT JOIN 
+                        device_devicetechnology AS ss_device_tech
+                    ON
+                        ss_device.device_technology = ss_device_tech.id
+                    LEFT JOIN
+                        device_devicetype as sect_device_type
+                    ON
+                        sect_device_type.id = device.device_type
+                    LEFT JOIN
+                        device_devicetype as ss_device_type
+                    ON
+                        ss_device_type.id = ss_device.device_type
+                    LEFT JOIN
+                        device_devicetype as bh_device_type
+                    ON
+                        bh_device_type.id = bh_device.device_type
+                    LEFT JOIN
+                        device_devicefrequency as sect_freq
+                    ON
+                        sect_freq.id = sect.frequency_id
+                    LEFT JOIN
+                        device_device as current_device
+                    ON
+                        current_device.id = {2}
+                    where
+                        current_device.is_added_to_nms > 0
+                        AND
+                        bs.id in ({0})
+                        AND
+                        sect_device.id = {1}
+                '''.format(', '.join(bs_id), current_sector_device_id, current_device_id)
         elif page_type == 'other':
             case_of_ptp_bh = False
             bs_alias_qs = BaseStation.objects.filter(id=bs_id[0]).values('alias')
@@ -8650,10 +8951,10 @@ class GetTopology(View):
             if multiple_bs:
                 resultant_dict['far_end_base_station'] = bs_ids_dict.values()
             else:
-                if not resultant_dict['far_end_base_station']:
+                if not resultant_dict.get('far_end_base_station'):
                     resultant_dict['far_end_base_station'] = list()
 
-                if not resultant_dict['base_station']:
+                if not resultant_dict.get('base_station'):
                     resultant_dict['base_station'] = list()
 
                 resultant_dict['base_station'].append({
@@ -8667,7 +8968,6 @@ class GetTopology(View):
                     'far_end_bs_alias': far_end_bs_alias,
                     'bs_icon': bs_icon
                 })            
-
         else:
 
             for bs in result_of_query:
