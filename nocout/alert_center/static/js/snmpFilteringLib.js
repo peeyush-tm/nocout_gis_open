@@ -48,6 +48,7 @@ $('input[name="alarm_type"]').change(function(e) {
         new_get_param = 'alarm_type='+alarm_type,
         active_tab_id = $('.nav-tabs li.active a').attr('id'),
         pmp_url = $("#snmp_pmp_tab").attr("data_url"),
+        rad5k_url = $("#snmp_rad5k_tab").attr("data_url"),
         headers = '',
         wimax_url = $("#snmp_wimax_tab").attr("data_url"),
         all_url = $("#snmp_all_tab").attr("data_url"),
@@ -68,28 +69,37 @@ $('input[name="alarm_type"]').change(function(e) {
         array2 = array1[1].split("&");
     array2[0] = new_get_param
     array1[1] = array2.join('&');
-    updated_url_pmp = array1.join('?')
+    updated_url_pmp = array1.join('?');
+
+    // Update Radwin5K url
+    var array1 = rad5k_url.split("?"),
+        array2 = array1[1].split("&");
+    array2[0] = new_get_param
+    array1[1] = array2.join('&');
+    updated_url_rad5k = array1.join('?');
 
     // Update WiMAX url
     var array1 = wimax_url.split("?"),
         array2 = array1[1].split("&");
     array2[0] = new_get_param
     array1[1] = array2.join('&');
-    updated_url_wimax = array1.join('?')
+    updated_url_wimax = array1.join('?');
 
     // Update All url
     var array1 = all_url.split("?"),
         array2 = array1[1].split("&");
     array2[0] = new_get_param
     array1[1] = array2.join('&');
-    updated_url_all = array1.join('?')
+    updated_url_all = array1.join('?');
 
     // Update the 'data_url' attribute of all tabs
     $("#snmp_pmp_tab").attr("data_url", updated_url_pmp);
+    $("#snmp_rad5k_tab").attr("data_url", updated_url_rad5k);
     $("#snmp_wimax_tab").attr("data_url", updated_url_wimax);
     $("#snmp_all_tab").attr("data_url", updated_url_all);
 
     $("#snmp_pmp_tab").attr("data_header", headers);
+    $("#snmp_rad5k_tab").attr("data_header", headers);
     $("#snmp_wimax_tab").attr("data_header", headers);
     $("#snmp_all_tab").attr("data_header", headers);
 
@@ -111,6 +121,7 @@ function show_hide_count_column() {
 
     var all_headers_list = JSON.parse($("#snmp_all_tab").attr("data_header")),
         pmp_headers_list = JSON.parse($("#snmp_pmp_tab").attr("data_header")),
+        rad5k_headers_list = JSON.parse($("#snmp_rad5k_tab").attr("data_header")),
         wimax_headers_list = JSON.parse($("#snmp_wimax_tab").attr("data_header"));
 
     for (var i=0;i<all_headers_list.length;i++) {
@@ -125,6 +136,12 @@ function show_hide_count_column() {
         }
     }
 
+    for (var i=0;i<rad5k_headers_list.length;i++) {
+        if (rad5k_headers_list[i]['mData'] == 'customer_count') {
+            rad5k_headers_list[i]['sClass'] = hide_class;
+        }
+    }    
+
     for (var i=0;i<wimax_headers_list.length;i++) {
         if (wimax_headers_list[i]['mData'] == 'customer_count') {
             wimax_headers_list[i]['sClass'] = hide_class;
@@ -134,6 +151,7 @@ function show_hide_count_column() {
     // Update headers data in tabs header attribute
     $("#snmp_all_tab").attr("data_header", JSON.stringify(all_headers_list));
     $("#snmp_pmp_tab").attr("data_header", JSON.stringify(pmp_headers_list));
+    $("#snmp_rad5k_tab").attr("data_header", JSON.stringify(rad5k_headers_list));
     $("#snmp_wimax_tab").attr("data_header", JSON.stringify(wimax_headers_list));
     
     return true;

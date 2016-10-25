@@ -36,7 +36,12 @@
                     </li>
                     <li>
                         <a href="#pmp_augment_block" id="pmp_augment_tab" data-toggle="tab">
-                            <span class="hidden-inline-mobile">PMP</span>
+                            <span class="hidden-inline-mobile">Cambium</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#rad5k_augment_block" id="rad5k_augment_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Radwin5K</span>
                         </a>
                     </li>
                     <li class="active">
@@ -55,7 +60,13 @@
                         </table>
                     </div>
                     <div class="tab-pane" id="pmp_augment_block">
-                    <table class="datatable table table-striped table-bordered table-hover" id="pmp_augment_table">
+                        <table class="datatable table table-striped table-bordered table-hover" id="pmp_augment_table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="rad5k_augment_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="rad5k_augment_table">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -93,10 +104,12 @@
         /*Grid headers object & ajax url*/
         var all_ajax_url = '{% url "SectorAugmentationAlertsListing" %}',
             pmp_ajax_url = '{% url "SectorAugmentationAlertsListing" %}'+'?technology=PMP',
+            rad5k_ajax_url = '{% url "SectorAugmentationAlertsListing" %}'+'?technology=Radwin5KBS&is_type=1',
             wimax_ajax_url = '{% url "SectorAugmentationAlertsListing" %}'+'?technology=WiMAX',
             common_param = "'download_excel': 'yes'",
             all_title = "Sector Augmentation Alerts - All",
-            pmp_title = "Sector Augmentation Alerts - PMP",
+            pmp_title = "Sector Augmentation Alerts - Cambium",
+            rad5k_title = "Sector Augmentation Alerts - Radwin5K",
             wimax_title = "Sector Augmentation Alerts - WiMAX";
 
 
@@ -117,6 +130,14 @@
                 "header_extra_param" : "{"+common_param+"}",
                 "data_extra_param" : "{'technology': 'PMP', 'report_title' : '"+pmp_title+"', "+common_param+"}"
             },
+            "rad5k_augment_tab" : {
+                "app_name" : "capacity_management",
+                "table_title" : rad5k_title,
+                "header_class_name" : "SectorAugmentationAlertsHerders",
+                "data_class_name" : "SectorAugmentationAlertsListing",
+                "header_extra_param" : "{"+common_param+"}",
+                "data_extra_param" : "{'technology': 'Radwin5KBS', 'is_type': 1, 'report_title' : '"+rad5k_title+"', "+common_param+"}"
+            },
             "wimax_augment_tab" : {
                 "app_name" : "capacity_management",
                 "table_title" : wimax_title,
@@ -133,6 +154,9 @@
 
         $("#pmp_augment_tab").attr("data_url", pmp_ajax_url);
         $("#pmp_augment_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#rad5k_augment_tab").attr("data_url", rad5k_ajax_url);
+        $("#rad5k_augment_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
         $("#wimax_augment_tab").attr("data_url", wimax_ajax_url);
         $("#wimax_augment_tab").attr("data_header", '{{ datatable_headers|safe }}');
