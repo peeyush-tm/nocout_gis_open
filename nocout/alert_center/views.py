@@ -847,11 +847,6 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         else:
             header_key = 'bh_datatable_headers'
 
-        print page_type
-        print data_tab
-        print header_key
-        print data_source
-
         # Changing data source according to right keys in col_dict in case of Backhaul
         if data_source in ['packet_drop', 'Backhaul_PD']:
             data_source = 'packet_drop'
@@ -861,8 +856,6 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             data_source = 'latency'
         else:
             data_source = '' 
-
-        print data_source
 
         # Common Network Datatable headers used in ordering
         common_network_ptp_headers = [
@@ -980,10 +973,6 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 }
             }
         }
-
-        print '---------------------------------self.order_columns'
-        print col_dict.get(page_type, {}).get(data_source, {}).get(header_key)
-        print '---------------------------------self.order_columns'
 
         # returning right columns for ordering
         return col_dict.get(page_type, {}).get(data_source, {}).get(header_key)
