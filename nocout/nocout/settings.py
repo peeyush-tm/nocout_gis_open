@@ -434,6 +434,14 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
         'kwargs': {'technology': 'PMP'}
     },
+    'calculate_rf_range_dashboards-Radwin5K': {
+        'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'kwargs': {
+                    'technology': 'PMP',
+                    'is_rad5': True #Flag for radwin5k devices
+                }
+    },
     'calculate_rf_range_dashboards-PTP': {
         'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
         'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),

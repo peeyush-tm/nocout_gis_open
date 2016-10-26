@@ -58,7 +58,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
     if (table_id && ajax_url && grid_headers) {
         if (last_clicked_tab != e.currentTarget.id || second_condition) {
             var tab_id = table_id ? table_id.toLowerCase() : "";
-            
+
             var isPtp = ptp_list.filter(function(list_val) {
                     return tab_id.search(list_val) > -1
                 }).length,

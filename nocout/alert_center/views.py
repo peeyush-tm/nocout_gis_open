@@ -114,6 +114,7 @@ class AlertCenterListing(ListView):
         ]
 
         rad5_headers = []
+        rad5_customer_detail_headers = []
         rad5_polled_col = []
         rad5_headers += [
             {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},            
@@ -139,6 +140,8 @@ class AlertCenterListing(ListView):
             pmp_wimax_starting_headers += ckt_customer_headers
             pmp_wimax_starting_headers += near_ip_column
 
+
+
             # For saving if else hassle we have used a dict over here
             rad5_polled_col_dict = {
                 'packet_drop':[
@@ -160,6 +163,7 @@ class AlertCenterListing(ListView):
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'site_id', 'sTitle': 'SITE ID', 'sWidth': 'auto', 'bSortable': True, 'bVisible':False},
             {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
         ]
@@ -213,6 +217,30 @@ class AlertCenterListing(ListView):
             {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False}
         ]
+
+        # These headers are for Alert Center -> Customer Details -> Radwin5K Tab
+        rad5_customer_start_headers = [
+            {'mData': 'severity', 'sTitle': '', 'bSortable': True, 'sWidth': '40px'},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'bSortable': True, 'sWidth': 'auto'},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'bSortable': True, 'sWidth': 'auto'},
+            {'mData': 'customer_name', 'sTitle': 'Customer Name', 'bSortable': True, 'sWidth': 'auto'},
+            {'mData': 'near_end_ip', 'sTitle': 'HBS IP', 'bSortable': True, 'sWidth': 'auto'},
+            {'mData': 'ip_address', 'sTitle': 'HSU IP', 'bSortable': True, 'sWidth': 'auto'},
+            {'mData': 'device_type', 'sTitle': 'Type', 'bSortable': True, 'sWidth': 'auto'},
+            {'mData': 'bs_name', 'sTitle': 'BS Name', 'bSortable': True, 'sWidth': 'auto'},
+            {'mData': 'site_id', 'sTitle': 'SITE ID', 'sWidth': 'auto', 'bSortable': True, 'bVisible':False},
+            {'mData': 'city', 'sTitle': 'City', 'bSortable': True, 'sWidth': 'auto'},
+            {'mData': 'state', 'sTitle': 'State', 'bSortable': True, 'sWidth': 'auto'}
+        ]
+
+        rad5_other_headers = [
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'warn', 'sTitle': 'Warn', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False}
+        ]
+
+
         
         # Initialize headers list for all tabs
         ptp_datatable_headers = []
@@ -237,6 +265,12 @@ class AlertCenterListing(ListView):
                 'bSortable': True
             }]
 
+        if page_type == 'customer':
+            # These headers are for Alert Center -> Customer Details -> Radwin5K Tab
+            rad5_customer_detail_headers += rad5_customer_start_headers
+            rad5_customer_detail_headers += polled_headers
+            rad5_customer_detail_headers += rad5_other_headers
+
         pmp_wimax_datatable_headers += rad5_headers
         pmp_wimax_datatable_headers += polled_headers
         pmp_wimax_datatable_headers += rad5_polled_col
@@ -259,11 +293,12 @@ class AlertCenterListing(ListView):
 
         context['ptp_datatable_headers'] = json.dumps(ptp_datatable_headers)
         context['pmp_wimax_datatable_headers'] = json.dumps(pmp_wimax_datatable_headers)
+        context['rad5_customer_detail_headers'] = json.dumps(rad5_customer_detail_headers)
         context['bh_datatable_headers'] = json.dumps(bh_datatable_headers)
         context['data_source'] = displayed_ds_name
         context['url_data_source'] = data_source
         context['page_type'] = page_type
-
+        
         return context
 
 
@@ -379,6 +414,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             devices = inventory_utils.filter_devices(
                 organizations=kwargs['organizations'],
                 data_tab=device_tab_technology,
+                is_rad5=is_rad5,
                 page_type=page_type,
                 other_type=other_type,
                 required_value_list=required_value_list
@@ -745,6 +781,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
         order = []
         order_columns = self.get_order_columns()
+
         sort_using = ''
         reverse = ''
 
@@ -796,6 +833,149 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 return qs
         else:
             return qs
+
+    def find_order_columns(self, page_type='network', data_source='packet_drop', data_tab=None):
+        """
+        This method will return column list in which order sorting will work
+        """
+
+        # Getting key for searching in col_dict 
+        if data_tab in ['WiMAX', 'PMP']:
+            header_key = 'pmp_wimax_datatable_headers'
+        elif data_tab == 'P2P':
+            header_key = 'ptp_datatable_headers'
+        else:
+            header_key = 'bh_datatable_headers'
+
+        # Changing data source according to right keys in col_dict in case of Backhaul
+        if data_source in ['packet_drop', 'Backhaul_PD']:
+            data_source = 'packet_drop'
+        elif data_source in ['down', 'Backhaul_Down']:
+            data_source = 'down'
+        elif data_source in ['latency', 'Backhaul_RTA']:
+            data_source = 'latency'
+        else:
+            data_source = '' 
+
+        # Common Network Datatable headers used in ordering
+        common_network_ptp_headers = [
+            'severity',
+            'circuit_id',
+            'customer_name',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+        ]
+
+        common_network_bh_headers = [
+            'severity',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+            'bh_connectivity',
+            'current_value'
+        ]
+
+        common_network_pmp_wimax_headers = [
+            'severity',
+            'sector_id',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+            'customer_count',
+            'region',
+            'current_value',
+        ]
+
+        # Common Customer Datatable headers used in ordering
+        common_customer_ptp_headers = [
+            'severity',
+            'circuit_id',
+            'customer_name',
+            'near_end_ip',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+            'current_value',
+        ]
+
+        common_customer_pmp_wimax_headers = [
+            'severity',
+            'sector_id',
+            'circuit_id',
+            'customer_name',
+            'near_end_ip',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+            'region',
+        ]
+
+
+        network_pd_and_down_ptp_datatable_headers = common_network_ptp_headers + ['current_value', 'sys_timestamp', 'age', 'action']
+        network_pd_and_down_bh_datatable_headers = common_network_bh_headers +  ['sys_timestamp', 'age', 'action']
+        customer_pd_and_down_ptp_datatable_headers = common_customer_ptp_headers + ['sys_timestamp', 'age', 'action']
+
+        col_dict = {
+            'network' : {
+                'packet_drop' : {
+                    'ptp_datatable_headers': network_pd_and_down_ptp_datatable_headers,
+                    'bh_datatable_headers': network_pd_and_down_bh_datatable_headers,
+                    'pmp_wimax_datatable_headers': common_network_pmp_wimax_headers + ['sys_timestamp', 'age', 'action']
+                },
+
+                'down' : {
+                    'ptp_datatable_headers': network_pd_and_down_ptp_datatable_headers,
+                    'bh_datatable_headers': network_pd_and_down_bh_datatable_headers,
+                    'pmp_wimax_datatable_headers': common_network_pmp_wimax_headers + ['ticket_no', 'sys_timestamp', 'age', 'action']
+                },
+
+                'latency' : {
+                    'ptp_datatable_headers': common_network_ptp_headers + ['current_value', 'max_value', 'min_value', 'sys_timestamp', 'age', 'action'],
+                    'bh_datatable_headers': common_network_bh_headers + ['max_value', 'min_value', 'sys_timestamp', 'age', 'action'],
+                    'pmp_wimax_datatable_headers': common_network_pmp_wimax_headers + ['max_value', 'min_value', 'sys_timestamp', 'age', 'action']
+                }
+            }, 
+
+            'customer' : {
+                'packet_drop' : {
+                    'ptp_datatable_headers': customer_pd_and_down_ptp_datatable_headers,
+                    'bh_datatable_headers': [],
+                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers + ['current_value', 'dl_uas', 'ul_uas', 'sys_timestamp', 'age', 'action']
+                },
+
+                'down' : {
+                    'ptp_datatable_headers': customer_pd_and_down_ptp_datatable_headers,
+                    'bh_datatable_headers': [],
+                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers + ['current_value', 'sys_timestamp', 'age', 'action']
+                },
+
+                'latency' : {
+                    'ptp_datatable_headers': common_customer_ptp_headers + ['max_value', 'min_value', 'sys_timestamp', 'age', 'action'],
+                    'bh_datatable_headers': [],
+                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers + ['min_latency', 'current_value', 'max_value', 'min_value', 
+                                                                                        'dl_utilization', 'ul_utilization', 'sys_timestamp', 'age', 'action']
+                }
+            }
+        }
+
+        # returning right columns for ordering
+        return col_dict.get(page_type, {}).get(data_source, {}).get(header_key)
 
     def prepare_initial_params(self):
         """
@@ -879,7 +1059,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         self.columns += polled_columns
         self.columns += other_columns
         
-        self.order_columns = self.columns
+        self.order_columns = self.find_order_columns(page_type, data_source, data_tab)
 
         return True
 
@@ -950,6 +1130,20 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
         ]
 
+        rad5_starting_headers = [
+            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'refer', 'sTitle': 'Affected Sectors', 'sWidth': 'auto', 'bSortable': True},
+        ]
+
+        rad5_specific_headers = [
+            {'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},
+            # {'mData': 'customer_count', 'sTitle': 'Total Customer Count', 'sWidth': 'auto', 'bSortable': True},
+            # {'mData': 'impacted_customer', 'sTitle': 'Impacted Customer Count', 'sWidth': 'auto', 'bSortable': True},
+            # {'mData': 'impacted_customer_percent', 'sTitle': '% Impacted Customer Count', 'sWidth': 'auto', 'bSortable': True},
+        ]
+
         specific_headers = [
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'bSortable': True},
@@ -1012,6 +1206,14 @@ class NetworkAlertDetailHeaders(ListView):
         backhaul_headers += bh_specific_headers
         backhaul_headers += polled_headers
         backhaul_headers += other_headers
+
+        rad5_ul_issue_headers = []
+        rad5_ul_issue_headers += starting_headers
+        rad5_ul_issue_headers += rad5_starting_headers
+        rad5_ul_issue_headers += common_headers
+        rad5_ul_issue_headers += rad5_specific_headers
+        rad5_ul_issue_headers += polled_headers
+        rad5_ul_issue_headers += other_headers
 
         ul_issue_datatable_headers = []
         ul_issue_datatable_headers += starting_headers
@@ -1080,7 +1282,8 @@ class NetworkAlertDetailHeaders(ListView):
             'bh_utils_headers': json.dumps(bh_utils_headers),
             'ul_issue_headers': json.dumps(ul_issue_datatable_headers),
             'bh_headers': json.dumps(bh_dt_headers),
-            'sector_utils_headers': json.dumps(sector_utils_headers)
+            'sector_utils_headers': json.dumps(sector_utils_headers),
+            'rad5_ul_issue_headers': json.dumps(rad5_ul_issue_headers)
         }
 
         return context
@@ -1095,6 +1298,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
     is_polled = False
     is_searched = False
     is_initialised = True
+    is_rad5 = False
 
     model = EventNetwork
     columns = [
@@ -1151,7 +1355,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
 
         organizations = nocout_utils.logged_in_user_organizations(self)
 
-        required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
+        required_value_list = ['id', 'machine__name', 'device_name', 'ip_address', 'organization__alias']
 
         page_type = self.request.GET.get('page_type', "network")
         include_pe = self.request.GET.get('include_pe', False)
@@ -1197,6 +1401,14 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 self.table_name = 'performance_utilizationstatus'
                 # Add 'refer column' in case of ULIssue
                 self.polled_columns.append('refer')
+            elif tab_id == "RAD5ULIssue":
+                # technology = [int(WiMAX.ID), int(PMP.ID)]
+                technology = ["PMP"]
+                self.data_sources = ['bs_ul_issue']
+                self.table_name = 'performance_utilizationstatus'
+                self.is_rad5 = True
+                # Add 'refer column' in case of ULIssue
+                self.polled_columns.append('refer')
             elif tab_id in ["Backhaul"]:
                 technology = None
                 is_bh = True
@@ -1221,6 +1433,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 for techno in technology:
                     device_list += inventory_utils.filter_devices(
                         organizations=organizations,
+                        is_rad5=self.is_rad5,
                         data_tab=techno,
                         page_type=page_type,
                         required_value_list=required_value_list
@@ -1321,7 +1534,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         if data_source in ['Temperature', 'WiMAXULIssue']:
             device_tab_technology = 'WiMAX'
 
-        if data_source in ['PMPULIssue']:
+        if data_source in ['PMPULIssue', 'RAD5ULIssue']:
             device_tab_technology = 'PMP'
 
         if data_source in ['Backhaul', 'Temperature_bh']:
@@ -1556,6 +1769,28 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'customer_count',
                 'sys_timestamp',
                 'age'
+            ]
+        elif data_source in ['RAD5ULIssue']:
+            self.order_columns = [
+                'severity',
+                'device_technology',
+                'site_id',
+                'sector_id',
+                'refer',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'organization__alias',
+                # 'customer_count',
+                # 'impacted_customer',
+                # 'impacted_customer_percent',
+                'data_source_name',
+                'current_value',
+                'sys_timestamp',
+                'age',
+                'action'
             ]
         elif data_source in ['Backhaul']:
             self.order_columns = [

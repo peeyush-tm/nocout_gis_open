@@ -123,7 +123,12 @@
                     </li>
                     <li>
                       <a href="#pmp_ulIssue_block" id="pmp_ulIssue_tab" data-toggle="tab">
-                        <span class="hidden-inline-mobile">PMP UL Issue</span>
+                        <span class="hidden-inline-mobile">Cambium UL Issue</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#rad5_ulIssue_block" id="rad5_ulIssue_tab" data-toggle="tab">
+                        <span class="hidden-inline-mobile">Radwin5K UL Issue</span>
                       </a>
                     </li>
                     <li>
@@ -172,6 +177,16 @@
                     </table>
                 </div>
                 <!-- pmp_ulIssue_block End -->
+
+                <!-- rad5_ulIssue_block Start -->
+                <div class="tab-pane fade" id="rad5_ulIssue_block">
+                    <table class="datatable table table-striped table-bordered table-hover" id="rad5_ulIssue_block_table">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <!-- pmp_ulIssue_block End -->
+
 
                 <!-- wimax_ulIssue_block Start -->
                 <div class="tab-pane fade" id="wimax_ulIssue_block">
@@ -299,6 +314,7 @@
                 ajax_url_bh_temp = '{% url "NetworkAlertDetails" %}' + '?data_source=Temperature_bh',
                 ajax_url_con = '{% url "NetworkAlertDetails" %}' + '?data_source=Backhaul',
                 ajax_url_pmp_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=PMPULIssue',
+                ajax_url_rad5_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=RAD5ULIssue',
                 ajax_url_wimax_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=WiMAXULIssue',
                 ajax_url_sectorutil = '{% url "SectorAugmentationAlertsListing" %}',
                 ajax_url_bhutil = '{% url "BackhaulAugmentationAlertsListing" %}';
@@ -441,6 +457,9 @@
 
             $("#pmp_ulIssue_tab").attr("data_url", ajax_url_pmp_ul);
             $("#pmp_ulIssue_tab").attr("data_header", '{{ ul_issue_headers|safe }}');
+
+            $("#rad5_ulIssue_tab").attr("data_url", ajax_url_rad5_ul);
+            $("#rad5_ulIssue_tab").attr("data_header", '{{ rad5_ul_issue_headers|safe }}');
 
             $("#wimax_ulIssue_tab").attr("data_url", ajax_url_wimax_ul);
             $("#wimax_ulIssue_tab").attr("data_header", '{{ ul_issue_headers|safe }}');
