@@ -21,4 +21,5 @@ urlpatterns = patterns('',
 	url(r'^customer_detail_listing_table/', views.AlertListingTable.as_view(), name='CustomerAlertDetails'),
 	url(r'^all/listing/$', views.AllSiaListingTable.as_view(), name='all_alarms_listing'),
 	url(r'^all/(?P<data_source>\w+)/$', views.AllSiaListing.as_view(), name='all_traps'),
+	url(r'^planned_events/(?P<page_type>\w+)/$', views.PlannedEventsInit.as_view(), name='planned_enents_init'),
 )

@@ -3246,6 +3246,65 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         return ret
 
 
+class PlannedEventsInit(ListView):
+    """
+    View to render planned events page.
+    """
+
+    # need to associate ListView class with a model here
+    model = CurrentAlarms
+    template_name = 'alert_center/pe_events.html'
+
+    def get_context_data(self, **kwargs):
+        """
+
+        :param kwargs:
+        :return:
+        """
+        context = super(PlannedEventsInit, self).get_context_data(**kwargs)
+        page_type = self.kwargs.get('page_type', None)
+
+        page_type_info_dict = {
+            "next": "Next 24 Hours",
+            "week": "Week",
+            "history": "History",
+            "upcoming": "All Future PE's"
+        }
+
+        try:
+            page_type_title = page_type_info_dict.get(page_type, page_type)
+            if not page_type_title:
+                page_type_title = page_type
+        except Exception, e:
+            page_type_title = page_type
+
+        datatable_headers = [
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'bSortable': True},
+            {'mData': 'start_date', 'sTitle': 'Start Date', 'bSortable': True},
+            {'mData': 'end_date', 'sTitle': 'End Date', 'bSortable': True},
+            {'mData': 'sa_nsa', 'sTitle': 'SA/NSA', 'bSortable': True},
+            {'mData': 'technology', 'sTitle': 'Technology', 'bSortable': True},
+            {'mData': 'owner_detail', 'sTitle': 'PE Owner Detail', 'bSortable': True},
+            {'mData': 'executor', 'sTitle': 'Executor', 'bSortable': True},
+            {'mData': 'pe_detail', 'sTitle': 'PE Detail', 'bSortable': True},
+            {'mData': 'pe_tt_no', 'sTitle': 'PE TT No.', 'bSortable': True},
+            {'mData': 'sr_no', 'sTitle': 'Sr. No.', 'bSortable': True},
+            {'mData': 'impacted_customers', 'sTitle': 'No. of Impacter Customers', 'bSortable': True},
+            {'mData': 'emergency_normal', 'sTitle': 'Emergency/Normal', 'bSortable': True},
+            {'mData': 'summary', 'sTitle': 'Summary', 'bSortable': True},
+            {'mData': 'status', 'sTitle': 'Status', 'bSortable': True},
+            {'mData': 'impacted_domain', 'sTitle': 'Impacted Domain', 'bSortable': True},
+            {'mData': 'component', 'sTitle': 'Component', 'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'bSortable': True}
+        ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        context['page_type'] = page_type
+        context['page_type_title'] = page_type_title
+
+        return context
+
+
 @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_snmp_gis_data(qs, tech_name):
     """
@@ -3960,3 +4019,4 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             )
 
     return qs_list
+
