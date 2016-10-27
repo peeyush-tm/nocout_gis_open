@@ -887,7 +887,8 @@ SETTINGS_EXPORT = [
     'SHOW_RFO_TRENDS_DASHBOARD',
     'ENABLE_PING_TEST',
     'ENABLE_PE_PERF',
-    'SHOW_ALL_IN_NETWORK_ALERT_CENTER'
+    'SHOW_ALL_IN_NETWORK_ALERT_CENTER',
+    'PLANNED_EVENTS_ENABLED'
 ]
 
 # Dashbaord Settings
@@ -1361,6 +1362,7 @@ ENABLE_PE_PERF = False
 # Enable/Disable All tab in alert center
 SHOW_ALL_IN_NETWORK_ALERT_CENTER = False
 ENABLE_MANUAL_TICKETING = False
+PLANNED_EVENTS_ENABLED = False
 
 # Import the local_settings.py file to override global settings
 try:
