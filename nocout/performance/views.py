@@ -4018,6 +4018,7 @@ class GetServiceTypePerformanceData(View):
         chart_data= list()
 
         if performance_data:
+            SERVICE_DATA_SOURCE = service_utils.service_data_sources()
             ds_list = list(set(performance_data.values_list('data_source', flat=True)))
             service_view_type = self.request.GET.get('service_view_type')
             is_unified_view = service_view_type and service_view_type == 'unified'
