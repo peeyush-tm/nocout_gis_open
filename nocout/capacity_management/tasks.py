@@ -540,7 +540,7 @@ def gather_sector_status(technology):
 
         avg_max_val = None
         avg_max_per = None
-
+        util_duration = None
         if calc_util_last_day():
 
             if technology_low == 'pmp' and rad5k_machine_dict.get(machine):
@@ -568,7 +568,8 @@ def gather_sector_status(technology):
                 val=sector_val,
                 technology=technology,
                 avg_max_per=avg_max_per,
-                avg_max_val=avg_max_val
+                avg_max_val=avg_max_val,
+                util_duration=util_duration
             )
         )
 
@@ -1458,7 +1459,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
     return True
 
 @task()
-def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_max_per):
+def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_max_per, util_duration):
     """
 
     :param sectors: sectors query set
@@ -1508,6 +1509,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
     indexed_val = dict()
     indexed_avg_max_val = dict()
     indexed_avg_max_per = dict()
+    indexed_util_duration = dict()
 
     # Create instance of 'NocoutUtilsGateway' class
     nocout_utils = NocoutUtilsGateway()
@@ -1530,9 +1532,16 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
         return False
 
     if avg_max_per:
-
         indexed_avg_max_per = nocout_utils.indexed_query_set(
             query_set=avg_max_per,
+            indexes=['device_name', 'service_name', 'data_source'],
+            values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
+            is_raw=True
+        )
+
+    if util_duration:
+        indexed_util_duration = nocout_utils.indexed_query_set(
+            query_set=util_duration,
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
             is_raw=True
@@ -1871,12 +1880,17 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     avg_out_per = float(indexed_avg_max_per[out_per_index][0]['avg_val'])
                     # peak percentage in/out
                     peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
+                    # Duration in/out  (Multiply threshold breached count with 5 to get the duration)
+                    peak_in_duration = int(indexed_util_duration[in_per_index][0]['duration']) * 5
+                    peak_out_duration = int(indexed_util_duration[out_per_index][0]['duration']) * 5
                 except Exception as e:
                     logger.error(e)
                     avg_in_per = 0
                     peak_in_per = None
                     avg_out_per = 0
                     peak_out_per = None
+                    peak_in_duration = 0
+                    peak_out_duration = 0
 
                 peak_in_per, peak_in_timestamp = get_peak_sectors_util(
                     device=sector.sector_configured_on.device_name,
@@ -1905,7 +1919,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     avg_out_val = avg_out_per * sector_capacity_out / 100.00
                     # peak value in/out
                     peak_out_val = peak_out_per * sector_capacity_out / 100.00
-
                 except Exception as e:
                     logger.error(e)
                     avg_in_val = 0
@@ -1940,6 +1953,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     scs.peak_in_val = round(float(peak_in_val), 2) if peak_in_val else 0
 
                     scs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
+                    scs.peak_in_duration = int(peak_in_duration) if peak_in_duration else 0
 
                     scs.avg_out_per = round(float(avg_out_per), 2) if avg_out_per else 0
                     scs.avg_out_val = round(float(avg_out_val), 2) if avg_out_val else 0
@@ -1947,39 +1961,33 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     scs.peak_out_val = round(float(peak_out_val), 2) if peak_out_val else 0
 
                     scs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
+                    scs.peak_out_duration = int(peak_out_duration) if peak_out_duration else 0
 
-                # scs.save()
                 bulk_update_scs.append(scs)
-
             else:
                 bulk_create_scs.append(
-                    SectorCapacityStatus
-                    (
+                    SectorCapacityStatus(
                         sector=sector,
                         sector_sector_id=sector.sector_id,
                         sector_capacity=float(sector_capacity) if sector_capacity else 0,
-
                         sector_capacity_in=sector_capacity_in,
                         sector_capacity_out=sector_capacity_out,
-
                         current_in_per=round(float(current_in_per), 2) if current_in_per else 0,
                         current_in_val=round(float(current_in_val), 2) if current_in_val else 0,
-
                         avg_in_per=round(float(avg_in_per), 2) if avg_in_per else 0,
                         avg_in_val=round(float(avg_in_val), 2) if avg_in_val else 0,
                         peak_in_per=round(float(peak_in_per), 2) if peak_in_per else 0,
                         peak_in_val=round(float(peak_in_val), 2) if peak_in_val else 0,
                         peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else 0,
-
+                        peak_in_duration=int(peak_in_duration) if peak_in_duration else 0,
                         current_out_per=round(float(current_out_per), 2) if current_out_per else 0,
                         current_out_val=round(float(current_out_val), 2) if current_out_val else 0,
-
                         avg_out_per=round(float(avg_out_per), 2) if avg_out_per else 0,
                         avg_out_val=round(float(avg_out_val), 2) if avg_out_val else 0,
                         peak_out_per=round(float(peak_out_per), 2) if peak_out_per else 0,
                         peak_out_val=round(float(peak_out_val), 2) if peak_out_val else 0,
                         peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
-
+                        peak_out_duration=int(peak_out_duration) if peak_out_duration else 0,
                         sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
                         organization=sector.organization if sector.organization else 1,
                         severity=severity if severity else 'unknown',
