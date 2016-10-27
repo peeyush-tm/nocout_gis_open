@@ -24,7 +24,7 @@ from nocout.utils.util import NocoutUtilsGateway, time_delta_calculator
 
 from nocout.mixins.datatable import AdvanceFilteringMixin
 
-from nocout.settings import DATE_TIME_FORMAT
+from nocout.settings import DATE_TIME_FORMAT, RADWIN5K_CONFIG
 
 from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
 
@@ -53,69 +53,80 @@ class SectorStatusHeaders(ListView):
 		context = super(SectorStatusHeaders, self).get_context_data(**kwargs)
 
 		hidden_headers = [
-			{'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-			{'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-			{'mData': 'severity', 'sTitle': 'severity', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-			{'mData': 'age', 'sTitle': 'age', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-			{'mData': 'organization__alias', 'sTitle': 'organization', 'sWidth': 'auto', 'sClass': 'hide',
-			 'bSortable': True},
+			{'mData': 'id', 'sTitle': 'Device ID', 'sClass': 'hide', 'bSortable': True},
+			{'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sClass': 'hide', 'bSortable': True},
+			{'mData': 'severity', 'sTitle': 'severity', 'sClass': 'hide', 'bSortable': True},
+			{'mData': 'age', 'sTitle': 'age', 'sClass': 'hide', 'bSortable': True},
+			{'mData': 'organization__alias', 'sTitle': 'organization', 'sClass': 'hide', 'bSortable': True},
 		]
 
-		common_headers = [
-			{'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto',
-			 'sClass': 'hidden-xs', 'bSortable': True},
-			{'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto',
-			 'sClass': 'hidden-xs', 'bSortable': True},
-			{'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'IP', 'sWidth': 'auto',
-			 'sClass': 'hidden-xs', 'bSortable': True},
-			{'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto',
-			 'bSortable': True},
-			{'mData': 'sector_capacity', 'sTitle': 'Cbw (MHz)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-
-			{'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-			{'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'sector_capacity_in', 'sTitle': 'Capacity DL', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'avg_in_per', 'sTitle': 'AVG DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-			{'mData': 'avg_in_val', 'sTitle': 'AVG DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'peak_in_per', 'sTitle': 'PEAK DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'peak_in_val', 'sTitle': 'PEAK DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'peak_in_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-
-			{'mData': 'current_out_per', 'sTitle': 'UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'current_out_val', 'sTitle': 'UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'sector_capacity_out', 'sTitle': 'Capacity UL', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'avg_out_per', 'sTitle': 'AVG UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'avg_out_val', 'sTitle': 'AVG UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-			 'bSortable': True},
-			{'mData': 'actions', 'sTitle': 'Actions', 'sWidth': 'auto', 'bSortable': False}
+		inventory_headers = [
+			{'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'bSortable': True},
+			{'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'bSortable': True},
+			{'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'bSortable': True},
+			{'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'bSortable': True},
+			{'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'IP', 'bSortable': True},
+			{'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'bSortable': True},
 		]
 
-		datatable_headers = hidden_headers
+		current_headers = [
+			{'mData': 'sector_capacity', 'sTitle': 'Cbw (MHz)', 'bSortable': True},
+			{'mData': 'current_in_per', 'sTitle': 'DL (%)', 'bSortable': True},
+			{'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'bSortable': True},
+			{'mData': 'sector_capacity_in', 'sTitle': 'Capacity DL', 'bSortable': True},
+		]
 
-		datatable_headers += common_headers
+		# Create Cambium, Wimax headers
+		datatable_headers = list()
+		datatable_headers.extend(hidden_headers)
+		datatable_headers.extend(inventory_headers)
+		datatable_headers.extend(current_headers)
+		datatable_headers.extend([
+			{'mData': 'avg_in_per', 'sTitle': 'AVG DL (%)', 'bSortable': True},
+			{'mData': 'avg_in_val', 'sTitle': 'AVG DL (mbps)', 'bSortable': True},
+			{'mData': 'peak_in_per', 'sTitle': 'PEAK DL (%)', 'bSortable': True},
+			{'mData': 'peak_in_val', 'sTitle': 'PEAK DL (mbps)', 'bSortable': True},
+			{'mData': 'peak_in_timestamp', 'sTitle': 'PEAK Time', 'bSortable': True},
+			{'mData': 'current_out_per', 'sTitle': 'UL (%)', 'bSortable': True},
+			{'mData': 'current_out_val', 'sTitle': 'UL (mbps)', 'bSortable': True},
+			{'mData': 'sector_capacity_out', 'sTitle': 'Capacity UL', 'bSortable': True},
+			{'mData': 'avg_out_per', 'sTitle': 'AVG UL (%)', 'bSortable': True},
+			{'mData': 'avg_out_val', 'sTitle': 'AVG UL (mbps)', 'bSortable': True},
+			{'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'bSortable': True},
+			{'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'bSortable': True},
+			{'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'bSortable': True},
+			{'mData': 'actions', 'sTitle': 'Actions', 'bSortable': False}
+		])
 
+		# Create Radwin5K headers
+		rad5k_datatable_headers = list()
+		rad5k_datatable_headers.extend(hidden_headers)
+		rad5k_datatable_headers.extend(inventory_headers)
+
+		if RADWIN5K_CONFIG.get('SECTOR_STATUS_CUSTOMER_COUNT'):
+			rad5k_datatable_headers.insert(len(rad5k_datatable_headers) - 1, {
+				'mData': 'customer_count', 
+				'sTitle': 'Customer Count', 
+				'bSortable': True
+			})
+
+		rad5k_datatable_headers.extend(current_headers)
+		rad5k_datatable_headers.extend([
+			{'mData': 'peak_in_per', 'sTitle': 'PEAK DL (%)', 'bSortable': True},
+			{'mData': 'peak_in_val', 'sTitle': 'PEAK DL (mbps)', 'bSortable': True},
+			{'mData': 'peak_in_timestamp', 'sTitle': 'PEAK Time', 'bSortable': True},
+			{'mData': 'peak_in_duration', 'sTitle': 'Duration', 'bSortable': True},
+			{'mData': 'current_out_per', 'sTitle': 'UL (%)', 'bSortable': True},
+			{'mData': 'current_out_val', 'sTitle': 'UL (mbps)', 'bSortable': True},
+			{'mData': 'sector_capacity_out', 'sTitle': 'Capacity UL', 'bSortable': True},
+			{'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'bSortable': True},
+			{'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'bSortable': True},
+			{'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'bSortable': True},
+			{'mData': 'peak_out_duration', 'sTitle': 'Duration', 'bSortable': True},
+			{'mData': 'actions', 'sTitle': 'Actions', 'bSortable': False}
+		])
 		context['datatable_headers'] = json.dumps(datatable_headers)
+		context['rad5k_datatable_headers'] = json.dumps(rad5k_datatable_headers)
 		return context
 
 
@@ -132,66 +143,24 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
 	is_type = 0
 
 	columns = [
-		'id',
-		'sector__sector_id',
-		'sector_sector_id',
-		'sector__base_station__alias',
-		'sector__base_station__city__city_name',
-		'sector__base_station__state__state_name',
-		'sector__sector_configured_on__ip_address',
-		'sector__sector_configured_on__device_technology',
-		'sector__sector_configured_on__id',
-		'sector_capacity',
-		'sector_capacity_in',
-		'sector_capacity_out',
-		'current_in_per',
-		'current_in_val',
-		'avg_in_per',
-		'avg_in_val',
-		'peak_in_per',
-		'peak_in_val',
-		'peak_in_timestamp',
-		'current_out_per',
-		'current_out_val',
-		'avg_out_per',
-		'avg_out_val',
-		'peak_out_per',
-		'peak_out_val',
-		'peak_out_timestamp',
-		'organization__alias',
-		'severity',
-		'age'
+		'id', 'sector__sector_id', 'sector_sector_id', 'sector__base_station__alias',
+		'sector__base_station__city__city_name', 'sector__base_station__state__state_name', 
+		'sector__sector_configured_on__ip_address', 'sector__sector_configured_on__device_technology',
+		'sector__sector_configured_on__id', 'sector_capacity', 'sector_capacity_in',
+		'sector_capacity_out', 'current_in_per', 'current_in_val', 'avg_in_per',
+		'avg_in_val', 'peak_in_per', 'peak_in_val', 'peak_in_timestamp', 'peak_in_duration', 'current_out_per',
+		'current_out_val', 'avg_out_per', 'avg_out_val', 'peak_out_per', 'peak_out_val',
+		'peak_out_timestamp', 'peak_out_duration', 'organization__alias', 'severity', 'age'
 	]
 
 	order_columns = [
-		'id',
-		'sector__sector_id',
-		'severity',
-		'age',
-		'organization__alias',
-		'sector_sector_id',
-		'sector__base_station__alias',
-		'sector__base_station__city__city_name',
-		'sector__base_station__state__state_name',
-		'sector__sector_configured_on__ip_address',
-		'sector__sector_configured_on__device_technology',
-		'sector_capacity',
-		'current_in_per',
-		'current_in_val',
-		'sector_capacity_in',
-		'avg_in_per',
-		'avg_in_val',
-		'peak_in_per',
-		'peak_in_val',
-		'peak_in_timestamp',
-		'current_out_per',
-		'current_out_val',
-		'sector_capacity_out',
-		'avg_out_per',
-		'avg_out_val',
-		'peak_out_per',
-		'peak_out_val',
-		'peak_out_timestamp'
+		'id', 'sector__sector_id', 'severity', 'age', 'organization__alias',
+		'sector_sector_id', 'sector__base_station__alias', 'sector__base_station__city__city_name',
+		'sector__base_station__state__state_name', 'sector__sector_configured_on__ip_address', 
+		'sector__sector_configured_on__device_technology', 'sector_capacity', 'current_in_per', 'current_in_val',
+		'sector_capacity_in', 'avg_in_per', 'avg_in_val', 'peak_in_per', 'peak_in_val',
+		'peak_in_timestamp', 'current_out_per', 'current_out_val', 'sector_capacity_out', 'avg_out_per',
+		'avg_out_val', 'peak_out_per', 'peak_out_val', 'peak_out_timestamp'
 	]
 
 	related_columns = [
@@ -211,7 +180,6 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
 		:param qs:
 		:return qs:
 		"""
-		# sSearch = self.request.GET.get('sSearch', None)
 		sSearch = self.request.GET.get('search[value]', None)
 		self.is_technology_searched = False
 		if sSearch:
@@ -338,8 +306,20 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
 		return json_data
 
 	def ordering(self, qs):
-		""" Get parameters from the request and prepare order by clause
 		"""
+		Get parameters from the request and prepare order by clause
+		"""
+		if 'Radwin5K' in self.technology and self.is_type:
+			self.order_columns = [
+				'id', 'sector__sector_id', 'severity', 'age', 'organization__alias',
+				'sector_sector_id', 'sector__base_station__alias', 'sector__base_station__city__city_name',
+				'sector__base_station__state__state_name', 'sector__sector_configured_on__ip_address', 
+				'sector__sector_configured_on__device_technology', 'sector_capacity', 'current_in_per', 'current_in_val',
+				'sector_capacity_in', 'peak_in_per', 'peak_in_val', 'peak_in_timestamp', 'peak_in_duration',
+				'current_out_per', 'current_out_val', 'sector_capacity_out', 'peak_out_per', 
+				'peak_out_val', 'peak_out_timestamp', 'peak_out_duration'
+			]
+
 		return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
 	def get_context_data(self, *args, **kwargs):
