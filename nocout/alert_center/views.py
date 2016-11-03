@@ -864,7 +864,11 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         
         # Getting key for searching in col_dict 
         if data_tab in ['WiMAX', 'PMP', 'all']:
-            header_key = 'rad5_customer_detail_headers' if is_rad5 else 'pmp_wimax_datatable_headers'
+            # case handling for Customer alert details page, as there is no Data source
+            if is_rad5 and data_source == 'customer':
+                header_key = 'rad5_customer_detail_headers' if is_rad5 else 'pmp_wimax_datatable_headers'
+            else:
+                header_key = 'pmp_wimax_datatable_headers'
         elif data_tab == 'P2P':
             header_key = 'ptp_datatable_headers'
         else:
