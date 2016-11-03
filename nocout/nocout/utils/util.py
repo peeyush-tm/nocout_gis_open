@@ -1867,6 +1867,7 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
                     device_info.SSDEVICENAME AS SSDEVICENAME,
                     device_info.DEVICE_ID AS DEVICE_ID,
                     device_info.SS_DEVICE_ID AS SS_DEVICE_ID,
+                    device_info.org_alias AS org_alias,
                     
                     devicetype.alias AS DEVICE_TYPE,
                     devicetype.id AS TYPEID,
@@ -1880,9 +1881,14 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
                         device.ip_address as SSIP,
                         device.device_name as SSDEVICENAME,
                         device.device_technology as device_technology_id,
-                        device.device_type as device_type_id
+                        device.device_type as device_type_id,
+                        device_org.alias as org_alias
                     FROM
                         device_device as device
+                    LEFT JOIN
+                        organization_organization as device_org
+                    ON
+                        device.organization_id = device_org.id
                     {2}
                     {1}
                 ) AS device_info
@@ -2123,7 +2129,8 @@ def get_inventory_sector_query(
                     device_info.SECTOR_CONF_ON_IP AS SECTOR_CONF_ON_IP,
                     device_info.SECTOR_CONF_ON_ID AS SECTOR_CONF_ON_ID,
                     device_info.DEVICE_ID AS DEVICE_ID,
-                    device_info.SECTOR_CONF_ON_NAME AS SECTOR_CONF_ON_NAME
+                    device_info.SECTOR_CONF_ON_NAME AS SECTOR_CONF_ON_NAME,
+                    device_info.org_alias AS org_alias
                 from (
                     SELECT
                         device.id as DEVICE_ID,
@@ -2131,9 +2138,14 @@ def get_inventory_sector_query(
                         device.ip_address as SECTOR_CONF_ON_IP,
                         device.device_name as SECTOR_CONF_ON_NAME,
                         device.device_technology as device_technology_id,
-                        device.device_type as device_type_id
+                        device.device_type as device_type_id,
+                        device_org.alias as org_alias
                     FROM
                         device_device as device
+                    LEFT JOIN
+                        organization_organization as device_org
+                    ON
+                        device.organization_id = device_org.id
                     {2}
                     {1}
                 ) AS device_info
@@ -2287,7 +2299,8 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                             device_info.SECTOR_CONF_ON_IP AS SECTOR_CONF_ON_IP,
                             device_info.NEAR_DEVICE_ID AS NEAR_DEVICE_ID,
                             device_info.DEVICE_ID AS DEVICE_ID,
-                            device_info.SECTOR_CONF_ON_NAME AS SECTOR_CONF_ON_NAME
+                            device_info.SECTOR_CONF_ON_NAME AS SECTOR_CONF_ON_NAME,
+                            device_info.org_alias AS org_alias
                         FROM (
                             SELECT
                                 device.id as DEVICE_ID,
@@ -2295,9 +2308,14 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                                 device.ip_address as SECTOR_CONF_ON_IP,
                                 device.device_name as SECTOR_CONF_ON_NAME,
                                 device.device_technology as device_technology_id,
-                                device.device_type as device_type_id
+                                device.device_type as device_type_id,
+                                device_org.alias as org_alias
                             FROM
                                 device_device as device
+                            LEFT JOIN
+                                organization_organization as device_org
+                            ON
+                                device.organization_id = device_org.id
                             {1}
                             {0}
                         ) AS device_info
@@ -2440,16 +2458,22 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
                     
                     device_info.BHIP AS BHIP,
                     device_info.DEVICE_ID AS DEVICE_ID,
-                    device_info.BHDEVICENAME AS BHDEVICENAME
+                    device_info.BHDEVICENAME AS BHDEVICENAME,
+                    device_info.org_alias AS org_alias
                 from (
                     SELECT
                         device.id as DEVICE_ID,
                         device.ip_address as BHIP,
                         device.device_name as BHDEVICENAME,
                         device.device_technology as device_technology_id,
-                        device.device_type as device_type_id
+                        device.device_type as device_type_id,
+                        device_org.alias as org_alias
                     FROM
                         device_device as device
+                    LEFT JOIN
+                        organization_organization as device_org
+                    ON
+                        device.organization_id = device_org.id
                     {1}
                         AND
                         device.is_deleted = 0

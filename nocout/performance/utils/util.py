@@ -886,6 +886,7 @@ def prepare_gis_devices_optimized(
                     "ss_name": "NA",
                     "ss_id": 0,
                     "city": "NA",
+                    "region": "NA",
                     "state": "NA",
                     "device_type": "NA",
                     "device_technology": "NA",
@@ -927,6 +928,7 @@ def prepare_gis_devices_optimized(
                         "bs_name": inventory_row.get('BSALIAS', 'NA'),
                         "ss_name": inventory_row.get('SSALIAS', 'NA'),
                         "ss_id": inventory_row.get('SSID', 0),
+                        "region": inventory_row.get('org_alias', 'NA'),
                         "city": inventory_row.get('BSCITY', 'NA'),
                         "state": inventory_row.get('BSSTATE', 'NA'),
                         "site_id": inventory_row.get('SITEID', 'NA'),
@@ -964,6 +966,7 @@ def prepare_gis_devices_optimized(
                     "ss_name": "NA",
                     "ss_id": 0,
                     "site_id": "NA",
+                    "region": "NA",
                     "city": "NA",
                     "state": "NA",
                     "device_type": "NA",
@@ -1013,6 +1016,7 @@ def prepare_gis_devices_optimized(
                         "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
                         "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
                         "bs_id": inventory_row.get('BSID', 0),
+                        "region": inventory_row.get('org_alias', 'NA'),
                         "city_id": inventory_row.get('BSCITYID', 0),
                         "state_id": inventory_row.get('BSSTATEID', 0),
                         "tech_id": inventory_row.get('TECHID', 0),
@@ -1058,6 +1062,7 @@ def prepare_gis_devices_optimized(
                     "site_id": "NA",
                     "city": "NA",
                     "state": "NA",
+                    "region": "NA",
                     "device_type": "NA",
                     "device_technology": "NA",
                     "qos_bw" : "NA",
@@ -1101,6 +1106,7 @@ def prepare_gis_devices_optimized(
                         "ss_name": inventory_row.get('SSALIAS', 'NA'),
                         "ss_id": inventory_row.get('SSID', 'NA'),
                         "site_id": inventory_row.get('SITEID', 'NA'),
+                        "region": inventory_row.get('org_alias', 'NA'),
                         "city": inventory_row.get('BSCITY', 'NA'),
                         "state": inventory_row.get('BSSTATE', 'NA'),
                         "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
@@ -1172,6 +1178,7 @@ def prepare_gis_devices_optimized(
                     "city": "NA",
                     "state": "NA",
                     "device_type": "NA",
+                    "region": "NA",
                     "site_id": "NA",
                     "device_technology": "NA",
                     "bs_id": 0,
@@ -1220,6 +1227,7 @@ def prepare_gis_devices_optimized(
                         "state": inventory_row.get('BSSTATE', 'NA'),
                         "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
                         "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
+                        "region": inventory_row.get('org_alias', 'NA'),
                         "bs_id": inventory_row.get('BSID', 0),
                         "city_id": inventory_row.get('BSCITYID', 0),
                         "state_id": inventory_row.get('BSSTATEID', 0),
@@ -1259,6 +1267,7 @@ def prepare_gis_devices_optimized(
                 "device_technology": "NA",
                 "bh_connectivity" : "NA",
                 "bh_capacity" : "NA",
+                "region": "NA",
                 "bh_alias" : "NA",
                 "bh_port" : 0,
                 "bs_id": 0,
@@ -1294,6 +1303,7 @@ def prepare_gis_devices_optimized(
                     "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
                     "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
                     "bh_connectivity" : inventory_row.get('BH_CONNECTIVITY', 'NA'),
+                    "region": inventory_row.get('org_alias', 'NA'),
                     "bh_capacity" : inventory_row.get('BHCAPACITY', 'NA'),
                     "bh_alias" : inventory_row.get('BH_ALIAS', 'NA'),
                     "bh_port" : inventory_row.get('BHPORT', 'NA'),
@@ -1757,13 +1767,18 @@ def get_se_to_pe_min_latency(device_id=0, page_type='network'):
         pass
 
     try:
-        min_latency = NetworkStatus.objects.get(
-                ip_address=pe_device.ip_address,
-                data_source='rta',
-                service='ping'
-            ).using(
-                pe_device.machine.name
-            ).min_value
+        # Reason of using 'filter' instead of 'get' : 
+        # Using(db_name) method doesn't work on model object
+        # it only works on querysets
+        min_latency = NetworkStatus.objects.filter(
+            ip_address=pe_device.ip_address,
+            data_source='rta',
+            service_name='ping'
+        ).using(
+            pe_device.machine.name
+        ).values_list(
+            'min_value', flat=True
+        )[0]
     except Exception, err:
         return 'NA'
 

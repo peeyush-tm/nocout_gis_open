@@ -236,7 +236,7 @@ class AlertCenterListing(ListView):
         rad5_other_headers = [
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'warn', 'sTitle': 'Warn', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'warning_threshold', 'sTitle': 'Warn', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False}
         ]
 
@@ -328,7 +328,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         "max_value",
         "min_value",
         "sys_timestamp",
-        "age"
+        "age",
+        "warning_threshold"
     ]
 
     polled_value_columns = [
@@ -390,7 +391,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         
         device_tab_technology = self.request.GET.get('data_tab')
 
-        required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
+        required_value_list = ['id', 'machine__name', 'device_name', 'ip_address', 'organization__alias']
 
         if device_tab_technology == 'all':
             devices = list()
@@ -598,9 +599,12 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 except Exception, err:
                     pass
 
+                perf_utils = PerformanceUtilsGateway()
                 # for getting SE to PE min. latency
                 if is_rad5:
                     device_id = dct.get('id', 0)
+
+
                     min_latency = perf_utils.get_se_to_pe_min_latency(device_id, page_type)
 
                     # getting extra columns for rad5 devices
@@ -620,7 +624,10 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                                 ).using(machine_name).values_list(
                                     'current_value',
                                     flat=True
-                                    )[0]
+                                    )
+
+                            if dl_uas.exists():
+                                dl_uas = dl_uas[0]
 
                             ul_uas = InventoryStatus.objects.filter(
                                     ip_address=dct.get('ip_address', None),
@@ -629,7 +636,11 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                                 ).using(machine_name).values_list(
                                     'current_value',
                                     flat=True
-                                    )[0]
+                                    )
+
+                            if ul_uas.exists():
+                                ul_uas = ul_uas[0]
+
                         elif data_source == 'latency':
                             dl_utilization = UtilizationStatus.objects.filter(
                                     ip_address=dct.get('ip_address', None),
@@ -638,7 +649,10 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                                 ).using(machine_name).values_list(
                                     'current_value',
                                     flat=True
-                                    )[0]
+                                    )
+
+                            if dl_utilization.exists():
+                                dl_utilization = dl_utilization[0]
 
                             ul_utilization = UtilizationStatus.objects.filter(
                                     ip_address=dct.get('ip_address', None),
@@ -647,7 +661,11 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                                 ).using(machine_name).values_list(
                                     'current_value',
                                     flat=True
-                                    )[0]
+                                    )
+
+                            if ul_utilization.exists():
+                                ul_utilization = ul_utilization[0]
+
                         elif data_source == 'down':
                             device_uptime = ServiceStatus.objects.filter(
                                     ip_address=dct.get('ip_address', None),
@@ -656,7 +674,11 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                                 ).using(machine_name).values_list(
                                     'current_value',
                                     flat=True
-                                    )[0]
+                                    )
+
+                            if device_uptime.exists():
+                                device_uptime = device_uptime[0]
+
                         else:
                             pass
 
@@ -810,7 +832,6 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
             else:
                 order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
-
         if order and sort_using:
             self.is_initialised = False
             self.is_ordered = True
@@ -839,9 +860,11 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         This method will return column list in which order sorting will work
         """
 
+        is_rad5 = int(self.request.GET.get('is_rad5', 0))
+        
         # Getting key for searching in col_dict 
-        if data_tab in ['WiMAX', 'PMP']:
-            header_key = 'pmp_wimax_datatable_headers'
+        if data_tab in ['WiMAX', 'PMP', 'all']:
+            header_key = 'rad5_customer_detail_headers' if is_rad5 else 'pmp_wimax_datatable_headers'
         elif data_tab == 'P2P':
             header_key = 'ptp_datatable_headers'
         else:
@@ -855,7 +878,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         elif data_source in ['latency', 'Backhaul_RTA']:
             data_source = 'latency'
         else:
-            data_source = '' 
+            # data_source = '' 
+            pass
 
         # Common Network Datatable headers used in ordering
         common_network_ptp_headers = [
@@ -922,7 +946,10 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'bs_name',
             'site_id',
             'city',
-            'state',
+            'state'
+        ]
+
+        region_header = [
             'region',
         ]
 
@@ -951,24 +978,28 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     'pmp_wimax_datatable_headers': common_network_pmp_wimax_headers + ['max_value', 'min_value', 'sys_timestamp', 'age', 'action']
                 }
             }, 
-
             'customer' : {
+                # case handling for Customer alert details page, there is no Data source
+                'customer' : {
+                    'ptp_datatable_headers': common_network_ptp_headers + ['data_source_name', 'current_value', 'sys_timestamp', 'age', 'action'],
+                    'bh_datatable_headers': [],
+                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers+region_header+['data_source_name', 'current_value', 'sys_timestamp', 'age', 'action'],
+                    'rad5_customer_detail_headers': common_customer_pmp_wimax_headers + ['data_source_name', 'current_value', 'sys_timestamp', 'age', 'warning_threshold', 'action']
+                },
                 'packet_drop' : {
                     'ptp_datatable_headers': customer_pd_and_down_ptp_datatable_headers,
                     'bh_datatable_headers': [],
-                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers + ['current_value', 'dl_uas', 'ul_uas', 'sys_timestamp', 'age', 'action']
+                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers+region_header+['current_value', 'dl_uas', 'ul_uas', 'sys_timestamp', 'age', 'action']
                 },
-
                 'down' : {
                     'ptp_datatable_headers': customer_pd_and_down_ptp_datatable_headers,
                     'bh_datatable_headers': [],
-                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers + ['current_value', 'sys_timestamp', 'age', 'action']
+                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers+region_header+['current_value', 'sys_timestamp', 'age', 'action']
                 },
-
                 'latency' : {
                     'ptp_datatable_headers': common_customer_ptp_headers + ['max_value', 'min_value', 'sys_timestamp', 'age', 'action'],
                     'bh_datatable_headers': [],
-                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers + ['min_latency', 'current_value', 'max_value', 'min_value', 
+                    'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers+region_header+['min_latency', 'current_value', 'max_value', 'min_value', 
                                                                                         'dl_utilization', 'ul_utilization', 'sys_timestamp', 'age', 'action']
                 }
             }
@@ -1327,7 +1358,8 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         "max_value",
         "min_value",
         "sys_timestamp",
-        "age"
+        "age",
+        "warning_threshold"
     ]
 
     data_sources = []
@@ -1752,6 +1784,18 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         """
         data_source = self.request.GET.get('data_source')
 
+        common_network_bh_headers = [
+            'severity',
+            'ip_address',
+            'device_type',
+            'bs_name',
+            'site_id',
+            'city',
+            'state',
+            'bh_connectivity',
+            'current_value'
+        ]
+
         if data_source in ['WiMAXULIssue', 'PMPULIssue']:
             self.order_columns = [
                 'severity',
@@ -1807,33 +1851,11 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'age'
             ]
         elif data_source in ['Backhaul_PD', 'Backhaul_Down']:
-            self.order_columns = [
-                'severity',
-                'ip_address',
-                'device_type',
-                'bs_name',
-                'city',
-                'state',
-                'bh_connectivity',
-                'current_value',
-                'sys_timestamp',
-                'age'
-            ]
+            self.order_columns = common_network_bh_headers + ['sys_timestamp', 'age', 'action']
+
         elif data_source in ['Backhaul_RTA']:
-            self.order_columns = [
-                'severity',
-                'ip_address',
-                'device_type',
-                'bs_name',
-                'city',
-                'state',
-                'bh_connectivity',
-                'current_value',
-                'max_value',
-                'min_value',
-                'sys_timestamp',
-                'age'
-            ]
+            self.order_columns = ['sys_timestamp', 'age', 'action'] + ['max_value', 'min_value', 'sys_timestamp', 'age', 'action'],
+
         elif data_source in ['Temperature_bh']:
             self.order_columns = [
                 'severity',
