@@ -133,10 +133,11 @@ tech_model_service = {
             'model': 'performance_utilizationstatus',
             'service_name': [
                 'cambium_ul_util_kpi', 'cambium_dl_util_kpi',
-                'rad5k_bs_ul_util_kpi', 'rad5k_bs_dl_util_kpi'
+                'radwin5k_ul_util_kpi', 'radwin5k_dl_util_kpi'
             ],
             'data_source': [
-                'cam_ul_util_kpi', 'cam_dl_util_kpi'
+                'cam_ul_util_kpi', 'cam_dl_util_kpi',
+                'rad5k_ul_util_kpi', 'rad5k_dl_util_kpi'
             ],
             'values': ['current_value', 'age', 'severity', 'sys_timestamp'],
             'values_list': None
@@ -1547,6 +1548,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             is_raw=True
         )
 
+    rad5k_type_id = 0
+    try:
+        if technology.lower() == 'pmp':
+            rad5k_type_id = DeviceType.objects.get(name__iexact='Radwin5KBS').id
+    except Exception as e:
+        pass
+
     for sector in sectors:
         # deduplication of the sector on the basis of sector ID
         if sector.sector_id in processed_sectors:
@@ -1796,27 +1804,40 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             except Exception as e:
                 logger.error("PMP : {0}".format(e.message))
                 pass
-                # logger.error(e)
+            
+            try:
+                sector_device_name = sector.sector_configured_on.device_name
+            except Exception as e:
+                sector_device_name = 0
 
-            # index for dl values
-            in_value_index = (sector.sector_configured_on.device_name,
-                              'cambium_dl_utilization',
-                              'dl_utilization')
-
-            # index for ul values
-            out_value_index = (sector.sector_configured_on.device_name,
-                               'cambium_ul_utilization',
-                               'ul_utilization')
-
-            # in % values index
-            in_per_index = (sector.sector_configured_on.device_name,
-                            'cambium_dl_util_kpi',
-                            'cam_dl_util_kpi')
-
-            # out % values index
-            out_per_index = (sector.sector_configured_on.device_name,
-                             'cambium_ul_util_kpi',
-                             'cam_ul_util_kpi')
+            try:
+                if sector.sector_configured_on.device_type == rad5k_type_id:
+                    # index for dl values
+                    in_value_index = (sector_device_name, 'rad5k_bs_dl_utilization', 'dl_utilization')
+                    # index for ul values
+                    out_value_index = (sector_device_name, 'rad5k_bs_ul_utilization', 'ul_utilization')
+                    # in % values index
+                    in_per_index = (sector_device_name, 'radwin5k_dl_util_kpi', 'rad5k_dl_util_kpi')
+                    # out % values index
+                    out_per_index = (sector_device_name, 'radwin5k_ul_util_kpi', 'rad5k_ul_util_kpi')
+                else:
+                    # index for dl values
+                    in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
+                    # index for ul values
+                    out_value_index = (sector_device_name, 'cambium_ul_utilization', 'ul_utilization')
+                    # in % values index
+                    in_per_index = (sector_device_name, 'cambium_dl_util_kpi', 'cam_dl_util_kpi')
+                    # out % values index
+                    out_per_index = (sector_device_name, 'cambium_ul_util_kpi', 'cam_ul_util_kpi')
+            except Exception as e:
+                # index for dl values
+                in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
+                # index for ul values
+                out_value_index = (sector_device_name, 'cambium_ul_utilization', 'ul_utilization')
+                # in % values index
+                in_per_index = (sector_device_name, 'cambium_dl_util_kpi', 'cam_dl_util_kpi')
+                # out % values index
+                out_per_index = (sector_device_name, 'cambium_ul_util_kpi', 'cam_ul_util_kpi')
 
             severity_s = dict()
 
