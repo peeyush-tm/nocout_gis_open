@@ -384,6 +384,7 @@ def prepare_raw_alert_results(performance_data=None):
                 'current_value': data["current_value"],
                 'max_value': data["max_value"],
                 'min_value': data["min_value"],
+                'warning_threshold': data["warning_threshold"],
                 # 'sys_timestamp': datetime.datetime.fromtimestamp(
                 #     float(data["sys_timestamp"])).strftime(DATE_TIME_FORMAT),
                 # 'age': datetime.datetime.fromtimestamp(
