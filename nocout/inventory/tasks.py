@@ -14706,7 +14706,7 @@ def get_organizations():
     return orgs
 
 
-def get_devices(technology='WiMAX', rf_type=None, site_name=None):
+def get_devices(technology='WiMAX', rf_type=None, site_name=None, is_rad5=False):
     """
 
     :param technology:
@@ -14733,7 +14733,8 @@ def get_devices(technology='WiMAX', rf_type=None, site_name=None):
     else:
         network_devices = inventory_utils.organization_network_devices(
             organizations=organizations,
-            technology=technology
+            technology=technology,
+            is_rad5=is_rad5
         )
 
     if site_name and SiteInstance.objects.filter(name=site_name).exists():

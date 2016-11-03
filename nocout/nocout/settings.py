@@ -1370,6 +1370,12 @@ ENABLE_PE_PERF = False
 SHOW_ALL_IN_NETWORK_ALERT_CENTER = False
 ENABLE_MANUAL_TICKETING = False
 
+RADWIN5K_CONFIG = {
+    'SECTOR_STATUS_CUSTOMER_COUNT': False,
+    'SHOW_SECTOR_AUGMENTATION': False,
+    'SHOW_SECTOR_STATUS': False
+}
+
 # Import the local_settings.py file to override global settings
 try:
     from local_settings import *
