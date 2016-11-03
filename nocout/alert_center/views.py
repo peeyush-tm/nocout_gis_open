@@ -1358,7 +1358,8 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         "max_value",
         "min_value",
         "sys_timestamp",
-        "age"
+        "age",
+        "warning_threshold"
     ]
 
     data_sources = []
