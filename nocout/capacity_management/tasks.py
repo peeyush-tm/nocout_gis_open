@@ -1890,8 +1890,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             if not severity and not age:
                 continue
 
-            if calc_util_last_day():
+            peak_in_duration = 0
+            peak_out_duration = 0
 
+            if calc_util_last_day():
                 try:
                     # average percentage in/out
                     avg_in_per = float(indexed_avg_max_per[in_per_index][0]['avg_val'])
@@ -1946,12 +1948,9 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     peak_in_val = 0
                     avg_out_val = 0
                     peak_out_val = 0
+            
             if scs:
-                # update the scs
-                # scs.sector = sector
-                # scs.sector_sector_id = sector.sector_id
                 scs.sector_capacity = float(sector_capacity) if sector_capacity else 0
-
                 scs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 scs.organization = sector.organization if sector.organization else 1
                 scs.severity = severity if severity else 'unknown'
