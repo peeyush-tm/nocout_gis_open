@@ -669,7 +669,7 @@ def filter_devices(
             'id': device['id'],
             'ip_address': device['ip_address'],
             'organization_id' : device.get('organization__id'),
-            'region': device.get('organization__alias', 'NA')
+            # 'region': device.get('organization__alias', 'NA')
         }
         for device in device_list
     ]
