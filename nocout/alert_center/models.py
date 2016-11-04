@@ -74,7 +74,7 @@ class PlannedEvent(models.Model):
 	startdate = models.IntegerField('Scheduled Start Datetime', default=0)
 	enddate = models.IntegerField('Scheduled End Datetime', default=0)
 	event_type = models.CharField('Event Type', max_length=128, null=True, blank=True)
-	technnology = models.ForeignKey(DeviceTechnology)
+	technology = models.ForeignKey(DeviceTechnology)
 	device_type = models.ForeignKey(DeviceType)
 	owner_details = models.CharField('PE Owner Details', max_length=255, null=True, blank=True)
 	change_coordinator = models.CharField('Change Coordinator', max_length=255, null=True, blank=True)
