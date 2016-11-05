@@ -47,7 +47,7 @@ urlpatterns = patterns('',
 	),
 	url(
 		r'^servicestatus/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>[-\w]+)/device/(?P<device_id>\d+)/$',
-		cache_page(60 * 2)(views.GetServiceStatus.as_view()),
+		views.GetServiceStatus.as_view(),
 		name='GetServiceStatus'
 	),
 	url(
