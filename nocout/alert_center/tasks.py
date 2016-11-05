@@ -9,6 +9,7 @@ from inventory.tasks import bulk_update_create
 from device.models import Device, DeviceTechnology, DeviceType
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
+from nocout.settings import PLANNED_EVENTS_ENABLED
 from alert_center.models import PlannedEvent
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
@@ -79,50 +80,51 @@ def get_planned_events():
 	This function fetch planned events from monolith's database
 	"""
 
-	PE_COLUMNS = [
-		'ScheduledStartDate', 'ScheduledEndDate', 'EventType', 'PEOwnerDetails', 
-		'ChangeCoordinator', 'PETTno', 'SRNumber', 'Timing', 'Changesummary', 
-		'ChangeStatus', 'ImpactedDomain', 'Component', 'SectorID', 
-		'ResourceName', 'ServiceIDs'
-	]
-	TABLE_NAME = 'Wireless1ServiceDump'
+	if PLANNED_EVENTS_ENABLED:
+		PE_COLUMNS = [
+			'ScheduledStartDate', 'ScheduledEndDate', 'EventType', 'PEOwnerDetails', 
+			'ChangeCoordinator', 'PETTno', 'SRNumber', 'Timing', 'Changesummary', 
+			'ChangeStatus', 'ImpactedDomain', 'Component', 'SectorID', 
+			'ResourceName', 'ServiceIDs'
+		]
+		TABLE_NAME = 'Wireless1ServiceDump'
 
-	now_datetime = datetime.datetime.now()
-	start_date = float(format(now_datetime, 'U'))
-	end_date = float(format(now_datetime + datetime.timedelta(minutes=60), 'U'))
+		now_datetime = datetime.datetime.now()
+		start_date = float(format(now_datetime, 'U'))
+		end_date = float(format(now_datetime + datetime.timedelta(minutes=60), 'U'))
 
-	query = 'SELECT \
-				{0} \
-			FROM \
-				{1} \
-			WHERE \
-				NOT ISNULL(ResourceName) \
-				AND \
-				ResourceName != "" \
-				AND \
-				NOT ISNULL(PETTno) \
-				AND \
-				PETTno != "" \
-				AND \
-				ScheduledStartDate BETWEEN \
-				{2} AND {3} \
-			'.format(', '.join(PE_COLUMNS), TABLE_NAME, start_date, end_date)
+		query = 'SELECT \
+					{0} \
+				FROM \
+					{1} \
+				WHERE \
+					NOT ISNULL(ResourceName) \
+					AND \
+					ResourceName != "" \
+					AND \
+					NOT ISNULL(PETTno) \
+					AND \
+					PETTno != "" \
+					AND \
+					ScheduledStartDate BETWEEN \
+					{2} AND {3} \
+				'.format(', '.join(PE_COLUMNS), TABLE_NAME, start_date, end_date)
 
-	# Create instance of 'NocoutUtilsGateway' class
-	nocout_utils = NocoutUtilsGateway()
-	
-	# Execute Query to get planned events from monolith DB
-	planned_events_dataset = list()
+		# Create instance of 'NocoutUtilsGateway' class
+		nocout_utils = NocoutUtilsGateway()
+		
+		# Execute Query to get planned events from monolith DB
+		planned_events_dataset = list()
 
-	try:
-		planned_events_dataset = nocout_utils.fetch_raw_result(query, machine='monolith')
-	except Exception as e:
-		logger.error('Query execution exception')
-		logger.error(e)
-		pass
+		try:
+			planned_events_dataset = nocout_utils.fetch_raw_result(query, machine='monolith')
+		except Exception as e:
+			logger.error('Query execution exception')
+			logger.error(e)
+			pass
 
-	if planned_events_dataset:
-		set_planned_events.delay(planned_events_dataset)
+		if planned_events_dataset:
+			set_planned_events.delay(planned_events_dataset)
 
 	return True
 

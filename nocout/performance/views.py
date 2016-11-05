@@ -1987,22 +1987,13 @@ class GetServiceStatus(View):
         else:
             pass
 
+        # Update severity if planned event is defined for current ip address
         try:
-            if device.ip_address:
-                now_datetime = datetime.datetime.now()
-                start_date = float(format(now_datetime, 'U'))
-
-                planned_events = PlannedEvent.objects.filter(
-                    startdate__lte=start_date,
-                    enddate__gte=start_date,
-                    nia__icontains=device.ip_address
-                )
-
-                if planned_events.exists():
-                    self.result['data']['objects']['pl_status'] = 'inDownTime'
+            planned_events = nocout_utils.get_current_planned_event_ips(ip_address=device.ip_address)
+            if planned_events:
+                self.result['data']['objects']['pl_status'] = 'inDownTime'
         except Exception as e:
             pass
-
 
         return HttpResponse(json.dumps(self.result), content_type="application/json")
 

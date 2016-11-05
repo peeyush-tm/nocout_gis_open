@@ -783,20 +783,15 @@ def check_device_status():
 
     # Get planned events ip address to suppress escalation
     try:
-        now_datetime = datetime.datetime.now()
-        start_date = float(format(now_datetime, 'U'))
+        # import NocoutUtilsGateway class
+        from nocout.utils.util import NocoutUtilsGateway
+        
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
 
-        planned_events = list(PlannedEvent.objects.filter(
-            startdate__lte=start_date,
-            enddate__gte=start_date,
-            resource_name__isnull=False
-        ).values_list('nia', flat=True))
-
-        # In 'nia' column we have comma seperated ip addresses.
-        # So make a list of individual ip address
-        planned_events = str(','.join(planned_events)).split(',')
+        planned_events = nocout_utils.get_current_planned_event_ips()
     except Exception as e:
-        logger.error('Planned event fetch error')
+        logger.error('Planned event fetch error - alarm escalation')
         logger.error(e)
         planned_events = list()
 

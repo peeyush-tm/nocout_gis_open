@@ -502,19 +502,9 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 			else:
 				scheduling_type = ['devi', 'dety', 'cust', 'netw', 'back']
 
+			# get planned events ips for current timestamp
 			try:
-				now_datetime = datetime.datetime.now()
-				start_date = float(format(now_datetime, 'U'))
-
-				planned_events = list(PlannedEvent.objects.filter(
-					startdate__lte=start_date,
-					enddate__gte=start_date,
-					resource_name__isnull=False
-				).values_list('nia', flat=True))
-
-				# In 'nia' column we have comma seperated ip addresses.
-				# So make a list of individual ip address
-				planned_events = filter(None, str(','.join(planned_events)).split(','))
+				planned_events = nocout_utils.get_current_planned_event_ips()
 			except Exception as e:
 				logger.error('Planned event fetch error - Alert Center')
 				logger.error(e)
