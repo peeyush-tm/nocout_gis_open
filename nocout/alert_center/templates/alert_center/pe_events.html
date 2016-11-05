@@ -41,22 +41,23 @@
 
             var table_headers = $.parseJSON('{{ datatable_headers|safe }}'),
                 page_type = '{{ page_type|safe }}',
-                ajax_url = '{% url "all_alarms_listing" %}' + '?page_type='+ page_type;
-
+                table_title = 'Planned Events - ' + '{{ page_type_title }}',
+                ajax_url = "{% url 'planned_events_listing' page_type %}",
+                extra_param = "{'page_type' : '"+page_type+"', 'report_title' : '"+table_title+"', 'download_excel': 'yes' }";
 
             /*Call createDataTable function of ourDataTableWidget class*/
-            // dataTableInstance.createDataTable(
-            //     "pe_events_listing",
-            //     datatable_headers, //current_headers,
-            //     updated_url, //ajax_url,
-            //     false,
-            //     table_title,
-            //     'alert_center',
-            //     'AllSiaListing',
-            //     'AllSiaListingTable',
-            //     extra_param,
-            //     extra_param
-            // );
+            dataTableInstance.createDataTable(
+                "pe_events_listing",
+                table_headers,
+                ajax_url,
+                false,
+                table_title,
+                'alert_center',
+                'PlannedEventsInit',
+                'PlannedEventsListing',
+                extra_param,
+                extra_param
+            );
         });
     </script>
 {% endblock %}

@@ -65,6 +65,7 @@ from user_profile.models import PowerLogs
 from django.views.decorators.csrf import csrf_exempt
 import os
 from nocout.settings import BASE_DIR
+from alert_center.models import PlannedEvent
 
 service_utils = ServiceUtilsGateway()
 
@@ -1975,6 +1976,7 @@ class GetServiceStatus(View):
                 last_updated = datetime.datetime.fromtimestamp(
                     float(performance_data[0].sys_timestamp)
                 ).strftime(DATE_TIME_FORMAT)
+
                 severity_val = performance_data[0].severity.lower().strip() if performance_data[0].severity else None
 
                 self.result['data']['objects']['perf'] = current_value
@@ -1985,6 +1987,13 @@ class GetServiceStatus(View):
         else:
             pass
 
+        # Update severity if planned event is defined for current ip address
+        try:
+            planned_events = nocout_utils.get_current_planned_event_ips(ip_address=device.ip_address)
+            if planned_events:
+                self.result['data']['objects']['pl_status'] = 'inDownTime'
+        except Exception as e:
+            pass
 
         return HttpResponse(json.dumps(self.result), content_type="application/json")
 

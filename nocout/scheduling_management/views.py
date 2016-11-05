@@ -24,6 +24,9 @@ from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationF
 from nocout.mixins.user_action import UserLogDeleteMixin
 from device.models import Device, DeviceType
 from user_profile.utils.auth import in_group
+from alert_center.models import PlannedEvent
+from dateutil.relativedelta import *
+from nocout.settings import PLANNED_EVENTS_ENABLED
 
 
 class SchedulingViewsGateway:
@@ -530,21 +533,57 @@ def get_month_event_list(request):
 
     for event in Event.objects.filter(organization__in=[org]):
         # Get the event's date list of execution.
-        result = event_today_status({'event': event, 'month': month+1, 'year': year})
+        result = event_today_status({
+            'event': event, 
+            'month': month+1, 
+            'year': year
+        })
         # Update the list if date fall in same month.
         for date in result['execution_dates']:
             if first_day_of_month <= date and date <= last_day_of_month:
-                # convert the start and end date in specific format.
-                dic = { 'id': event.id, 'title': event.name,
-                        'start': (datetime.combine(date, event.start_on_time)).strftime(fmt),
-                        'end': datetime.combine(date, event.end_on_time).strftime(fmt),
-                        'allDay': False,
-                        }
-                month_schedule_list.append(dic)
+                month_schedule_list.append({
+                    'id': event.id,
+                    'title': event.name,
+                    'start': (datetime.combine(date, event.start_on_time)).strftime(fmt),
+                    'end': datetime.combine(date, event.end_on_time).strftime(fmt),
+                    'allDay': False
+                })
 
-    return HttpResponse ( json.dumps({
-            'month_schedule_list': month_schedule_list
-            }) )
+    """
+    ****************************************
+    ****************************************
+    * fetch current month's planned events *
+    ****************************************
+    ****************************************
+    """
+    if PLANNED_EVENTS_ENABLED:
+        now = datetime.now()
+        current_timestamp = datetime(
+            now.year,
+            now.month,
+            now.day, 0, 0, 0
+        )
+        start_date = (current_timestamp + relativedelta(day=1)).strftime('%s')
+        end_date = (current_timestamp + relativedelta(day=31)).strftime('%s')
+
+        planned_events = PlannedEvent.objects.filter(
+            startdate__gte=start_date,
+            startdate__lte=end_date
+        ).values(
+            'startdate', 'enddate', 'resource_name'
+        )
+
+        for pe in planned_events:
+            ip_address = pe['resource_name']
+            month_schedule_list.append({
+                'title': 'Planned Event - {0}'.format(ip_address),
+                'start': datetime.fromtimestamp(float(pe['startdate'])).strftime(fmt),
+                'end': datetime.fromtimestamp(float(pe['enddate'])).strftime(fmt)
+            })
+
+    return HttpResponse (json.dumps({
+        'month_schedule_list': month_schedule_list
+    }))
 
 
 # **************************************** SNMP Trap Settings *********************************************
