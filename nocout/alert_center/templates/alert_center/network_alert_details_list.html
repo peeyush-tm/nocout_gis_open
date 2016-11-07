@@ -121,6 +121,7 @@
                         <span class="hidden-inline-mobile">WiMAX UL Issue</span>
                       </a>
                     </li>
+                    {% if settings.SHOW_SPRINT3 %}
                     <li>
                       <a href="#pmp_ulIssue_block" id="pmp_ulIssue_tab" data-toggle="tab">
                         <span class="hidden-inline-mobile">Cambium UL Issue</span>
@@ -131,6 +132,13 @@
                         <span class="hidden-inline-mobile">Radwin5K UL Issue</span>
                       </a>
                     </li>
+                    {% else %}
+                    <li>
+                      <a href="#pmp_ulIssue_block" id="pmp_ulIssue_tab" data-toggle="tab">
+                        <span class="hidden-inline-mobile">PMP UL Issue</span>
+                      </a>
+                    </li>
+                    {% endif %}
                     <li>
                       <a href="#network_sectorUtil_block" id="network_sectorUtil_tab" data-toggle="tab">
                         <span class="hidden-inline-mobile">Sector Util.</span>
@@ -333,6 +341,7 @@
                 network_bhUtil_title = "Network Alert Details: BH Utilization",
                 network_sectorUtil_title = "Network Alert Details: Sector Utilization",
                 pmp_ulIssue_title = "Network Alert Details: PMP UL Issues",
+                rad5_ulIssue_title = "Network Alert Details: Radwin5K UL Issues",
                 wimax_ulIssue_title = "Network Alert Details: WiMAX UL Issues",
                 converter_title = "Network Alert Details: Backhaul",
                 bh_temp_title = "Network Alert Details: BH Temperature",
@@ -340,7 +349,8 @@
                 wimax_title = "Network Alert Details: WiMAX BS",
                 pmp_title = "Network Alert Details: PMP BS",
                 ptp_title = "Network Alert Details: PTP BH",
-                pmp_ulIssue_extra_param = "{'data_source' : 'PMPULIssue', 'report_title' : '"+pmp_ulIssue_title+"', "+common_extra_param+"}",
+                pmp_ulIssue_extra_param = "{'data_source' : 'PMPULIssue', 'report_title' : '"+rad5_ulIssue_title+"', "+common_extra_param+"}",
+                rad5_ulIssue_extra_param = "{'data_source' : 'RAD5ULIssue', 'report_title' : '"+pmp_ulIssue_title+"', "+common_extra_param+"}",
                 wimax_ulIssue_extra_param = "{'data_source' : 'WiMAXULIssue', 'report_title' : '"+wimax_ulIssue_title+"', "+common_extra_param+"}",
                 converter_extra_param = "{'data_source' : 'Backhaul', 'report_title' : '"+converter_title+"', "+common_extra_param+"}",
                 bh_temp_extra_param = "{'data_source' : 'Temperature_bh', 'report_title' : '"+bh_temp_title+"', "+common_extra_param+"}",
@@ -441,7 +451,16 @@
                     "header_extra_param" : "{"+common_extra_param+"}",
                     "data_extra_param" : ptp_extra_param,
                     "excluded" : "['sector_id']"
-                }
+                },
+                "rad5_ulIssue_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : rad5_ulIssue_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "GetNetworkAlertDetail",
+                    "header_extra_param" : "{'headers_data_key' : 'rad5_ul_issue_headers',"+common_extra_param+"}",
+                    "data_extra_param" : rad5_ulIssue_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]"
+                },
             };
 
             // Report Download Feature -- END

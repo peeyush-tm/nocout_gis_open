@@ -38,7 +38,7 @@ from django.utils.dateformat import format
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME, \
 SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT, SHOW_TICKET_NUMBER, \
-ENABLE_MANUAL_TICKETING
+ENABLE_MANUAL_TICKETING, SHOW_SPRINT3
 
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
@@ -1334,6 +1334,8 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
     is_searched = False
     is_initialised = True
     is_rad5 = False
+    # Temp flag for distinguishing features of sprint 3(Radwin5K)
+    s3_feature = False
 
     model = EventNetwork
     columns = [
@@ -1413,6 +1415,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 technology = [tab_id]
             elif tab_id == "PMP":
                 technology = [tab_id]
+                self.s3_feature = not SHOW_SPRINT3
             elif tab_id == "Temperature":
                 # for handelling the temperature alarms
                 # temperature alarms would be for WiMAX
@@ -1435,6 +1438,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 technology = ["PMP"]
                 self.data_sources = ['bs_ul_issue']
                 self.table_name = 'performance_utilizationstatus'
+                self.s3_feature = not SHOW_SPRINT3
                 # Add 'refer column' in case of ULIssue
                 self.polled_columns.append('refer')
             elif tab_id == "RAD5ULIssue":
@@ -1443,6 +1447,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 self.data_sources = ['bs_ul_issue']
                 self.table_name = 'performance_utilizationstatus'
                 self.is_rad5 = True
+                self.s3_feature = not SHOW_SPRINT3
                 # Add 'refer column' in case of ULIssue
                 self.polled_columns.append('refer')
             elif tab_id in ["Backhaul"]:
@@ -1470,6 +1475,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                     device_list += inventory_utils.filter_devices(
                         organizations=organizations,
                         is_rad5=self.is_rad5,
+                        s3_feature=self.s3_feature,
                         data_tab=techno,
                         page_type=page_type,
                         required_value_list=required_value_list
@@ -2500,6 +2506,8 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     model = None
     alarm_type = None
     tech_name = None
+    is_rad5 = False
+
     columns = [
         'severity', 'ip_address', 'eventname', 'traptime',
         'alarm_count','first_occurred','last_occurred',
@@ -2553,7 +2561,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         model_columns = self.columns
 
         if self.tech_name == 'all':
-            tech_name_list = ['pmp', 'wimax', 'radwin5']
+            tech_name_list = ['pmp', 'wimax', 'rad5k']
         else:
             tech_name_list = [self.tech_name]
         tech_name_id = list()
@@ -2567,13 +2575,15 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 tech_name_id.append(device_technology_dict.get(tech_name))
 
         not_condition_sign = ''
-        if self.tech_name not in ['pmp', 'radwin5k', 'wimax', 'all']:
+        if self.tech_name not in ['pmp', 'rad5k', 'wimax', 'all']:
             tech_name_list = ['pmp', 'wimax']
             not_condition_sign = '~'
 
             for tech_name in tech_name_list:
                 if tech_name in device_technology_dict:
                     tech_name_id.append(device_technology_dict.get(tech_name))
+
+        self.is_rad5 = int(self.request.GET.get('is_rad5k', 0))
 
         if self.tech_name == 'all':
             tech_type_filter_condition = ''
@@ -2607,8 +2617,21 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     active_filter_condition,
                     tech_type_filter_condition
                 )
-
         exec query
+
+        # Case Handling if Technology is coming "pmp" for rad5 devices
+        # if SHOW_SPRINT3:
+        #     # Filter for rad5 devices
+        #     if self.tech_name in ["PMP", "pmp"]:
+        #         if self.is_rad5:
+        #             # Getting all devices ip list of devicetype 'Radwin5KBS'
+        #             device_ip_qs = Device.objects.filter(device_type=DeviceType.objects.get(name='Radwin5KBS').id).values_list('ip_address', flat=True)
+
+        #             # Filtering Alarms for radwin5k
+        #             queryset = queryset.filter(ip_address__in=device_ip_qs)
+        #     else:
+        #         pass
+
         return queryset
 
     def filter_queryset(self, qs):
@@ -3564,7 +3587,7 @@ def prepare_snmp_gis_data(qs, tech_name):
 
     sectors_data_qs, dr_data_qs = '', ''
     converter_mapped_data = {}
-    if tech_name in ['pmp', 'radwin5k', 'wimax', 'all']:
+    if tech_name in ['pmp', 'rad5k', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
         ).extra(

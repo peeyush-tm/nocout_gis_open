@@ -895,7 +895,8 @@ SETTINGS_EXPORT = [
     'SHOW_RFO_TRENDS_DASHBOARD',
     'ENABLE_PING_TEST',
     'ENABLE_PE_PERF',
-    'SHOW_ALL_IN_NETWORK_ALERT_CENTER'
+    'SHOW_ALL_IN_NETWORK_ALERT_CENTER',
+    'SHOW_SPRINT3',
 ]
 
 # Dashbaord Settings
@@ -1375,6 +1376,13 @@ RADWIN5K_CONFIG = {
     'SHOW_SECTOR_AUGMENTATION': False,
     'SHOW_SECTOR_STATUS': False
 }
+
+
+# Show/Hide features of Sprint 3 of Radwin5K
+# Feature list:-
+# 1) Alert Centre - Alert Details - Network Details - Radwin 5k UL Alerts summary window
+# 2) Separate tab required for Radwin 5k in Device Alarms page
+SHOW_SPRINT3 = False
 
 # Import the local_settings.py file to override global settings
 try:

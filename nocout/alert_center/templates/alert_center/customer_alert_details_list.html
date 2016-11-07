@@ -120,7 +120,9 @@
                 pmp_title = "Customer Alert Details: PMP",
                 wimax_title = "Customer Alert Details: WiMAX",
                 ptp_title = "Customer Alert Details: PTP",
+                rad5_title = "Customer Alert Details: Radwin5K"
                 pmp_extra_param = "{" + common_dict_items + ",'data_tab' : 'PMP', 'report_title' : '"+pmp_title+"', "+common_extra_param+"}",
+                rad5_extra_param = "{" + common_dict_items + ",'data_tab' : 'PMP', 'report_title' : '"+rad5_title+"', "+common_extra_param+"}",
                 wimax_extra_param = "{" + common_dict_items + ",'data_tab' : 'WiMAX', 'report_title' : '"+wimax_title+"', "+common_extra_param+"}",
                 ptp_extra_param = "{" + common_dict_items + ",'data_tab' : 'P2P', 'report_title' : '"+ptp_title+"', "+common_extra_param+"}";
             
@@ -149,7 +151,15 @@
                     "header_extra_param" : "{'page_type' : 'customer', 'headers_data_key' : 'ptp_datatable_headers', "+common_extra_param+"}",
                     "data_extra_param" : ptp_extra_param,
                     "excluded" : "['sector_id']"
-                }
+                },
+                "customer_rad5_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : rad5_title,
+                    "header_class_name" : "AlertCenterListing",
+                    "data_class_name" : "AlertListingTable",
+                    "header_extra_param" : "{'page_type' : 'customer', 'headers_data_key' : 'rad5_customer_detail_headers', "+common_extra_param+", 'is_rad5': 1}",
+                    "data_extra_param" : pmp_extra_param
+                },
             };
 
             // Report Download Feature -- END

@@ -3802,6 +3802,20 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto='', is_ra
                 bs_device_vendor = 11
                 bs_device_model = 14
                 bs_device_type = 16
+            else:
+                if 'Vendor' in row.keys():
+                    try:
+                        vendor_in_sheet = str(row['Vendor']).lower()
+                    except Exception, e:
+                        logger.error('Vendor LowerCase error')
+                        logger.error(row['Vendor'])
+                        logger.error(e)
+                        vendor_in_sheet = row['Vendor']
+
+                    if vendor_in_sheet == 'radwin5k':
+                        bs_device_vendor = 11
+                        bs_device_model = 14
+                        bs_device_type = 16
 
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
@@ -4601,6 +4615,19 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto='', is_ra
                 ss_device_vendor = 11
                 ss_device_model = 14
                 ss_device_type = 17
+            else:
+                if 'Vendor' in row.keys():
+                    try:
+                        vendor_in_sheet = str(row['Vendor']).lower()
+                    except Exception, e:
+                        logger.error('SS Vendor LowerCase error')
+                        logger.error(row['Vendor'])
+                        logger.error(e)
+                        vendor_in_sheet = row['Vendor']
+                    if vendor_in_sheet == 'radwin5k':
+                        ss_device_vendor = 11
+                        ss_device_model = 14
+                        ss_device_type = 17
 
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
