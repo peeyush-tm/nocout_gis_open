@@ -9,8 +9,10 @@ from dateutil import tz
 from django.db import connections
 from django.db.models import Q
 from operator import itemgetter
-from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME, MAX_SUGGESTION_COUNT, DATATABLE_SEARCHTXT_KEY, SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, \
-SHOW_TICKET_NUMBER
+from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME, MAX_SUGGESTION_COUNT, DATATABLE_SEARCHTXT_KEY, \
+SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, PLANNED_EVENTS_ENABLED, SHOW_TICKET_NUMBER
+
+from django.utils.dateformat import format
 
 date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
@@ -107,14 +109,12 @@ class NocoutUtilsGateway:
         response = get_maps_initial_data_cached(bs_id=bs_id)
         return response
 
-
     def get_maps_initial_data_noncached(self, bs_id=[]):
         """
 
         """
         response = get_maps_initial_data_noncached(bs_id=bs_id)
         return response
-
 
     def non_cached_all_gis_inventory(
         self, 
@@ -548,7 +548,11 @@ class NocoutUtilsGateway:
 
         return param1
 
-
+    def get_current_planned_event_ips(self, ip_address=None):
+        '''
+        '''
+        result = get_current_planned_event_ips(ip_address=ip_address)
+        return result
 
 class DictDiffer(object):
     """
@@ -3182,3 +3186,37 @@ def getSectorInventoryInfo(sector_id=None):
     sector_info = fetch_raw_result(query)
 
     return sector_info
+
+
+def get_current_planned_event_ips(ip_address=None):
+    """
+    This function return 'Planned Events' ips for current timestamp
+    """
+    planned_ips = list()
+    if PLANNED_EVENTS_ENABLED:
+        from alert_center.models import PlannedEvent
+        try:
+            now_datetime = datetime.datetime.now()
+            start_date = float(format(now_datetime, 'U'))
+
+            if ip_address:
+                planned_ips = list(PlannedEvent.objects.filter(
+                    startdate__lte=start_date,
+                    enddate__gte=start_date,
+                    nia__icontains=ip_address
+                ).values_list('nia', flat=True))
+            else:
+                planned_ips = list(PlannedEvent.objects.filter(
+                    startdate__lte=start_date,
+                    enddate__gte=start_date,
+                    resource_name__isnull=False
+                ).values_list('nia', flat=True))
+
+            # In 'nia' column we have comma seperated ip addresses.
+            # So make a list of individual ip address
+            planned_ips = filter(None, str(','.join(planned_ips)).split(','))
+        except Exception as e:
+            log.error('Planned event fetch error - Nocout Utils')
+            log.error(e)
+
+    return planned_ips

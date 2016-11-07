@@ -9,6 +9,5 @@ urlpatterns = patterns('',
     url(r'^new/$', views.EventCreate.as_view(), name='event_new'),
     url(r'^(?P<pk>\d+)/edit/$', views.EventUpdate.as_view(), name='event_edit'),
     url(r'^(?P<pk>\d+)/delete/$', views.EventDelete.as_view(), name='event_delete'),
-
     url(r'^month/$', views.get_month_event_list, name='monthly-event'),
 )

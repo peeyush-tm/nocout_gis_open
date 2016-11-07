@@ -44,7 +44,6 @@ network_data_values = []
 service_data_values = []
 network_update_list = []
 service_update_list = []
-device_first_down_map = {}
 ss_provis_helper_serv_data =[]
 kpi_helper_serv_data = []
 def load_file(file_path):
@@ -65,27 +64,21 @@ def load_file(file_path):
 def calculate_refer_field_for_host(device_first_down, host_name, ds_values, 
 		local_timestamp):
 	refer = ''
-	try:
+	try:                                                                 # device_first_down is a tuple like  (severity , time)
 		if not device_first_down and ds_values['cur'] == '100':
-			device_first_down = {}
-			device_first_down['host'] = host_name
-			device_first_down['severity'] = "down"
-			device_first_down['time'] = local_timestamp
-			#device_first_down_map[host_name]=device_first_down
-		elif (device_first_down and host_name ==  device_first_down['host'] and 
-			ds_values['cur'] != '100'):
-			device_first_down['severity'] = "up"
-			#device_first_down_map[host_name]['severity'] = "up"
-			#device_first_down_list[]
-		elif (device_first_down and host_name == device_first_down['host'] and 
-			device_first_down['severity'] == "up" and 
-				ds_values['cur'] == '100'):
-			device_first_down['severity'] = "down"
-			device_first_down['time'] = local_timestamp
-			#device_first_down_map[host_name]['severity'] = "down"
-			#device_first_down_map[host_name]['time'] = local_timestamp
+
+			device_first_down = ("down", local_timestamp)
+		elif (device_first_down  and ds_values['cur'] != '100'):  
+
+			device_first_down = ('up',device_first_down[1] )
+		
+		elif (device_first_down  and device_first_down[0] == "up" and ds_values['cur'] == '100'):
+
+			device_first_down = ("down", local_timestamp)
+
+		
 		if device_first_down:
-			refer = device_first_down['time']
+			refer = device_first_down[1]
 	except Exception as exc:
 		# printing the exc for now
 		print 'Exc in host refer field: ', exc
@@ -108,7 +101,6 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	global service_data_values
 	global network_update_list
 	global service_update_list
-	global device_first_down_map
 	global ss_provis_helper_serv_data
 	global kpi_helper_serv_data
         age = None
@@ -136,27 +128,46 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	# Process network perf data
         nw_qry_output = network_result
 	try:
-		pickle_file = open("state_change.dat",'r') 
-		state_change_dict = cPickle.load(pickle_file)
-		pickle_file.close()
-	except Exception as e: 
-		print e 
-		state_change_dict= {}
+            pickle_file = open("state_change.dat",'r')
+            state_change_dict = cPickle.load(pickle_file)
+            pickle_file.close()
+
+            pickle_file1 = open("state_change_rta.dat",'r')
+            state_change_dict_rta = cPickle.load(pickle_file1)
+            pickle_file1.close()
+
+
+
+        except Exception as e:
+	    print e
+	    state_change_dict= {}	
+	    state_change_dict_rta= {}
 	file_path = "/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk" % site
 	host_var = load_file(file_path)
 	host_list = [str(index[0]) for index in nw_qry_output]
 	try:
-		redis_obj=db_ops_module.RedisInterface()
-		rds_cnx=redis_obj.redis_cnx
-		key = nocout_site_name + "_first_down"	
-		device_first_down_list=rds_cnx.get(key)
-		device_first_down_list =literal_eval(device_first_down_list)
-		for down_device_dict in device_first_down_list:
-			if down_device_dict and down_device_dict.get('host'):
-				device_first_down_map[down_device_dict['host']] = down_device_dict
+		pickle_file = open("device_down_dict_pickle.txt",'r')
+		device_first_down_map = cPickle.load(pickle_file)
+		pickle_file.close()
+
+	except IOError : 
+		device_first_down_map = {}
 	except Exception,e:
 		print e
 	#print device_first_down_map
+	events_pl_rta_list = []
+	state_change_severity = None
+	event_name = None
+	pl_event_name_mapping ={
+	"down" : "Device_not_reachable",
+	"critical": "PD_threshold_breach_major",
+	"warning": "PD_threshold_breach_warning"
+	}
+	rta_event_name_mapping ={
+	"down" : "Device_not_reachable",
+	"critical": "Latency_Threshold_Breach_major",
+	"warning": "Latency_Threshold_Breach_warning"
+	}
 	for entry in nw_qry_output:
                 try:
 		    threshold_values = get_threshold(entry[-1])
@@ -182,6 +193,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
 				local_timestamp = present_time
 				check_time = local_timestamp - timedelta(minutes=2)
+			if (local_timestamp - present_time  >= timedelta(minutes=2)):
+				local_timestamp= present_time
 			check_time =int(time.mktime(check_time.timetuple()))
 			# Pivot the time stamp to next 5 mins time frame
 			local_timestamp =int(time.mktime(local_timestamp.timetuple()))
@@ -201,10 +214,20 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					pl_crit = float(pl_crit)
 					if pl_cur < pl_war:
 						host_severity = "up"
+						state_change_severity = "clear"
+						event_name = "PD_threshold_breach"
 					elif pl_cur >= pl_war and pl_cur <= pl_crit:
 						host_severity = "warning"
+						state_change_severity = "warning"
+						event_name = "PD_threshold_breach_warning"
+					elif pl_cur > pl_crit and pl_cur < 100:
+						host_severity = "critical"
+						state_change_severity = "major"
+						event_name = "PD_threshold_breach_major"
 					else:
 						host_severity = "down"
+						state_change_severity = "critical"
+						event_name = "Device_not_reachable"
 				try:
 					#if device_first_down_map:
 					device_first_down = device_first_down_map.get(str(entry[0]))
@@ -216,21 +239,46 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					refer = ''
 
 				try:
-					pre_host_severity=state_change_dict.get(str(entry[1]))[0]
-					if pre_host_severity and pre_host_severity!= host_severity:
-						age = int(time.time())
+				    pre_host_severity=state_change_dict.get(str(entry[1]))[0]
+				    if pre_host_severity and pre_host_severity!= host_severity:
+					age = int(time.time())
+					
+				    	
+					
+					if host_severity == "up":
+					    if pl_event_name_mapping.get(pre_host_severity):	
+					        event_name = pl_event_name_mapping.get(pre_host_severity)
+					elif host_severity in ["warning","critical","down"] and pre_host_severity != "up":
+					    modified_event_name = pl_event_name_mapping.get(pre_host_severity)
+					    t2 = ('', modified_event_name, '',str(entry[1]),
+						    '',
+						    '',
+						    "clear",
+						    '',
+						     time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(local_timestamp)), #check_time,
+						    ''
+					    )
+                                            events_pl_rta_list.append(t2)
+					local_time = local_timestamp + 2
+					t = ('', event_name, '',str(entry[1]),
+                     				'',
+                     				'',
+                     				state_change_severity,
+                     				'',
+						time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(local_time))),
+                     				''
+                     				)
 
-					else :
-						age = state_change_dict.get(str(entry[1]))[1]						
+					events_pl_rta_list.append(t)
+				    else :
+					age = state_change_dict.get(str(entry[1]))[1]                                         
 
-					state_change_dict[str(entry[1])]=(host_severity,age)
+				    state_change_dict[str(entry[1])]=(host_severity,age)
 
 				except Exception as e :
-					print e, "in state change dict"
-					state_change_dict[str(entry[1])]=(host_severity,age)
-                                        
-
-
+				    print e, "in state change dict"
+				    state_change_dict[str(entry[1])]=(host_severity,age)
+				    #state_change_dict[str(entry[1])]=host_severity
 
 			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
 			if ds == 'rta':
@@ -246,15 +294,68 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					rta_cur = float(rta_cur)
 					rta_war = float(rta_war)
 					rta_crit = float(rta_crit)
+					event_name = 'Latency_Threshold_Breach'
 					if rta_cur < rta_war:
 						host_severity = "up"
+						state_change_severity = "clear"
 					elif (rta_cur >= rta_war) and (rta_cur <= rta_crit):
 						host_severity = "warning"
+						state_change_severity = "warning"
+						event_name = 'Latency_Threshold_Breach_warning'
+					elif rta_cur > rta_crit:
+						host_severity = "critical"
+						state_change_severity = "major"
+						event_name = 'Latency_Threshold_Breach_major'
 					else:
 						host_severity = "down"
+						state_change_severity = "critical"
+
 					
 				rta_dict = {'min_value': rt_min, 'max_value': rt_max}
 				data_values[0].update(rta_dict)
+												# changes for rta
+                                try:
+                                    pre_host_severity=state_change_dict_rta.get(str(entry[1]))[0]
+                                    if pre_host_severity and pre_host_severity!= host_severity:
+                                        age = int(time.time())
+                                        pl_flag = 1
+					if host_severity == "up":
+					    if rta_event_name_mapping.get(pre_host_severity):	
+					        event_name = rta_event_name_mapping.get(pre_host_severity)
+					elif host_severity in ["warning","critical","down"] and pre_host_severity != "up":
+					    modified_event_name = rta_event_name_mapping.get(pre_host_severity)
+					    t2 = ('', modified_event_name, '',str(entry[1]),
+						    '',
+						    '',
+						    "clear",
+						    '',
+						     time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(local_timestamp)), #check_time,
+						    ''
+					    )
+                                            events_pl_rta_list.append(t2)
+					local_time = local_timestamp + 2
+                                        t1 = ('', event_name, '',str(entry[1]),
+                                                '',
+                                                '',
+                                                state_change_severity,
+                                                '',
+                                                 time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(local_time)), #check_time,
+                                                ''
+                                                )
+                                        events_pl_rta_list.append(t1)
+                                    else :
+                                        age = state_change_dict_rta.get(str(entry[1]))[1]
+
+                                    state_change_dict_rta[str(entry[1])]=(host_severity,age)
+
+                                except Exception as e :
+                                    print e, "in state change dict"
+                                    state_change_dict_rta[str(entry[1])]=(host_severity,age)
+
+
+
+
+
 			data_dict.update({
 				'site': site,
 				'host': str(entry[0]),
@@ -285,13 +386,16 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		refer = ''
 		device_first_down = {}
 	after = int(time.time())
+	try:
+	    pickle_file = open("state_change.dat",'w')
+	    cPickle.dump(state_change_dict,pickle_file)
+	    pickle_file.close()
 
-        try:
-                pickle_file = open("state_change.dat",'w')
-                cPickle.dump(state_change_dict,pickle_file)
-                pickle_file.close()
-        except Exception as e:
-                print e
+	    pickle_file1 = open("state_change_rta.dat",'w')
+	    cPickle.dump(state_change_dict_rta,pickle_file1)
+	    pickle_file1.close()
+	except Exception as e:
+	    print e
 
 
 	#print len(device_first_down_list)
@@ -373,7 +477,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			try:
 				value =  ds_values.get('cur')
 			except:
-		        value=None
+		        	value=None
 				pass	
 			# Code has been Added to figure out if check is executed or not..if check not executed then take current value
 			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
@@ -453,7 +557,12 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			if dr_flag:
 				dr_flag= 0
 				host_matched_row=filter(lambda x: re.match(str(entry[0]),x) ,dr_host_entry)
-				dr_host = host_matched_row[0].split('|')[3].split(':')[1].strip(' ')
+				try:
+				    dr_host = host_matched_row[0].split('|')[3].split(':')[1].strip(' ')
+				except Exception,e:
+				    print e
+				    print "Error",host_matched_row,str(entry[0])
+				    continue
 				if dr_host in s_device_down_list and str(entry[0]) in s_device_down_list:
 					data_dict = {}
 					matching_criteria = {}
@@ -510,8 +619,23 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		except:
 			continue
 	elap = int(time.time()) - current1
+	print datetime.now()
 	print 'service_data_values'
+	#print events_pl_rta_list
 	print len(service_data_values)
+	try:
+		rds_obj=db_ops_module.RedisInterface()
+		machine_name = nocout_site_name.split('_')[0]
+        	redis_key = 'queue:network:snmptt:%s' % machine_name
+        	rds_obj.redis_cnx_prd4.rpush(redis_key, *events_pl_rta_list)
+	except Exception as e :
+		print e
+
+
+	pickle_file = open("device_down_dict_pickle.txt","w") 
+	cPickle.dump(device_first_down_map,pickle_file) 
+	pickle_file.close()
+
 	# Bulk insert the values into Mongodb
 	#try:
 	#	mongo_module.mongo_db_insert(db, service_data_values, 'serv_perf_data')
@@ -521,7 +645,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 
 
 
-def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_first_down_map,db):
+def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
 	#db = mongo_module.mongo_conn(
 	#    host=mongo_host,
 	#    port=int(mongo_port),
@@ -540,8 +664,8 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_f
 	memc_obj=db_ops_module.MemcacheInterface()
 	exp_time =240 # 4 min
 	memc_obj.store(key,serv_values,doc_len_key,exp_time,chunksize=1000)
-	
-	key = nocout_site_name + "_network"
+	key = nocout_site_name + "_network"	
+	#key = nocout_site_name + "_network"
 	doc_len_key =  key + "_len"
 	memc_obj.store(key,net_values,doc_len_key,exp_time,chunksize=1000)
 
@@ -575,9 +699,6 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_f
 		rds_obj.zadd_compress(set_name,current_time,net_values)
 		set_name = nocout_site_name + "_service"
 		rds_obj.zadd_compress(set_name,current_time,serv_values)
-		key = nocout_site_name + "_first_down"
-		device_first_down_info = device_first_down_map.values()
-		rds_obj.redis_cnx.set(key,device_first_down_info)
 		rds_obj.multi_set(ss_provis_helper_serv_data, perf_type='provis')
 		rds_obj.redis_update(kpi_helper_serv_data, update_queue=True,
                                                perf_type='ul_issue')
@@ -1288,5 +1409,5 @@ if __name__ == '__main__':
     get_host_services_name(
     site_name=site
     )
-    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,device_first_down_map,db)
+    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,db)
 

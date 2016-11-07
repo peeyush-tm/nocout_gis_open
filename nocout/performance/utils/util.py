@@ -213,6 +213,18 @@ class PerformanceUtilsGateway:
 
         return param1
 
+    def get_performance_data(self, device_list, machine, model=None):
+        """
+
+        :param device_list:
+        :param machine:
+        :param model:
+        """
+
+        param1 = get_performance_data(device_list, machine, model)
+
+        return param1
+
     def prepare_gis_devices_optimized(
         self,
         qs,

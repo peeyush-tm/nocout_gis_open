@@ -23,6 +23,7 @@ from organization.models import Organization
 from device.models import Device, DeviceType, DeviceTypeService, DeviceTypeServiceDataSource, DeviceTechnology
 from service.models import Service, ServiceDataSource, ServiceSpecificDataSource
 from performance.models import ServiceStatus
+from alert_center.models import PlannedEvent
 from alarm_escalation.models import EscalationStatus, EscalationLevel
 # Import performance utils gateway class
 from performance.utils.util import PerformanceUtilsGateway
@@ -281,10 +282,18 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                 # If no gis info then iterate to next element of list
                 continue
 
-            invent_obj.update({'current_value': service_status.current_value})
-            invent_obj.update({'threshold' : service_status.warning_threshold})
+            invent_obj.update({
+                'current_value': service_status.current_value
+            })
+
+            invent_obj.update({
+                'threshold' : service_status.warning_threshold
+            })
+
             if service_status.severity.lower() in ['critical', 'crit', 'down']:
-                invent_obj.update({'threshold' : service_status.critical_threshold})
+                invent_obj.update({
+                    'threshold' : service_status.critical_threshold
+                })
             
             # if object is get & not created,
             # then update the severity and ip_address of object as per the severity and ip_address of service_status.
@@ -771,6 +780,21 @@ def check_device_status():
 
     #get the device list which is in downtime scheduling today.
     device_id_list = scheduling_utils.get_today_event_list()['device_ids']
+
+    # Get planned events ip address to suppress escalation
+    try:
+        # import NocoutUtilsGateway class
+        from nocout.utils.util import NocoutUtilsGateway
+        
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        planned_events = nocout_utils.get_current_planned_event_ips()
+    except Exception as e:
+        logger.error('Planned event fetch error - alarm escalation')
+        logger.error(e)
+        planned_events = list()
+
     for org in Organization.objects.all():
         # get the objects which require escalation
         required_objects = EscalationLevel.objects.filter(organization__in=[org])
@@ -783,11 +807,14 @@ def check_device_status():
             service_data_source_list = set(required_objects.values_list('service_data_source__name', flat=True))
 
             # exclude those devices which is in downtime scheduling today.
-            device_list_qs = Device.objects.filter(
+            device_list_qs = Device.objects.exclude(
+                id__in=device_id_list,
+                ip_address__in=planned_events
+            ).filter(
                 organization__in=[org],
                 device_type__in=device_type_list,
                 is_added_to_nms__gt=0
-            ).exclude(id__in=device_id_list).values('device_name', 'machine__name')
+            ).values('device_name', 'machine__name')
 
             # Prepare list of dictionaries {key = machine_name : value = list of devices}
             machine_dict = prepare_machines(device_list_qs)
@@ -808,13 +835,12 @@ def check_device_status():
 
                 if service_status_list.exists():
                     # Appending jobs
-                    g_jobs.append(
-                        raise_alarms.s(dict_devices_invent_info,
-                                       service_status_list=service_status_list,
-                                       org=org,
-                                       required_levels=required_objects
-                        )
-                    )
+                    g_jobs.append(raise_alarms.s(
+                        dict_devices_invent_info,
+                        service_status_list=service_status_list,
+                        org=org,
+                        required_levels=required_objects
+                    ))
 
     if not len(g_jobs):
         return ret

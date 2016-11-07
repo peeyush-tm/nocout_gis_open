@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import imp
 import time
 from sys import path
+from operator import itemgetter
 #path.append('nocout/performance/service')
 
 
@@ -24,13 +25,14 @@ from trap_handler.correlation import *
 
 @app.task(name='insert_network_event')
 def insert_network_event(**opt):
-    machine_name = opt.get('machine_name')
-    data_list = make_network_snmptt_data(machine_name)
-    if data_list :
-        #print "Data list network event",data_list
-        worker = Eventmapper()
-        worker.filter_events(data_list)
-	collect_down_events_from_redis.s(data_list).apply_async()
+    machine_names = opt.get('machine_name')
+    for machine_name in machine_names :
+        data_list = make_network_snmptt_data(machine_name)
+        if data_list :
+            #print "Data list network event",data_list
+            worker = Eventmapper()
+            worker.filter_events(data_list)
+	    #collect_down_events_from_redis.s(data_list).apply_async()
 
 @app.task(name='insert_bs_ul_issue_event')
 def insert_bs_ul_issue_event(**opt):
@@ -46,61 +48,15 @@ def make_network_snmptt_data(machine_name):
     ds_event_mapping = {}
     {'rta':'Latency_Threshold_Breach'}
     try:
-        queue = RedisInterface(perf_q = 'q:network:snmptt:%s' % machine_name)
-        cur = queue.get(0, -1)
+        queue = RedisInterface(perf_q = 'queue:network:snmptt:%s' % machine_name)
+        cursor = queue.get(0, -1)
         docs = []
-        for doc in cur:
-            severity = doc.get('severity').lower()
-            ds  = doc.get('data_source')
-            if severity == 'down':
-                severity = 'critical'
-            if severity == 'up':
-                severity = 'clear'
-            if ds == 'pl' and severity == 'major':
-               event_name = 'PD_threshold_breach'
-            elif ds == 'pl' and severity == 'critical':
-                event_name = 'Device_not_reachable'
-            elif ds == 'pl' and severity == 'clear':
-                event_name = 'PD_threshold_breach'
-                # Add alarm for clearing both major and critical alarm ,As we dnt know which was raised earlier.
-                t = (
-                 '',
-                 event_name,
-                 '',
-                 doc.get('ip_address'),
-                 '',
-                 '',
-                 severity,
-                 '',
-                 time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(doc.get('check_timestamp')))),
-                 ''
-                 )
-                docs.append(t)
-                event_name = 'Device_not_reachable'
-            elif ds == 'rta' and severity  == 'critical':
-                event_name = 'Latency_Threshold_Breach'
-                severity = 'major'
-            elif  ds == 'rta':
-                event_name = 'Latency_Threshold_Breach'
-            t = (
-                 '',
-                 event_name,
-                 '',
-                 doc.get('ip_address'),
-                 '',
-                 '',
-                 severity,
-                 '',
-                 time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(doc.get('check_timestamp')))),
-                 ''
-                 )
-            docs.append(t)
-            t =()
+	docs = sorted(cursor, key=itemgetter(-2))
+	print "Record",docs
         return docs
     except Exception,e :
-        pass
-        print "Error in Redis Tuple : %s \n",str(e)
-
+        print "Error in Redis Tuple in %s : %s \n" % (machine_name,str(e))
+	pass
 
 @app.task(name='make_bs_ul_issue_snmptt_data')
 def make_bs_ul_issue_snmptt_data(machine_name):
