@@ -1,0 +1,63 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-bell-o'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "PE Events" "javascript:;" %}
+    {% breadcrumb_safe page_type_title "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content %}
+    <div class="clearfix"></div>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-bell-o"></i>{{ page_type_title }}</h4>
+            <div class="clearfix"></div>
+        </div>
+
+        <div class="box-body" style="overflow:auto;">
+            <table class="datatable table table-striped table-bordered table-hover" id="pe_events_listing">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}
+{% block jquery %}
+    <!-- Custom library create jquery datatable -->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+
+            var table_headers = $.parseJSON('{{ datatable_headers|safe }}'),
+                page_type = '{{ page_type|safe }}',
+                table_title = 'Planned Events - ' + '{{ page_type_title }}',
+                ajax_url = "{% url 'planned_events_listing' page_type %}",
+                extra_param = "{'page_type' : '"+page_type+"', 'report_title' : '"+table_title+"', 'download_excel': 'yes' }";
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable(
+                "pe_events_listing",
+                table_headers,
+                ajax_url,
+                false,
+                table_title,
+                'alert_center',
+                'PlannedEventsInit',
+                'PlannedEventsListing',
+                extra_param,
+                extra_param
+            );
+        });
+    </script>
+{% endblock %}

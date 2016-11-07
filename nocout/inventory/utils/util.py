@@ -14,6 +14,9 @@ from inventory.models import Sector, Circuit, SubStation, Backhaul
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 
+# Import required flags from nocout settings.py
+from nocout.settings import SHOW_SPRINT3
+
 #logging the performance of function
 import logging
 log = logging.getLogger(__name__)
@@ -43,6 +46,7 @@ class InventoryUtilsGateway:
         self,
         organizations,
         is_rad5 = False,
+        s3_feature = False,
         technology=None, 
         specify_ptp_type='all'
     ):
@@ -55,6 +59,7 @@ class InventoryUtilsGateway:
         param1 = organization_customer_devices(
             organizations,
             is_rad5,
+            s3_feature = s3_feature,
             technology=technology,
             specify_ptp_type=specify_ptp_type
         )
@@ -65,6 +70,7 @@ class InventoryUtilsGateway:
         self, 
         organizations, 
         is_rad5=False,
+        s3_feature = False,
         technology=None, 
         specify_ptp_bh_type='all'
     ):
@@ -77,6 +83,7 @@ class InventoryUtilsGateway:
         param1 = organization_network_devices(
             organizations,
             is_rad5,
+            s3_feature = s3_feature,
             technology=technology, 
             specify_ptp_bh_type=specify_ptp_bh_type
         )
@@ -110,6 +117,7 @@ class InventoryUtilsGateway:
         self, 
         organizations, 
         is_rad5=False,
+        s3_feature=False,
         data_tab=None, 
         page_type="customer", 
         other_type=None, 
@@ -130,6 +138,7 @@ class InventoryUtilsGateway:
         param1 = filter_devices(
             organizations, 
             is_rad5,
+            s3_feature,
             data_tab=data_tab, 
             page_type=page_type, 
             other_type=other_type, 
@@ -140,13 +149,13 @@ class InventoryUtilsGateway:
 
         return param1
 
-    def prepare_machines(self, device_list, machine_key='device_machine'):
+    def prepare_machines(self, device_list, machine_key='device_machine', device_name_key='device_name'):
         """
 
         :param device_list:
         :param machine_key:
         """
-        param1 = prepare_machines(device_list, machine_key=machine_key)
+        param1 = prepare_machines(device_list, machine_key=machine_key, device_name_key=device_name_key)
 
         return param1
 
@@ -315,11 +324,13 @@ def ptp_device_circuit_backhaul(specify_type='all'):
     return device_list_with_circuit_type_backhaul
 
 
-def organization_customer_devices(organizations, is_rad5=False, technology=None, specify_ptp_type='all'):
+def organization_customer_devices(organizations, is_rad5=False, s3_feature=False, technology=None, specify_ptp_type='all'):
     """
     To result back the all the customer devices from the respective organization..
-
-
+    
+    Note: s3_feature is a temp flag for hiding Radwin5k Sprint3 Features,
+          It should be removed after deployment of Sprint 3
+    
     :param specify_ptp_type:
     :param technology:
     :param organizations:
@@ -379,20 +390,30 @@ def organization_customer_devices(organizations, is_rad5=False, technology=None,
             except Exception, e:
                 rad5_device_type_id = None
 
-            # Filtering device queryset further for radwin devices
-            if is_rad5 and int(technology) == int(PMP.ID):
-                customer_devices = customer_devices.filter(device_type=rad5_device_type_id)
-            elif (not is_rad5) and (int(technology) == int(PMP.ID)):
-                customer_devices = customer_devices.exclude(device_type=rad5_device_type_id)
+            # print '---------------------Customer Devices s3_flag = %s' %s3_feature
+
+            # Filter Devices only if call is not from Sprint 3 features
+            if not s3_feature:
+                # Filtering device queryset further for radwin devices
+                if int(technology) == int(PMP.ID):
+                    if is_rad5:
+                        customer_devices = customer_devices.filter(device_type=rad5_device_type_id)
+                    else:
+                        customer_devices = customer_devices.exclude(device_type=rad5_device_type_id)                
+                else:
+                    pass
             else:
                 pass
 
     return customer_devices
 
 
-def organization_network_devices(organizations, is_rad5=False, technology=None, specify_ptp_bh_type='all'):
+def organization_network_devices(organizations, is_rad5=False, s3_feature=False, technology=None, specify_ptp_bh_type='all'):
     """
     To result back the all the network devices from the respective organization..
+
+    Note: s3_feature is a temp flag for hiding Radwin5k Sprint3 Features,
+          It should be removed after deployment of Sprint 3
 
     :param specify_ptp_bh_type:
     :param organizations:
@@ -503,11 +524,17 @@ def organization_network_devices(organizations, is_rad5=False, technology=None, 
             except Exception, e:
                 rad5_device_type_id = None
 
-            # Filtering device queryset further for radwin devices
-            if is_rad5:
-                devices = devices.filter(device_type=rad5_device_type_id)
+            # print '---------------------Network Devices s3_flag = %s' %s3_feature
+
+            # Filter Devices only if call is not from Sprint 3 features
+            if not s3_feature:
+                # Filtering device queryset further for radwin devices
+                if is_rad5:
+                    devices = devices.filter(device_type=rad5_device_type_id)
+                else:
+                    devices = devices.exclude(device_type=rad5_device_type_id)
             else:
-                devices = devices.exclude(device_type=rad5_device_type_id)
+                pass
 
 
     return devices
@@ -590,6 +617,7 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
 def filter_devices(
     organizations, 
     is_rad5,
+    s3_feature,
     data_tab=None,
     page_type="customer", 
     other_type=None, 
@@ -640,12 +668,14 @@ def filter_devices(
         device_list = organization_customer_devices(
             organizations,
             is_rad5,
+            s3_feature,
             device_technology_id
         ).values(*device_value_list)
     elif page_type == "network":
         device_list = organization_network_devices(
             organizations,
             is_rad5,
+            s3_feature,
             device_technology_id,
         ).values(*device_value_list)
     elif page_type == "other":
@@ -669,7 +699,6 @@ def filter_devices(
             'id': device['id'],
             'ip_address': device['ip_address'],
             'organization_id' : device.get('organization__id'),
-            # 'region': device.get('organization__alias', 'NA')
         }
         for device in device_list
     ]
@@ -678,7 +707,7 @@ def filter_devices(
 
 
 @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
-def prepare_machines(device_list, machine_key='device_machine'):
+def prepare_machines(device_list, machine_key='device_machine', device_name_key='device_name'):
     """
 
 
@@ -692,7 +721,7 @@ def prepare_machines(device_list, machine_key='device_machine'):
     machine_dict = {}
     #Creating the machine as a key and device_name as a list for that machine.
     for machine in unique_device_machine_list:
-        machine_dict[machine] = [device['device_name'] for device in device_list if
+        machine_dict[machine] = [device[device_name_key] for device in device_list if
                                  device[machine_key] == machine]
 
     return machine_dict

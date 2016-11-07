@@ -131,245 +131,255 @@ class SectorStatusHeaders(ListView):
 
 
 class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
-	"""
-	Extend the Sector Status View
-	"""
-	model = SectorCapacityStatus
-	is_ordered = False
-	is_polled = False
-	is_searched = False
-	is_initialised = True
-	technology = 'ALL'
-	is_type = 0
+    """
+    Extend the Sector Status View
+    """
+    model = SectorCapacityStatus
+    is_ordered = False
+    is_polled = False
+    is_searched = False
+    is_initialised = True
+    technology = 'ALL'
 
-	columns = [
-		'id', 'sector__sector_id', 'sector_sector_id', 'sector__base_station__alias',
-		'sector__base_station__city__city_name', 'sector__base_station__state__state_name', 
-		'sector__sector_configured_on__ip_address', 'sector__sector_configured_on__device_technology',
-		'sector__sector_configured_on__id', 'sector_capacity', 'sector_capacity_in',
-		'sector_capacity_out', 'current_in_per', 'current_in_val', 'avg_in_per',
-		'avg_in_val', 'peak_in_per', 'peak_in_val', 'peak_in_timestamp', 'peak_in_duration', 'current_out_per',
-		'current_out_val', 'avg_out_per', 'avg_out_val', 'peak_out_per', 'peak_out_val',
-		'peak_out_timestamp', 'peak_out_duration', 'organization__alias', 'severity', 'age'
-	]
+    columns = [
+        'id',
+        'sector__sector_id',
+        'sector_sector_id',
+        'sector__base_station__alias',
+        'sector__base_station__city__city_name',
+        'sector__base_station__state__state_name',
+        'sector__sector_configured_on__ip_address',
+        'sector__sector_configured_on__device_technology',
+        'sector__sector_configured_on__id',
+        'sector_capacity',
+        'sector_capacity_in',
+        'sector_capacity_out',
+        'current_in_per',
+        'current_in_val',
+        'avg_in_per',
+        'avg_in_val',
+        'peak_in_per',
+        'peak_in_val',
+        'peak_in_timestamp',
+        'current_out_per',
+        'current_out_val',
+        'avg_out_per',
+        'avg_out_val',
+        'peak_out_per',
+        'peak_out_val',
+        'peak_out_timestamp',
+        'organization__alias',
+        'severity',
+        'age'
+    ]
 
-	order_columns = [
-		'id', 'sector__sector_id', 'severity', 'age', 'organization__alias',
-		'sector_sector_id', 'sector__base_station__alias', 'sector__base_station__city__city_name',
-		'sector__base_station__state__state_name', 'sector__sector_configured_on__ip_address', 
-		'sector__sector_configured_on__device_technology', 'sector_capacity', 'current_in_per', 'current_in_val',
-		'sector_capacity_in', 'avg_in_per', 'avg_in_val', 'peak_in_per', 'peak_in_val',
-		'peak_in_timestamp', 'current_out_per', 'current_out_val', 'sector_capacity_out', 'avg_out_per',
-		'avg_out_val', 'peak_out_per', 'peak_out_val', 'peak_out_timestamp'
-	]
+    order_columns = [
+        'id',
+        'sector__sector_id',
+        'severity',
+        'age',
+        'organization__alias',
+        'sector_sector_id',
+        'sector__base_station__alias',
+        'sector__base_station__city__city_name',
+        'sector__base_station__state__state_name',
+        'sector__sector_configured_on__ip_address',
+        'sector__sector_configured_on__device_technology',
+        'sector_capacity',
+        'current_in_per',
+        'current_in_val',
+        'sector_capacity_in',
+        'avg_in_per',
+        'avg_in_val',
+        'peak_in_per',
+        'peak_in_val',
+        'peak_in_timestamp',
+        'current_out_per',
+        'current_out_val',
+        'sector_capacity_out',
+        'avg_out_per',
+        'avg_out_val',
+        'peak_out_per',
+        'peak_out_val',
+        'peak_out_timestamp'
+    ]
 
-	related_columns = [
-		'sector__base_station',
-		'sector__base_station__city',
-		'sector__base_station__state',
-		'sector__sector_configured_on',
-		'organization'
-	]
+    related_columns = [
+        'sector__base_station',
+        'sector__base_station__city',
+        'sector__base_station__state',
+        'sector__sector_configured_on',
+        'organization'
+    ]
 
-	is_technology_searched = False
+    is_technology_searched = False
 
-	def filter_queryset(self, qs):
-		"""
-		The filtering of the queryset with respect to the search keyword entered.
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
 
-		:param qs:
-		:return qs:
-		"""
-		sSearch = self.request.GET.get('search[value]', None)
-		self.is_technology_searched = False
-		if sSearch:
-			if sSearch.lower() in ['pmp', 'wimax']:
-				self.is_technology_searched = True
-				prepared_data = self.prepare_results(qs)
-				filtered_result = list()
+        :param qs:
+        :return qs:
+        """
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
+        self.is_technology_searched = False
+        if sSearch:
+            if sSearch.lower() in ['pmp', 'wimax']:
+                self.is_technology_searched = True
+                prepared_data = self.prepare_results(qs)
+                filtered_result = list()
 
-				for data in prepared_data:
-					if sSearch.lower() in str(data).lower():
-						filtered_result.append(data)
-						
-				return self.advance_filter_queryset(filtered_result)
-			else:
-				query = []
-				exec_query = "qs = qs.filter("
-				for column in self.columns[:-1]:
-					query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+                for data in prepared_data:
+                    if sSearch.lower() in str(data).lower():
+                        filtered_result.append(data)
+                        
+                return self.advance_filter_queryset(filtered_result)
+            else:
+                query = []
+                exec_query = "qs = qs.filter("
+                for column in self.columns[:-1]:
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-				exec_query += " | ".join(query)
-				exec_query += ").values(*" + str(self.columns) + ")"
-				exec exec_query
-		return self.advance_filter_queryset(qs)
+                exec_query += " | ".join(query)
+                exec_query += ").values(*" + str(self.columns) + ")"
+                exec exec_query
+        return self.advance_filter_queryset(qs)
 
-	def get_initial_queryset(self):
-		"""
-		Preparing  Initial Queryset for the for rendering the data table.
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
 
-		"""
-		if not self.model:
-			raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-		else:
-			organizations = nocout_utils.logged_in_user_organizations(self)
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        else:
+            organizations = nocout_utils.logged_in_user_organizations(self)
 
-			return self.get_initial_query_set_data(organizations=organizations)
+            return self.get_initial_query_set_data(organizations=organizations)
 
-	def get_initial_query_set_data(self, **kwargs):
-		"""
-		Generic function required to fetch the initial data with respect to the page_type parameter in the get request requested.
+    def get_initial_query_set_data(self, **kwargs):
+        """
+        Generic function required to fetch the initial data with respect to the page_type parameter in the get request requested.
 
-		:param device_association:
-		:param kwargs:
-		:return: list of devices
-		"""
-		if self.technology == 'ALL':
-			sectors = self.model.objects.filter(
-				sector__sector_configured_on__isnull=False,
-				organization__in=kwargs['organizations']
-			).prefetch_related(*self.related_columns).values(*self.columns)
-		else:
-			where_condition = Q()
-			where_condition &= Q(sector__sector_configured_on__isnull=False)
-			where_condition &= Q(organization__in=kwargs['organizations'])
+        :param device_association:
+        :param kwargs:
+        :return: list of devices
+        """
+        if self.technology == 'ALL':
+            sectors = self.model.objects.filter(
+                sector__sector_configured_on__isnull=False,
+                organization__in=kwargs['organizations']
+            ).prefetch_related(*self.related_columns).values(*self.columns)
+        else:
+            tech_id = DeviceTechnology.objects.get(name=self.technology).id
+            sectors = self.model.objects.filter(
+                    sector__sector_configured_on__isnull=False,
+                    organization__in=kwargs['organizations'],
+                    sector__sector_configured_on__device_technology=tech_id
+                ).prefetch_related(*self.related_columns).values(*self.columns)
 
-			if self.is_type:
-				try:
-					device_type_id = DeviceType.objects.get(name__iexact=self.technology).id
-					where_condition &= Q(sector__sector_configured_on__device_type=device_type_id)
-				except Exception, e:
-					return self.model.objects.filter(id=0)
-					pass
-			else:
-				try:
-					tech_id = DeviceTechnology.objects.get(name__iexact=self.technology).id
-					where_condition &= Q(sector__sector_configured_on__device_technology=tech_id)
-					if self.technology.lower() == 'pmp':
-						excluded_device_type = DeviceType.objects.filter(
-							name__icontains='radwin5'
-						).values_list('id', flat=True)
-						where_condition &= ~Q(sector__sector_configured_on__device_type__in=excluded_device_type)
-				except Exception, e:
-					pass
+        return sectors
 
-			sectors = self.model.objects.filter(
-				where_condition
-			).prefetch_related(*self.related_columns).values(*self.columns)
+    def prepare_results(self, qs):
+        """
+        """
+        json_data = [{key: val if val not in ['', 'undefined', 'None'] else "" for key, val in dct.items()} for dct in
+                     qs]
+        technology_object = DeviceTechnology.objects.all()
 
-		return sectors
+        for item in json_data:
+            try:
+                techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
+                device_id = item['sector__sector_configured_on__id']
 
-	def prepare_results(self, qs):
-		"""
-		"""
-		json_data = [{key: val if val not in ['', 'undefined', 'None'] else "" for key, val in dct.items()} for dct in
-					 qs]
-		technology_object = DeviceTechnology.objects.all()
+                perf_page_link = ''
+                if device_id:
+                    performance_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={
+                            'page_type': 'network',
+                            'device_id': device_id
+                        },
+                        current_app='performance'
+                    )
+                    perf_page_link = '<a href="' + performance_url + '?is_util=1" \
+                                      title="Device Performance"><i class="fa \
+                                      fa-bar-chart-o text-info"></i></a>'
 
-		for item in json_data:
-			try:
-				techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
-				device_id = item['sector__sector_configured_on__id']
+                item['actions'] = perf_page_link
+                item['sector__sector_configured_on__device_technology'] = techno_name
+                # Format DL Peak Time
+                item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
+                    float(item['peak_out_timestamp'])
+                ).strftime(
+                    DATE_TIME_FORMAT
+                ) if str(item['peak_out_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
+                # Format UL Peak Time
+                item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
+                    float(item['peak_in_timestamp'])
+                ).strftime(
+                    DATE_TIME_FORMAT
+                ) if str(item['peak_in_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
+            except Exception, e:
+                item['actions'] = ''
+                logger.exception(e)
+                continue
 
-				perf_page_link = ''
-				if device_id:
-					performance_url = reverse(
-						'SingleDevicePerf',
-						kwargs={
-							'page_type': 'network',
-							'device_id': device_id
-						},
-						current_app='performance'
-					)
-					perf_page_link = '<a href="' + performance_url + '?is_util=1" \
-									  title="Device Performance"><i class="fa \
-									  fa-bar-chart-o text-info"></i></a>'
+        return json_data
 
-				item['actions'] = perf_page_link
-				item['sector__sector_configured_on__device_technology'] = techno_name
-				# Format DL Peak Time
-				item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
-					float(item['peak_out_timestamp'])
-				).strftime(
-					DATE_TIME_FORMAT
-				) if str(item['peak_out_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
-				# Format UL Peak Time
-				item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
-					float(item['peak_in_timestamp'])
-				).strftime(
-					DATE_TIME_FORMAT
-				) if str(item['peak_in_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
-			except Exception, e:
-				logger.exception(e)
-				continue
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
-		return json_data
+    def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
 
-	def ordering(self, qs):
-		"""
-		Get parameters from the request and prepare order by clause
-		"""
-		if 'Radwin5K' in self.technology and self.is_type:
-			self.order_columns = [
-				'id', 'sector__sector_id', 'severity', 'age', 'organization__alias',
-				'sector_sector_id', 'sector__base_station__alias', 'sector__base_station__city__city_name',
-				'sector__base_station__state__state_name', 'sector__sector_configured_on__ip_address', 
-				'sector__sector_configured_on__device_technology', 'sector_capacity', 'current_in_per', 'current_in_val',
-				'sector_capacity_in', 'peak_in_per', 'peak_in_val', 'peak_in_timestamp', 'peak_in_duration',
-				'current_out_per', 'current_out_val', 'sector_capacity_out', 'peak_out_per', 
-				'peak_out_val', 'peak_out_timestamp', 'peak_out_duration'
-			]
+        request = self.request
 
-		return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
+        self.initialize(*args, **kwargs)
 
-	def get_context_data(self, *args, **kwargs):
-		"""
-		The maine function call to fetch, search, ordering , prepare and display the data on the data table.
-		"""
+        self.technology = request.GET.get('technology', 'ALL')
 
-		request = self.request
+        qs = self.get_initial_queryset()
 
-		self.initialize(*args, **kwargs)
+        # number of records before filtering
+        if type(qs) == type(list()):
+            total_records = len(qs)
+        else:
+            total_records = qs.count()
 
-		self.technology = request.GET.get('technology', 'ALL')
-		self.is_type = request.GET.get('is_type', 0)
+        qs = self.filter_queryset(qs)
 
-		qs = self.get_initial_queryset()
+        # number of records after filtering
+        if type(qs) == type(list()):
+            total_display_records = len(qs)
+        else:
+            total_display_records = qs.count()
 
-		# number of records before filtering
-		if type(qs) == type(list()):
-			total_records = len(qs)
-		else:
-			total_records = qs.count()
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
 
-		qs = self.filter_queryset(qs)
+        # if the qs is empty then JSON is unable to serialize the empty
+        # ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
 
-		# number of records after filtering
-		if type(qs) == type(list()):
-			total_display_records = len(qs)
-		else:
-			total_display_records = qs.count()
+        if self.is_technology_searched:
+            aaData = qs
+        else:
+            aaData = self.prepare_results(qs)
 
-		qs = self.ordering(qs)
-		qs = self.paging(qs)
-
-		# if the qs is empty then JSON is unable to serialize the empty
-		# ValuesQuerySet.Therefore changing its type to list.
-		if not qs and isinstance(qs, ValuesQuerySet):
-			qs = list(qs)
-
-		if self.is_technology_searched:
-			aaData = qs
-		else:
-			aaData = self.prepare_results(qs)
-
-		ret = {
-			'sEcho': int(request.REQUEST.get('sEcho', 0)),
-			'iTotalRecords': total_records,
-			'iTotalDisplayRecords': total_display_records,
-			'aaData': aaData
-		}
-		return ret
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+        return ret
 
 
 # This class loads headers for Sector Augmentation Alerts Listing Table
@@ -739,315 +749,316 @@ class BackhaulStatusHeaders(ListView):
 
 
 class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
-	"""
-	Extend the Backhaul Status View
-	"""
-	model = BackhaulCapacityStatus
-	is_ordered = False
-	is_polled = False
-	is_searched = False
-	is_initialised = True
+    """
+    Extend the Backhaul Status View
+    """
+    model = BackhaulCapacityStatus
+    is_ordered = False
+    is_polled = False
+    is_searched = False
+    is_initialised = True
 
-	columns = [
-		'id',
-		'severity',
-		'age',
-		'organization__alias',
-		'backhaul__bh_configured_on__ip_address',
-		'backhaul__bh_configured_on__id',
-		'backhaul__alias',
-		'basestation__alias',
-		'backhaul__bh_type',
-		'backhaul__bh_connectivity',
-		'bh_port_name',
-		'backhaul__bh_configured_on__device_technology',
-		'basestation__city__city_name',
-		'basestation__state__state_name',
-		'backhaul_capacity',
-		'current_in_per',
-		'current_in_val',
-		'avg_in_per',
-		'avg_in_val',
-		'peak_in_per',
-		'peak_in_val',
-		'peak_in_timestamp',
-		'current_out_per',
-		'current_out_val',
-		'avg_out_per',
-		'avg_out_val',
-		'peak_out_per',
-		'peak_out_val',
-		'peak_out_timestamp'
-	]
+    columns = [
+        'id',
+        'severity',
+        'age',
+        'organization__alias',
+        'backhaul__bh_configured_on__ip_address',
+        'backhaul__bh_configured_on__id',
+        'backhaul__alias',
+        'basestation__alias',
+        'backhaul__bh_type',
+        'backhaul__bh_connectivity',
+        'bh_port_name',
+        'backhaul__bh_configured_on__device_technology',
+        'basestation__city__city_name',
+        'basestation__state__state_name',
+        'backhaul_capacity',
+        'current_in_per',
+        'current_in_val',
+        'avg_in_per',
+        'avg_in_val',
+        'peak_in_per',
+        'peak_in_val',
+        'peak_in_timestamp',
+        'current_out_per',
+        'current_out_val',
+        'avg_out_per',
+        'avg_out_val',
+        'peak_out_per',
+        'peak_out_val',
+        'peak_out_timestamp'
+    ]
 
-	order_columns = [
-		'id',
-		'severity',
-		'age',
-		'organization__alias',
-		'backhaul__bh_configured_on__ip_address',
-		'backhaul__alias',
-		'basestation__alias',
-		'backhaul__bh_type',
-		'backhaul__bh_connectivity',
-		'bh_port_name',
-		'basestation__city__city_name',
-		'basestation__state__state_name',
-		'backhaul__bh_configured_on__device_technology',
-		'backhaul_capacity',
-		'current_in_per',
-		'current_in_val',
-		'avg_in_per',
-		'avg_in_val',
-		'peak_in_per',
-		'peak_in_val',
-		'peak_in_timestamp',
-		'current_out_per',
-		'current_out_val',
-		'avg_out_per',
-		'avg_out_val',
-		'peak_out_per',
-		'peak_out_val',
-		'peak_out_timestamp'
-	]
+    order_columns = [
+        'id',
+        'severity',
+        'age',
+        'organization__alias',
+        'backhaul__bh_configured_on__ip_address',
+        'backhaul__alias',
+        'basestation__alias',
+        'backhaul__bh_type',
+        'backhaul__bh_connectivity',
+        'bh_port_name',
+        'basestation__city__city_name',
+        'basestation__state__state_name',
+        'backhaul__bh_configured_on__device_technology',
+        'backhaul_capacity',
+        'current_in_per',
+        'current_in_val',
+        'avg_in_per',
+        'avg_in_val',
+        'peak_in_per',
+        'peak_in_val',
+        'peak_in_timestamp',
+        'current_out_per',
+        'current_out_val',
+        'avg_out_per',
+        'avg_out_val',
+        'peak_out_per',
+        'peak_out_val',
+        'peak_out_timestamp'
+    ]
 
-	related_columns = [
-		'basestation__city',
-		'basestation__state',
-		'backhaul__bh_configured_on',
-		'organization'
-	]
+    related_columns = [
+        'basestation__city',
+        'basestation__state',
+        'backhaul__bh_configured_on',
+        'organization'
+    ]
 
-	is_technology_searched = False
+    is_technology_searched = False
 
-	is_technology_ordered = False
+    is_technology_ordered = False
 
-	def filter_queryset(self, qs):
-		# sSearch = self.request.GET.get('sSearch', None)
-		sSearch = self.request.GET.get('search[value]', None)
-		self.is_technology_searched = False
-		if sSearch:
-			if sSearch.lower() in ['pmp', 'wimax', 'tcl pop', 'pop']:
-				self.is_technology_searched = True
-				prepared_data = self.prepare_results(qs)
-				filtered_result = list()
+    def filter_queryset(self, qs):
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
+        self.is_technology_searched = False
+        if sSearch:
+            if sSearch.lower() in ['pmp', 'wimax', 'tcl pop', 'pop']:
+                self.is_technology_searched = True
+                prepared_data = self.prepare_results(qs)
+                filtered_result = list()
 
-				for data in prepared_data:
-					if sSearch.lower() in str(data).lower():
-						filtered_result.append(data)
-				return self.advance_filter_queryset(filtered_result)
-			else:
-				query = []
-				exec_query = "qs = qs.filter("
-				for column in self.columns[:-1]:
-					query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+                for data in prepared_data:
+                    if sSearch.lower() in str(data).lower():
+                        filtered_result.append(data)
+                return self.advance_filter_queryset(filtered_result)
+            else:
+                query = []
+                exec_query = "qs = qs.filter("
+                for column in self.columns[:-1]:
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-				exec_query += " | ".join(query)
-				exec_query += ").values(*" + str(self.columns) + ")"
-				exec exec_query
-		return self.advance_filter_queryset(qs)
+                exec_query += " | ".join(query)
+                exec_query += ").values(*" + str(self.columns) + ")"
+                exec exec_query
+        return self.advance_filter_queryset(qs)
 
-	def ordering(self, qs):
-		"""
-		 Get parameters from the request and prepare order by clause
-		:param order_columns:
-		:param self_instance:
-		:param qs:
-		"""
-		# Number of columns that are used in sorting
-		sorting_cols = 0
-		if self.pre_camel_case_notation:
-			try:
-				sorting_cols = int(self._querydict.get('iSortingCols', 0))
-			except ValueError:
-				sorting_cols = 0
-		else:
-			sort_key = 'order[{0}][column]'.format(sorting_cols)
-			while sort_key in self._querydict:
-				sorting_cols += 1
-				sort_key = 'order[{0}][column]'.format(sorting_cols)
+    def ordering(self, qs):
+        """
+         Get parameters from the request and prepare order by clause
+        :param order_columns:
+        :param self_instance:
+        :param qs:
+        """
+        # Number of columns that are used in sorting
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
+            try:
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
+            except ValueError:
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
-		order = []
-		order_columns = self.get_order_columns()
+        order = []
+        order_columns = self.get_order_columns()
 
-		for i in range(sorting_cols):
-			# sorting column
-			sort_dir = 'asc'
-			try:
-				if self.pre_camel_case_notation:
-					sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
-					# sorting order
-					sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
-				else:
-					sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
-					# sorting order
-					sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
-			except ValueError:
-				sort_col = 0
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
 
-			sdir = '-' if sort_dir == 'desc' else ''
-			sortcol = order_columns[sort_col]
+            sdir = '-' if sort_dir == 'desc' else ''
+            sortcol = order_columns[sort_col]
 
-			if isinstance(sortcol, list):
-				for sc in sortcol:
-					order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
-			else:
-				order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+            else:
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
 
-		if order:
-			key_name = order[0][1:] if '-' in order[0] else order[0]
-			if key_name == 'backhaul__bh_configured_on__device_technology':
-				self.is_technology_ordered = True
-				prepared_data = self.prepare_results(qs)
-				filtered_result = list()
-				for data in prepared_data:
-					filtered_result.append(data)
-				sorted_device_data = sorted(
-					filtered_result,
-					key=itemgetter(key_name),
-					reverse=True if '-' in order[0] else False
-				)
-				return sorted_device_data
+        if order:
+            key_name = order[0][1:] if '-' in order[0] else order[0]
+            if key_name == 'backhaul__bh_configured_on__device_technology':
+                self.is_technology_ordered = True
+                prepared_data = self.prepare_results(qs)
+                filtered_result = list()
+                for data in prepared_data:
+                    filtered_result.append(data)
+                sorted_device_data = sorted(
+                    filtered_result,
+                    key=itemgetter(key_name),
+                    reverse=True if '-' in order[0] else False
+                )
+                return sorted_device_data
 
-			# Try catch is added because in some cases
-			# we receive instead of queryset
-			try:
-				sorted_device_data = qs.order_by(*order)
-			except Exception, e:
-				try:
-					sorted_device_data = sorted(
-						qs,
-						key=itemgetter(key_name),
-						reverse=True if '-' in order[0] else False
-					)
-				except Exception, e:
-					sorted_device_data = qs
-					logger.info(e.message)
-			return sorted_device_data
-		return qs
+            # Try catch is added because in some cases
+            # we receive instead of queryset
+            try:
+                sorted_device_data = qs.order_by(*order)
+            except Exception, e:
+                try:
+                    sorted_device_data = sorted(
+                        qs,
+                        key=itemgetter(key_name),
+                        reverse=True if '-' in order[0] else False
+                    )
+                except Exception, e:
+                    sorted_device_data = qs
+                    logger.info(e.message)
+            return sorted_device_data
+        return qs
 
-	def get_initial_queryset(self):
-		"""
-		Preparing  Initial Queryset for the for rendering the data table.
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
 
-		"""
-		if not self.model:
-			raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-		else:
-			organizations = nocout_utils.logged_in_user_organizations(self)
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        else:
+            organizations = nocout_utils.logged_in_user_organizations(self)
 
-			return self.get_initial_query_set_data(organizations=organizations)
+            return self.get_initial_query_set_data(organizations=organizations)
 
-	def get_initial_query_set_data(self, **kwargs):
-		"""
-		Generic function required to fetch the initial data with respect to the page_type parameter in the get request requested.
+    def get_initial_query_set_data(self, **kwargs):
+        """
+        Generic function required to fetch the initial data with respect to the page_type parameter in the get request requested.
 
-		:param device_association:
-		:param kwargs:
-		:return: list of devices
-		"""
+        :param device_association:
+        :param kwargs:
+        :return: list of devices
+        """
 
-		sectors = self.model.objects.filter(
-			Q(organization__in=kwargs['organizations'])
-		).prefetch_related(*self.related_columns).values(*self.columns)
+        sectors = self.model.objects.filter(
+            Q(organization__in=kwargs['organizations'])
+        ).prefetch_related(*self.related_columns).values(*self.columns)
 
-		return sectors
+        return sectors
 
-	def prepare_results(self, qs):
-		"""
-		"""
-		# data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-		json_data = [{key: val if val not in ['', 'undefined', 'None'] else "NA" for key, val in dct.items()} for dct in
-					 qs]
-		technology_object = DeviceTechnology.objects.all()
+    def prepare_results(self, qs):
+        """
+        """
+        # data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        json_data = [{key: val if val not in ['', 'undefined', 'None'] else "NA" for key, val in dct.items()} for dct in
+                     qs]
+        technology_object = DeviceTechnology.objects.all()
 
-		for item in json_data:
-			try:
-				techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
-				device_id = item['backhaul__bh_configured_on__id']
+        for item in json_data:
+            try:
+                techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
+                device_id = item['backhaul__bh_configured_on__id']
 
-				perf_page_link = ''
-				if device_id:
-					performance_url = reverse(
-						'SingleDevicePerf',
-						kwargs={
-							'page_type': 'other',
-							'device_id': device_id
-						},
-						current_app='performance'
-					)
-					perf_page_link = '<a href="' + performance_url + '?is_util=1" \
-									  title="Device Performance"><i class="fa \
-									  fa-bar-chart-o text-info"></i></a>'
+                perf_page_link = ''
+                if device_id:
+                    performance_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={
+                            'page_type': 'other',
+                            'device_id': device_id
+                        },
+                        current_app='performance'
+                    )
+                    perf_page_link = '<a href="' + performance_url + '?is_util=1" \
+                                      title="Device Performance"><i class="fa \
+                                      fa-bar-chart-o text-info"></i></a>'
 
-				item['actions'] = perf_page_link
+                item['actions'] = perf_page_link
 
-				item['backhaul__bh_configured_on__device_technology'] = techno_name
-				item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
-					float(item['peak_out_timestamp'])
-				).strftime(DATE_TIME_FORMAT) if str(item['peak_out_timestamp']) not in ['', 'undefined', 'None',
-																						'0'] else 'NA'
+                item['backhaul__bh_configured_on__device_technology'] = techno_name
+                item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
+                    float(item['peak_out_timestamp'])
+                ).strftime(DATE_TIME_FORMAT) if str(item['peak_out_timestamp']) not in ['', 'undefined', 'None',
+                                                                                        '0'] else 'NA'
 
-				item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
-					float(item['peak_in_timestamp'])
-				).strftime(DATE_TIME_FORMAT) if str(item['peak_in_timestamp']) not in ['', 'undefined', 'None',
-																					   '0'] else 'NA'
+                item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
+                    float(item['peak_in_timestamp'])
+                ).strftime(DATE_TIME_FORMAT) if str(item['peak_in_timestamp']) not in ['', 'undefined', 'None',
+                                                                                       '0'] else 'NA'
 
-			except Exception, e:
-				logger.exception(e)
-				continue
+            except Exception, e:
+                item['actions'] = ''
+                logger.exception(e)
+                continue
 
-		return json_data
+        return json_data
 
-	def get_context_data(self, *args, **kwargs):
-		"""
-		The main function call to fetch, search, ordering , prepare and display the data on the data table.
-		"""
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
 
-		request = self.request
+        request = self.request
 
-		self.initialize(*args, **kwargs)
+        self.initialize(*args, **kwargs)
 
-		qs = self.get_initial_queryset()
+        qs = self.get_initial_queryset()
 
-		# number of records before filtering
-		# total_records = qs.annotate(Count('sector_sector_id')).count()
-		total_records = qs.annotate(Count('id')).count()
+        # number of records before filtering
+        # total_records = qs.annotate(Count('sector_sector_id')).count()
+        total_records = qs.annotate(Count('id')).count()
 
-		qs = self.filter_queryset(qs)
+        qs = self.filter_queryset(qs)
 
-		# number of records after filtering
-		if type(qs) == type(list()):
-			total_display_records = len(qs)
-		else:
-			total_display_records = qs.annotate(Count('id')).count()
+        # number of records after filtering
+        if type(qs) == type(list()):
+            total_display_records = len(qs)
+        else:
+            total_display_records = qs.annotate(Count('id')).count()
 
-		if total_display_records and total_records:
-			# check if this has just initialised
-			# if so : process the results
+        if total_display_records and total_records:
+            # check if this has just initialised
+            # if so : process the results
 
-			qs = self.ordering(qs)
-			qs = self.paging(qs)
+            qs = self.ordering(qs)
+            qs = self.paging(qs)
 
-			# if the qs is empty then JSON is unable to serialize the empty
-			# ValuesQuerySet.Therefore changing its type to list.
-			if not qs and isinstance(qs, ValuesQuerySet):
-				qs = list(qs)
+            # if the qs is empty then JSON is unable to serialize the empty
+            # ValuesQuerySet.Therefore changing its type to list.
+            if not qs and isinstance(qs, ValuesQuerySet):
+                qs = list(qs)
 
-			if self.is_technology_searched or self.is_technology_ordered:
-				aaData = qs
-			else:
-				aaData = self.prepare_results(qs)
-		else:
-			aaData = list()
+            if self.is_technology_searched or self.is_technology_ordered:
+                aaData = qs
+            else:
+                aaData = self.prepare_results(qs)
+        else:
+            aaData = list()
 
-		ret = {
-			'sEcho': int(request.REQUEST.get('sEcho', 0)),
-			'iTotalRecords': total_records,
-			'iTotalDisplayRecords': total_display_records,
-			'aaData': aaData
-		}
-		return ret
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+        return ret
 
 
 # This class loads headers for Backhaul Augmentation Alerts Listing Table

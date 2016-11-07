@@ -7,13 +7,14 @@ import ujson as json
 from django.db.models.query import ValuesQuerySet, Q
 from django.db.models import F
 from django.core.urlresolvers import reverse
+from django.db.models.expressions import RawSQL
 from django.views.generic import ListView, View
 from django.http import HttpResponse
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceTechnology, DeviceType, DeviceTicket
 from machine.models import Machine
 # For SIA Listing
-from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
+from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms, PlannedEvent
 from performance.models import EventNetwork, EventService, InventoryStatus, ServiceStatus, UtilizationStatus
 
 from operator import itemgetter
@@ -22,10 +23,10 @@ from performance.utils.util import PerformanceUtilsGateway
 
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
-from inventory.models import Sector, BaseStation
+from inventory.models import Sector, BaseStation, SubStation, Circuit, Backhaul
 
 # Import alert_center utils gateway class
-from alert_center.utils.util import AlertCenterUtilsGateway
+from alert_center.utils.util import AlertCenterUtilsGateway, get_ping_status
 
 # Import scheduling_management utils gateway class
 from scheduling_management.utils.util import SchedulingManagementGateway
@@ -38,7 +39,7 @@ from django.utils.dateformat import format
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME, \
 SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT, SHOW_TICKET_NUMBER, \
-ENABLE_MANUAL_TICKETING
+ENABLE_MANUAL_TICKETING, SHOW_SPRINT3
 
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
@@ -51,6 +52,9 @@ inventory_utils = InventoryUtilsGateway()
 
 # Create instance of 'AlertCenterUtilsGateway' class
 alert_utils = AlertCenterUtilsGateway()
+
+# Create instance of 'AlertCenterUtilsGateway' class
+perf_utils = PerformanceUtilsGateway()
 
 # Create instance of 'SchedulingManagementGateway' class
 scheduling_utils = SchedulingManagementGateway()
@@ -864,7 +868,11 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         
         # Getting key for searching in col_dict 
         if data_tab in ['WiMAX', 'PMP', 'all']:
-            header_key = 'rad5_customer_detail_headers' if is_rad5 else 'pmp_wimax_datatable_headers'
+            # case handling for Customer alert details page, as there is no Data source
+            if is_rad5 and data_source == 'customer':
+                header_key = 'rad5_customer_detail_headers' if is_rad5 else 'pmp_wimax_datatable_headers'
+            else:
+                header_key = 'pmp_wimax_datatable_headers'
         elif data_tab == 'P2P':
             header_key = 'ptp_datatable_headers'
         else:
@@ -1330,6 +1338,8 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
     is_searched = False
     is_initialised = True
     is_rad5 = False
+    # Temp flag for distinguishing features of sprint 3(Radwin5K)
+    s3_feature = False
 
     model = EventNetwork
     columns = [
@@ -1409,6 +1419,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 technology = [tab_id]
             elif tab_id == "PMP":
                 technology = [tab_id]
+                self.s3_feature = not SHOW_SPRINT3
             elif tab_id == "Temperature":
                 # for handelling the temperature alarms
                 # temperature alarms would be for WiMAX
@@ -1431,6 +1442,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 technology = ["PMP"]
                 self.data_sources = ['bs_ul_issue']
                 self.table_name = 'performance_utilizationstatus'
+                self.s3_feature = not SHOW_SPRINT3
                 # Add 'refer column' in case of ULIssue
                 self.polled_columns.append('refer')
             elif tab_id == "RAD5ULIssue":
@@ -1439,6 +1451,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 self.data_sources = ['bs_ul_issue']
                 self.table_name = 'performance_utilizationstatus'
                 self.is_rad5 = True
+                self.s3_feature = not SHOW_SPRINT3
                 # Add 'refer column' in case of ULIssue
                 self.polled_columns.append('refer')
             elif tab_id in ["Backhaul"]:
@@ -1466,6 +1479,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                     device_list += inventory_utils.filter_devices(
                         organizations=organizations,
                         is_rad5=self.is_rad5,
+                        s3_feature=self.s3_feature,
                         data_tab=techno,
                         page_type=page_type,
                         required_value_list=required_value_list
@@ -2101,390 +2115,390 @@ class SingleDeviceAlertsInit(ListView):
 
 class SingleDeviceAlertsListing(BaseDatatableView, AdvanceFilteringMixin):
 
-    model = EventNetwork
-    required_columns = [
-        "ip_address",
-        "service_name",
-        "data_source",
-        "severity",
-        "current_value",
-        "sys_timestamp",
-        "description"
-    ]
+	model = EventNetwork
+	required_columns = [
+		"ip_address",
+		"service_name",
+		"data_source",
+		"severity",
+		"current_value",
+		"sys_timestamp",
+		"description"
+	]
 
-    public_params = {}
+	public_params = {}
 
-    order_columns = required_columns
+	order_columns = required_columns
 
-    def filter_queryset(self, qs):
-        """ Filter datatable as per requested value
-        :param qs:
-        """
-        sSearch = self.request.GET.get('search[value]', None)
+	def filter_queryset(self, qs):
+		""" Filter datatable as per requested value
+		:param qs:
+		"""
+		sSearch = self.request.GET.get('search[value]', None)
 
-        if sSearch:
+		if sSearch:
 
-            if self.public_params['service_name'] == 'ping':
+			if self.public_params['service_name'] == 'ping':
 
-                # raw query is required here so as to get data
-                query = alert_utils.ping_service_query(
-                    self.public_params['device_name'],
-                    self.public_params['start_date'],
-                    self.public_params['end_date']
-                )
+				# raw query is required here so as to get data
+				query = alert_utils.ping_service_query(
+					self.public_params['device_name'],
+					self.public_params['start_date'],
+					self.public_params['end_date']
+				)
 
-                condition_str = ''
-                final_query = ''
+				condition_str = ''
+				final_query = ''
 
-                counter = 0
+				counter = 0
 
-                for column in self.required_columns:
-                    counter += 1
+				for column in self.required_columns:
+					counter += 1
 
-                    if counter == len(self.required_columns):
-                        condition_str += " data_tab."+column+" LIKE '"+sSearch+"%' "
-                    else:
-                        condition_str += " data_tab."+column+" LIKE '"+sSearch+"%' or "
+					if counter == len(self.required_columns):
+						condition_str += " data_tab."+column+" LIKE '"+sSearch+"%' "
+					else:
+						condition_str += " data_tab."+column+" LIKE '"+sSearch+"%' or "
 
-                if condition_str:
-                    final_query += 'select data_tab.* from ('+query+') as data_tab where '+condition_str
-                else:
-                    final_query += query
+				if condition_str:
+					final_query += 'select data_tab.* from ('+query+') as data_tab where '+condition_str
+				else:
+					final_query += query
 
-                qs = nocout_utils.fetch_raw_result(final_query, self.public_params['machine_name'])
+				qs = nocout_utils.fetch_raw_result(final_query, self.public_params['machine_name'])
 
-            else:
-                if self.public_params['service_name'] == 'service':
-                    # Update model for 'service'
-                    self.model = EventService
+			else:
+				if self.public_params['service_name'] == 'service':
+					# Update model for 'service'
+					self.model = EventService
 
-                query = []
+				query = []
 
-                # Create query condition string
-                pre_condition_query = "("
-                pre_condition_query += "Q(device_name="+str(self.public_params['device_name'])+")"
+				# Create query condition string
+				pre_condition_query = "("
+				pre_condition_query += "Q(device_name="+str(self.public_params['device_name'])+")"
 
-                if self.public_params['service_name'] == 'latency':
-                    pre_condition_query += " & Q(data_source='rta')"
-                elif self.public_params['service_name'] == 'packet_drop':
-                    pre_condition_query += " & Q(data_source='pl')"
-                elif self.public_params['service_name'] == 'down':
-                    pre_condition_query += " & Q(data_source='pl')"
-                    pre_condition_query += " & Q(current_value=100)"
-                    pre_condition_query += " & Q(severity='DOWN')"
+				if self.public_params['service_name'] == 'latency':
+					pre_condition_query += " & Q(data_source='rta')"
+				elif self.public_params['service_name'] == 'packet_drop':
+					pre_condition_query += " & Q(data_source='pl')"
+				elif self.public_params['service_name'] == 'down':
+					pre_condition_query += " & Q(data_source='pl')"
+					pre_condition_query += " & Q(current_value=100)"
+					pre_condition_query += " & Q(severity='DOWN')"
 
-                pre_condition_query += " & Q({0}__gte={1})".format('sys_timestamp', self.public_params['start_date'])
-                pre_condition_query += " & Q({0}__lte={1})".format('sys_timestamp', self.public_params['end_date'])
+				pre_condition_query += " & Q({0}__gte={1})".format('sys_timestamp', self.public_params['start_date'])
+				pre_condition_query += " & Q({0}__lte={1})".format('sys_timestamp', self.public_params['end_date'])
 
-                pre_condition_query += ")"
+				pre_condition_query += ")"
 
-                query.append(pre_condition_query)
+				query.append(pre_condition_query)
 
-                # Create the search condition string
-                search_condition_query = ''
-                exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-                counter = 0
-                for column in self.required_columns:
-                    counter += 1
+				# Create the search condition string
+				search_condition_query = ''
+				exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+				counter = 0
+				for column in self.required_columns:
+					counter += 1
 
-                    if counter == len(self.required_columns):
-                        search_condition_query += " Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ") "
-                    else:
-                        search_condition_query += " Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ") | "
+					if counter == len(self.required_columns):
+						search_condition_query += " Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ") "
+					else:
+						search_condition_query += " Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ") | "
 
-                if search_condition_query:
-                    search_condition_query = "("+search_condition_query+")"
-                    query.append(search_condition_query)
+				if search_condition_query:
+					search_condition_query = "("+search_condition_query+")"
+					query.append(search_condition_query)
 
-                exec_query += " & ".join(query)
-                exec_query += ").values(*" + str(self.required_columns) + ")"
-                exec_query += ".using(alias='" + self.public_params['machine_name'] + "')"
+				exec_query += " & ".join(query)
+				exec_query += ").values(*" + str(self.required_columns) + ")"
+				exec_query += ".using(alias='" + self.public_params['machine_name'] + "')"
 
-                exec exec_query
-        # advance filtering the query set
-        return self.advance_filter_queryset(qs)
+				exec exec_query
+		# advance filtering the query set
+		return self.advance_filter_queryset(qs)
 
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+	def get_initial_queryset(self):
+		"""
+		Preparing  Initial Queryset for the for rendering the data table.
+		"""
+		if not self.model:
+			raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        if not len(self.public_params):
-            self.initialize_params()
+		if not len(self.public_params):
+			self.initialize_params()
 
-        if self.public_params['service_name'] == 'service':
+		if self.public_params['service_name'] == 'service':
 
-            report_resultset = EventService.objects.filter(
-                device_name=self.public_params['device_name'],
-                sys_timestamp__gte=self.public_params['start_date'],
-                sys_timestamp__lte=self.public_params['end_date']
-            ).order_by("-sys_timestamp").values(*self.required_columns).using(
-                alias=self.public_params['machine_name']
-            )
+			report_resultset = EventService.objects.filter(
+				device_name=self.public_params['device_name'],
+				sys_timestamp__gte=self.public_params['start_date'],
+				sys_timestamp__lte=self.public_params['end_date']
+			).order_by("-sys_timestamp").values(*self.required_columns).using(
+				alias=self.public_params['machine_name']
+			)
 
-        elif self.public_params['service_name'] == 'ping':
+		elif self.public_params['service_name'] == 'ping':
 
-            # raw query is required here so as to get data
-            query = alert_utils.ping_service_query(
-                self.public_params['device_name'],
-                self.public_params['start_date'],
-                self.public_params['end_date']
-            )
-            report_resultset = nocout_utils.fetch_raw_result(query, self.public_params['machine_name'])
+			# raw query is required here so as to get data
+			query = alert_utils.ping_service_query(
+				self.public_params['device_name'],
+				self.public_params['start_date'],
+				self.public_params['end_date']
+			)
+			report_resultset = nocout_utils.fetch_raw_result(query, self.public_params['machine_name'])
 
-        elif self.public_params['service_name'] == 'latency':
+		elif self.public_params['service_name'] == 'latency':
 
-            report_resultset = EventNetwork.objects.filter(
-                device_name=self.public_params['device_name'],
-                data_source='rta',
-                sys_timestamp__gte=self.public_params['start_date'],
-                sys_timestamp__lte=self.public_params['end_date']
-            ).order_by("-sys_timestamp").values(*self.required_columns).using(
-                alias=self.public_params['machine_name']
-            )
+			report_resultset = EventNetwork.objects.filter(
+				device_name=self.public_params['device_name'],
+				data_source='rta',
+				sys_timestamp__gte=self.public_params['start_date'],
+				sys_timestamp__lte=self.public_params['end_date']
+			).order_by("-sys_timestamp").values(*self.required_columns).using(
+				alias=self.public_params['machine_name']
+			)
 
-        elif self.public_params['service_name'] == 'packet_drop':
+		elif self.public_params['service_name'] == 'packet_drop':
 
-            report_resultset = EventNetwork.objects.filter(
-                device_name=self.public_params['device_name'],
-                data_source='pl',
-                sys_timestamp__gte=self.public_params['start_date'],
-                sys_timestamp__lte=self.public_params['end_date']
-            ).order_by("-sys_timestamp").values(*self.required_columns).using(
-                alias=self.public_params['machine_name']
-            )
+			report_resultset = EventNetwork.objects.filter(
+				device_name=self.public_params['device_name'],
+				data_source='pl',
+				sys_timestamp__gte=self.public_params['start_date'],
+				sys_timestamp__lte=self.public_params['end_date']
+			).order_by("-sys_timestamp").values(*self.required_columns).using(
+				alias=self.public_params['machine_name']
+			)
 
-        elif self.public_params['service_name'] == 'down':
+		elif self.public_params['service_name'] == 'down':
 
-            report_resultset = EventNetwork.objects.filter(
-                device_name=self.public_params['device_name'],
-                data_source='pl',
-                current_value=100,  # need to show up and down both
-                severity='DOWN',
-                sys_timestamp__gte=self.public_params['start_date'],
-                sys_timestamp__lte=self.public_params['end_date']
-            ).order_by("-sys_timestamp").values(*self.required_columns).using(
-                alias=self.public_params['machine_name']
-            )
+			report_resultset = EventNetwork.objects.filter(
+				device_name=self.public_params['device_name'],
+				data_source='pl',
+				current_value=100,  # need to show up and down both
+				severity='DOWN',
+				sys_timestamp__gte=self.public_params['start_date'],
+				sys_timestamp__lte=self.public_params['end_date']
+			).order_by("-sys_timestamp").values(*self.required_columns).using(
+				alias=self.public_params['machine_name']
+			)
 
-        else:
+		else:
 
-            report_resultset = []
+			report_resultset = []
 
-        return report_resultset
+		return report_resultset
 
-    def prepare_results(self, qs):
-        """
-        Preparing Final dataset for rendering the data table.
-        :param qs:
-        """
+	def prepare_results(self, qs):
+		"""
+		Preparing Final dataset for rendering the data table.
+		:param qs:
+		"""
 
-        final_list = list()
-        if qs:
-            for data in qs:
-                single_dict = {}
-                single_dict = data
-                single_dict['sys_timestamp'] = datetime.datetime.fromtimestamp(
-                    float(data["sys_timestamp"])
-                ).strftime(DATE_TIME_FORMAT)
+		final_list = list()
+		if qs:
+			for data in qs:
+				single_dict = {}
+				single_dict = data
+				single_dict['sys_timestamp'] = datetime.datetime.fromtimestamp(
+					float(data["sys_timestamp"])
+				).strftime(DATE_TIME_FORMAT)
 
-                # add data to report_resultset list
-                final_list.append(single_dict)
-        else:
-            final_list = qs
+				# add data to report_resultset list
+				final_list.append(single_dict)
+		else:
+			final_list = qs
 
-        return final_list
+		return final_list
 
-    def ordering(self, qs):
-        """ Get parameters from the request and prepare order by clause
-        :param qs:
-        """
-        return nocout_utils.nocout_datatable_ordering(self, qs, self.required_columns)
+	def ordering(self, qs):
+		""" Get parameters from the request and prepare order by clause
+		:param qs:
+		"""
+		return nocout_utils.nocout_datatable_ordering(self, qs, self.required_columns)
 
-    def initialize_params(self):
-        """
-        This function initializes global variables used within the class
-        """
+	def initialize_params(self):
+		"""
+		This function initializes global variables used within the class
+		"""
 
-        device_id = self.kwargs['device_id']
-        device_obj = Device.objects.get(id=device_id)
-        device_name = device_obj.device_name
-        machine_name = device_obj.machine.name
-        service_name = self.request.GET.get('service_name', 'ping')
+		device_id = self.kwargs['device_id']
+		device_obj = Device.objects.get(id=device_id)
+		device_name = device_obj.device_name
+		machine_name = device_obj.machine.name
+		service_name = self.request.GET.get('service_name', 'ping')
 
-        start_date = self.request.GET.get('start_date', '')
-        end_date = self.request.GET.get('end_date', '')
+		start_date = self.request.GET.get('start_date', '')
+		end_date = self.request.GET.get('end_date', '')
 
-        if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
-            try:
-                start_date = float(start_date)
-                end_date = float(end_date)
-            except Exception, e:
-                start_date_object = datetime.datetime.strptime(start_date, "%d-%m-%Y %H:%M:%S")
-                end_date_object = datetime.datetime.strptime(end_date, "%d-%m-%Y %H:%M:%S")
-                start_date = format(start_date_object, 'U')
-                end_date = format(end_date_object, 'U')
-        else:
-            # The end date is the end limit we need to make query till.
-            end_date_object = datetime.datetime.now()
-            # The start date is the last monday of the week we need to calculate from.
-            start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
-            # Replacing the time, to start with the 00:00:00 of the last monday obtained.
-            start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
-            # Converting the date to epoch time or Unix Timestamp
-            end_date = format(end_date_object, 'U')
-            start_date = format(start_date_object, 'U')
-            isSet = True
+		if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
+			try:
+				start_date = float(start_date)
+				end_date = float(end_date)
+			except Exception, e:
+				start_date_object = datetime.datetime.strptime(start_date, "%d-%m-%Y %H:%M:%S")
+				end_date_object = datetime.datetime.strptime(end_date, "%d-%m-%Y %H:%M:%S")
+				start_date = format(start_date_object, 'U')
+				end_date = format(end_date_object, 'U')
+		else:
+			# The end date is the end limit we need to make query till.
+			end_date_object = datetime.datetime.now()
+			# The start date is the last monday of the week we need to calculate from.
+			start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+			# Replacing the time, to start with the 00:00:00 of the last monday obtained.
+			start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+			# Converting the date to epoch time or Unix Timestamp
+			end_date = format(end_date_object, 'U')
+			start_date = format(start_date_object, 'U')
+			isSet = True
 
-        # Prepare columns array as per service name
+		# Prepare columns array as per service name
 
-        if service_name in ['ping']:
-            self.required_columns = [
-                "ip_address",
-                "service_name",
-                "severity",
-                "latency",
-                "packet_loss",
-                "sys_timestamp",
-                "description"
-            ]
-        elif service_name in ['service']:
-            self.required_columns = [
-                "ip_address",
-                "service_name",
-                "machine_name",
-                "site_name",
-                "severity",
-                "current_value",
-                "sys_timestamp",
-                "description"
-            ]
+		if service_name in ['ping']:
+			self.required_columns = [
+				"ip_address",
+				"service_name",
+				"severity",
+				"latency",
+				"packet_loss",
+				"sys_timestamp",
+				"description"
+			]
+		elif service_name in ['service']:
+			self.required_columns = [
+				"ip_address",
+				"service_name",
+				"machine_name",
+				"site_name",
+				"severity",
+				"current_value",
+				"sys_timestamp",
+				"description"
+			]
 
-        self.public_params = {
-            'service_name': service_name,
-            'device_name': device_name,
-            'page_type': self.kwargs['page_type'],
-            'machine_name': machine_name,
-            'start_date': start_date,
-            'end_date': end_date
-        }
+		self.public_params = {
+			'service_name': service_name,
+			'device_name': device_name,
+			'page_type': self.kwargs['page_type'],
+			'machine_name': machine_name,
+			'start_date': start_date,
+			'end_date': end_date
+		}
 
-        return True
+		return True
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        :param kwargs:
-        :param args:
-        """
+	def get_context_data(self, *args, **kwargs):
+		"""
+		The main method call to fetch, search, ordering , prepare and display the data on the data table.
+		:param kwargs:
+		:param args:
+		"""
 
-        request = self.request
-        self.initialize(*args, **kwargs)
+		request = self.request
+		self.initialize(*args, **kwargs)
 
-        if not len(self.public_params):
-            self.initialize_params()
+		if not len(self.public_params):
+			self.initialize_params()
 
-        qs = self.get_initial_queryset()
+		qs = self.get_initial_queryset()
 
-        # number of records before filtering
-        total_records = len(qs)
+		# number of records before filtering
+		total_records = len(qs)
 
-        qs = self.filter_queryset(qs)
+		qs = self.filter_queryset(qs)
 
-        # number of records after filtering
-        total_display_records = len(qs)
+		# number of records after filtering
+		total_display_records = len(qs)
 
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        
-        # if the qs is empty then JSON is unable to serialize 
-        # the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
+		qs = self.ordering(qs)
+		qs = self.paging(qs)
+		
+		# if the qs is empty then JSON is unable to serialize 
+		# the empty ValuesQuerySet.Therefore changing its type to list.
+		if not qs and isinstance(qs, ValuesQuerySet):
+			qs = list(qs)
 
-        aaData = self.prepare_results(qs)
+		aaData = self.prepare_results(qs)
 
-        ret = {
-            'sEcho': int(request.REQUEST.get('sEcho', 0)),
-            'iTotalRecords': total_records,
-            'iTotalDisplayRecords': total_display_records,
-            'aaData': aaData
-        }
+		ret = {
+			'sEcho': int(request.REQUEST.get('sEcho', 0)),
+			'iTotalRecords': total_records,
+			'iTotalDisplayRecords': total_display_records,
+			'aaData': aaData
+		}
 
-        return ret
+		return ret
 
 
 class SIAListing(ListView):
-    """
-    View to render service impacting alarms page with appropriate column headers.
-    """
+	"""
+	View to render service impacting alarms page with appropriate column headers.
+	"""
 
-    # need to associate ListView class with a model here
-    model = CurrentAlarms
-    template_name = 'alert_center/current_list.html'
+	# need to associate ListView class with a model here
+	model = CurrentAlarms
+	template_name = 'alert_center/current_list.html'
 
-    def get_context_data(self, **kwargs):
-        """
+	def get_context_data(self, **kwargs):
+		"""
 
-        :param kwargs:
-        :return:
-        """
-        context = super(SIAListing, self).get_context_data(**kwargs)
+		:param kwargs:
+		:return:
+		"""
+		context = super(SIAListing, self).get_context_data(**kwargs)
 
-        starting_columns = [
-            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
-        ]
+		starting_columns = [
+			{'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
+		]
 
-        invent_columns = [
-            {'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_connectivity', 'sTitle': 'BH Connectivity', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True}
-        ]
+		invent_columns = [
+			{'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bh_connectivity', 'sTitle': 'BH Connectivity', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True}
+		]
 
-        common_columns = [
-            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
-        ]
+		common_columns = [
+			{'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
+		]
 
-        specific_invent_columns = [
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
-        ]
+		specific_invent_columns = [
+			{'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
+		]
 
-        action_columns = []
-        if ENABLE_MANUAL_TICKETING:
-            action_columns = [
-                {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
-            ]
+		action_columns = []
+		if ENABLE_MANUAL_TICKETING:
+			action_columns = [
+				{'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
+			]
 
-        datatable_headers = list()
-        datatable_headers += starting_columns
-        datatable_headers += specific_invent_columns
-        datatable_headers += invent_columns
-        datatable_headers += common_columns
+		datatable_headers = list()
+		datatable_headers += starting_columns
+		datatable_headers += specific_invent_columns
+		datatable_headers += invent_columns
+		datatable_headers += common_columns
 
-        converter_datatable_headers = list()
-        converter_datatable_headers += starting_columns
-        converter_datatable_headers += invent_columns
-        converter_datatable_headers += common_columns
+		converter_datatable_headers = list()
+		converter_datatable_headers += starting_columns
+		converter_datatable_headers += invent_columns
+		converter_datatable_headers += common_columns
 
 
-        context['datatable_headers'] = json.dumps(datatable_headers + action_columns)
-        # context['converter_datatable_headers'] = json.dumps(converter_datatable_headers)
-        context['clear_history_headers'] = json.dumps(datatable_headers)
+		context['datatable_headers'] = json.dumps(datatable_headers + action_columns)
+		# context['converter_datatable_headers'] = json.dumps(converter_datatable_headers)
+		context['clear_history_headers'] = json.dumps(datatable_headers)
 
-        return context
+		return context
 
 
 class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
@@ -2496,6 +2510,8 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     model = None
     alarm_type = None
     tech_name = None
+    is_rad5 = False
+
     columns = [
         'severity', 'ip_address', 'eventname', 'traptime',
         'alarm_count','first_occurred','last_occurred',
@@ -2549,7 +2565,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         model_columns = self.columns
 
         if self.tech_name == 'all':
-            tech_name_list = ['pmp', 'wimax', 'radwin5']
+            tech_name_list = ['pmp', 'wimax', 'rad5k']
         else:
             tech_name_list = [self.tech_name]
         tech_name_id = list()
@@ -2563,13 +2579,15 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 tech_name_id.append(device_technology_dict.get(tech_name))
 
         not_condition_sign = ''
-        if self.tech_name not in ['pmp', 'radwin5k', 'wimax', 'all']:
+        if self.tech_name not in ['pmp', 'rad5k', 'wimax', 'all']:
             tech_name_list = ['pmp', 'wimax']
             not_condition_sign = '~'
 
             for tech_name in tech_name_list:
                 if tech_name in device_technology_dict:
                     tech_name_id.append(device_technology_dict.get(tech_name))
+
+        self.is_rad5 = int(self.request.GET.get('is_rad5k', 0))
 
         if self.tech_name == 'all':
             tech_type_filter_condition = ''
@@ -2603,8 +2621,21 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     active_filter_condition,
                     tech_type_filter_condition
                 )
-
         exec query
+
+        # Case Handling if Technology is coming "pmp" for rad5 devices
+        # if SHOW_SPRINT3:
+        #     # Filter for rad5 devices
+        #     if self.tech_name in ["PMP", "pmp"]:
+        #         if self.is_rad5:
+        #             # Getting all devices ip list of devicetype 'Radwin5KBS'
+        #             device_ip_qs = Device.objects.filter(device_type=DeviceType.objects.get(name='Radwin5KBS').id).values_list('ip_address', flat=True)
+
+        #             # Filtering Alarms for radwin5k
+        #             queryset = queryset.filter(ip_address__in=device_ip_qs)
+        #     else:
+        #         pass
+
         return queryset
 
     def filter_queryset(self, qs):
@@ -2919,627 +2950,732 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
 
 class GetSiaFiltersData(View):
-    """
-    """
-    def get(self, *args, **kwargs):
-        """
-        """
-        result = {
-            "success" : 0,
-            "message" : "No Record Found",
-            "data" : []
-        }
-        fetched_columns = ['id', 'text']
-        item_type = self.request.GET.get('item_type')
-        search_txt = self.request.GET.get('search_txt')
-        alarm_type = self.request.GET.get('alarm_type', 'current')
-        tab_id = self.request.GET.get('tab_id', 'all')
-        model = None
-        suggestions_max_limit = 40
+	"""
+	"""
+	def get(self, *args, **kwargs):
+		"""
+		"""
+		result = {
+			"success" : 0,
+			"message" : "No Record Found",
+			"data" : []
+		}
+		fetched_columns = ['id', 'text']
+		item_type = self.request.GET.get('item_type')
+		search_txt = self.request.GET.get('search_txt')
+		alarm_type = self.request.GET.get('alarm_type', 'current')
+		tab_id = self.request.GET.get('tab_id', 'all')
+		model = None
+		suggestions_max_limit = 40
 
-        if item_type and search_txt:
-            # Select model as per the alarm type
-            if alarm_type in ['clear','current']:
-                model = CurrentAlarms
-            else:
-                model = HistoryAlarms
-            # else:
-            #     model = CurrentAlarms
+		if item_type and search_txt:
+			# Select model as per the alarm type
+			if alarm_type in ['clear','current']:
+				model = CurrentAlarms
+			else:
+				model = HistoryAlarms
+			# else:
+			#     model = CurrentAlarms
 
-            try:
-                column_alias = {
-                    'text' : item_type,
-                    'id' : item_type
-                }
-                if tab_id and tab_id != 'all':
-                    not_condition_sign = ''
-                    tech_name_list = [tab_id]
-                    tech_name_id = list()
+			try:
+				column_alias = {
+					'text' : item_type,
+					'id' : item_type
+				}
+				if tab_id and tab_id != 'all':
+					not_condition_sign = ''
+					tech_name_list = [tab_id]
+					tech_name_id = list()
 
-                    for tech_name in tech_name_list:
-                        if tech_name in device_technology_dict:
-                            tech_name_id.append(device_technology_dict.get(tech_name))
+					for tech_name in tech_name_list:
+						if tech_name in device_technology_dict:
+							tech_name_id.append(device_technology_dict.get(tech_name))
 
-                    if tab_id not in ['pmp', 'wimax']:
-                        not_condition_sign = '~'
-                        tech_name_list = ['pmp', 'wimax']
+					if tab_id not in ['pmp', 'wimax']:
+						not_condition_sign = '~'
+						tech_name_list = ['pmp', 'wimax']
 
-                    for tech_name in tech_name_list:
-                        if tech_name in device_technology_dict:
-                            tech_name_id.append(device_technology_dict.get(tech_name))
+					for tech_name in tech_name_list:
+						if tech_name in device_technology_dict:
+							tech_name_id.append(device_technology_dict.get(tech_name))
 
-                    if alarm_type in ['clear']:
-                        where_condition = "{0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), Q({2}__istartswith='{3}'),Q(severity__in = ['informational'])".format(
-                            not_condition_sign,
-                            tech_name_id,
-                            item_type,
-                            search_txt
-                        )
-                    else:
-                        where_condition = "{0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), Q({2}__istartswith='{3}')".format(
-                            not_condition_sign,
-                            tech_name_id,
-                            item_type,
-                            search_txt
-                        )
-                else:
-                    if alarm_type in ['clear']:
-                        where_condition = "Q({0}__istartswith='{1}'),Q(severity__in = ['informational'])".format(item_type, search_txt)
-                    else:
-                        where_condition = "Q({0}__istartswith='{1}')".format(item_type, search_txt)                    
+					if alarm_type in ['clear']:
+						where_condition = "{0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), Q({2}__istartswith='{3}'),Q(severity__in = ['informational'])".format(
+							not_condition_sign,
+							tech_name_id,
+							item_type,
+							search_txt
+						)
+					else:
+						where_condition = "{0}Q(ip_address__in=(Device.objects.filter(device_technology__in = {1}).values_list('ip_address'))), Q({2}__istartswith='{3}')".format(
+							not_condition_sign,
+							tech_name_id,
+							item_type,
+							search_txt
+						)
+				else:
+					if alarm_type in ['clear']:
+						where_condition = "Q({0}__istartswith='{1}'),Q(severity__in = ['informational'])".format(item_type, search_txt)
+					else:
+						where_condition = "Q({0}__istartswith='{1}')".format(item_type, search_txt)                    
 
-                # Django ORM query as per the GET params
-                query = "resultset = {0}.objects.extra(select={1}).filter({2}).values(*{3}).distinct()[:40]".format(
-                            model.__name__,
-                            column_alias,
-                            where_condition,
-                            fetched_columns
-                        )
+				# Django ORM query as per the GET params
+				query = "resultset = {0}.objects.extra(select={1}).filter({2}).values(*{3}).distinct()[:40]".format(
+							model.__name__,
+							column_alias,
+							where_condition,
+							fetched_columns
+						)
 
-                exec query
+				exec query
 
-                result['success'] = 1
-                result['data'] = list(resultset)
-                result['message'] = "Data Fetched Successfully"
-            except Exception, e:
-                # logger.info(e.message)
-                pass
+				result['success'] = 1
+				result['data'] = list(resultset)
+				result['message'] = "Data Fetched Successfully"
+			except Exception, e:
+				# logger.info(e.message)
+				pass
 
-        return HttpResponse(json.dumps(result))
+		return HttpResponse(json.dumps(result))
 
 
 class AllSiaListing(ListView):
-    """
-    View to render service impacting alarms page with appropriate column headers.
-    """
+	"""
+	View to render service impacting alarms page with appropriate column headers.
+	"""
 
-    # need to associate ListView class with a model here
-    model = CurrentAlarms
-    template_name = 'alert_center/all_list.html'
+	# need to associate ListView class with a model here
+	model = CurrentAlarms
+	template_name = 'alert_center/all_list.html'
 
-    def get_context_data(self, **kwargs):
-        """
+	def get_context_data(self, **kwargs):
+		"""
 
-        :param kwargs:
-        :return:
-        """
-        context = super(AllSiaListing, self).get_context_data(**kwargs)
-        data_source = self.kwargs.get('data_source', None)
+		:param kwargs:
+		:return:
+		"""
+		context = super(AllSiaListing, self).get_context_data(**kwargs)
+		data_source = self.kwargs.get('data_source', None)
 
-        try:
-            data_source_title = data_source.replace('_',' ').title()
-        except Exception, e:
-            data_source_title = data_source
+		try:
+			data_source_title = data_source.replace('_',' ').title()
+		except Exception, e:
+			data_source_title = data_source
 
-        starting_columns = [
-            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
-        ]
+		starting_columns = [
+			{'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
+			# {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
+			# {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bh_status', 'sTitle': 'BH Status', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'circle', 'sTitle': 'Circle', 'sWidth': 'auto', 'bSortable': True},
+			# {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bh_connectivity', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bh_type', 'sTitle': 'BH Media Type', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bh_ckt_id', 'sTitle': 'TCL BH CKT ID', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bh_ttsl_ckt_id', 'sTitle': 'BH BSO CKT ID', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'bs_conv_ip', 'sTitle': 'BS Convertor IP', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'pop_conv_ip', 'sTitle': 'POP Convertor IP', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'aggr_sw_ip', 'sTitle': 'Aggregation Switch IP', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'pe_ip', 'sTitle': 'PE IP', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
+			{'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
+			# {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
+		]
 
-        invent_columns = [
-            {'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_connectivity', 'sTitle': 'BH Connectivity', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_ckt_id', 'sTitle': 'BH Circuit ID', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_ttsl_ckt_id', 'sTitle': 'BH TTSL Circuit ID', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bs_conv_ip', 'sTitle': 'BS Convertor IP', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'pop_conv_ip', 'sTitle': 'POP Convertor IP', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'aggr_sw_ip', 'sTitle': 'Aggregation Switch IP', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'pe_ip', 'sTitle': 'PE IP', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_status', 'sTitle': 'BH Status', 'sWidth': 'auto', 'bSortable': True}
-        ]
+		
+		action_columns = [
+			{'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False}
+		]
 
-        common_columns = [
-            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'traptime', 'sTitle': 'Received Time', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'uptime', 'sTitle': 'Uptime', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
-        ]
+		datatable_headers = list()
+		datatable_headers += starting_columns
 
-        specific_invent_columns = [
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': False},
-        ]
+		context['datatable_headers'] = json.dumps(action_columns + datatable_headers)
+		context['clear_history_headers'] = json.dumps(action_columns + datatable_headers)
+		context['data_source'] = data_source
+		context['data_source_title'] = data_source_title
 
-        action_columns = []
-        if ENABLE_MANUAL_TICKETING:
-            action_columns = [
-                {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
-            ]
-
-        datatable_headers = list()
-        datatable_headers += starting_columns
-        datatable_headers += specific_invent_columns
-        datatable_headers += invent_columns
-        datatable_headers += common_columns
-
-        context['datatable_headers'] = json.dumps(datatable_headers + action_columns)
-        context['clear_history_headers'] = json.dumps(datatable_headers)
-        context['data_source'] = data_source
-        context['data_source_title'] = data_source_title
-
-        return context
+		return context
 
 
 class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
-    """
-    View to render service impacting alarms;
-    namely history, current and clear alarms for all the devices.
-    """
-
-    model = None
-    alarm_type = None
-    tech_name = None
-    columns = [
-        'severity', 'ip_address', 'eventname', 'traptime',
-        'alarm_count','first_occurred','last_occurred',
-        'customer_count', 'sia'
-    ]
-    
-    order_columns = [
-        'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state',
-        'bh_connectivity', 'bh_type', 'eventname','traptime','uptime',
-        'alarm_count', 'first_occurred','last_occurred', 'customer_count', 'sia'
-    ]
-
-    other_columns = [
-        'bs_alias', 'bs_city', 'bs_state',
-        'sector_id','device_type', 'bh_connectivity', 'bh_type',
-        'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip', 
-        'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'bh_status'
-    ]
-
-    # excluded_events = [
-    #     'Latency_Threshold_Breach', 'Uplink_Issue_threshold_Breach',
-    #     'Device_not_reachable', 'PD_threshold_breach'
-    # ]
-
-    is_ordered = False
-    is_searched = False
-
-    up_since_format_array = [
-        'Day',
-        'Hour',
-        'Minute',
-        'Second',
-        'Mili Second'
-    ]
-
-    def get_initial_queryset(self):
-        """
-
-        :return: :raise NotImplementedError:
-        """
-        if not (self.model and self.alarm_type and self.tech_name):
-            self.prepare_initial_params()
-
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        filter_condition = False
-        ip_address_list = list()
-        # If any advance filter is applied
-        if self.request.GET.get('is_filter_applied', False):
-            filter_condition = self.prepare_filtering_condition()
-
-        data_source = (self.request.GET.get('data_source', None))
-
-        model_columns = self.columns
-
-        # set filter condition according to the data source
-        if data_source and data_source.lower() in ['packet_drop']:
-            eventname_list = ['PD_threshold_breach']
-        elif data_source and data_source.lower() in ['latency']:
-            eventname_list = ['Latency_Threshold_Breach']
-        elif data_source and data_source.lower() in ['down']:
-            eventname_list = ['Device_not_reachable']
-        else:
-            eventname_list = []
-
-        # Event name condition for filtering
-        eventname_condition = 'Q(eventname__in={0})'.format(eventname_list)
-
-        if self.tech_name == 'all':
-            tech_name_list = ['pmp', 'wimax']
-        else:
-            tech_name_list = [self.tech_name]
-        tech_name_id = list()
-
-        active_filter_condition = ''
-        if self.alarm_type in ['current', 'clear']:
-            active_filter_condition = ' Q(is_active= 1),'
-
-        for tech_name in tech_name_list:                
-            if tech_name in device_technology_dict:
-                tech_name_id.append(device_technology_dict.get(tech_name))
-
-        not_condition_sign = ''
-        if self.tech_name not in ['pmp', 'wimax', 'all']:
-            tech_name_list = ['pmp', 'wimax']
-            not_condition_sign = '~'
-
-            for tech_name in tech_name_list:
-                if tech_name in device_technology_dict:
-                    tech_name_id.append(device_technology_dict.get(tech_name))
-
-        if self.tech_name == 'all':
-            tech_type_filter_condition = ''
-            not_condition_sign = ''
-        else:
-            # ip_address_list = list(Device.objects.filter(
-            #     device_technology__in=tech_name_id
-            # ).values_list('ip_address', flat=True))
-            tech_type_filter_condition = 'Q(technology__iexact="{0}"),'.format(self.tech_name)
-
-
-        if filter_condition:
-            query = "queryset = self.model.objects.filter( \
-                            {0}{4}\
-                            ({1}) ,\
-                            {3}\
-                            {5}\
-                        ).using(TRAPS_DATABASE).order_by('-traptime').values(*{2})".format(
-                            not_condition_sign,
-                            filter_condition,
-                            model_columns,
-                            active_filter_condition,
-                            tech_type_filter_condition,
-                            eventname_condition
-                        )
-
-        else:
-            query = "queryset = self.model.objects.filter( \
-                    {0}{3}\
-                    {2}\
-                    {4}\
-                ).using(TRAPS_DATABASE).order_by('-traptime').values(*{1})".format(
-                    not_condition_sign,
-                    model_columns,
-                    active_filter_condition,
-                    tech_type_filter_condition,
-                    eventname_condition
-                )                   
-
-        exec query
-        return queryset
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return result_list:
-        """
-        sSearch = self.request.GET.get('search[value]', None)
-        if sSearch:
-            self.is_searched = True
-            if type(qs) == type(list()):
-                result = qs
-            else:
-                result = self.prepare_devices(qs)
-
-            result_list = list()
-            for search_data in result:
-                # Convert the dict to string & check the search text in that string
-                try:
-                    dict_values_str_list = [str(i) for i in search_data.values()]
-                    dict_values_string = ', '.join(dict_values_str_list).lower()
-                    sSearch = sSearch.lower()
-                except Exception, e:
-                    dict_values_string = search_data.values()
-                    sSearch = sSearch
-                if sSearch in dict_values_string :
-                    result_list.append(search_data)
-            # advance filtering the query set
-            return self.advance_filter_queryset(result_list)
-        else:
-            if self.request.GET.get('advance_filter', None):
-                self.is_searched = True
-                if type(qs) == type(list()):
-                    qs = qs
-                else:
-                    qs = self.prepare_devices(qs)
-            else:
-                self.is_searched = False
-
-        return self.advance_filter_queryset(qs)
-
-    def ordering(self, qs):
-        """ Get parameters from the request and prepare order by clause
-        """
-        inventory_columns = []
-        if self.tech_name in ['pmp', 'wimax', 'all']:
-            self.order_columns = [
-                'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                'bs_state', 'bh_connectivity', 'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id',
-                'bs_conv_ip', 'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'bh_status',
-                'device_type', 'eventname', 'traptime', 'uptime','alarm_count',
-                'first_occurred','last_occurred', 'customer_count', 'sia'
-            ]
-
-        # Number of columns that are used in sorting
-        sorting_cols = 0
-        if self.pre_camel_case_notation:
-            try:
-                sorting_cols = int(self._querydict.get('iSortingCols', 0))
-            except ValueError:
-                sorting_cols = 0
-        else:
-            sort_key = 'order[{0}][column]'.format(sorting_cols)
-            while sort_key in self._querydict:
-                sorting_cols += 1
-                sort_key = 'order[{0}][column]'.format(sorting_cols)
-
-        order = []
-        order_columns = self.order_columns
-        reverse = False
-        sort_using = ''
-
-        for i in range(sorting_cols):
-            # sorting column
-            sort_dir = 'asc'
-            try:
-                if self.pre_camel_case_notation:
-                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
-                    # sorting order
-                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
-                else:
-                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
-                    # sorting order
-                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
-            except ValueError:
-                sort_col = 0
-
-            sdir = '-' if sort_dir == 'desc' else ''
-            reverse = True if sort_dir == 'desc' else False
-            sortcol = order_columns[sort_col]
-
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
-                    sort_using = sc
-            else:
-                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
-                sort_using = sortcol
-        if sort_using and sort_using in order_columns:
-            # If sorting request is from other columns 
-            if type(qs) == type(list()) or sort_using in self.other_columns:
-                # Update the 'is_ordered' flag
-                self.is_ordered = True
-                # prepare result as per the complete queryset
-                if self.is_searched or type(qs) == type(list()):
-                    prepared_result = qs
-                else:
-                    prepared_result = self.prepare_devices(qs)
-                try:
-                    # Sort the prepared result list
-                    sorted_qs = sorted(
-                        prepared_result,
-                        key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
-                        reverse=reverse
-                    )
-                except Exception, e:
-                    sorted_qs = prepared_result
-                return sorted_qs
-            else:
-                # Update the 'is_ordered' flag
-                self.is_ordered = False
-                return qs.order_by(*order)
-        return qs
-    
-    def prepare_filtering_condition(self):
-        """
-        This function prepares query condition as per the applied filters
-        """
-        # Initialize variables
-        filtering_condition = ''
-
-        # Ip address filtering
-        ip_address = self.request.GET.get('ip_address', False)
-        ip_address_list = ip_address.split('|') if ip_address else False
-
-        if ip_address_list:
-            if filtering_condition:
-                filtering_condition += ' | Q(ip_address__in={0}) '.format(ip_address_list)
-            else:
-                filtering_condition += ' Q(ip_address__in={0}) '.format(ip_address_list)
-
-        # event name filtering
-        eventname = self.request.GET.get('eventname', False)
-        eventname_list = eventname.split('|') if eventname else False
-
-        if eventname_list:
-            if filtering_condition:
-                filtering_condition += ' | Q(eventname__in={0}) '.format(eventname_list)
-            else:
-                filtering_condition += ' Q(eventname__in={0}) '.format(eventname_list)
-
-        # trap start_date & end_date filtering
-        start_date = self.request.GET.get('start_date', False)
-        end_date = self.request.GET.get('end_date', False)
-
-        if start_date and end_date:
-            if filtering_condition:
-                filtering_condition += ' | Q(traptime__range=("{0}", "{1}")) '.format(start_date, end_date)
-            else:
-                filtering_condition += 'Q(traptime__range=("{0}", "{1}")) '.format(start_date, end_date)
-
-        # severity filtering
-        severity = self.request.GET.get('severity', False)
-        severity_list = severity.split('|') if severity else False
-
-        if severity_list:
-            if filtering_condition:
-                filtering_condition += ' | Q(severity__in={0}) '.format(severity_list)
-            else:
-                filtering_condition += ' Q(severity__in={0}) '.format(severity_list)
-
-        return filtering_condition
-
-    def prepare_initial_params(self):
-        """
-        This function initializes params as per the querystring
-        """
-        self.alarm_type = self.request.GET.get('alarm_type', 'current')
-        self.tech_name = self.request.GET.get('tech_name', 'all')
-        # set model as per alarm type
-        if self.alarm_type in ['current']:
-            self.model = CurrentAlarms
-        elif self.alarm_type in ['clear']:
-            self.model = ClearAlarms
-        else:
-            self.model = HistoryAlarms
-        return True
-
-    def prepare_devices(self, qs):
-        """
-        """
-        return prepare_snmp_gis_data_all_tab(qs, self.tech_name)
-
-    def format_uptime_value(self, uptime):
-        """
-        This function format uptime value
-        """
-        splitted_uptime = uptime.split(':')
-
-        formatted_string = ''
-
-        for i in range(len(splitted_uptime)):
-            suffix_val = str(self.up_since_format_array[i])
-            timestamp_val = splitted_uptime[i]
-            try:
-                if not int(timestamp_val):
-                    continue
-            except Exception, e:
-                pass
-
-            try:
-                if int(timestamp_val) > 1:
-                    suffix_val += 's'
-            except Exception, e:
-                pass
-            formatted_string += ' {} {} '.format(str(timestamp_val), suffix_val)
-
-        return formatted_string
-
-    def prepare_results(self, qs):
-        """
-        This function format resultant qs as per the GUI display
-        """
-        if not qs:
-            return list(qs)
-        else:
-            for dct in  qs:
-                severity = dct.get('severity')
-                severity_icon = alert_utils.common_get_severity_icon(severity)
-                uptime = dct.get('uptime')
-                ticket_number = dct.get('ticket_number')
-                is_manual = dct.get('is_manual')
-                action = ''
-                formatted_uptime = uptime
-
-                try:
-                    if ENABLE_MANUAL_TICKETING:
-                        if not ticket_number:
-                            action += '<a href="javascript:;" title="Generate Manual Ticket"><i class="fa fa-sign-in"></i></a>'
-
-                        if is_manual:
-                            action += '&nbsp;&nbsp;<a href="javascript:;" class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></a>'
-                except Exception, e:
-                    pass
-
-                try:
-                    first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
-                except Exception, e:
-                    first_occurred = dct.get('first_occurred')
-
-                try:
-                    last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
-                except Exception, e:
-                    last_occurred = dct.get('last_occurred')
-
-                if uptime:
-                    formatted_uptime = self.format_uptime_value(uptime)
-
-                dct.update(
-                    action='',
-                    bh_status=severity,
-                    severity=severity_icon,
-                    uptime=formatted_uptime,
-                    first_occurred=first_occurred,
-                    last_occurred=last_occurred
-                )
-
-            return qs
-    
-    def get_context_data(self, *args, **kwargs):
-        """
-
-        :param args:
-        :param kwargs:
-        :return:
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        if not (self.model and self.alarm_type and self.tech_name):
-            self.prepare_initial_params()
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        if self.is_searched:
-            total_display_records = len(qs)
-        else:
-            total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        if not (self.is_ordered or self.is_searched):
-            qs = self.prepare_devices(qs)
-        
-        aaData = self.prepare_results(qs)
-
-        ret = {
-            'sEcho': int(request.REQUEST.get('sEcho', 0)),
-            'iTotalRecords': total_records,
-            'iTotalDisplayRecords': total_display_records,
-            'aaData': aaData
-        }
-
-        return ret
+	"""
+	View to render service impacting alarms;
+	namely history, current and clear alarms for all the devices.
+	"""
+
+	model = None
+	alarm_type = None
+	tech_name = None
+	columns = [
+		'severity', 'ip_address', 'eventname', 'traptime',
+		'alarm_count','first_occurred','last_occurred',
+		'customer_count', 'sia'
+	]
+	
+	order_columns = [
+		'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state',
+		'bh_connectivity', 'bh_type', 'eventname','traptime','uptime',
+		'alarm_count', 'first_occurred','last_occurred', 'customer_count', 'sia'
+	]
+
+	other_columns = [
+		'bs_alias', 'bs_city', 'bs_state', 'circle',
+		'sector_id','device_type', 'bh_connectivity', 'bh_type',
+		'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip', 
+		'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'bh_status', 'ticket_number'
+	]
+
+	# excluded_events = [
+	#     'Latency_Threshold_Breach', 'Uplink_Issue_threshold_Breach',
+	#     'Device_not_reachable', 'PD_threshold_breach'
+	# ]
+
+	is_ordered = False
+	is_searched = False
+
+	severity_icon_dict = {
+		'latency': {
+			'warning': 'orange-dot',
+			'major': 'red-dot',
+			'clear': 'green-dot'
+		},
+		'packet_drop': {
+			'warning': 'orange-dot',
+			'major': 'red-dot',
+			'clear': 'green-dot'
+		},
+		'down': {
+			'critical': 'red-dot',
+			'clear': 'green-dot'
+		}
+	}
+
+	up_since_format_array = [
+		'Day',
+		'Hour',
+		'Minute',
+		'Second',
+		'Mili Second'
+	]
+
+	def get_initial_queryset(self):
+		"""
+
+		:return: :raise NotImplementedError:
+		"""
+		if not (self.model and self.alarm_type and self.tech_name):
+			self.prepare_initial_params()
+
+		if not self.model:
+			raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+		# Fetch PTP-BH, PMP, WiMAX & BH Congfigured on devices ips from our inventory
+		pmp_wimax_ips = list(Sector.objects.exclude(
+			sector_id__iexact=''
+		).filter(
+			sector_id__isnull=False,
+			sector_configured_on__ip_address__isnull=False
+		).values_list('sector_configured_on__ip_address', flat=True))
+
+		wimax_dr_ips = list(Sector.objects.exclude(
+		   sector_id__iexact=''
+		).filter(
+		   sector_id__isnull=False,
+		   dr_configured_on__ip_address__isnull=False
+		).values_list('dr_configured_on__ip_address', flat=True))
+
+		bh_conf_ips = list(Backhaul.objects.filter(
+			bh_configured_on__isnull=False,
+			bh_configured_on__ip_address__isnull=False
+		).values_list('bh_configured_on__ip_address', flat=True))
+
+		ptp_bh_ips = list(Circuit.objects.filter(
+			circuit_type__iexact='backhaul',
+			sector__sector_configured_on__ip_address__isnull=False
+		).values_list('sector__sector_configured_on__ip_address', flat=True))
+
+		ptp_bh_ss_ips = list(Circuit.objects.filter(
+			circuit_type__iexact='backhaul',
+			sub_station__device__ip_address__isnull=False
+		).values_list('sub_station__device__ip_address', flat=True))
+
+		inventory_ips_list = pmp_wimax_ips + wimax_dr_ips + bh_conf_ips + ptp_bh_ips + ptp_bh_ss_ips
+
+		filter_condition = False
+		ip_address_list = list()
+		# If any advance filter is applied
+		if self.request.GET.get('is_filter_applied', False):
+			filter_condition = self.prepare_filtering_condition()
+
+		data_source = (self.request.GET.get('data_source', None))
+
+		model_columns = self.columns
+
+		# set filter condition according to the data source
+		if data_source and data_source.lower() in ['packet_drop']:
+			eventname_list = ['PD_threshold_breach_warning', 'PD_threshold_breach_major']
+		elif data_source and data_source.lower() in ['latency']:
+			eventname_list = ['Latency_Threshold_Breach_warning', 'Latency_Threshold_Breach_major']
+		elif data_source and data_source.lower() in ['down']:
+			eventname_list = ['Device_not_reachable']
+		else:
+			eventname_list = []
+
+		# Event name condition for filtering
+		eventname_condition = 'Q(eventname__in={0})'.format(eventname_list)
+
+		if self.tech_name == 'all':
+			tech_name_list = ['pmp', 'wimax']
+		else:
+			tech_name_list = [self.tech_name]
+		tech_name_id = list()
+
+		active_filter_condition = ''
+		if self.alarm_type in ['current', 'clear']:
+			active_filter_condition = ' Q(is_active= 1),'
+			# three_month_filter_condition = ''
+			three_month_before_date = 0
+		else:
+			current_date = datetime.datetime.now()
+			three_month_before_date = current_date - datetime.timedelta(days=90)
+			# three_month_filter_condition = Q(traptime__gte=three_month_before_date)
+
+		for tech_name in tech_name_list:                
+			if tech_name in device_technology_dict:
+				tech_name_id.append(device_technology_dict.get(tech_name))
+
+		not_condition_sign = ''
+		if self.tech_name not in ['pmp', 'wimax', 'all']:
+			tech_name_list = ['pmp', 'wimax']
+			not_condition_sign = '~'
+
+			for tech_name in tech_name_list:
+				if tech_name in device_technology_dict:
+					tech_name_id.append(device_technology_dict.get(tech_name))
+
+		if self.tech_name == 'all':
+			tech_type_filter_condition = ''
+			not_condition_sign = ''
+		else:
+			# ip_address_list = list(Device.objects.filter(
+			#     device_technology__in=tech_name_id
+			# ).values_list('ip_address', flat=True))
+			tech_type_filter_condition = 'Q(technology__iexact="{0}"),'.format(self.tech_name)
+
+		str_to_date_condition = "STR_TO_DATE(traptime, '%%Y-%%m-%%d %%H:%%i:%%S')"
+		field_name = {
+			"traptime": str_to_date_condition
+		}
+		if filter_condition:
+			query = "queryset = self.model.objects.extra({6}).filter(\
+							{0}{4}\
+							({1}) ,\
+							{3}\
+							{5},\
+							ip_address__in=inventory_ips_list\
+						).using(TRAPS_DATABASE).order_by('-traptime').values(*{2})".format(
+							not_condition_sign,
+							filter_condition,
+							model_columns,
+							active_filter_condition,
+							tech_type_filter_condition,
+							eventname_condition,
+							field_name
+						)
+
+		else:
+			try:
+				query = "queryset = self.model.objects.extra({5}).filter(\
+								{0}{3}\
+								{2}\
+								{4},\
+								ip_address__in=inventory_ips_list\
+							).using(TRAPS_DATABASE).order_by('-traptime').values(*{1})".format(
+								not_condition_sign,
+								model_columns,
+								active_filter_condition,
+								tech_type_filter_condition,
+								eventname_condition,
+								field_name,
+							)                   
+			except Exception, e:
+				logger.error(e)
+				pass
+		
+		exec query
+
+		# filtering queryset for 3 only last 3 months traps
+		if self.alarm_type == 'history':
+			queryset = queryset.filter(traptime__gte=three_month_before_date)
+		
+		return queryset
+
+	def filter_queryset(self, qs):
+		"""
+		The filtering of the queryset with respect to the search keyword entered.
+
+		:param qs:
+		:return result_list:
+		"""
+		sSearch = self.request.GET.get('search[value]', None)
+		if sSearch:
+			self.is_searched = True
+			if type(qs) == type(list()):
+				result = qs
+			else:
+				result = self.prepare_devices(qs)
+
+			result_list = list()
+			for search_data in result:
+				# Convert the dict to string & check the search text in that string
+				try:
+					dict_values_str_list = [str(i) for i in search_data.values()]
+					dict_values_string = ', '.join(dict_values_str_list).lower()
+					sSearch = sSearch.lower()
+				except Exception, e:
+					dict_values_string = search_data.values()
+					sSearch = sSearch
+				if sSearch in dict_values_string :
+					result_list.append(search_data)
+			# advance filtering the query set
+			return self.advance_filter_queryset(result_list)
+		else:
+			if self.request.GET.get('advance_filter', None):
+				self.is_searched = True
+				if type(qs) == type(list()):
+					qs = qs
+				else:
+					qs = self.prepare_devices(qs)
+			else:
+				self.is_searched = False
+
+		return self.advance_filter_queryset(qs)
+
+	def ordering(self, qs):
+		""" Get parameters from the request and prepare order by clause
+		"""
+		inventory_columns = []
+		if self.tech_name in ['pmp', 'wimax', 'all']:
+			self.order_columns = []
+
+			self.order_columns += [
+				'action', 'severity', 'traptime', 'ip_address',
+				'device_type', 'bs_alias', 'bh_status', 'bs_state',
+				'bs_city', 'circle', 'ticket_number', 'bh_connectivity',
+				'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip',
+				'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'alarm_count',
+				'first_occurred', 'last_occurred' 
+			]
+
+		# Number of columns that are used in sorting
+		sorting_cols = 0
+		if self.pre_camel_case_notation:
+			try:
+				sorting_cols = int(self._querydict.get('iSortingCols', 0))
+			except ValueError:
+				sorting_cols = 0
+		else:
+			sort_key = 'order[{0}][column]'.format(sorting_cols)
+			while sort_key in self._querydict:
+				sorting_cols += 1
+				sort_key = 'order[{0}][column]'.format(sorting_cols)
+
+		order = []
+		order_columns = self.order_columns
+		reverse = False
+		sort_using = ''
+
+		for i in range(sorting_cols):
+			# sorting column
+			sort_dir = 'asc'
+			try:
+				if self.pre_camel_case_notation:
+					sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+					# sorting order
+					sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+				else:
+					sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+					# sorting order
+					sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+			except ValueError:
+				sort_col = 0
+
+			sdir = '-' if sort_dir == 'desc' else ''
+			reverse = True if sort_dir == 'desc' else False
+			sortcol = order_columns[sort_col]
+
+			if isinstance(sortcol, list):
+				for sc in sortcol:
+					order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+					sort_using = sc
+			else:
+				order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+				sort_using = sortcol
+		if sort_using and sort_using in order_columns:
+			# If sorting request is from other columns 
+			if type(qs) == type(list()) or sort_using in self.other_columns:
+				# Update the 'is_ordered' flag
+				self.is_ordered = True
+				# prepare result as per the complete queryset
+				if self.is_searched or type(qs) == type(list()):
+					prepared_result = qs
+				else:
+					prepared_result = self.prepare_devices(qs)
+				try:
+					# Sort the prepared result list
+					sorted_qs = sorted(
+						prepared_result,
+						key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
+						reverse=reverse
+					)
+				except Exception, e:
+					sorted_qs = prepared_result
+				return sorted_qs
+			else:
+				# Update the 'is_ordered' flag
+				self.is_ordered = False
+				return qs.order_by(*order)
+		return qs
+	
+	def prepare_filtering_condition(self):
+		"""
+		This function prepares query condition as per the applied filters
+		"""
+		# Initialize variables
+		filtering_condition = ''
+
+		# Ip address filtering
+		ip_address = self.request.GET.get('ip_address', False)
+		ip_address_list = ip_address.split('|') if ip_address else False
+
+		if ip_address_list:
+			if filtering_condition:
+				filtering_condition += ' | Q(ip_address__in={0}) '.format(ip_address_list)
+			else:
+				filtering_condition += ' Q(ip_address__in={0}) '.format(ip_address_list)
+
+		# event name filtering
+		eventname = self.request.GET.get('eventname', False)
+		eventname_list = eventname.split('|') if eventname else False
+
+		if eventname_list:
+			if filtering_condition:
+				filtering_condition += ' | Q(eventname__in={0}) '.format(eventname_list)
+			else:
+				filtering_condition += ' Q(eventname__in={0}) '.format(eventname_list)
+
+		# trap start_date & end_date filtering
+		start_date = self.request.GET.get('start_date', False)
+		end_date = self.request.GET.get('end_date', False)
+
+		if start_date and end_date:
+			if filtering_condition:
+				filtering_condition += ' | Q(traptime__range=("{0}", "{1}")) '.format(start_date, end_date)
+			else:
+				filtering_condition += 'Q(traptime__range=("{0}", "{1}")) '.format(start_date, end_date)
+
+		# severity filtering
+		severity = self.request.GET.get('severity', False)
+		severity_list = severity.split('|') if severity else False
+
+		if severity_list:
+			if filtering_condition:
+				filtering_condition += ' | Q(severity__in={0}) '.format(severity_list)
+			else:
+				filtering_condition += ' Q(severity__in={0}) '.format(severity_list)
+
+		return filtering_condition
+
+	def prepare_initial_params(self):
+		"""
+		This function initializes params as per the querystring
+		"""
+		self.alarm_type = self.request.GET.get('alarm_type', 'current')
+		self.tech_name = self.request.GET.get('tech_name', 'all')
+		# set model as per alarm type
+		if self.alarm_type in ['current']:
+			self.model = CurrentAlarms
+		elif self.alarm_type in ['clear']:
+			self.model = ClearAlarms
+		else:
+			self.model = HistoryAlarms
+		return True
+
+	def prepare_devices(self, qs):
+		"""
+		"""
+		return prepare_snmp_gis_data_all_tab(qs, self.tech_name)
+
+	def format_uptime_value(self, uptime):
+		"""
+		This function format uptime value
+		"""
+		splitted_uptime = uptime.split(':')
+
+		formatted_string = ''
+
+		for i in range(len(splitted_uptime)):
+			suffix_val = str(self.up_since_format_array[i])
+			timestamp_val = splitted_uptime[i]
+			try:
+				if not int(timestamp_val):
+					continue
+			except Exception, e:
+				pass
+
+			try:
+				if int(timestamp_val) > 1:
+					suffix_val += 's'
+			except Exception, e:
+				pass
+			formatted_string += ' {} {} '.format(str(timestamp_val), suffix_val)
+
+		return formatted_string
+
+	def prepare_results(self, qs):
+		"""
+		This function format resultant qs as per the GUI display
+		"""
+		if not qs:
+			return list(qs)
+		else:
+			for dct in  qs:
+				severity = dct.get('severity')
+				# severity_icon = alert_utils.common_get_severity_icon(severity)
+				uptime = dct.get('uptime')
+				ticket_number = dct.get('ticket_number')
+				is_manual = dct.get('is_manual')
+				action = ''
+				formatted_uptime = uptime
+				data_source = (self.request.GET.get('data_source', None))
+
+				# severity icon according to user requirement
+				# Change Color "RED" in Current and "Green" in Clear. Same in History Tab
+				dot_color = self.severity_icon_dict.get(data_source, {}).get(severity, 'grey-dot')
+				severity_icon = '<i class="fa fa-circle {1}" title="{0}">\
+									<span style="display:none">{0}</span></i>'.format(severity, dot_color)
+
+				try:
+					if ENABLE_MANUAL_TICKETING:
+						if not ticket_number:
+							action += '<a href="javascript:;" title="Generate Manual Ticket"><i class="fa fa-sign-in"></i></a>'
+
+						if is_manual:
+							action += '&nbsp;&nbsp;<a href="javascript:;" class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></a>'
+				except Exception, e:
+					pass
+
+				try:
+					first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+				except Exception, e:
+					first_occurred = dct.get('first_occurred')
+
+				try:
+					last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+				except Exception, e:
+					last_occurred = dct.get('last_occurred')
+
+				if uptime:
+					formatted_uptime = self.format_uptime_value(uptime)
+				performance_url = alert_url = inventory_url = ''
+				dct['action'] = ''
+				
+				if dct.get('device_id'):
+					performance_url = reverse(
+						'SingleDevicePerf',
+						kwargs={
+							'page_type': dct.get('page_type', 'network'), 
+							'device_id': dct.get('device_id', 0)
+						},
+						current_app='performance'
+					)
+
+					alert_url = reverse(
+						'SingleDeviceAlertsInit',
+						kwargs={
+							'page_type': dct.get('page_type', 'network'), 
+							'data_source' : data_source.lower(), 
+							'device_id': dct.get('device_id', 0)
+						},
+						current_app='alert_center'
+					)
+		
+					inventory_url = reverse(
+						'device_edit',
+						kwargs={
+							'pk': dct.get('device_id', 0)
+						},
+						current_app='device'
+					)
+
+
+					dct.update(
+						action='<a href="' + alert_url + '" title="Device Alerts">\
+								<i class="fa fa-warning text-warning"></i></a>\
+								<a href="' + performance_url + '" title="Device Performance">\
+								<i class="fa fa-bar-chart-o text-info"></i></a>\
+								<a href="' + inventory_url + '" title="Device Inventory">\
+								<i class="fa fa-dropbox text-muted"></i></a>'
+					)
+
+				dct.update(
+					severity=severity_icon,
+					uptime=formatted_uptime,
+					first_occurred=first_occurred,
+					last_occurred=last_occurred
+				)
+			return qs
+	
+	def get_context_data(self, *args, **kwargs):
+		"""
+
+		:param args:
+		:param kwargs:
+		:return:
+		"""
+		request = self.request
+		self.initialize(*args, **kwargs)
+
+		if not (self.model and self.alarm_type and self.tech_name):
+			self.prepare_initial_params()
+
+		qs = self.get_initial_queryset()
+
+		# number of records before filtering
+		total_records = qs.count()
+
+		qs = self.filter_queryset(qs)
+
+		# number of records after filtering
+		if self.is_searched:
+			total_display_records = len(qs)
+		else:
+			total_display_records = qs.count()
+
+		qs = self.ordering(qs)
+		qs = self.paging(qs)
+		if not (self.is_ordered or self.is_searched):
+			qs = self.prepare_devices(qs)
+		
+		aaData = self.prepare_results(qs)
+
+		ret = {
+			'sEcho': int(request.REQUEST.get('sEcho', 0)),
+			'iTotalRecords': total_records,
+			'iTotalDisplayRecords': total_display_records,
+			'aaData': aaData
+		}
+
+		return ret
 
 
 @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
@@ -3560,7 +3696,7 @@ def prepare_snmp_gis_data(qs, tech_name):
 
     sectors_data_qs, dr_data_qs = '', ''
     converter_mapped_data = {}
-    if tech_name in ['pmp', 'radwin5k', 'wimax', 'all']:
+    if tech_name in ['pmp', 'rad5k', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
         ).extra(
@@ -3713,344 +3849,761 @@ def prepare_snmp_gis_data(qs, tech_name):
     mapped_result.update(converter_mapped_data)
    
     for data in qs_list:
-        ip_address = data.get('ip_address')
-        data.update(
-            bs_alias='NA',
-            bs_city='NA',
-            bs_state='NA',
-            sector_id='NA',
-            device_type='NA',
-            bh_connectivity='NA',
-            bh_type='NA'
-        )
-        if not ip_address:
-            continue
+		ip_address = data.get('ip_address')
+		data.update(
+			bs_alias='NA',
+			bs_city='NA',
+			bs_state='NA',
+			sector_id='NA',
+			device_type='NA',
+			bh_connectivity='NA',
+			bh_type='NA'
+		)
+		if not ip_address:
+			continue
 
-        try:
-            sector_dct = mapped_result[ip_address]
-        except Exception, e:
-            sector_dct = None
-            pass
-        if sector_dct:
-            data.update(
-                sector_id=sector_dct.get('sector_id', 'NA'),
-                bs_alias=sector_dct.get('base_station__alias', 'NA'),
-                bs_city=sector_dct.get('base_station__city__city_name', 'NA'),
-                bs_state=sector_dct.get('base_station__state__state_name', 'NA'),
-                bh_connectivity=sector_dct.get('base_station__backhaul__bh_connectivity', 'NA'),
-                bh_type=sector_dct.get('base_station__backhaul__bh_type', 'NA'),
-                device_type=device_type_dict.get(sector_dct.get('device_type'))
-            )
+		try:
+			sector_dct = mapped_result[ip_address]
+		except Exception, e:
+			sector_dct = None
+			pass
+		if sector_dct:
+			data.update(
+				sector_id=sector_dct.get('sector_id', 'NA'),
+				bs_alias=sector_dct.get('base_station__alias', 'NA'),
+				bs_city=sector_dct.get('base_station__city__city_name', 'NA'),
+				bs_state=sector_dct.get('base_station__state__state_name', 'NA'),
+				bh_connectivity=sector_dct.get('base_station__backhaul__bh_connectivity', 'NA'),
+				bh_type=sector_dct.get('base_station__backhaul__bh_type', 'NA'),
+				device_type=device_type_dict.get(sector_dct.get('device_type'))
+			)
 
     return qs_list
 
-# @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_snmp_gis_data_all_tab(qs, tech_name):
-    """
-    This function fetched GIS Inventory data as per the given param & 
-    map it with given queryset
-    :param qs, It contains model query of SNMP model 
-    :param tech_name, It contains tech_name pass to API
-    """
-    if type(qs) == type(list()):
-        qs_list = qs
-    else:
-        qs_list = list(qs.values())
+	"""
+	This function fetched GIS Inventory data as per the given param & 
+	map it with given queryset
+	:param qs, It contains model query of SNMP model 
+	:param tech_name, It contains tech_name pass to API
+	"""
+	if type(qs) == type(list()):
+		qs_list = qs
+	else:
+		qs_list = list(qs.values())
 
-    # Get IP address list from qs
-    ip_address_list = [x['ip_address'] for x in qs_list]
+	# Get IP address list from qs
+	ip_address_list = [x['ip_address'] for x in qs_list]
 
-    sectors_data_qs, dr_data_qs = '', ''
-    converter_mapped_data = {}
+	sectors_data_qs, dr_data_qs = '', ''
+	converter_mapped_data = {}
 
-    # Fetch ticket number for given ips
-    tickets_dataset = DeviceTicket.objects.filter(
-        ip_address__in=ip_address_list
-    ).values('ticket_number', 'ip_address')
+	# device_list = []
+	bh_device_list = []
 
-    if tech_name in ['pmp', 'wimax', 'all']:
-        sectors_data_qs =  Sector.objects.filter(
-            sector_configured_on__ip_address__in=ip_address_list
-        ).extra(
-            select={'device_type' : 'device_device.device_type'}
-        ).values(
-            'sector_id',
-            'sector_configured_on__ip_address',
-            'base_station__alias',
-            'base_station__city__city_name',
-            'base_station__state__state_name',
-            'base_station__backhaul__bh_type',
-            'base_station__backhaul__bh_connectivity',
-            'base_station__backhaul__bh_circuit_id',
-            'base_station__backhaul__ttsl_circuit_id',
-            'base_station__backhaul__bh_switch__ip_address',
-            'base_station__backhaul__pop__ip_address',
-            'base_station__backhaul__aggregator__ip_address',
-            'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
-        ).distinct()
+	# Fetch ticket number for given ips
+	tickets_dataset = DeviceTicket.objects.filter(
+		ip_address__in=ip_address_list
+	).values('ticket_number', 'ip_address')
 
-        # If wimax only then check for DR device
-        if tech_name in ['wimax', 'all']:
-            dr_data_qs =  Sector.objects.filter(
-                dr_configured_on__ip_address__in=ip_address_list
-            ).extra(
-                select={'device_type' : 'device_device.device_type'}
-            ).values(
-                'sector_id',
-                'base_station__alias',
-                'base_station__city__city_name',
-                'base_station__state__state_name',
-                'dr_configured_on__ip_address',
-                'base_station__backhaul__bh_circuit_id',
-                'base_station__backhaul__ttsl_circuit_id',
-                'base_station__backhaul__bh_switch__ip_address',
-                'base_station__backhaul__pop__ip_address',
-                'base_station__backhaul__aggregator__ip_address',
-                'base_station__backhaul__pe_ip__ip_address',
-                'device_type'
-            ).distinct()
+	if tech_name in ['pmp', 'wimax', 'all']:
+		sectors_data_qs =  Sector.objects.filter(
+			sector_configured_on__ip_address__in=ip_address_list
+		).annotate(
+			machine_name=F('sector_configured_on__machine__name'),
+			device_name=F('sector_configured_on__device_name'),
+			bh_device_name=F('base_station__backhaul__bh_configured_on__device_name'),
+			bh_machine_name=F('base_station__backhaul__bh_configured_on__machine__name'),
+			device_type=F('sector_configured_on__device_type'),
+			device_id=F('sector_configured_on_id'),
+			circle=F('sector_configured_on__organization__alias'),
+			page_type=RawSQL('SELECT "network"', ())
+		).values(
+			'sector_id',
+			'sector_configured_on__ip_address',
+			'base_station__alias',
+			'base_station__city__city_name',
+			'base_station__state__state_name',
+			'machine_name',
+			'device_name',
+			'bh_device_name',
+			'bh_machine_name',
+			# 'base_station__backhaul__bh_configured_on__device_name',
+			# 'base_station__backhaul__bh_configured_on__machine__name',
+			'base_station__backhaul__bh_type',
+			'base_station__backhaul__bh_connectivity',
+			'base_station__backhaul__bh_circuit_id',
+			'base_station__backhaul__ttsl_circuit_id',
+			'base_station__backhaul__bh_switch__ip_address',
+			'base_station__backhaul__pop__ip_address',
+			'base_station__backhaul__aggregator__ip_address',
+			'base_station__backhaul__pe_ip__ip_address',
+			'device_type',
+			'device_id',
+			'page_type',
+			'circle'
+		).distinct()
 
-    # If requert from converter or all tab only then check Backhaul model
-    if tech_name in ['switch', 'converter', 'all']:
+		#device_list += sectors_data_qs.values('machine_name', 'device_name')
+		bh_device_list += sectors_data_qs.values('bh_device_name', 'bh_machine_name')
 
-        # annotate is being used for renaming the fields to maintain the same keys
-        # throughout the code. i.e keys are from line #3360 to #3365
 
-        bh_conf_data_qs =  BaseStation.objects.extra(
-            select={
-                'base_station__alias' : 'inventory_basestation.alias',
-                'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'device_device.device_type'
-            }
-        ).annotate(
-            base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
-            base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
-            base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
-            base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
-            base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
-        ).filter(
-            backhaul__bh_configured_on__ip_address__in=ip_address_list
-        ).values(
-            'base_station__alias',
-            'base_station__city__city_name',
-            'city__city_name',
-            'base_station__state__state_name',
-            'state__state_name',
-            'backhaul__bh_configured_on__ip_address',
-            'base_station__backhaul__bh_circuit_id',
-            'base_station__backhaul__ttsl_circuit_id',
-            'base_station__backhaul__bh_switch__ip_address',
-            'base_station__backhaul__pop__ip_address',
-            'base_station__backhaul__aggregator__ip_address',
-            'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
-        ).distinct()
-        
-        bh_switch_data_qs =  BaseStation.objects.extra(
-            select={
-                'base_station__alias' : 'inventory_basestation.alias',
-                'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'T4.device_type'
-            }
-        ).annotate(
-            base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
-            base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
-            base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
-            base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
-            base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
-        ).filter(
-            backhaul__bh_configured_on__isnull=False,
-            backhaul__bh_switch__ip_address__in=ip_address_list
-        ).values(
-            'base_station__alias',
-            'base_station__city__city_name',
-            'city__city_name',
-            'base_station__state__state_name',
-            'state__state_name',
-            'backhaul__bh_switch__ip_address',
-            'base_station__backhaul__bh_circuit_id',
-            'base_station__backhaul__ttsl_circuit_id',
-            'base_station__backhaul__bh_switch__ip_address',
-            'base_station__backhaul__pop__ip_address',
-            'base_station__backhaul__aggregator__ip_address',
-            'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
-        ).distinct()
+		# Checking for SS Devices
+		ss_id_list =  SubStation.objects.filter(
+			device__ip_address__in=ip_address_list
+		).values_list('id', flat=True)
 
-        pop_data_qs =  BaseStation.objects.extra(
-            select={
-                'base_station__alias' : 'inventory_basestation.alias',
-                'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'device_device.device_type'
-            }
-        ).annotate(
-            base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
-            base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
-            base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
-            base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
-            base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
-        ).filter(
-            backhaul__bh_configured_on__isnull=False,
-            backhaul__pop__ip_address__in=ip_address_list
-        ).values(
-            'base_station__alias',
-            'base_station__city__city_name',
-            'city__city_name',
-            'base_station__state__state_name',
-            'state__state_name',
-            'backhaul__pop__ip_address',
-            'base_station__backhaul__bh_circuit_id',
-            'base_station__backhaul__ttsl_circuit_id',
-            'base_station__backhaul__bh_switch__ip_address',
-            'base_station__backhaul__pop__ip_address',
-            'base_station__backhaul__aggregator__ip_address',
-            'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
-        ).distinct()
+		ss_data_qs = Circuit.objects.filter(
+			circuit_type__iexact='backhaul',
+			sub_station__id__in=ss_id_list
+		).annotate(
+			machine_name=F('sub_station__device__machine__name'),
+			device_name=F('sub_station__device__device_name'),
+			device_type=F('sub_station__device__device_type'),
+			device_id=F('sub_station__device__id'),
+			circle=F('sub_station__device__organization__alias'),
+			page_type=RawSQL('SELECT "customer"', ()),
+			bh_device_name=F('sector__base_station__backhaul__bh_configured_on__device_name'),
+			bh_machine_name=F('sector__base_station__backhaul__bh_configured_on__machine__name'),
+			base_station__alias=F('sector__base_station__alias'),
+			base_station__city__city_name=F('sector__base_station__city__city_name'),
+			base_station__state__state_name=F('sector__base_station__state__state_name'),
+			base_station__backhaul__bh_type=F('sector__base_station__backhaul__bh_type'),
+			base_station__backhaul__bh_connectivity=F('sector__base_station__backhaul__bh_connectivity'),
+			base_station__backhaul__bh_circuit_id=F('sector__base_station__backhaul__bh_circuit_id'),
+			base_station__backhaul__ttsl_circuit_id=F('sector__base_station__backhaul__ttsl_circuit_id'),
+			base_station__backhaul__bh_switch__ip_address=F('sector__base_station__backhaul__bh_switch__ip_address'),
+			base_station__backhaul__pop__ip_address=F('sector__base_station__backhaul__pop__ip_address'),
+			base_station__backhaul__aggregator__ip_address=F('sector__base_station__backhaul__aggregator__ip_address'),
+			base_station__backhaul__pe_ip__ip_address=F('sector__base_station__backhaul__pe_ip__ip_address'),
+			sector_id=F('sector__sector_id'),
+			sector_configured_on__ip_address=F('sector__sector_configured_on__ip_address'),
+		).values(
+			'sector_id',
+			'sector_configured_on__ip_address',
+			'base_station__alias',
+			'sub_station__device__ip_address',
+			'machine_name',
+			'device_name',
+			'bh_device_name',
+			'bh_machine_name',
+			'base_station__city__city_name',
+			'base_station__state__state_name',
+			'base_station__backhaul__bh_type',
+			'base_station__backhaul__bh_connectivity',
+			'base_station__backhaul__bh_circuit_id',
+			'base_station__backhaul__ttsl_circuit_id',
+			'base_station__backhaul__bh_switch__ip_address',
+			'base_station__backhaul__pop__ip_address',
+			'base_station__backhaul__aggregator__ip_address',
+			'base_station__backhaul__pe_ip__ip_address',
+			'device_type',
+			'device_id',
+			'circle',
+			'page_type'
+		).distinct()
+	
+		#device_list += ss_data_qs.values('machine_name', 'device_name')
+		bh_device_list += ss_data_qs.values('bh_device_name', 'bh_machine_name')
+	
+		if tech_name in ['wimax', 'all']:
+			dr_data_qs =  Sector.objects.filter(
+				dr_configured_on__ip_address__in=ip_address_list
+			).annotate(
+				machine_name=F('dr_configured_on__machine__name'),
+				device_name=F('dr_configured_on__device_name'),
+				device_type=F('dr_configured_on__device_type'),
+				bh_device_name=F('base_station__backhaul__bh_configured_on__device_name'),
+				bh_machine_name=F('base_station__backhaul__bh_configured_on__machine__name'),
+				device_id=F('dr_configured_on_id'),
+				page_type=RawSQL('SELECT "network"', ()),
+				circle=F('dr_configured_on__organization__alias'),
+			).values(
+				'sector_id',
+				'base_station__alias',
+				'base_station__city__city_name',
+				'base_station__state__state_name',
+				'dr_configured_on__ip_address',
+				'machine_name',
+				'device_name',
+				'bh_device_name',
+				'bh_machine_name',
+				'base_station__backhaul__bh_type',
+				'base_station__backhaul__bh_connectivity',
+				'base_station__backhaul__bh_circuit_id',
+				'base_station__backhaul__ttsl_circuit_id',
+				'base_station__backhaul__bh_switch__ip_address',
+				'base_station__backhaul__pop__ip_address',
+				'base_station__backhaul__aggregator__ip_address',
+				'base_station__backhaul__pe_ip__ip_address',
+				'device_type',
+				'device_id',
+				'page_type',
+				'circle'
+			).distinct()
 
-        aggr_data_qs =  BaseStation.objects.extra(
-            select={
-                'base_station__alias' : 'inventory_basestation.alias',
-                'base_station__city__city_name' : 'device_city.city_name',
-                'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'T4.device_type'
-            }
-        ).annotate(
-            base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
-            base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
-            base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
-            base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
-            base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
-            base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') 
-        ).filter(
-            backhaul__bh_configured_on__isnull=False,
-            backhaul__aggregator__ip_address__in=ip_address_list
-        ).values(
-            'base_station__alias',
-            'base_station__city__city_name',
-            'city__city_name',
-            'base_station__state__state_name',
-            'state__state_name',
-            'backhaul__aggregator__ip_address',
-            'base_station__backhaul__bh_circuit_id',
-            'base_station__backhaul__ttsl_circuit_id',
-            'base_station__backhaul__bh_switch__ip_address',
-            'base_station__backhaul__pop__ip_address',
-            'base_station__backhaul__aggregator__ip_address',
-            'base_station__backhaul__pe_ip__ip_address',
-            'device_type'
-        ).distinct()
+		#device_list += dr_data_qs.values('machine_name', 'device_name')
+		bh_device_list += dr_data_qs.values('bh_device_name', 'bh_machine_name')
 
-        mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
-            list(bh_conf_data_qs),
-            'backhaul__bh_configured_on__ip_address'
-        )
+	
 
-        mapped_bh_switch_result = inventory_utils.list_to_indexed_dict(
-            list(bh_switch_data_qs),
-            'backhaul__bh_switch__ip_address'
-        )
+	# If requert from converter or all tab only then check Backhaul model
+	if tech_name in ['switch', 'converter', 'all']:
 
-        mapped_pop_result = inventory_utils.list_to_indexed_dict(
-            list(pop_data_qs),
-            'backhaul__pop__ip_address'
-        )
+		# annotate is being used for renaming the fields to maintain the same keys
+		# throughout the code. i.e keys are from line #3360 to #3365
 
-        mapped_aggr_result = inventory_utils.list_to_indexed_dict(
-            list(aggr_data_qs),
-            'backhaul__aggregator__ip_address'
-        )
+		bh_conf_data_qs =  BaseStation.objects.extra(
+			select={
+				'base_station__alias' : 'inventory_basestation.alias',
+				'base_station__city__city_name' : 'device_city.city_name',
+				'base_station__state__state_name' : 'device_state.state_name',
+				#'device_type': 'device_device.device_type'
+			}
+		).annotate(
+			base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
+			base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
+			base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
+			base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
+			base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
+			base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address') ,
+			base_station__backhaul__bh_type=F('backhaul__bh_type'),
+			base_station__backhaul__bh_connectivity=F('backhaul__bh_connectivity'),
+			machine_name=F('backhaul__bh_configured_on__machine__name'),
+			device_name=F('backhaul__bh_configured_on__device_name'),
+			bh_machine_name=F('backhaul__bh_configured_on__machine__name'),
+			bh_device_name=F('backhaul__bh_configured_on__device_name'),
+			device_type=F('backhaul__bh_configured_on__device_type'),
+			device_id=F('backhaul__bh_configured_on_id'),
+			page_type=RawSQL('SELECT "other"', ()),
+			circle=F('backhaul__bh_configured_on__organization__alias'),
+		).filter(
+			backhaul__bh_configured_on__ip_address__in=ip_address_list
+		).values(
+			'base_station__alias',
+			'base_station__city__city_name',
+			'city__city_name',
+			'base_station__state__state_name',
+			'state__state_name',
+			'machine_name',
+			'device_name',
+			'bh_device_name',
+			'bh_machine_name',
+			'base_station__backhaul__bh_type',
+			'base_station__backhaul__bh_connectivity',
+			'backhaul__bh_configured_on__ip_address',
+			'base_station__backhaul__bh_circuit_id',
+			'base_station__backhaul__ttsl_circuit_id',
+			'base_station__backhaul__bh_switch__ip_address',
+			'base_station__backhaul__pop__ip_address',
+			'base_station__backhaul__aggregator__ip_address',
+			'base_station__backhaul__pe_ip__ip_address',
+			'device_type',
+			'device_id',
+			'page_type',
+			'circle'
+		).distinct()
 
-        converter_mapped_data = mapped_bh_conf_result.copy()
-        converter_mapped_data.update(mapped_bh_switch_result)
-        converter_mapped_data.update(mapped_pop_result)
-        converter_mapped_data.update(mapped_aggr_result)
+		#device_list += bh_conf_data_qs.values('machine_name', 'device_name')
+		bh_device_list += bh_conf_data_qs.values('bh_device_name', 'bh_machine_name')
 
-    mapped_sector_result = inventory_utils.list_to_indexed_dict(
-        list(sectors_data_qs),
-        'sector_configured_on__ip_address'
-    )
+		# bh_switch_data_qs =  BaseStation.objects.extra(
+		#     select={
+		#         'base_station__alias' : 'inventory_basestation.alias',
+		#         'base_station__city__city_name' : 'device_city.city_name',
+		#         'base_station__state__state_name' : 'device_state.state_name',
+		#         # 'device_type': 'T4.device_type'
+		#     }
+		# ).annotate(
+		#     base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
+		#     base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
+		#     base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
+		#     base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
+		#     base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
+		#     base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+		#     base_station__backhaul__bh_type=F('backhaul__bh_type'),
+		#     base_station__backhaul__bh_connectivity=F('backhaul__bh_connectivity') ,
+		#     machine_name=F('backhaul__bh_switch__machine__name'),
+		#     device_name=F('backhaul__bh_switch__device_name'),
+		#     device_type=F('backhaul__bh_switch__device_type'),
+		#     device_id=F('backhaul__bh_switch_id'),
+		#     page_type=RawSQL('SELECT "other"', ()),
+		#     circle=F('backhaul__bh_switch__organization__alias'),
+		# ).filter(
+		#     backhaul__bh_configured_on__isnull=False,
+		#     backhaul__bh_switch__ip_address__in=ip_address_list
+		# ).values(
+		#     'base_station__alias',
+		#     'base_station__city__city_name',
+		#     'city__city_name',
+		#     'base_station__state__state_name',
+		#     'state__state_name',
+		#     'machine_name',
+		#     'device_name',
+		#     'base_station__backhaul__bh_type',
+		#     'base_station__backhaul__bh_connectivity',
+		#     'backhaul__bh_switch__ip_address',
+		#     'base_station__backhaul__bh_circuit_id',
+		#     'base_station__backhaul__ttsl_circuit_id',
+		#     'base_station__backhaul__bh_switch__ip_address',
+		#     'base_station__backhaul__pop__ip_address',
+		#     'base_station__backhaul__aggregator__ip_address',
+		#     'base_station__backhaul__pe_ip__ip_address',
+		#     'device_type',
+		#     'device_id',
+		#     'page_type',
+		#     'circle'
+		# ).distinct()
 
-    mapped_dr_result = inventory_utils.list_to_indexed_dict(
-        list(dr_data_qs),
-        'dr_configured_on__ip_address'
-    )
+		# device_list += bh_switch_data_qs.values('machine_name', 'device_name')
 
-    tickets_dict = inventory_utils.list_to_indexed_dict(
-        list(tickets_dataset),
-        'ip_address'
-    )
+		# pop_data_qs =  BaseStation.objects.extra(
+		#     select={
+		#         'base_station__alias' : 'inventory_basestation.alias',
+		#         'base_station__city__city_name' : 'device_city.city_name',
+		#         'base_station__state__state_name' : 'device_state.state_name',
+		#         # 'device_type': 'device_device.device_type'
+		#     }
+		# ).annotate(
+		#     base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
+		#     base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
+		#     base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
+		#     base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
+		#     base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
+		#     base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+		#     base_station__backhaul__bh_type=F('backhaul__bh_type'),
+		#     base_station__backhaul__bh_connectivity=F('backhaul__bh_connectivity') ,
+		#     machine_name=F('backhaul__pop__machine__name'),
+		#     device_name=F('backhaul__pop__device_name'),
+		#     device_type=F('backhaul__pop__device_type'),
+		#     device_id=F('backhaul__pop_id'),
+		#     page_type=RawSQL('SELECT "other"', ()),
+		#     circle=F('backhaul__pop__organization__alias'),
+		# ).filter(
+		#     backhaul__bh_configured_on__isnull=False,
+		#     backhaul__pop__ip_address__in=ip_address_list
+		# ).values(
+		#     'base_station__alias',
+		#     'base_station__city__city_name',
+		#     'city__city_name',
+		#     'base_station__state__state_name',
+		#     'state__state_name',
+		#     'machine_name',
+		#     'device_name',
+		#     'backhaul__pop__ip_address',
+		#     'base_station__backhaul__bh_type',
+		#     'base_station__backhaul__bh_connectivity',
+		#     'base_station__backhaul__bh_circuit_id',
+		#     'base_station__backhaul__ttsl_circuit_id',
+		#     'base_station__backhaul__bh_switch__ip_address',
+		#     'base_station__backhaul__pop__ip_address',
+		#     'base_station__backhaul__aggregator__ip_address',
+		#     'base_station__backhaul__pe_ip__ip_address',
+		#     'device_type',
+		#     'device_id',
+		#     'page_type',
+		#     'circle'
+		# ).distinct()
 
-    mapped_result = mapped_sector_result.copy()
-    mapped_result.update(mapped_dr_result)
-    mapped_result.update(converter_mapped_data)
+		# device_list += pop_data_qs.values('machine_name', 'device_name')
+
+		# aggr_data_qs =  BaseStation.objects.extra(
+		#     select={
+		#         'base_station__alias' : 'inventory_basestation.alias',
+		#         'base_station__city__city_name' : 'device_city.city_name',
+		#         'base_station__state__state_name' : 'device_state.state_name',
+		#         # 'device_type': 'T4.device_type'
+		#     }
+		# ).annotate(
+		#     base_station__backhaul__bh_circuit_id=F('backhaul__bh_circuit_id'),
+		#     base_station__backhaul__ttsl_circuit_id=F('backhaul__ttsl_circuit_id'),
+		#     base_station__backhaul__bh_switch__ip_address=F('backhaul__bh_switch__ip_address'),
+		#     base_station__backhaul__pop__ip_address=F('backhaul__pop__ip_address'),
+		#     base_station__backhaul__aggregator__ip_address=F('backhaul__aggregator__ip_address'),
+		#     base_station__backhaul__pe_ip__ip_address=F('backhaul__pe_ip__ip_address'),
+		#     base_station__backhaul__bh_type=F('backhaul__bh_type'),
+		#     base_station__backhaul__bh_connectivity=F('backhaul__bh_connectivity') ,
+		#     machine_name=F('backhaul__aggregator__machine__name'),
+		#     device_name=F('backhaul__aggregator__device_name'),
+		#     device_type=F('backhaul__aggregator__device_type'),
+		#     device_id=F('backhaul__aggregator_id'),
+		#     page_type=RawSQL('SELECT "other"', ()),
+		#     circle=F('backhaul__aggregator__organization__alias'),
+		# ).filter(
+		#     backhaul__bh_configured_on__isnull=False,
+		#     backhaul__aggregator__ip_address__in=ip_address_list
+		# ).values(
+		#     'base_station__alias',
+		#     'base_station__city__city_name',
+		#     'city__city_name',
+		#     'base_station__state__state_name',
+		#     'state__state_name',
+		#     'backhaul__aggregator__ip_address',
+		#     'base_station__backhaul__bh_circuit_id',
+		#     'base_station__backhaul__bh_type',
+		#     'base_station__backhaul__bh_connectivity',
+		#     'machine_name',
+		#     'device_name',
+		#     'base_station__backhaul__ttsl_circuit_id',
+		#     'base_station__backhaul__bh_switch__ip_address',
+		#     'base_station__backhaul__pop__ip_address',
+		#     'base_station__backhaul__aggregator__ip_address',
+		#     'base_station__backhaul__pe_ip__ip_address',
+		#     'device_type',
+		#     'device_id',
+		#     'page_type',
+		#     'circle'
+		# ).distinct()
+
+		# device_list += aggr_data_qs.values('machine_name', 'device_name')
+	
+		mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
+			list(bh_conf_data_qs),
+			'backhaul__bh_configured_on__ip_address'
+		)
+
+		# mapped_bh_switch_result = inventory_utils.list_to_indexed_dict(
+		#     list(bh_switch_data_qs),
+		#     'backhaul__bh_switch__ip_address'
+		# )
+
+		# mapped_pop_result = inventory_utils.list_to_indexed_dict(
+		#     list(pop_data_qs),
+		#     'backhaul__pop__ip_address'
+		# )
+
+		# mapped_aggr_result = inventory_utils.list_to_indexed_dict(
+		#     list(aggr_data_qs),
+		#     'backhaul__aggregator__ip_address'
+		# )
+	
+		converter_mapped_data = mapped_bh_conf_result.copy()
+		#converter_mapped_data.update(mapped_bh_switch_result)
+		#converter_mapped_data.update(mapped_pop_result)
+		#converter_mapped_data.update(mapped_aggr_result)
+
+	mapped_sector_result = inventory_utils.list_to_indexed_dict(
+		list(sectors_data_qs),
+		'sector_configured_on__ip_address'
+	)
+
+	
+	mapped_dr_result = inventory_utils.list_to_indexed_dict(
+		list(dr_data_qs),
+		'dr_configured_on__ip_address'
+	)
+
+	mapped_ss_result = inventory_utils.list_to_indexed_dict(
+		list(ss_data_qs),
+		'sub_station__device__ip_address',
+	)
+
+	tickets_dict = inventory_utils.list_to_indexed_dict(
+		list(tickets_dataset),
+		'ip_address'
+	)
+
+	machine_device_dict = inventory_utils.prepare_machines(bh_device_list, 'bh_machine_name', 'bh_device_name')
+
+	perf_result = {}
+	for machine_name in machine_device_dict:
+		if machine_name and machine_device_dict[machine_name]:
+			result = perf_utils.get_performance_data(machine_device_dict[machine_name], machine_name, None)
+			perf_result.update(result)
+
+	mapped_result = mapped_sector_result.copy()
+	mapped_result.update(mapped_dr_result)
+	mapped_result.update(mapped_ss_result)
+	mapped_result.update(converter_mapped_data)
    
-    for data in qs_list:
-        ip_address = data.get('ip_address')
-        data.update(
-            bs_alias='NA',
-            bs_city='NA',
-            bs_state='NA',
-            sector_id='NA',
-            device_type='NA',
-            bh_connectivity='NA',
-            bh_type='NA',
-            bh_ckt_id='NA',
-            bh_ttsl_ckt_id='NA',
-            bs_conv_ip='NA',
-            pop_conv_ip='NA',
-            aggr_sw_ip='NA',
-            pe_ip='NA',
-            ticket_number='NA'
-        )
+	for data in qs_list:
+		ip_address = data.get('ip_address', '').strip()
 
-        if not ip_address:
-            continue
+		data.update(
+			bs_alias='NA',
+			bs_city='NA',
+			bs_state='NA',
+			sector_id='NA',
+			device_type='NA',
+			bh_connectivity='NA',
+			bh_type='NA',
+			bh_status='NA',
+			bh_ckt_id='NA',
+			bh_ttsl_ckt_id='NA',
+			bs_conv_ip='NA',
+			pop_conv_ip='NA',
+			aggr_sw_ip='NA',
+			pe_ip='NA',
+			ticket_number='NA',
+			page_type='network',
+			circle='NA'
+		)
 
-        try:
-            sector_dct = mapped_result[ip_address]
-        except Exception, e:
-            sector_dct = None
-            pass
+		if not ip_address:
+			continue
 
-        try:
-            ticket_number = tickets_dict.get(ip_address).get('ticket_number', 'NA')
-        except Exception, e:
-            ticket_number = 'NA'
+		try:
+			sector_dct = mapped_result[ip_address]
+		except Exception, e:
+			sector_dct = None
+			pass
 
-        data.update(
-            ticket_number=ticket_number
-        )
+		try:
+			ticket_number = tickets_dict.get(ip_address).get('ticket_number', 'NA')
+		except Exception, e:
+			ticket_number = 'NA'
 
-        if sector_dct:
-            pe_ip = sector_dct.get('base_station__backhaul__pe_ip__ip_address') if sector_dct.get('base_station__backhaul__pe_ip__ip_address') else 'NA'
-            bh_ckt_id= sector_dct.get('base_station__backhaul__bh_circuit_id') if sector_dct.get('base_station__backhaul__bh_circuit_id') else 'NA'
-            bh_ttsl_ckt_id= sector_dct.get('base_station__backhaul__ttsl_circuit_id') if sector_dct.get('base_station__backhaul__ttsl_circuit_id') else 'NA'
-            bs_conv_ip= sector_dct.get('base_station__backhaul__bh_switch__ip_address') if sector_dct.get('base_station__backhaul__bh_switch__ip_address') else 'NA'
-            pop_conv_ip= sector_dct.get('base_station__backhaul__pop__ip_address') if sector_dct.get('base_station__backhaul__pop__ip_address') else 'NA'
-            aggr_sw_ip= sector_dct.get('base_station__backhaul__aggregator__ip_address') if sector_dct.get('base_station__backhaul__aggregator__ip_address') else 'NA'
+		data.update(
+			ticket_number=ticket_number
+		)
 
-            data.update(
-                sector_id=sector_dct.get('sector_id', 'NA'),
-                bs_alias=sector_dct.get('base_station__alias', 'NA'),
-                bs_city=sector_dct.get('base_station__city__city_name', 'NA'),
-                bs_state=sector_dct.get('base_station__state__state_name', 'NA'),
-                bh_connectivity=sector_dct.get('base_station__backhaul__bh_connectivity', 'NA'),
-                bh_type=sector_dct.get('base_station__backhaul__bh_type', 'NA'),
-                device_type=device_type_dict.get(sector_dct.get('device_type')),
-                bh_ckt_id= bh_ckt_id,
-                bh_ttsl_ckt_id= bh_ttsl_ckt_id,
-                bs_conv_ip= bs_conv_ip,
-                pop_conv_ip= pop_conv_ip,
-                aggr_sw_ip= aggr_sw_ip,
-                pe_ip=pe_ip,
-            )
+		if sector_dct:
+			pe_ip = sector_dct.get('base_station__backhaul__pe_ip__ip_address') if sector_dct.get('base_station__backhaul__pe_ip__ip_address') else 'NA'
+			bh_ckt_id= sector_dct.get('base_station__backhaul__bh_circuit_id') if sector_dct.get('base_station__backhaul__bh_circuit_id') else 'NA'
+			bh_ttsl_ckt_id= sector_dct.get('base_station__backhaul__ttsl_circuit_id') if sector_dct.get('base_station__backhaul__ttsl_circuit_id') else 'NA'
+			bs_conv_ip= sector_dct.get('base_station__backhaul__bh_switch__ip_address') if sector_dct.get('base_station__backhaul__bh_switch__ip_address') else 'NA'
+			pop_conv_ip= sector_dct.get('base_station__backhaul__pop__ip_address') if sector_dct.get('base_station__backhaul__pop__ip_address') else 'NA'
+			aggr_sw_ip= sector_dct.get('base_station__backhaul__aggregator__ip_address') if sector_dct.get('base_station__backhaul__aggregator__ip_address') else 'NA'
+			device_name = sector_dct.get('device_name', 'NA')
+			bh_device_name = sector_dct.get('bh_device_name', 'NA')
 
-    return qs_list
+			packet_loss = perf_result.get(bh_device_name, {}).get('packet_loss', None)
+			bh_status = ('DOWN' if packet_loss == 100 else 'UP') if packet_loss not in [None, ''] else "NA"
+
+			data.update(
+				sector_id=sector_dct.get('sector_id', 'NA'),
+				bs_alias=sector_dct.get('base_station__alias', 'NA'),
+				bs_city=sector_dct.get('base_station__city__city_name', 'NA'),
+				bs_state=sector_dct.get('base_station__state__state_name', 'NA'),
+				bh_connectivity=sector_dct.get('base_station__backhaul__bh_connectivity', 'NA'),
+				bh_status=bh_status,
+				bh_type=sector_dct.get('base_station__backhaul__bh_type', 'NA'),
+				device_type=device_type_dict.get(sector_dct.get('device_type')),
+				bh_ckt_id= bh_ckt_id,
+				bh_ttsl_ckt_id= bh_ttsl_ckt_id,
+				bs_conv_ip= bs_conv_ip,
+				pop_conv_ip= pop_conv_ip,
+				aggr_sw_ip= aggr_sw_ip,
+				pe_ip=pe_ip,
+				page_type=sector_dct.get('page_type', 'network'),
+				circle=sector_dct.get('circle', 'NA'),
+				device_id=sector_dct.get('device_id', 0),
+			)
+
+	return qs_list
+
+
+class PlannedEventsInit(ListView):
+	"""
+	View to render planned events page.
+	"""
+
+	# need to associate ListView class with a model here
+	model = CurrentAlarms
+	template_name = 'alert_center/pe_events.html'
+
+	def get_context_data(self, **kwargs):
+		"""
+
+		:param kwargs:
+		:return:
+		"""
+		context = super(PlannedEventsInit, self).get_context_data(**kwargs)
+		page_type = self.kwargs.get('page_type', None)
+
+		page_type_info_dict = {
+			"next": "Next 24 Hours",
+			"week": "Week",
+			"history": "History",
+			"upcoming": "All Future PE's"
+		}
+
+		try:
+			page_type_title = page_type_info_dict.get(page_type, page_type)
+			if not page_type_title:
+				page_type_title = page_type
+		except Exception, e:
+			page_type_title = page_type
+
+		datatable_headers = [
+			{'mData': 'resource_name', 'sTitle': 'Resource Name', 'bSortable': True}, 
+			{'mData': 'startdate', 'sTitle': 'Start Datetime', 'bSortable': True}, 
+			{'mData': 'enddate', 'sTitle': 'End  Datetime', 'bSortable': True}, 
+			{'mData': 'event_type', 'sTitle': 'SA/NSA', 'bSortable': True}, 
+			{'mData': 'technology__alias', 'sTitle': 'Technnology', 'bSortable': True}, 
+			# {'mData': 'device_type__alias', 'sTitle': 'Device Type', 'bSortable': True}, 
+			{'mData': 'owner_details', 'sTitle': 'PE Owner Details', 'bSortable': True}, 
+			{'mData': 'change_coordinator', 'sTitle': 'Executor', 'bSortable': True}, 
+			{'mData': 'pettno', 'sTitle': 'PE TT No.', 'bSortable': True}, 
+			{'mData': 'sr_number', 'sTitle': 'Sr No', 'bSortable': True}, 
+			{'mData': 'impacted_customer', 'sTitle': 'Impacted Customers', 'bSortable': True}, 
+			{'mData': 'timing', 'sTitle': 'Emergency/Normal', 'bSortable': True}, 
+			{'mData': 'summary', 'sTitle': 'Summary', 'bSortable': True}, 
+			{'mData': 'status', 'sTitle': 'Status', 'bSortable': True}, 
+			{'mData': 'impacted_domain', 'sTitle': 'Impacted Domain', 'bSortable': True}, 
+			{'mData': 'component', 'sTitle': 'Component', 'bSortable': True}, 
+			{'mData': 'sectorid', 'sTitle': 'Sector ID', 'bSortable': True}, 
+			{'mData': 'service_ids', 'sTitle': 'SIA', 'bSortable': True}, 
+			{'mData': 'nia', 'sTitle': 'NIA', 'bSortable': True}
+		]
+
+		context['datatable_headers'] = json.dumps(datatable_headers)
+		context['page_type'] = page_type
+		context['page_type_title'] = page_type_title
+
+		return context
+
+
+class PlannedEventsListing(BaseDatatableView, AdvanceFilteringMixin):
+	"""
+	Generic Class Based View for the Alert Center Network Listing Tables.
+
+	"""
+	model = PlannedEvent
+	columns = [
+		'resource_name',
+		'startdate',
+		'enddate',
+		'event_type',
+		'technology__alias',
+		# 'device_type__alias',
+		'owner_details',
+		'change_coordinator',
+		'pettno',
+		'sr_number',
+		'impacted_customer',
+		'timing',
+		'summary',
+		'status',
+		'impacted_domain',
+		'component',
+		'sectorid',
+		'service_ids',
+		'nia',
+	]
+	order_columns = columns
+
+	def filter_queryset(self, qs):
+		"""
+		Filter datatable as per requested value
+		"""
+		sSearch = self.request.GET.get('search[value]', None)
+
+		if sSearch:
+			query = []
+			exec_query = "qs = qs.filter("
+			for column in self.columns[:-1]:
+				# avoid search on 'added_on'
+				if column == 'added_on':
+					continue
+				query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+			exec_query += " | ".join(query)
+			exec_query += ").values(*" + str(self.columns) + ")"
+			exec exec_query
+		return self.advance_filter_queryset(qs)
+
+	def get_initial_queryset(self):
+		"""
+		Preparing  Initial Queryset for the for rendering the data table.
+		"""
+		if not self.model:
+			raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+		page_type = self.kwargs.get('page_type', 'next')
+		
+		now_datetime = datetime.datetime.now()
+		end_date = float(format(now_datetime, 'U'))
+		where_condition = Q()
+
+		# Prepare where condition on the basis of page type
+		if page_type == 'next':
+			start_date = float(format(now_datetime + datetime.timedelta(hours=24), 'U'))
+			where_condition &= Q(startdate__lte=start_date)
+			where_condition &= Q(enddate__gte=end_date)
+		elif page_type == 'week':
+			start_date = float(format(now_datetime + datetime.timedelta(days=7), 'U'))
+			where_condition &= Q(startdate__lte=start_date)
+			where_condition &= Q(enddate__gte=end_date)
+		elif page_type == 'history':
+			where_condition &= Q(enddate__lte=end_date)
+		elif page_type == 'upcoming':
+			where_condition &= Q(enddate__gte=end_date)
+
+		qs = self.model.objects.filter(
+			where_condition
+		).values(*self.columns)
+
+		return qs
+
+	def prepare_results(self, qs):
+		"""
+		Preparing  Initial Queryset for the for rendering the data table.
+		"""
+
+		json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+		resultset = list()
+		for dct in json_data:
+			start_date = dct.get('startdate', '')
+			end_date = dct.get('enddate', '')
+
+			try:
+				start_datetime_obj = datetime.datetime.fromtimestamp(start_date)
+				formatted_startdate = start_datetime_obj.strftime(DATE_TIME_FORMAT)
+			except Exception as e:
+				formatted_startdate = ''
+
+			try:
+				end_datetime_obj = datetime.datetime.fromtimestamp(end_date)
+				formatted_enddate = end_datetime_obj.strftime(DATE_TIME_FORMAT)
+			except Exception as e:
+				formatted_enddate = ''
+
+			dct.update(
+				startdate=formatted_startdate,
+				enddate=formatted_enddate
+			)
+
+			# resultset.append(dct)
+
+		return json_data
+
+	def ordering(self, qs):
+		""" Get parameters from the request and prepare order by clause
+		"""
+		return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
+
+	def get_context_data(self, *args, **kwargs):
+		"""
+		The main method call to fetch, search, ordering , prepare and display the data on the data table.
+		"""
+
+		request = self.request
+		self.initialize(*args, **kwargs)
+
+		qs = self.get_initial_queryset()
+
+		# number of records before filtering
+		total_records = qs.count()
+
+		qs = self.filter_queryset(qs)
+
+		# number of records after filtering
+		total_display_records = qs.count()
+
+		qs = self.ordering(qs)
+		qs = self.paging(qs)
+		#if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+		if not qs and isinstance(qs, ValuesQuerySet):
+			qs = list(qs)
+
+		aaData = self.prepare_results(qs)
+		
+		ret = {
+			'sEcho': int(request.REQUEST.get('sEcho', 0)),
+			'iTotalRecords': total_records,
+			'iTotalDisplayRecords': total_display_records,
+			'aaData': aaData
+		}
+
+		return ret

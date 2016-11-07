@@ -61,16 +61,24 @@
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                    <li>
-                        <a href="#snmp_pmp_block" id="snmp_pmp_tab" data-toggle="tab">
-                            Cambium
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#snmp_rad5k_block" id="snmp_rad5k_tab" data-toggle="tab">
-                            Radwin5K
-                        </a>
-                    </li>
+                    {% if settings.SHOW_SPRINT3 %}
+                        <li>
+                            <a href="#snmp_pmp_block" id="snmp_pmp_tab" data-toggle="tab">
+                                Cambium
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#snmp_rad5k_block" id="snmp_rad5k_tab" data-toggle="tab">
+                                Radwin5K
+                            </a>
+                        </li>
+                    {% else %}
+                        <li>
+                            <a href="#snmp_pmp_block" id="snmp_pmp_tab" data-toggle="tab">
+                                PMP
+                            </a>
+                        </li>
+                    {% endif %}
                     <li>
                         <a href="#snmp_wimax_block" id="snmp_wimax_tab" data-toggle="tab">
                             WiMAX
@@ -161,7 +169,7 @@
             var alarm_type = $('input[name="alarm_type"]:checked').val(),
                 ajax_url_all = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=all',
                 ajax_url_pmp = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=pmp',
-                ajax_url_rad5k = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=radwin5k&is_rad5k=1',
+                ajax_url_rad5k = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=rad5k&is_rad5k=1',
                 ajax_url_wimax = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=wimax';
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
@@ -188,7 +196,7 @@
                     "header_class_name" : "SIAListing",
                     "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+rad5k_title+"', 'alarm_type': '{0}', 'tech_name': 'radwin5k', 'is_rad5k': 1, "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+rad5k_title+"', 'alarm_type': '{0}', 'tech_name': 'rad5k', 'is_rad5k': 1, "+common_extra_param+"}"
                 },
                 "snmp_wimax_tab" : {
                     "app_name" : "alert_center",
