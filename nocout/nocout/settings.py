@@ -520,7 +520,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'inventory.tasks.check_alarms_for_no_pps',
         'schedule': crontab(hour='*/1'),
         'kwargs': {'alarm_type': 'clear'},
-        # 'args' : ['clear'],
+    },
+    'get_set_planned_events': {
+        'task': 'alert_center.tasks.get_planned_events',
+        'schedule': crontab(hour='*/1')
     }
 }
 
@@ -887,7 +890,8 @@ SETTINGS_EXPORT = [
     'SHOW_RFO_TRENDS_DASHBOARD',
     'ENABLE_PING_TEST',
     'ENABLE_PE_PERF',
-    'SHOW_ALL_IN_NETWORK_ALERT_CENTER'
+    'SHOW_ALL_IN_NETWORK_ALERT_CENTER',
+    'PLANNED_EVENTS_ENABLED'
 ]
 
 # Dashbaord Settings
@@ -1361,6 +1365,7 @@ ENABLE_PE_PERF = False
 # Enable/Disable All tab in alert center
 SHOW_ALL_IN_NETWORK_ALERT_CENTER = False
 ENABLE_MANUAL_TICKETING = False
+PLANNED_EVENTS_ENABLED = False
 
 # Import the local_settings.py file to override global settings
 try:

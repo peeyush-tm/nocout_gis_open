@@ -7,12 +7,14 @@
 var green_color = "#468847",
     orange_color = "#f0ad4e",
     red_color = "#b94a48",
+    blue_color = "#0066FF",
     ok_severity_color = "#30B91A",
     unknown_severity_color = "#555555",
     green_status_array = ['ok', 'success', 'up'],
     red_status_array = ['critical'],
     down_status_array = ['down'],
     orange_status_array = ['warning'],
+    blue_status_array = ['indowntime'],
     left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;background:#FFF;",
     right_block_style = "border:1px solid #CCC;padding: 3px 5px;background:#FFF;",
     val_icon = '<i class="fa fa-arrow-circle-o-right"></i>',
@@ -47,7 +49,8 @@ var green_color = "#468847",
  * @param info {Object}, It contains the latest status info object
  */
 function populateDeviceStatus_nocout(domElement,info) {
-
+    console.log('info')
+    console.log(info)
     if (isLatestStatusUpdated) {
         return true;
     }
@@ -65,7 +68,8 @@ function populateDeviceStatus_nocout(domElement,info) {
         severity_unknown = info.severity && info.severity.unknown ? info.severity.unknown : 0;
 
     var severity_style_obj = nocout_getSeverityColorIcon(status);
-
+    console.log(status);
+    console.log(severity_style_obj);
     txt_color = severity_style_obj.color ? severity_style_obj.color : "";
     fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle";
 
@@ -124,6 +128,9 @@ function nocout_getSeverityColorIcon(status) {
         info_obj.icon = "fa-warning";
     } else if (down_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
         info_obj.color = red_color;
+        info_obj.icon = "fa-warning";
+    } else if (blue_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj.color = blue_color;
         info_obj.icon = "fa-warning";
     } else {
         // pass

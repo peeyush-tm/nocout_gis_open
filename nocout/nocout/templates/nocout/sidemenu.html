@@ -292,14 +292,36 @@
                     </li>
                     {% endif %}
 
-                    <!-- {% if settings.SIA_ENABLED %}
-                    <li>
-                        <a href="/alarms/sia/">
-                            <span class="sub-menu-text">Device Alarms</span>
+                    {% if settings.PLANNED_EVENTS_ENABLED %}
+                    <li class="has-sub-sub">
+                        <a href="javascript:;">
+                            <span class="sub-menu-text">PE Events</span>
+                            <span class="arrow"></span>
                         </a>
+                        <ul class="sub-sub">
+                            <li>
+                                <a href="{% url 'planned_events_init' 'next' %}">
+                                    <span class="sub-menu-text">Next 24 Hours</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'planned_events_init' 'week' %}">
+                                    <span class="sub-menu-text">Week</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'planned_events_init' 'history' %}">
+                                    <span class="sub-menu-text">History</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'planned_events_init' 'upcoming' %}">
+                                    <span class="sub-menu-text">All Future PE's</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
-                    {% endif %} -->
-
+                    {% endif %}
                 </ul>
             </li>
             

@@ -193,6 +193,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
 				local_timestamp = present_time
 				check_time = local_timestamp - timedelta(minutes=2)
+			if (local_timestamp - present_time  >= timedelta(minutes=2)):
+				local_timestamp= present_time
 			check_time =int(time.mktime(check_time.timetuple()))
 			# Pivot the time stamp to next 5 mins time frame
 			local_timestamp =int(time.mktime(local_timestamp.timetuple()))
@@ -240,8 +242,9 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 				    pre_host_severity=state_change_dict.get(str(entry[1]))[0]
 				    if pre_host_severity and pre_host_severity!= host_severity:
 					age = int(time.time())
-					# Adding changes for generating events based on the changed state of rta/pl
-					# Also Generating clear events for previous state	
+					
+				    	
+					
 					if host_severity == "up":
 					    if pl_event_name_mapping.get(pre_host_severity):	
 					        event_name = pl_event_name_mapping.get(pre_host_severity)
@@ -554,7 +557,12 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			if dr_flag:
 				dr_flag= 0
 				host_matched_row=filter(lambda x: re.match(str(entry[0]),x) ,dr_host_entry)
-				dr_host = host_matched_row[0].split('|')[3].split(':')[1].strip(' ')
+				try:
+				    dr_host = host_matched_row[0].split('|')[3].split(':')[1].strip(' ')
+				except Exception,e:
+				    print e
+				    print "Error",host_matched_row,str(entry[0])
+				    continue
 				if dr_host in s_device_down_list and str(entry[0]) in s_device_down_list:
 					data_dict = {}
 					matching_criteria = {}
@@ -615,7 +623,6 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	print 'service_data_values'
 	#print events_pl_rta_list
 	print len(service_data_values)
-	# publishing data to server prd4 for processing the events
 	try:
 		rds_obj=db_ops_module.RedisInterface()
 		machine_name = nocout_site_name.split('_')[0]
