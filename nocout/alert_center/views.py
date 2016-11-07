@@ -1147,7 +1147,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'aaData': aaData
         }
 
-		return ret
+        return ret
 
 
 class NetworkAlertDetailHeaders(ListView):
@@ -3848,7 +3848,7 @@ def prepare_snmp_gis_data(qs, tech_name):
     mapped_result.update(mapped_dr_result)
     mapped_result.update(converter_mapped_data)
    
-	for data in qs_list:
+    for data in qs_list:
 		ip_address = data.get('ip_address')
 		data.update(
 			bs_alias='NA',
@@ -3878,7 +3878,7 @@ def prepare_snmp_gis_data(qs, tech_name):
 				device_type=device_type_dict.get(sector_dct.get('device_type'))
 			)
 
-	return qs_list
+    return qs_list
 
 def prepare_snmp_gis_data_all_tab(qs, tech_name):
 	"""
