@@ -1277,22 +1277,41 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
 
-        sector_util_common_headers = [
+        sector_util_headers_1 = [
             {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+        ]
+
+        sector_util_headers_2 = [
             {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'BS IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'current_in_per', 'sTitle': '% DL Utilization', 'sWidth': 'auto', 'bSortable': True},
+        ]
+
+        sector_util_headers_3 = [
             {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Aging (seconds)', 'sWidth': 'auto', 'bSortable': True},
         ]
 
+        sector_util_common_headers = sector_util_headers_1 + sector_util_headers_2 + sector_util_headers_3
+
         sector_utils_headers = []
         sector_utils_headers += sector_util_hidden_headers
         sector_utils_headers += sector_util_common_headers
+
+        rad5_sector_util_headers = []
+        rad5_sector_util_headers += sector_util_headers_1
+        rad5_sector_util_headers += [{'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},]
+        rad5_sector_util_headers += sector_util_headers_2
+        rad5_sector_util_headers += [
+            # {'mData': 'dl_timeslot', 'sTitle': 'DL Time-slot', 'width': 'auto', 'bSortable': True },
+            # {'mData': 'ul_timeslot', 'sTitle': 'UL Time-slot', 'width': 'auto', 'bSortable': True },
+        ]
+        rad5_sector_util_headers += sector_util_headers_3
+        rad5_sector_util_headers += [{'mData': 'sector__base_station__bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', 'bSortable': True},]
 
         bh_util_hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
@@ -1322,7 +1341,8 @@ class NetworkAlertDetailHeaders(ListView):
             'ul_issue_headers': json.dumps(ul_issue_datatable_headers),
             'bh_headers': json.dumps(bh_dt_headers),
             'sector_utils_headers': json.dumps(sector_utils_headers),
-            'rad5_ul_issue_headers': json.dumps(rad5_ul_issue_headers)
+            'rad5_ul_issue_headers': json.dumps(rad5_ul_issue_headers),
+            'rad5_sector_util_headers': json.dumps(rad5_sector_util_headers)
         }
 
         return context

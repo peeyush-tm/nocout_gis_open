@@ -145,6 +145,11 @@
                       </a>
                     </li>
                     <li>
+                      <a href="#network_rad5_sectorUtil_block" id="network_rad5_sectorUtil_tab" data-toggle="tab">
+                        <span class="hidden-inline-mobile">Radwin5K Sector Util.</span>
+                      </a>
+                    </li>
+                    <li>
                       <a href="#network_bhUtil_block" id="network_bhUtil_tab" data-toggle="tab">
                         <span class="hidden-inline-mobile">BH Util.</span>
                       </a>
@@ -176,6 +181,16 @@
 
                 </div>
                 <!-- network_sectorUtil_block End -->
+
+                <!-- network_rad5_sectorUtil_block Start -->
+                <div class="tab-pane fade" id="network_rad5_sectorUtil_block">
+                    <table class="datatable table table-striped table-bordered table-hover" id="network_rad5_sectorUtil_block_table">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+
+                </div>
+                <!-- network_rad5_sectorUtil_block End -->
 
                 <!-- pmp_ulIssue_block Start -->
                 <div class="tab-pane fade" id="pmp_ulIssue_block">
@@ -325,6 +340,7 @@
                 ajax_url_rad5_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=RAD5ULIssue',
                 ajax_url_wimax_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=WiMAXULIssue',
                 ajax_url_sectorutil = '{% url "SectorAugmentationAlertsListing" %}',
+                ajax_url_rad5_sectorutil = '{% url "SectorAugmentationAlertsListing" %}' + '?is_rad5=1&technology=pmp',
                 ajax_url_bhutil = '{% url "BackhaulAugmentationAlertsListing" %}';
 
             if (ajax_url_bhutil.indexOf('?') > -1) {
@@ -340,6 +356,7 @@
             var common_extra_param = "'download_excel': 'yes'",
                 network_bhUtil_title = "Network Alert Details: BH Utilization",
                 network_sectorUtil_title = "Network Alert Details: Sector Utilization",
+                network_rad5_sectorUtil_title = "Network Alert Details: Radwin5K Sector Utilization",
                 pmp_ulIssue_title = "Network Alert Details: PMP UL Issues",
                 rad5_ulIssue_title = "Network Alert Details: Radwin5K UL Issues",
                 wimax_ulIssue_title = "Network Alert Details: WiMAX UL Issues",
@@ -473,6 +490,9 @@
 
             $("#network_sectorUtil_tab").attr("data_url", ajax_url_sectorutil);
             $("#network_sectorUtil_tab").attr("data_header", '{{ sector_utils_headers|safe }}');
+
+            $("#network_rad5_sectorUtil_tab").attr("data_url", ajax_url_rad5_sectorutil);
+            $("#network_rad5_sectorUtil_tab").attr("data_header", '{{ rad5_sector_util_headers|safe }}');
 
             $("#pmp_ulIssue_tab").attr("data_url", ajax_url_pmp_ul);
             $("#pmp_ulIssue_tab").attr("data_header", '{{ ul_issue_headers|safe }}');
