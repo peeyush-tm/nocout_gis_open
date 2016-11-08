@@ -9481,6 +9481,11 @@ class PingStabilityTestListing(BaseDatatableView):
             else:
                 dct['status'] = 'Pending'
 
+            try:
+                dct['email_ids'] = ', '.join(str(dct['email_ids']).split(','))
+            except Exception as e:
+                pass
+
             created_at = dct.get('created_at')
             if created_at:
                 dct['created_at'] = created_at.strftime(DATE_TIME_FORMAT)
