@@ -9397,7 +9397,7 @@ class InitStabilityTest(ListView):
             {'mData': 'user_profile__username', 'sTitle': 'Username', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'time_duration', 'sTitle': 'Time Duration', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'time_duration', 'sTitle': 'Time Duration (In Hrs)', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'created_at', 'sTitle': 'Started At', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'email_ids', 'sTitle': 'Email Address', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False},
@@ -9480,6 +9480,11 @@ class PingStabilityTestListing(BaseDatatableView):
                     )
             else:
                 dct['status'] = 'Pending'
+
+            try:
+                dct['email_ids'] = ', '.join(str(dct['email_ids']).split(','))
+            except Exception as e:
+                pass
 
             created_at = dct.get('created_at')
             if created_at:
