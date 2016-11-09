@@ -65,6 +65,7 @@ from user_profile.models import PowerLogs
 from django.views.decorators.csrf import csrf_exempt
 import os
 from nocout.settings import BASE_DIR
+from alert_center.models import PlannedEvent
 
 service_utils = ServiceUtilsGateway()
 
@@ -1975,6 +1976,7 @@ class GetServiceStatus(View):
                 last_updated = datetime.datetime.fromtimestamp(
                     float(performance_data[0].sys_timestamp)
                 ).strftime(DATE_TIME_FORMAT)
+
                 severity_val = performance_data[0].severity.lower().strip() if performance_data[0].severity else None
 
                 self.result['data']['objects']['perf'] = current_value
@@ -1985,6 +1987,13 @@ class GetServiceStatus(View):
         else:
             pass
 
+        # Update severity if planned event is defined for current ip address
+        try:
+            planned_events = nocout_utils.get_current_planned_event_ips(ip_address=device.ip_address)
+            if planned_events:
+                self.result['data']['objects']['pl_status'] = 'inDownTime'
+        except Exception as e:
+            pass
 
         return HttpResponse(json.dumps(self.result), content_type="application/json")
 
@@ -4018,6 +4027,7 @@ class GetServiceTypePerformanceData(View):
         chart_data= list()
 
         if performance_data:
+            SERVICE_DATA_SOURCE = service_utils.service_data_sources()
             ds_list = list(set(performance_data.values_list('data_source', flat=True)))
             service_view_type = self.request.GET.get('service_view_type')
             is_unified_view = service_view_type and service_view_type == 'unified'
@@ -9387,7 +9397,7 @@ class InitStabilityTest(ListView):
             {'mData': 'user_profile__username', 'sTitle': 'Username', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'time_duration', 'sTitle': 'Time Duration', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'time_duration', 'sTitle': 'Time Duration (In Hrs)', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'created_at', 'sTitle': 'Started At', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'email_ids', 'sTitle': 'Email Address', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False},
@@ -9470,6 +9480,11 @@ class PingStabilityTestListing(BaseDatatableView):
                     )
             else:
                 dct['status'] = 'Pending'
+
+            try:
+                dct['email_ids'] = ', '.join(str(dct['email_ids']).split(','))
+            except Exception as e:
+                pass
 
             created_at = dct.get('created_at')
             if created_at:

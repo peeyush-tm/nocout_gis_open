@@ -158,10 +158,10 @@ class Config:
 	        'schedule': crontab(minute='*/5'),
 	        'kwargs':{'site_name':'ospf2_slave_8'}
 	      },
-            'insert-network-event-ospf1': {
+            'insert-network-event': {
                 'task': 'insert_network_event',
                 'schedule': crontab(minute='*/2'),
-                'kwargs': {'machine_name' : 'ospf1'}
+                'kwargs': {'machine_name' : ['ospf1','ospf2','ospf3','ospf4','ospf5','vrfprv','pub']}
                 },
 	    'insert-bs-ul-issue-event-ospf1': {
 	    	'task': 'insert_bs_ul_issue_event',

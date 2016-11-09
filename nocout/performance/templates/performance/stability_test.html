@@ -18,12 +18,15 @@
         .ping_test_form_container .form-group {
             margin-right: 10px;
         }
+        .ping_test_form_container .form-group select {
+            min-width: 170px;
+        }
     </style>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>PING STABILITY TEST</h4>
         </div>
-        <div id="tableContainer" class="box-body">
+        <div id="tableContainer" class="box-body" style="overflow: auto;">
             <div class="form-inline ping_test_form_container" role="form" align="center">
                 <div class="form-group">
                     <label class="sr-only" for="ip_address">IP Address</label>
@@ -32,7 +35,7 @@
                 <div class="form-group">
                     <label class="sr-only" for="technology">Password</label>
                     <select class="form-control input-sm" id="technology">
-                        <option value="">Select Technology</option>
+                        <option value="">Technology</option>
                         {% for tech in tech_list %}
                             <option value="{{ tech.id }}" techname="{{ tech.name }}">{{ tech.alias }}</option>
                         {% endfor %}
@@ -41,7 +44,7 @@
                 <div class="form-group">
                     <label class="sr-only" for="time_duration">Time Duration</label>
                     <select class="form-control input-sm" id="time_duration">
-                        <option value="">Select Time Duration</option>
+                        <option value="">Time Duration (In Hrs)</option>
                         {% for i in 'XXXXXXXXXXXXXXXXXXXXXXXX' %}
                             <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
                         {% endfor %}

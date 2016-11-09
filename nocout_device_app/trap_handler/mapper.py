@@ -33,19 +33,20 @@ sia_value = {
 technology = {
         'wimax' : 'wimax',
         'pmp' : 'pmp',
-        'radwin5k' : 'radwin5k',
+        'radwin5k' : 'pmp',
         'converter' : 'converter',
-	'tclpop' : 'converter',
 }
 
-exclude_in_redis_event = [ "PD_threshold_breach",\
+
+include_in_redis_event = [ "PD_threshold_breach_major",\
                            "Device_not_reachable",\
-                           "Latency_Threshold_Breach",\
-                           "Uplink_Issue_threshold_Breach",\
                          ]
 
-exclude_in_correlation = [ "PD_threshold_breach",\
-                           "Latency_Threshold_Breach"]
+exclude_in_correlation = [ "Latency_Threshold_Breach_major",\
+			   "Latency_Threshold_Breach_warning",\
+			   "PD_threshold_breach_warning",\
+                           "Uplink_Issue_threshold_Breach",\
+                        ]
 
 class Eventmapper(object):
    def __init__(self):
@@ -54,7 +55,6 @@ class Eventmapper(object):
 	self.inventory_info = self.read_cached_inventory()
 	# `id` of the most latest row read from MySQL
 	self.mat_entry_details = self.read_mat_entries()
-	self.static_entry_details = self.read_static_details_entries()
 	self.customer_count_details = self.read_customer_count_from_redis()
 	self.latest_id = None
 
@@ -82,20 +82,7 @@ class Eventmapper(object):
                 print 'Error in reading MAT: {0}'.format(exc)
         return mat_entry_details
 
-   def read_static_details_entries(self):
-        redis_cnx = self.conn_base.redis_cnx(db_name='redis_MAT')
-        static_entry_details = {}
-        try:
-                static_details = redis_cnx.keys('static_*')
-                #print "static_details", static_details
-                for static_detail in static_details:
-                        static_entry_details[static_detail] = eval(redis_cnx.get(static_detail))
-        except Exception as exc:
-                static_details = {}
-                print 'Error in reading Static Details: {0}'.format(exc)
-	return static_entry_details
-
-   def read_customer_count_from_redis(self):	
+   def read_customer_count_from_redis(self):
         customer_count_dict = defaultdict(list)
 	try :
 		redis_cnx = self.conn_base.redis_cnx(db_name='redis')
@@ -275,7 +262,9 @@ class Eventmapper(object):
         clear_events_update = []
         traps_events_update = []
         history_event = []
-        redis_entry = []
+        redis_event_entry = []
+        redis_trap_entry = []
+
         for count,trap in event_count_dict.values():
             new_trap =  {}
             if 'wimax' in trap[1].lower() :
@@ -332,15 +321,8 @@ class Eventmapper(object):
                             device_type = technology[str(self.mat_entry_details[(eventname.split('_')[1],severity)]['device_type']).lower()]
                         else :
                             sia = sia_value[str(self.mat_entry_details[(eventname,severity)]['sia'])]
-			    if eventname in exclude_in_redis_event :
-			        try :
-			            device_type = technology[str(self.static_entry_details['static_%s' % str(trap[3])]['technology']).lower()]
-				    print "--- Device_type %s"%device_type
-			        except Exception,e:
-				    print "--- Error",e
-				    device_type = ''
-			else :
                             device_type = technology[str(self.mat_entry_details[(eventname,severity)]['device_type']).lower()]
+
                 except Exception,e:
                         print e
                         sia = ''
@@ -379,7 +361,11 @@ class Eventmapper(object):
                 new_trap['traptime'].strftime("%Y-%m-%d %H:%M:%S") if type(new_trap['traptime']) is not str else new_trap['traptime'],
                 new_trap['description']
                 )
-                redis_entry.append(trap)
+                if new_trap['eventname'] in include_in_redis_event :
+                        redis_event_entry.append(trap)
+                else :
+                        redis_trap_entry.append(trap)
+
 
             if severity.lower() not in severity_for_clear_table:
                 current_events_update.append(new_trap)
@@ -394,8 +380,12 @@ class Eventmapper(object):
             key = 'traps:%s:%s:%s' % (new_trap['ip_address'],new_trap['eventname'],new_trap['severity'])
             redis_cnx.set(key,str(new_trap['traptime']))
             history_event.append(history_trap)
-        if redis_entry:
-            redis_cnx_mat.rpush('queue:traps', *redis_entry)
+
+        if redis_event_entry:
+            #logger.error('redis_event_entry {0}'.format(redis_event_entry))
+            redis_cnx_mat.rpush('queue:events',*redis_event_entry)
+        if redis_trap_entry:
+            redis_cnx_mat.rpush('queue:traps', *redis_trap_entry)
 
         self.update_db(current_traps=current_events_update, clear_traps=clear_events_update,\
                         require_masking=None, flag='update', history_traps=history_event)
@@ -427,14 +417,7 @@ class Eventmapper(object):
                                     device_type = technology[str(self.mat_entry_details[(eventname.split('_')[1],event[6].lower())]['device_type']).lower()]
                                 else :
                                     sia = sia_value[str(self.mat_entry_details[(eventname,event[6].lower())]['sia'])]
-				    if event_type is 'event':
-				        try :
-                                            device_type = technology[str(self.static_entry_details['static_%s' % str(event[3])]['technology']).lower()]
-                                        except Exception,e:
-					    print "------ Error",e
-                                            device_type = ''
-				    else :
-                                        device_type = technology[str(self.mat_entry_details[(eventname,event[6].lower())]['device_type']).lower()]
+                                    device_type = technology[str(self.mat_entry_details[(eventname,event[6].lower())]['device_type']).lower()]
                         except Exception,e:
                                 print "EventName doesn't match with mapped EventName",e
                                 sia = ''
@@ -456,7 +439,8 @@ class Eventmapper(object):
                                 'is_active': 1,
                                 'sia': sia,
                                 'customer_count': self.customer_count_details[str(event[3])]
-						 if str(event[3]) in self.customer_count_details else None
+						 if str(event[3]) in self.customer_count_details else None,
+                                'technology': device_type
 				})
 			if event[6].lower() not in severity_for_clear_table:
 				current_events.append(new_event)
@@ -652,7 +636,7 @@ class Eventmapper(object):
 	""" starting point for processing all events"""
 	#alarm_mask_oid = self.get_alarm_mask_oids()
 	if events:
-		events,alarm_count_dict = self.make_unique_event_dict(events,flag='event')
+		events,mono,alarm_count_dict = self.make_unique_event_dict(events,flag='event')
 		current_events,clear_events,require_masking=self.process_events(events,alarm_mask_oid,flag='event')
 		self.update_db(current_traps=current_events,clear_traps=clear_events,\
 				require_masking=require_masking,flag='event')
@@ -967,3 +951,4 @@ def delete_history_trap():
 
     cursor.close()
     my_cnx.close()
+
