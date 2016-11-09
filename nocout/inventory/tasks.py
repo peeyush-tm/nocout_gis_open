@@ -15003,8 +15003,8 @@ def bulk_update_create(bulky, action='update', model=None):
     :return:
     """
     logger.debug("####################################### bulky - {}".format(bulky))
+    
     if bulky and len(bulky):
-
         if action == 'update':
             try:
                 bulk_update_internal_no_save(bulky)

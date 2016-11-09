@@ -24,6 +24,8 @@ class SectorCapacityStatus(models.Model):
     peak_in_duration = models.IntegerField('Peak In Duration', default=0)
     current_out_per = models.FloatField('OUT Current Utilization Percentage',  default=0)
     current_out_val = models.FloatField('OUT Current Utilization Value',  default=0)
+    timeslot_ul = models.FloatField('Dynamic TimeSlot-UL',  default=None, null=True)
+    timeslot_dl = models.FloatField('Dynamic TimeSlot-DL',  default=None, null=True)
     avg_out_per = models.FloatField('OUT Current Utilization Average Percentage',  default=0)
     avg_out_val = models.FloatField('OUT Current Utilization Average Value',  default=0)
     peak_out_per = models.FloatField('OUT Peak Utilization Percentage',  default=0)

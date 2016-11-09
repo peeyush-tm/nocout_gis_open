@@ -1307,8 +1307,8 @@ class NetworkAlertDetailHeaders(ListView):
         rad5_sector_util_headers += [{'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},]
         rad5_sector_util_headers += sector_util_headers_2
         rad5_sector_util_headers += [
-            # {'mData': 'dl_timeslot', 'sTitle': 'DL Time-slot', 'width': 'auto', 'bSortable': True },
-            # {'mData': 'ul_timeslot', 'sTitle': 'UL Time-slot', 'width': 'auto', 'bSortable': True },
+            {'mData': 'timeslot_dl', 'sTitle': 'DL Time-slot', 'width': 'auto', 'bSortable': True },
+            {'mData': 'timeslot_ul', 'sTitle': 'UL Time-slot', 'width': 'auto', 'bSortable': True },
         ]
         rad5_sector_util_headers += sector_util_headers_3
         rad5_sector_util_headers += [{'mData': 'sector__base_station__bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', 'bSortable': True},]

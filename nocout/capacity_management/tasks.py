@@ -122,9 +122,13 @@ tech_model_service = {
             'model': 'performance_servicestatus',
             'service_name': [
                 'cambium_ul_utilization', 'cambium_dl_utilization', 
-                'rad5k_bs_ul_utilization', 'rad5k_bs_dl_utilization'
+                'rad5k_bs_ul_utilization', 'rad5k_bs_dl_utilization',
+                'radwin5k_ss_ul_dyn_tl', 'radwin5k_ss_dl_dyn_tl'
             ],
-            'data_source': ['ul_utilization', 'dl_utilization'],
+            'data_source': [
+                'ul_utilization', 'dl_utilization',
+                'rad5k_ss_ul_dyn_tl', 'rad5k_ss_dl_dyn_tl'
+            ],
             'values': ['current_value', 'age', 'severity', 'sys_timestamp'],
             'values_list': ['current_value']
 
@@ -141,7 +145,7 @@ tech_model_service = {
             ],
             'values': ['current_value', 'age', 'severity', 'sys_timestamp'],
             'values_list': None
-        },
+        }
     },
 }
 
@@ -521,14 +525,17 @@ def gather_sector_status(technology):
             return False
 
         sector_val = None
-        # values for current utilization
-        # sector_val = get_sectors_cbw_val_kpi(
-        #     devices=machine_dict[machine],
-        #     service_name=tech_model_service[technology_low]['val']['service_name'],
-        #     data_source=tech_model_service[technology_low]['val']['data_source'],
-        #     machine=machine,
-        #     getit='val'
-        # )
+
+        # values for current utilization of rad5 devices
+        sector_val_rad5 = None
+        if technology_low == 'pmp' and rad5k_machine_dict.get(machine):
+            sector_val_rad5 = get_sectors_cbw_val_kpi(
+                devices=rad5k_machine_dict[machine],
+                service_name=tech_model_service[technology_low]['val']['service_name'],
+                data_source=tech_model_service[technology_low]['val']['data_source'],
+                machine=machine,
+                getit='val'
+            )
 
         # values for current Percentage KPIs
         sector_kpi = get_sectors_cbw_val_kpi(
@@ -570,7 +577,8 @@ def gather_sector_status(technology):
                 technology=technology,
                 avg_max_per=avg_max_per,
                 avg_max_val=avg_max_val,
-                util_duration=util_duration
+                util_duration=util_duration,
+                rad5_val=sector_val_rad5,
             )
         )
 
@@ -1460,7 +1468,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
     return True
 
 @task()
-def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_max_per, util_duration):
+def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_max_per, util_duration, rad5_val=None):
     """
 
     :param sectors: sectors query set
@@ -1472,7 +1480,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
     :param avg_max_per: Values Query Set when it is required to calculate the average and max %
     :return:
     """
-
     bulk_update_scs = []
     bulk_create_scs = []
 
@@ -1491,6 +1498,9 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
     current_out_per = 0
     current_out_val = 0
+
+    current_timeslot_ul = None
+    current_timeslot_dl = None
 
     avg_out_per = 0
     avg_out_val = 0
@@ -1529,8 +1539,16 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
         )
-    else:
-        return False
+    # else:
+    #     return False
+
+    indexed_rad5_val = {}
+    if technology.lower() == 'pmp' and rad5_val.exists():
+        indexed_rad5_val = nocout_utils.indexed_query_set(
+            query_set=rad5_val,
+            indexes=['device_name', 'service_name', 'data_source'],
+            values=['device_name', 'service_name', 'data_source', 'current_value'],
+        )
 
     if avg_max_per:
         indexed_avg_max_per = nocout_utils.indexed_query_set(
@@ -1820,6 +1838,18 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     in_per_index = (sector_device_name, 'radwin5k_dl_util_kpi', 'rad5k_dl_util_kpi')
                     # out % values index
                     out_per_index = (sector_device_name, 'radwin5k_ul_util_kpi', 'rad5k_ul_util_kpi')
+                    # index for dl_timeslot values
+                    timeslot_ul_index = (sector_device_name, 'radwin5k_ss_ul_dyn_tl', 'rad5k_ss_ul_dyn_tl')
+                    # index for ul values
+                    timeslot_dl_index = (sector_device_name, 'radwin5k_ss_dl_dyn_tl', 'rad5k_ss_dl_dyn_tl')
+
+                    current_timeslot_ul = None
+                    current_timeslot_dl = None
+                    # Current values for Dynamic TS-UL and Dynamic TS-DL for rad5 devices
+                    if indexed_rad5_val.get(timeslot_ul_index):
+                        current_timeslot_ul = float(indexed_rad5_val.get(timeslot_ul_index)[0]['current_value'])
+                    if indexed_rad5_val.get(timeslot_dl_index):
+                        current_timeslot_dl = float(indexed_rad5_val.get(timeslot_dl_index)[0]['current_value'])
                 else:
                     # index for dl values
                     in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
@@ -1948,13 +1978,17 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     peak_in_val = 0
                     avg_out_val = 0
                     peak_out_val = 0
-            
+        
             if scs:
                 scs.sector_capacity = float(sector_capacity) if sector_capacity else 0
                 scs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 scs.organization = sector.organization if sector.organization else 1
                 scs.severity = severity if severity else 'unknown'
                 scs.age = float(age) if age else 0
+                scs.timeslot_ul = current_timeslot_ul 
+                scs.timeslot_dl = current_timeslot_dl 
+
+
                 # new fileds for better representation of IN and OUT
 
                 scs.sector_capacity_in = sector_capacity_in
@@ -2006,6 +2040,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         avg_out_val=round(float(avg_out_val), 2) if avg_out_val else 0,
                         peak_out_per=round(float(peak_out_per), 2) if peak_out_per else 0,
                         peak_out_val=round(float(peak_out_val), 2) if peak_out_val else 0,
+                        timeslot_ul=round(float(current_timeslot_ul), 2) if current_timeslot_ul else None, 
+                        timeslot_dl=round(float(current_timeslot_dl), 2) if current_timeslot_dl else None,
                         peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
                         peak_out_duration=int(peak_out_duration) if peak_out_duration else 0,
                         sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
