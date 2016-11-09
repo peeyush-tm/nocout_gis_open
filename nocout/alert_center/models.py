@@ -20,7 +20,8 @@ class GenericAlarm(models.Model):
 	sia = models.CharField(max_length=32, blank=True, null=True)
 	customer_count = models.IntegerField(blank=True, null=True)
 	technology = models.CharField("Technology", max_length=256, null=True, blank=True)
-	# ticket_number = models.CharField('Ticket Number', max_length=256, null=True, blank=True)
+	ticket_number = models.CharField('Ticket Number', max_length=64, null=True, blank=True)
+	is_manual = models.BooleanField('Is Manual Ticket', default=False)
 
 	class Meta:
 		abstract = True
