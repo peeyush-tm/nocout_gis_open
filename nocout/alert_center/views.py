@@ -13,7 +13,8 @@ from django.http import HttpResponse
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceTechnology, DeviceType, DeviceTicket
 # For SIA Listing
-from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms, PlannedEvent
+from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms, \
+PlannedEvent, ManualTicketingHistory
 from performance.models import EventNetwork, EventService
 
 from operator import itemgetter
@@ -38,10 +39,12 @@ from django.utils.dateformat import format
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME, \
 SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT, SHOW_TICKET_NUMBER, \
-ENABLE_MANUAL_TICKETING
+ENABLE_MANUAL_TICKETING, MANUAL_TICKET_API
 
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
+import urllib
+import requests
 
 import logging
 logger = logging.getLogger(__name__)
@@ -2070,17 +2073,35 @@ class SIAListing(ListView):
 			{'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
 		]
 
-		action_columns = []
-		if ENABLE_MANUAL_TICKETING:
-			action_columns = [
-				{'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True}
-			]
-
 		datatable_headers = list()
 		datatable_headers += starting_columns
 		datatable_headers += specific_invent_columns
 		datatable_headers += invent_columns
 		datatable_headers += common_columns
+
+		manual_ticketing_columns = []
+		is_manual_column = []
+		if ENABLE_MANUAL_TICKETING:
+			manual_ticketing_columns = [{
+				'mData': 'action',
+				'sTitle': 'Action',
+				'sWidth': 'auto',
+				'bSortable': False
+			}]
+
+			datatable_headers += [{
+				'mData': 'ticket_number',
+				'sTitle': 'PBI Ticket',
+				'sWidth': 'auto',
+				'bSortable': True
+			}]
+
+			# is_manual_column += [{
+			# 	'mData': 'is_manual',
+			# 	'sTitle': 'Is Manual',
+			# 	'sWidth': 'auto',
+			# 	'bSortable': True
+			# }]
 
 		converter_datatable_headers = list()
 		converter_datatable_headers += starting_columns
@@ -2088,9 +2109,9 @@ class SIAListing(ListView):
 		converter_datatable_headers += common_columns
 
 
-		context['datatable_headers'] = json.dumps(datatable_headers + action_columns)
+		context['datatable_headers'] = json.dumps(datatable_headers + manual_ticketing_columns)
 		# context['converter_datatable_headers'] = json.dumps(converter_datatable_headers)
-		context['clear_history_headers'] = json.dumps(datatable_headers)
+		context['clear_history_headers'] = json.dumps(datatable_headers + is_manual_column)
 
 		return context
 
@@ -2107,13 +2128,14 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 	columns = [
 		'severity', 'ip_address', 'eventname', 'traptime',
 		'alarm_count','first_occurred','last_occurred',
-		'customer_count', 'sia'
+		'customer_count', 'sia', 'id', 'is_manual', 'ticket_number'
 	]
 	
 	order_columns = [
 		'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state',
 		'bh_connectivity', 'bh_type', 'eventname','traptime','uptime',
-		'alarm_count', 'first_occurred','last_occurred', 'customer_count', 'sia'
+		'alarm_count', 'first_occurred','last_occurred', 'customer_count', 
+		'sia', 'ticket_number'
 	]
 
 	other_columns = [
@@ -2268,7 +2290,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 				'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
 				'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
 				'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
-				'customer_count', 'sia'
+				'customer_count', 'sia', 'ticket_number'
 			]
 
 		# Number of columns that are used in sorting
@@ -2315,6 +2337,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 			else:
 				order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
 				sort_using = sortcol
+
 		if sort_using and sort_using in order_columns:
 			# If sorting request is from other columns 
 			if type(qs) == type(list()) or sort_using in self.other_columns:
@@ -2445,7 +2468,10 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 			return list(qs)
 		else:
 			for dct in  qs:
+				pk = dct.get('id')
+				ip_address = dct.get('ip_address')
 				severity = dct.get('severity')
+				event_name = dct.get('eventname')
 				severity_icon = alert_utils.common_get_severity_icon(severity)
 				uptime = dct.get('uptime')
 				ticket_number = dct.get('ticket_number')
@@ -2455,11 +2481,18 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
 				try:
 					if ENABLE_MANUAL_TICKETING:
-						if not ticket_number:
-							action += '<a href="javascript:;" title="Generate Manual Ticket"><i class="fa fa-sign-in"></i></a>'
+						if not ticket_number and not is_manual:
+							action += '<a href="javascript:;" class="manual_ticketing_btn" data-ip="{0}" data-severity="{1}" \
+									   data-alarm="{2}" data-pk="{3}" title="Generate Manual Ticket"> \
+									   <i class="fa fa-sign-in"></i></a>&nbsp;&nbsp;'.format(ip_address, severity, event_name, pk)
 
 						if is_manual:
-							action += '&nbsp;&nbsp;<a href="javascript:;" class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></a>'
+							# action += '<span class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></span>'
+							if ticket_number:
+								ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
+								# is_manual = '<i class="fa fa-check-circle text-success"></i>'
+						# else:
+						# 	is_manual = '<i class="fa fa-times-circle text-danger"></i>'
 				except Exception, e:
 					pass
 
@@ -2481,7 +2514,9 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 					severity=severity_icon,
 					uptime=formatted_uptime,
 					first_occurred=first_occurred,
-					last_occurred=last_occurred
+					last_occurred=last_occurred,
+					is_manual=is_manual,
+					ticket_number=ticket_number
 				)
 
 			return qs
@@ -4187,3 +4222,230 @@ class PlannedEventsListing(BaseDatatableView, AdvanceFilteringMixin):
 		}
 
 		return ret
+
+
+class GenerateManualTicket(View):
+	"""
+	This class calls API to generate manual ticket for specific IP trap
+	"""
+	def post(self, *args, **kwargs):
+
+		pk = self.request.POST.get('pk')
+		ip_address = self.request.POST.get('ip_address')
+		severity = self.request.POST.get('severity')
+		alarm_name = self.request.POST.get('alarm_name')
+		result = {
+			'success': 0,
+			'message': 'Ticket generate request not sent.'
+		}
+
+		try:
+			current_instance = CurrentAlarms.objects.filter(
+				id=pk,
+				is_active=1
+			).using(TRAPS_DATABASE)
+
+			if current_instance.exists():
+				current_instance = current_instance[0]
+		except Exception as e:
+			result.update(
+				message='Invalid primary key.'
+			)
+			current_instance = None
+
+		if current_instance and ip_address and alarm_name:
+
+			# Encoding data.
+			encoded_data = urllib.urlencode({
+				'ip_address': ip_address, 
+				'severity': severity, 
+				'alarm_name': alarm_name
+			})
+
+			# Sending post request to nocout device app to start given IP ping stability testing
+			try:
+				logger.error(' ----- Manual Ticketing API ----- ')
+				logger.error('url --> {0}'.format(MANUAL_TICKET_API))
+				logger.error(encoded_data)
+				logger.error(' ----- Manual Ticketing API ----- ')
+				
+				request_instance = requests.post(MANUAL_TICKET_API, data=encoded_data)
+				# response_dict = ast.literal_eval(request_instance.text)
+
+				# Create entry in ManualTicketingHistory
+				try:
+					ticket_history_instance = ManualTicketingHistory(
+						ip_address=ip_address,
+						eventname=alarm_name,
+						user_profile_id=self.request.user.id
+					)
+					ticket_history_instance.save()
+				except Exception as e:
+					logger.error('Ticket history create exception for {0} - {1}'.format(ip_address, alarm_name))
+					logger.error(e)
+					pass
+
+				
+				# Update is_manual flag in current traps
+				try:
+					current_instance.is_manual = True
+					current_instance.save()
+				except Exception as e:
+					logger.error('is_manual not updated')
+					logger.error(e)
+					pass
+
+				result.update(
+					success=1,
+					message='Manual ticket generate request sent.'
+				)
+			except Exception as e:
+				result.update(
+					message=e.message
+				)
+				logger.error('Manual Ticketing Request Exception')
+				logger.error(e)
+				pass
+
+		else:
+			result.update(
+				message='Invalid API params'
+			)
+
+		return HttpResponse(json.dumps(result))
+
+
+class ManualTicketsInit(ListView):
+	"""
+	View to render manual tickets history page.
+	"""
+
+	# need to associate ListView class with a model here
+	model = ManualTicketingHistory
+	template_name = 'alert_center/manual_events.html'
+
+	def get_context_data(self, **kwargs):
+		"""
+
+		:param kwargs:
+		:return:
+		"""
+		context = super(ManualTicketsInit, self).get_context_data(**kwargs)
+
+		datatable_headers = [
+			{'mData': 'ip_address', 'sTitle': 'IP Address', 'bSortable': True}, 
+			{'mData': 'eventname', 'sTitle': 'Event Name', 'bSortable': True}, 
+			{'mData': 'ticket_number', 'sTitle': 'PBI Ticket', 'bSortable': True}, 
+			{'mData': 'user_profile__username', 'sTitle': 'Created By', 'bSortable': True}, 
+			{'mData': 'created_at', 'sTitle': 'Created At', 'bSortable': True}
+		]
+
+		context['datatable_headers'] = json.dumps(datatable_headers)
+
+		return context
+
+
+class ManualTicketsListing(BaseDatatableView, AdvanceFilteringMixin):
+	"""
+	Generic Class Based View for the Alert Center Network Listing Tables.
+
+	"""
+	model = ManualTicketingHistory
+	columns = [
+		'ip_address',
+		'eventname',
+		'ticket_number',
+		'user_profile__username',
+		'created_at'
+	]
+	order_columns = columns
+
+	def filter_queryset(self, qs):
+		"""
+		Filter datatable as per requested value
+		"""
+		sSearch = self.request.GET.get('search[value]', None)
+
+		if sSearch:
+			query = []
+			exec_query = "qs = qs.filter("
+			for column in self.columns[:-1]:
+				# avoid search on 'added_on'
+				if column == 'added_on':
+					continue
+				query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+			exec_query += " | ".join(query)
+			exec_query += ").values(*" + str(self.columns) + ")"
+			exec exec_query
+		return self.advance_filter_queryset(qs)
+
+	def get_initial_queryset(self):
+		"""
+		Preparing  Initial Queryset for the for rendering the data table.
+		"""
+		if not self.model:
+			raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+		qs = self.model.objects.values(*self.columns).order_by(
+			'-created_at'
+		).using(TRAPS_DATABASE)
+
+		return qs
+
+	def prepare_results(self, qs):
+		"""
+		Preparing  Initial Queryset for the for rendering the data table.
+		"""
+
+		json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+		resultset = list()
+		for dct in json_data:
+			created_at = dct.get('created_at')
+			if created_at:
+				dct.update(
+					created_at=created_at.strftime(DATE_TIME_FORMAT)
+				)
+
+		return json_data
+
+	def ordering(self, qs):
+		""" Get parameters from the request and prepare order by clause
+		"""
+		return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
+
+	def get_context_data(self, *args, **kwargs):
+		"""
+		The main method call to fetch, search, ordering , prepare and display the data on the data table.
+		"""
+
+		request = self.request
+		self.initialize(*args, **kwargs)
+
+		qs = self.get_initial_queryset()
+
+		# number of records before filtering
+		total_records = qs.count()
+
+		qs = self.filter_queryset(qs)
+
+		# number of records after filtering
+		total_display_records = qs.count()
+
+		qs = self.ordering(qs)
+		qs = self.paging(qs)
+		#if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+		if not qs and isinstance(qs, ValuesQuerySet):
+			qs = list(qs)
+
+		aaData = self.prepare_results(qs)
+		
+		ret = {
+			'sEcho': int(request.REQUEST.get('sEcho', 0)),
+			'iTotalRecords': total_records,
+			'iTotalDisplayRecords': total_display_records,
+			'aaData': aaData
+		}
+
+		return ret
+

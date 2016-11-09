@@ -46,6 +46,14 @@ DATABASES = {
         'PASSWORD': 'pass',
         'HOST': 'localhost',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
         'PORT': '3306',  # Set to empty string for default.
+    },
+    'monolith': {
+        'ENGINE': 'django.db.backends.mysql', 
+        'NAME': 'Cramer',
+        'USER': 'wireless1',
+        'PASSWORD': 'abc123',
+        'HOST': '10.133.12.151',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'PORT': '3306',  # Set to empty string for default.
     }
 }
 
@@ -891,7 +899,8 @@ SETTINGS_EXPORT = [
     'ENABLE_PING_TEST',
     'ENABLE_PE_PERF',
     'SHOW_ALL_IN_NETWORK_ALERT_CENTER',
-    'PLANNED_EVENTS_ENABLED'
+    'PLANNED_EVENTS_ENABLED',
+    'ENABLE_MANUAL_TICKETING_HISTORY'
 ]
 
 # Dashbaord Settings
@@ -1366,6 +1375,10 @@ ENABLE_PE_PERF = False
 SHOW_ALL_IN_NETWORK_ALERT_CENTER = False
 ENABLE_MANUAL_TICKETING = False
 PLANNED_EVENTS_ENABLED = False
+ENABLE_MANUAL_TICKETING_HISTORY = False
+
+# Manual Ticketing API Details
+MANUAL_TICKET_API = 'http://121.244.255.123/'
 
 # Import the local_settings.py file to override global settings
 try:
