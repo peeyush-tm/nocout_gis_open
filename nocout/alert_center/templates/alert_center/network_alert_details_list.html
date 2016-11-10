@@ -307,7 +307,8 @@
     <script type="text/javascript">
         var dataTableInstance = "",
             base_url = "",
-            excel_columns = [];
+            excel_columns = [],
+            page_type = 'network';
 
         $(document).ready(function () {
 
@@ -396,6 +397,15 @@
                     "data_class_name" : "SectorAugmentationAlertsListing",
                     "header_extra_param" : "{"+common_extra_param+"}",
                     "data_extra_param" : "{'report_title' : '"+network_sectorUtil_title+"', "+common_extra_param+"}",
+                    "excluded" : "['id','sector__sector_id','organization__alias']"
+                },
+                "network_rad5_sectorUtil_tab" : {
+                    "app_name" : "capacity_management",
+                    "table_title" : network_rad5_sectorUtil_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "SectorAugmentationAlertsListing",
+                    "header_extra_param" : "{'headers_data_key' : 'rad5_sector_util_headers',"+common_extra_param+"}",
+                    "data_extra_param" : "{'report_title' : '"+network_rad5_sectorUtil_title+"', "+common_extra_param+", 'is_rad5':1, 'technology': 'pmp'}",
                     "excluded" : "['id','sector__sector_id','organization__alias']"
                 },
                 "pmp_ulIssue_tab" : {

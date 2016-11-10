@@ -32,6 +32,10 @@ from performance.formulae import display_time
 
 import logging
 
+# This import needs to be done becuase in case of Radwin5K sector Utilization
+# Headers are getting defined in NetworkAlertDetailHeaders class
+from alert_center.views import NetworkAlertDetailHeaders
+
 logger = logging.getLogger(__name__)
 
 # Create instance of 'NocoutUtilsGateway' class
