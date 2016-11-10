@@ -48,7 +48,7 @@ $('input[name="alarm_type"]').change(function(e) {
         new_get_param = 'alarm_type='+alarm_type,
         active_tab_id = $('.nav-tabs li.active a').attr('id'),
         pmp_url = $("#snmp_pmp_tab").attr("data_url"),
-        rad5k_url = $("#snmp_rad5k_tab").attr("data_url"),
+        rad5k_url = $("#snmp_rad5k_tab").length > 0 ? $("#snmp_rad5k_tab").attr("data_url") : ''
         headers = '',
         wimax_url = $("#snmp_wimax_tab").attr("data_url"),
         all_url = $("#snmp_all_tab").attr("data_url"),
@@ -94,12 +94,15 @@ $('input[name="alarm_type"]').change(function(e) {
 
     // Update the 'data_url' attribute of all tabs
     $("#snmp_pmp_tab").attr("data_url", updated_url_pmp);
-    $("#snmp_rad5k_tab").attr("data_url", updated_url_rad5k);
     $("#snmp_wimax_tab").attr("data_url", updated_url_wimax);
     $("#snmp_all_tab").attr("data_url", updated_url_all);
+    
+    if ($("#snmp_rad5k_tab").length > 0) {
+        $("#snmp_rad5k_tab").attr("data_url", updated_url_rad5k);
+        $("#snmp_rad5k_tab").attr("data_header", headers);
+    }
 
     $("#snmp_pmp_tab").attr("data_header", headers);
-    $("#snmp_rad5k_tab").attr("data_header", headers);
     $("#snmp_wimax_tab").attr("data_header", headers);
     $("#snmp_all_tab").attr("data_header", headers);
 
@@ -121,7 +124,7 @@ function show_hide_count_column() {
 
     var all_headers_list = JSON.parse($("#snmp_all_tab").attr("data_header")),
         pmp_headers_list = JSON.parse($("#snmp_pmp_tab").attr("data_header")),
-        rad5k_headers_list = JSON.parse($("#snmp_rad5k_tab").attr("data_header")),
+        rad5k_headers_list = $("#snmp_rad5k_tab").length > 0 ? JSON.parse($("#snmp_rad5k_tab").attr("data_header")) : [],
         wimax_headers_list = JSON.parse($("#snmp_wimax_tab").attr("data_header"));
 
     for (var i=0;i<all_headers_list.length;i++) {
@@ -151,11 +154,12 @@ function show_hide_count_column() {
     // Update headers data in tabs header attribute
     $("#snmp_all_tab").attr("data_header", JSON.stringify(all_headers_list));
     $("#snmp_pmp_tab").attr("data_header", JSON.stringify(pmp_headers_list));
-    $("#snmp_rad5k_tab").attr("data_header", JSON.stringify(rad5k_headers_list));
     $("#snmp_wimax_tab").attr("data_header", JSON.stringify(wimax_headers_list));
+    if($("#snmp_rad5k_tab").length > 0) {
+        $("#snmp_rad5k_tab").attr("data_header", JSON.stringify(rad5k_headers_list));
+    }
     
     return true;
-
 }
 
 /**
