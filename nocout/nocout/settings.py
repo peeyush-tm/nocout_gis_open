@@ -1297,7 +1297,15 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
     'huawei_switch_ul_util_kpi_gigabitethernet0_0_27_kpi',
     'huawei_switch_dl_util_kpi_gigabitethernet0_0_27_kpi',
     'huawei_switch_ul_util_kpi_gigabitethernet0_0_28_kpi',
-    'huawei_switch_dl_util_kpi_gigabitethernet0_0_28_kpi'
+    'huawei_switch_dl_util_kpi_gigabitethernet0_0_28_kpi',
+    'radwin5k_dl_util_kpi_rad5k_dl_util_kpi',
+    'radwin5k_ul_util_kpi_rad5k_ul_util_kpi',
+    'radwin5k_dl_dyn_tl_rad5k_dl_dyn_tl',
+    'radwin5k_ul_dyn_tl_rad5k_ul_dyn_tl',
+    'radwin5k_ss_ul_util_kpi_rad5k_ss_ul_util_kpi',
+    'radwin5k_ss_dl_util_kpi_rad5k_ss_dl_util_kpi',
+    'radwin5k_ss_dl_dyn_tl_rad5k_ss_dl_dyn_tl',
+    'radwin5k_ss_ul_dyn_tl_rad5k_ss_ul_dyn_tl',
 ])
 # Global variable to show/hide Scheduled report mail option in dowload center listing.
 REPORT_EMAIL_PERM = json.dumps({
