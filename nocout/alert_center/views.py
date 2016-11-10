@@ -2109,7 +2109,7 @@ class SIAListing(ListView):
 		converter_datatable_headers += common_columns
 
 
-		context['datatable_headers'] = json.dumps(datatable_headers + manual_ticketing_columns)
+		context['datatable_headers'] = json.dumps(manual_ticketing_columns + datatable_headers)
 		# context['converter_datatable_headers'] = json.dumps(converter_datatable_headers)
 		context['clear_history_headers'] = json.dumps(datatable_headers + is_manual_column)
 
@@ -2286,12 +2286,20 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 		"""
 
 		if self.tech_name in ['pmp', 'wimax', 'all']:
-			self.order_columns = [
-				'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-				'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
-				'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
-				'customer_count', 'sia', 'ticket_number'
-			]
+			if ENABLE_MANUAL_TICKETING:
+				self.order_columns = [
+					'action', 'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
+					'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
+					'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
+					'customer_count', 'sia', 'ticket_number'
+				]
+			else:
+				self.order_columns = [
+					'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
+					'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
+					'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
+					'customer_count', 'sia', 'ticket_number'
+				]
 
 		# Number of columns that are used in sorting
 		sorting_cols = 0
@@ -2481,18 +2489,14 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
 				try:
 					if ENABLE_MANUAL_TICKETING:
-						if not ticket_number and not is_manual:
+						has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
+						if not has_ticket_number and not is_manual:
 							action += '<a href="javascript:;" class="manual_ticketing_btn" data-ip="{0}" data-severity="{1}" \
 									   data-alarm="{2}" data-pk="{3}" title="Generate Manual Ticket"> \
 									   <i class="fa fa-sign-in"></i></a>&nbsp;&nbsp;'.format(ip_address, severity, event_name, pk)
 
-						if is_manual:
-							# action += '<span class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></span>'
-							if ticket_number:
-								ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
-								# is_manual = '<i class="fa fa-check-circle text-success"></i>'
-						# else:
-						# 	is_manual = '<i class="fa fa-times-circle text-danger"></i>'
+						if is_manual and has_ticket_number:
+							ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
 				except Exception, e:
 					pass
 
@@ -2733,7 +2737,7 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 	columns = [
 		'severity', 'ip_address', 'eventname', 'traptime',
 		'alarm_count','first_occurred','last_occurred',
-		'customer_count', 'sia'
+		'customer_count', 'sia', 'ticket_number', 'is_manual', 'id'
 	]
 	
 	order_columns = [
@@ -2988,7 +2992,7 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 				'bs_city', 'circle', 'ticket_number', 'bh_connectivity',
 				'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip',
 				'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'alarm_count',
-				'first_occurred', 'last_occurred' 
+				'first_occurred', 'last_occurred'
 			]
 
 		# Number of columns that are used in sorting
@@ -3164,11 +3168,13 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 			return list(qs)
 		else:
 			for dct in  qs:
-				severity = dct.get('severity')
-				# severity_icon = alert_utils.common_get_severity_icon(severity)
+				pk = dct.get('id')
 				uptime = dct.get('uptime')
-				ticket_number = dct.get('ticket_number')
+				severity = dct.get('severity')
+				event_name = dct.get('eventname')
+				ip_address = dct.get('ip_address')
 				is_manual = dct.get('is_manual')
+				ticket_number = dct.get('ticket_number')
 				action = ''
 				formatted_uptime = uptime
 				data_source = (self.request.GET.get('data_source', None))
@@ -3181,11 +3187,14 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
 				try:
 					if ENABLE_MANUAL_TICKETING:
-						if not ticket_number:
-							action += '<a href="javascript:;" title="Generate Manual Ticket"><i class="fa fa-sign-in"></i></a>'
+						has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
+						if not has_ticket_number and not is_manual:
+							action += '<a href="javascript:;" class="manual_ticketing_btn" data-ip="{0}" data-severity="{1}" \
+									   data-alarm="{2}" data-pk="{3}" title="Generate Manual Ticket"> \
+									   <i class="fa fa-sign-in"></i></a>&nbsp;&nbsp;'.format(ip_address, severity, event_name, pk)
 
-						if is_manual:
-							action += '&nbsp;&nbsp;<a href="javascript:;" class="text-success" title="Manual Ticket"><i class="fa fa-ticket"></i></a>'
+						if is_manual and has_ticket_number:
+							ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
 				except Exception, e:
 					pass
 
@@ -3232,17 +3241,16 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
 						current_app='device'
 					)
 
-
-					dct.update(
-						action='<a href="' + alert_url + '" title="Device Alerts">\
+					action += '<a href="' + alert_url + '" title="Device Alerts">\
 								<i class="fa fa-warning text-warning"></i></a>\
 								<a href="' + performance_url + '" title="Device Performance">\
 								<i class="fa fa-bar-chart-o text-info"></i></a>\
 								<a href="' + inventory_url + '" title="Device Inventory">\
 								<i class="fa fa-dropbox text-muted"></i></a>'
-					)
 
 				dct.update(
+					action=action,
+					ticket_number=ticket_number,
 					severity=severity_icon,
 					uptime=formatted_uptime,
 					first_occurred=first_occurred,
