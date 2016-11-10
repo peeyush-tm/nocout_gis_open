@@ -32,6 +32,10 @@ from performance.formulae import display_time
 
 import logging
 
+# This import needs to be done becuase in case of Radwin5K sector Utilization
+# Headers are getting defined in NetworkAlertDetailHeaders class
+from alert_center.views import NetworkAlertDetailHeaders
+
 logger = logging.getLogger(__name__)
 
 # Create instance of 'NocoutUtilsGateway' class
@@ -435,6 +439,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
     is_initialised = True
     technology = 'ALL'
     is_type = 0
+    is_rad5 = 0
 
     columns = [
         'id',
@@ -536,7 +541,13 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         sectors = list()
         if max_timestamp:
             if self.technology == 'ALL':
+                # Excluding Radwin5K devices
+                excluded_device_type = DeviceType.objects.filter(
+                    name__icontains='radwin5'
+                ).values_list('id', flat=True)
+
                 sectors = self.model.objects.filter(
+                    ~Q(sector__sector_configured_on__device_type__in=excluded_device_type),
                     sector__sector_configured_on__isnull=False,
                     organization__in=kwargs['organizations']
                 ).prefetch_related(*self.related_columns).values(*self.columns)
@@ -561,7 +572,12 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                             excluded_device_type = DeviceType.objects.filter(
                                 name__icontains='radwin5'
                             ).values_list('id', flat=True)
-                            where_condition &= ~Q(sector__sector_configured_on__device_type__in=excluded_device_type)
+
+                            # Case handling for Radwin5k devices
+                            if self.is_rad5:
+                                where_condition &= Q(sector__sector_configured_on__device_type__in=excluded_device_type)
+                            else:
+                                where_condition &= ~Q(sector__sector_configured_on__device_type__in=excluded_device_type)
                     except Exception, e:
                         pass
 
@@ -616,6 +632,28 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
 
         self.technology = request.GET['technology'] if 'technology' in request.GET else 'ALL'
         self.is_type = request.GET.get('is_type', 0)
+        self.is_rad5 = int(request.GET.get('is_rad5', 0))
+
+        if self.is_rad5:
+            self.columns = [
+                'sector__base_station__alias',
+                'sector__base_station__state__state_name',
+                'sector__base_station__city__city_name',
+                'organization__alias',
+                'sector__sector_configured_on__ip_address',
+                'sector__sector_configured_on__device_technology',
+                'sector_sector_id',
+                'current_out_per',
+                'current_in_per',
+                'timeslot_dl',
+                'timeslot_ul',
+                'severity',
+                'age',
+                'sector__base_station__bs_site_id',
+                'sys_timestamp'
+            ]
+
+            self.order_columns = self.columns
 
         qs = self.get_initial_queryset()
 

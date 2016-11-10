@@ -124,11 +124,19 @@ $(".nav-tabs li a").click(function (e, isFirst) {
             if (is_rad5 > 0){
                 for (var i = 0; i < grid_headers.length; i++) {
                     var column = grid_headers[i];
-                    if (column.mData.indexOf("region") > -1 || column.mData.indexOf("min_latency") > -1) {
-                        if (!column.bVisible) {
-                            column.bVisible = true;
-                        } else {
-                            column["bVisible"] = true;
+                    if (page_type != 'customer'){
+                        if (
+                                column.mData.indexOf("region") > -1 
+                                ||
+                                column.mData.indexOf("min_latency") > -1
+                                ||
+                                column.mData.indexOf("site_id") > -1
+                            ) {
+                            if (!column.bVisible) {
+                                column.bVisible = true;
+                            } else {
+                                column["bVisible"] = true;
+                            }
                         }
                     }
                 }

@@ -136,7 +136,8 @@
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
 
-        var dataTableInstance = "";
+        var dataTableInstance = "",
+            page_type = "";
 
         $(document).ready(function (e) {
 
@@ -145,7 +146,8 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
-            ajax_url_get_parameter = "{{ page_type|slugify|lower }}";
+            ajax_url_get_parameter = "{{ page_type|slugify|lower }}"
+            page_type = ajax_url_get_parameter;
 
             /*Ajax url to get grid data*/
             var destroy = false,
