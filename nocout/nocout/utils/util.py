@@ -2699,6 +2699,7 @@ def get_maps_initial_data_query(bs_id=[]):
             IF(isnull(bs.name), 'NA', bs.name) AS BSNAME,
             IF(isnull(bs.alias), 'NA', bs.alias) AS BSALIAS,
             IF(isnull(bs.maintenance_status), 'NA', bs.maintenance_status) AS BSMAINTENANCESTATUS,
+            IF(isnull(bs.organization_id), 'NA', bs_org.alias) AS BSREGION,
             IF(isnull(city.city_name), 'NA', city.city_name) AS BSCITY, 
             IF(isnull(state.state_name), 'NA', state.state_name) AS BSSTATE,
             IF(isnull(bs.latitude), 'NA', bs.latitude) AS BSLAT,
@@ -2752,6 +2753,10 @@ def get_maps_initial_data_query(bs_id=[]):
             device_devicetype AS bh_type
         ON
             bh_device.device_type = bh_type.id
+        LEFT JOIN 
+            organization_organization AS bs_org
+        ON
+            bs_org.id = bs.organization_id
         LEFT JOIN 
             device_state AS state
         ON

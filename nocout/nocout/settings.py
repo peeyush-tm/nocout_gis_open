@@ -1389,6 +1389,11 @@ RADWIN5K_CONFIG = {
 # 2) Separate tab required for Radwin 5k in Device Alarms page
 SHOW_SPRINT3 = False
 
+# Show/Hide features of Sprint 4 of Radwin5K
+# Feature list:-
+# 1) Region filter on GIS
+SHOW_SPRINT4 = False
+
 # Import the local_settings.py file to override global settings
 try:
     from local_settings import *
