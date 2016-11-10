@@ -205,6 +205,7 @@ class LivePerformance(ListView):
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
             ]
 
+            specific_headers += [{'mData': 'site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False}]
             specific_headers += rad5_specific_headers
 
         elif page_type in ["customer"]:
@@ -398,6 +399,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'sector_id',
                 'circuit_id',
                 'customer_name',
+                'site_id',
                 'region',
                 'min_latency',
                 'ip_address',
