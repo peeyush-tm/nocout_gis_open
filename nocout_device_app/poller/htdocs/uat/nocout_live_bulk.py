@@ -77,8 +77,8 @@ def ping_test_mail_sent(id):
 		url = ping_conf.get('email_url') #API URL to send the email
 		data1 = {'pk' : id, 'report_type' : 'ping'}
 		r = requests.post(url, data = data1, verify=False)
-		if r.status_code == 200:
-			logger.info("Email-sent")
+		#if r.status_code == 200:
+		#	logger.info("Email-sent")
 	except Exception as e :
 		logger.error('in ping e-mail sent: ' + pformat(e))
 
@@ -103,7 +103,7 @@ def ping_status_update(id,file_name):   # The function change the status(0 to 1)
 		query += "SET `status`=%s,`file_path`=%s WHERE `id`=%s"
 		cur.execute(query, data_values)
 		db_conn.commit()
-		logger.info("Status update")
+		
 	except Exception as e :
 		logger.error('in ping status: ' + pformat(e))
 	finally :
@@ -114,8 +114,7 @@ def ping_status_update(id,file_name):   # The function change the status(0 to 1)
 
 def ping_file_send(file_name):
 	try:
-		#hostname = " tmadmin@121.244.255.107:"   # for production
-
+		
 		SSH_NEWKEY = r'Are you sure you want to continue connecting \(yes/no\)\?'
 		hostname = " "+ping_conf.get('scp_host')+":"
 		remote_path = ping_conf.get('remote_file_path')
@@ -127,15 +126,15 @@ def ping_file_send(file_name):
 	                child.expect("password:",timeout=120)
         	        child.sendline(ping_conf.get('scp_password'))   #   password
                 	child.expect(pexpect.EOF, timeout=10)
-                	logger.info('file sent' )  
+                	#logger.info('file sent' )  
 
 		else:
 
 			child.expect("password:",timeout=120)
 			child.sendline(ping_conf.get('scp_password'))
-			#child.sendline('TTpl12#$')   #   password
+			
 			child.expect(pexpect.EOF, timeout=10)
-			logger.info('file sent' )  
+			#logger.info('file sent' )  
 
 	except Exception as e:
 		logger.error('in ping file sending: ' + pformat(e))   # change with the looger
@@ -173,7 +172,7 @@ def ping_test(id, ip, time1):
 		ping_status_update(id,file_name1)
 		time.sleep(8)
 		ping_test_mail_sent(id)
-		#print(err.decode())
+		
 	except Exception as e :	
 		logger.error('in ping1: ' + pformat(e))
 
@@ -191,7 +190,7 @@ def ping_conf_get():
 			ip= each.get("ip_address")
 			id= each.get("id")
 			time1 = int(each.get("time_interval"))
-			#time1 = time1*3600
+			time1 = time1*3600
 			process = Process(target=ping_test, args=(id,ip, time1))  # call ping1 function with arguments
 			process.start()
 		except Exception as e :
