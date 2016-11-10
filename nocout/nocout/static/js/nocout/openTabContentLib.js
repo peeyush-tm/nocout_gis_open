@@ -7,6 +7,7 @@
 var tables_info = {},
     last_clicked_tab = "",
     timeOutId = "",
+    page_type = "",
     ptp_list = ['ptp','p2p'],
     pmp_list = ['pmp', 'rad5'],
     rad5_list = ['rad5'],
