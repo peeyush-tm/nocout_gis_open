@@ -72,11 +72,13 @@ $('input[name="alarm_type"]').change(function(e) {
     updated_url_pmp = array1.join('?');
 
     // Update Radwin5K url
-    var array1 = rad5k_url.split("?"),
-        array2 = array1[1].split("&");
-    array2[0] = new_get_param
-    array1[1] = array2.join('&');
-    updated_url_rad5k = array1.join('?');
+    if($("#snmp_rad5k_tab").length > 0) {
+        var array1 = rad5k_url.split("?"),
+            array2 = array1[1].split("&");
+        array2[0] = new_get_param
+        array1[1] = array2.join('&');
+        updated_url_rad5k = array1.join('?');
+    }
 
     // Update WiMAX url
     var array1 = wimax_url.split("?"),
