@@ -7,7 +7,7 @@
 #
 #  Output: service state,plugin output ,performance data
 ##################################################################
-
+from mysql_connection import memc
 
 def check_rad5k_channel_bw_invent(item, _no_params, info):
 	"""
@@ -43,6 +43,17 @@ def check_rad5k_channel_bw_invent(item, _no_params, info):
 				channel_bandwidth = saveint(info[0][0])
 				infotext = "cbw=%d" % channel_bandwidth
 				state= 0
+
+                                key = g_hostname + "_cbw"
+                                try:
+                                        if memc:
+                                                memc.set(key, channel_bandwidth)
+						memc.get(key)
+                                except :
+                                        pass
+
+
+
 	except:
         	infotext = "unknown_value"
    

@@ -6,6 +6,8 @@
 #
 # Output: service state ,plugin output
 # ######################################################################
+import memcache
+from mysql_connection import memc
 
 def live_query_for_rad5k_ss_ul_utilization(serial_number):
         """
@@ -129,6 +131,17 @@ def check_rad5k_ss_ul_utilization(item, _no_params, info):
 					infotext = "SS uplink utilization not available"
 					state = 3
 					ul_utilization = None
+
+				key = g_hostname + "_ul"
+				try:
+					if memc:
+						 memc.set(key,"%.2f" % float(ul_utilization))
+				except  :
+					pass
+
+
+
+
 	except ValueError:
         	infotext = "type_mismatch_value"
 	except Exception,e:

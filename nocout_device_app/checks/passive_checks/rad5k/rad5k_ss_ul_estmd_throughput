@@ -1,17 +1,17 @@
 #!/usr/bin/python
 # ######################################################################
-# Function: check_rad5k_ss_dl_utilization
+# Function: check_rad5k_dl_estmd_throughput_invent
 #
 # Parameters: info (SNMP Ouput) _no_params (No Parameters)
 #
 # Output: service state ,plugin output
 # ######################################################################
-def live_query_for_rad5k_ss_dl_utilization(serial_number):
+def live_query_for_rad5k_ss_ul_estimated_throughput(serial_number):
         """
-            live_query_for_rad5k_ss_dl_utilization function calculates the SS DownLink Utilization
-            by extracting data from memory using SS Serial number as key from memcache;
-            if data is not present in memcache it retrieves the data from Livestatus by making a socket
-            connection and reading plugin output of 'rad5k_topology_discover' through the details
+            live_query_for_rad5k_ss_ul_estimated_throughput function calculates the SS UpLink Estimated
+            Throughput by extracting data from memory using SS Serial number as key from memcache;
+            if data is not present in memcache it retrieves the data from Livestatus by making a
+            socket connection and reading plugin output of 'rad5k_topology_discover' through the details
             of its corresponded Base Station whose details are fetched from memcache or MySQL DB(if not present in memcache)
 
             Args:
@@ -19,7 +19,7 @@ def live_query_for_rad5k_ss_dl_utilization(serial_number):
 
             Returns:
 
-                    dl_utilization(string): SS DownLink Utilization
+                    ul_estimated_throughput(string): SS UpLink Estimated Throughput
 
             Raises:
                     Exception
@@ -27,24 +27,23 @@ def live_query_for_rad5k_ss_dl_utilization(serial_number):
 
         """
         exit_value = 3
-        dl_utilization = None
-	bs_params = None
+        ul_estimated_throughput = None
+        bs_params = None
         if memc:
-                key = "%s_param" % serial_number
+                key = serial_number + "_param"
                 value_list = memc.get(key)
-		#print value_list
                 if value_list:
                         try:
-                                dl_utilization = value_list[2]
+                                ul_estimated_throughput = value_list[7]
                         except:
-                                dl_utilization = None
-                if dl_utilization is None:
+                                ul_estimated_throughput = None
+                if ul_estimated_throughput is None:
                         try:
                                 key_bs = serial_number + "_topology"
                                 bs_params = memc.get(key_bs)
                         except :
                                 pass
-        if dl_utilization is None :
+        if ul_estimated_throughput is None :
                 if not bs_params :
                         host_name = extract_host_from_rad5k_topology(serial_number)
                         try :
@@ -56,6 +55,7 @@ def live_query_for_rad5k_ss_dl_utilization(serial_number):
                                 if bs_hostname :
                                         try :
                                                 arg_list = []
+
                                                 arg_list.append([bs_hostname,bs_site])
                                                 key = serial_number + "_topology"
                                                 memc.set(key,arg_list,360)
@@ -69,30 +69,25 @@ def live_query_for_rad5k_ss_dl_utilization(serial_number):
                         if bs_hostname:
                                 query_string = "GET services\nColumns: plugin_output\nFilter: " + \
                                 "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("rad5k_topology_discover", bs_hostname)
-
-
                                 site = bs_site
                                 machine_name = site.split('_')[0]
                                 socket_ip = _LIVESTATUS[machine_name]['host']
                                 socket_port = _LIVESTATUS[machine_name][site]['port']
-
                                 query_output = eval(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
-				#print query_output
-	                        if query_output[0][0]:
+                                if query_output[0][0]:
                                         plugin_output = str(query_output[0][0].split(' - ')[1])
                                         plugin_output = [entry for entry in plugin_output.split(' ')]
-					#print plugin_output
                                         entry=filter(lambda x: serial_number in x, plugin_output)
-                                        dl_utilization = entry[0].split('=')[1].split('/')[2]
+                                        ul_estimated_throughput = int(entry[0].split('=')[1].split('/')[7])
 
                 except Exception,e:
-			#print e
-                        dl_utilization = None
-        return dl_utilization
+                        ul_estimated_throughput = None
 
-def check_rad5k_ss_dl_utilization(item, _no_params, info):
+        return ul_estimated_throughput
+
+def check_rad5k_ss_ul_estmd_throughput(item, _no_params, info):
 	"""
-           check_rad5k_ss_dl_utilization function calculates the SS Downlink Utilization
+           check_rad5k_ss_ul_estmd_throughput function calculates the SS UpLink Estimated Throughput
 
             Args:
                     item (str) Specific item on SNMP output on which we want to filter results
@@ -108,54 +103,39 @@ def check_rad5k_ss_dl_utilization(item, _no_params, info):
                                     3: unknown
                     infotext(string):
                                     plugin output
-                                    Example : OK - SS downlink utilization is 0.04
+                                    Example : OK - ul_estimated_throughput=1
 
-            Raises:
-                    ValueError ,Exception
+                    Raises:
+                            ValueError ,Exception
+
 	"""
 	state = 3
 	infotext = "unknown_value"
-	dl_utilization= None
-	if info :
-		try:
-        		ss_serial_number = info[0][0]
-	        	if ss_serial_number:
-        	        	dl_utilization =live_query_for_rad5k_ss_dl_utilization(ss_serial_number)
-	                	if dl_utilization is not None :
-        	                	infotext = "SS downlink utilization is %s" % dl_utilization
-                	        	state = 0
-				else:
-					infotext = "SS downlink utilization not available"
-					dl_utilization = None
-					state = 3
+	ul_estimated_throughput= None
+	try:
+		if info :
+	        	ss_serial_number = info[0][0]
+		        if ss_serial_number:
+	        	        ul_estimated_throughput =live_query_for_rad5k_ss_ul_estimated_throughput(ss_serial_number)
+	                	if ul_estimated_throughput is not None:
+	                        	infotext = "ul_estimated_throughput=%s" % ul_estimated_throughput
+		                        state = 0
+	except ValueError:
+        	infotext = "type_mismatch_value"
+	except:
+        	infotext = "unknown_value"
 
-				key = g_hostname + "_dl"
-				try:
-					if memc:
-						memc.set(key,"%.2f" % float(dl_utilization))
-				except:
-					pass
+	return (state, infotext,[("ul_estimated_throughput",ul_estimated_throughput)])
 
-
-
-
-
-		except ValueError:
-        		infotext = "type_mismatch_value"
-		except:
-        		infotext = "unknown_value"
-
-	return (state, infotext,[("dl_utilization", dl_utilization)])
-
-check_info["rad5k_ss_dl_utilization"] = {
-    'check_function': check_rad5k_ss_dl_utilization,
-    'service_description': 'rad5k_ss_dl_utilization',
+check_info["rad5k_ss_ul_estmd_throughput"] = {
+    'check_function': check_rad5k_ss_ul_estmd_throughput,
+    'service_description': 'rad5k_ss_ul_estmd_throughput',
     'has_perfdata': True,
 }
 
 #########################################################################
-#       SNMP OID for the downlink utilization
+#       SNMP OID for the Uplink Estimated throughput
 #########################################################################
-snmp_info["rad5k_ss_dl_utilization"] = (  ".1.3.6.1.4.1.4458.1000.1.1", ["29.0"] )
+snmp_info["rad5k_ss_ul_estmd_throughput"] = (  ".1.3.6.1.4.1.4458.1000.1.1", ["29.0"] )
 
 

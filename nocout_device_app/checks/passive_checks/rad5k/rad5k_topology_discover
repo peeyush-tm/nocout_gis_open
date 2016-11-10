@@ -46,12 +46,14 @@ def check_rad5k_topology_discover(item, params, info):
             ap_ip = info[0][0]
             ap_mac = info[0][1]
             n= 2
+            ss_list= []
             ap_mac=(':').join([ap_mac[j:j+2] for j in range(0, len(ap_mac), n)])
             ap_sector_id = info[0][2].replace(" ","_")
             infotext += "%s %s %s " %(ap_mac,ap_ip,ap_sector_id)
             info_list1 = info[1:17]
             info_list2 = info[17:]
 	    #print info_list1, "\n", info_list2
+            connected_ss_dl_modulation = info[0][18]
             for i in range(len(info_list1)):
                 try:
                     connected_ss_serial_number = info_list1[i][3].split(',')[4]
@@ -63,6 +65,7 @@ def check_rad5k_topology_discover(item, params, info):
 		try:
 		    hex_ip = info_list1[i][3].split(',')[1]
 		    connected_ss_ip_address = '.'.join(str(int(index, 16)) for index in ([hex_ip[index:index+2] for index in range(0, len(hex_ip), 2)]))
+		    ss_list.append(connected_ss_ip_address)
 		except:
 		    connected_ss_ip_address = None
 		try:
@@ -127,18 +130,67 @@ def check_rad5k_topology_discover(item, params, info):
                 except:
                     connected_ss_ul_bbe = None
 
-                infotext += "%s=%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s " % (connected_ss_serial_number, \
+	        try :
+                    connected_ss_data_vlan = int(info_list1[i][19])
+                except :
+                    connected_ss_data_vlan = None
+
+
+
+	        try :
+	            connected_ss_mir_ul = int(info_list1[i][20])
+	        except :
+	            connected_ss_mir_ul = None
+
+                try :
+                    connected_ss_mir_dl = int(info_list1[i][21])
+                except :
+                    connected_ss_mir_dl = None
+
+                try :
+                    ul_rssi2 = (info_list1[i][22][66])
+                    s1 = binascii.hexlify(ul_rssi2)
+                    s2 = int(s1, 16)
+                    s3 = bin(s2)
+                    s3 = s3[2:]
+                    s4 = ''.join('1' if x == '0' else '0' for x in s3)
+                    s5 = "1".zfill(len(s4))
+                    s6 = bin(int(s4,2) + int(s5,2))
+                    s7 = int(s6,2)
+                    ul_rssi2 = s7
+                
+                except :
+                    ul_rssi2 = None
+
+                try :
+                    dl_rssi2 = (info_list1[i][22][67])
+                    s1 = binascii.hexlify(dl_rssi2)
+                    s2 = int(s1, 16)
+                    s3 = bin(s2)
+                    s3 = s3[2:]
+                    s4 = ''.join('1' if x == '0' else '0' for x in s3)
+                    s5 = "1".zfill(len(s4))
+                    s6 = bin(int(s4,2) + int(s5,2))
+                    s7 = int(s6,2)
+                    dl_rssi2 = s7
+
+                except :
+                    dl_rssi2 = None
+
+
+                infotext += "%s=%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s " % (connected_ss_serial_number, \
 		connected_ss_rssi_ul,connected_ss_rssi_dl,connected_ss_dl_utilization,connected_ss_ul_utilization,\
 		connected_ss_time_slot_alloted_dl,connected_ss_time_slot_alloted_ul,connected_ss_estimated_throughput_dl,\
 		connected_ss_estimated_throughput_ul,connected_ss_ul_uas,connected_ss_ul_es,connected_ss_ul_ses,\
-		connected_ss_ul_bbe,connected_ss_cell_radius,connected_ss_commanded_rx_power,connected_ss_ip_address)
+		connected_ss_ul_bbe,connected_ss_cell_radius,connected_ss_commanded_rx_power,connected_ss_ip_address,connected_ss_dl_modulation,connected_ss_data_vlan,connected_ss_mir_ul,connected_ss_mir_dl,ul_rssi2,dl_rssi2)
                 try:
                     value_list= []
                     value_list.extend([connected_ss_rssi_ul,connected_ss_rssi_dl,connected_ss_dl_utilization,\
                                             connected_ss_ul_utilization,connected_ss_time_slot_alloted_dl,\
 					    connected_ss_time_slot_alloted_ul,connected_ss_estimated_throughput_dl,\
 					    connected_ss_estimated_throughput_ul,connected_ss_ul_uas,connected_ss_ul_es,\
-					    connected_ss_ul_ses,connected_ss_ul_bbe,connected_ss_cell_radius,connected_ss_commanded_rx_power,connected_ss_ip_address])
+					    connected_ss_ul_ses,connected_ss_ul_bbe,connected_ss_cell_radius,connected_ss_commanded_rx_power,\
+					    connected_ss_ip_address,connected_ss_dl_modulation,connected_ss_data_vlan,connected_ss_mir_ul,connected_ss_mir_dl,ul_rssi2,dl_rssi2])
                     memc.set(connected_ss_serial_number+"_param",value_list,360)
 		    #print memc.get("%s_params" % connected_ss_serial_number),'\n' 
                 except Exception ,e:
@@ -152,6 +204,15 @@ def check_rad5k_topology_discover(item, params, info):
     except Exception,e:
         #print e
         infotext = None
+
+    try :
+        if memc:
+            memc.set("%s_conn_ss" % g_hostname,ss_list)
+    except:
+        pass
+
+
+
     return (state, infotext)
 check_info["rad5k_topology_discover"] = {
     'check_function': check_rad5k_topology_discover,
@@ -168,5 +229,5 @@ check_info["rad5k_topology_discover"] = {
 snmp_info["rad5k_topology_discover"] = ( ".1.3.6.1.4.1.4458.1000", ["1.1.6.0", "1.3.2.1.5.0", "1.5.3.0", "3.1.7.2.1.23",\
 					 "3.1.7.2.1.9", "3.1.7.2.1.11", "3.1.7.2.1.26", "3.1.7.2.1.27", "3.1.6.2.1.7",\
 					 "3.1.6.2.1.13","3.1.7.2.1.6","3.1.7.2.1.7","1.6.1.1.1","1.6.1.1.2","1.6.1.1.3",\
-					 "1.6.1.1.4","3.1.7.2.1.8","3.1.7.2.1.9"] )
+					 "1.6.1.1.4","3.1.7.2.1.8","3.1.7.2.1.9","1.5.9.5.0","3.3.2.1.1.2","3.1.6.2.1.2","3.1.6.2.1.3","3.1.7.2.1.22"] )
 
