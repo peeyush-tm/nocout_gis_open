@@ -158,6 +158,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	events_pl_rta_list = []
 	state_change_severity = None
 	event_name = None
+	severity_names = ["warning","critical","down"]
 	pl_event_name_mapping ={
 	"down" : "Device_not_reachable",
 	"critical": "PD_threshold_breach_major",
@@ -248,7 +249,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					if host_severity == "up":
 					    if pl_event_name_mapping.get(pre_host_severity):	
 					        event_name = pl_event_name_mapping.get(pre_host_severity)
-					elif host_severity in ["warning","critical","down"] and pre_host_severity != "up":
+					elif host_severity in severity_names and pre_host_severity != "up":
 					    modified_event_name = pl_event_name_mapping.get(pre_host_severity)
 					    t2 = ('', modified_event_name, '',str(entry[1]),
 						    '',
@@ -277,8 +278,18 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 
 				except Exception as e :
 				    print e, "in state change dict"
-				    state_change_dict[str(entry[1])]=(host_severity,age)
-				    #state_change_dict[str(entry[1])]=host_severity
+				    # If any new deivce is Added and it is down then events are sent
+				    if not state_change_dict.get(str(entry[1])) and host_severity in severity_names:
+					state_change_dict[str(entry[1])]=(host_severity,age)
+					t = ('', event_name, '',str(entry[1]),
+                     				'',
+                     				'',
+                     				state_change_severity,
+                     				'',
+						time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(local_timestamp))),
+                     				''
+                     				)
+					events_pl_rta_list.append(t)
 
 			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
 			if ds == 'rta':
@@ -322,7 +333,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					if host_severity == "up":
 					    if rta_event_name_mapping.get(pre_host_severity):	
 					        event_name = rta_event_name_mapping.get(pre_host_severity)
-					elif host_severity in ["warning","critical","down"] and pre_host_severity != "up":
+					elif host_severity in severity_names and pre_host_severity != "up":
 					    modified_event_name = rta_event_name_mapping.get(pre_host_severity)
 					    t2 = ('', modified_event_name, '',str(entry[1]),
 						    '',
@@ -350,10 +361,17 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 
                                 except Exception as e :
                                     print e, "in state change dict"
-                                    state_change_dict_rta[str(entry[1])]=(host_severity,age)
-
-
-
+				    if not state_change_dict_rta.get(str(entry[1])) and host_severity in severity_names:
+					state_change_dict_rta[str(entry[1])]=(host_severity,age)
+					t = ('', event_name, '',str(entry[1]),
+                     				'',
+                     				'',
+                     				state_change_severity,
+                     				'',
+						time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(local_timestamp))),
+                     				''
+                     				)
+					events_pl_rta_list.append(t)
 
 
 			data_dict.update({
