@@ -278,9 +278,9 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 
 				except Exception as e :
 				    print e, "in state change dict"
+				    state_change_dict[str(entry[1])]=(host_severity,age)
 				    # If any new deivce is Added and it is down then events are sent
 				    if not state_change_dict.get(str(entry[1])) and host_severity in severity_names:
-					state_change_dict[str(entry[1])]=(host_severity,age)
 					t = ('', event_name, '',str(entry[1]),
                      				'',
                      				'',
@@ -361,8 +361,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 
                                 except Exception as e :
                                     print e, "in state change dict"
+				    state_change_dict_rta[str(entry[1])]=(host_severity,age)
 				    if not state_change_dict_rta.get(str(entry[1])) and host_severity in severity_names:
-					state_change_dict_rta[str(entry[1])]=(host_severity,age)
 					t = ('', event_name, '',str(entry[1]),
                      				'',
                      				'',
