@@ -23,4 +23,7 @@ urlpatterns = patterns('',
 	url(r'^all/(?P<data_source>\w+)/$', views.AllSiaListing.as_view(), name='all_traps'),
 	url(r'^planned_events/(?P<page_type>\w+)/$', views.PlannedEventsInit.as_view(), name='planned_events_init'),
 	url(r'^planned_events/(?P<page_type>\w+)/listing/$', views.PlannedEventsListing.as_view(), name='planned_events_listing'),
+	url(r'^generate_manual_ticket/$', views.GenerateManualTicket.as_view(), name='generate_manual_ticket'),
+	url(r'^manual_tickets/$', views.ManualTicketsInit.as_view(), name='manual_tickets_init'),
+	url(r'^manual_tickets/listing/$', views.ManualTicketsListing.as_view(), name='manual_tickets_listing'),
 )

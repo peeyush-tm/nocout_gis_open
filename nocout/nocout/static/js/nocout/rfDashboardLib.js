@@ -75,6 +75,12 @@ function rf_getChartData(ds_name, chunk_counter) {
         var data_source_title = ds_name ? ds_name.toUpperCase() : "",
             get_param = "?data_source=" + ds_name,
             tab_title = window.location.href.split("rf-performance/")[1].split("/")[0].toUpperCase();
+
+            // Adding extra flag in case if request is from rad5 page
+            if (ajax_url.indexOf('radwin5k') > -1){
+                get_param += '&is_rad5=1'
+            }
+
         $.ajax({
             url : base_url+""+ajax_url+""+get_param,
             type : "GET",

@@ -35,9 +35,8 @@
     <script type="text/javascript">
         var dataTableInstance = '';
         $(document).ready(function (e) {
-
             {% for group in user.groups.all %}
-                {% if group.name == 'Admin' %}
+                {% if group.name|lower == 'admin' %}
                     var create_link_html = '<a href="/bulk_import/gis_inventory/" title="GIS Inventory Bulk Import" \
                                             class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
 

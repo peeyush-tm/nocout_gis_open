@@ -47,6 +47,33 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                 }
             }
 
+            if(table_id.toLowerCase().indexOf("rad5") > -1) {
+                for (var i = 0; i < grid_headers.length; i++) {
+                    var column = grid_headers[i];
+                    if (column.mData.indexOf("region") > -1
+                        ||
+                        column.mData.indexOf("min_latency") > -1
+                        ||
+                        column.mData.indexOf("site_id") > -1
+                        ||
+                        column.mData.indexOf("dl_uas") > -1
+                        ||
+                        column.mData.indexOf("ul_uas") > -1 
+                        ||
+                        column.mData.indexOf("dl_utilization") > -1
+                        ||
+                        column.mData.indexOf("ul_utilization") > -1
+                        ||
+                        column.mData.indexOf("device_uptime") > -1){ 
+                        if (!column.bVisible) {
+                            column.bVisible = true;
+                        } else {
+                            column["bVisible"] = true;
+                        }
+                    }
+                }
+            }
+
             if(!tables_info[anchor_id]) {
                 /*Call createDataTable function to create the data table for specified dom element with given data*/
                 dataTableInstance.createDataTable(

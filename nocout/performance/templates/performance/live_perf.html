@@ -75,9 +75,13 @@
                         <li><a href="#{{ page_type|slugify|lower }}_wifi_block"
                                id="{{ page_type|slugify|lower }}_wifi_tab" data-toggle="tab"><span
                                 class="hidden-inline-mobile">WiMAX</span></a></li>
+                        <li>
+                            <a href="#{{ page_type|slugify|lower }}_rad5_block"
+                                id="{{ page_type|slugify|lower }}_rad5_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">Radwin5k</span></a></li>
                         <li><a href="#{{ page_type|slugify|lower }}_pmp_block"
                                id="{{ page_type|slugify|lower }}_pmp_tab" data-toggle="tab"><span
-                                class="hidden-inline-mobile">PMP</span></a></li>
+                                class="hidden-inline-mobile">Cambium</span></a></li>
                         <li class="active"><a href="#{{ page_type|slugify|lower }}_p2p_block"
                                               id="{{ page_type|slugify|lower }}_ptp_tab" data-toggle="tab"><span
                                 class="hidden-inline-mobile">
@@ -89,6 +93,12 @@
                                 </span></a></li>
                     </ul>
                     <div class="tab-content" style="overflow-y:auto;">
+                        <div class="tab-pane" id="{{ page_type|slugify|lower }}_rad5_block">
+                            <table id="{{ page_type|slugify|lower }}_rad5_performancelistingtable" class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                         <div class="tab-pane" id="{{ page_type|slugify|lower }}_wifi_block">
                             <table id="{{ page_type|slugify|lower }}_wifi_performancelistingtable" class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
@@ -126,7 +136,8 @@
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
 
-        var dataTableInstance = "";
+        var dataTableInstance = "",
+            page_type = "";
 
         $(document).ready(function (e) {
 
@@ -135,7 +146,8 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
-            ajax_url_get_parameter = "{{ page_type|slugify|lower }}";
+            ajax_url_get_parameter = "{{ page_type|slugify|lower }}"
+            page_type = ajax_url_get_parameter;
 
             /*Ajax url to get grid data*/
             var destroy = false,
@@ -203,9 +215,11 @@
                 var network_wifi_title = "Network Live - WiMAX",
                     network_ptp_title = "Network Live - PTP BH",
                     network_pmp_title = "Network Live - PMP",
+                    network_rad5_title = "Network Live - RADWIN5",
                     customer_wifi_title = "Customer Live - WiMAX",
                     customer_ptp_title = "Customer Live - PTP",
-                    customer_pmp_title = "Customer Live - PMP";
+                    customer_pmp_title = "Customer Live - PMP",
+                    customer_rad5_title = "Customer Live - RADWIN5";
 
                 tables_info = {
                     "network_wifi_tab" : {
@@ -235,6 +249,15 @@
                         "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'report_title' : '"+network_pmp_title+"', 'download_excel': 'yes' }",
                         "excluded" : "['circuit_id','customer_name']"
                     },
+                    "network_rad5_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : network_rad5_title,
+                        "header_class_name" : "LivePerformance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'RADWIN5', 'report_title' : '"+network_rad5_title+"', 'download_excel': 'yes' }",
+                        "excluded" : "['circuit_id','customer_name']"
+                    },
                     "customer_wifi_tab" : {
                         "app_name" : "performance",
                         "table_title" : customer_wifi_title,
@@ -259,13 +282,22 @@
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
                         "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'report_title' : '"+customer_pmp_title+"', 'download_excel': 'yes' }"
+                    },
+                    "customer_rad5_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : customer_rad5_title,
+                        "header_class_name" : "LivePerformance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'RADWIN5', 'report_title' : '"+customer_rad5_title+"', 'download_excel': 'yes' }"
                     }
                 };
 
                 ///for network and cusotmer devices
-                var ajax_url_wifi = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX';
-                var ajax_url_pmp = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'PMP';
-                var ajax_url_p2p = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'P2P';
+                var ajax_url_wifi = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX' + '&is_rad5=' +0;
+                var ajax_url_pmp = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'PMP' + '&is_rad5=' +0;
+                var ajax_url_p2p = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'P2P' + '&is_rad5=' +0;
+                var ajax_url_rad5 = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'PMP' + '&is_rad5=' +1;
                 ///end: for network and cusotmer devices
                 /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
@@ -278,6 +310,9 @@
                 $("#network_ptp_tab").attr("data_url", ajax_url_p2p);
                 $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
+                $("#network_rad5_tab").attr("data_url", ajax_url_rad5);
+                $("#network_rad5_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
 
                 $("#customer_wifi_tab").attr("data_url", ajax_url_wifi);
                 $("#customer_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
@@ -287,6 +322,9 @@
 
                 $("#customer_ptp_tab").attr("data_url", ajax_url_p2p);
                 $("#customer_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+                $("#customer_rad5_tab").attr("data_url", ajax_url_rad5);
+                $("#customer_rad5_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
                 if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
                     /*Trigger click event on active tab to load its data*/
