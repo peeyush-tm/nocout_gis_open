@@ -144,6 +144,7 @@ def get_datatable_response(payload):
             file_headers_list = list()
             datatable_headers = simplejson.loads(headers_data[headers_data_key])
             excluded_columns = payload['excluded'] if 'excluded' in payload and payload['excluded'] else []
+            
             # Headers which will not displayed in excel sheet
             non_display_headers = action_headers + excluded_columns
 

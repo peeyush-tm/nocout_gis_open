@@ -13,6 +13,7 @@ from django.db.models import Q
 import operator
 
 from dashboard.models import DashboardSetting
+from device.models import DeviceType
 from dashboard.config import dashboards
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
@@ -24,7 +25,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def get_unused_dashboards(dashboard_setting_id=None):
+def get_unused_dashboards(dashboard_setting_id=None, device_type_id=None):
     """
     This function gives us the list of unused dashboards whose settings are not created.
 
@@ -56,8 +57,47 @@ def get_unused_dashboards(dashboard_setting_id=None):
     for dashboard_setting in dashboard_settings:
         setting_technology = dashboard_setting.technology.id if dashboard_setting.technology else None
         for i, dashboard_conf in enumerate(unused_dashboards):
-            if dashboard_conf['page_name'] == dashboard_setting.page_name and technologies[dashboard_conf['technology']] == setting_technology and dashboard_conf['is_bh'] == dashboard_setting.is_bh and dashboard_conf['dashboard_name'] == dashboard_setting.name and types[dashboard_conf['dashboard_type']] == dashboard_setting.dashboard_type:
+
+            # device_type_condition for rf_performance dashboards
+            if dashboard_conf['device_type']:
+                device_type = dashboard_setting.device_type.name if dashboard_setting.device_type else ''
+                device_type_condition = (dashboard_conf['device_type'] == device_type)
+            else : 
+                device_type_condition = True
+
+            if_condition = (
+                                dashboard_conf['page_name'] == dashboard_setting.page_name
+                                and
+                                technologies[dashboard_conf['technology']] == setting_technology
+                                and
+                                dashboard_conf['is_bh'] == dashboard_setting.is_bh
+                                and
+                                dashboard_conf['dashboard_name'] == dashboard_setting.name
+                                and
+                                types[dashboard_conf['dashboard_type']] == dashboard_setting.dashboard_type
+                                and
+                                device_type_condition
+                        )
+
+            if if_condition:
                 unused_dashboards.pop(i)
+
+    # Execute only when a device_type_id is given
+    # i.e call from nocout.api.GetUnusedDashboards
+    if device_type_id:
+        filtered_dashboards = []
+        try:
+            device_type_name = DeviceType.objects.get(id=device_type_id).name
+        except Exception, e:
+            device_type_name = ''
+
+        for j, dashboard in enumerate(unused_dashboards):
+            if device_type_name and dashboard['device_type'] == device_type_name:
+                filtered_dashboards.append(unused_dashboards[j])
+
+        # unused_dashboards = filtered_dashboards
+        return filtered_dashboards
+
     return json.dumps(unused_dashboards)
 
 def get_service_status_data(queue, machine_device_list, machine, model, service_name, data_source):
@@ -138,6 +178,32 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
             log.exception(e.message)
     else:
         return service_status_data
+
+def fill_device_type_entry_in_dashboard_settings():
+    """
+    Function for filling newly added device type column in all dashboard_settings objects.
+    """
+    device_tech_type_mapping = {
+        'P2P': 'Radwin2KSS',
+        'PTP-BH': 'Radwin2KSS',
+        'PMP': 'CanopySM100SS',
+        'WiMAX': 'StarmaxSS' 
+    }
+    dashboard_settings = DashboardSetting.objects.all()
+
+    for setting in dashboard_settings:
+        device_tech = setting.technology
+
+        device_tech_name = device_tech.name if device_tech else ''
+        device_type_name = device_tech_type_mapping.get(device_tech_name, '')
+
+        try:
+            setting.device_type = DeviceType.objects.get(name=device_type_name)
+        except Exception, e:
+            setting.device_type = None
+
+        # saving the dashboard_setting instance
+        setting.save()
 
 # Below class is referenced from Link - https://djangosnippets.org/snippets/1253/
 class MultiQuerySet(object):

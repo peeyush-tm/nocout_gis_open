@@ -1835,6 +1835,7 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
             IF(not isnull(state.state_name), state.state_name, 'NA') as BSSTATE,
             bs.city_id as BSCITYID,
             bs.state_id as BSSTATEID,
+            IF(not isnull(bs.bs_site_id), bs.bs_site_id, 'NA') as SITEID,
             device_port.name as SECTOR_PORT,
             IF(
                 lower(ss_info.DEVICE_TECH) = 'wimax' and not isnull(device_port.name),
@@ -1870,6 +1871,7 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
                     device_info.SSDEVICENAME AS SSDEVICENAME,
                     device_info.DEVICE_ID AS DEVICE_ID,
                     device_info.SS_DEVICE_ID AS SS_DEVICE_ID,
+                    device_info.org_alias AS org_alias,
                     
                     devicetype.alias AS DEVICE_TYPE,
                     devicetype.id AS TYPEID,
@@ -1883,9 +1885,14 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
                         device.ip_address as SSIP,
                         device.device_name as SSDEVICENAME,
                         device.device_technology as device_technology_id,
-                        device.device_type as device_type_id
+                        device.device_type as device_type_id,
+                        device_org.alias as org_alias
                     FROM
                         device_device as device
+                    LEFT JOIN
+                        organization_organization as device_org
+                    ON
+                        device.organization_id = device_org.id
                     {2}
                     {1}
                 ) AS device_info
@@ -2098,6 +2105,7 @@ def get_inventory_sector_query(
             IF(not isnull(bs.alias), bs.alias, 'NA') as BSALIAS,
             IF(not isnull(city.city_name), city.city_name, 'NA') as BSCITY,
             IF(not isnull(state.state_name), state.state_name, 'NA') as BSSTATE,
+            IF(not isnull(bs.bs_site_id), bs.bs_site_id, 'NA') as SITEID,
             device_port.name as SECTOR_PORT,
             {3}
             bs.city_id as BSCITYID,
@@ -2125,7 +2133,8 @@ def get_inventory_sector_query(
                     device_info.SECTOR_CONF_ON_IP AS SECTOR_CONF_ON_IP,
                     device_info.SECTOR_CONF_ON_ID AS SECTOR_CONF_ON_ID,
                     device_info.DEVICE_ID AS DEVICE_ID,
-                    device_info.SECTOR_CONF_ON_NAME AS SECTOR_CONF_ON_NAME
+                    device_info.SECTOR_CONF_ON_NAME AS SECTOR_CONF_ON_NAME,
+                    device_info.org_alias AS org_alias
                 from (
                     SELECT
                         device.id as DEVICE_ID,
@@ -2133,9 +2142,14 @@ def get_inventory_sector_query(
                         device.ip_address as SECTOR_CONF_ON_IP,
                         device.device_name as SECTOR_CONF_ON_NAME,
                         device.device_technology as device_technology_id,
-                        device.device_type as device_type_id
+                        device.device_type as device_type_id,
+                        device_org.alias as org_alias
                     FROM
                         device_device as device
+                    LEFT JOIN
+                        organization_organization as device_org
+                    ON
+                        device.organization_id = device_org.id
                     {2}
                     {1}
                 ) AS device_info
@@ -2255,6 +2269,7 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
             IF(not isnull(bs.id), bs.id, '0') AS BSID,
             IF(not isnull(city.city_name), city.city_name, 'NA') AS BSCITY,
             IF(not isnull(state.state_name), state.state_name, 'NA') AS BSSTATE,
+            IF(not isnull(bs.bs_site_id), bs.bs_site_id, 'NA') as SITEID,
             IF(not isnull(freq.value), freq.value, 'NA') AS FREQUENCY,
             bs.city_id AS BSCITYID,
             bs.state_id AS BSSTATEID,
@@ -2288,7 +2303,8 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                             device_info.SECTOR_CONF_ON_IP AS SECTOR_CONF_ON_IP,
                             device_info.NEAR_DEVICE_ID AS NEAR_DEVICE_ID,
                             device_info.DEVICE_ID AS DEVICE_ID,
-                            device_info.SECTOR_CONF_ON_NAME AS SECTOR_CONF_ON_NAME
+                            device_info.SECTOR_CONF_ON_NAME AS SECTOR_CONF_ON_NAME,
+                            device_info.org_alias AS org_alias
                         FROM (
                             SELECT
                                 device.id as DEVICE_ID,
@@ -2296,9 +2312,14 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                                 device.ip_address as SECTOR_CONF_ON_IP,
                                 device.device_name as SECTOR_CONF_ON_NAME,
                                 device.device_technology as device_technology_id,
-                                device.device_type as device_type_id
+                                device.device_type as device_type_id,
+                                device_org.alias as org_alias
                             FROM
                                 device_device as device
+                            LEFT JOIN
+                                organization_organization as device_org
+                            ON
+                                device.organization_id = device_org.id
                             {1}
                             {0}
                         ) AS device_info
@@ -2422,6 +2443,7 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
             IF(not isnull(bs.bh_port_name), bs.bh_port_name , 'NA') AS BHPORT,
             IF(not isnull(bs.city_id), bs.city_id , '0') AS BSCITYID,
             IF(not isnull(bs.state_id), bs.state_id , '0') AS BSSTATEID,
+            IF(not isnull(bs.bs_site_id), bs.bs_site_id, 'NA') as SITEID,
             IF(not isnull(city.city_name), city.city_name , 'NA') AS BSCITY,
             IF(not isnull(state.state_name), state.state_name , 'NA') AS BSSTATE,
             bh_info.* 
@@ -2440,16 +2462,22 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
                     
                     device_info.BHIP AS BHIP,
                     device_info.DEVICE_ID AS DEVICE_ID,
-                    device_info.BHDEVICENAME AS BHDEVICENAME
+                    device_info.BHDEVICENAME AS BHDEVICENAME,
+                    device_info.org_alias AS org_alias
                 from (
                     SELECT
                         device.id as DEVICE_ID,
                         device.ip_address as BHIP,
                         device.device_name as BHDEVICENAME,
                         device.device_technology as device_technology_id,
-                        device.device_type as device_type_id
+                        device.device_type as device_type_id,
+                        device_org.alias as org_alias
                     FROM
                         device_device as device
+                    LEFT JOIN
+                        organization_organization as device_org
+                    ON
+                        device.organization_id = device_org.id
                     {1}
                         AND
                         device.is_deleted = 0
@@ -2671,6 +2699,7 @@ def get_maps_initial_data_query(bs_id=[]):
             IF(isnull(bs.name), 'NA', bs.name) AS BSNAME,
             IF(isnull(bs.alias), 'NA', bs.alias) AS BSALIAS,
             IF(isnull(bs.maintenance_status), 'NA', bs.maintenance_status) AS BSMAINTENANCESTATUS,
+            IF(isnull(bs.organization_id), 'NA', bs_org.alias) AS BSREGION,
             IF(isnull(city.city_name), 'NA', city.city_name) AS BSCITY, 
             IF(isnull(state.state_name), 'NA', state.state_name) AS BSSTATE,
             IF(isnull(bs.latitude), 'NA', bs.latitude) AS BSLAT,
@@ -2724,6 +2753,10 @@ def get_maps_initial_data_query(bs_id=[]):
             device_devicetype AS bh_type
         ON
             bh_device.device_type = bh_type.id
+        LEFT JOIN 
+            organization_organization AS bs_org
+        ON
+            bs_org.id = bs.organization_id
         LEFT JOIN 
             device_state AS state
         ON

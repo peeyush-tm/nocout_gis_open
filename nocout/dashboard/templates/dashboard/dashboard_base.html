@@ -1,6 +1,8 @@
 {% extends "nocout/base.html" %}
 
 {% block load_js %}
+{% load staticfiles %}
+<script type="text/javascript" src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
 <script>
     jQuery(document).ready(function () {
         App.setPage("");  //Set current page

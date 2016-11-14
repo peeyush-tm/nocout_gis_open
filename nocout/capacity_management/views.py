@@ -17,20 +17,24 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 
 import ujson as json
 
-from device.models import DeviceTechnology, Device
+from device.models import DeviceTechnology, Device, DeviceType
 
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway, time_delta_calculator
 
 from nocout.mixins.datatable import AdvanceFilteringMixin
 
-from nocout.settings import DATE_TIME_FORMAT
+from nocout.settings import DATE_TIME_FORMAT, RADWIN5K_CONFIG
 
 from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
 
 from performance.formulae import display_time
 
 import logging
+
+# This import needs to be done becuase in case of Radwin5K sector Utilization
+# Headers are getting defined in NetworkAlertDetailHeaders class
+from alert_center.views import NetworkAlertDetailHeaders
 
 logger = logging.getLogger(__name__)
 
@@ -53,69 +57,80 @@ class SectorStatusHeaders(ListView):
         context = super(SectorStatusHeaders, self).get_context_data(**kwargs)
 
         hidden_headers = [
-            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'severity', 'sTitle': 'severity', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'age', 'sTitle': 'age', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'organization__alias', 'sTitle': 'organization', 'sWidth': 'auto', 'sClass': 'hide',
-             'bSortable': True},
+            {'mData': 'id', 'sTitle': 'Device ID', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'severity', 'sTitle': 'severity', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'age', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'organization__alias', 'sTitle': 'organization', 'sClass': 'hide', 'bSortable': True},
         ]
 
-        common_headers = [
-            {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto',
-             'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto',
-             'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'IP', 'sWidth': 'auto',
-             'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto',
-             'bSortable': True},
-            {'mData': 'sector_capacity', 'sTitle': 'Cbw (MHz)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-
-            {'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sector_capacity_in', 'sTitle': 'Capacity DL', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'avg_in_per', 'sTitle': 'AVG DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'avg_in_val', 'sTitle': 'AVG DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_in_per', 'sTitle': 'PEAK DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_in_val', 'sTitle': 'PEAK DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_in_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-
-            {'mData': 'current_out_per', 'sTitle': 'UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'current_out_val', 'sTitle': 'UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sector_capacity_out', 'sTitle': 'Capacity UL', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'avg_out_per', 'sTitle': 'AVG UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'avg_out_val', 'sTitle': 'AVG UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': 'auto', 'bSortable': False}
+        inventory_headers = [
+            {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'bSortable': True},
+            {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'bSortable': True},
+            {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'bSortable': True},
+            {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'bSortable': True},
+            {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'IP', 'bSortable': True},
+            {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'bSortable': True},
         ]
 
-        datatable_headers = hidden_headers
+        current_headers = [
+            {'mData': 'sector_capacity', 'sTitle': 'Cbw (MHz)', 'bSortable': True},
+            {'mData': 'current_in_per', 'sTitle': 'DL (%)', 'bSortable': True},
+            {'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'bSortable': True},
+            {'mData': 'sector_capacity_in', 'sTitle': 'Capacity DL', 'bSortable': True},
+        ]
 
-        datatable_headers += common_headers
+        # Create Cambium, Wimax headers
+        datatable_headers = list()
+        datatable_headers.extend(hidden_headers)
+        datatable_headers.extend(inventory_headers)
+        datatable_headers.extend(current_headers)
+        datatable_headers.extend([
+            {'mData': 'avg_in_per', 'sTitle': 'AVG DL (%)', 'bSortable': True},
+            {'mData': 'avg_in_val', 'sTitle': 'AVG DL (mbps)', 'bSortable': True},
+            {'mData': 'peak_in_per', 'sTitle': 'PEAK DL (%)', 'bSortable': True},
+            {'mData': 'peak_in_val', 'sTitle': 'PEAK DL (mbps)', 'bSortable': True},
+            {'mData': 'peak_in_timestamp', 'sTitle': 'PEAK Time', 'bSortable': True},
+            {'mData': 'current_out_per', 'sTitle': 'UL (%)', 'bSortable': True},
+            {'mData': 'current_out_val', 'sTitle': 'UL (mbps)', 'bSortable': True},
+            {'mData': 'sector_capacity_out', 'sTitle': 'Capacity UL', 'bSortable': True},
+            {'mData': 'avg_out_per', 'sTitle': 'AVG UL (%)', 'bSortable': True},
+            {'mData': 'avg_out_val', 'sTitle': 'AVG UL (mbps)', 'bSortable': True},
+            {'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'bSortable': True},
+            {'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'bSortable': True},
+            {'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'bSortable': True},
+            {'mData': 'actions', 'sTitle': 'Actions', 'bSortable': False}
+        ])
 
+        # Create Radwin5K headers
+        rad5k_datatable_headers = list()
+        rad5k_datatable_headers.extend(hidden_headers)
+        rad5k_datatable_headers.extend(inventory_headers)
+
+        if RADWIN5K_CONFIG.get('SECTOR_STATUS_CUSTOMER_COUNT'):
+            rad5k_datatable_headers.insert(len(rad5k_datatable_headers) - 1, {
+                'mData': 'customer_count', 
+                'sTitle': 'Customer Count', 
+                'bSortable': True
+            })
+
+        rad5k_datatable_headers.extend(current_headers)
+        rad5k_datatable_headers.extend([
+            {'mData': 'peak_in_per', 'sTitle': 'PEAK DL (%)', 'bSortable': True},
+            {'mData': 'peak_in_val', 'sTitle': 'PEAK DL (mbps)', 'bSortable': True},
+            {'mData': 'peak_in_timestamp', 'sTitle': 'PEAK Time', 'bSortable': True},
+            {'mData': 'peak_in_duration', 'sTitle': 'Duration', 'bSortable': True},
+            {'mData': 'current_out_per', 'sTitle': 'UL (%)', 'bSortable': True},
+            {'mData': 'current_out_val', 'sTitle': 'UL (mbps)', 'bSortable': True},
+            {'mData': 'sector_capacity_out', 'sTitle': 'Capacity UL', 'bSortable': True},
+            {'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'bSortable': True},
+            {'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'bSortable': True},
+            {'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'bSortable': True},
+            {'mData': 'peak_out_duration', 'sTitle': 'Duration', 'bSortable': True},
+            {'mData': 'actions', 'sTitle': 'Actions', 'bSortable': False}
+        ])
         context['datatable_headers'] = json.dumps(datatable_headers)
+        context['rad5k_datatable_headers'] = json.dumps(rad5k_datatable_headers)
         return context
 
 
@@ -129,68 +144,27 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
     is_searched = False
     is_initialised = True
     technology = 'ALL'
+    is_type = 0
 
     columns = [
-        'id',
-        'sector__sector_id',
-        'sector_sector_id',
-        'sector__base_station__alias',
-        'sector__base_station__city__city_name',
-        'sector__base_station__state__state_name',
-        'sector__sector_configured_on__ip_address',
-        'sector__sector_configured_on__device_technology',
-        'sector__sector_configured_on__id',
-        'sector_capacity',
-        'sector_capacity_in',
-        'sector_capacity_out',
-        'current_in_per',
-        'current_in_val',
-        'avg_in_per',
-        'avg_in_val',
-        'peak_in_per',
-        'peak_in_val',
-        'peak_in_timestamp',
-        'current_out_per',
-        'current_out_val',
-        'avg_out_per',
-        'avg_out_val',
-        'peak_out_per',
-        'peak_out_val',
-        'peak_out_timestamp',
-        'organization__alias',
-        'severity',
-        'age'
+        'id', 'sector__sector_id', 'sector_sector_id', 'sector__base_station__alias',
+        'sector__base_station__city__city_name', 'sector__base_station__state__state_name', 
+        'sector__sector_configured_on__ip_address', 'sector__sector_configured_on__device_technology',
+        'sector__sector_configured_on__id', 'sector_capacity', 'sector_capacity_in',
+        'sector_capacity_out', 'current_in_per', 'current_in_val', 'avg_in_per',
+        'avg_in_val', 'peak_in_per', 'peak_in_val', 'peak_in_timestamp', 'peak_in_duration', 'current_out_per',
+        'current_out_val', 'avg_out_per', 'avg_out_val', 'peak_out_per', 'peak_out_val',
+        'peak_out_timestamp', 'peak_out_duration', 'organization__alias', 'severity', 'age'
     ]
 
     order_columns = [
-        'id',
-        'sector__sector_id',
-        'severity',
-        'age',
-        'organization__alias',
-        'sector_sector_id',
-        'sector__base_station__alias',
-        'sector__base_station__city__city_name',
-        'sector__base_station__state__state_name',
-        'sector__sector_configured_on__ip_address',
-        'sector__sector_configured_on__device_technology',
-        'sector_capacity',
-        'current_in_per',
-        'current_in_val',
-        'sector_capacity_in',
-        'avg_in_per',
-        'avg_in_val',
-        'peak_in_per',
-        'peak_in_val',
-        'peak_in_timestamp',
-        'current_out_per',
-        'current_out_val',
-        'sector_capacity_out',
-        'avg_out_per',
-        'avg_out_val',
-        'peak_out_per',
-        'peak_out_val',
-        'peak_out_timestamp'
+        'id', 'sector__sector_id', 'severity', 'age', 'organization__alias',
+        'sector_sector_id', 'sector__base_station__alias', 'sector__base_station__city__city_name',
+        'sector__base_station__state__state_name', 'sector__sector_configured_on__ip_address', 
+        'sector__sector_configured_on__device_technology', 'sector_capacity', 'current_in_per', 'current_in_val',
+        'sector_capacity_in', 'avg_in_per', 'avg_in_val', 'peak_in_per', 'peak_in_val',
+        'peak_in_timestamp', 'current_out_per', 'current_out_val', 'sector_capacity_out', 'avg_out_per',
+        'avg_out_val', 'peak_out_per', 'peak_out_val', 'peak_out_timestamp'
     ]
 
     related_columns = [
@@ -210,7 +184,6 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         :param qs:
         :return qs:
         """
-        # sSearch = self.request.GET.get('sSearch', None)
         sSearch = self.request.GET.get('search[value]', None)
         self.is_technology_searched = False
         if sSearch:
@@ -261,12 +234,32 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                 organization__in=kwargs['organizations']
             ).prefetch_related(*self.related_columns).values(*self.columns)
         else:
-            tech_id = DeviceTechnology.objects.get(name=self.technology).id
+            where_condition = Q()
+            where_condition &= Q(sector__sector_configured_on__isnull=False)
+            where_condition &= Q(organization__in=kwargs['organizations'])
+
+            if self.is_type:
+                try:
+                    device_type_id = DeviceType.objects.get(name__iexact=self.technology).id
+                    where_condition &= Q(sector__sector_configured_on__device_type=device_type_id)
+                except Exception, e:
+                    return self.model.objects.filter(id=0)
+                    pass
+            else:
+                try:
+                    tech_id = DeviceTechnology.objects.get(name__iexact=self.technology).id
+                    where_condition &= Q(sector__sector_configured_on__device_technology=tech_id)
+                    if self.technology.lower() == 'pmp':
+                        excluded_device_type = DeviceType.objects.filter(
+                            name__icontains='radwin5'
+                        ).values_list('id', flat=True)
+                        where_condition &= ~Q(sector__sector_configured_on__device_type__in=excluded_device_type)
+                except Exception, e:
+                    pass
+
             sectors = self.model.objects.filter(
-                    sector__sector_configured_on__isnull=False,
-                    organization__in=kwargs['organizations'],
-                    sector__sector_configured_on__device_technology=tech_id
-                ).prefetch_related(*self.related_columns).values(*self.columns)
+                where_condition
+            ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
 
@@ -311,15 +304,26 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                     DATE_TIME_FORMAT
                 ) if str(item['peak_in_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
             except Exception, e:
-                item['actions'] = ''
                 logger.exception(e)
                 continue
 
         return json_data
 
     def ordering(self, qs):
-        """ Get parameters from the request and prepare order by clause
         """
+        Get parameters from the request and prepare order by clause
+        """
+        if 'Radwin5K' in self.technology and self.is_type:
+            self.order_columns = [
+                'id', 'sector__sector_id', 'severity', 'age', 'organization__alias',
+                'sector_sector_id', 'sector__base_station__alias', 'sector__base_station__city__city_name',
+                'sector__base_station__state__state_name', 'sector__sector_configured_on__ip_address', 
+                'sector__sector_configured_on__device_technology', 'sector_capacity', 'current_in_per', 'current_in_val',
+                'sector_capacity_in', 'peak_in_per', 'peak_in_val', 'peak_in_timestamp', 'peak_in_duration',
+                'current_out_per', 'current_out_val', 'sector_capacity_out', 'peak_out_per', 
+                'peak_out_val', 'peak_out_timestamp', 'peak_out_duration'
+            ]
+
         return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def get_context_data(self, *args, **kwargs):
@@ -332,6 +336,7 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         self.initialize(*args, **kwargs)
 
         self.technology = request.GET.get('technology', 'ALL')
+        self.is_type = request.GET.get('is_type', 0)
 
         qs = self.get_initial_queryset()
 
@@ -433,6 +438,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
     is_searched = False
     is_initialised = True
     technology = 'ALL'
+    is_type = 0
+    is_rad5 = 0
 
     columns = [
         'id',
@@ -534,20 +541,51 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         sectors = list()
         if max_timestamp:
             if self.technology == 'ALL':
+                # Excluding Radwin5K devices
+                excluded_device_type = DeviceType.objects.filter(
+                    name__icontains='radwin5'
+                ).values_list('id', flat=True)
+
                 sectors = self.model.objects.filter(
-                    Q(organization__in=kwargs['organizations']),
-                    Q(severity__in=['warning', 'critical']),
-                    Q(sys_timestamp__gte=max_timestamp - 420)
-                    # Q(age__lte = F('sys_timestamp') - 600)
+                    ~Q(sector__sector_configured_on__device_type__in=excluded_device_type),
+                    sector__sector_configured_on__isnull=False,
+                    organization__in=kwargs['organizations']
                 ).prefetch_related(*self.related_columns).values(*self.columns)
             else:
-                tech_id = DeviceTechnology.objects.get(name=self.technology).id
+                where_condition = Q()
+                where_condition &= Q(organization__in=kwargs['organizations'])
+                where_condition &= Q(sys_timestamp__gte=max_timestamp - 420)
+
+                if self.is_type:
+                    try:
+                        device_type_id = DeviceType.objects.get(name__iexact=self.technology).id
+                        where_condition &= Q(sector__sector_configured_on__device_type=device_type_id)
+                    except Exception, e:
+                        return self.model.objects.filter(id=0)
+                        pass
+                else:
+                    try:
+                        tech_id = DeviceTechnology.objects.get(name__iexact=self.technology).id
+                        where_condition &= Q(sector__sector_configured_on__device_technology=tech_id)
+                        
+                        if SHOW_SPRINT3:
+                            if self.technology.lower() == 'pmp':
+                                excluded_device_type = DeviceType.objects.filter(
+                                    name__icontains='radwin5'
+                                ).values_list('id', flat=True)
+
+                                # Case handling for Radwin5k devices
+                                if self.is_rad5:
+                                    where_condition &= Q(sector__sector_configured_on__device_type__in=excluded_device_type)
+                                else:
+                                    where_condition &= ~Q(sector__sector_configured_on__device_type__in=excluded_device_type)
+                    except Exception, e:
+                        pass
+
                 sectors = self.model.objects.filter(
-                    Q(organization__in=kwargs['organizations']),
-                    Q(sector__sector_configured_on__device_technology=tech_id),
-                    Q(severity__in=['warning', 'critical']),
-                    Q(sys_timestamp__gte=max_timestamp - 420)
-                    # Q(age__lte = F('sys_timestamp') - 600)
+                    where_condition
+                    &
+                    Q(severity__in=['warning', 'critical'])
                 ).prefetch_related(*self.related_columns).values(*self.columns)
         return sectors
 
@@ -594,6 +632,29 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         self.initialize(*args, **kwargs)
 
         self.technology = request.GET['technology'] if 'technology' in request.GET else 'ALL'
+        self.is_type = request.GET.get('is_type', 0)
+        self.is_rad5 = int(request.GET.get('is_rad5', 0))
+
+        if self.is_rad5:
+            self.columns = [
+                'sector__base_station__alias',
+                'sector__base_station__state__state_name',
+                'sector__base_station__city__city_name',
+                'organization__alias',
+                'sector__sector_configured_on__ip_address',
+                'sector__sector_configured_on__device_technology',
+                'sector_sector_id',
+                'current_out_per',
+                'current_in_per',
+                'timeslot_dl',
+                'timeslot_ul',
+                'severity',
+                'age',
+                'sector__base_station__bs_site_id',
+                'sys_timestamp'
+            ]
+
+            self.order_columns = self.columns
 
         qs = self.get_initial_queryset()
 
@@ -972,7 +1033,6 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                                                                                        '0'] else 'NA'
 
             except Exception, e:
-                item['actions'] = ''
                 logger.exception(e)
                 continue
 
@@ -1409,3 +1469,4 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
             'aaData': aaData
         }
         return ret
+

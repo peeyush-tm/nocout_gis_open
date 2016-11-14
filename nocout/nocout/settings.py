@@ -442,6 +442,14 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
         'kwargs': {'technology': 'PMP'}
     },
+    'calculate_rf_range_dashboards-Radwin5K': {
+        'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'kwargs': {
+                    'technology': 'PMP',
+                    'is_rad5': True #Flag for radwin5k devices
+                }
+    },
     'calculate_rf_range_dashboards-PTP': {
         'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
         'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
@@ -900,7 +908,8 @@ SETTINGS_EXPORT = [
     'ENABLE_PE_PERF',
     'SHOW_ALL_IN_NETWORK_ALERT_CENTER',
     'PLANNED_EVENTS_ENABLED',
-    'ENABLE_MANUAL_TICKETING_HISTORY'
+    'ENABLE_MANUAL_TICKETING_HISTORY',
+    'SHOW_SPRINT3',
 ]
 
 # Dashbaord Settings
@@ -1300,12 +1309,12 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
     'huawei_switch_dl_util_kpi_gigabitethernet0_0_28_kpi',
     'radwin5k_dl_util_kpi_rad5k_dl_util_kpi',
     'radwin5k_ul_util_kpi_rad5k_ul_util_kpi',
-    'radwin5k_dl_dyn_tl_rad5k_dl_dyn_tl',
-    'radwin5k_ul_dyn_tl_rad5k_ul_dyn_tl',
+    'radwin5k_dl_dyn_tl_kpi_rad5k_dl_dyn_tl',
+    'radwin5k_ul_dyn_tl_kpi_rad5k_ul_dyn_tl',
     'radwin5k_ss_ul_util_kpi_rad5k_ss_ul_util_kpi',
     'radwin5k_ss_dl_util_kpi_rad5k_ss_dl_util_kpi',
-    'radwin5k_ss_dl_dyn_tl_rad5k_ss_dl_dyn_tl',
-    'radwin5k_ss_ul_dyn_tl_rad5k_ss_ul_dyn_tl',
+    'radwin5k_ss_dl_dyn_tl_kpi_rad5k_ss_dl_dyn_tl',
+    'radwin5k_ss_ul_dyn_tl_kpi_rad5k_ss_ul_dyn_tl',
 ])
 # Global variable to show/hide Scheduled report mail option in dowload center listing.
 REPORT_EMAIL_PERM = json.dumps({
@@ -1387,6 +1396,24 @@ ENABLE_MANUAL_TICKETING_HISTORY = False
 
 # Manual Ticketing API Details
 MANUAL_TICKET_API = 'http://121.244.255.123/'
+
+RADWIN5K_CONFIG = {
+    'SECTOR_STATUS_CUSTOMER_COUNT': False,
+    'SHOW_SECTOR_AUGMENTATION': False,
+    'SHOW_SECTOR_STATUS': False
+}
+
+
+# Show/Hide features of Sprint 3 of Radwin5K
+# Feature list:-
+# 1) Alert Centre - Alert Details - Network Details - Radwin 5k UL Alerts summary window
+# 2) Separate tab required for Radwin 5k in Device Alarms page
+SHOW_SPRINT3 = False
+
+# Show/Hide features of Sprint 4 of Radwin5K
+# Feature list:-
+# 1) Region filter on GIS
+SHOW_SPRINT4 = False
 
 # Import the local_settings.py file to override global settings
 try:

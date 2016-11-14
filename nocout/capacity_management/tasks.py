@@ -120,19 +120,32 @@ tech_model_service = {
         },
         'val': {
             'model': 'performance_servicestatus',
-            'service_name': ['cambium_ul_utilization', 'cambium_dl_utilization'],
-            'data_source': ['ul_utilization', 'dl_utilization'],
+            'service_name': [
+                'cambium_ul_utilization', 'cambium_dl_utilization', 
+                'rad5k_bs_ul_utilization', 'rad5k_bs_dl_utilization',
+                'radwin5k_ss_ul_dyn_tl', 'radwin5k_ss_dl_dyn_tl'
+            ],
+            'data_source': [
+                'ul_utilization', 'dl_utilization',
+                'rad5k_ss_ul_dyn_tl', 'rad5k_ss_dl_dyn_tl'
+            ],
             'values': ['current_value', 'age', 'severity', 'sys_timestamp'],
             'values_list': ['current_value']
 
         },
         'per': {
             'model': 'performance_utilizationstatus',
-            'service_name': ['cambium_ul_util_kpi', 'cambium_dl_util_kpi'],
-            'data_source': ['cam_ul_util_kpi', 'cam_dl_util_kpi'],
+            'service_name': [
+                'cambium_ul_util_kpi', 'cambium_dl_util_kpi',
+                'radwin5k_ul_util_kpi', 'radwin5k_dl_util_kpi'
+            ],
+            'data_source': [
+                'cam_ul_util_kpi', 'cam_dl_util_kpi',
+                'rad5k_ul_util_kpi', 'rad5k_dl_util_kpi'
+            ],
             'values': ['current_value', 'age', 'severity', 'sys_timestamp'],
             'values_list': None
-        },
+        }
     },
 }
 
@@ -424,25 +437,40 @@ def gather_sector_status(technology):
 
     technology_object = DeviceTechnology.objects.get(name__icontains=technology)
     technology_low = technology.strip().lower()
-
-    network_devices = get_devices(technology)
+    rad5k_network_devices = list()
+    if technology_low == 'pmp':
+        network_devices = list()
+        cambium_network_devices = list(get_devices(technology))
+        rad5k_network_devices = list(get_devices(technology=technology, is_rad5=True))
+        network_devices = cambium_network_devices + rad5k_network_devices
+    else:
+        network_devices = get_devices(technology)
     device_list = []
 
     # Create instance of 'InventoryUtilsGateway' class
     inventory_utils = InventoryUtilsGateway()
 
     for device in network_devices:
-        device_list.append(
-            {
-                'id': device['id'],
-                'device_name': device['device_name'],
-                'device_machine': device['machine__name']
-            }
-        )
+        device_list.append({
+            'id': device['id'],
+            'device_name': device['device_name'],
+            'device_machine': device['machine__name']
+        })
 
     machine_dict = {}
 
     machine_dict = inventory_utils.prepare_machines(device_list)
+    rad5k_device_list = list()
+    rad5k_machine_dict = {}
+    if technology_low == 'pmp':
+        for device in rad5k_network_devices:
+            rad5k_device_list.append({
+                'id': device['id'],
+                'device_name': device['device_name'],
+                'device_machine': device['machine__name']
+            })
+
+        rad5k_machine_dict = inventory_utils.prepare_machines(rad5k_device_list)
     #need to gather from various sources
     #will do a raw query
 
@@ -456,14 +484,13 @@ def gather_sector_status(technology):
                 sector_configured_on__machine__name=machine,
                 sector_id__isnull=False,
                 sector_configured_on_port__isnull=False
-                ).select_related(
-                    'sector_configured_on',
-                    'sector_configured_on_port',
-                    'base_station',
-                    'base_station__city',
-                    'base_station__state'
-                ).annotate(Count('sector_id')
-            )
+            ).select_related(
+                'sector_configured_on',
+                'sector_configured_on_port',
+                'base_station',
+                'base_station__city',
+                'base_station__state'
+            ).annotate(Count('sector_id'))
 
         elif technology_low == 'pmp':
             sectors = Sector.objects.filter(
@@ -472,15 +499,14 @@ def gather_sector_status(technology):
                 sector_configured_on__machine__name=machine,
                 sector_id__isnull=False,
                 sector_configured_on_port__isnull=True
-                ).select_related(
-                    'sector_configured_on',
-                    'base_station',
-                    'base_station__city',
-                    'base_station__state'
-                ).annotate(Count('sector_id')
-            )
+            ).select_related(
+                'sector_configured_on',
+                'base_station',
+                'base_station__city',
+                'base_station__state'
+            ).annotate(Count('sector_id'))
         else:
-            logger.debug('No Technology from WiMAX and PMP')
+            logger.error('No Technology from WiMAX and PMP')
             return False
 
         if technology_low == 'pmp':
@@ -495,18 +521,21 @@ def gather_sector_status(technology):
             )
 
         else:
-            logger.debug('No Technology from WiMAX and PMP')
+            logger.error('No Technology from WiMAX and PMP')
             return False
 
         sector_val = None
-        # values for current utilization
-        # sector_val = get_sectors_cbw_val_kpi(
-        #     devices=machine_dict[machine],
-        #     service_name=tech_model_service[technology_low]['val']['service_name'],
-        #     data_source=tech_model_service[technology_low]['val']['data_source'],
-        #     machine=machine,
-        #     getit='val'
-        # )
+
+        # values for current utilization of rad5 devices
+        sector_val_rad5 = None
+        if technology_low == 'pmp' and rad5k_machine_dict.get(machine):
+            sector_val_rad5 = get_sectors_cbw_val_kpi(
+                devices=rad5k_machine_dict[machine],
+                service_name=tech_model_service[technology_low]['val']['service_name'],
+                data_source=tech_model_service[technology_low]['val']['data_source'],
+                machine=machine,
+                getit='val'
+            )
 
         # values for current Percentage KPIs
         sector_kpi = get_sectors_cbw_val_kpi(
@@ -519,15 +548,17 @@ def gather_sector_status(technology):
 
         avg_max_val = None
         avg_max_per = None
-
+        util_duration = None
         if calc_util_last_day():
-            # avg_max_val = get_avg_max_sector_util(
-            #     devices=machine_dict[machine],
-            #     services=tech_model_service[technology_low]['val']['service_name'],
-            #     data_sources=tech_model_service[technology_low]['val']['data_source'],
-            #     machine=machine,
-            #     getit='val'
-            # )
+
+            if technology_low == 'pmp' and rad5k_machine_dict.get(machine):
+                util_duration = get_duration_sector_util(
+                    devices=rad5k_machine_dict[machine],
+                    services=tech_model_service[technology_low]['per']['service_name'],
+                    data_sources=tech_model_service[technology_low]['per']['data_source'],
+                    machine=machine,
+                    getit='per'
+                )
 
             avg_max_per = get_avg_max_sector_util(
                 devices=machine_dict[machine],
@@ -545,7 +576,9 @@ def gather_sector_status(technology):
                 val=sector_val,
                 technology=technology,
                 avg_max_per=avg_max_per,
-                avg_max_val=avg_max_val
+                avg_max_val=avg_max_val,
+                util_duration=util_duration,
+                rad5_val=sector_val_rad5,
             )
         )
 
@@ -558,7 +591,6 @@ def gather_sector_status(technology):
         return True
 
     return ret
-
 
 def get_higher_severity(severity_dict):
     """
@@ -580,7 +612,6 @@ def get_higher_severity(severity_dict):
         pass
 
     return s, a
-
 
 def compare_old_severity(old_severity, new_severity, old_age, new_age):
     """
@@ -609,7 +640,6 @@ def compare_old_severity(old_severity, new_severity, old_age, new_age):
         # severity must be existsting
         return new_severity, new_age
 
-
 def get_time():
     """
 
@@ -621,7 +651,6 @@ def get_time():
     start_date = format(end_time + datetime.timedelta(days=-1), 'U')
 
     return float(start_date), float(end_date)
-
 
 def calc_util_last_day():
     """
@@ -658,7 +687,6 @@ def get_sector_bw(devices, service_name, data_source, machine):
 
     return performance
 
-
 def get_sector_val(devices, service_name, data_source, machine):
     """
 
@@ -677,7 +705,6 @@ def get_sector_val(devices, service_name, data_source, machine):
 
     return performance
 
-
 def get_sector_kpi(devices, service_name, data_source, machine):
     """
 
@@ -694,7 +721,6 @@ def get_sector_kpi(devices, service_name, data_source, machine):
     ).order_by().using(alias=machine)
 
     return performance
-
 
 def get_sectors_cbw_val_kpi(devices, service_name, data_source, machine, getit):
     """
@@ -718,7 +744,6 @@ def get_sectors_cbw_val_kpi(devices, service_name, data_source, machine, getit):
         return performance
     except:
         return None
-
 
 def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
     """
@@ -788,6 +813,72 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
 
     return perf
 
+def get_duration_sector_util(devices, services, data_sources, machine, getit):
+    """
+
+    :param devices: device list for the object
+    :param services: service name for the object
+    :param data_sources: data source for the object
+    :param machine: machine name for the devices
+    :param getit: val or per ( as in value or percentage)
+    :return:
+    """
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
+    devices = nocout_utils.check_item_is_list(items=devices)
+    services = nocout_utils.check_item_is_list(items=services)
+    data_sources = nocout_utils.check_item_is_list(items=data_sources)
+
+    start_date, end_date = get_time()
+
+    try:
+        in_string = lambda x: "'" + str(x) + "'"
+
+        # cast as DECIMAL
+        # MAX(CAST(`current_value` AS DECIMAL(3,6)) AS `max_val`,
+        # AVG(CAST(`current_value` AS DECIMAL(3,6)) AS `avg_val`
+
+        query = """
+        SELECT
+            `device_name`,
+            `service_name`,
+            `data_source`,
+            COUNT(`id`) AS `duration`,
+        FROM {0}
+        WHERE
+            `sys_timestamp` >= {4}
+            AND
+            `sys_timestamp` <= {5}
+            AND
+            `severity` = 'critical'
+            AND
+            `device_name`  IN ({1})
+            AND
+            `service_name` IN ({2})
+            AND
+            `data_source`  IN ({3})
+        GROUP BY
+            `device_name`,
+            `service_name`,
+            `data_source`
+        """.format(
+            CAPACTIY_TABLES[getit],
+            (",".join(map(in_string, devices))),
+            (",".join(map(in_string, services))),
+            (",".join(map(in_string, data_sources))),
+            start_date,
+            end_date
+        )
+
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        perf = nocout_utils.fetch_raw_result(query=query, machine=machine)
+    except Exception as e:
+        logger.error(e)
+        return None
+
+    return perf
 
 def get_peak_sectors_util(device, service, data_source, machine, max_value, getit):
     """
@@ -832,7 +923,6 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
     else:
         return 0, 0
 
-
 def get_average_sector_util(device_object, service, data_source, getit='val'):
     """
 
@@ -872,7 +962,6 @@ def get_average_sector_util(device_object, service, data_source, getit='val'):
         return float(perf['current_value__avg'])
     else:
         return 0
-
 
 def get_peak_sector_util(device_object, service, data_source, getit='val'):
     """
@@ -936,7 +1025,6 @@ def get_peak_sector_util(device_object, service, data_source, getit='val'):
 
     else:
         return 0, 0
-
 
 @task()
 def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
@@ -1113,7 +1201,7 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 ).name.lower()
             except Exception as e:
                 logger.error('Back-hual Port {0} for {1} IP address'.format(bs.bh_port_name, bh_device.ip_address))
-                # logger.debug('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
+                # logger.error('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
                 pass
                 # if we don't have a port mapping
                 # do not query database
@@ -1379,9 +1467,8 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
     #     ret |= r
     return True
 
-
 @task()
-def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_max_per):
+def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_max_per, util_duration, rad5_val=None):
     """
 
     :param sectors: sectors query set
@@ -1393,7 +1480,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
     :param avg_max_per: Values Query Set when it is required to calculate the average and max %
     :return:
     """
-
     bulk_update_scs = []
     bulk_create_scs = []
 
@@ -1413,6 +1499,9 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
     current_out_per = 0
     current_out_val = 0
 
+    current_timeslot_ul = None
+    current_timeslot_dl = None
+
     avg_out_per = 0
     avg_out_val = 0
     peak_out_per = 0
@@ -1431,6 +1520,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
     indexed_val = dict()
     indexed_avg_max_val = dict()
     indexed_avg_max_per = dict()
+    indexed_util_duration = dict()
 
     # Create instance of 'NocoutUtilsGateway' class
     nocout_utils = NocoutUtilsGateway()
@@ -1449,18 +1539,39 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
         )
+    # else:
+    #     return False
 
-    else:
-        return False
+    indexed_rad5_val = {}
+    if technology.lower() == 'pmp' and rad5_val.exists():
+        indexed_rad5_val = nocout_utils.indexed_query_set(
+            query_set=rad5_val,
+            indexes=['device_name', 'service_name', 'data_source'],
+            values=['device_name', 'service_name', 'data_source', 'current_value'],
+        )
 
     if avg_max_per:
-
         indexed_avg_max_per = nocout_utils.indexed_query_set(
             query_set=avg_max_per,
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
             is_raw=True
         )
+
+    if util_duration:
+        indexed_util_duration = nocout_utils.indexed_query_set(
+            query_set=util_duration,
+            indexes=['device_name', 'service_name', 'data_source'],
+            values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
+            is_raw=True
+        )
+
+    rad5k_type_id = 0
+    try:
+        if technology.lower() == 'pmp':
+            rad5k_type_id = DeviceType.objects.get(name__iexact='Radwin5KBS').id
+    except Exception as e:
+        pass
 
     for sector in sectors:
         # deduplication of the sector on the basis of sector ID
@@ -1481,7 +1592,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     sector_sector_id=sector.sector_id
                 )
             except Exception as e:
-                # logger.debug("WiMAX : {0}".format(e.message))
+                # logger.error("WiMAX : {0}".format(e.message))
                 pass
 
             if 'pmp1' in sector.sector_configured_on_port.name.lower():
@@ -1536,7 +1647,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             try:
                 sector_capacity = indexed_cbw[cbw_index][0]['current_value']
             except Exception as e:
-                # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
+                # logger.error("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
                 logger.error(e)
                 continue
 
@@ -1709,29 +1820,54 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     sector_sector_id=sector.sector_id
                 )
             except Exception as e:
-                logger.debug("PMP : {0}".format(e.message))
+                logger.error("PMP : {0}".format(e.message))
                 pass
-                # logger.error(e)
+            
+            try:
+                sector_device_name = sector.sector_configured_on.device_name
+            except Exception as e:
+                sector_device_name = 0
 
-            # index for dl values
-            in_value_index = (sector.sector_configured_on.device_name,
-                              'cambium_dl_utilization',
-                              'dl_utilization')
+            try:
+                if sector.sector_configured_on.device_type == rad5k_type_id:
+                    # index for dl values
+                    in_value_index = (sector_device_name, 'rad5k_bs_dl_utilization', 'dl_utilization')
+                    # index for ul values
+                    out_value_index = (sector_device_name, 'rad5k_bs_ul_utilization', 'ul_utilization')
+                    # in % values index
+                    in_per_index = (sector_device_name, 'radwin5k_dl_util_kpi', 'rad5k_dl_util_kpi')
+                    # out % values index
+                    out_per_index = (sector_device_name, 'radwin5k_ul_util_kpi', 'rad5k_ul_util_kpi')
+                    # index for dl_timeslot values
+                    timeslot_ul_index = (sector_device_name, 'radwin5k_ss_ul_dyn_tl', 'rad5k_ss_ul_dyn_tl')
+                    # index for ul values
+                    timeslot_dl_index = (sector_device_name, 'radwin5k_ss_dl_dyn_tl', 'rad5k_ss_dl_dyn_tl')
 
-            # index for ul values
-            out_value_index = (sector.sector_configured_on.device_name,
-                               'cambium_ul_utilization',
-                               'ul_utilization')
-
-            # in % values index
-            in_per_index = (sector.sector_configured_on.device_name,
-                            'cambium_dl_util_kpi',
-                            'cam_dl_util_kpi')
-
-            # out % values index
-            out_per_index = (sector.sector_configured_on.device_name,
-                             'cambium_ul_util_kpi',
-                             'cam_ul_util_kpi')
+                    current_timeslot_ul = None
+                    current_timeslot_dl = None
+                    # Current values for Dynamic TS-UL and Dynamic TS-DL for rad5 devices
+                    if indexed_rad5_val.get(timeslot_ul_index):
+                        current_timeslot_ul = float(indexed_rad5_val.get(timeslot_ul_index)[0]['current_value'])
+                    if indexed_rad5_val.get(timeslot_dl_index):
+                        current_timeslot_dl = float(indexed_rad5_val.get(timeslot_dl_index)[0]['current_value'])
+                else:
+                    # index for dl values
+                    in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
+                    # index for ul values
+                    out_value_index = (sector_device_name, 'cambium_ul_utilization', 'ul_utilization')
+                    # in % values index
+                    in_per_index = (sector_device_name, 'cambium_dl_util_kpi', 'cam_dl_util_kpi')
+                    # out % values index
+                    out_per_index = (sector_device_name, 'cambium_ul_util_kpi', 'cam_ul_util_kpi')
+            except Exception as e:
+                # index for dl values
+                in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
+                # index for ul values
+                out_value_index = (sector_device_name, 'cambium_ul_utilization', 'ul_utilization')
+                # in % values index
+                in_per_index = (sector_device_name, 'cambium_dl_util_kpi', 'cam_dl_util_kpi')
+                # out % values index
+                out_per_index = (sector_device_name, 'cambium_ul_util_kpi', 'cam_ul_util_kpi')
 
             severity_s = dict()
 
@@ -1740,7 +1876,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sector_capacity_in = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['dl']
                 sector_capacity_out = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['ul']
             except Exception as e:
-                # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
+                # logger.error("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
                 logger.error(e)
                 continue
 
@@ -1784,8 +1920,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             if not severity and not age:
                 continue
 
-            if calc_util_last_day():
+            peak_in_duration = 0
+            peak_out_duration = 0
 
+            if calc_util_last_day():
                 try:
                     # average percentage in/out
                     avg_in_per = float(indexed_avg_max_per[in_per_index][0]['avg_val'])
@@ -1795,12 +1933,17 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     avg_out_per = float(indexed_avg_max_per[out_per_index][0]['avg_val'])
                     # peak percentage in/out
                     peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
+                    # Duration in/out  (Multiply threshold breached count with 5 to get the duration)
+                    peak_in_duration = int(indexed_util_duration[in_per_index][0]['duration']) * 5
+                    peak_out_duration = int(indexed_util_duration[out_per_index][0]['duration']) * 5
                 except Exception as e:
                     logger.error(e)
                     avg_in_per = 0
                     peak_in_per = None
                     avg_out_per = 0
                     peak_out_per = None
+                    peak_in_duration = 0
+                    peak_out_duration = 0
 
                 peak_in_per, peak_in_timestamp = get_peak_sectors_util(
                     device=sector.sector_configured_on.device_name,
@@ -1829,23 +1972,23 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     avg_out_val = avg_out_per * sector_capacity_out / 100.00
                     # peak value in/out
                     peak_out_val = peak_out_per * sector_capacity_out / 100.00
-
                 except Exception as e:
                     logger.error(e)
                     avg_in_val = 0
                     peak_in_val = 0
                     avg_out_val = 0
                     peak_out_val = 0
+        
             if scs:
-                # update the scs
-                # scs.sector = sector
-                # scs.sector_sector_id = sector.sector_id
                 scs.sector_capacity = float(sector_capacity) if sector_capacity else 0
-
                 scs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 scs.organization = sector.organization if sector.organization else 1
                 scs.severity = severity if severity else 'unknown'
                 scs.age = float(age) if age else 0
+                scs.timeslot_ul = current_timeslot_ul 
+                scs.timeslot_dl = current_timeslot_dl 
+
+
                 # new fileds for better representation of IN and OUT
 
                 scs.sector_capacity_in = sector_capacity_in
@@ -1864,6 +2007,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     scs.peak_in_val = round(float(peak_in_val), 2) if peak_in_val else 0
 
                     scs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
+                    scs.peak_in_duration = int(peak_in_duration) if peak_in_duration else 0
 
                     scs.avg_out_per = round(float(avg_out_per), 2) if avg_out_per else 0
                     scs.avg_out_val = round(float(avg_out_val), 2) if avg_out_val else 0
@@ -1871,39 +2015,35 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     scs.peak_out_val = round(float(peak_out_val), 2) if peak_out_val else 0
 
                     scs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
+                    scs.peak_out_duration = int(peak_out_duration) if peak_out_duration else 0
 
-                # scs.save()
                 bulk_update_scs.append(scs)
-
             else:
                 bulk_create_scs.append(
-                    SectorCapacityStatus
-                    (
+                    SectorCapacityStatus(
                         sector=sector,
                         sector_sector_id=sector.sector_id,
                         sector_capacity=float(sector_capacity) if sector_capacity else 0,
-
                         sector_capacity_in=sector_capacity_in,
                         sector_capacity_out=sector_capacity_out,
-
                         current_in_per=round(float(current_in_per), 2) if current_in_per else 0,
                         current_in_val=round(float(current_in_val), 2) if current_in_val else 0,
-
                         avg_in_per=round(float(avg_in_per), 2) if avg_in_per else 0,
                         avg_in_val=round(float(avg_in_val), 2) if avg_in_val else 0,
                         peak_in_per=round(float(peak_in_per), 2) if peak_in_per else 0,
                         peak_in_val=round(float(peak_in_val), 2) if peak_in_val else 0,
                         peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else 0,
-
+                        peak_in_duration=int(peak_in_duration) if peak_in_duration else 0,
                         current_out_per=round(float(current_out_per), 2) if current_out_per else 0,
                         current_out_val=round(float(current_out_val), 2) if current_out_val else 0,
-
                         avg_out_per=round(float(avg_out_per), 2) if avg_out_per else 0,
                         avg_out_val=round(float(avg_out_val), 2) if avg_out_val else 0,
                         peak_out_per=round(float(peak_out_per), 2) if peak_out_per else 0,
                         peak_out_val=round(float(peak_out_val), 2) if peak_out_val else 0,
+                        timeslot_ul=round(float(current_timeslot_ul), 2) if current_timeslot_ul else None, 
+                        timeslot_dl=round(float(current_timeslot_dl), 2) if current_timeslot_dl else None,
                         peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
-
+                        peak_out_duration=int(peak_out_duration) if peak_out_duration else 0,
                         sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
                         organization=sector.organization if sector.organization else 1,
                         severity=severity if severity else 'unknown',
