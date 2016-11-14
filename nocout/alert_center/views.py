@@ -26,7 +26,7 @@ from inventory.utils.util import InventoryUtilsGateway
 from inventory.models import Sector, BaseStation, SubStation, Circuit, Backhaul
 
 # Import alert_center utils gateway class
-from alert_center.utils.util import AlertCenterUtilsGateway
+from alert_center.utils.util import AlertCenterUtilsGateway, get_ping_status
 
 # Import scheduling_management utils gateway class
 from scheduling_management.utils.util import SchedulingManagementGateway

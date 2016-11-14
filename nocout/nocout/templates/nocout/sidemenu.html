@@ -423,7 +423,7 @@
                         </a>
                     </li>
                     {% endif %}
-                    {% if user.is_superuser or user.groups.all.0.name == 'admin' %}
+                    {% if user.is_superuser or user.groups.all.0.name == 'Admin' %}
                         {% if settings.ENABLE_PING_TEST %}
                             <li>
                                 <a href="{% url 'ping_stability_test' %}">
