@@ -1647,7 +1647,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             try:
                 sector_capacity = indexed_cbw[cbw_index][0]['current_value']
             except Exception as e:
-                # logger.error("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
+                logger.error("sector_capacity exception")
                 logger.error(e)
                 continue
 
@@ -1655,6 +1655,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sector_capacity_in = CAPACITY_SETTINGS['wimax'][int(float(sector_capacity))]['dl']
                 sector_capacity_out = CAPACITY_SETTINGS['wimax'][int(float(sector_capacity))]['ul']
             except:
+                logger.error("CAPACITY_SETTINGS sector_capacity exception")
+                logger.error(e)
                 continue
 
             try:
@@ -1686,6 +1688,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 current_out_val = current_out_per * sector_capacity_out / 100.00
 
             except Exception as e:
+                logger.error('Current in/out val exception')
                 logger.error(e)
                 continue  # we dont have any current values with us
 
@@ -1876,7 +1879,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sector_capacity_in = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['dl']
                 sector_capacity_out = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['ul']
             except Exception as e:
-                # logger.error("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
+                logger.error('PMP CAPACITY_SETTINGS exception')
                 logger.error(e)
                 continue
 
@@ -1909,6 +1912,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 current_out_val = current_out_per * sector_capacity_out / 100.00
 
             except Exception as e:
+                logger.error('PMP current in/out exception')
                 logger.error(e)
                 continue  # we dont have any current values with us
 
@@ -1917,8 +1921,14 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             if Topology.objects.filter(device_name=sector.sector_configured_on.device_name).count() >= 8:
                 severity = 'critical'
 
-            if not severity and not age:
-                continue
+            severity = None
+            age = None
+
+            # Commented------------------------------------
+            # if not severity and not age:
+            #     logger.error('No severity & age')
+            #     logger.error(scs)
+            #     continue
 
             peak_in_duration = 0
             peak_out_duration = 0
