@@ -24,7 +24,7 @@ from nocout.utils.util import NocoutUtilsGateway, time_delta_calculator
 
 from nocout.mixins.datatable import AdvanceFilteringMixin
 
-from nocout.settings import DATE_TIME_FORMAT, RADWIN5K_CONFIG
+from nocout.settings import DATE_TIME_FORMAT, RADWIN5K_CONFIG, SHOW_SPRINT3
 
 from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
 

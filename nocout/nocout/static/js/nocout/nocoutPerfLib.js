@@ -1698,27 +1698,27 @@ $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e
         current_attr = current_target.attributes,
         tab_service_id = current_target.id.slice(0, -4);
 
+    var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
+        serviceDataUrl = "";
+
+    if (service_data_url_val) {
+        if (service_data_url_val[0] != "/") {
+            serviceDataUrl = "/" + service_data_url_val;
+        } else {
+            serviceDataUrl = service_data_url_val;
+        }
+    }
+
     if (last_active_tab && last_active_tab.indexOf('live_poll_now') > -1 && is_polling_active) {
         // Stop live polling
         nocout_stopPollNow();
-        // notify user
+        // notify user0
         bootbox.alert("Live polling is stopped");
-    } else {
-        var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
-            serviceDataUrl = "";
-
-        if (service_data_url_val) {
-            if (service_data_url_val[0] != "/") {
-                serviceDataUrl = "/" + service_data_url_val;
-            } else {
-                serviceDataUrl = service_data_url_val;
-            }
-        }
-
-        if (show_historical_on_performance || is_perf_polling_enabled) {
-            dataset_list = [];
-            perfInstance.initGetServiceData(serviceDataUrl, tab_service_id, current_device);
-        }
+    }
+    
+    if (show_historical_on_performance || is_perf_polling_enabled) {
+        dataset_list = [];
+        perfInstance.initGetServiceData(serviceDataUrl, tab_service_id, current_device);
     }
 
     last_active_tab = tab_service_id;
@@ -1767,6 +1767,8 @@ $(".perfContainerBlock").delegate('.single_perf_poll_now', 'click', function(e) 
 
     var active_tab_obj = nocout_getPerfTabDomId(),
         tab_id = active_tab_obj["active_dom_id"];
+    
+    is_polling_active = true;
 
     var currentTarget = e.currentTarget;
     // Show button in loading view
@@ -1776,6 +1778,7 @@ $(".perfContainerBlock").delegate('.single_perf_poll_now', 'click', function(e) 
     }
     initSingleDevicePolling(function(response) {
         
+        is_polling_active = false;        
         $(currentTarget).button('complete');
         
         if($("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
