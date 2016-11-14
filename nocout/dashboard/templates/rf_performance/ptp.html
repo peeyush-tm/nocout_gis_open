@@ -34,11 +34,39 @@
     <div id="tableContainer" class="box-body">
         <div class="tabbable header-tabs">
             <ul class="nav nav-tabs">
-                <li><a href="{% url 'dashboard-rf-performance-ptp-bh' %}" id="ptp_bh_tab"><span class="hidden-inline-mobile">PTP BH</span></a></li>
-                <li><a href="{% url 'dashboard-rf-performance-wimax' %}" id="wimax_tab"><span class="hidden-inline-mobile">Wimax</span></a></li>
-                <li><a href="{% url 'dashboard-rf-performance-rad5' %}" id="rad5_tab"><span class="hidden-inline-mobile">Radwin5K</span></a></li>
-                <li><a href="{% url 'dashboard-rf-performance-pmp' %}" id="pmp_tab"><span class="hidden-inline-mobile">Cambium</span></a></li>
-                <li class="active"><a href="#ptp_block" id="ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
+                <li>
+                    <a href="{% url 'dashboard-rf-performance-ptp-bh' %}" id="ptp_bh_tab">
+                        <span class="hidden-inline-mobile">PTP BH</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'dashboard-rf-performance-wimax' %}" id="wimax_tab">
+                        <span class="hidden-inline-mobile">Wimax</span>
+                    </a>
+                </li>
+                {% if settings.SHOW_SPRINT3 %}
+                <li>
+                    <a href="{% url 'dashboard-rf-performance-rad5' %}" id="rad5_tab">
+                        <span class="hidden-inline-mobile">Radwin5K</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'dashboard-rf-performance-pmp' %}" id="pmp_tab">
+                        <span class="hidden-inline-mobile">Cambium</span>
+                    </a>
+                </li>
+                {% else %}
+                <li>
+                    <a href="{% url 'dashboard-rf-performance-pmp' %}" id="pmp_tab">
+                        <span class="hidden-inline-mobile">PMP</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="active">
+                    <a href="#ptp_block" id="ptp_tab" data-toggle="tab">
+                        <span class="hidden-inline-mobile">PTP</span>
+                    </a>
+                </li>
             </ul>
             <div class="tab-content" style="overflow-y:auto;">
                 <div class="tab-pane active" id="ptp_block">
