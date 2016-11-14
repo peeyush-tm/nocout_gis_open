@@ -9779,7 +9779,7 @@ class PingStabilityTestListing(BaseDatatableView):
                                 </i></a>'.format(dct.get('file_path'))
                     )
             else:
-                dct['status'] = 'Pending'
+                dct['status'] = 'In Progress'
 
             try:
                 dct['email_ids'] = ', '.join(str(dct['email_ids']).split(','))
