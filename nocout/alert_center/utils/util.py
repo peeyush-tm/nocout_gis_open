@@ -648,4 +648,91 @@ def get_performance_data(machine_device_list, machine, data_sources, columns, co
     )
     return prepare_raw_alert_results(nocout_utils.fetch_raw_result(query, machine))
 
+def get_ping_status(device_list, machine, model):
+    """
+    Consolidated ping status for devices from the Data base.
 
+    :param model:
+    :param machine:
+    :param device_list:
+    :return:
+    """
+    perf_utils = PerformanceUtilsGateway()
+    st = datetime.datetime.now()
+
+    device_result = {}
+    perf_result = {"packet_loss": "N/A",
+                   "latency": "N/A",
+                   "last_updated": "N/A",
+                   "age": "N/A"
+                   }
+
+    query = perf_utils.prepare_row_query(table_name="performance_networkstatus",
+                              devices=device_list
+                              )
+
+    performance_data = nocout_utils.fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
+
+    indexed_perf_data = make_indexed_polled_results(performance_data)
+
+    # (len(performance_data))
+    for device in device_list:
+        if device not in device_result:
+            device_result[device] = perf_result
+
+    processed = []
+    for device in indexed_perf_data:
+        if device not in processed:
+            processed.append(device)
+            perf_result = {"packet_loss": "N/A",
+                           "latency": "N/A",
+                           "last_updated": "N/A",
+                           "device_name": "N/A",
+                           "age": "N/A",
+                           }
+            data = indexed_perf_data[device]
+            # for data in performance_data:
+            #     if str(data['device_name']).strip().lower() == str(device).strip().lower():
+            perf_result['device_name'] = data['device_name']
+
+            # d_src = str(data['data_source']).strip().lower()
+            # current_val = str(data['current_value'])
+            try:
+                # if d_src == "pl":
+                perf_result["packet_loss"] = float(data['pl'])
+                # if d_src == "rta":
+                perf_result["latency"] = float(data['rta'])
+            except Exception as e:
+                # if d_src == "pl":
+                perf_result["packet_loss"] = data['pl']
+                # if d_src == "rta":
+                perf_result["latency"] = data['rta']
+
+            perf_result["last_updated"] = datetime.datetime.fromtimestamp(
+                float(data['sys_timestamp'])
+            ).strftime(DATE_TIME_FORMAT)
+
+            perf_result["age"] = datetime.datetime.fromtimestamp(
+                float(data["age"])
+            ).strftime(DATE_TIME_FORMAT) if data["age"] else ""
+
+            device_result[device] = perf_result
+
+    return device_result
+
+def make_indexed_polled_results(performance_data):
+    """
+
+
+    :param performance_data:
+    :return: dictionary for polled results w.r.t to device name
+    """
+    indexed_raw_results = {}
+
+    for data in performance_data:
+        defined_index = data['device_name']
+        if defined_index not in indexed_raw_results:
+            indexed_raw_results[defined_index] = None
+        indexed_raw_results[defined_index] = data
+
+    return indexed_raw_results
