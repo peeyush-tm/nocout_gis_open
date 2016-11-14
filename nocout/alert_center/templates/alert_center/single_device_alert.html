@@ -14,7 +14,7 @@
         {% if page_type == 'customer' and device_technology_name|upper == 'P2P'  %}
             {% breadcrumb_safe "PTP"  "init_alert_listing"  page_type data_source %}
         {% else %}
-            {% breadcrumb_safe device_technology_name|upper  "init_alert_listing"  page_type data_source %}
+            {% breadcrumb_safe breadcrumb_title|upper  "init_alert_listing"  page_type data_source %}
         {% endif %}
     {% endif %}
 

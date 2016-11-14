@@ -322,6 +322,14 @@
                         </ul>
                     </li>
                     {% endif %}
+
+                    {% if settings.ENABLE_MANUAL_TICKETING_HISTORY %}
+                    <li>
+                        <a href="{% url 'manual_tickets_init' %}">
+                            <span class="sub-menu-text">Manual Ticketing History</span>
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
             </li>
             

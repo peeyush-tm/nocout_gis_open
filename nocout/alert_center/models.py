@@ -1,6 +1,6 @@
 from django.db import models
 from device.models import DeviceTechnology, DeviceType
-
+from user_profile.models import UserProfile
 
 class GenericAlarm(models.Model):
 	id = models.IntegerField(primary_key=True)
@@ -20,7 +20,8 @@ class GenericAlarm(models.Model):
 	sia = models.CharField(max_length=32, blank=True, null=True)
 	customer_count = models.IntegerField(blank=True, null=True)
 	technology = models.CharField("Technology", max_length=256, null=True, blank=True)
-	# ticket_number = models.CharField('Ticket Number', max_length=256, null=True, blank=True)
+	ticket_number = models.CharField('Ticket Number', max_length=64, null=True, blank=True)
+	is_manual = models.BooleanField('Is Manual Ticket', default=False)
 
 	class Meta:
 		abstract = True
@@ -90,3 +91,17 @@ class PlannedEvent(models.Model):
 	resource_name = models.CharField('Resource Name/IP Address', max_length=255, null=True, blank=True)
 	service_ids = models.TextField('Service IDs', null=True, blank=True)
 	nia = models.TextField('NIA', null=True, blank=True)
+
+
+class ManualTicketingHistory(models.Model):
+	"""
+	This model contains created manual ticket history
+	"""
+	ip_address = models.CharField('IP Address', max_length=32)
+	eventname = models.CharField('Event Name', max_length=128)
+	ticket_number = models.CharField('Ticket Number', max_length=64, null=True, blank=True)
+	user_profile = models.ForeignKey(UserProfile)
+	created_at = models.DateTimeField('Created At', auto_now_add=True)
+	updated_at = models.DateTimeField('Updated At', auto_now=True)
+	# is_active = models.BooleanField('Is Active', default=False)
+

@@ -1,0 +1,61 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-bell-o'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "Manual Ticketing History" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content %}
+    <div class="clearfix"></div>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-ticket"></i>Manual Ticketing History</h4>
+            <div class="clearfix"></div>
+        </div>
+
+        <div class="box-body" style="overflow:auto;">
+            <table class="datatable table table-striped table-bordered table-hover" id="manual_tickets_listing">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}
+{% block jquery %}
+    <!-- Custom library create jquery datatable -->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+
+            var table_headers = $.parseJSON('{{ datatable_headers|safe }}'),
+                table_title = 'Manual Tickets History',
+                ajax_url = "{% url 'manual_tickets_listing' %}",
+                extra_param = "";
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable(
+                "manual_tickets_listing",
+                table_headers,
+                ajax_url,
+                false,
+                table_title,
+                'alert_center',
+                'ManualTicketsInit',
+                'ManualTicketsListing',
+                extra_param,
+                extra_param
+            );
+        });
+    </script>
+{% endblock %}

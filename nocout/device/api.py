@@ -432,6 +432,7 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
             'bs_id': bs.get('BSID'),
             'name': bs.get('BSNAME'),
             'alias': bs.get('BSALIAS'),
+            'region': bs.get('BSREGION'),
             'city': bs.get('BSCITY'),
             'state': bs.get('BSSTATE'),
             'total_ss': bs.get('TOTALSS'),

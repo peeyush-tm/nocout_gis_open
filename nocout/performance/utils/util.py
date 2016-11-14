@@ -29,6 +29,8 @@ from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
 from django.http import HttpRequest
 
 from device.models import Device
+from inventory.models import Sector, Circuit
+from performance.models import NetworkStatus
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
@@ -243,6 +245,16 @@ class PerformanceUtilsGateway:
             device_name_list=device_name_list,
             is_single_call=is_single_call
         )
+
+        return param1
+
+    def get_se_to_pe_min_latency(self, device_id=0, page_type='network'):
+        """
+
+        :param device_id
+        :param page_type
+        """
+        param1 = get_se_to_pe_min_latency(device_id, page_type)
 
         return param1
 
@@ -886,9 +898,11 @@ def prepare_gis_devices_optimized(
                     "ss_name": "NA",
                     "ss_id": 0,
                     "city": "NA",
+                    "region": "NA",
                     "state": "NA",
                     "device_type": "NA",
                     "device_technology": "NA",
+                    "site_id": "NA",
                     "bs_id": 0,
                     "city_id": 0,
                     "state_id": 0,
@@ -926,8 +940,10 @@ def prepare_gis_devices_optimized(
                         "bs_name": inventory_row.get('BSALIAS', 'NA'),
                         "ss_name": inventory_row.get('SSALIAS', 'NA'),
                         "ss_id": inventory_row.get('SSID', 0),
+                        "region": inventory_row.get('org_alias', 'NA'),
                         "city": inventory_row.get('BSCITY', 'NA'),
                         "state": inventory_row.get('BSSTATE', 'NA'),
+                        "site_id": inventory_row.get('SITEID', 'NA'),
                         "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
                         "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
                         "bs_id": inventory_row.get('BSID', 0),
@@ -961,6 +977,8 @@ def prepare_gis_devices_optimized(
                     "bs_name": "NA",
                     "ss_name": "NA",
                     "ss_id": 0,
+                    "site_id": "NA",
+                    "region": "NA",
                     "city": "NA",
                     "state": "NA",
                     "device_type": "NA",
@@ -1003,12 +1021,14 @@ def prepare_gis_devices_optimized(
                         "customer_name": inventory_row.get('CUST', 'NA'),
                         "bs_name": inventory_row.get('BSALIAS', 'NA'),
                         "ss_name": inventory_row.get('SSALIAS', 'NA'),
+                        "site_id": inventory_row.get('SITEID', 'NA'),
                         "ss_id": inventory_row.get('SSID', 'NA'),
                         "city": inventory_row.get('BSCITY', 'NA'),
                         "state": inventory_row.get('BSSTATE', 'NA'),
                         "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
                         "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
                         "bs_id": inventory_row.get('BSID', 0),
+                        "region": inventory_row.get('org_alias', 'NA'),
                         "city_id": inventory_row.get('BSCITYID', 0),
                         "state_id": inventory_row.get('BSSTATEID', 0),
                         "tech_id": inventory_row.get('TECHID', 0),
@@ -1051,8 +1071,10 @@ def prepare_gis_devices_optimized(
                     "bs_name": "NA",
                     "ss_name": "NA",
                     "ss_id": "NA",
+                    "site_id": "NA",
                     "city": "NA",
                     "state": "NA",
+                    "region": "NA",
                     "device_type": "NA",
                     "device_technology": "NA",
                     "qos_bw" : "NA",
@@ -1095,6 +1117,8 @@ def prepare_gis_devices_optimized(
                         "bs_name": inventory_row.get('BSALIAS', 'NA'),
                         "ss_name": inventory_row.get('SSALIAS', 'NA'),
                         "ss_id": inventory_row.get('SSID', 'NA'),
+                        "site_id": inventory_row.get('SITEID', 'NA'),
+                        "region": inventory_row.get('org_alias', 'NA'),
                         "city": inventory_row.get('BSCITY', 'NA'),
                         "state": inventory_row.get('BSSTATE', 'NA'),
                         "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
@@ -1166,6 +1190,8 @@ def prepare_gis_devices_optimized(
                     "city": "NA",
                     "state": "NA",
                     "device_type": "NA",
+                    "region": "NA",
+                    "site_id": "NA",
                     "device_technology": "NA",
                     "bs_id": 0,
                     "city_id": 0,
@@ -1209,9 +1235,11 @@ def prepare_gis_devices_optimized(
                         "customer_name": inventory_row.get('CUST', 'NA'),
                         "bs_name": inventory_row.get('BSALIAS', 'NA'),
                         "city": inventory_row.get('BSCITY', 'NA'),
+                        "site_id": inventory_row.get('SITEID', 'NA'),
                         "state": inventory_row.get('BSSTATE', 'NA'),
                         "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
                         "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
+                        "region": inventory_row.get('org_alias', 'NA'),
                         "bs_id": inventory_row.get('BSID', 0),
                         "city_id": inventory_row.get('BSCITYID', 0),
                         "state_id": inventory_row.get('BSSTATEID', 0),
@@ -1251,6 +1279,7 @@ def prepare_gis_devices_optimized(
                 "device_technology": "NA",
                 "bh_connectivity" : "NA",
                 "bh_capacity" : "NA",
+                "region": "NA",
                 "bh_alias" : "NA",
                 "bh_port" : 0,
                 "bs_id": 0,
@@ -1259,7 +1288,8 @@ def prepare_gis_devices_optimized(
                 "state_id": 0,
                 "tech_id": 0,
                 "type_id": 0,
-                "pe_hostname": "NA"
+                "pe_hostname": "NA",
+                "site_id": "NA",
             })
 
 
@@ -1285,11 +1315,13 @@ def prepare_gis_devices_optimized(
                     "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
                     "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
                     "bh_connectivity" : inventory_row.get('BH_CONNECTIVITY', 'NA'),
+                    "region": inventory_row.get('org_alias', 'NA'),
                     "bh_capacity" : inventory_row.get('BHCAPACITY', 'NA'),
                     "bh_alias" : inventory_row.get('BH_ALIAS', 'NA'),
                     "bh_port" : inventory_row.get('BHPORT', 'NA'),
                     "bs_id": inventory_row.get('BSID', 0),
                     "bh_id": inventory_row.get('BHID', 0),
+                    "site_id": inventory_row.get('SITEID', 'NA'),
                     "city_id": inventory_row.get('BSCITYID', 0),
                     "state_id": inventory_row.get('BSSTATEID', 0),
                     "tech_id": inventory_row.get('TECHID', 0),
@@ -1719,3 +1751,47 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
     except Exception as e:
         log.exception(e.message)
 
+def get_se_to_pe_min_latency(device_id=0, page_type='network'):
+    """
+    This method is for getting device's SE to PE min latency
+    param device_id: id of device
+    param page_type: Type of page i.e. 'Network', 'Customer'
+    return: min_latency(SE TO PE Min. latency of device)
+    """
+    if not device_id:
+        return 'NA'
+
+    if page_type == 'network':
+        try:
+            pe_device = Sector.objects.get(
+                    sector_configured_on_id=device_id
+                ).base_station.backhaul.pe_ip
+        except Exception, e:
+            return 'NA'
+    elif page_type == 'customer':
+        try:
+            pe_device = Circuit.objects.get(
+                    sub_station__device_id=device_id
+                ).sector.base_station.backhaul.pe_ip
+        except Exception, e:
+            return 'NA'
+    else:
+        pass
+
+    try:
+        # Reason of using 'filter' instead of 'get' : 
+        # Using(db_name) method doesn't work on model object
+        # it only works on querysets
+        min_latency = NetworkStatus.objects.filter(
+            ip_address=pe_device.ip_address,
+            data_source='rta',
+            service_name='ping'
+        ).using(
+            pe_device.machine.name
+        ).values_list(
+            'min_value', flat=True
+        )[0]
+    except Exception, err:
+        return 'NA'
+
+    return min_latency

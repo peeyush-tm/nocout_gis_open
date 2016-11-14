@@ -2,6 +2,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "WiMAX",
+        "device_type": "StarmaxSS",
         "dashboard_name" : "modulation_ul_fec",
         "dashboard_type" : "string",
         "is_bh": False,
@@ -9,6 +10,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "WiMAX",
+        "device_type": "StarmaxSS",
         "dashboard_name" : "modulation_dl_fec",
         "dashboard_type" : "string",
         "is_bh": False,
@@ -16,6 +18,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "WiMAX",
+        "device_type": "StarmaxSS",
         "dashboard_name" : "ul_cinr",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -23,6 +26,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "WiMAX",
+        "device_type": "StarmaxSS",
         "dashboard_name" : "dl_cinr",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -30,6 +34,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "WiMAX",
+        "device_type": "StarmaxSS",
         "dashboard_name" : "ul_rssi",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -37,6 +42,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "WiMAX",
+        "device_type": "StarmaxSS",
         "dashboard_name" : "dl_rssi",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -44,6 +50,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "PMP",
+        "device_type": "CanopySM100SS",
         "dashboard_name" : "ul_jitter",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -51,6 +58,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "PMP",
+        "device_type": "CanopySM100SS",
         "dashboard_name" : "dl_jitter",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -58,6 +66,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "PMP",
+        "device_type": "CanopySM100SS",
         "dashboard_name" : "rereg_count",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -65,6 +74,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "PMP",
+        "device_type": "CanopySM100SS",
         "dashboard_name" : "ul_rssi",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -72,13 +82,63 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "PMP",
+        "device_type": "CanopySM100SS",
         "dashboard_name" : "dl_rssi",
         "dashboard_type" : "numeric",
         "is_bh": False,
     },
     {
         "page_name": "rf_dashboard",
+        "technology": "PMP",
+        "device_type": "Radwin5KSS",
+        "dashboard_name" : "ul_rssi",
+        "dashboard_type" : "numeric",
+        "is_bh": False,
+    },
+    {
+        "page_name": "rf_dashboard",
+        "technology": "PMP",
+        "device_type": "Radwin5KSS",
+        "dashboard_name" : "dl_rssi",
+        "dashboard_type" : "numeric",
+        "is_bh": False,
+    },
+    {
+        "page_name": "rf_dashboard",
+        "technology": "PMP",
+        "device_type": "Radwin5KSS",
+        "dashboard_name" : "ul_uas",
+        "dashboard_type" : "numeric",
+        "is_bh": False,
+    },
+    {
+        "page_name": "rf_dashboard",
+        "technology": "PMP",
+        "device_type": "Radwin5KSS",
+        "dashboard_name" : "dl_uas",
+        "dashboard_type" : "numeric",
+        "is_bh": False,
+    },
+    {
+        "page_name": "rf_dashboard",
+        "technology": "PMP",
+        "device_type": "Radwin5KSS",
+        "dashboard_name" : "rad5k_ss_ul_modulation",
+        "dashboard_type" : "numeric",
+        "is_bh": False,
+    },
+    {
+        "page_name": "rf_dashboard",
+        "technology": "PMP",
+        "device_type": "Radwin5KSS",
+        "dashboard_name" : "rad5k_ss_dl_modulation",
+        "dashboard_type" : "numeric",
+        "is_bh": False,
+    },
+    {
+        "page_name": "rf_dashboard",
         "technology": "P2P",
+        "device_type": "Radwin2KSS",
         "dashboard_name" : "rssi",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -86,6 +146,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "P2P",
+        "device_type": "Radwin2KSS",
         "dashboard_name" : "uas",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -93,6 +154,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "P2P",
+        "device_type": "Radwin2KSS",
         "dashboard_name" : "rssi",
         "dashboard_type" : "numeric",
         "is_bh": True,
@@ -100,6 +162,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "P2P",
+        "device_type": "Radwin2KSS",
         "dashboard_name" : "availability",
         "dashboard_type" : "numeric",
         "is_bh": True,
@@ -107,6 +170,7 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "P2P",
+        "device_type": "Radwin2KSS",
         "dashboard_name" : "uas",
         "dashboard_type" : "numeric",
         "is_bh": True,
@@ -114,6 +178,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "WiMAX",
+        "device_type": "",
         "dashboard_name" : "temperature",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -121,6 +186,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "P2P",
+        "device_type": "",
         "dashboard_name" : "latency-p2p-bh",
         "dashboard_type" : "numeric",
         "is_bh": True,
@@ -128,6 +194,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "PMP",
+        "device_type": "",
         "dashboard_name" : "latency-pmp",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -135,6 +202,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "WiMAX",
+        "device_type": "",
         "dashboard_name" : "latency-wimax",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -142,6 +210,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "All",
+        "device_type": "",
         "dashboard_name" : "latency-network",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -149,6 +218,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "PMP",
+        "device_type": "",
         "dashboard_name" : "topology-pmp",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -156,6 +226,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "WiMAX",
+        "device_type": "",
         "dashboard_name" : "topology-wimax",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -163,6 +234,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "PMP",
+        "device_type": "",
         "dashboard_name" : "packetloss-pmp",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -170,6 +242,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "WiMAX",
+        "device_type": "",
         "dashboard_name" : "packetloss-wimax",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -177,6 +250,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "All",
+        "device_type": "",
         "dashboard_name" : "packetloss-network",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -184,6 +258,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "WiMAX",
+        "device_type": "",
         "dashboard_name" : "down-wimax",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -191,6 +266,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "PMP",
+        "device_type": "",
         "dashboard_name" : "down-pmp",
         "dashboard_type" : "numeric",
         "is_bh": False,
@@ -198,6 +274,7 @@ dashboards = [
     {
         "page_name": "main_dashboard",
         "technology": "All",
+        "device_type": "",
         "dashboard_name" : "down-network",
         "dashboard_type" : "numeric",
         "is_bh": False,

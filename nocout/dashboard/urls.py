@@ -47,6 +47,11 @@ urlpatterns = patterns('',
         name='dashboard-rf-performance-pmp'
     ),
     url(
+        r'^rf-performance/radwin5k/$',
+        cache_page(60 * 2)(views.RAD5_Performance_Dashboard.as_view()),
+        name='dashboard-rf-performance-rad5'
+    ),
+    url(
         r'^rf-performance/ptp/$',
         cache_page(60 * 2)(views.PTP_Performance_Dashboard.as_view()),
         name='dashboard-rf-performance-ptp'

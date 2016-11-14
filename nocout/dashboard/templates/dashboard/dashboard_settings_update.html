@@ -66,6 +66,41 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
+        var parent_class = 'formContainer',
+            current_dashboard = ''
+            change_event_dom_ids = [
+                '#id_technology',
+                "#id_device_type"
+            ],
+            element_relation_dict = {
+                '#id_technology' : {
+                    "old_value" : $('#id_technology').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_device_type',
+                            "url_name" : "{% url 'get_types_for_tech' 123 %}",
+                            "existing_value" : $('#id_device_type').val()
+                        }
+                    ],
+                    "reset" : [
+                        '#id_device_type'
+                    ]
+                },
+                '#id_device_type' : {
+                    "old_value" : $('#id_device_type').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_name',
+                            "url_name" : "{% url 'get_unused_dashboard' 123 %}",
+                            "existing_value" : $('#id_name').val()
+                        }
+                    ],
+                    "reset" : [
+                        '#id_name'
+                    ]
+                }
+            };
+
         $(document).ready(function() {
 
             // Initialize the select2 selectbox.
@@ -80,6 +115,8 @@
             /*Number of range inputs*/
             var total_label = $("label").length,
                 range_count = 0;
+            
+            current_dashboard = '{{ current_dashboard|safe }}';
 
             for (var i = 0; i < total_label; i++) {
                 if ($("label")[i].innerHTML.indexOf("Start") > -1 || $("label")[i].innerHTML.indexOf("End") > -1) {
@@ -207,6 +244,14 @@
                 }
             }
 
+            // Loop to trigger change event on select boxes if value exists
+            for (var i=0;i<change_event_dom_ids.length;i++) {
+                if (element_relation_dict[change_event_dom_ids[i]]['old_value']) {
+                    // trigger change event
+                    $(change_event_dom_ids[i]).trigger('change', true);
+                }
+            };
+
         });
 
         
@@ -244,6 +289,9 @@
                 options += "<option value=\"" + key + "\" >" + technologies[key] + "</option>";
             }
             reset_technology(options);
+
+            // reset device_type box
+            $('#id_device_type').html('<option selected value=>---------</option>')
         });
 
         function get_technology (technology_value) {
@@ -320,6 +368,12 @@
             }
             reset_dashboard_type(options);
         });
+
+        // change event for updating saved dashboard name
+        // $("#id_device_type").on('change', function(){
+        //     // console.log(current_dashboard);
+        //     $('#id_name').prepend('<option selected>' +current_dashboard+ '</option>')
+        // })
 
     </script>
 {% endblock %}

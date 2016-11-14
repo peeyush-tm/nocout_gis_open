@@ -193,12 +193,20 @@ class LivePerformance(ListView):
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
 
+        rad5_specific_headers = [
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},
+            {'mData': 'min_latency', 'sTitle': 'SE to PE Latency Min', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
+        ]
+
         if page_type in ["network"]:
             specific_headers = [
                 {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
                 {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'bSortable': True},
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
             ]
+
+            specific_headers += [{'mData': 'site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False}]
+            specific_headers += rad5_specific_headers
 
         elif page_type in ["customer"]:
             specific_headers = [
@@ -207,6 +215,8 @@ class LivePerformance(ListView):
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
                 {'mData': 'near_end_ip', 'sTitle': 'Near End Ip', 'sWidth': 'auto', 'bSortable': True},
             ]
+
+            specific_headers += rad5_specific_headers
 
         else:
             specific_headers = [
@@ -233,6 +243,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
     is_ordered = False
     is_polled = False
     is_searched = False
+    is_rad5 = False
     is_initialised = True
     
     # Create instance of 'InventoryUtilsGateway' class
@@ -245,6 +256,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         'customer_name',
         'near_end_ip',
         'ip_address',
+        'region',
+        'min_latency',
         'device_type',
         'bs_name',
         'city',
@@ -288,14 +301,16 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         page_type = self.request.GET.get('page_type')
 
         other_type = self.request.GET.get('other_type', None)
+        is_rad5 = int(self.request.GET.get('is_rad5', 0))
 
-        required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
+        required_value_list = ['id', 'machine__name', 'device_name', 'ip_address', 'organization__alias']
 
         device_tab_technology = self.request.GET.get('data_tab')
         
         devices = self.inventory_utils.filter_devices(
             organizations=kwargs['organizations'],
             data_tab=device_tab_technology,
+            is_rad5=is_rad5,
             page_type=page_type,
             other_type=other_type,
             required_value_list=required_value_list
@@ -357,6 +372,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         request = self.request
 
         page_type = request.GET['page_type']
+        is_rad5 = int(request.GET.get('is_rad5', 0))
 
         if page_type == 'customer':
             columns = [
@@ -365,6 +381,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'circuit_id',
                 'customer_name',
                 'near_end_ip',
+                'region',
+                'min_latency',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -373,7 +391,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'packet_loss',
                 'latency',
                 'last_updated',
-                'age'
+                'age',
             ]
         elif page_type == 'network':
             columns = [
@@ -381,6 +399,9 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'sector_id',
                 'circuit_id',
                 'customer_name',
+                'site_id',
+                'region',
+                'min_latency',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -547,6 +568,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         other_type = self.request.GET.get('other_type')
         alert_page_type = page_type
 
+        is_rad5 = int(self.request.GET.get('is_rad5', 0))
         # In case of other page update page type to 'network' for alert center link
         if page_type not in ["customer", "network"]:
             alert_page_type = 'network'
@@ -555,8 +577,13 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
             page_type = 'pe'
             alert_page_type = 'network'
 
+        min_latency = ''
         if qs:
             for dct in qs:
+                # for getting SE to PE min. latency
+                if is_rad5:
+                    device_id = dct.get('id', 0)
+                    min_latency = perf_utils.get_se_to_pe_min_latency(device_id, page_type)
 
                 try:
                     if int(dct['packet_loss']) == 100:
@@ -602,7 +629,10 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 except Exception, e:
                     packet_loss = dct.get('packet_loss')
 
+
+
                 dct.update(
+                    min_latency= min_latency if min_latency else 'NA',
                     latency=latency,
                     packet_loss=packet_loss,
                     actions='<a href="' + performance_url + '" title="Device Performance">\
@@ -846,9 +876,15 @@ class GetPerfomance(View):
         if bh_perf_url:
             bh_perf_url += '?is_util=1'
 
+        if device_technology.lower() == 'pmp':
+            breadcrumb_title = 'Radwin5k' if is_radwin5 else 'Cambium'
+        else:
+            breadcrumb_title = device_technology
+
         page_data = {
             'page_title': page_type.capitalize(),
             'device_technology': device_technology,
+            'breadcrumb_title': breadcrumb_title,
             'device_type': device_type,
             'device': device,
             'realdevice': realdevice,

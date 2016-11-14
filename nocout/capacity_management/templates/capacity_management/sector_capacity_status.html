@@ -37,7 +37,12 @@
                     </li>
                     <li>
                         <a href="#pmp_status_block" id="pmp_status_tab" data-toggle="tab">
-                            <span class="hidden-inline-mobile">PMP</span>
+                            <span class="hidden-inline-mobile">Cambium</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#rad5k_status_block" id="rad5k_status_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Radwin5K</span>
                         </a>
                     </li>
                     <li class="active">
@@ -151,6 +156,58 @@
                         </table>
                     </div>
 
+                    <div class="tab-pane" id="rad5k_status_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="rad5k_sector_status_table">
+                            <thead>
+                                <tr>
+                                    <th colspan="5" class="hide" style="width:auto;" aria-label=""></th>
+                                    <th colspan="7" style="text-align: center;">SECTOR</th>
+                                    <th colspan="2" style="text-align: center;" aria-label="">Current DL</th>
+                                    <th colspan="5" style="text-align: center;">DL (Last Day)</th>
+                                    <th colspan="2" style="text-align: center;" aria-label="">Current UL</th>
+                                    <th colspan="5" style="text-align: center;">UL (Last Day)</th>
+                                    <th style="width:auto;" aria-label=""></th>
+                                </tr>
+                                <tr>
+                                    <th class="hide" style="width:auto;" aria-label="Device ID">Device ID</th>
+                                    <th class="hide" style="width:auto;" aria-label="Sector">Sector</th>
+                                    <th class="hide" style="width:auto;" aria-label="severity">severity</th>
+                                    <th class="hide" style="width:auto;" aria-label="age">age</th>
+                                    <th class="hide" style="width:auto;" aria-label="organization">organization</th>
+
+                                    <th style="width:auto;" aria-label="Sector ID">Sector ID</th>
+                                    <th style="width:auto;" aria-label="BS Name">BS Name</th>
+                                    <th style="width:auto;" aria-label="City">City</th>
+                                    <th style="width:auto;" aria-label="State">State</th>
+                                    <th style="width:auto;" aria-label="IP">IP</th>
+                                    <th style="width:auto;" aria-label="Technology">Technology</th>
+                                    <th style="width:auto;" aria-label="Capacity">Cbw (MHz)</th>
+
+                                    <th style="width:auto;" aria-label="DL (%)">DL (%)</th>
+                                    <th style="width:auto;" aria-label="DL (mbps)">DL (mbps)</th>
+
+                                    <th style="width:auto;" aria-label="Capacity DL">Capacity DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK DL (%)">PEAK DL (%)</th>
+                                    <th style="width:auto;" aria-label="PEAK DL (mbps)">PEAK DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
+                                    <th style="width:auto;" aria-label="Duration">Duration</th>
+
+                                    <th style="width:auto;" aria-label="UL (%)">UL (%)</th>
+                                    <th style="width:auto;" aria-label="UL (mbps)">UL (mbps)</th>
+
+                                    <th style="width:auto;" aria-label="Capacity UL">Capacity UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK UL (%)">PEAK UL (%)</th>
+                                    <th style="width:auto;" aria-label="PEAK UL (mbps)">PEAK UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
+                                    <th style="width:auto;" aria-label="Duration">Duration</th>
+                                    
+                                    <th style="width:auto;" aria-label="Actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
                     <div class="tab-pane active" id="all_status_block">
                         <table class="datatable table table-striped table-bordered table-hover" id="all_sector_status_table">
                             <thead>
@@ -230,10 +287,12 @@
         /*Grid headers object & ajax url*/
         var all_ajax_url = '{% url "SectorStatusListingClass" %}',
             pmp_ajax_url = '{% url "SectorStatusListingClass" %}'+'?technology=PMP',
+            rad5k_ajax_url = '{% url "SectorStatusListingClass" %}'+'?technology=Radwin5KBS&is_type=1',
             wimax_ajax_url = '{% url "SectorStatusListingClass" %}'+'?technology=WiMAX',
             common_param = "'download_excel': 'yes'",
             all_title = "Sector Utilization Status - All",
-            pmp_title = "Sector Utilization Status - PMP",
+            pmp_title = "Sector Utilization Status - Cambium",
+            rad5k_title = "Sector Utilization Status - Radwin5KBS",
             wimax_title = "Sector Utilization Status - WiMAX";
 
 
@@ -254,6 +313,14 @@
                 "header_extra_param" : "{"+common_param+"}",
                 "data_extra_param" : "{'technology': 'PMP', 'report_title' : '"+pmp_title+"', "+common_param+"}"
             },
+            "rad5k_status_tab": {
+                "app_name" : "capacity_management",
+                "table_title" : rad5k_title,
+                "header_class_name" : "SectorStatusHeaders",
+                "data_class_name" : "SectorStatusListing",
+                "header_extra_param" : "{"+common_param+"}",
+                "data_extra_param" : "{'technology': 'Radwin5KBS', 'report_title' : '"+rad5k_title+"', "+common_param+"}"
+            },
             "wimax_status_tab" : {
                 "app_name" : "capacity_management",
                 "table_title" : wimax_title,
@@ -269,6 +336,9 @@
 
         $("#pmp_status_tab").attr("data_url", pmp_ajax_url);
         $("#pmp_status_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#rad5k_status_tab").attr("data_url", rad5k_ajax_url);
+        $("#rad5k_status_tab").attr("data_header", '{{ rad5k_datatable_headers|safe }}');
 
         $("#wimax_status_tab").attr("data_url", wimax_ajax_url);
         $("#wimax_status_tab").attr("data_header", '{{ datatable_headers|safe }}');
