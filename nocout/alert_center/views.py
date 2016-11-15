@@ -654,8 +654,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
                             dl_utilization = UtilizationStatus.objects.filter(
                                     ip_address=dct.get('ip_address', None),
-                                    service_name='rad5k_bs_dl_utilization',
-                                    data_source='dl_utilization'
+                                    service_name='radwin5k_ss_dl_util_kpi',
+                                    data_source='rad5k_ss_dl_util_kpi'
                                 ).using(machine_name)
 
                             if dl_utilization.exists():
@@ -663,8 +663,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
                             ul_utilization = UtilizationStatus.objects.filter(
                                     ip_address=dct.get('ip_address', None),
-                                    service_name='rad5k_bs_ul_utilization',
-                                    data_source='ul_utilization'
+                                    service_name='radwin5k_ss_ul_util_kpi',
+                                    data_source='rad5k_ss_ul_util_kpi'
                                 ).using(machine_name)
 
                             if ul_utilization.exists():
