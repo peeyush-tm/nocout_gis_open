@@ -5080,8 +5080,8 @@ class GISPerfInfo(View):
             complete_performance = get_complete_performance(machine_dict=machine_dict)
 
             # ******************************** GET DEVICE MACHINE MAPPING (END) ********************************
-
             network_perf_data = complete_performance['network_perf_data']
+            perf_perf_data = complete_performance['performance_perf_data']
             service_perf_data = complete_performance['service_perf_data']
             inventory_perf_data = complete_performance['inventory_perf_data']
             status_perf_data = complete_performance['status_perf_data']
@@ -5107,6 +5107,10 @@ class GISPerfInfo(View):
                                                       processed=processed)
 
                 perf_info += self.collect_performance(performance=status_perf_data,
+                                                      device_id=device_id,
+                                                      processed=processed)
+
+                perf_info += self.collect_performance(performance=perf_perf_data,
                                                       device_id=device_id,
                                                       processed=processed)
 
@@ -5369,11 +5373,11 @@ def get_complete_performance(machine_dict={}, tech_list=[], current_user=None, t
         network_perf_data.extend(list(device_network_info))
 
         # device performance info
-        # performance_network_info = PerformanceStatus.objects.filter(where_condition).values(
-        #     *polled_columns
-        # ).using(alias=machine_name)
+        performance_network_info = PerformanceStatus.objects.filter(where_condition).values(
+            *polled_columns
+        ).using(alias=machine_name)
 
-        # performance_perf_data.extend(list(performance_network_info))
+        performance_perf_data.extend(list(performance_network_info))
 
         # device service info
         device_service_info = ServiceStatus.objects.filter(where_condition).values(

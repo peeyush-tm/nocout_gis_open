@@ -2035,7 +2035,9 @@ class BulkFetchLPDataApi(View):
             'rad5k_dl_time_slot_alloted_invent','rad5k_ul_time_slot_alloted_invent',  'rad5k_dl_estmd_throughput_invent', 
             'rad5k_ul_estmd_throughput_invent', 'rad5k_ul_uas_invent', 'rad5k_dl_es_invent', 'rad5k_ul_ses_invent', 
             'rad5k_ul_bbe_invent','rad5k_ss_cell_radius_invent', 'rad5k_ss_cmd_rx_pwr_invent', 'rad5k_ss_dl_utilization', 
-            'rad5k_ss_ul_utilization', 'wimax_qos_invent', 'wimax_ss_session_uptime'
+            'rad5k_ss_ul_utilization', 'wimax_qos_invent', 'wimax_ss_session_uptime', 'rad5k_ss_mir_ul', 'rad5k_ss_mir_dl',
+            'rad5k_ss2_ul_rssi', 'rad5k_ss2_dl_rssi', 'rad5k_ss_dl_estmd_throughput', 'rad5k_ss_ul_estmd_throughput',
+            'rad5k_ss_data_vlan_invent', 'rad5k_ss_dl_modulation',
         ]
 
         # Service for which live polling runs.

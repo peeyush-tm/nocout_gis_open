@@ -440,6 +440,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
     technology = 'ALL'
     is_type = 0
     is_rad5 = 0
+    call_from_alert = False
 
     columns = [
         'id',
@@ -538,6 +539,9 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             Q(severity__in=['warning', 'critical'])
         ).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
 
+        # Set Flag if request is from alert_center -> Network details -> Radwin5k sector util. tab
+        self.call_from_alert = int(self.request.GET.get('call_from_alert', 0))
+
         sectors = list()
         if max_timestamp:
             if self.technology == 'ALL':
@@ -548,8 +552,9 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
 
                 sectors = self.model.objects.filter(
                     ~Q(sector__sector_configured_on__device_type__in=excluded_device_type),
+                    Q(severity__in=['warning', 'critical']),
                     sector__sector_configured_on__isnull=False,
-                    organization__in=kwargs['organizations']
+                    organization__in=kwargs['organizations'],
                 ).prefetch_related(*self.related_columns).values(*self.columns)
             else:
                 where_condition = Q()
@@ -567,8 +572,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                     try:
                         tech_id = DeviceTechnology.objects.get(name__iexact=self.technology).id
                         where_condition &= Q(sector__sector_configured_on__device_technology=tech_id)
-                        
-                        if SHOW_SPRINT3:
+                                                
+                        if SHOW_SPRINT3 or self.call_from_alert:                            
                             if self.technology.lower() == 'pmp':
                                 excluded_device_type = DeviceType.objects.filter(
                                     name__icontains='radwin5'
