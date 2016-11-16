@@ -1316,7 +1316,20 @@ function nocoutPerfLib() {
 
                                             // Update bottom table HTML
                                             $('#' + service_id+ '_bottom_table').html(contentHtml);
+                                            
+                                            var tbl_columns = $('#' + service_id+ '_bottom_table thead tr:nth-child(2) th'),
+                                                columns_list = [];
 
+                                            for(var x=0; x<tbl_columns.length; x++) {
+                                                var col = null;
+                                                if (x % 2 == 0) {
+                                                    col = {
+                                                        "sType": "date-uk"
+                                                    };
+                                                }
+
+                                                columns_list.push(col)
+                                            }
                                             // Margin of 20px between the chart & table
                                             $('#' + service_id+ '_bottom_table').css("margin-top","20px");
 
@@ -1333,9 +1346,11 @@ function nocoutPerfLib() {
                                                         }
                                                     ]
                                                 },
+                                                "aoColumns": columns_list,
                                                 fnInitComplete: function(oSettings) {
                                                     var row_per_pages_selectbox = '#perf_data_table_wrapper div.dataTables_length label select',
                                                         search_box = '#perf_data_table_wrapper div.dataTables_filter label input';
+                                                        
                                                     // Update search txt box & row per pages dropdown style
                                                     $(row_per_pages_selectbox + ' , ' + search_box).addClass("form-control");
                                                     $(row_per_pages_selectbox + ' , ' + search_box).addClass("input-sm");

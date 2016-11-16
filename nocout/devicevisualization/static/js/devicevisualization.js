@@ -1209,6 +1209,9 @@ $('#infoWindowContainer').delegate('td','click',function(e) {
                             createHighChart_nocout(result.data.objects,'perf', false, false, function(status) {
                                 // 
                             });
+
+                            // Add data to table
+                            addDataToChartTable_nocout(chartConfig, 'perf_data_table');
                         }
                     }
                 }
