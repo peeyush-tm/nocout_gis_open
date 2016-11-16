@@ -182,7 +182,7 @@ def check_rad5k_topology_discover(item, params, info):
 		connected_ss_rssi_ul,connected_ss_rssi_dl,connected_ss_dl_utilization,connected_ss_ul_utilization,\
 		connected_ss_time_slot_alloted_dl,connected_ss_time_slot_alloted_ul,connected_ss_estimated_throughput_dl,\
 		connected_ss_estimated_throughput_ul,connected_ss_ul_uas,connected_ss_ul_es,connected_ss_ul_ses,\
-		connected_ss_ul_bbe,connected_ss_cell_radius,connected_ss_commanded_rx_power,connected_ss_ip_address,connected_ss_dl_modulation,connected_ss_data_vlan,connected_ss_mir_ul,connected_ss_mir_dl,ul_rssi2,dl_rssi2)
+		connected_ss_ul_bbe,connected_ss_cell_radius,connected_ss_commanded_rx_power,connected_ss_dl_modulation,connected_ss_data_vlan,connected_ss_mir_ul,connected_ss_mir_dl,ul_rssi2,dl_rssi2,connected_ss_ip_address)
                 try:
                     value_list= []
                     value_list.extend([connected_ss_rssi_ul,connected_ss_rssi_dl,connected_ss_dl_utilization,\

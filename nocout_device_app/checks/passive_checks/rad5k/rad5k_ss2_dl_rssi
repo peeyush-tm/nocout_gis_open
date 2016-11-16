@@ -59,7 +59,7 @@ def rad5k_ss2_dl_rssi(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext,[("dl_2rssi_ul", dl_2rssi)])
+    return (state, infotext,[("dl_2rssi", dl_2rssi)])
 
 
 check_info["rad5k_ss2_dl_rssi"] = {

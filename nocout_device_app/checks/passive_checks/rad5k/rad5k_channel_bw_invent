@@ -48,7 +48,7 @@ def check_rad5k_channel_bw_invent(item, _no_params, info):
                                 try:
                                         if memc:
                                                 memc.set(key, channel_bandwidth)
-						memc.get(key)
+						
                                 except :
                                         pass
 
