@@ -49,8 +49,8 @@ var green_color = "#468847",
  * @param info {Object}, It contains the latest status info object
  */
 function populateDeviceStatus_nocout(domElement,info) {
-    console.log('info')
-    console.log(info)
+    // console.log('info')
+    // console.log(info)
     if (isLatestStatusUpdated) {
         return true;
     }
@@ -68,8 +68,8 @@ function populateDeviceStatus_nocout(domElement,info) {
         severity_unknown = info.severity && info.severity.unknown ? info.severity.unknown : 0;
 
     var severity_style_obj = nocout_getSeverityColorIcon(status);
-    console.log(status);
-    console.log(severity_style_obj);
+    // console.log(status);
+    // console.log(severity_style_obj);
     txt_color = severity_style_obj.color ? severity_style_obj.color : "";
     fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle";
 
@@ -990,7 +990,7 @@ function nocout_livePollCurrentDevice(
                     epoch_time = dateObj.getTime(),
                     current_date = dateObj.getDate() > 9 ? dateObj.getDate() : '0' + String(dateObj.getDate()),
                     month = Number(dateObj.getMonth()) + 1 > 9 ? Number(dateObj.getMonth()) + 1 : '0' + String(Number(dateObj.getMonth()) + 1),
-                    date_str = current_date + "-" + month + "-" + dateObj.getFullYear(),
+                    date_str = current_date + "/" + month + "/" + dateObj.getFullYear(),
                     current_hour = dateObj.getHours() > 9 ? dateObj.getHours() : '0' + String(dateObj.getHours()),
                     current_minutes = dateObj.getMinutes() > 9 ? dateObj.getMinutes() : '0' + String(dateObj.getMinutes()),
                     current_second = dateObj.getSeconds() > 9 ? dateObj.getSeconds() : '0' + String(dateObj.getSeconds()),
@@ -1579,6 +1579,9 @@ function nocout_stopPollNow() {
 
     var active_tab_obj = nocout_getPerfTabDomId(),
         tab_id = active_tab_obj["active_dom_id"];
+
+    $('.single_perf_poll_now').button('complete');
+    $('.single_perf_poll_now').removeAttr('disabled');
 
     if($("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
         $("#" + tab_id + "_block .play_pause_btns").removeClass("disabled");

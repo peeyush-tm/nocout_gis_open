@@ -5,7 +5,7 @@ from django.utils import timezone
 import datetime
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import P2P, PMP, WiMAX, TCLPOP, DEBUG, SPEEDOMETER_DASHBAORDS
+from nocout.settings import P2P, PMP, WiMAX, TCLPOP, DEBUG, SPEEDOMETER_DASHBAORDS, SHOW_SPRINT3
 
 from organization.models import Organization
 from device.models import DeviceTechnology, Device, DeviceType
@@ -893,7 +893,9 @@ def calculate_RF_Performance_dashboards(technology, is_rad5=False, is_bh = False
     inventory_utils = InventoryUtilsGateway()
 
     devices_method_to_call = inventory_utils.organization_customer_devices
-    devices_method_kwargs = dict(specify_ptp_type='all', is_rad5=is_rad5)
+    
+    disable_s3 = not SHOW_SPRINT3
+    devices_method_kwargs = dict(specify_ptp_type='all', is_rad5=is_rad5, s3_feature=disable_s3)
     # Making of dashboard configs according to values of technology, is_bh
     if technology == 'WiMAX' and is_bh == False:
         dashboards = {

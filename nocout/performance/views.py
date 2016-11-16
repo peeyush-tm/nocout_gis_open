@@ -1257,6 +1257,12 @@ class InventoryDeviceStatus(View):
             device_tech = DeviceTechnology.objects.get(pk=device.device_technology).name
         except Exception, e:
             device_tech = ''
+
+        try:
+            device_type_name = DeviceType.objects.get(pk=device.device_type).name
+            device_type_name = device_type_name.lower()
+        except Exception, e:
+            device_type_name = ''
         
         # check that the device is SS, sector, BH or other and update the flag accordingly
         if device.substation_set.exists():
@@ -1368,14 +1374,6 @@ class InventoryDeviceStatus(View):
                     if lowered_device_tech in ['ptp', 'p2p']:
                         service_name = 'radwin_frequency_invent'
                     elif lowered_device_tech == 'pmp':
-                        try:
-                            device_type_name = DeviceType.objects.get(
-                                id=Device.objects.get(device_name=device_name).device_type
-                            ).name
-                            device_type_name = device_type_name.lower()
-                        except Exception, e:
-                            device_type_name = ''
-
                         if 'cambium' in device_type_name or 'canopy' in device_type_name:
                             service_name = 'cambium_ss_frequency_invent'
                         else:
@@ -1416,11 +1414,19 @@ class InventoryDeviceStatus(View):
                     
                     # GET Service & DS as per the technology
                     if lowered_device_tech in ['pmp']:
-                        service_name = 'cambium_qos_invent'
-                        ds_name = 'bw_dl_sus_rate'
+                        if 'radwin5k' in device_type_name:
+                            model_name = ServiceStatus
+                            service_name = 'cambium_qos_invent'
+                            ds_name = 'bw_dl_sus_rate'
 
-                        sector_id_service_name = 'cambium_ss_sector_id_invent'
-                        sector_id_ds_name = 'ss_sector_id'
+                            sector_id_service_name = 'rad5k_ss_sector_id'
+                            sector_id_ds_name = 'sector_id'
+                        else:
+                            service_name = 'cambium_qos_invent'
+                            ds_name = 'bw_dl_sus_rate'
+
+                            sector_id_service_name = 'cambium_ss_sector_id_invent'
+                            sector_id_ds_name = 'ss_sector_id'
 
                     elif lowered_device_tech in ['wimax']:
                         service_name = 'wimax_qos_invent'
