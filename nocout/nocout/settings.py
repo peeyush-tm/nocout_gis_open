@@ -1315,6 +1315,8 @@ NO_ONDEMAND_POLL_SDS = json.dumps([
     'radwin5k_ss_dl_util_kpi_rad5k_ss_dl_util_kpi',
     'radwin5k_ss_dl_dyn_tl_kpi_rad5k_ss_dl_dyn_tl',
     'radwin5k_ss_ul_dyn_tl_kpi_rad5k_ss_ul_dyn_tl',
+    'radwin5k_ss_ul_issue_kpi_ul_issue',
+    'radwin5k_bs_ul_issue_kpi_bs_ul_issue',
 ])
 # Global variable to show/hide Scheduled report mail option in dowload center listing.
 REPORT_EMAIL_PERM = json.dumps({

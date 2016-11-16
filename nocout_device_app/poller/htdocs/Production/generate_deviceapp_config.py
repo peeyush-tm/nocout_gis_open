@@ -969,11 +969,13 @@ group by
             'radwin_ss_provis_kpi',
             'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
             'rici_dl_util_kpi', 'rici_ul_util_kpi',
-            'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi','huawei_switch_dl_util_kpi','huawei_switch_ul_util_kpi']
+            'cisco_switch_ul_util_kpi','cisco_switch_dl_util_kpi','juniper_switch_ul_util_kpi','juniper_switch_dl_util_kpi',
+            'huawei_switch_dl_util_kpi','huawei_switch_ul_util_kpi','radwin5k_dl_dyn_tl_kpi','radwin5k_ul_dyn_tl_kpi',
+            'radwin5k_dl_util_kpi','radwin5k_ul_util_kpi','radwin5k_bs_ul_issue_kpi']
     # Following dependent SS checks should not be included in list of passive checks
     # As they are treated as active checks (Dependent in sense they get data from their BS)
     exclude_ss_active_services = ['cambium_ss_ul_issue_kpi', 'cambium_ss_provis_kpi', 'wimax_ss_ul_issue_kpi',
-            'wimax_ss_provis_kpi']
+            'wimax_ss_provis_kpi','radwin5k_ss_ul_issue_kpi','radwin5k_ss_dl_dyn_tl_kpi','radwin5k_ss_ul_dyn_tl_kpi','radwin5k_ss_dl_util_kpi','radwin5k_ss_ul_util_kpi']
     for service in data:
         """
         from pprint import pprint

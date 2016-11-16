@@ -5232,7 +5232,7 @@ class GISPerfInfo(View):
 					}
 
 				device_info.append(perf_info)
-			except Exception as e:      
+			except Exception as e:		
 				logger.error(e)
 				# pass
 

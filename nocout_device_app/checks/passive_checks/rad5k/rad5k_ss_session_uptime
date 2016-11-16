@@ -1,0 +1,68 @@
+#!/usr/bin/python
+# ######################################################################
+# Function: check_rad5k_ss_session_uptime
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+
+def check_rad5k_ss_session_uptime(item, _no_params, info):
+    """
+            check_rad5k_ss_session_uptime function calculates the uplink utilization
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter results
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                                    3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example :  OK - up since Mon Jul 27 09:33:23 2015 (17d 04:52:49)
+
+                    Raises:
+                            ValueError ,Exception
+
+    """ 
+    state = 3
+    uptime = None
+    infotext = "unknown_value"
+    try:
+        if info:
+            if info[0][0]:
+                uptime = int(info[0][0])
+                uptime = uptime / 100
+                seconds = uptime % 60
+                rem = uptime / 60
+                minutes = rem % 60
+                hours = (rem % 1440) / 60
+                days = rem / 1440
+                now = int(time.time())
+                since = time.strftime("%c", time.localtime(now - uptime))
+                state = 0
+                infotext = "up since %s (%dd %02d:%02d:%02d)" % (since, days, hours, minutes, seconds)
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unkown_value"
+
+    return (state, infotext, [("session_uptime", uptime)])
+
+
+check_info["rad5k_ss_session_uptime"] = {
+    'check_function': check_rad5k_ss_session_uptime,
+    'service_description': 'rad5k_ss_session_uptime',
+    'has_perfdata': True
+
+}
+#########################################################################
+#       SNMP OID for Session Uptime
+#########################################################################
+snmp_info["rad5k_ss_session_uptime"] = ( ".1.3.6.1.2.1.1", ["3.0"] )

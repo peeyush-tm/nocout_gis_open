@@ -1,0 +1,74 @@
+#!/usr/bin/python
+
+import sys
+import os
+from mysql_connection import memc
+
+"""
+# ######################################################################
+# Function: radwin_bs_software_dl_modulation_invent
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+
+"""
+
+def rad5k_ss_ul_modulation(item, _no_params, info):
+    """
+            radwin_bs_software_dl_modulation_invent function calcdlates the operating ptx
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter resdlts
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - 5835
+
+                    Raises:
+                            ValueError ,Exception
+"""
+    state = 3
+    infotext = "unknown_value"
+    ul_mod= None
+    rad5k_ul_mod_invent_convert_dict = {007:'64QAM-FEC-5/6', 107:'64QAM-FEC-5/6', 207:'64QAM-FEC-5/6', 006: '64QAM-FEC-3/4', 106: '64QAM-FEC-3/4', 206: '64QAM-FEC-3/4', 005: '64QAM-FEC-2/3', 105:'64QAM-FEC-2/3', 205:'64QAM-FEC-2/3',     004:'16QAM-FEC-3/4', 104: '16QAM-FEC-3/4', 204: '16QAM-FEC-3/4', 003:'16QAM-FEC-1/2', 103:'16QAM-FEC-1/2', 203:'16QAM-FEC-1/2',002:'QPSK-FEC-3/4', 102:'QPSK-FEC-3/4', 202:'QPSK-FEC-3/4', 001:'QPSK-FEC-1/2', 101:'QPSK-FEC-1/2', 201:'Q    PSK-FEC-1/2', 000:'BPSK-FEC-1/2', 100:'BPSK-FEC-1/2', 200:'BPSK-FEC-1/2' }
+    try:
+	ul_mod = info[0][0]
+	if ul_mod:
+		ul_modulation = rad5k_ul_mod_invent_convert_dict.get(int(ul_mod),'')
+		infotext = "UL Modulation is %s" % ul_modulation
+		state = 0
+	if memc :
+		try:
+			key = g_hostname+"_rad5k_ss_ul_mod"
+			memc.set(key,ul_modulation)
+		except :
+			pass
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext,[("ul_modulation", ul_modulation)])
+
+
+check_info["rad5k_ss_ul_modulation"] = {
+    'check_function': rad5k_ss_ul_modulation,
+    'service_description': 'rad5k_ss_ul_modulation',
+    'has_perfdata' : True,
+}
+
+#########################################################################
+#	SNMP OID for the operating ptx
+#########################################################################
+snmp_info["rad5k_ss_ul_modulation"] = ( ".1.3.6.1.4.1.4458.1000.1.5.9.5", ["0"] )

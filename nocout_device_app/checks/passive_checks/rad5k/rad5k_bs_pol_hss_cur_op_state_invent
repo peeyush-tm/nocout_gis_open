@@ -5,7 +5,7 @@
 
 """
 # ######################################################################
-# Function: rad5k_ss_prod_type_invent
+# Function: rad5k_bs_pol_hss_cur_op_state_invent
 #
 # Parameters: info (SNMP Ouput) _no_params (No Parameters)
 #
@@ -14,9 +14,9 @@
 
 """
 
-def rad5k_ss_prod_type_invent(item, _no_params, info):
+def rad5k_bs_pol_hss_cur_op_state_invent(item, _no_params, info):
     """
-            rad5k_ss_prod_type_invent function calcdlates the operating ptx
+            rad5k_bs_pol_hss_cur_op_state_invent function calcdlates the operating ptx
 
             Args:
                     item (str) Specific item on SNMP output on which we want to filter resdlts
@@ -39,28 +39,30 @@ def rad5k_ss_prod_type_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
-    prod_type= None
+    polled_value= None
+    hsu_dict=  {'1' : 'Not Supported', '2'  : 'Independent Unit', '3' : 'HubSync Master', '4' : 'HbuSyncClientContinueTx', '5'  : 'HubSyncClientDisableTx', '6' : 'gps Sync', '7'  : 'Independent Sync Unit'}	
+
     try:
-	prod_type = info[0][0]
-	prod_type = prod_type.replace(" ","")
-	if prod_type:
-		infotext = "%s" % prod_type
+	polled_value = info[0][0]
+	if polled_value:
+		polled_value = hsu_dict.get(polled_value)
+		infotext = "%s" % polled_value
 		state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
 
-    return (state, infotext,[("software_prod_type", prod_type)])
+    return (state, infotext,[("op_state", polled_value)])
 
 
-check_info["rad5k_ss_prod_type_invent"] = {
-    'check_function': rad5k_ss_prod_type_invent,
-    'service_description': 'rad5k_ss_prod_type_invent',
+check_info["rad5k_bs_pol_hss_cur_op_state_invent"] = {
+    'check_function': rad5k_bs_pol_hss_cur_op_state_invent,
+    'service_description': 'rad5k_bs_pol_hss_cur_op_state_invent',
     'has_perfdata' : True,
 }
 
 #########################################################################
 #	SNMP OID for the operating ptx
 #########################################################################
-snmp_info["rad5k_ss_prod_type_invent"] = ( ".1.3.6.1.4.1.4458.1000.1.1.30", ["0"] )
+snmp_info["rad5k_bs_pol_hss_cur_op_state_invent"] = ( ".1.3.6.1.4.1.4458.1000.1.5.40.2", ["0"] )
