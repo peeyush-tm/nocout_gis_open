@@ -1,25 +1,16 @@
 #!/usr/bin/python
+
 # ######################################################################
-# Function: check_rad5k_speed_status
+# Function: check_rad5k_ss_mac
 #
 # Parameters: info (SNMP Ouput) _no_params (No Parameters)
 #
 # Output: service state ,plugin output
 # ######################################################################
 
-speed_value = { 
-	1 : 'notConnected',
-	10 : '10Mbps',
-	11 : '10Mbps',
-	15 : '100Mbps',
-	16 : '100Mbps',
-	20 : '1000Mbps',
-	21 : '1000Mbps',
-	65535 : 'unknown'}
-
-def check_rad5k_speed_status(item, _no_params, info):
-	"""
-            check_rad5k_speed_status function calculates the uplink utilization
+def check_rad5k_ss_mac(item, _no_params, info):
+    """
+            check_rad5k_ss_mac function calculates the uplink utilization
 
             Args:
                     item (str) Specific item on SNMP output on which we want to filter results
@@ -35,36 +26,37 @@ def check_rad5k_speed_status(item, _no_params, info):
                                     3: unknown
                     infotext(string):
                                     plugin output
-                                    Example :  OK - speed status : 100Mbps 
+                                    Example : OK - mac: 00:15:67:65:10:cd 
 
                     Raises:
                             ValueError ,Exception
 
-	""" 
-	state = 3
+    """ 
+    state = 3
+    infotext = "unknown_value"
+    mac = ""
+        
+    try:
+        if info:
+            if info[0][0]:
+		temp = info[0][0]
+		mac = (':').join(temp[i:i+2] for i in range(0,len(temp),2))
+                state = 0
+                infotext = "mac: %s" % mac                                
+    except ValueError :
+	infotext = "type_mismatch_value"
+    except:
 	infotext = "unknown_value"
-	speed = ""
-	try:
-		if info:
-		    if info[0][0]:
-			x = int(info[0][0])
-			if speed_value.get(x):					
-				speed =speed_value.get(x)
-				state = 0
-				infotext = "speed status : %s " % speed
-	except ValueError :
-		infotext = "type_mismatch_value"
-	except:
-		infotext = "unknown_value"
-	return(state,infotext,[("ss_speed",speed)])
-
-check_info["rad5k_speed_status"] = {
-	'check_function' : check_rad5k_speed_status,
-	'service_description' : "rad5k_speed_status",
-	'has_perfdata' : True
+		
+    return (state,infotext,[("ss_mac",mac)])
+                
+check_info["rad5k_ss_mac"] = {
+    'check_function' :  check_rad5k_ss_mac,
+    'service_description' : "rad5k_ss_mac",
+    'has_perfdata': True
 }
 #########################################################################
-#       SNMP OID for Speed Status
+#       SNMP OID for the HSU Mac
 #########################################################################
-snmp_info["rad5k_speed_status"] = (".1.3.6.1.4.1.4458.1000.1.3.2.1",["7.1"]) 
+snmp_info['rad5k_ss_mac'] = (".1.3.6.1.4.1.4458.1000.1.3.2.1",["5.1"])
 
