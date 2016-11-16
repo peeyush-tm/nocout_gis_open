@@ -499,6 +499,170 @@ def extract_cambium_util_data(host_params,**args):
         build_export.s(args['site_name'], service_list).apply_async()
     return None
 
+
+def extract_radwin5k_util_data(host_params,**args):
+    perf = rad5k_util = plugin_message = ''
+    state = 3
+    state_string = "unknown"
+    service_list = []
+    util_type = args['service'].split('_')[1]
+    data_s = 'util_kpi'
+    if args['service'].endswith("dyn_tl_kpi"):
+	    data_s = 'dyn_tl'
+
+
+    data_source = 'rad5k_%s_' % util_type + data_s
+    for entry in host_params:
+        if entry and len(eval(entry[0])) == 3 :
+            hostname,site,ip_address = eval(entry[0])
+        else:
+            break
+        try:
+                if args['memc']:
+
+                    rad5k_util = args['memc'].get(str(hostname) + "_" + util_type)
+                    rad5k_ch_bwd = args['memc'].get(str(hostname) + "_cbw")
+		    error('mohit_cbw {0} {1}'.format(hostname, rad5k_ch_bwd))
+                    if str(rad5k_ch_bwd) == '10000':
+                        ul_capacity = 5 
+                        dl_capacity = 10 
+                    elif str(rad5k_ch_bwd) == '5000':
+                        ul_capacity = 5
+                        dl_capacity = 3
+                if rad5k_util != None and isinstance(rad5k_util,basestring):
+                    rad5k_util = literal_eval(rad5k_util)
+        except Exception,e:
+                warning('memc mohit: {0} {1}'.format(e,"extract_radwin5k_util_data"))
+                #warning('args: {0}'.format(args))
+        try:
+            if rad5k_util != None:
+                if util_type == 'ul':
+                  		
+                    rad5k_util = (float(rad5k_util)/ul_capacity)*100
+		elif util_type == 'dl':
+                    rad5k_util = (float(rad5k_util)/dl_capacity)*100
+
+
+		if args['service'].endswith("dyn_tl_kpi"):
+                	rad5k_dyn_tl = (rad5k_util*63)/100  # Dyncamic TL
+			rad5k_util= rad5k_dyn_tl
+			data_s = 'dyn_tl'
+                rad5k_util = round(rad5k_util,2)
+                try :
+                    if rad5k_util < float(args['war']):
+                        state = 0
+                        state_string = "ok"
+                    elif rad5k_util >= float(args['crit']):
+                        state = 2
+                        state_string = "critical"
+                    else:
+                        state = 1
+                        state_string = "warning"
+                except Exception as e :
+                    error('Rad5k bs kpi or dyn: {0} '.format(e))
+            
+            perf = data_source + "=%s;%s;%s" %(rad5k_util,args['war'],args['crit'])
+        except Exception,e:
+            
+            perf = data_source + "=;%s;%s" %(args['war'],args['crit'])
+
+        # calculate age since last state change
+        age_of_state = age_since_last_state(hostname, args['service'], state_string)
+
+        service_dict = service_dict_for_kpi_services(
+            perf, state_string, hostname, site, ip_address, age_of_state, **args)
+        service_dict['refer'] = None
+        service_list.append(service_dict)
+        rad5k_util = ''
+        
+        perf = ''
+        state_string = "unknown"
+    #error('rad5kbium util data : {0}'.format(len(service_list)))
+    if len(service_list) > 0:
+
+      
+        
+        build_export.s(args['site_name'], service_list).apply_async()
+    return None
+
+	
+def extract_radwin5k_ss_util_data(host_params,**args):
+    perf = rad5k_util =  plugin_message = ''
+    state = 3
+    state_string = "unknown"
+    service_list = []
+    util_type = args['service'].split('_')[2]
+    data_s = 'util_kpi'
+    if args['service'].endswith("dyn_tl_kpi"):
+            data_s = 'dyn_tl'
+
+
+    data_source = 'rad5k_ss_%s_' % util_type + data_s
+
+
+
+
+    for entry in host_params:
+        if entry and len(eval(entry[0])) == 3 :
+            hostname,site,ip_address = eval(entry[0])
+        else:
+            break
+        try:
+                if args['memc']:
+                    rad5k_util = args['memc'].get(str(hostname) + "_" + util_type)
+                if rad5k_util != None and isinstance(rad5k_util,basestring):
+                    rad5k_util = literal_eval(rad5k_util)
+        except Exception,e:
+                error('mohit_memc: {0} {1}'.format(e,"extract_radwin5k_util_data"))
+                #warning('args: {0}'.format(args))
+        try:
+            if rad5k_util != None:
+                rad5k_util = (float(rad5k_util)/10)
+                if args['service'].endswith("dyn_tl_kpi"):
+                        rad5k_util = round(rad5k_util,2)  
+                        rad5k_dyn_tl = (rad5k_util*63)/100  # Dyncamic TL
+                        rad5k_util= rad5k_dyn_tl
+                rad5k_util = round(rad5k_util,2)
+
+		try:	
+			if rad5k_util < float(args['war']):
+				state = 0
+                    		state_string = "ok"
+			elif rad5k_util >= float(args['crit']):
+				state = 2
+				state_string = "critical"
+			else:
+				state = 1
+				state_string = "warning"
+		except Exception as e :
+			error('rad5k_ss_kpi  {0} '.format(e))
+					
+            #data_source = 'rad5k_%s_' % util_type + data_s
+            perf = data_source + "=%s;%s;%s" %(rad5k_util,args['war'],args['crit'])
+        except Exception,e:
+            #error('rad5k ss mohit***ss*** util: {0}'.format(e))
+            perf = data_source + "=;%s;%s" %(args['war'],args['crit'])
+
+        # calculate age since last state change
+        age_of_state = age_since_last_state(hostname, args['service'], state_string)
+
+        service_dict = service_dict_for_kpi_services(
+            perf, state_string, hostname, site, ip_address, age_of_state, **args)
+        service_dict['refer'] = None
+        service_list.append(service_dict)
+        rad5k_util = ''
+        
+        perf = ''
+        state_string = "unknown"
+    #error('rad5kbium util data : {0}'.format(len(service_list)))
+    if len(service_list) > 0:
+
+    
+        build_export.s(args['site_name'], service_list).apply_async()
+    return None
+
+
+
 def extract_radwin_util_data(host_params,**args):
     perf = rad_util = sec_id = plugin_message = ''
     state = 3
@@ -856,8 +1020,9 @@ def extract_ss_ul_issue_data(pmp_data_dict,redis_conn,**args):
     service_dict_list = []
     cambium_bs_ul_issue_data = []
     wimax_bs_ul_issue_data = []
+    rad5k_bs_ul_issue_data = []
     #warning('ss info: {0}'.format(ss_info))
-
+    memc_conn  = extract_ss_ul_issue_data.memc_cnx
     local_cnx = redis_conn.redis_cnx
     p = local_cnx.pipeline()
     for (ss_info, bs_host_name, bs_site_name, bs_ip_address, sect_id, sec_type) in pmp_data_dict :
@@ -890,7 +1055,7 @@ def extract_ss_ul_issue_data(pmp_data_dict,redis_conn,**args):
 			elif len(ul_intrf_values[0]) == 2  and len(dl_intrf_values[0]) == 2:
 			    ul_issue = 0
 			    state_string = "ok"
-		    else:
+		    elif 'cambium' in args['service']:
 			ul_jitter_count = 0
 			rereg_count = 0
 			ul_jitter_key = local_cnx.keys(pattern="ul_issue:%s:cambium_ul_jitter" % host_name)
@@ -918,6 +1083,27 @@ def extract_ss_ul_issue_data(pmp_data_dict,redis_conn,**args):
 			else:
 			    state_string = "ok"
 			    ul_issue = 0
+
+		    elif 'radwin5k' in args['service'] :          # the logic part to find out SS UL issue
+			try:
+                            key1 = ip_address+ "_uas_list"
+                            key2 = ip_address+"_rad5k_ss_ul_mod"
+                            uas1= memc_conn.get(str(key1))
+                            mod1  = memc_conn.get(str(key2))
+          	            state_string = "ok"
+           
+                            if len(uas1) == 2:
+                                if len([i for i in uas1 if int(i) >0])==2 :
+				    ul_issue = 1
+                            if len(mod1) == 2 :
+			        if len([i for i in mod1 if i == 'BPSK-FEC-1/2'])==2 :
+				    ul_issue = 1
+		 
+			except Exception as e :
+                           error('rad5k ******error*******ul issue: {0} '.format(e))
+
+
+
 		    perf = 'ul_issue' + "=%s;;;" % (ul_issue)
 		except Exception ,e:
 		    warning('error: {0}'.format(e))
@@ -932,6 +1118,10 @@ def extract_ss_ul_issue_data(pmp_data_dict,redis_conn,**args):
 		cambium_bs_ul_issue_data.append((service_dict_list,bs_host_name,bs_site_name,bs_ip_address,sect_id))
 	elif 'wimax' in args['service']:
 		wimax_bs_ul_issue_data.append((service_dict_list,bs_host_name,bs_site_name,bs_ip_address,sect_id,sec_type))
+
+
+	elif 'rad' in args['service']:
+                rad5k_bs_ul_issue_data.append((service_dict_list,bs_host_name,bs_site_name,bs_ip_address)) 
 
     #redis_conn = str(args['redis'])
     #arg['redis'] = ''
@@ -960,6 +1150,13 @@ def extract_ss_ul_issue_data(pmp_data_dict,redis_conn,**args):
     elif 'wimax' in args['service']:
         extract_wimax_bs_ul_issue_data.s(wimax_bs_ul_issue_data,**args).apply_async()
 
+    elif 'rad' in args['service']:
+        #warning('error: {0}'.format(service_dict_list))
+        extract_rad5k_bs_ul_issue_data.s(rad5k_bs_ul_issue_data,**args).apply_async()  # the rad5k_bs_ul_issue_data list contains tuple of 4 paramenters 
+
+
+
+
 @app.task(base=DatabaseTask,name='call_kpi_services')
 def call_kpi_services(**opt):
     #DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
@@ -979,6 +1176,8 @@ def call_kpi_services(**opt):
     pmp_bs_key = redis_cnx.keys(pattern="pmp:bs:%s:*" % opts['site_name'])
     pmp_ss_key = redis_cnx.keys(pattern="pmp:ss:%s:*" % opts['site_name'])
     radwin_ss_key = redis_cnx.keys(pattern="p2p:ss:%s:*" % opts['site_name'])
+    rad5k_bs_key = redis_cnx.keys(pattern="rad5k:bs:%s:*" % opts['site_name'])
+    rad5k_ss_key = redis_cnx.keys(pattern="rad5k:ss:%s:*" % opts['site_name'])
     mrotek_bs_key = redis_cnx.keys(pattern="pine:bs:%s:*" % opts['site_name'])
     rici_bs_key = redis_cnx.keys(pattern="rici:bs:%s:*" % opts['site_name'])
     cisco_bs_key = redis_cnx.keys(pattern="cisco:bs:%s:*" % opts['site_name'])
@@ -1000,6 +1199,23 @@ def call_kpi_services(**opt):
             'cambium_ss_ul_issue_kpi',
             'cambium_ss_provis_kpi'
             ]
+
+
+    radwin5k_util_kpi_services = [
+            'radwin5k_dl_util_kpi',
+            'radwin5k_ul_util_kpi',
+	    'radwin5k_ul_dyn_tl_kpi',
+	    'radwin5k_dl_dyn_tl_kpi',
+	    'radwin5k_ss_ul_issue_kpi'
+            ]
+
+    radwin5k_ss_util_kpi_services=[
+	    'radwin5k_ss_dl_util_kpi',
+	    'radwin5k_ss_ul_util_kpi',
+	    'radwin5k_ss_dl_dyn_tl_kpi',
+	    'radwin5k_ss_ul_dyn_tl_kpi'
+	    ]
+
     radwin_util_kpi_services = [
             'radwin_dl_util_kpi',
            'radwin_ul_util_kpi',
@@ -1038,7 +1254,9 @@ def call_kpi_services(**opt):
     total_services.extend(cisco_util_kpi_services)
     total_services.extend(juniper_util_kpi_services)
     total_services.extend(huawei_util_kpi_services)
-    total_services.extend(['wimax_bs_ul_issue_kpi', 'cambium_bs_ul_issue_kpi'])
+    total_services.extend(radwin5k_util_kpi_services)
+    total_services.extend(radwin5k_ss_util_kpi_services)
+    total_services.extend(['wimax_bs_ul_issue_kpi', 'cambium_bs_ul_issue_kpi','radwin5k_bs_ul_issue_kpi'])
 
     for service_name in total_services:
         bs_war_key  = service_name + ':war'
@@ -1181,6 +1399,25 @@ def call_kpi_services(**opt):
             site_name=opt.get('site_name'),
             func='extract_cambium_ss_provis_data'
             )
+
+
+    call_tasks(
+            rad5k_bs_key,
+            radwin5k_util_kpi_services,
+            service_threshold,
+            site_name=opt.get('site_name'),
+            func='extract_radwin5k_util_data'
+            )
+
+    call_tasks(
+           rad5k_ss_key,
+           radwin5k_ss_util_kpi_services,
+           service_threshold,
+           site_name=opt.get('site_name'),
+           func='extract_radwin5k_ss_util_data'
+										            )
+
+
     #for i in izip_longest(*[iter(pmp_ss_key)] * 500):    
     #    args = {}    
     #    args['site_name'] =  opts['site_name']
@@ -1383,6 +1620,19 @@ def call_tasks(hosts, services, services_thresholds, site_name=None, func=None, 
 			'crit': services_thresholds['cambium_bs_ul_issue_kpi:crit']
 			})
                 calling_func = extract_cambium_ul_issue_data
+
+
+            elif service == 'radwin5k_ss_ul_issue_kpi':
+                args.update({
+                        'war': services_thresholds['radwin5k_bs_ul_issue_kpi:war'],
+                        'crit': services_thresholds['radwin5k_bs_ul_issue_kpi:crit']
+                        })
+                calling_func = extract_rad5k_ul_issue_data
+
+
+
+
+
             else:
                 calling_func = extract_kpi_services_data
             calling_func.delay(**args)
@@ -1684,6 +1934,69 @@ def extract_cambium_bs_ul_issue_data(bs_ul_issue_data,**args):
     #insert_bs_ul_issue_data_to_redis(bs_service_dict_list)
 
 
+
+@app.task(base=DatabaseTask, name ='extract_rad5k_bs_ul_issue_data')
+def extract_rad5k_bs_ul_issue_data(bs_ul_issue_data,**args):   # get UL issue on BS 
+    count = 0
+    perf = ''
+    sec_ul_issue = ''
+    state_string = 'uknown'
+    #warning('cambium ss entry: {0}'.format(ul_issue_list))
+    rds_cli = RedisInterface()
+    redis_cnx = rds_cli.redis_cnx
+    bs_service_dict_list = []
+    sect_id = None
+    for (ul_issue_list, host_name, site, ip) in bs_ul_issue_data :
+            perf = ''
+            sec_ul_issue = ''
+            state_string = 'unknown'
+            for service_dict in ul_issue_list:
+                try:
+                    value = int(service_dict['perf_data'].split('=')[1])
+                except:
+                    continue
+                count = count +value
+
+            if len(ul_issue_list):
+                sec_ul_issue = count/float(len(ul_issue_list)) * 100
+                if sec_ul_issue > 100:
+                    sec_ul_issue = 100
+            try:
+                if sec_ul_issue not in ['',None]:
+                    sec_ul_issue = "%.2f" % sec_ul_issue
+                    if float(sec_ul_issue) < args['war']:
+                        state = 0
+                        state_string = "ok"
+                    elif float(sec_ul_issue) >= args['crit']:
+                        state = 2
+                        state_string = "critical"
+                    else:
+                        state = 1
+                        state_string = "warning"
+                perf = ''.join(
+                        'bs_ul_issue' + "=%s;%s;%s;%s" %(sec_ul_issue,args['war'],
+                            args['crit'],sect_id))
+            except Exception,e:
+                error('rad5 ss entry: {0}'.format(e))
+                perf = 'bs_ul_issue'+'=;%s;%s;%s' % (args['war'],args['crit'],sect_id)
+
+            args['service'] = 'radwin5k_bs_ul_issue_kpi'
+            age_of_state = age_since_last_state(host_name, args['service'], state_string)
+            bs_service_dict = service_dict_for_kpi_services(
+                    perf,state_string,
+                    host_name,site,ip,age_of_state,**args)
+            bs_service_dict['refer'] =sect_id
+            ul_issue_list.append(bs_service_dict)
+            #warning('cambium bs entry: {0}'.format(len(ul_issue_list)))
+            redis_cnx.rpush('queue:ul_issue:%s' % site,*ul_issue_list)
+            #bs_service_dict_list.append((bs_service_dict, site))
+    #insert_bs_ul_issue_data_to_redis(bs_service_dict_list)
+
+
+
+
+
+
 @app.task(base=DatabaseTask, name='extract_wimax_ul_issue_data')
 def extract_wimax_ul_issue_data(**args):
     host_info = args['host_info']
@@ -1747,7 +2060,6 @@ def extract_wimax_ul_issue_data(**args):
     extract_ss_ul_issue_data.s(pmp_data_dict,redis_conn,**args).apply_async()
     #warning('pmp2 service list: {0}'.format(pmp2_service_list))
 
-
 @app.task(base=DatabaseTask, name='extract_cambium_ul_issue_data')
 def extract_cambium_ul_issue_data(**args):
     host_info = args['host_info']
@@ -1777,7 +2089,33 @@ def extract_cambium_ul_issue_data(**args):
             [p.lrange(k[0], 0 , -1) for k  in ss_key if k]
             ss_info = p.execute()
             ss_ul_issue_data.append((ss_info,host_name,site_name,ip_address,sect_id,None))
+    extract_ss_ul_issue_data.s(ss_ul_issue_data,redis_conn,**args).apply_async()
 
+@app.task(base=DatabaseTask, name='exitract_rad5k_ul_issue_data')
+def extract_rad5k_ul_issue_data(**args):
+    host_info = args['host_info']
+    service_list = []
+    ss_info = []
+    rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
+    p = rds_cli.redis_cnx.pipeline()
+    memc_conn  = extract_rad5k_ul_issue_data.memc_cnx
+    args['memc'] = ''
+    redis_conn =args['redis']
+    args['redis'] = ''
+    ss_ul_issue_data = []
+    for entry in host_info:
+        if entry:
+            if len(literal_eval(entry[0])) == 3:
+                host_name,site_name,ip_address  = literal_eval(entry[0])
+        else:
+            break
+        conn_ss_ip = extract_cambium_connected_ss(host_name,memc_conn)  # used as generaic function 
+	sect_id = None
+        if conn_ss_ip:
+            ss_key = map(lambda x: rds_cli.redis_cnx.keys(pattern="rad5k:ss:*:%s" %x) ,conn_ss_ip)  # getting key to data from redis
+            [p.lrange(k[0], 0 , -1) for k  in ss_key if k]
+            ss_info = p.execute()
+            ss_ul_issue_data.append((ss_info,host_name,site_name,ip_address,sect_id,None))   # 6 parameter, in order to make it generic add None 
     extract_ss_ul_issue_data.s(ss_ul_issue_data,redis_conn,**args).apply_async()
 
 
