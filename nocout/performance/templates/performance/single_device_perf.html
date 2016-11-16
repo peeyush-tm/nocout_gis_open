@@ -608,6 +608,31 @@
             save_power_log_url = "{% url 'save_power_log' %}";
             device_reboot_url = "{% url 'init_device_reboot' %}";
 
+            /**
+             * This event is used to sort datetime columns in datatables(static tables)
+             * @event oSort
+             */
+            jQuery.extend( jQuery.fn.dataTableExt.oSort, {
+                "date-uk-pre": function ( a ) {
+
+                    var splitted_str = a.split(' '),
+                        date_str = splitted_str[0],
+                        time_str = splitted_str.length > 1 ? splitted_str[1] : '';
+
+                    var ukDatea = date_str.split('/'),
+                        ukTime = time_str.split(':');
+
+                    return (ukDatea[2] + ukDatea[1] + ukDatea[0] + ukTime[0] + ukTime[1]) * 1;
+                },
+                "date-uk-asc": function ( a, b ) {
+                    return ((a < b) ? -1 : ((a > b) ? 1 : 0));
+                },
+
+                "date-uk-desc": function ( a, b ) {
+                    return ((a < b) ? 1 : ((a > b) ? -1 : 0));
+                }
+            });
+
             initPerformancePage(true);
         });
 
