@@ -522,10 +522,10 @@ def extract_radwin5k_util_data(host_params,**args):
 
                     rad5k_util = args['memc'].get(str(hostname) + "_" + util_type)
                     rad5k_ch_bwd = args['memc'].get(str(hostname) + "_cbw")
-                    if str(rad5k_ch_bwd) == '10000':
+                    if str(rad5k_ch_bwd) == '10':
                         ul_capacity = 5 
                         dl_capacity = 10 
-                    elif str(rad5k_ch_bwd) == '5000':
+                    elif str(rad5k_ch_bwd) == '5':
                         ul_capacity = 5
                         dl_capacity = 3
                 if rad5k_util != None and isinstance(rad5k_util,basestring):
@@ -537,9 +537,9 @@ def extract_radwin5k_util_data(host_params,**args):
             if rad5k_util != None:
                 if util_type == 'ul':
                   		
-                    rad5k_util = (float(rad5k_util)/ul_capacity)*1000
+                    rad5k_util = (float(rad5k_util)/ul_capacity)*100
 		elif util_type == 'dl':
-                    rad5k_util = (float(rad5k_util)/dl_capacity)*1000
+                    rad5k_util = (float(rad5k_util)/dl_capacity)*100
 
 
 		if args['service'].endswith("dyn_tl_kpi"):
