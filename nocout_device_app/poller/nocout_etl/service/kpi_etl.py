@@ -522,7 +522,6 @@ def extract_radwin5k_util_data(host_params,**args):
 
                     rad5k_util = args['memc'].get(str(hostname) + "_" + util_type)
                     rad5k_ch_bwd = args['memc'].get(str(hostname) + "_cbw")
-		    error('mohit_cbw {0} {1}'.format(hostname, rad5k_ch_bwd))
                     if str(rad5k_ch_bwd) == '10000':
                         ul_capacity = 5 
                         dl_capacity = 10 
@@ -532,15 +531,15 @@ def extract_radwin5k_util_data(host_params,**args):
                 if rad5k_util != None and isinstance(rad5k_util,basestring):
                     rad5k_util = literal_eval(rad5k_util)
         except Exception,e:
-                warning('memc mohit: {0} {1}'.format(e,"extract_radwin5k_util_data"))
+                warning('extract_radwin5k_util_data : {0} '.format(e))
                 #warning('args: {0}'.format(args))
         try:
             if rad5k_util != None:
                 if util_type == 'ul':
                   		
-                    rad5k_util = (float(rad5k_util)/ul_capacity)*100
+                    rad5k_util = (float(rad5k_util)/ul_capacity)*1000
 		elif util_type == 'dl':
-                    rad5k_util = (float(rad5k_util)/dl_capacity)*100
+                    rad5k_util = (float(rad5k_util)/dl_capacity)*1000
 
 
 		if args['service'].endswith("dyn_tl_kpi"):
@@ -613,7 +612,7 @@ def extract_radwin5k_ss_util_data(host_params,**args):
                 if rad5k_util != None and isinstance(rad5k_util,basestring):
                     rad5k_util = literal_eval(rad5k_util)
         except Exception,e:
-                error('mohit_memc: {0} {1}'.format(e,"extract_radwin5k_util_data"))
+                error('extract_radwin5k_util_data {1}'.format(e))
                 #warning('args: {0}'.format(args))
         try:
             if rad5k_util != None:
@@ -637,10 +636,8 @@ def extract_radwin5k_ss_util_data(host_params,**args):
 		except Exception as e :
 			error('rad5k_ss_kpi  {0} '.format(e))
 					
-            #data_source = 'rad5k_%s_' % util_type + data_s
             perf = data_source + "=%s;%s;%s" %(rad5k_util,args['war'],args['crit'])
         except Exception,e:
-            #error('rad5k ss mohit***ss*** util: {0}'.format(e))
             perf = data_source + "=;%s;%s" %(args['war'],args['crit'])
 
         # calculate age since last state change
