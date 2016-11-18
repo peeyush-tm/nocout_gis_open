@@ -1143,7 +1143,7 @@ var pmp_radwin5k_ss_toolTip_polled = [
     },
     {
         'name'         : 'rad5k_ul_rssi_ul_rssi',
-        'title'        : 'UL RSSI',
+        'title'        : 'UL RSSI 1',
         'show'         : 1,
         'value'        : '',
         'url'          : '',
@@ -1152,7 +1152,7 @@ var pmp_radwin5k_ss_toolTip_polled = [
     },
     {
         'name'         : 'rad5k_dl_rssi_dl_rssi',
-        'title'        : 'DL RSSI',
+        'title'        : 'DL RSSI 1',
         'show'         : 1,
         'value'        : '',
         'url'          : '',
@@ -1160,13 +1160,40 @@ var pmp_radwin5k_ss_toolTip_polled = [
         'ds'           : 'dl_rssi'
     },
     {
+        'name'         : 'rad5k_ss2_ul_rssi_ul_2rssi',
+        'title'        : 'UL RSSI 2',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss2_ul_rssi',
+        'ds'           : 'ul_2rssi'
+    },
+    {
+        'name'         : 'rad5k_ss2_dl_rssi_dl_2rssi',
+        'title'        : 'DL RSSI 2',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss2_dl_rssi',
+        'ds'           : 'dl_2rssi'
+    },
+    {
         'name'         : 'rad5k_ss_data_vlan_invent_ss_data_vlan',
-        'title'        : 'VLAN',
+        'title'        : 'Data VLAN',
         'show'         : 1,
         'value'        : '',
         'url'          : '',
         'service_name' : 'rad5k_ss_data_vlan_invent',
         'ds'           : 'ss_data_vlan'
+    },
+    {
+        'name'         : 'rad5k_man_vlan_invent_ss_vlan',
+        'title'        : 'Management VLAN',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_man_vlan_invent',
+        'ds'           : 'ss_vlan'
     },
     {
         'name'         : 'rad5k_ss_device_uptime_uptime',
@@ -1332,7 +1359,7 @@ var pmp_radwin5k_ss_toolTip_polled = [
     },
     {
         'name'         : 'rad5k_ss_ul_estmd_throughput_ul_estimated_throughput',
-        'title'        : 'UL throughput',
+        'title'        : 'UL Est. throughput (bps)',
         'show'         : 1,
         'value'        : '',
         'url'          : '',
@@ -1341,7 +1368,7 @@ var pmp_radwin5k_ss_toolTip_polled = [
     },
     {
         'name'         : 'rad5k_ss_dl_estmd_throughput_dl_estimated_throughput',
-        'title'        : 'DL throughput',
+        'title'        : 'DL Est. throughput (bps)',
         'show'         : 1,
         'value'        : '',
         'url'          : '',

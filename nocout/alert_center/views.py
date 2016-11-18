@@ -16,7 +16,7 @@ from device.models import Device, DeviceTechnology, DeviceType, DeviceTicket
 from machine.models import Machine
 # For SIA Listing
 from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms, PlannedEvent, ManualTicketingHistory
-from performance.models import EventNetwork, EventService, InventoryStatus, ServiceStatus, UtilizationStatus
+from performance.models import EventNetwork, EventService, InventoryStatus, ServiceStatus, UtilizationStatus, PerformanceService
 
 from operator import itemgetter
 # Import performance utils gateway class
@@ -673,7 +673,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
                             device_uptime = ServiceStatus.objects.filter(
                                     ip_address=dct.get('ip_address', None),
-                                    service_name='radwin_uptime',
+                                    service_name='rad5k_ss_device_uptime',
                                     data_source='uptime'
                                 ).using(machine_name)
 

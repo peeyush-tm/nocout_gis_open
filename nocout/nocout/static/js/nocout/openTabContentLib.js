@@ -129,10 +129,18 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         if (
                                 column.mData.indexOf("region") > -1 
                                 ||
-                                column.mData.indexOf("min_latency") > -1
-                                ||
                                 column.mData.indexOf("site_id") > -1
                             ) {
+                            if (!column.bVisible) {
+                                column.bVisible = true;
+                            } else {
+                                column["bVisible"] = true;
+                            }
+                        } 
+                    } 
+
+                    if (page_type == 'customer' || page_type == 'network'){
+                        if (column.mData.indexOf("min_latency") > -1){
                             if (!column.bVisible) {
                                 column.bVisible = true;
                             } else {
