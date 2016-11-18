@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
-
-
-
+import sys
+import os
+from mysql_connection import memc
 """
 # ######################################################################
-# Function: rad5k_ss_prod_type_invent
+# Function: radwin_bs_software_data_vlan_invent
 #
 # Parameters: info (SNMP Ouput) _no_params (No Parameters)
 #
@@ -14,9 +14,9 @@
 
 """
 
-def rad5k_ss_prod_type_invent(item, _no_params, info):
+def rad5k_ss_data_vlan_invent(item, _no_params, info):
     """
-            rad5k_ss_prod_type_invent function calcdlates the operating ptx
+            radwin_bs_software_data_vlan_invent function calcdlates the operating ptx
 
             Args:
                     item (str) Specific item on SNMP output on which we want to filter resdlts
@@ -39,28 +39,36 @@ def rad5k_ss_prod_type_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
-    prod_type= None
+    data_vlan= None
     try:
-	prod_type = info[0][0]
-	prod_type = prod_type.replace(" ","")
-	if prod_type:
-		infotext = "%s" % prod_type
+	serial_number = info[0][0]
+	if serial_number:
+	        if memc:
+	                key = serial_number + "_param"
+        	        value_list = memc.get(key)
+                	if value_list:
+                        	try:
+                                	data_vlan = value_list[16]
+                        	except:
+                                	data_vlan = None
+
+		infotext = "Data Vlan is %s" % data_vlan
 		state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
 
-    return (state, infotext,[("software_prod_type", prod_type)])
+    return (state, infotext,[("ss_data_vlan", data_vlan)])
 
 
-check_info["rad5k_ss_prod_type_invent"] = {
-    'check_function': rad5k_ss_prod_type_invent,
-    'service_description': 'rad5k_ss_prod_type_invent',
+check_info["rad5k_ss_data_vlan_invent"] = {
+    'check_function': rad5k_ss_data_vlan_invent,
+    'service_description': 'rad5k_ss_data_vlan_invent',
     'has_perfdata' : True,
 }
 
 #########################################################################
 #	SNMP OID for the operating ptx
 #########################################################################
-snmp_info["rad5k_ss_prod_type_invent"] = ( ".1.3.6.1.4.1.4458.1000.1.1.30", ["0"] )
+snmp_info["rad5k_ss_data_vlan_invent"] = ( ".1.3.6.1.4.1.4458.1000.1.1", ["29.0"] )

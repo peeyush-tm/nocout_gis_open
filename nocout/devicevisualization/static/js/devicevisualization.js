@@ -443,7 +443,8 @@ $("#setAdvFilterBtn").click(function(e) {
         frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
         polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
         antena_type_filter = $("#filter_antena_type").select2('val').length > 0 ? $("#filter_antena_type").select2('val').join(',').split(',') : [],
-        total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length + frequency_filter.length + polarization_filter.length + antena_type_filter.length;
+        region_filter = $("#filter_region").select2('val').length > 0 ? $("#filter_region").select2('val').join(',').split(',') : [],
+        total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length + frequency_filter.length + polarization_filter.length + antena_type_filter.length + region_filter.length;
 
     // If any value is selected in filter
     if(total_selected_items > 0) {
@@ -1209,6 +1210,9 @@ $('#infoWindowContainer').delegate('td','click',function(e) {
                             createHighChart_nocout(result.data.objects,'perf', false, false, function(status) {
                                 // 
                             });
+
+                            // Add data to table
+                            addDataToChartTable_nocout(chartConfig, 'perf_data_table');
                         }
                     }
                 }

@@ -83,6 +83,32 @@ def calculate_refer_field_for_host(device_first_down, host_name, ds_values,
 		# printing the exc for now
 		print 'Exc in host refer field: ', exc
 	return  refer,device_first_down
+
+
+
+def memcachelist(key,value):
+	memc_obj=db_ops_module.MemcacheInterface()
+        memc = memc_obj.memc_conn
+        list1 = memc.get(str(key))
+        try:
+                if not list1:
+                        list1 = []
+                if len(list1)< 2:
+                        list1.append(value)
+			
+                elif len(list1) == 2:
+                        list1.pop(0)
+                        list1.append(value)
+                memc.set(key, list1)
+        except Exception as e :
+                print e
+        print 'in memcache',  memc.get(key)
+
+
+
+
+
+
 	
 def build_export(site, network_result, service_result,mrc_hosts,device_down_output,unknwn_state_svc_data, db):
 	"""
@@ -103,6 +129,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	global service_update_list
 	global ss_provis_helper_serv_data
 	global kpi_helper_serv_data
+	memc_obj=db_ops_module.MemcacheInterface()
         age = None
 	rt_min, rt_max = None, None
 	rta_dict = {}
@@ -456,6 +483,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	kpi_helper_services =['wimax_dl_intrf', 'wimax_ul_intrf', 'cambium_ul_jitter',
                         'cambium_rereg_count']
 
+	rad5k_helper_service = ['rad5k_ss_dl_uas','rad5k_ss_ul_modulation']
+
 	#ss_provis_helper_serv_data = []	
 	for entry in serv_qry_output:
                 if len(entry) < 8:
@@ -536,6 +565,17 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 				'current_value': value
 			})				
 
+			if str(entry[2]) in rad5k_helper_service:
+				ip_address = entry[1]
+				if str(entry[2]) == 'rad5k_ss_ul_modulation':
+					key = ip_address+ "_rad5k_ss_ul_mod"
+					key = str(key)
+					memcachelist(key,value)
+				elif str(entry[2]) == 'rad5k_ss_dl_uas':
+					key = ip_address+ "_uas_list"
+                                        key = str(key)
+					memcachelist(key,value)
+					print "value", value
 
 
 	 

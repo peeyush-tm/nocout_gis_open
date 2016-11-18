@@ -704,6 +704,9 @@ def load_devicetechno_wise(data_values, p, extra=None):
 				matched_dr = None
 	#[p.rpush(key % data[2], data[:last_index]) for data in data_values]
 	for data in data_values:
+		if data[3].startswith('Radwin5K'):
+			key = key.replace("pmp","rad5k")
+			error('key*************: normal {0}'.format(key))
 		p.set(invent_key % data[0], data[2])
 		p.rpush(key % (data[1], data[2]), data[:last_index])
 

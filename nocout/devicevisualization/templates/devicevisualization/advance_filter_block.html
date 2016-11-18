@@ -56,6 +56,15 @@
                         </div>
                     </div>
                     {% endif %}
+
+                    {% if settings.SHOW_SPRINT4 %}
+                    <div class="form-group">
+                        <label for="filter_antena_type" class="col-sm-4 control-label">Region</label>
+                        <div class="col-sm-8">
+                            <input type="hidden" class="multiSelectBox col-md-12" id="filter_region" style="width:100%;">
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </form>
         </div>
