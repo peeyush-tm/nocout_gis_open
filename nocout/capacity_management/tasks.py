@@ -47,7 +47,15 @@ CAPACITY_SETTINGS = {
         7: {
             'ul': 2.24,
             'dl': 4.76
-        }
+        },
+    5: {
+        'ul': 3,
+        'dl': 5
+    },
+    10: {
+        'ul': 5,
+        'dl': 10
+    }
     }
 }
 
@@ -112,22 +120,29 @@ tech_model_service = {
         }
     },
     'pmp': {
+        #'cbw': {
+        #    'model': None,
+        #    'service_name': None,
+        #    'data_source': None,
+        #    'values': None
+        #},
         'cbw': {
-            'model': None,
-            'service_name': None,
-            'data_source': None,
-            'values': None
+            'model': 'performance_inventorystatus',
+            'service_name': ['rad5k_channel_bw_invent'],
+            'data_source': ['cbw'],
+            'values': ['current_value', 'age', 'severity', 'sys_timestamp'],
+            'values_list': ['current_value']
         },
         'val': {
             'model': 'performance_servicestatus',
             'service_name': [
                 'cambium_ul_utilization', 'cambium_dl_utilization', 
                 'rad5k_bs_ul_utilization', 'rad5k_bs_dl_utilization',
-                'radwin5k_ss_ul_dyn_tl', 'radwin5k_ss_dl_dyn_tl'
+                'radwin5k_ul_dyn_tl_kpi', 'radwin5k_dl_dyn_tl_kpi'
             ],
             'data_source': [
                 'ul_utilization', 'dl_utilization',
-                'rad5k_ss_ul_dyn_tl', 'rad5k_ss_dl_dyn_tl'
+                'rad5k_ul_dyn_tl', 'rad5k_dl_dyn_tl'
             ],
             'values': ['current_value', 'age', 'severity', 'sys_timestamp'],
             'values_list': ['current_value']
@@ -497,8 +512,8 @@ def gather_sector_status(technology):
                 sector_configured_on__device_technology=technology_object.id,
                 sector_configured_on__is_added_to_nms__gt=0,
                 sector_configured_on__machine__name=machine,
-                sector_id__isnull=False,
-                sector_configured_on_port__isnull=True
+                #sector_id__isnull=False,
+                #sector_configured_on_port__isnull=True
             ).select_related(
                 'sector_configured_on',
                 'base_station',
@@ -509,9 +524,10 @@ def gather_sector_status(technology):
             logger.error('No Technology from WiMAX and PMP')
             return False
 
-        if technology_low == 'pmp':
-            cbw = None
-        elif technology_low == 'wimax':
+        #if technology_low == 'pmp':
+        #    cbw = None
+        #elif technology_low == 'wimax':
+        if technology_low in ['pmp', 'wimax']:
             cbw = get_sectors_cbw_val_kpi(
                 devices=machine_dict[machine],
                 service_name=tech_model_service[technology_low]['cbw']['service_name'],
@@ -519,7 +535,6 @@ def gather_sector_status(technology):
                 machine=machine,
                 getit='cbw'
             )
-
         else:
             logger.error('No Technology from WiMAX and PMP')
             return False
@@ -528,13 +543,13 @@ def gather_sector_status(technology):
 
         # values for current utilization of rad5 devices
         sector_val_rad5 = None
-        if technology_low == 'pmp' and rad5k_machine_dict.get(machine):
+        if technology_low == 'pmp' and machine in rad5k_machine_dict:
             sector_val_rad5 = get_sectors_cbw_val_kpi(
                 devices=rad5k_machine_dict[machine],
-                service_name=tech_model_service[technology_low]['val']['service_name'],
-                data_source=tech_model_service[technology_low]['val']['data_source'],
+                service_name=['radwin5k_ul_dyn_tl_kpi', 'radwin5k_dl_dyn_tl_kpi'],
+                data_source=['rad5k_ul_dyn_tl', 'rad5k_dl_dyn_tl'],
                 machine=machine,
-                getit='val'
+                getit='per'
             )
 
         # values for current Percentage KPIs
@@ -657,7 +672,7 @@ def calc_util_last_day():
 
     :return: True. False
     """
-
+    #return True
     tdy = datetime.datetime.today()
     
     # this is the end time today's 00:10:00
@@ -804,7 +819,8 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
 
         # Create instance of 'NocoutUtilsGateway' class
         nocout_utils = NocoutUtilsGateway()
-
+        #logger.error('Query----------')
+        #logger.error(query)
         perf = nocout_utils.fetch_raw_result(query=query, machine=machine)
 
     except Exception as e:
@@ -844,14 +860,14 @@ def get_duration_sector_util(devices, services, data_sources, machine, getit):
             `device_name`,
             `service_name`,
             `data_source`,
-            COUNT(`id`) AS `duration`,
+            COUNT(`id`) AS `duration`
         FROM {0}
         WHERE
             `sys_timestamp` >= {4}
             AND
             `sys_timestamp` <= {5}
             AND
-            `severity` = 'critical'
+            `severity` in ('critical', 'warning')
             AND
             `device_name`  IN ({1})
             AND
@@ -1526,7 +1542,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
     nocout_utils = NocoutUtilsGateway()
 
     # force evaluation of query set
-    if technology.lower() == 'wimax' and cbw.exists():
+    #if technology.lower() == 'wimax' and cbw.exists():
+    if cbw.exists():
         indexed_cbw = nocout_utils.indexed_query_set(
             query_set=cbw,
             indexes=['device_name', 'service_name', 'data_source'],
@@ -1541,9 +1558,11 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
         )
     # else:
     #     return False
-
+    # logger.error('================ rad5_val')
+    # logger.error(rad5_val)
+    # logger.error('================ rad5_val')
     indexed_rad5_val = {}
-    if technology.lower() == 'pmp' and rad5_val.exists():
+    if technology.lower() == 'pmp' and rad5_val and rad5_val.exists():
         indexed_rad5_val = nocout_utils.indexed_query_set(
             query_set=rad5_val,
             indexes=['device_name', 'service_name', 'data_source'],
@@ -1648,6 +1667,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sector_capacity = indexed_cbw[cbw_index][0]['current_value']
             except Exception as e:
                 logger.error("sector_capacity exception")
+                logger.error(cbw_index)
                 logger.error(e)
                 continue
 
@@ -1656,6 +1676,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sector_capacity_out = CAPACITY_SETTINGS['wimax'][int(float(sector_capacity))]['ul']
             except:
                 logger.error("CAPACITY_SETTINGS sector_capacity exception")
+                logger.error(sector_capacity)
                 logger.error(e)
                 continue
 
@@ -1824,13 +1845,14 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 )
             except Exception as e:
                 logger.error("PMP : {0}".format(e.message))
+                logger.error(sector.sector_id)
                 pass
             
             try:
                 sector_device_name = sector.sector_configured_on.device_name
             except Exception as e:
                 sector_device_name = 0
-
+            cbw_index = None
             try:
                 if sector.sector_configured_on.device_type == rad5k_type_id:
                     # index for dl values
@@ -1842,9 +1864,11 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     # out % values index
                     out_per_index = (sector_device_name, 'radwin5k_ul_util_kpi', 'rad5k_ul_util_kpi')
                     # index for dl_timeslot values
-                    timeslot_ul_index = (sector_device_name, 'radwin5k_ss_ul_dyn_tl', 'rad5k_ss_ul_dyn_tl')
+                    timeslot_ul_index = (sector_device_name, 'radwin5k_ul_dyn_tl_kpi', 'rad5k_ul_dyn_tl')
                     # index for ul values
-                    timeslot_dl_index = (sector_device_name, 'radwin5k_ss_dl_dyn_tl', 'rad5k_ss_dl_dyn_tl')
+                    timeslot_dl_index = (sector_device_name, 'radwin5k_dl_dyn_tl_kpi', 'rad5k_dl_dyn_tl')
+                    # index for cbw values
+                    cbw_index = (sector_device_name, 'rad5k_channel_bw_invent', 'cbw')
 
                     current_timeslot_ul = None
                     current_timeslot_dl = None
@@ -1853,6 +1877,12 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         current_timeslot_ul = float(indexed_rad5_val.get(timeslot_ul_index)[0]['current_value'])
                     if indexed_rad5_val.get(timeslot_dl_index):
                         current_timeslot_dl = float(indexed_rad5_val.get(timeslot_dl_index)[0]['current_value'])
+
+                    logger.error('Timeslot ---------')
+                    logger.error(indexed_rad5_val)
+                    logger.error(current_timeslot_dl)
+                    logger.error(current_timeslot_ul)
+                    logger.error(sector.sector_id)
                 else:
                     # index for dl values
                     in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
@@ -1863,6 +1893,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     # out % values index
                     out_per_index = (sector_device_name, 'cambium_ul_util_kpi', 'cam_ul_util_kpi')
             except Exception as e:
+                logger.error('PMP index creation exception')
+                logger.error(e)
                 # index for dl values
                 in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
                 # index for ul values
@@ -1875,13 +1907,31 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             severity_s = dict()
 
             try:
+                if sector.sector_configured_on.device_type == rad5k_type_id:
+                    sector_capacity = int(indexed_cbw[cbw_index][0]['current_value'])
+                else:
+                    sector_capacity = 7
+            except Exception as e:
+                logger.error("rad5k sector_capacity exception")
+                logger.error(cbw_index)
+                logger.error(e)
+
+            if sector.sector_configured_on.device_type != rad5k_type_id:
                 sector_capacity = 7
+
+            try:
+                #sector_capacity = 7
                 sector_capacity_in = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['dl']
                 sector_capacity_out = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['ul']
             except Exception as e:
                 logger.error('PMP CAPACITY_SETTINGS exception')
+                logger.error(sector_capacity)
+                logger.error(scs)
                 logger.error(e)
-                continue
+                #continue
+            
+            severity = None
+            age = None
 
             try:
                 # time of update
@@ -1896,7 +1946,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 else:
                     current_in_per = 0
                     current_out_per = 0
-
                 # severity for KPI services
                 severity_s = {
                     indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age'],
@@ -1910,25 +1959,24 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                 # current in/out values
                 current_out_val = current_out_per * sector_capacity_out / 100.00
-
             except Exception as e:
                 logger.error('PMP current in/out exception')
+                logger.error(in_per_index)
+                logger.error(scs)
                 logger.error(e)
-                continue  # we dont have any current values with us
+                #continue  # we dont have any current values with us
 
             # condition is : if the topology count >= 8 : the sector is
             # stop provisioning state
             if Topology.objects.filter(device_name=sector.sector_configured_on.device_name).count() >= 8:
                 severity = 'critical'
 
-            severity = None
-            age = None
 
             # Commented------------------------------------
-            # if not severity and not age:
-            #     logger.error('No severity & age')
-            #     logger.error(scs)
-            #     continue
+            if not severity and not age:
+                logger.error('No severity & age')
+                logger.error(scs)
+            #   continue
 
             peak_in_duration = 0
             peak_out_duration = 0
@@ -1947,6 +1995,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     peak_in_duration = int(indexed_util_duration[in_per_index][0]['duration']) * 5
                     peak_out_duration = int(indexed_util_duration[out_per_index][0]['duration']) * 5
                 except Exception as e:
+                    logger.error('Avg Exception 1')
+                    logger.error(scs)
                     logger.error(e)
                     avg_in_per = 0
                     peak_in_per = None
@@ -1954,11 +2004,22 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     peak_out_per = None
                     peak_in_duration = 0
                     peak_out_duration = 0
+        
+                if sector.sector_configured_on.device_type == rad5k_type_id:
+                    peak_dl_service = 'radwin5k_dl_util_kpi'
+                    peak_dl_ds = 'rad5k_dl_util_kpi'
+                    peak_ul_service = 'radwin5k_ul_util_kpi'
+                    peak_ul_ds = 'rad5k_ul_util_kpi'
+                else:
+                    peak_dl_service = 'cambium_dl_util_kpi'
+                    peak_dl_ds = 'cam_dl_util_kpi'
+                    peak_ul_service = 'cambium_ul_util_kpi'
+                    peak_ul_ds = 'cambium_ul_util_kpi'
 
                 peak_in_per, peak_in_timestamp = get_peak_sectors_util(
                     device=sector.sector_configured_on.device_name,
-                    service='cambium_dl_util_kpi',
-                    data_source='cam_dl_util_kpi',
+                    service=peak_dl_service,
+                    data_source=peak_dl_ds,
                     machine=sector.sector_configured_on.machine.name,
                     max_value=peak_in_per,
                     getit='per'
@@ -1966,13 +2027,15 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                 peak_out_per, peak_out_timestamp = get_peak_sectors_util(
                     device=sector.sector_configured_on.device_name,
-                    service='cambium_ul_util_kpi',
-                    data_source='cam_ul_util_kpi',
+                    service=peak_ul_service,
+                    data_source=peak_ul_ds,
                     machine=sector.sector_configured_on.machine.name,
                     max_value=peak_out_per,
                     getit='per'
                 )
-
+                #logger.error('Valsssssss')
+                #logger.error(peak_in_per)
+                #logger.error(peak_out_per)
                 try:
                     # average value in/out
                     avg_in_val = avg_in_per * sector_capacity_in / 100.00
@@ -1983,6 +2046,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     # peak value in/out
                     peak_out_val = peak_out_per * sector_capacity_out / 100.00
                 except Exception as e:
+                    logger.error('Avg Exception 2')
+                    logger.error(scs)
                     logger.error(e)
                     avg_in_val = 0
                     peak_in_val = 0
@@ -2004,25 +2069,25 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 scs.sector_capacity_in = sector_capacity_in
                 scs.sector_capacity_out = sector_capacity_out
 
-                scs.current_in_per = round(float(current_in_per), 2) if current_in_per else 0
-                scs.current_in_val = round(float(current_in_val), 2) if current_in_val else 0
+                scs.current_in_per = round(float(current_in_per), 3) if current_in_per else 0
+                scs.current_in_val = round(float(current_in_val), 3) if current_in_val else 0
 
-                scs.current_out_per = round(float(current_out_per), 2) if current_out_per else 0
-                scs.current_out_val = round(float(current_out_val), 2) if current_in_val else 0
+                scs.current_out_per = round(float(current_out_per), 3) if current_out_per else 0
+                scs.current_out_val = round(float(current_out_val), 3) if current_in_val else 0
 
                 if calc_util_last_day():
-                    scs.avg_in_per = round(float(avg_in_per), 2) if avg_in_per else 0
-                    scs.avg_in_val = round(float(avg_in_val), 2) if avg_in_val else 0
-                    scs.peak_in_per = round(float(peak_in_per), 2) if peak_in_per else 0
-                    scs.peak_in_val = round(float(peak_in_val), 2) if peak_in_val else 0
+                    scs.avg_in_per = round(float(avg_in_per), 3) if avg_in_per else 0
+                    scs.avg_in_val = round(float(avg_in_val), 3) if avg_in_val else 0
+                    scs.peak_in_per = round(float(peak_in_per), 3) if peak_in_per else 0
+                    scs.peak_in_val = round(float(peak_in_val), 3) if peak_in_val else 0
 
                     scs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
                     scs.peak_in_duration = int(peak_in_duration) if peak_in_duration else 0
 
-                    scs.avg_out_per = round(float(avg_out_per), 2) if avg_out_per else 0
-                    scs.avg_out_val = round(float(avg_out_val), 2) if avg_out_val else 0
-                    scs.peak_out_per = round(float(peak_out_per), 2) if peak_out_per else 0
-                    scs.peak_out_val = round(float(peak_out_val), 2) if peak_out_val else 0
+                    scs.avg_out_per = round(float(avg_out_per), 3) if avg_out_per else 0
+                    scs.avg_out_val = round(float(avg_out_val), 3) if avg_out_val else 0
+                    scs.peak_out_per = round(float(peak_out_per), 3) if peak_out_per else 0
+                    scs.peak_out_val = round(float(peak_out_val), 3) if peak_out_val else 0
 
                     scs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
                     scs.peak_out_duration = int(peak_out_duration) if peak_out_duration else 0
@@ -2036,22 +2101,22 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         sector_capacity=float(sector_capacity) if sector_capacity else 0,
                         sector_capacity_in=sector_capacity_in,
                         sector_capacity_out=sector_capacity_out,
-                        current_in_per=round(float(current_in_per), 2) if current_in_per else 0,
-                        current_in_val=round(float(current_in_val), 2) if current_in_val else 0,
-                        avg_in_per=round(float(avg_in_per), 2) if avg_in_per else 0,
-                        avg_in_val=round(float(avg_in_val), 2) if avg_in_val else 0,
-                        peak_in_per=round(float(peak_in_per), 2) if peak_in_per else 0,
-                        peak_in_val=round(float(peak_in_val), 2) if peak_in_val else 0,
+                        current_in_per=round(float(current_in_per), 3) if current_in_per else 0,
+                        current_in_val=round(float(current_in_val), 3) if current_in_val else 0,
+                        avg_in_per=round(float(avg_in_per), 3) if avg_in_per else 0,
+                        avg_in_val=round(float(avg_in_val), 3) if avg_in_val else 0,
+                        peak_in_per=round(float(peak_in_per), 3) if peak_in_per else 0,
+                        peak_in_val=round(float(peak_in_val), 3) if peak_in_val else 0,
                         peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else 0,
                         peak_in_duration=int(peak_in_duration) if peak_in_duration else 0,
-                        current_out_per=round(float(current_out_per), 2) if current_out_per else 0,
-                        current_out_val=round(float(current_out_val), 2) if current_out_val else 0,
-                        avg_out_per=round(float(avg_out_per), 2) if avg_out_per else 0,
-                        avg_out_val=round(float(avg_out_val), 2) if avg_out_val else 0,
-                        peak_out_per=round(float(peak_out_per), 2) if peak_out_per else 0,
-                        peak_out_val=round(float(peak_out_val), 2) if peak_out_val else 0,
-                        timeslot_ul=round(float(current_timeslot_ul), 2) if current_timeslot_ul else None, 
-                        timeslot_dl=round(float(current_timeslot_dl), 2) if current_timeslot_dl else None,
+                        current_out_per=round(float(current_out_per), 3) if current_out_per else 0,
+                        current_out_val=round(float(current_out_val), 3) if current_out_val else 0,
+                        avg_out_per=round(float(avg_out_per), 3) if avg_out_per else 0,
+                        avg_out_val=round(float(avg_out_val), 3) if avg_out_val else 0,
+                        peak_out_per=round(float(peak_out_per), 3) if peak_out_per else 0,
+                        peak_out_val=round(float(peak_out_val), 3) if peak_out_val else 0,
+                        timeslot_ul=round(float(current_timeslot_ul), 3) if current_timeslot_ul else None, 
+                        timeslot_dl=round(float(current_timeslot_dl), 3) if current_timeslot_dl else None,
                         peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
                         peak_out_duration=int(peak_out_duration) if peak_out_duration else 0,
                         sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
