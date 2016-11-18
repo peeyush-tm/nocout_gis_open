@@ -182,12 +182,21 @@ class LivePerformance(ListView):
             {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
         ]
 
-        polled_headers = [
+        polled_headers_1 = [
             {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'bSortable': True},
+        ]
+
+        se_to_pe_header = [
+            {'mData': 'min_latency', 'sTitle': 'SE to PE Latency Min', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
+        ]
+
+        polled_headers_2 = [
             {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
         ]
+
+        polled_headers = polled_headers_1 + se_to_pe_header + polled_headers_2
 
         action_headers = [
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
@@ -195,7 +204,6 @@ class LivePerformance(ListView):
 
         rad5_specific_headers = [
             {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},
-            {'mData': 'min_latency', 'sTitle': 'SE to PE Latency Min', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
         ]
 
         if page_type in ["network"]:
@@ -257,13 +265,13 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         'near_end_ip',
         'ip_address',
         'region',
-        'min_latency',
         'device_type',
         'bs_name',
         'city',
         'state',
         'packet_loss',
         'latency',
+        'min_latency',
         'last_updated',
         'age'
     ]
@@ -382,7 +390,6 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'customer_name',
                 'near_end_ip',
                 'region',
-                'min_latency',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -390,6 +397,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'state',
                 'packet_loss',
                 'latency',
+                'min_latency',
                 'last_updated',
                 'age',
             ]
@@ -401,7 +409,6 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'customer_name',
                 'site_id',
                 'region',
-                'min_latency',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -409,6 +416,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'state',
                 'packet_loss',
                 'latency',
+                'min_latency',
                 'last_updated',
                 'age'
             ]
