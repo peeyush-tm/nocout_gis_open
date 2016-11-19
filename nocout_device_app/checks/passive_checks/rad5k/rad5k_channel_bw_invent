@@ -41,6 +41,7 @@ def check_rad5k_channel_bw_invent(item, _no_params, info):
 			channel_bandwidth = 0
 			if info[0][0]:
 				channel_bandwidth = saveint(info[0][0])
+				channel_bandwidth = channel_bandwidth/1000
 				infotext = "cbw=%d" % channel_bandwidth
 				state= 0
 
