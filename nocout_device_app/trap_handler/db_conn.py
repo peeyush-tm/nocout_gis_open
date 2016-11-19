@@ -6,7 +6,9 @@ from mysql.connector import connect
 import os
 from pprint import pprint
 from redis import StrictRedis
-
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
+info, warning, error = logger.info, logger.warning, logger.error
 
 try:
 	BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -47,9 +49,7 @@ class ConnectionBase(object):
 		except Exception as exc:
 			redis_db = None
 			print 'Error redis conn: {0}'.format(exc)
-
 		return redis_db
-
 
 class ExportTraps(object):
 
@@ -66,54 +66,61 @@ class ExportTraps(object):
 		updated = False
 		inserted = False
 		# TODO: use 2 concurrent threads for insert/update ops
-		if history_traps :
-			inserted = self.insert_traps(history_traps, insert_table)
-		if current_traps and flag is not 'update':
-			table = current_table
-                        current_mark_inactive = filter(lambda x: x[2] == 'clear' ,mark_inactive)
-			updated = self.update_traps(current_traps, 
-					table, 
-					mark_inactive=current_mark_inactive,
-					mask_table=clear_table,
-					flag=flag
-					)
-		if clear_traps and flag is not 'update':
-			table = clear_table
-                        clear_mark_inactive = filter(lambda x: x[2] != 'clear' ,mark_inactive)
-			updated = self.update_traps(
-					clear_traps, 
-					table, 
-					mark_inactive=clear_mark_inactive,
-					mask_table=current_table,
-					flag=flag
-					)
+		if flag is 'monolith_trap' :
+			self.update_id(latest_id)
+		else :
+			if history_traps :
+				inserted = self.insert_traps(history_traps, insert_table)
+			if current_traps and flag is not 'update':
+				table = current_table
+                        	current_mark_inactive = filter(lambda x: x[2] == 'clear' ,mark_inactive)
+				updated = self.update_traps(current_traps, 
+						table, 
+						mark_inactive=current_mark_inactive,
+						mask_table=clear_table,
+						flag=flag
+						)
+			if clear_traps and flag is not 'update':
+				table = clear_table
+                       		clear_mark_inactive = filter(lambda x: x[2] != 'clear' ,mark_inactive)
+				updated = self.update_traps(
+						clear_traps, 
+						table, 
+						mark_inactive=clear_mark_inactive,
+						mask_table=current_table,
+						flag=flag
+						)
 	
-		if current_traps and flag is 'update' :
-			table = current_table
-			updated = self.update_trap_count(current_traps, table)
-		if clear_traps and flag is 'update':
-                        table = clear_table
-			updated = self.update_trap_count(clear_traps, table)
+			if current_traps and flag is 'update' :
+				table = current_table
+				updated = self.update_trap_count(current_traps, table)
+			if clear_traps and flag is 'update':
+                       		table = clear_table
+				updated = self.update_trap_count(clear_traps, table)
 		# Check this again ..
 		if inserted and updated:
 			# TODO: if ops are successful, update the processed_traps_info
-			if flag != 'event':
+			if flag != 'event' and latest_id is not None:
 			    self.update_id(latest_id)
 
 	def exec_qry(self, qry, data=None, many=True, db_name='application_db'):
+		row_count = None
 		try:
 		    mysql_cnx = self.conn_base.mysql_cnx(db_name=db_name)
 		    cursor = mysql_cnx.cursor()
 		    if many:
 			cursor.executemany(qry, data)
+			row_count = cursor.rowcount
 		    elif data :
 			cursor.execute(qry,data)
+			row_count = cursor.rowcount
 		    else:
 			cursor.execute(qry)
 		    mysql_cnx.commit()
 		    cursor.close()
 		except Exception,e:
 		    print e
+		return row_count
 
 
 	def update_id(self, id):
@@ -130,13 +137,16 @@ class ExportTraps(object):
 				'device_name', 'ip_address', 'trapoid', 'eventname',
 				'eventno', 'severity', 'uptime', 'traptime',
 				'description', 'alarm_count', 'first_occurred',
-				'last_occurred', 'is_active', 'sia', 'customer_count'
-				)
+				'last_occurred', 'is_active', 'sia', 'customer_count',
+				'technology','ticket_number','alarm_id','is_manual'
+                                  )
 		columns = columns if columns else default_columns
 		# we don't need to update all the columns
 		update_columns = (
 				'severity', 'uptime', 'traptime',
-				'description', 'last_occurred', 'is_active', 'sia', 'customer_count'
+				'description', 'last_occurred', 'is_active', 'sia', 'customer_count',
+				'technology', 'ticket_number',
+				'alarm_id','is_manual'
 				)
 
 		p0 = "INSERT INTO %(table)s" % {'table': table}
@@ -185,7 +195,8 @@ class ExportTraps(object):
 				'device_name', 'ip_address', 'trapoid', 'eventname',
 				'eventno', 'severity', 'uptime', 'traptime',
 				'description', 'alarm_count', 'first_occurred',
-				'last_occurred', 'is_active', 'sia', 'customer_count'
+				'last_occurred', 'is_active', 'sia', 'customer_count',
+				'technology','ticket_number','alarm_id','is_manual'
 				)
 		columns = columns if columns else default_columns
 		p0 = "INSERT INTO %(table)s" % {'table': table}
@@ -207,12 +218,13 @@ class ExportTraps(object):
                                 'device_name', 'ip_address', 'trapoid', 'eventname',
                                 'eventno', 'severity', 'uptime', 'traptime',
                                 'description', 'alarm_count', 'first_occurred',
-                                'last_occurred', 'is_active', 'sia', 'customer_count'
+                                'last_occurred', 'is_active', 'sia', 'customer_count',
+				'technology','ticket_number','alarm_id','is_manual'
                                 )
                 update_columns = (
 		                'severity', 'uptime', 'traptime',
                                 'description', 'last_occurred', 'sia',
-				'customer_count'
+				'customer_count','technology','ticket_number','alarm_id','is_manual'
                           )
 
 		p0 = "INSERT INTO %(table)s" % {'table': table}
