@@ -1,7 +1,8 @@
 from pprint import pprint
-from start_pub import app
-from db_ops import RedisInterface,DatabaseTask
-from db_conn import ExportTraps,ConnectionBase
+import correlation
+from start.start import app
+from handlers.db_ops import RedisInterface,DatabaseTask
+from trap_handler.db_conn import ExportTraps,ConnectionBase
 from uuid import uuid4
 from datetime import datetime
 from collections import defaultdict
@@ -13,8 +14,7 @@ logger = get_task_logger(__name__)
 info, warning, error = logger.info, logger.warning, logger.error
 from os import system
 from time import sleep
-import correlation_s3
-from correlation_s3 import correlation
+from correlation import correlation
 import web
 import re
 try:
@@ -146,7 +146,7 @@ class manual_ticketing:
 	if final_events:
             # External Handling of data manupulation for Monolith server.
             final_events= corr_obj.final_trap_data_manupulation(final_events)
-            logger.error('Manupulated Events list {0}'.format(final_events))
+            #logger.error('Manupulated Events list {0}'.format(final_events))
             correlation_s3.trap_sender_task.s(final_events).apply_async()
 
             non_ckt_events = filter(lambda x: not x.get('impacted_circuit_ids'),final_events)
