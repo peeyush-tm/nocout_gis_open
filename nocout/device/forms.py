@@ -10,6 +10,7 @@ from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoice
 from device.models import DeviceTypeFields
 from service.models import Service, ServiceDataSource
 
+from nocout.settings import ENABLE_PARENT_FIELDS
 from django.forms.util import ErrorList
 import re
 import logging
@@ -131,7 +132,10 @@ class DeviceForm(forms.ModelForm):
         Meta Information
         """
         model = Device
-        exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms']
+        if ENABLE_PARENT_FIELDS:
+            exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms']
+        else:
+            exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms', 'parent', 'parent_type', 'parent_port']
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }

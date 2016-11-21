@@ -1397,6 +1397,7 @@ SHOW_ALL_IN_NETWORK_ALERT_CENTER = False
 ENABLE_MANUAL_TICKETING = False
 PLANNED_EVENTS_ENABLED = False
 ENABLE_MANUAL_TICKETING_HISTORY = False
+ENABLE_PARENT_FIELDS = False
 
 # Manual Ticketing API Details
 MANUAL_TICKET_API = 'http://121.244.255.123/'
@@ -1421,6 +1422,10 @@ SHOW_SPRINT3 = False
 # Feature list:-
 # 1) Region filter on GIS
 SHOW_SPRINT4 = False
+
+PE_REDIS_HOST = '10.133.19.165'
+PE_REDIS_PORT = '6380'
+PE_REDIS_DB = '10'
 
 # Import the local_settings.py file to override global settings
 try:

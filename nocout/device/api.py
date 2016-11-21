@@ -2392,8 +2392,7 @@ class BulkFetchLPDataApi(View):
                         target=nocout_live_polling,
                         args=(q, site,)
                     ) for site in site_list
-                    ]
-
+                ]
                 for j in jobs:
                     j.start()
                 for k in jobs:
@@ -2431,6 +2430,16 @@ class BulkFetchLPDataApi(View):
 
                         result['data']['devices'][device_name] = dict()
 
+                        try:
+                            if ds_name in ['pl']:
+                                if device_value >= ds_warn_crit_param[0]['pl_critical']:
+                                    result['data']['meta']['chart_color'] = '#FF193B'
+                                elif device_value < ds_warn_crit_param[0]['pl_critical'] and device_value >= ds_warn_crit_param[0]['pl_warning']:
+                                    result['data']['meta']['chart_color'] = '#FFE90D'
+                                else:
+                                    pass
+                        except Exception as e:
+                            pass
                         # Evaluate value if formula is available for data source.
                         if ds_formula:
                             device_val = device_value

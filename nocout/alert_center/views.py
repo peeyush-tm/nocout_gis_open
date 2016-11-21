@@ -4,7 +4,7 @@
 import datetime
 # faster json processing module
 import ujson as json
-
+import requests
 from django.db.models.query import ValuesQuerySet, Q
 from django.db.models import F
 from django.core.urlresolvers import reverse
@@ -41,7 +41,7 @@ from django.utils.dateformat import format
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME, \
 SHOW_CUSTOMER_COUNT_IN_ALERT_LIST, SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT, SHOW_TICKET_NUMBER, \
-ENABLE_MANUAL_TICKETING, SHOW_SPRINT3
+ENABLE_MANUAL_TICKETING, SHOW_SPRINT3, MANUAL_TICKET_API
 
 # Import advance filtering mixin for BaseDatatableView
 from nocout.mixins.datatable import AdvanceFilteringMixin
@@ -69,6 +69,14 @@ device_type_dict = {}
 device_type_dict.update(DeviceType.objects.values_list('id', 'name'))
 device_technology_list = DeviceTechnology.objects.extra(select={'name' : 'LOWER(name)', 'id':'id'}).values_list('name','id')
 device_technology_dict.update(device_technology_list)
+
+EXCLUDED_EVENTS_FOR_MANUAL_TICKETING = [
+    'ODU1_Lost', 'ODU1_No_Heart_Beat', 'ODU1_Output_RF_TX_Unleveled', 
+    'ODU1_Input_IF_TX_Unleveled', 'ODU1_Power_Amplifier_OFF', 'ODU2_Lost', 
+    'ODU2_No_Heart_Beat', 'ODU2_Output_RF_TX_Unleveled', 'ODU2_Input_IF_TX_Unleveled', 
+    'ODU2_Power_Amplifier_OFF', 'Synchronization_problem__no_PPS', 'PD_threshold_breach_major',
+    'Device_not_reachable', 'gpsNotSynchronised'
+]
 
 class AlertCenterListing(ListView):
     """
@@ -2914,7 +2922,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 formatted_uptime = uptime
 
                 try:
-                    if ENABLE_MANUAL_TICKETING:
+                    if ENABLE_MANUAL_TICKETING and event_name not in EXCLUDED_EVENTS_FOR_MANUAL_TICKETING:
                         has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
                         if not has_ticket_number and not is_manual:
                             action += '<a href="javascript:;" class="manual_ticketing_btn" data-ip="{0}" data-severity="{1}" \
@@ -4690,11 +4698,11 @@ class GenerateManualTicket(View):
         if current_instance and ip_address and alarm_name:
 
             # Encoding data.
-            encoded_data = urllib.urlencode({
+            encoded_data = {
                 'ip_address': ip_address, 
                 'severity': severity, 
                 'alarm_name': alarm_name
-            })
+            }
 
             # Sending post request to nocout device app to start given IP ping stability testing
             try:
@@ -4703,7 +4711,7 @@ class GenerateManualTicket(View):
                 logger.error(encoded_data)
                 logger.error(' ----- Manual Ticketing API ----- ')
                 
-                request_instance = requests.post(MANUAL_TICKET_API, data=encoded_data)
+                request_instance = requests.post(MANUAL_TICKET_API, data=json.dumps(encoded_data))
                 # response_dict = ast.literal_eval(request_instance.text)
 
                 # Create entry in ManualTicketingHistory
