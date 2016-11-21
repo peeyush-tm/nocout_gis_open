@@ -267,6 +267,7 @@ class PowerSignals(models.Model):
 
     circuit_contacts = models.ForeignKey(CircuitContacts, max_length=250, null=True, blank=True)
     message = models.CharField('Message', max_length=512, null=True, blank=True)
+    ticket_id = models.CharField('Ticket ID', max_length=128, null=True, blank=True)
     created_at = models.DateTimeField('Created at', auto_now_add=True)
     signal_type = models.CharField('Signal Type', max_length=32, null=True, blank=True, default='Received')
 

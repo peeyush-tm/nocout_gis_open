@@ -1124,6 +1124,51 @@ var pmp_ss_toolTip_static = [];
 // PMP SS Tooltip polled info object for radwin 5k
 var pmp_radwin5k_ss_toolTip_polled = [
     {
+        'name'         : 'pl',
+        'title'        : 'Packet Loss',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'ping',
+        'ds'           : 'pl'
+    },
+    {
+        'name'         : 'rta',
+        'title'        : 'Latency',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'ping',
+        'ds'           : 'rta'
+    },
+    {
+        'name'         : 'rad5k_ss_frequency_frequency',
+        'title'        : 'Frequency',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_frequency',
+        'ds'           : 'frequency'
+    },
+    // {
+    //     'name'         : 'rad5k_man_vlan_invent_ss_vlan',
+    //     'title'        : 'Management VLAN',
+    //     'show'         : 1,
+    //     'value'        : '',
+    //     'url'          : '',
+    //     'service_name' : 'rad5k_man_vlan_invent',
+    //     'ds'           : 'ss_vlan'
+    // },
+    {
+        'name'         : 'rad5k_ss_data_vlan_invent_ss_data_vlan',
+        'title'        : 'Data VLAN',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_data_vlan_invent',
+        'ds'           : 'ss_data_vlan'
+    },
+    {
         'name'         : 'rad5k_ss_ul_utilization_ul_utilization',
         'title'        : 'Uplink utilization (Mbps)',
         'show'         : 1,
@@ -1158,42 +1203,6 @@ var pmp_radwin5k_ss_toolTip_polled = [
         'url'          : '',
         'service_name' : 'rad5k_dl_rssi',
         'ds'           : 'dl_rssi'
-    },
-    {
-        'name'         : 'rad5k_ss2_ul_rssi_ul_2rssi',
-        'title'        : 'UL RSSI 2',
-        'show'         : 1,
-        'value'        : '',
-        'url'          : '',
-        'service_name' : 'rad5k_ss2_ul_rssi',
-        'ds'           : 'ul_2rssi'
-    },
-    {
-        'name'         : 'rad5k_ss2_dl_rssi_dl_2rssi',
-        'title'        : 'DL RSSI 2',
-        'show'         : 1,
-        'value'        : '',
-        'url'          : '',
-        'service_name' : 'rad5k_ss2_dl_rssi',
-        'ds'           : 'dl_2rssi'
-    },
-    {
-        'name'         : 'rad5k_ss_data_vlan_invent_ss_data_vlan',
-        'title'        : 'Data VLAN',
-        'show'         : 1,
-        'value'        : '',
-        'url'          : '',
-        'service_name' : 'rad5k_ss_data_vlan_invent',
-        'ds'           : 'ss_data_vlan'
-    },
-    {
-        'name'         : 'rad5k_man_vlan_invent_ss_vlan',
-        'title'        : 'Management VLAN',
-        'show'         : 1,
-        'value'        : '',
-        'url'          : '',
-        'service_name' : 'rad5k_man_vlan_invent',
-        'ds'           : 'ss_vlan'
     },
     {
         'name'         : 'rad5k_ss_device_uptime_uptime',
@@ -1277,33 +1286,6 @@ var pmp_radwin5k_ss_toolTip_polled = [
         'ds'           : 'bs_ip'
     },
     {
-        'name'         : 'rad5k_ss_frequency_frequency',
-        'title'        : 'Frequency',
-        'show'         : 1,
-        'value'        : '',
-        'url'          : '',
-        'service_name' : 'rad5k_ss_frequency',
-        'ds'           : 'frequency'
-    },
-    {
-        'name'         : 'pl',
-        'title'        : 'Packet Loss',
-        'show'         : 1,
-        'value'        : '',
-        'url'          : '',
-        'service_name' : 'ping',
-        'ds'           : 'pl'
-    },
-    {
-        'name'         : 'rta',
-        'title'        : 'Latency',
-        'show'         : 1,
-        'value'        : '',
-        'url'          : '',
-        'service_name' : 'ping',
-        'ds'           : 'rta'
-    },
-    {
         'name'         : 'rad5k_ss_dl_uas_dl_uas',
         'title'        : 'DL UAS',
         'show'         : 1,
@@ -1383,6 +1365,24 @@ var pmp_radwin5k_ss_toolTip_polled = [
         'url'          : '',
         'service_name' : '',
         'ds'           : ''
+    },
+    {
+        'name'         : 'rad5k_ss2_ul_rssi_ul_2rssi',
+        'title'        : 'UL RSSI 2',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss2_ul_rssi',
+        'ds'           : 'ul_2rssi'
+    },
+    {
+        'name'         : 'rad5k_ss2_dl_rssi_dl_2rssi',
+        'title'        : 'DL RSSI 2',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss2_dl_rssi',
+        'ds'           : 'dl_2rssi'
     },
 ];
 
