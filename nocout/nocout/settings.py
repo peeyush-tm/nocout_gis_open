@@ -1419,6 +1419,10 @@ SHOW_SPRINT3 = False
 # 1) Region filter on GIS
 SHOW_SPRINT4 = False
 
+PE_REDIS_HOST = '10.133.19.165'
+PE_REDIS_PORT = '6380'
+PE_REDIS_DB = '10'
+
 # Import the local_settings.py file to override global settings
 try:
     from local_settings import *

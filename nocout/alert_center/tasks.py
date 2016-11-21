@@ -9,10 +9,16 @@ from inventory.tasks import bulk_update_create
 from device.models import Device, DeviceTechnology, DeviceType
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
-from nocout.settings import PLANNED_EVENTS_ENABLED
+from nocout.settings import PLANNED_EVENTS_ENABLED, PE_REDIS_HOST, PE_REDIS_PORT, PE_REDIS_DB
 from alert_center.models import PlannedEvent
+import redis
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
+
+try:
+	redis_conn = redis.StrictRedis(host=PE_REDIS_HOST, port=PE_REDIS_PORT, db=PE_REDIS_DB)
+except Exception as e:
+	redis_conn = None
 
 def get_child_ips(device):
 	'''
@@ -73,6 +79,22 @@ def get_child_ips(device):
 				))
 
 	return ','.join(ips)
+
+def set_planned_events_in_redis(dataset=[]):
+	"""
+	This function stores Planned Events data in redis on DA end
+	"""
+	if not dataset:
+		return False
+
+	if redis_conn:
+		try:
+			redis_conn.set('planned_events', dataset)
+		except Exception a1s e:
+			logger.error('Set redis data exception -- PE')
+			logger.error(e)
+
+	return True
 
 @task()
 def get_planned_events():
@@ -141,6 +163,7 @@ def set_planned_events(dataset):
 	if dataset:
 		bulk_update_pe = list()
 		bulk_create_pe = list()
+		redis_dataset = list()
 		g_jobs = list()
 
 		for event in dataset:
@@ -172,6 +195,14 @@ def set_planned_events(dataset):
 				except Exception as e:
 					technnology = ''
 					device_type = ''
+
+				if nia:
+					try:
+						redis_data = (startdate, enddate, nia.split(','))
+						redis_dataset.append(redis_data)
+					except Exception as e:
+						logger.error('Planned Events -- Redis dataset exception')
+						logger.error(e)
 				
 				impacted_customer = 0
 				try:
@@ -252,6 +283,11 @@ def set_planned_events(dataset):
 				action='update',
 				model=PlannedEvent
 			))
+
+		if redis_dataset:
+			set_planned_events_in_redis(
+				dataset=redis_dataset
+			)
 
 		if not len(g_jobs):
 			return False
