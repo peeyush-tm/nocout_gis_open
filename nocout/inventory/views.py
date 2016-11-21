@@ -5660,7 +5660,10 @@ class GetSms(View):
                         call_mode = ''
                         request_id = ''
                     
-                    soap_result = self.call_soap_api(api_mode=call_mode, request_id=request_id)
+                    # Call API Only in UP/DOWN event
+                    soap_result = {}
+                    if call_mode and request_id:
+                        soap_result = self.call_soap_api(api_mode=call_mode, request_id=request_id)
 
                 try:
                     power_instance = PowerSignals()
@@ -5668,8 +5671,8 @@ class GetSms(View):
                     power_instance.message = message
 
                     # Store Ticket ID only for DOWN Event
-                    if soap_result['success'] and USE_SOAP_TICKETING and message.lower() == 'down':
-                        power_instance.ticket_id = soap_result.get(ticket_id, '')
+                    if soap_result.get('success', 0) and USE_SOAP_TICKETING and message.lower() == 'down':
+                        power_instance.ticket_id = soap_result.get('ticket_id', '')
 
                     power_instance.save()
 
