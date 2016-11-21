@@ -81,17 +81,21 @@ def get_planned_events():
 	"""
 
 	if PLANNED_EVENTS_ENABLED:
+		# PE_COLUMNS = [
+		# 	'ScheduledStartDate', 'ScheduledEndDate', 'EventType', 'PEOwnerDetails', 
+		# 	'ChangeCoordinator', 'PETTno', 'SRNumber', 'Timing', 'Changesummary', 
+		# 	'ChangeStatus', 'ImpactedDomain', 'Component', 'SectorID', 
+		# 	'ResourceName', 'ServiceIDs'
+		# ]
 		PE_COLUMNS = [
-			'ScheduledStartDate', 'ScheduledEndDate', 'EventType', 'PEOwnerDetails', 
-			'ChangeCoordinator', 'PETTno', 'SRNumber', 'Timing', 'Changesummary', 
-			'ChangeStatus', 'ImpactedDomain', 'Component', 'SectorID', 
-			'ResourceName', 'ServiceIDs'
+			'ScheduledStartDate','ScheduledEndDate','EventType','PEOwner','Executor',
+			'PE_TT_NO','SRNumber','Summary','ChangeStatus','Impacted_Domain','ResourceName'
 		]
 		TABLE_NAME = 'Wireless1ServiceDump'
 
 		now_datetime = datetime.datetime.now()
 		start_date = float(format(now_datetime, 'U'))
-		end_date = float(format(now_datetime + datetime.timedelta(minutes=60), 'U'))
+		end_date = float(format(now_datetime + datetime.timedelta(minutes=90), 'U'))
 
 		query = 'SELECT \
 					{0} \
@@ -102,7 +106,7 @@ def get_planned_events():
 					AND \
 					ResourceName != "" \
 					AND \
-					NOT ISNULL(PETTno) \
+					NOT ISNULL(PE_TT_NO) \
 					AND \
 					PETTno != "" \
 					AND \
@@ -140,20 +144,20 @@ def set_planned_events(dataset):
 		g_jobs = list()
 
 		for event in dataset:
-			ticket_no = event.get('PETTno')
+			ticket_no = event.get('PE_TT_NO')
 			resource_name = event.get('ResourceName')
 
 			if ticket_no and resource_name:
 				startdate = event.get('ScheduledStartDate', '')
 				enddate = event.get('ScheduledEndDate', '')
 				event_type = event.get('EventType', '')
-				owner_details = event.get('PEOwnerDetails', '')
-				change_coordinator = event.get('ChangeCoordinator', '')
+				owner_details = event.get('PEOwner', '')
+				change_coordinator = event.get('Executor', '')
 				sr_number = event.get('SRNumber', '')
 				timing = event.get('Timing', '')
-				summary = event.get('Changesummary', '')
+				summary = event.get('Summary', '')
 				status = event.get('ChangeStatus', '')
-				impacted_domain = event.get('ImpactedDomain', '')
+				impacted_domain = event.get('Impacted_Domain', '')
 				component = event.get('Component', '')
 				sectorid = event.get('SectorID', '')
 				service_ids = event.get('ServiceIDs', '')
