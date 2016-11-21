@@ -5,6 +5,9 @@ import imp
 import time
 from sys import path
 from operator import itemgetter
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
+info, warning, error = logger.info, logger.warning, logger.error
 #path.append('nocout/performance/service')
 
 
@@ -52,10 +55,12 @@ def make_network_snmptt_data(machine_name):
         cursor = queue.get(0, -1)
         docs = []
 	docs = sorted(cursor, key=itemgetter(-2))
-	print "Record",docs
+	#print "Record",docs
+	logger.error("Event Record :  %s",str(docs))
         return docs
     except Exception,e :
-        print "Error in Redis Tuple in %s : %s \n" % (machine_name,str(e))
+        #print "Error in Redis Tuple in %s : %s \n" % (machine_name,str(e))
+	logger.error("Error in Redis Tuple in %s : %s \n" , (machine_name,str(e)))
 	pass
 
 @app.task(name='make_bs_ul_issue_snmptt_data')

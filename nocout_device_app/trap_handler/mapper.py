@@ -11,10 +11,16 @@ from start.start import app
 #app = start_app_module.app
 from copy import deepcopy
 from time import sleep
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
+info, warning, error = logger.info, logger.warning, logger.error
+
 
 severity_for_clear_table = ['clear','ok']
 global alarm_mask_oid
 global mat_entries
+global monolith_ticket_dict
+global correlated_trap_alarm_id
 formatline_indexes = {
 	# for wimax we need only these two vars
         'wimax': {
@@ -33,7 +39,7 @@ sia_value = {
 technology = {
         'wimax' : 'wimax',
         'pmp' : 'pmp',
-        'radwin5k' : 'pmp',
+        'radwin5k' : 'rad5k',
         'converter' : 'converter',
 }
 
@@ -66,7 +72,8 @@ class Eventmapper(object):
 		out = p.execute()
 	except Exception as exc:
 		out = [{}]
-		print 'Error in reading cached inventory: {0}'.format(exc)
+		logger.error('Error in reading cached inventory: {0}'.format(exc))
+		#print 'Error in reading cached inventory: {0}'.format(exc)
 
 	return out[0]
 
@@ -79,7 +86,8 @@ class Eventmapper(object):
                         mat_entry_details[alarms] = data
         except Exception as exc:
                 mat_entry_details = {}
-                print 'Error in reading MAT: {0}'.format(exc)
+		logger.error('Error in reading MAT: {0}'.format(exc))
+                #print 'Error in reading MAT: {0}'.format(exc)
         return mat_entry_details
 
    def read_customer_count_from_redis(self):
@@ -91,7 +99,8 @@ class Eventmapper(object):
         		key = entry.split(':')[-1]
         		customer_count_dict[key] = int(redis_cnx.get(entry))
 	except Exception,exc :
-  		print 'Error in reading customer count from redis: {0}'.format(exc)
+		logger.error('Error in reading customer count from redis: {0}'.format(exc))
+  		#print 'Error in reading customer count from redis: {0}'.format(exc)
 	return customer_count_dict
 
    def get_alarm_mask_oids(self):
@@ -114,7 +123,7 @@ class Eventmapper(object):
 	and     master1.device_type in ('wimax')
         """
 	qry = """
-	SELECT 
+	SELECT
 		master1.oid,master1.severity ,master2.oid mask_oid,master2.severity mask_severity
 	FROM
 		alarm_masking_table mask
@@ -129,18 +138,20 @@ class Eventmapper(object):
 
 	and     master1.device_type not in ('wimax')
 	"""
-	my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
-	cursor = my_cnx.cursor()
-	cursor.execute(query_1)
-	wimax_data = cursor.fetchall()
-	cursor.execute(qry)
-	other_traps_data = cursor.fetchall()
-        for (name,severity,mask_name,mask_severity) in wimax_data:
-		alarm_masking_dict[(name,severity)].append((mask_name,mask_severity))
-	for oid,severity,mask_oid,mask_severity in other_traps_data:
-        	alarm_masking_dict[(str(oid),severity)].append((mask_oid,mask_severity))
+	try:
+		my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
+		cursor = my_cnx.cursor()
+		cursor.execute(query_1)
+		wimax_data = cursor.fetchall()
+		cursor.execute(qry)
+		other_traps_data = cursor.fetchall()
+        	for (name,severity,mask_name,mask_severity) in wimax_data:
+			alarm_masking_dict[(name,severity)].append((mask_name,mask_severity))
+		for oid,severity,mask_oid,mask_severity in other_traps_data:
+        		alarm_masking_dict[(str(oid),severity)].append((mask_oid,mask_severity))
         except Exception ,e :
-                print "Error in get_alarm_mask_oids : %s "% str(e)
+		logger.error("Error in get_alarm_mask_oids : %s ", str(e))
+                #print "Error in get_alarm_mask_oids : %s "% str(e)
         finally:
                 if cursor :
                         cursor.close()
@@ -178,7 +189,8 @@ class Eventmapper(object):
                 mat_entries.extend(other_traps_mat_entries)
                 mat_entries = set(mat_entries)
         except Exception ,e :
-                print "Error in get_mapped_mat_entries : %s "% str(e)
+                #print "Error in get_mapped_mat_entries : %s "% str(e)
+		logger.error("Error in get_mapped_mat_entries : %s ", str(e))
         finally:
                 if cursor :
                         cursor.close()
@@ -251,8 +263,61 @@ class Eventmapper(object):
             else :
                 not_mapped.append(mat_entry)
         if not_mapped:
-                print "Not mapped in MAT : ",not_mapped
+                #print "Not mapped in MAT : ",not_mapped
+		logger.error("Not mapped in MAT : %s",str(not_mapped))
         return (event_dict.values(),monolith_ticket_traps,event_count_dict)
+
+   def delete_cleared_monolith_ticket(self,ip_address,eventname):
+	"""Delete tickets from monolith_ticket:IP redis dict"""
+	redis_cnx_mat = self.conn_base.redis_cnx(db_name='redis_MAT')
+	monolith_ticket_entry = eval(redis_cnx_mat.get('monolith_ticket:%s' %ip_address))
+	monolith_ticket_entry.pop(eventname, None)
+	redis_cnx_mat.set('monolith_ticket:%s' %ip_address,monolith_ticket_entry)
+	
+   def get_monolith_ticket_dict(self):
+	"""Fetch tickets from monolith_ticket:IP redis dict"""
+	monolith_ticket = {}
+	redis_cnx_mat = self.conn_base.redis_cnx(db_name='redis_MAT')
+	monolith_ticket_number_ip = redis_cnx_mat.keys('monolith_ticket:*')
+	if monolith_ticket_number_ip:
+	    for ip in monolith_ticket_number_ip :
+            	monolith_ticket[ip.split(':')[1]] = eval(redis_cnx_mat.get(ip))
+	return monolith_ticket
+
+   def get_correlated_trap_alarm_id(self):
+	"""Fetch correlated_trap from correlated_traps redis hash"""
+	correlated_trap = {}
+	redis_cnx_mat = self.conn_base.redis_cnx(db_name='redis_MAT')
+	correlated_trap_data = redis_cnx_mat.hgetall('correlated_traps')
+	if correlated_trap_data :
+	    for key,value in correlated_trap_data.iteritems():
+	    	correlated_trap[key] = eval(value)['alrm_id']
+	return correlated_trap
+
+   def return_ticket_details(self,ip_address,eventname,severity):
+	"""Fetch Alarm Id, Ticket Number, Manual trap bit for particular IP Address and Eventname"""
+	mask_key =  alarm_mask_oid.get((eventname,severity.lower()))
+        mask_eventname,mask_severity = mask_key[0]
+        if severity in severity_for_clear_table :
+            try :
+                alarm_id = monolith_ticket_dict[ip_address][mask_eventname]['alarm_id']
+		ticket_number = monolith_ticket_dict[ip_address][mask_eventname]['ticket_number']
+		is_manual =  monolith_ticket_dict[ip_address][mask_eventname]['is_manual']
+		self.delete_cleared_monolith_ticket(ip_address,mask_eventname)
+            except Exception,e :
+		print "Exception in fetch alarm_id in mapper: %s"%str(e) 
+                ticket_number = None
+		"""
+		try :
+		    alarm_id = correlated_trap_alarm_id[ip_address+'_'+eventname] 
+		except Exception,e :
+                    alarm_id = None
+		"""
+	else :
+	    ticket_number = None
+	    alarm_id = None
+	    is_manual = None
+        return (ticket_number,alarm_id,is_manual)
 
    def update_trap_count(self,event_count_dict):
         """Update trap count field using event_count_dict"""
@@ -264,7 +329,10 @@ class Eventmapper(object):
         history_event = []
         redis_event_entry = []
         redis_trap_entry = []
-
+	global monolith_ticket_dict
+	monolith_ticket_dict = self.get_monolith_ticket_dict()
+	#global correlated_trap_alarm_id
+	#correlated_trap_alarm_id = self.get_correlated_trap_alarm_id()
         for count,trap in event_count_dict.values():
             new_trap =  {}
             if 'wimax' in trap[1].lower() :
@@ -279,12 +347,13 @@ class Eventmapper(object):
                 except :
                     last_occurred = trap[8]
                 eventname = re.sub('[: ]', '_', formatline[indexes['event_name']])
+		ticket_number, alarm_id, is_manual = self.return_ticket_details(trap[3],eventname,severity)	
                 try:
                     sia = sia_value[str(self.mat_entry_details[(eventname,severity)]['sia'])]
                     device_type = technology[str(self.mat_entry_details[(eventname,severity)]['device_type']).lower()]
 
                 except Exception,e:
-                    print e
+                    #print e
                     sia = ''
                     device_type = ''
 
@@ -305,7 +374,10 @@ class Eventmapper(object):
                                 'sia': sia,
                                 'customer_count': self.customer_count_details[str(trap[3])] \
                                                 if str(trap[3]) in self.customer_count_details else None,
-                                'technology': device_type
+                                'technology': device_type,
+				'ticket_number' : None,
+				'alarm_id' : None,
+				'is_manual' : None
                                 })
             else :
                 severity  = trap[6].lower()
@@ -315,6 +387,7 @@ class Eventmapper(object):
                 except :
                     last_occurred = trap[8]
                 eventname =  str(trap[1])
+		ticket_number , alarm_id, is_manual = self.return_ticket_details(trap[3],eventname,severity)
                 try :
                         if 'PMP_' in eventname :
                             sia = sia_value[str(self.mat_entry_details[(eventname.split('_')[1],severity)]['sia'])]
@@ -324,7 +397,7 @@ class Eventmapper(object):
                             device_type = technology[str(self.mat_entry_details[(eventname,severity)]['device_type']).lower()]
 
                 except Exception,e:
-                        print e
+                        #print e
                         sia = ''
                         device_type = ''
                 new_trap.update({
@@ -344,7 +417,10 @@ class Eventmapper(object):
                                 'sia': sia,
                                 'customer_count': self.customer_count_details[str(trap[3])] \
                                                 if str(trap[3]) in self.customer_count_details else None,
-                                'technology':device_type
+                                'technology':device_type,
+				'ticket_number' : None,
+				'alarm_id' : None,
+				'is_manual' : None
                                 })
             trap = ()
             #if new_trap['eventname'] not in exclude_in_redis_event :
@@ -370,6 +446,9 @@ class Eventmapper(object):
             if severity.lower() not in severity_for_clear_table:
                 current_events_update.append(new_trap)
             else:
+		new_trap['ticket_number'] = ticket_number
+		new_trap['alarm_id'] = alarm_id
+		new_trap['is_manual'] = is_manual
                 clear_events_update.append(new_trap)
             history_trap = deepcopy(new_trap)
             # Update is_active to 1 in history records
@@ -411,6 +490,7 @@ class Eventmapper(object):
                                 last_occurred = event[8]
 
                         eventname =  str(event[1])
+			ticket_number , alarm_id , is_manual = self.return_ticket_details(str(event[3]),eventname,event[6].lower())
                         try :
                                 if 'PMP_' in eventname :
                                     sia = sia_value[str(self.mat_entry_details[(eventname.split('_')[1],event[6].lower())]['sia'])]
@@ -419,7 +499,7 @@ class Eventmapper(object):
                                     sia = sia_value[str(self.mat_entry_details[(eventname,event[6].lower())]['sia'])]
                                     device_type = technology[str(self.mat_entry_details[(eventname,event[6].lower())]['device_type']).lower()]
                         except Exception,e:
-                                print "EventName doesn't match with mapped EventName",e
+                                #print "EventName doesn't match with mapped EventName",e
                                 sia = ''
                                 device_type = ''
 
@@ -443,11 +523,18 @@ class Eventmapper(object):
                                 'technology': device_type
 				})
 			if event[6].lower() not in severity_for_clear_table:
+				new_event['ticket_number'] = None
+				new_event['alarm_id'] = None
+                                new_event['is_manual'] = None
 				current_events.append(new_event)
 			else:
+				new_event['ticket_number'] = ticket_number
+				new_event['alarm_id'] = alarm_id
+                                new_event['is_manual'] = None
 				clear_events.append(new_event)
 		except Exception as exc:
-			print 'Exc in normalize traps: {0}'.format(exc)
+			#print 'Exc in normalize traps: {0}'.format(exc)
+			logger.error('Exc in normalize traps: {0}'.format(exc))
 			continue
 		#out.append(new_trap)
 		if event_type  == 'event':
@@ -489,7 +576,7 @@ class Eventmapper(object):
 		formatline = trap[-1].split('|')
 		# key: (host, event_name, severity)
 		#key = (
-		#		trap[3], 
+		#		trap[3],
 		#		formatline[indexes['event_name']],
 		#		formatline[indexes['severity']]
 		#		)
@@ -508,7 +595,7 @@ class Eventmapper(object):
                             last_occurred = trap[8]
 
                         eventname = re.sub('[: ]', '_', formatline[indexes['event_name']])
-
+			ticket_number, alarm_id, is_manual = self.return_ticket_details(trap[3],eventname,severity)
                         try :
                             sia = sia_value[str(self.mat_entry_details[(eventname,severity)]['sia'])]
                             device_type = technology[str(self.mat_entry_details[(eventname,severity)]['device_type']).lower()]
@@ -538,9 +625,15 @@ class Eventmapper(object):
                                 })
 
 			if severity not in severity_for_clear_table:
+				new_trap['ticket_number'] = None
+				new_trap['alarm_id'] = None
+                                new_trap['is_manual'] = None
 				current_traps.append(new_trap)
 			else:
-				clear_traps.append(new_trap) 
+                                new_event['ticket_number'] = ticket_number
+                                new_event['alarm_id'] = alarm_id
+                                new_trap['is_manual'] = None
+				clear_traps.append(new_trap)
 		except IndexError as exc:
 			continue
 
@@ -563,19 +656,19 @@ class Eventmapper(object):
 
 	#if traps:
 	#	export_traps = ExportTraps()
-	#	export_traps.do_work(traps, mark_inactive=mark_inactive, 
+	#	export_traps.do_work(traps, mark_inactive=mark_inactive,
 	#			latest_id=self.latest_id)
 	#	print 'Processed {0} pmp traps'.format(len(traps))
         return current_events,clear_events,require_masking
 
    def filter_wimax_traps(self, traps, device_type=None):
 	""" Filters the traps based on device type"""
-	filtered = [t for t in traps if 
+	filtered = [t for t in traps if
 			device_type in t[1].lower()]
-	remaining = [t for t in traps if 
+	remaining = [t for t in traps if
 			device_type not in t[1].lower()]
 
-	return filtered , remaining
+	return (filtered, remaining)
 
    def filter_traps(self, traps):
 	""" Starting point for processing all traps"""
@@ -584,6 +677,10 @@ class Eventmapper(object):
         clear_traps=None
         require_masking = None
         traps,monolith_ticket_traps,alarm_count_dict  = self.make_unique_event_dict(traps)
+	if not traps and monolith_ticket_traps :
+		 self.update_db(current_traps=None,clear_traps=None,\
+                                require_masking=None,flag='monolith_trap')
+        #logger.error('Monolith filter_traps {0}'.format(monolith_ticket_traps))
         wimax_traps, other_traps = self.filter_wimax_traps(traps, device_type='wimax')
         #alarm_mask_oid = self.get_alarm_mask_oids()
         if wimax_traps:
@@ -599,22 +696,61 @@ class Eventmapper(object):
 
         # Traps from monolith for RF-IP correlation module
         if monolith_ticket_traps:
+		redis_cnx_mat = self.conn_base.redis_cnx(db_name='redis_MAT')
+                #logger.error("Monolith_ticket_traps {0}".format(monolith_ticket_traps))
                 #logger.error("chanish : monolith_ticket_traps {0}".format(monolith_ticket_traps))
                 traps = self.process_deviceticket(monolith_ticket_traps)
                 table = 'device_deviceticket'
                 columns = ('ip_address','alarm_id')
                 p0 = "UPDATE  device_deviceticket SET ticket_number= %(ticket_number)s WHERE "
                 p2 = ' and '.join(map(lambda x: x+'= %('+ x + ')s', columns))
-                qry = ''.join([p0,p2])
-                #logger.error('chanish : query {0}'.format(qry))
+                query_for_device_deviceticket = ''.join([p0,p2])
+                #logger.error('Query device_deviceticket : {0}'.format(query_for_device_deviceticket))
+		query_current_alarm  =  'UPDATE alert_center_currentalarms SET ticket_number = %(ticket_number)s \
+                                	where alarm_id = %(alarm_id)s'
+
+		query_clear_alarm  =  	'UPDATE alert_center_clearalarms SET ticket_number = %(ticket_number)s \
+                                	where alarm_id = %(alarm_id)s'
+
+        	query_history_alarm  =  'UPDATE alert_center_historyalarms SET ticket_number = %(ticket_number)s \
+					where alarm_id = %(alarm_id)s'
+
+		export_traps = ExportTraps()
+		monolith_tickets_ip = redis_cnx_mat.keys('monolith_ticket:*')
+		monolith_ticket = {}
                 if traps:
+		    for each_trap in traps:
                         try:
-                                # Store the Ticket and other information on application database.
-                                export_traps = ExportTraps()
-                                export_traps.exec_qry(qry, traps, db_name='application_db')
+                            # Store the Ticket and other information on application database.
+                            try :
+			        export_traps.exec_qry(query_for_device_deviceticket, each_trap, False, db_name='application_db')
+			    except Exception,e :
+			        print "Error in query for device_deviceticket %s",query_for_device_deviceticket
+			    export_traps.exec_qry(query_current_alarm, each_trap, False, db_name='snmptt_db')
+			    affected_row_count = export_traps.exec_qry(query_clear_alarm, each_trap, False, db_name='snmptt_db')
+
+			    print "affected_row_count" ,affected_row_count
+			    if affected_row_count == 0 :
+				ip_address = each_trap.get('ip_address')
+				eventname =  re.sub('[: ]', '_', each_trap.get('eventname'))
+				ticket_number = each_trap.get('ticket_number')
+				print "ticket number: %s"%str(ticket_number)
+
+				#alarm_id = each_trap.get('alarm_id')
+				if 'monolith_ticket:' + ip_address in monolith_tickets_ip :
+				    monolith_ticket = eval(redis_cnx_mat.get('monolith_ticket:' + ip_address))
+				    monolith_ticket_alarm_data = monolith_ticket.get(eventname)
+				    monolith_ticket_alarm_data['ticket_number'] = ticket_number
+				    monolith_ticket = { eventname: monolith_ticket_alarm_data }
+			        else :
+				    #monolith_ticket = {eventname : (ticket_number,alarm_id)}
+				    logger.error('Monolith ticket alarm not found')
+				redis_cnx_mat.set('monolith_ticket:' + ip_address, monolith_ticket)
+			    export_traps.exec_qry(query_history_alarm, each_trap, False,db_name='snmptt_db')
+			
                         except Exception as exc:
                                 inserted = False
-                #                logger.error('chanish : Exc in mysql trap insert: {0}'.format(exc))
+                                #logger.error('chanish : Exc in mysql trap insert: {0}'.format(exc))
         self.update_trap_count(alarm_count_dict)
 
    def process_deviceticket(self,monolith_traps):
@@ -624,9 +760,10 @@ class Eventmapper(object):
             formatline = t[-1].split('|')
             if formatline:
                 #TODO: Replace formatline index with actual index coming from monolith traps.
-                trap_dict['ip_address'] = formatline[2]
+                trap_dict['ip_address'] = formatline[4]
                 trap_dict['ticket_number'] = formatline[3]
-                trap_dict['alarm_id'] = formatline[4]
+                trap_dict['alarm_id'] = formatline[2]
+		trap_dict['eventname'] = formatline[0]
                 traps.append(trap_dict)
         #logger.error('chanish : ticket information from snmptt table {0}'.format(traps))
         return traps
@@ -676,7 +813,12 @@ class Eventmapper(object):
 				mark_inactive=require_masking, latest_id=self.latest_id,\
 				flag=flag,history_traps = history_traps)
 
-		print 'Processed {0} current traps'.format(len(current_traps),len(clear_traps))
+		print 'Processed {0} current traps, {1} clear traps'.format(len(current_traps),len(clear_traps))
+	elif flag is 'monolith_trap':
+		export_traps.do_work(current_traps=current_traps, clear_traps=clear_traps, \
+                                mark_inactive=require_masking, latest_id=self.latest_id,\
+                                flag='monolith_trap',history_traps = history_traps)
+	print 'Processed monolith traps; last processed id : {0}'.format(self.latest_id)
 
 @app.task(name='load_customer_count_in_redis')
 def load_customer_count_in_redis():
@@ -694,7 +836,8 @@ def load_customer_count_in_redis():
         cursor.execute(query)
         customer_count_data = cursor.fetchall()
     except Exception ,e:
-        print "MySQL exception : %s" % e
+        #print "MySQL exception : %s" % e
+	logger.error("MySQL exception : %s", e)
         cursor.close()
     try :
 	redis_cnx = conn_base.redis_cnx(db_name='redis')
@@ -703,7 +846,8 @@ def load_customer_count_in_redis():
 	    p.set('customer_count:%s' % sector_config_ip,customer_count)
 	    p.execute()
     except Exception,exc :
-        print 'Error in writing customer count to redis: {0}'.format(exc)
+        #print 'Error in writing customer count to redis: {0}'.format(exc)
+	logger.error('Error in writing customer count to redis: {0}'.format(exc))
 
 @app.task(name='delete_history_trap')
 def delete_history_trap():
@@ -879,7 +1023,8 @@ def delete_history_trap():
     except Exception, exc:
         cursor.close()
         delete_current_entry = False
-        print 'Mysql Current Alarm Count Update Error', exc
+        #print 'Mysql Current Alarm Count Update Error', exc
+	logger.error('Mysql Current Alarm Count Update Error : %s', str(exc))
     else:
         my_cnx.commit()
     sleep(30)
@@ -889,7 +1034,8 @@ def delete_history_trap():
     except Exception, exc:
         cursor.close()
         delete_clear_entry = False
-        print 'Mysql Clear Alarm Count Update Error', exc
+        #print 'Mysql Clear Alarm Count Update Error', exc
+	logger.error('Mysql Clear Alarm Count Update Error : %s', str(exc))
     else:
         my_cnx.commit()
     sleep(30)
@@ -899,7 +1045,8 @@ def delete_history_trap():
     except Exception, exc:
         cursor.close()
         delete_clear_entry = False
-        print 'Mysql Clear Alarm Time Update Error', exc
+        #print 'Mysql Clear Alarm Time Update Error', exc
+	logger.error('Mysql Clear Alarm Time Update Error : %s', str(exc))
     else:
         my_cnx.commit()
     sleep(30)
@@ -909,7 +1056,8 @@ def delete_history_trap():
     except Exception, exc:
         cursor.close()
         delete_current_entry = False
-        print 'Mysql Current Alarm Time Update Error', exc
+        #print 'Mysql Current Alarm Time Update Error', exc
+	logger.error('Mysql Current Alarm Time Update Error : %s', str(exc))
     else:
         my_cnx.commit()
     sleep(30)
@@ -919,7 +1067,8 @@ def delete_history_trap():
             cursor.execute(delete_query_currenthistory)
         except Exception, exc:
             cursor.close()
-            print 'Mysql Current Events History Delete Error', exc
+            #print 'Mysql Current Events History Delete Error', exc
+	    logger.error('Mysql Current Events History Delete Error : %s', str(exc))
         else:
             my_cnx.commit()
             sleep(30)
@@ -927,7 +1076,8 @@ def delete_history_trap():
                 cursor.execute(current_delete_query)
             except Exception, exc:
                 cursor.close()
-                print 'Mysql Current Delete Error', exc
+                #print 'Mysql Current Delete Error', exc
+		logger.error('Mysql Current Delete Error : %s', str(exc))
             else:
                 my_cnx.commit()
     sleep(30)
@@ -937,7 +1087,8 @@ def delete_history_trap():
             cursor.execute(delete_query_clearhistory)
         except Exception, exc:
             cursor.close()
-            print 'Mysql Clear Events History Delete Error', exc
+            #print 'Mysql Clear Events History Delete Error', exc
+	    logger.error('Mysql Clear Events History Delete Error : %s', str(exc))
         else:
             my_cnx.commit()
             sleep(30)
@@ -945,7 +1096,8 @@ def delete_history_trap():
                 cursor.execute(clear_delete_query)
             except Exception, exc:
                 cursor.close()
-                print 'Mysql Clear Delete Error', exc
+                #print 'Mysql Clear Delete Error', exc
+		logger.error('Mysql Clear Delete Error : %s', str(exc))
             else:
                 my_cnx.commit()
 
