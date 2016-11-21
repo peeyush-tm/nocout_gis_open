@@ -142,7 +142,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 	'rad5k_dl_time_slot_alloted_invent','rad5k_ul_time_slot_alloted_invent','rad5k_dl_estmd_throughput_invent',
 	'rad5k_ul_estmd_throughput_invent',
 	'rad5k_ul_uas_invent','rad5k_dl_es_invent','rad5k_ul_ses_invent','rad5k_ul_bbe_invent','rad5k_ss_cell_radius_invent',
-	'rad5k_ss_cmd_rx_pwr_invent']
+	'rad5k_ss_cmd_rx_pwr_invent','rad5k_ss_dl_modulation','rad5k_ss_data_vlan_invent','rad5k_ss_mir_ul','rad5k_ss_mir_dl','rad5k_ss2_ul_rssi','rad5k_ss2_dl_rssi']
      util_service_list = ['wimax_pmp1_dl_util_bgp','wimax_pmp1_ul_util_bgp','wimax_pmp2_dl_util_bgp','wimax_pmp2_ul_util_bgp',
 	'radwin_dl_utilization','radwin_ul_utilization','cambium_dl_utilization','cambium_ul_utilization',
 	'cambium_ss_dl_utilization','cambium_ss_ul_utilization','mrotek_dl_utilization','mrotek_ul_utilization','rici_dl_utilization',

@@ -86,8 +86,7 @@ def calculate_refer_field_for_host(device_first_down, host_name, ds_values,
 
 
 
-def memcachelist(key,value):
-	memc_obj=db_ops_module.MemcacheInterface()
+def memcachelist(memc_obj,key,value):
         memc = memc_obj.memc_conn
         list1 = memc.get(str(key))
         try:
@@ -102,7 +101,7 @@ def memcachelist(key,value):
                 memc.set(key, list1)
         except Exception as e :
                 print e
-        print 'in memcache',  memc.get(key)
+        
 
 
 
@@ -110,7 +109,7 @@ def memcachelist(key,value):
 
 
 	
-def build_export(site, network_result, service_result,mrc_hosts,device_down_output,unknwn_state_svc_data, db):
+def build_export(memc_obj,site, network_result, service_result,mrc_hosts,device_down_output,unknwn_state_svc_data, db):
 	"""
 	Function name: build_export  (function export data from the rrdtool (which stores the period data) for all services for particular host
 	and stores them in mongodb in particular structure)
@@ -129,7 +128,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	global service_update_list
 	global ss_provis_helper_serv_data
 	global kpi_helper_serv_data
-	memc_obj=db_ops_module.MemcacheInterface()
+	
         age = None
 	rt_min, rt_max = None, None
 	rta_dict = {}
@@ -570,12 +569,11 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 				if str(entry[2]) == 'rad5k_ss_ul_modulation':
 					key = ip_address+ "_rad5k_ss_ul_mod"
 					key = str(key)
-					memcachelist(key,value)
+					memcachelist(memc_obj,key,value)
 				elif str(entry[2]) == 'rad5k_ss_dl_uas':
 					key = ip_address+ "_uas_list"
                                         key = str(key)
-					memcachelist(key,value)
-					print "value", value
+					memcachelist(memc_obj,key,value)
 
 
 	 
@@ -703,7 +701,10 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 
 
 
-def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
+
+
+
+def insert_bulk_perf(memc_obj,net_values, serv_values,net_update,service_update ,db):
 	#db = mongo_module.mongo_conn(
 	#    host=mongo_host,
 	#    port=int(mongo_port),
@@ -719,7 +720,7 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
 
 	key = nocout_site_name + "_service" 
 	doc_len_key = key + "_len" 
-	memc_obj=db_ops_module.MemcacheInterface()
+	
 	exp_time =240 # 4 min
 	memc_obj.store(key,serv_values,doc_len_key,exp_time,chunksize=1000)
 	key = nocout_site_name + "_network"	
@@ -824,7 +825,7 @@ def calculate_severity(severity_bit):
 	return severity
 
 
-def get_host_services_name(site_name=None, db=None):
+def get_host_services_name(memc_obj,site_name=None, db=None):
         """
         Function_name : get_host_services_name (extracts the services monitotred on that poller)
 
@@ -900,7 +901,7 @@ def get_host_services_name(site_name=None, db=None):
 
 	    #unknwn_state_svc_data  =  calculate_avg_value(unknwn_state_svc_data,frequency_based_service_list,db)
 	    unknwn_state_svc_data ={}
-	    build_export(
+	    build_export(memc_obj,
                        site_name,
                        nw_qry_output,
                        serv_qry_output,mrc_hosts,device_down_list,unknwn_state_svc_data,
@@ -1459,13 +1460,14 @@ if __name__ == '__main__':
     desired_config = configs.get(desired_site)
     site = desired_config.get('site')
     db= None
+    memc_obj=db_ops_module.MemcacheInterface()
     #db = mongo_module.mongo_conn(
     #	    host=desired_config.get('host'),
     #	    port = int(desired_config.get('port')),
     #	    db_name= desired_config.get('nosql_db')
     #)
-    get_host_services_name(
+    get_host_services_name(memc_obj,
     site_name=site
     )
-    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,db)
+    insert_bulk_perf(memc_obj,network_data_values, service_data_values,network_update_list,service_update_list ,db)
 
