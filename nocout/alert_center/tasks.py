@@ -130,11 +130,8 @@ def get_planned_events():
 					AND \
 					NOT ISNULL(PE_TT_NO) \
 					AND \
-					PETTno != "" \
-					AND \
-					ScheduledStartDate BETWEEN \
-					{2} AND {3} \
-				'.format(', '.join(PE_COLUMNS), TABLE_NAME, start_date, end_date)
+					PE_TT_NO != ""\
+				'.format(', '.join(PE_COLUMNS), TABLE_NAME)
 
 		# Create instance of 'NocoutUtilsGateway' class
 		nocout_utils = NocoutUtilsGateway()
