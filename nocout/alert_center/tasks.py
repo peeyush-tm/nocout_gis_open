@@ -110,14 +110,12 @@ def get_planned_events():
 		# 	'ResourceName', 'ServiceIDs'
 		# ]
 		PE_COLUMNS = [
-			'ScheduledStartDate','ScheduledEndDate','EventType','PEOwner','Executor',
-			'PE_TT_NO','SRNumber','Summary','ChangeStatus','Impacted_Domain','ResourceName'
+			'SRNumber', 'ServiceIDs', 'ChangeStatus', 'ResourceName', 'ResourceType', 
+			'ScheduledStartDate', 'ScheduledEndDate', 'TimeModified', 'EventType', 
+			'Impacted_Domain', 'Executor', 'PE_TT_NO', 'Timing', 'Summary', 'Component', 
+			'PEOwner', 'SectorID'
 		]
 		TABLE_NAME = 'Wireless1ServiceDump'
-
-		now_datetime = datetime.datetime.now()
-		start_date = float(format(now_datetime, 'U'))
-		end_date = float(format(now_datetime + datetime.timedelta(minutes=90), 'U'))
 
 		query = 'SELECT \
 					{0} \
@@ -182,6 +180,8 @@ def set_planned_events(dataset):
 				sectorid = event.get('SectorID', '')
 				service_ids = event.get('ServiceIDs', '')
 				nia = ''
+				technnology = ''
+				device_type = ''
 				try:
 					device_instance = Device.objects.get(
 						ip_address=resource_name
@@ -190,8 +190,8 @@ def set_planned_events(dataset):
 					device_type = device_instance.device_type
 					nia = get_child_ips(device_instance)
 				except Exception as e:
-					technnology = ''
-					device_type = ''
+					logger.error('{0} named Device not found'.format(str(resource_name)))
+					continue
 
 				if nia:
 					try:
