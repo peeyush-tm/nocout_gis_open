@@ -1425,7 +1425,7 @@ SHOW_SPRINT4 = False
 
 PE_REDIS_HOST = '10.133.19.165'
 PE_REDIS_PORT = '6380'
-PE_REDIS_DB = '10'
+PE_REDIS_DB = '5'
 
 # Import the local_settings.py file to override global settings
 try:
