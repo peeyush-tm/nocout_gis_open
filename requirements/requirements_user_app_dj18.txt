@@ -56,3 +56,4 @@ ujson==1.33
 wsgiref==0.1.2
 xlrd==0.9.3
 xlwt==1.0.0
+suds==0.4

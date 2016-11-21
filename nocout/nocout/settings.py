@@ -910,7 +910,8 @@ SETTINGS_EXPORT = [
     'PLANNED_EVENTS_ENABLED',
     'ENABLE_MANUAL_TICKETING_HISTORY',
     'SHOW_SPRINT3',
-    'SHOW_SPRINT4'
+    'SHOW_SPRINT4',
+    'USE_SOAP_TICKETING'
 ]
 
 # Dashbaord Settings
@@ -1400,6 +1401,9 @@ ENABLE_PARENT_FIELDS = False
 
 # Manual Ticketing API Details
 MANUAL_TICKET_API = 'http://121.244.255.123/'
+
+# Use Remedy ticketing by calling SOAP Api in power tab
+USE_SOAP_TICKETING = False
 
 RADWIN5K_CONFIG = {
     'SECTOR_STATUS_CUSTOMER_COUNT': False,
