@@ -9394,7 +9394,8 @@ class PowerStatusListing(BaseDatatableView):
             temp_dict = {
                 'msg': data.get('message'),
                 'created_at': data.get('created_at'),
-                'status_type': data.get('signal_type')
+                'status_type': data.get('signal_type'),
+                'ticket_id': data.get('ticket_id')
             }
 
             if data.get('created_at'):
