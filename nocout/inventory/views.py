@@ -12,6 +12,7 @@ import json
 from user_profile.utils.auth import in_group
 import xlrd
 import xlwt
+from suds.client import Client
 
 from operator import itemgetter
 from datetime import datetime
@@ -33,7 +34,7 @@ from django.conf import settings
 
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_TIME_FORMAT
+from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_TIME_FORMAT, USE_SOAP_TICKETING
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
@@ -5638,12 +5639,40 @@ class GetSms(View):
             # Getting filtered queryset with respect to mobile number
             filtered_qs = CircuitContacts.objects.filter(phone_number=mobile_no)
 
-            if filtered_qs.count() == 1:  
+            if filtered_qs.count() == 1:
+                # Call soap api and Create or Close Ticket for that circuit_id.
+
+                if USE_SOAP_TICKETING:
+                    # If status is down, Create ticket else close ticket
+                    if message.lower() == 'down':
+                        call_mode = 'create'
+                        # in case of create we need circuit id
+                        request_id = filtered_qs[0].circuit.circuit_id
+                    elif message.lower() == 'up':
+                        call_mode = 'update'
+                        # in case of closing a ticket we need ticket id
+                        request_id = PowerSignals.objects.filter(
+                            circuit_contacts=filtered_qs[0]
+                        ).latest(
+                            'created_at'
+                        ).ticket_id
+                    else:
+                        call_mode = ''
+                        request_id = ''
+                    
+                    soap_result = self.call_soap_api(api_mode=call_mode, request_id=request_id)
+
                 try:
                     power_instance = PowerSignals()
                     power_instance.circuit_contacts = filtered_qs[0]
                     power_instance.message = message
+
+                    # Store Ticket ID only for DOWN Event
+                    if soap_result['success'] and USE_SOAP_TICKETING and message.lower() == 'down':
+                        power_instance.ticket_id = soap_result.get(ticket_id, '')
+
                     power_instance.save()
+
                     result.update(message= 'Successfully Saved', success=1 )
                 except:
                     result.update(message= 'Invalid data')
@@ -5651,3 +5680,78 @@ class GetSms(View):
                 result['message'] = 'None or Multiple circuit id for the given number'
         
         return HttpResponse(json.dumps(result))
+
+    def call_soap_api(self, api_mode='', request_id=''):
+        """
+        Method calls SOAP Api for ticket Creation or Updation in remedy tool.
+
+        :param api_mode : Create/Update
+        :param request_id: Circuit_id or Ticket_id depends on Mode of api
+
+        :return result_dict 
+        """
+
+        result_dict = {
+            'success': 0,
+            'ticket_id': ''
+        }
+
+        if not api_mode or not request_id:
+            return result_dict
+
+        try:
+            if api_mode == 'create':
+                remedy_wsdl_create_api = 'http://10.133.12.70:8080/arsys/WSDL/public/remedy-ebu-dev-app1/CMS_HPD_IncidentCreationMonolith'
+            elif api_mode == 'update':
+                remedy_wsdl_create_api = 'http://10.133.12.70:8080/arsys/WSDL/public/remedy-ebu-dev-app1/CMS_HPD_IncidentUpdationMonolith'
+
+            client = Client(remedy_wsdl_create_api)
+            method_name = client.wsdl.services[0].ports[0].methods.values()[0].soap.input.body.parts[0].element[0]
+
+            if 'create' in method_name.lower():
+                input_data = {
+                    'Submitter': 'EAI',
+                    'Created_By': 'WirelessOne',
+                    'Description': '',
+                    'Company': 'Enterprise Business Unit',
+                    'z1D_Action': 'CREATE',
+                    'Service_ID': request_id,
+                    'Creation_source': 'WirelessOne*PSU Zone',
+                    'Severity': 'SR',
+                    'Worklog_Details': '',
+                    'Product_Categorization_Tier_3': 'PSUAlertUpDown',
+                }
+            else:
+                input_data = {
+                    'Resolution_tracking': '',
+                    'Incident_number': request_id,
+                    'Worklog_type': 'Updated by WirelessOne',
+                    'Resolution_Tier_1': '',
+                    'Resolution_Tier_2': '',
+                    'Resolution_Tier_3': '',
+                    'Resolution': 'Resolved By WirelessOne'
+                }
+
+            # Set AuthenticationInfo headers
+            headers = client.factory.create('AuthenticationInfo')
+            headers.userName = 'EAI'
+            headers.password = 'eai1234'
+            client.set_options(soapheaders=headers)
+
+            # Call method with our data
+            result = eval('client.service.'+method_name+'(**input_data)')
+
+            # Return ticket_id
+            if api_mode == 'create':
+                ticket_id =  result.Request_ID
+            else:
+                ticket_id = result
+
+            if ticket_id:
+                result_dict['success'] = 1
+                result_dict['ticket_id'] = ticket_id
+        except Exception, e:
+            logger.error('remedy ticket'+ api_mode +'logging-------')
+            logger.error(e)
+
+        return result_dict

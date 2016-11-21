@@ -64,7 +64,7 @@ from user_profile.utils.auth import in_group
 from user_profile.models import PowerLogs
 from django.views.decorators.csrf import csrf_exempt
 import os
-from nocout.settings import BASE_DIR
+from nocout.settings import BASE_DIR, USE_SOAP_TICKETING
 from alert_center.models import PlannedEvent
 
 service_utils = ServiceUtilsGateway()
@@ -865,6 +865,9 @@ class GetPerfomance(View):
                 {'mData': 'created_at', 'sTitle': 'Timestamp'},
                 {'mData': 'status_type', 'sTitle': 'Status Type'}
             ]
+            # Show ticket number column only if this flag is true from Settings.py
+            if USE_SOAP_TICKETING:
+                power_listing_headers += [{'mData': 'ticket_id', 'sTitle': 'Ticket Number'}]
         
         try:
             # Service Data-source url
@@ -4804,6 +4807,7 @@ class DeviceServiceDetail(View):
 
         return HttpResponse(json.dumps(result), content_type="application/json")
 
+
 class CustomDashboardPerformanceData(View):
     """
     Generic Class based View to Fetch the Performance Data.
@@ -6615,6 +6619,7 @@ class CustomDashboardPerformanceData(View):
             result['data']['objects']['chart_data'] = chart_data
 
         return result
+
 
 class CustomDashboardPerformanceListing(BaseDatatableView,AdvanceFilteringMixin):
     """
@@ -9247,6 +9252,7 @@ class GetTopology(View):
 
         return HttpResponse(json.dumps(result), content_type="application/json")
 
+
 class EveryFiveMinDeviceStatus(View):
     """
     The Class based View to get pl info in every 5 min. for each device in topo-view.
@@ -9359,13 +9365,15 @@ class PowerStatusListing(BaseDatatableView):
         'message',
         'created_at',
         'signal_type',
+        'ticket_id',
         'circuit_contacts__circuit__sub_station__device__device_name'
     ]
 
     order_columns = [
         'message',
         'created_at',
-        'signal_type'
+        'signal_type',
+        'ticket_id'
     ]
 
     def get_initial_queryset(self):
@@ -9433,6 +9441,7 @@ class PowerStatusListing(BaseDatatableView):
 
         return ret
 
+
 class PowerStatus(View):
     """
     The Class based View to get the last updated power status for single device.
@@ -9482,6 +9491,7 @@ class PowerStatus(View):
             qs_dict = PowerSignals.objects.filter(id=0)
 
         return HttpResponse(json.dumps(self.result), content_type="application/json")
+
 
 class SendPowerSms(View):
     """
@@ -9655,7 +9665,6 @@ class InitDeviceReboot(View):
         return HttpResponse(json.dumps(result))
 
 
-
 class GetSSTelnet(View):
     """
     Generic class view for giving required info for SS telnet
@@ -9691,6 +9700,7 @@ class GetSSTelnet(View):
 
         return HttpResponse(json.dumps(result), content_type="application/json")
 
+
 class GetBSTelnet(View):
     """
     Generic class view for giving required info for BS telnet
@@ -9725,6 +9735,7 @@ class GetBSTelnet(View):
         result.update(success= 1, message= 'Telnet info fetched successfully')
 
         return HttpResponse(json.dumps(result), content_type="application/json")
+
         
 class InitStabilityTest(ListView):
     """
