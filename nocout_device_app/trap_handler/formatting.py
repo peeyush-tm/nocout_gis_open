@@ -35,7 +35,6 @@ class inventory(object):
 	#for pair in mapping.iteritems():
 	#	items.extend(pair)
 	mapping = self.dicts(mapping) 
-	#logger.error("mapping**********",mapping)
 	try: 
 	    [rds_cnx.set(pair[0],pair[1] ) for pair in mapping.iteritems()]  
 	except Exception as e:
@@ -346,6 +345,10 @@ class inventory(object):
 			
 	           ip_id[bs_ip] = obj_count
 		   bs_key = 'static_' + bs_ip
+		   try:
+		       parent_port =sec_list.split('|')[13]
+		   except:
+		       pass
 		   data_dict[bs_key]['bs_name'] = bs_name 
 		   data_dict[bs_key]['region'] = region
 		   data_dict[bs_key]['city'] = city
@@ -393,7 +396,9 @@ class inventory(object):
 		       sector_id = sec_list.split('|')[1]
 		       if sector_id == 'NA':
 			   continue
-		       data_dict[bs_key].setdefault('sector_id',set()).add(sector_id)
+		       sector_port = sec_list.split('|')[14] if  sec_list.split('|')[14] != 'NA' else None
+		       data_dict[bs_key].setdefault('sector_id',set()).add(tuple([sector_port, sector_id]))
+
 		   except Exception,e:
 		       print e
 		       continue

@@ -56,7 +56,8 @@ SELECT
         	IF(isnull(ckt.circuit_id), 'NA', ckt.circuit_id), '|',
         	IF(isnull(customer.alias), 'NA', customer.alias), '|',
         	IF(isnull(device.parent_type), 'NA', device.parent_type),'|',
-        	IF(isnull(device.parent_port), 'NA', device.parent_port)
+        	IF(isnull(device.parent_port), 'NA', device.parent_port),'|',
+		IF(isnull(sect.sector_configured_on_port_id), 'NA', sect.sector_configured_on_port_id)
 
 	) SEPARATOR '-|-|-') AS SECT_STR,
 	GROUP_CONCAT(CONCAT(
