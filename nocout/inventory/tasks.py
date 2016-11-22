@@ -11622,9 +11622,10 @@ def get_machine_details(mc_name, machine_numbers=None):
                 for site in sites:
                     # site instance dictionary
                     site_dict = dict()
-                    site_dict[site.name] = len(Device.objects.filter(site_instance=site))
+                    site_dict[site.name] = Device.objects.filter(site_instance=site).count()
                     # append site instance in machine sites list
                     machines_dict[machine_name].append(site_dict)
+                machines_dict[machine_name] = sorted(machines_dict[machine_name], key=lambda k: k.values())
             else:
                 machines_dict[machine_name] = {}
             machine_name = ""
@@ -11651,10 +11652,11 @@ def get_machine_details(mc_name, machine_numbers=None):
             for site in sites:
                 # site instance dictionary
                 site_dict = dict()
-                site_dict[site.name] = len(Device.objects.filter(site_instance=site))
+                site_dict[site.name] = Device.objects.filter(site_instance=site).count()
                 # append site instance in machine sites list
                 machines_dict[machine_name].append(site_dict)
-
+            machines_dict[machine_name] = sorted(machines_dict[machine_name], key=lambda k: k.values())
+            
             return machines_dict
     else:
         return ""
