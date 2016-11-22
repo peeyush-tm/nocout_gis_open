@@ -449,14 +449,18 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         :return:
         """
         page_type = self.request.GET.get('page_type')
+        ticket_number_required = False
         device_tab_technology = self.request.GET.get('data_tab')
         type_rf = None
+        data_source = self.request.GET.get('data_source', '')
         tech_list = DeviceTechnology.objects.all().values_list('name', flat=True)
         if device_tab_technology != 'all' and (device_tab_technology not in tech_list):
             device_tab_technology = None
 
             if page_type == 'network':
                 type_rf = 'sector'
+                if data_source.lower == 'down':
+                    ticket_number_required = True
             elif page_type == 'customer':
                 type_rf = 'ss'
             else:
@@ -466,13 +470,12 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         perf_utils = PerformanceUtilsGateway()
 
         device_name_list = list()
+        device_ip_list = list()
 
-        # GET all device name list from the list
-        try:
-            map(lambda x: device_name_list.append(x['device_name']), qs)
-        except Exception, e:
-            # logger.info(e.message)
-            pass
+        # GET all device name list and device ip list from the list
+        for device in qs:
+            device_name_list.append(device.get('device_name'))
+            device_ip_list.append(device.get('ip_address'))
 
         device_indexed_info = perf_utils.indexed_polled_results(self.main_qs)
         # Mapped device id with qs
@@ -490,14 +493,18 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 page_type=page_type,
                 technology='PMP',
                 type_rf=type_rf,
-                device_name_list=device_name_list
+                device_name_list=device_name_list,
+                device_ip_list=device_ip_list,
+                ticket_required=ticket_number_required
             )
             resultant_data = perf_utils.prepare_gis_devices_optimized(
                 resultant_data,
                 page_type=page_type,
                 technology='WiMAX',
                 type_rf=type_rf,
-                device_name_list=device_name_list
+                device_name_list=device_name_list,
+                device_ip_list=device_ip_list,
+                ticket_required=ticket_number_required
             )
         else:
             resultant_data = perf_utils.prepare_gis_devices_optimized(
@@ -505,7 +512,9 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 page_type=page_type,
                 technology=device_tab_technology,
                 type_rf=type_rf,
-                device_name_list=device_name_list
+                device_name_list=device_name_list,
+                device_ip_list=device_ip_list,
+                ticket_required=ticket_number_required
             )
 
         return resultant_data
@@ -3601,6 +3610,7 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 ip_address = dct.get('ip_address')
                 is_manual = dct.get('is_manual')
                 ticket_number = dct.get('ticket_number')
+
                 action = ''
                 formatted_uptime = uptime
                 data_source = (self.request.GET.get('data_source', None))
@@ -3949,11 +3959,6 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
 
     # device_list = []
     bh_device_list = []
-
-    # Fetch ticket number for given ips
-    tickets_dataset = DeviceTicket.objects.filter(
-        ip_address__in=ip_address_list
-    ).values('ticket_number', 'ip_address')
 
     if tech_name in ['pmp', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
@@ -4347,11 +4352,6 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         'sub_station__device__ip_address',
     )
 
-    tickets_dict = inventory_utils.list_to_indexed_dict(
-        list(tickets_dataset),
-        'ip_address'
-    )
-
     machine_device_dict = inventory_utils.prepare_machines(bh_device_list, 'bh_machine_name', 'bh_device_name')
 
     perf_result = {}
@@ -4383,7 +4383,6 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             pop_conv_ip='NA',
             aggr_sw_ip='NA',
             pe_ip='NA',
-            ticket_number='NA',
             page_type='network',
             circle='NA'
         )
@@ -4396,15 +4395,6 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
         except Exception, e:
             sector_dct = None
             pass
-
-        try:
-            ticket_number = tickets_dict.get(ip_address).get('ticket_number', 'NA')
-        except Exception, e:
-            ticket_number = 'NA'
-
-        data.update(
-            ticket_number=ticket_number
-        )
 
         if sector_dct:
             pe_ip = sector_dct.get('base_station__backhaul__pe_ip__ip_address') if sector_dct.get('base_station__backhaul__pe_ip__ip_address') else 'NA'
