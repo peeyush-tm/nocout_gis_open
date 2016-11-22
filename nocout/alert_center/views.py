@@ -4503,7 +4503,7 @@ class PlannedEventsInit(ListView):
             {'mData': 'change_coordinator', 'sTitle': 'Executor', 'bSortable': True}, 
             {'mData': 'pettno', 'sTitle': 'PE TT No.', 'bSortable': True}, 
             {'mData': 'sr_number', 'sTitle': 'Sr No', 'bSortable': True}, 
-            {'mData': 'impacted_customer', 'sTitle': 'Impacted Customers', 'bSortable': True}, 
+            {'mData': 'impacted_customer', 'sTitle': 'Impacted Customer Count', 'bSortable': True}, 
             {'mData': 'timing', 'sTitle': 'Emergency/Normal', 'bSortable': True}, 
             {'mData': 'summary', 'sTitle': 'Summary', 'bSortable': True}, 
             {'mData': 'status', 'sTitle': 'Status', 'bSortable': True}, 
