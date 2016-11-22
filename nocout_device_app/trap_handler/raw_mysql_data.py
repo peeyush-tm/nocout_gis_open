@@ -8,21 +8,27 @@ from collections import defaultdict
 query1 = """
 SELECT
 	backhaul.id as BackhaulID,	
+	IF(isnull(backhaul.bh_circuit_id), 'NA', backhaul.bh_circuit_id ) as ior,
+	IF(isnull(backhaul.ttsl_circuit_id), 'NA', backhaul.ttsl_circuit_id) as bso_ckt,
+	IF(isnull(bsswitch_device.parent_port), 'NA', bsswitch_device.parent_port) as BSswitchParentPort,
 	IF(isnull(pe_device.ip_address), 'NA', pe_device.ip_address) as PE_IP,
 	IF(isnull(aggregator_device.ip_address), 'NA', aggregator_device.ip_address) as AggregationSwitchIP,
 	IF(isnull(popconverter_device.ip_address), 'NA', popconverter_device.ip_address) as POPconverterIP,
 	IF(isnull(pop_device_tech.name), 'NA', pop_device_tech.name) as POPconverterTech,
+	IF(isnull(pop_device_type.name), 'NA', pop_device_type.name) as POPconverterType,
 	IF(isnull(pop_parent.ip_address), 'NA', pop_parent.ip_address) as POPconverterParentIP, 
 	IF(isnull(popconverter_device.parent_port), 'NA',popconverter_device.parent_port) as POPconverterParentPort, 
 	IF(isnull(popparent_devicetype.name), 'NA', popparent_devicetype.name) as POPconverterParentType,
 	IF(isnull(bsconverter_device.ip_address), 'NA', bsconverter_device.ip_address) as BTSconverterIP,
 	IF(isnull(bsconverter_device_tech.name), 'NA', bsconverter_device_tech.name) as BTSconverterTech,
+	IF(isnull(bsconverter_device_type.name), 'NA', bsconverter_device_type.name) as BTSconverterType,
 	IF(isnull(bsconverter_parent.ip_address), 'NA', bsconverter_parent.ip_address) as BTSconverterParentIP,
 	IF(isnull(bsconverter_device.parent_port), 'NA', bsconverter_device.parent_port) as BTSconverterParentPort,
 	IF(isnull(bsconverterparent_devicetype.name), 'NA', bsconverterparent_devicetype.name) as BTSconverterParentType,
 	IF(isnull(bh_device.ip_address), 'NA', bh_device.ip_address) as backhaul_configured_on_ip,
 	IF(isnull(bsswitch_device.ip_address), 'NA', bsswitch_device.ip_address) as BSswitchIP,
 	IF(isnull(bsswitch_device_tech.name), 'NA', bsswitch_device_tech.name) as BSswitchTech,
+	IF(isnull(bsswitch_device_type.name), 'NA', bsswitch_device_type.name) as BSswitchType,
 	IF(isnull(bsswitch_parent.ip_address), 'NA', bsswitch_parent.ip_address) as BSswitchParentIP,
 	IF(isnull(bsswitchparent_devicetype.name), 'NA', bsswitchparent_devicetype.name) as BSswitchParentType,
 	IF(isnull(bsswitch_device.parent_port), 'NA', bsswitch_device.parent_port) as BSswitchParentPort,
@@ -90,6 +96,10 @@ SELECT
 	ON
 		popconverter_device.device_technology = pop_device_tech.id
 	LEFT JOIN
+		device_devicetype AS pop_device_type
+	ON
+		popconverter_device.device_type = pop_device_type.id
+	LEFT JOIN
 		device_device as pop_parent
 	ON
 		popconverter_device.parent_id = pop_parent.id
@@ -110,6 +120,10 @@ SELECT
 	ON
 		bsconverter_device.device_technology = bsconverter_device_tech.id
 	LEFT JOIN
+		device_devicetype AS bsconverter_device_type
+	ON
+		bsconverter_device.device_type = bsconverter_device_type.id
+	LEFT JOIN
 		device_device as bsconverter_parent
 	ON
 		bsconverter_device.parent_id = bsconverter_parent.id
@@ -125,6 +139,10 @@ SELECT
 		device_devicetechnology AS bsswitch_device_tech
 	ON
 		bsswitch_device.device_technology = bsswitch_device_tech.id
+	LEFT JOIN
+		device_devicetype AS bsswitch_device_type
+	ON
+		bsswitch_device.device_type = bsswitch_device_type.id
 	LEFT JOIN
 		device_device as bsswitch_parent
 	ON
@@ -232,7 +250,7 @@ select
 	IF(isnull(severity), 'NA', severity) as severity,
 	IF(isnull(device_type), 'NA', device_type) as device_type,
 	IF(isnull(alarm_mode), 'NA',alarm_mode ) as alarm_mode,
-	IF(isnull(alarm_category), "set(['Down'])",alarm_category ) as alarm_category,
+	IF(isnull(alarm_category), 'set([])',alarm_category ) as alarm_category,
 	IF(isnull(alarm_group), 'NA',alarm_group ) as alarm_group,
 	IF(isnull(alarm_type), 'NA', alarm_type) as alarm_type,
 	IF(isnull(sia), 'NA', sia) as sia, 
@@ -272,29 +290,27 @@ SELECT master.alarm_name,master.severity,master.priority from master_alarm_table
 """
 @app.task(base=DatabaseTask, name='mysql_to_inventory_data')
 def mysql_to_inventory_data():
-    try:
+    try: 
 	alarm_mapping_dict = defaultdict(list)
 	alarm_priority_dict = {} 
 	inv = inventory()
 	ptp_farend = list()
-
 	conn_historical = mysql_to_inventory_data.mysql_cnx('historical')
 	cur = conn_historical.cursor()
 	cur.execute(query2)
 	desc = cur.description
 	farend_list = cur.fetchall()
-
 	for ip_tuple in farend_list:
 	    ptp_farend.append(ip_tuple[0])
 	cur.execute(query1)
 	desc =  cur.description
 	my_list = [dict(zip([col[0] for col in desc ],row)) for row in cur.fetchall()]
-	inv.create_inventory_data(my_list,ptp_farend)
+        inv.create_inventory_data(my_list,ptp_farend)
 	cur.close()
 	conn_historical.close()
-    except Exception as e:
-	logger.error('Error in rf-ip msyql historical data \n Exception : {0}'.format(e))
-	    
+    except Exception,e:
+	logger.error('Error in Mysql data extraction %s' %(e))
+    #print mylist
     try:
 	conn_snmptt = mysql_to_inventory_data.mysql_cnx('snmptt')
 	cur = conn_snmptt.cursor()
@@ -317,13 +333,12 @@ def mysql_to_inventory_data():
 	for (name,severity,priority) in alarm_priority:
 	    alarm_priority_dict[(name,severity)] = priority
 	redis_alarm_priority = {'alarm_priority_dict':alarm_priority_dict}
-	inv.insert_data_in_redis(redis_alarm_priority)
-	conn_snmptt.close()
+        inv.insert_data_in_redis(redis_alarm_priority)
 	cur.close()
-    except Exception as e:
-	logger.error('Error in rf-ip msyql snmptt data \n Exception : {0}'.format(e))
+	conn_snmptt.close()
+    except Exception,e:
+	logger.error('Error in MAt data extraction %s' %(e))
+
 
 if __name__ == '__main__':
     mysql_to_inventory_data.apply_async()
-    #mysql_to_inventory_data()
-
