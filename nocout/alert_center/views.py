@@ -2922,7 +2922,11 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 formatted_uptime = uptime
 
                 try:
-                    manual_action_condition = ENABLE_MANUAL_TICKETING and event_name in INCLUDED_EVENTS_FOR_MANUAL_TICKETING and dct.get('device_name')
+                    condition2 = event_name in INCLUDED_EVENTS_FOR_MANUAL_TICKETING
+                    condition3 = dct.get('device_name')
+                    condition4 = self.alarm_type == 'current'
+                    manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4
+
                     if manual_action_condition:
                         has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
                         if not has_ticket_number and not is_manual:
@@ -3621,7 +3625,11 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                                     <span style="display:none">{0}</span></i>'.format(severity, dot_color)
 
                 try:
-                    manual_action_condition = ENABLE_MANUAL_TICKETING and event_name in INCLUDED_EVENTS_FOR_MANUAL_TICKETING and dct.get('device_name')
+                    condition2 = event_name in INCLUDED_EVENTS_FOR_MANUAL_TICKETING
+                    condition3 = dct.get('device_name')
+                    condition4 = self.alarm_type == 'current'
+                    manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4
+                    
                     if manual_action_condition:
                         has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
                         if not has_ticket_number and not is_manual:
