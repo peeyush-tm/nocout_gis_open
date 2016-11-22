@@ -1105,10 +1105,9 @@ def prepare_Rf_dashboard_devices(organizations,
     filter_condition = ''
     if is_rad5:
         device_type = DeviceType.objects.get(name='Radwin5KSS').id
-        filter_condition = 'device_type={0}'.format(device_type)
+        filter_condition = 'device_type={0}'.format(str(device_type))
     else:
-        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
-        filter_condition = 'technology_id={0}'.format(technology_id)
+        filter_condition = 'technology_id={0}'.format(str(technology_id))
 
     try:
         query = """dashboard_setting = DashboardSetting.objects.get(
