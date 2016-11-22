@@ -534,12 +534,12 @@ CELERYBEAT_SCHEDULE = {
     },
     'check_clear_alarm_for_NO_PPS': {
         'task': 'inventory.tasks.check_alarms_for_no_pps',
-        'schedule': crontab(hour='*/1'),
-        'kwargs': {'alarm_type': 'clear'},
+        'schedule': timedelta(hours=1), #crontab(hour='*/1'),
+        'kwargs': {'alarm_type': 'clear'}
     },
     'get_set_planned_events': {
         'task': 'alert_center.tasks.get_planned_events',
-        'schedule': crontab(hour='*/1')
+        'schedule': timedelta(hours=1) #crontab(hour='*/1')
     }
 }
 
@@ -1425,7 +1425,7 @@ SHOW_SPRINT4 = False
 
 PE_REDIS_HOST = '10.133.19.165'
 PE_REDIS_PORT = '6380'
-PE_REDIS_DB = '10'
+PE_REDIS_DB = '5'
 
 # Import the local_settings.py file to override global settings
 try:

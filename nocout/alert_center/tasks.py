@@ -11,6 +11,7 @@ from device.models import Device, DeviceTechnology, DeviceType
 from nocout.utils.util import NocoutUtilsGateway
 from nocout.settings import PLANNED_EVENTS_ENABLED, PE_REDIS_HOST, PE_REDIS_PORT, PE_REDIS_DB
 from alert_center.models import PlannedEvent
+from inventory.models import Circuit
 import redis
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
@@ -110,14 +111,12 @@ def get_planned_events():
 		# 	'ResourceName', 'ServiceIDs'
 		# ]
 		PE_COLUMNS = [
-			'ScheduledStartDate','ScheduledEndDate','EventType','PEOwner','Executor',
-			'PE_TT_NO','SRNumber','Summary','ChangeStatus','Impacted_Domain','ResourceName'
+			'SRNumber', 'ServiceIDs', 'ChangeStatus', 'ResourceName', 'ResourceType', 
+			'ScheduledStartDate', 'ScheduledEndDate', 'TimeModified', 'EventType', 
+			'Impacted_Domain', 'Executor', 'PE_TT_NO', 'Timing', 'Summary', 'Component', 
+			'PEOwner', 'SectorID'
 		]
 		TABLE_NAME = 'Wireless1ServiceDump'
-
-		now_datetime = datetime.datetime.now()
-		start_date = float(format(now_datetime, 'U'))
-		end_date = float(format(now_datetime + datetime.timedelta(minutes=90), 'U'))
 
 		query = 'SELECT \
 					{0} \
@@ -182,6 +181,8 @@ def set_planned_events(dataset):
 				sectorid = event.get('SectorID', '')
 				service_ids = event.get('ServiceIDs', '')
 				nia = ''
+				technnology = ''
+				device_type = ''
 				try:
 					device_instance = Device.objects.get(
 						ip_address=resource_name
@@ -190,10 +191,29 @@ def set_planned_events(dataset):
 					device_type = device_instance.device_type
 					nia = get_child_ips(device_instance)
 				except Exception as e:
-					technnology = ''
-					device_type = ''
+					logger.error('{0} named Device not found'.format(str(resource_name)))
+					continue
+
 
 				if nia:
+					# Calculate SS IPs from fetch circuit ids & merge then with NIA IPs
+					try:
+						if service_ids:
+							ss_ips = list(Circuit.objects.filter(
+								circuit_id__in=service_ids.split(',')
+							).values_list(
+								'sub_station__device__ip_address', flat=True
+							))
+
+							if ss_ips:
+								nia += ',' + ','.join(ss_ips)
+							else:
+								logger.error('No SS IPs found')
+					except Exception as e:
+						logger.error('SIA calculation exception')
+						logger.error(e)
+						pass
+
 					try:
 						redis_data = (startdate, enddate, nia.split(','))
 						redis_dataset.append(redis_data)
