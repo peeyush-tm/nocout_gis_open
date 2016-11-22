@@ -24,13 +24,14 @@ log = logging.getLogger(__name__)
 
 from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
     MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS, \
-    CACHE_TIME, DATE_TIME_FORMAT
+    CACHE_TIME, DATE_TIME_FORMAT, TRAPS_DATABASE
 
 from django.http import HttpRequest
 
 from device.models import Device
 from inventory.models import Sector, Circuit
 from performance.models import NetworkStatus
+from alert_center.models import CurrentAlarms
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
@@ -233,7 +234,9 @@ class PerformanceUtilsGateway:
         technology='',
         type_rf='',
         device_name_list=None,
-        is_single_call=False
+        is_single_call=False,
+        device_ip_list=None,
+        ticket_required=False
     ):
 
         param1 = prepare_gis_devices_optimized(
@@ -243,7 +246,9 @@ class PerformanceUtilsGateway:
             technology=technology,
             type_rf=type_rf,
             device_name_list=device_name_list,
-            is_single_call=is_single_call
+            is_single_call=is_single_call,
+            device_ip_list=device_ip_list,
+            ticket_required=ticket_required
         )
 
         return param1
@@ -860,7 +865,9 @@ def prepare_gis_devices_optimized(
     technology='',
     type_rf='',
     device_name_list=None,
-    is_single_call=False
+    is_single_call=False,
+    device_ip_list=None,
+    ticket_required=False
 ):
     """
     This function first fetch inventory data as per the params & then 
@@ -1146,6 +1153,12 @@ def prepare_gis_devices_optimized(
             else:
                 grouped_query = True
 
+            ticket_dict = {}
+            if ticket_required and device_ip_list:
+                # call fucntion for getting indexed dict
+                # where key = ip_address and value = ticket number
+                ticket_dict = get_ticket_numbers(device_ip_list)
+
             sector_inventory_resultset = nocout_utils.fetch_sector_inventory(
                 technology=technology,
                 device_name_list=device_name_list,
@@ -1211,6 +1224,10 @@ def prepare_gis_devices_optimized(
 
 
                 device_name = data.get('device_name')
+                device_ip = data.get('ip_address')
+                # Update ticket_number 
+                data.update({"ticket_no": ticket_dict.get(device_ip, 'NA')})
+
                 if not device_name or not len(sector_inventory_resultset):
                     # append the deep copied dict
                     resultant_dataset.append(json.loads(json.dumps(data)))
@@ -1253,7 +1270,6 @@ def prepare_gis_devices_optimized(
                         "freq_id" : inventory_row.get('FREQ_ID', 0),
                         "planned_frequency": inventory_row.get('SECTOR_PLANNED_FREQUENCY', 'NA'),
                         "customer_count": inventory_row.get('CUSTOMER_COUNT', 0),
-                        "ticket_no": inventory_row.get('TICKET_NUMBER', "NA"),
                     })
                     
                     # append the deep copied dict
@@ -1754,9 +1770,9 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
 def get_se_to_pe_min_latency(device_id=0, page_type='network'):
     """
     This method is for getting device's SE to PE min latency
-    param device_id: id of device
-    param page_type: Type of page i.e. 'Network', 'Customer'
-    return: min_latency(SE TO PE Min. latency of device)
+    :param device_id: id of device
+    :param page_type: Type of page i.e. 'Network', 'Customer'
+    :return: min_latency(SE TO PE Min. latency of device)
     """
     if not device_id:
         return 'NA'
@@ -1795,3 +1811,37 @@ def get_se_to_pe_min_latency(device_id=0, page_type='network'):
         return 'NA'
 
     return min_latency
+
+def get_ticket_numbers(device_ip_list=[], required_events=['Device_not_reachable']):
+    """
+    Function for getting ticket numbers for corresponding IP Address
+    :param device_ip_list
+    :return result_dict = {
+        'IP Address': 'Ticket Number'
+    }
+    """
+    # Result to be returned
+    result_dict = {}
+
+    if device_ip_list and required_events:
+        alarms_qs = CurrentAlarms.objects.filter(
+            eventname__in=required_events,
+            ip_address__in=device_ip_list,
+            is_active=1,
+        ).using(
+            TRAPS_DATABASE
+        ).values(
+            'ip_address',
+            'ticket_number'
+        )
+
+        # Looping on alarms queryset to format resultant dict
+        for alarm in alarms_qs:
+            ip = alarm['ip_address']
+            tkt_num = alarm['ticket_number']
+
+            result_dict.update({ip: tkt_num})
+
+    return result_dict
+
+
