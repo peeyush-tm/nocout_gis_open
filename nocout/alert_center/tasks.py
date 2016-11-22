@@ -196,6 +196,7 @@ def set_planned_events(dataset):
 
 
 				if nia:
+					redis_nia = nia
 					# Calculate SS IPs from fetch circuit ids & merge then with NIA IPs
 					try:
 						if service_ids:
@@ -206,7 +207,7 @@ def set_planned_events(dataset):
 							))
 
 							if ss_ips:
-								nia += ',' + ','.join(ss_ips)
+								redis_nia += ',' + ','.join(ss_ips)
 							else:
 								logger.error('No SS IPs found')
 					except Exception as e:
@@ -215,7 +216,7 @@ def set_planned_events(dataset):
 						pass
 
 					try:
-						redis_data = (startdate, enddate, nia.split(','))
+						redis_data = (startdate, enddate, redis_nia.split(','))
 						redis_dataset.append(redis_data)
 					except Exception as e:
 						logger.error('Planned Events -- Redis dataset exception')

@@ -40,7 +40,7 @@
     {% endif %}
     <div class="clearfix"></div>
 
-    <div class="box border lite">
+    <div class="box border lite device_alarms_container">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-bell-o"></i>{{ data_source_title }}</h4>
             <div class="tools" style="margin-bottom: 0px;">
@@ -74,7 +74,8 @@
             table_title = '',
             show_customer_count = false,
             refresh_time = 300,
-            data_source = '';
+            data_source = '',
+            manual_ticketing_api = '';
 
         $(document).ready(function (e) {
             {% if settings.SHOW_CUSTOMER_COUNT_IN_TRAPS %}
@@ -86,6 +87,8 @@
 
             /*Grid headers object*/
             var alarm_type = $('input[name="alarm_type"]:checked').val();
+
+            manual_ticketing_api = '{% url "generate_manual_ticket" %}';
 
             current_headers = $.parseJSON('{{ datatable_headers|safe }}');
             clear_headers = $.parseJSON('{{ clear_history_headers|safe }}');
@@ -111,7 +114,49 @@
             initAllListing();
         });
 
+        /**
+         * This event trigger when manual ticket button clicked. It call respective API to generate manual ticket.
+         * @event click
+         */
+        $('.device_alarms_container').delegate('.manual_ticketing_btn', 'click', function(e) {
+            // show loading spinner
+            showSpinner();
 
+            var pk = $(this).data('pk'),
+                ip = $(this).data('ip'), 
+                severity = $(this).data('severity'), 
+                alarm = $(this).data('alarm');
+
+            if (manual_ticketing_api && pk && ip && alarm) {
+                $.ajax({
+                    url: base_url+manual_ticketing_api,
+                    type: 'POST',
+                    data: {
+                        'pk': pk,
+                        'ip_address': ip,
+                        'severity': severity,
+                        'alarm_name': alarm
+                    },
+                    success: function(response) {
+                        var search_txt = $.trim($('.device_alarms_container .tab-content .tab-pane.active input[type="search"]').val());
+
+                        // Refresh shown table content
+                        if (search_txt) {
+                            $('.device_alarms_container .tab-content .tab-pane.active button[id*="_search_btn"]').trigger('click', true);
+                        } else {
+                            $('.device_alarms_container .nav-tabs li.active a').trigger('click', true);
+                        }
+                    },
+                    error: function(err) {
+                        // console.log(err.statusText);
+                    },
+                    complete: function() {
+                        // hide loading spinner
+                        hideSpinner();
+                    }
+                });
+            }
+        });
 
         /**
          * This event trigger when alarm_type radio input changed

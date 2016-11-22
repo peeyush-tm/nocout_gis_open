@@ -1549,30 +1549,45 @@ function nocout_getPerfTabDomId() {
         },
         top_tab_content_id = $(".top_perf_tabs > li.active a").attr("href");
 
-    var is_singular_view = false;
+    var condition_1 = top_tab_content_id.indexOf('availability') == -1,
+        condition_2 = top_tab_content_id.indexOf('topology') == -1,
+        condition_3 = top_tab_content_id.indexOf('utilization') == -1,
+        condition_4 = top_tab_content_id.indexOf('power_content') == -1
 
-    if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
-        var is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1,
-            is_topo_view = clicked_tab_id.indexOf('topo') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('topo') > -1;
-        is_singular_view = is_birdeye_view || is_topo_view;
-    }
+    if (condition_1 && condition_2 && condition_3 && condition_4) {
+        var is_singular_view = false;
 
-    if (is_singular_view) {
-        return response_dict;
-    }
+        if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
+            var is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1,
+                is_topo_view = clicked_tab_id.indexOf('topo') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('topo') > -1;
+            is_singular_view = is_birdeye_view || is_topo_view;
+        }
 
-    if(show_historical_on_performance || is_perf_polling_enabled) {
-        var left_tab_content_id = $(top_tab_content_id + " .left_tabs_container li.active a").attr("href"),
-            active_inner_tab = $(left_tab_content_id + " .inner_inner_tab li.active a");
-        
-        response_dict["active_dom_id"] = active_inner_tab.attr("id").slice(0, -4);
-        response_dict["active_tab_api_url"] = active_inner_tab.attr("url");
+        if (is_singular_view) {
+            return response_dict;
+        }
+
+        if(show_historical_on_performance || is_perf_polling_enabled) {
+            var left_tab_content_id = $(top_tab_content_id + " .left_tabs_container li.active a").attr("href"),
+                active_inner_tab = $(left_tab_content_id + " .inner_inner_tab li.active a");
+            
+            response_dict["active_dom_id"] = active_inner_tab.attr("id").slice(0, -4);
+            response_dict["active_tab_api_url"] = active_inner_tab.attr("url");
+        } else {
+            var left_active_tab_anchor = $(top_tab_content_id + " .left_tabs_container li.active a"),
+                active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a');
+
+            response_dict["active_dom_id"] = left_active_tab_anchor.attr("id").slice(0, -4);
+            response_dict["active_tab_api_url"] = left_active_tab_anchor.attr("url");
+        }
     } else {
-        var left_active_tab_anchor = $(top_tab_content_id + " .left_tabs_container li.active a"),
-            active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a');
-
-        response_dict["active_dom_id"] = left_active_tab_anchor.attr("id").slice(0, -4);
-        response_dict["active_tab_api_url"] = left_active_tab_anchor.attr("url");
+        var tab_selector = $(top_tab_content_id + ' .panel .panel-body .left_tabs_container li.active a');
+        if (tab_selector.length > 0) {
+            response_dict = {
+                "active_dom_id" : tab_selector.attr('id'),
+                "active_tab_api_url" : tab_selector.attr('url')
+            };
+        }
     }
 
     return response_dict;
