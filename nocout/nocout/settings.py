@@ -534,12 +534,12 @@ CELERYBEAT_SCHEDULE = {
     },
     'check_clear_alarm_for_NO_PPS': {
         'task': 'inventory.tasks.check_alarms_for_no_pps',
-        'schedule': crontab(hour='*/1'),
-        'kwargs': {'alarm_type': 'clear'},
+        'schedule': timedelta(hours=1), #crontab(hour='*/1'),
+        'kwargs': {'alarm_type': 'clear'}
     },
     'get_set_planned_events': {
         'task': 'alert_center.tasks.get_planned_events',
-        'schedule': crontab(hour='*/1')
+        'schedule': timedelta(hours=1) #crontab(hour='*/1')
     }
 }
 
