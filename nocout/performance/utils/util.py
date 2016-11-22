@@ -1153,11 +1153,11 @@ def prepare_gis_devices_optimized(
             else:
                 grouped_query = True
 
-            tikect_dict = {}
+            ticket_dict = {}
             if ticket_required and device_ip_list:
                 # call fucntion for getting indexed dict
                 # where key = ip_address and value = ticket number
-                tikect_dict = get_ticket_numbers(device_ip_list)
+                ticket_dict = get_ticket_numbers(device_ip_list)
 
             sector_inventory_resultset = nocout_utils.fetch_sector_inventory(
                 technology=technology,
@@ -1226,7 +1226,7 @@ def prepare_gis_devices_optimized(
                 device_name = data.get('device_name')
                 device_ip = data.get('ip_address')
                 # Update ticket_number 
-                data.update({"ticket_no": tikect_dict.get(device_ip, 'NA')})
+                data.update({"ticket_no": ticket_dict.get(device_ip, 'NA')})
 
                 if not device_name or not len(sector_inventory_resultset):
                     # append the deep copied dict
@@ -1812,7 +1812,7 @@ def get_se_to_pe_min_latency(device_id=0, page_type='network'):
 
     return min_latency
 
-def get_ticket_numbers(device_ip_list=[]):
+def get_ticket_numbers(device_ip_list=[], required_events=['Device_not_reachable']):
     """
     Function for getting ticket numbers for corresponding IP Address
     :param device_ip_list
@@ -1823,9 +1823,9 @@ def get_ticket_numbers(device_ip_list=[]):
     # Result to be returned
     result_dict = {}
 
-    if device_ip_list:
+    if device_ip_list and required_events:
         alarms_qs = CurrentAlarms.objects.filter(
-            eventname__in=['Device_not_reachable'],
+            eventname__in=required_events,
             ip_address__in=device_ip_list,
             is_active=1,
         ).using(
