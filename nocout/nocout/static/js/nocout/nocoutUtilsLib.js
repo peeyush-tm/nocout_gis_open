@@ -715,10 +715,20 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
             filename: exported_filename
         },
         tooltip: {
-            formatter: function () {
+            formatter: function (e) {
                 var this_date = new Date(this.x),
-                    tooltip_string = "";
+                    tooltip_string = "",
+                    active_obj = nocout_getPerfTabDomId(),
+                    is_live = false;
 
+                // console.log(active_obj['active_dom_id'])
+                // console.log(active_obj['active_dom_id'] && active_obj['active_dom_id'].indexOf('live_poll_now_') > -1)
+
+                if(active_obj['active_dom_id'] && active_obj['active_dom_id'].indexOf('live_poll_now_') > -1) {
+                    is_live = true;
+                }
+
+                // console.log(is_live);
                 if (this.x && this_date !== 'Invalid Date') {
                     var date_str_options = {
                         timezone : "Asia/Kolkata",
@@ -731,7 +741,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                     };
 
                     try {
-                        var formatted_time = getFormattedDate(this.x);
+                        var formatted_time = getFormattedDate(this.x, is_live);
                         if (formatted_time) {                            
                             tooltip_string = '<b>' + formatted_time + '</b>';
                         } else {
@@ -990,7 +1000,8 @@ function nocout_livePollCurrentDevice(
                     epoch_time = dateObj.getTime(),
                     current_date = dateObj.getDate() > 9 ? dateObj.getDate() : '0' + String(dateObj.getDate()),
                     month = Number(dateObj.getMonth()) + 1 > 9 ? Number(dateObj.getMonth()) + 1 : '0' + String(Number(dateObj.getMonth()) + 1),
-                    date_str = current_date + "/" + month + "/" + dateObj.getFullYear(),
+                    year = String(dateObj.getYear()).substr(-2),
+                    date_str = current_date + "/" + month + "/" + year, 
                     current_hour = dateObj.getHours() > 9 ? dateObj.getHours() : '0' + String(dateObj.getHours()),
                     current_minutes = dateObj.getMinutes() > 9 ? dateObj.getMinutes() : '0' + String(dateObj.getMinutes()),
                     current_second = dateObj.getSeconds() > 9 ? dateObj.getSeconds() : '0' + String(dateObj.getSeconds()),
@@ -1998,7 +2009,7 @@ function createBirdEyeViewHTML(container_id) {
  * @param input_date {Object}, It contains date object
  * @return formatted_date {String}, It contains the formatted date string
  */
-function getFormattedDate(input_date) {
+function getFormattedDate(input_date, is_live) {
     var formatted_date = '';
 
     try {
@@ -2010,7 +2021,15 @@ function getFormattedDate(input_date) {
             fetched_minutes = fetched_datetime.getMinutes() > 9 ? fetched_datetime.getMinutes() : '0' + String(fetched_datetime.getMinutes());
 
         formatted_date = fetched_day + '/' + fetched_month + '/' + fetched_year + ' ' + fetched_hours + ':' + fetched_minutes;
+        // console.log(typeof is_live != 'undefined' && is_live);
+        // console.log('live');
+        if (typeof is_live != 'undefined' && is_live) {
+            var fetched_seconds = fetched_datetime.getSeconds() > 9 ? fetched_datetime.getSeconds() : '0' + String(fetched_datetime.getSeconds());
+            formatted_date += ':'+ fetched_seconds;
+            
+        }
     } catch(e) {
+        // console.error('error');
         // console.error(e);
     }
 

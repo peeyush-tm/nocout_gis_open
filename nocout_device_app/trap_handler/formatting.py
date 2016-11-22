@@ -35,6 +35,7 @@ class inventory(object):
 	#for pair in mapping.iteritems():
 	#	items.extend(pair)
 	mapping = self.dicts(mapping) 
+	#logger.error("mapping**********",mapping)
 	try: 
 	    [rds_cnx.set(pair[0],pair[1] ) for pair in mapping.iteritems()]  
 	except Exception as e:
@@ -48,7 +49,7 @@ class inventory(object):
 
     def create_inventory_data(self,resultset=None,ptp_farend_ip_list=None):
 	"""
-	This function is called by raw_mysql_data.py file.
+	This function is called by mysql_test.py file.
 	"""
 	ptp_bh_dict = dict()
 	inventory_id_list = list()
@@ -103,7 +104,6 @@ class inventory(object):
 	self.insert_data_in_redis(ip_invent_mapping)
     def prepare_raw_result(self,resultset=None, ptp_farend_ip_list=None,inventory_id_list=None,is_active=0,ptp_bh_dict=None):
 	# list will carry bs resultset for PTP_BH type hierarchy.
-	bs_parenttype = ''
 	far_end_resultset = list()
 	total_inventory = dict() 
 	obj_count = 0
@@ -114,6 +114,7 @@ class inventory(object):
 	conv_switch_data_dict = self.tree()
 	global ih_count
 	ih_dynamic =defaultdict(dict)
+
 	for bs in resultset:
 	    inventory_hierarchy = self.tree()
 	    sector_info_str = bs.get('SECT_STR', '')
@@ -126,7 +127,9 @@ class inventory(object):
 		    continue
 	    # Pick BTSconverterIP if available else pick POPconverterIP
 	    # Swtich IP will be ignored as Bs Parent IP, according to requirement.
-	    bs_parentip = ''	
+	    bs_parentip = ''
+	    bs_parentport = ''
+	    bs_parenttype = ''	
 	    if is_active == 1:
 		index = resultset.index(bs)
 		inventory_id = inventory_id_list[index]
@@ -143,6 +146,7 @@ class inventory(object):
 									resource_name,is_active,ptp_bh_dict)
 		bs_parentip = bs.get('POPconverterIP')
 		bs_parenttype = 'Converter'
+		bs_parentport = bs.get('POPconverterParentPort')
 		    
 	    if bs.get('BTSconverterIP') and bs.get('BTSconverterIP') != 'NA':
 		inventory_hierarchy[bs.get('BTSconverterIP')]=ih_count
@@ -156,6 +160,8 @@ class inventory(object):
 		#bs parent ip will update if BTSconverter is available.
 	        bs_parentip = bs.get('BTSconverterIP')
 		bs_parenttype = 'Converter'
+		bs_parentport = bs.get('BTSconverterParentPort')
+
 	    if bs.get('BSswitchIP') and bs.get('BSswitchIP') != 'NA':
 		inventory_hierarchy[bs.get('BSswitchIP')]=ih_count
 		ih_dynamic[ih_count]
@@ -165,13 +171,15 @@ class inventory(object):
 		resource_name = 'BSSwitch'
 		conv_switch_data_dict=self.create_conv_switch_data_dict(bs,conv_switch_data_dict,obj_count,
 									resource_name,is_active,ptp_bh_dict)
-	        bs_parentip = bs.get('BSSwitch')
+		#bs parent ip will update if BSSwitch is available.
+	        bs_parentip = bs.get('BSswitchIP')
 		bs_parenttype = 'Switch'
+		bs_parentport = bs.get('BSswitchParentPort')
 
 	    params = self.create_ss_dict(bs,ss_data_dict,obj_count,inventory_hierarchy,ih_dynamic,ptp_farend_ip_list,ptp_bh_dict,is_active)
 	    ss_data_dict,inventory_hierarchy,ih_dynamic,ptp_parent_child_dict,ptp_bh_dict =  params
 
-	    bs_parent = (bs_parentip,bs_parenttype,'')
+	    bs_parent = (bs_parentip,bs_parenttype,bs_parentport)
 	    bs_data_dict,inventory_hierarchy,ih_dynamic = self.create_sect_dict(bs,bs_data_dict,obj_count,inventory_hierarchy,ih_dynamic,
 									   ptp_parent_child_dict,ptp_bh_dict,is_active,bs_parent)
 	    if inventory_hierarchy and is_active == 0:
@@ -205,6 +213,16 @@ class inventory(object):
 	basestation_info_str = bs.get('BASESTATION', '')
 	basestation_info = list(set(basestation_info_str.split('-|-|-')))
 	bsswitch_ip_list = list(set(map(lambda x : x.split('|')[2],basestation_info)))
+
+	#Connected base station device ip list.
+	sector_info_str = bs.get('SECT_STR', '')
+	sector_info = sector_info_str.split('-|-|-')
+	bs_ips = list(set(map(lambda x : x.split('|')[5],sector_info)))
+	bs_ip_list = list()
+	for bs_ip in bs_ips:
+	    if bs_ip!='NA':
+		bs_ip_list.append(bs_ip)
+
 	try:
 	    data = basestation_info[0].split('|')
 	    bs_name = data[1]
@@ -218,24 +236,29 @@ class inventory(object):
 	if resource_name == 'POPConverter':  
 	    ip = bs.get('POPconverterIP')   
 	    parent_ip = bs.get('POPconverterParentIP')
-	    parent_type = bs.get('POPconverterParentType')
+	    #parent_type = bs.get('POPconverterParentType')
+	    parent_type ='Switch'
 	    parent_port = bs.get('POPconverterParentPort')
 	    resource_type = 'Converter'
-	    technology = bs.get('POPconverterTech')
+	    technology = bs.get('POPconverterTech').lower()
+	    device_type = bs.get('POPconverterType')
 	if resource_name == 'BTSConverter':
 	    ip = bs.get('BTSconverterIP')
 	    parent_ip = bs.get('BTSconverterParentIP')
-	    parent_type = bs.get('BTSconverterParentType')
+	    #parent_type = bs.get('BTSconverterParentType')
+	    parent_type ='Converter'
 	    parent_port = bs.get('BTSconverterParentPort')
 	    resource_type = 'Converter'
-	    technology = bs.get('BTSconverterTech')
+	    technology = bs.get('BTSconverterTech').lower()
+	    device_type = bs.get('BTSconverterType')
 	if resource_name == 'BSSwitch':
 	    ip = bs.get('BSswitchIP')
 	    resource_type = 'Switch'
 	    parent_ip = bs.get('BSswitchParentIP')
 	    parent_type = bs.get('BSswitchParentType')
 	    parent_port = bs.get('BSswitchParentPort')
-	    technology = bs.get('BSswitchTech')
+	    technology = bs.get('BSswitchTech').lower()
+	    device_type = bs.get('BSswitchType')
 
 	ip_id[ip] = obj_count
 	key = 'static_' + ip
@@ -264,9 +287,13 @@ class inventory(object):
 	data_dict[key]['resource_type'] = resource_type
 	data_dict[key]['resource_name'] = resource_name
 	data_dict[key]['technology'] = technology 
+	data_dict[key]['device_type'] = device_type
 	data_dict[key]['parent_ip'] = parent_ip
 	data_dict[key]['parent_type'] = parent_type 
 	data_dict[key]['parent_port'] = parent_port 
+	data_dict[key]['bs_ips'] = bs_ip_list 
+	data_dict[key]['ior'] = bs.get('ior') 
+	data_dict[key]['bso_ckt'] = bs.get('bso_ckt') 
     
 	return data_dict
 
@@ -330,6 +357,7 @@ class inventory(object):
 		   data_dict[bs_key]['parent_port'] = parent_port
 		   try:
 		      tech = sec_list.split('|')[4]
+		      data_dict[bs_key]['device_type'] = tech
 		   except Exception,e:
 		      print e
 		      pass
@@ -427,6 +455,7 @@ class inventory(object):
 	    ss_data_dict[ss_key]['resource_name'] = 'SS'
 	    ss_data_dict[ss_key]['parent_ip'] = ss_parent_ip
 	    ss_data_dict[ss_key]['parent_type'] = ss_parent_type
+	    ss_data_dict[ss_key]['device_type'] = ss_tech
 	    if 'starmax' in ss_tech.lower():
 		ss_data_dict[ss_key]['technology'] = 'wimax'
 		ss_data_dict[ss_key]['resource_type'] = 'SS'
@@ -462,6 +491,8 @@ class inventory(object):
 	    for alarm_info in resultset:
 		alarm_name = alarm_info.get('alarm_name','')
 		severity = alarm_info.get('severity','')
+		#TODO: change key it will be like alarm_name+severity+device_type
+		# Look into it
 		key = (alarm_name,severity)
 		mat_data[key] = dict()
 		mat_data[key]['alarm_name'] = alarm_info.get('alarm_name', '') 
@@ -483,14 +514,16 @@ class inventory(object):
 		mat_data[key]['bearer_organization'] = alarm_info.get('bearer_organization', '')
 		mat_data[key]['priority'] = alarm_info.get('priority', '')
 		# Type conversion str -> Set
-		mat_data[key]['category'] = eval(alarm_info.get('alarm_category', "set(['Down'])"))
+		mat_data[key]['category'] = eval(alarm_info.get('alarm_category', 'set([])'))
 		mat_data[key]['alarm_group'] = alarm_info.get('alarm_group','NA')
 		mat_data[key]['refer'] = alarm_info.get('refer', '')
-	    rds_obj = RedisInterface(custom_conf={'db': 5}) 
-	    redis_conn = rds_obj.redis_cnx	
-	    redis_conn.set('mat_data',mat_data)
-	except Exception as e:
-	    logger.error('insert_mat_data_in_redis {0}'.format(e))
+	except:
+		logger.error('Error in Redis Insertion')
+	    
+	# TODO: mat is stored temporary on 6 for testing
+	rds_obj = RedisInterface(custom_conf={'db': 5}) 
+	redis_conn = rds_obj.redis_cnx	
+	redis_conn.set('mat_data',mat_data)
 
 
 
