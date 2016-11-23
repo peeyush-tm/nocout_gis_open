@@ -6,7 +6,7 @@ from nocout.settings import P2P, WiMAX, PMP, CACHE_TIME
 from django.db.models import Count, Q
 
 #nocout specific functions
-from device.models import Device, DeviceTechnology, DeviceType, DeviceFrequency
+from device.models import Device, DeviceTechnology, DeviceType, DeviceFrequency, DeviceModel, DeviceVendor
 
 #inventory specific functions
 from inventory.models import Sector, Circuit, SubStation, Backhaul
@@ -870,3 +870,23 @@ def getFrequencyDict():
 
 
     return frequency_dict
+
+def getPrimaryKey(model_name=None, unique_key_name='name', value=None):
+    '''
+    This function return primary key for given model, unique key & value
+    '''
+    pk = None
+
+    if model_name and unique_key_name and value:
+        query = '{0}.objects.get({1}__iexact="{2}")'.format(model_name, unique_key_name, value)
+        try:
+            model_instance = eval(query)
+        except Exception as e:
+            log.error('PK Fetch Exception')
+            log.error(e)
+            model_instance = None
+
+        if model_instance:
+            pk = model_instance.id
+
+    return pk
