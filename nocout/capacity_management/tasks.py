@@ -19,6 +19,7 @@ from inventory.utils.util import InventoryUtilsGateway
 from nocout.utils.util import NocoutUtilsGateway, time_delta_calculator
 
 from inventory.tasks import get_devices, bulk_update_create
+from inventory.utils.util import getPrimaryKey
 
 from performance.models import UtilizationStatus, InventoryStatus, ServiceStatus, Utilization, PerformanceService, Topology
 
@@ -164,24 +165,30 @@ tech_model_service = {
     },
 }
 
+# Calculate device type pk from name
+juniper_type = getPrimaryKey(model_name='DeviceType', value='Juniper')
+cisco_type = getPrimaryKey(model_name='DeviceType', value='Cisco')
+mrotech_type = getPrimaryKey(model_name='DeviceType', value='PINE')
+rici_type = getPrimaryKey(model_name='DeviceType', value='RiCi')
+huawei_type = getPrimaryKey(model_name='DeviceType', value='Huawei')
 
 backhaul_tech_model_services = {
     'juniper': {
-        'device_type': 12
+        'device_type': juniper_type # 12
     },
     'cisco': {
-        'device_type': 18
+        'device_type': cisco_type # 18
     },
     'mrotek': {
-        'device_type': 13
+        'device_type': mrotech_type # 13
     },
     'rici': {
-        'device_type': 14
+        'device_type': rici_type # 14
     },
     'huawei': {
-        'device_type': 19
+        'device_type': huawei_type # 19
     },
-    12: {
+    juniper_type: {
         'val': {
             'model': None,
             'dl': {
@@ -205,7 +212,7 @@ backhaul_tech_model_services = {
             },
         },
     },
-    13: {
+    mrotech_type: {
         'val': {
             'model': None,
             'dl': {
@@ -229,7 +236,7 @@ backhaul_tech_model_services = {
             },
         },
     },
-    14: {
+    rici_type: {
         'val': {
             'model': None,
             'dl': {
@@ -253,7 +260,7 @@ backhaul_tech_model_services = {
             },
         },
     },
-    18: {
+    cisco_type: {
         'val': {
             'model': None,
             'dl': {
@@ -277,7 +284,7 @@ backhaul_tech_model_services = {
             },
         },
     },
-    19: {
+    huawei_type: {
         'val': {
             'model': None,
             'dl': {
@@ -1140,29 +1147,30 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
         # this complete mapping can be fetced from
         # device type : service : service data source mapping
         # if device type is 'switch'
-        if bs_device_type == 12:
+
+        if bs_device_type == juniper_type:
             val_ul_service = 'juniper_switch_ul_utilization'
             val_dl_service = 'juniper_switch_dl_utilization'
             kpi_ul_service = 'juniper_switch_ul_util_kpi'
             kpi_dl_service = 'juniper_switch_dl_util_kpi'
         # if device type is 'pine converter'
-        elif bs_device_type == 13:
+        elif bs_device_type == mrotech_type:
             val_ul_service = 'mrotek_ul_utilization'
             val_dl_service = 'mrotek_dl_utilization'
             kpi_ul_service = 'mrotek_ul_util_kpi'
             kpi_dl_service = 'mrotek_dl_util_kpi'
         # # if device type is 'rici converter'
-        elif bs_device_type == 14:
+        elif bs_device_type == rici_type:
             val_ul_service = 'rici_ul_utilization'
             val_dl_service = 'rici_dl_utilization'
             kpi_ul_service = 'rici_ul_util_kpi'
             kpi_dl_service = 'rici_dl_util_kpi'
-        elif bs_device_type == 18:
+        elif bs_device_type == cisco_type:
             val_ul_service = 'cisco_switch_ul_utilization'
             val_dl_service = 'cisco_switch_dl_utilization'
             kpi_ul_service = 'cisco_switch_ul_util_kpi'
             kpi_dl_service = 'cisco_switch_dl_util_kpi'
-        elif bs_device_type == 19:
+        elif bs_device_type == huawei_type:
             val_ul_service = 'huawei_switch_ul_utilization'
             val_dl_service = 'huawei_switch_dl_utilization'
             kpi_ul_service = 'huawei_switch_ul_util_kpi'
