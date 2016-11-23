@@ -33,33 +33,60 @@ def get_child_ips(device):
 		if device.pe_ip.exists(): # PE
 			pe_data = device.pe_ip.all()
 			for bh in pe_data:
-				ips.append(bh.aggregator.ip_address)
-				ips.append(bh.pop.ip_address)
-				ips.append(bh.bh_switch.ip_address)
+				try:
+					ips.append(bh.aggregator.ip_address)
+				except Exception, e:
+					pass
+				try:
+					ips.append(bh.pop.ip_address)
+				except Exception, e:
+					pass
+				try:
+					ips.append(bh.bh_switch.ip_address)
+				except Exception, e:
+					pass
 				bs_data = bh.basestation_set.all()
 				for bs in bs_data:
-					ips.append(bs.bs_switch.ip_address)
+					try:
+						ips.append(bs.bs_switch.ip_address)
+					except Exception, e:
+						pass
 					ips += list(bs.sector.values_list(
 						'sector_configured_on__ip_address', flat=True
 					))
 		elif device.backhaul_aggregator.exists(): # Aggregator
 			aggr_data = device.backhaul_aggregator.all()
 			for bh in aggr_data:
-				ips.append(bh.pop.ip_address)
-				ips.append(bh.bh_switch.ip_address)
+				try:
+					ips.append(bh.pop.ip_address)
+				except Exception, e:
+					pass
+				try:
+					ips.append(bh.bh_switch.ip_address)
+				except Exception, e:
+					pass
 				bs_data = bh.basestation_set.all()
 				for bs in bs_data:
-					ips.append(bs.bs_switch.ip_address)
+					try:
+						ips.append(bs.bs_switch.ip_address)
+					except Exception, e:
+						pass
 					ips += list(bs.sector.values_list(
 						'sector_configured_on__ip_address', flat=True
 					))
 		elif device.backhaul_pop.exists(): # POP
 			pop_data = device.backhaul_pop.all()
 			for bh in pop_data:
-				ips.append(bh.bh_switch.ip_address)
+				try:
+					ips.append(bh.bh_switch.ip_address)
+				except Exception, e:
+					pass
 				bs_data = bh.basestation_set.all()
 				for bs in bs_data:
-					ips.append(bs.bs_switch.ip_address)
+					try:
+						ips.append(bs.bs_switch.ip_address)
+					except Exception, e:
+						pass
 					ips += list(bs.sector.values_list(
 						'sector_configured_on__ip_address', flat=True
 					))
@@ -68,7 +95,10 @@ def get_child_ips(device):
 			for bh in bh_data:
 				bs_data = bh.basestation_set.all()
 				for bs in bs_data:
-					ips.append(bs.bs_switch.ip_address)
+					try:
+						ips.append(bs.bs_switch.ip_address)
+					except Exception, e:
+						pass
 					ips += list(bs.sector.values_list(
 						'sector_configured_on__ip_address', flat=True
 					))
