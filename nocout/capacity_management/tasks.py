@@ -48,14 +48,14 @@ CAPACITY_SETTINGS = {
             'ul': 2.24,
             'dl': 4.76
         },
-    5: {
-        'ul': 3,
-        'dl': 5
-    },
-    10: {
-        'ul': 5,
-        'dl': 10
-    }
+        5: {
+            'ul': 3,
+            'dl': 5
+        },
+        10: {
+            'ul': 5,
+            'dl': 10
+        }
     }
 }
 
@@ -1556,11 +1556,9 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
         )
-    # else:
-    #     return False
-    # logger.error('================ rad5_val')
-    # logger.error(rad5_val)
-    # logger.error('================ rad5_val')
+    else:
+        return False
+
     indexed_rad5_val = {}
     if technology.lower() == 'pmp' and rad5_val and rad5_val.exists():
         indexed_rad5_val = nocout_utils.indexed_query_set(
@@ -1877,12 +1875,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         current_timeslot_ul = float(indexed_rad5_val.get(timeslot_ul_index)[0]['current_value'])
                     if indexed_rad5_val.get(timeslot_dl_index):
                         current_timeslot_dl = float(indexed_rad5_val.get(timeslot_dl_index)[0]['current_value'])
-
-                    logger.error('Timeslot ---------')
-                    logger.error(indexed_rad5_val)
-                    logger.error(current_timeslot_dl)
-                    logger.error(current_timeslot_ul)
-                    logger.error(sector.sector_id)
                 else:
                     # index for dl values
                     in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
@@ -1985,23 +1977,35 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 try:
                     # average percentage in/out
                     avg_in_per = float(indexed_avg_max_per[in_per_index][0]['avg_val'])
-                    # peak percentage in/out
-                    peak_in_per = float(indexed_avg_max_per[in_per_index][0]['max_val'])
                     # average percentage in/out
                     avg_out_per = float(indexed_avg_max_per[out_per_index][0]['avg_val'])
-                    # peak percentage in/out
-                    peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
-                    # Duration in/out  (Multiply threshold breached count with 5 to get the duration)
-                    peak_in_duration = int(indexed_util_duration[in_per_index][0]['duration']) * 5
-                    peak_out_duration = int(indexed_util_duration[out_per_index][0]['duration']) * 5
                 except Exception as e:
                     logger.error('Avg Exception 1')
                     logger.error(scs)
                     logger.error(e)
                     avg_in_per = 0
-                    peak_in_per = None
                     avg_out_per = 0
+
+                try:
+                    # peak percentage in/out
+                    peak_in_per = float(indexed_avg_max_per[in_per_index][0]['max_val'])
+                    # peak percentage in/out
+                    peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
+                except Exception as e:
+                    logger.error('Peak Exception 1')
+                    logger.error(scs)
+                    logger.error(e)
+                    peak_in_per = None
                     peak_out_per = None
+
+                try:
+                    # Duration in/out  (Multiply threshold breached count with 5 to get the duration)
+                    peak_in_duration = int(indexed_util_duration[in_per_index][0]['duration']) * 5
+                    peak_out_duration = int(indexed_util_duration[out_per_index][0]['duration']) * 5
+                except Exception as e:
+                    logger.error('Duration Exception 1')
+                    logger.error(scs)
+                    logger.error(e)
                     peak_in_duration = 0
                     peak_out_duration = 0
         
@@ -2033,9 +2037,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     max_value=peak_out_per,
                     getit='per'
                 )
-                #logger.error('Valsssssss')
-                #logger.error(peak_in_per)
-                #logger.error(peak_out_per)
+
                 try:
                     # average value in/out
                     avg_in_val = avg_in_per * sector_capacity_in / 100.00
@@ -2063,31 +2065,30 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 scs.timeslot_ul = current_timeslot_ul 
                 scs.timeslot_dl = current_timeslot_dl 
 
-
                 # new fileds for better representation of IN and OUT
 
                 scs.sector_capacity_in = sector_capacity_in
                 scs.sector_capacity_out = sector_capacity_out
 
-                scs.current_in_per = round(float(current_in_per), 3) if current_in_per else 0
-                scs.current_in_val = round(float(current_in_val), 3) if current_in_val else 0
+                scs.current_in_per = round(float(current_in_per), 2) if current_in_per else 0
+                scs.current_in_val = round(float(current_in_val), 2) if current_in_val else 0
 
-                scs.current_out_per = round(float(current_out_per), 3) if current_out_per else 0
-                scs.current_out_val = round(float(current_out_val), 3) if current_in_val else 0
+                scs.current_out_per = round(float(current_out_per), 2) if current_out_per else 0
+                scs.current_out_val = round(float(current_out_val), 2) if current_in_val else 0
 
                 if calc_util_last_day():
-                    scs.avg_in_per = round(float(avg_in_per), 3) if avg_in_per else 0
-                    scs.avg_in_val = round(float(avg_in_val), 3) if avg_in_val else 0
-                    scs.peak_in_per = round(float(peak_in_per), 3) if peak_in_per else 0
-                    scs.peak_in_val = round(float(peak_in_val), 3) if peak_in_val else 0
+                    scs.avg_in_per = round(float(avg_in_per), 2) if avg_in_per else 0
+                    scs.avg_in_val = round(float(avg_in_val), 2) if avg_in_val else 0
+                    scs.peak_in_per = round(float(peak_in_per), 2) if peak_in_per else 0
+                    scs.peak_in_val = round(float(peak_in_val), 2) if peak_in_val else 0
 
                     scs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
                     scs.peak_in_duration = int(peak_in_duration) if peak_in_duration else 0
 
-                    scs.avg_out_per = round(float(avg_out_per), 3) if avg_out_per else 0
-                    scs.avg_out_val = round(float(avg_out_val), 3) if avg_out_val else 0
-                    scs.peak_out_per = round(float(peak_out_per), 3) if peak_out_per else 0
-                    scs.peak_out_val = round(float(peak_out_val), 3) if peak_out_val else 0
+                    scs.avg_out_per = round(float(avg_out_per), 2) if avg_out_per else 0
+                    scs.avg_out_val = round(float(avg_out_val), 2) if avg_out_val else 0
+                    scs.peak_out_per = round(float(peak_out_per), 2) if peak_out_per else 0
+                    scs.peak_out_val = round(float(peak_out_val), 2) if peak_out_val else 0
 
                     scs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
                     scs.peak_out_duration = int(peak_out_duration) if peak_out_duration else 0
@@ -2101,22 +2102,22 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         sector_capacity=float(sector_capacity) if sector_capacity else 0,
                         sector_capacity_in=sector_capacity_in,
                         sector_capacity_out=sector_capacity_out,
-                        current_in_per=round(float(current_in_per), 3) if current_in_per else 0,
-                        current_in_val=round(float(current_in_val), 3) if current_in_val else 0,
-                        avg_in_per=round(float(avg_in_per), 3) if avg_in_per else 0,
-                        avg_in_val=round(float(avg_in_val), 3) if avg_in_val else 0,
-                        peak_in_per=round(float(peak_in_per), 3) if peak_in_per else 0,
-                        peak_in_val=round(float(peak_in_val), 3) if peak_in_val else 0,
+                        current_in_per=round(float(current_in_per), 2) if current_in_per else 0,
+                        current_in_val=round(float(current_in_val), 2) if current_in_val else 0,
+                        avg_in_per=round(float(avg_in_per), 2) if avg_in_per else 0,
+                        avg_in_val=round(float(avg_in_val), 2) if avg_in_val else 0,
+                        peak_in_per=round(float(peak_in_per), 2) if peak_in_per else 0,
+                        peak_in_val=round(float(peak_in_val), 2) if peak_in_val else 0,
                         peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else 0,
                         peak_in_duration=int(peak_in_duration) if peak_in_duration else 0,
-                        current_out_per=round(float(current_out_per), 3) if current_out_per else 0,
-                        current_out_val=round(float(current_out_val), 3) if current_out_val else 0,
-                        avg_out_per=round(float(avg_out_per), 3) if avg_out_per else 0,
-                        avg_out_val=round(float(avg_out_val), 3) if avg_out_val else 0,
-                        peak_out_per=round(float(peak_out_per), 3) if peak_out_per else 0,
-                        peak_out_val=round(float(peak_out_val), 3) if peak_out_val else 0,
-                        timeslot_ul=round(float(current_timeslot_ul), 3) if current_timeslot_ul else None, 
-                        timeslot_dl=round(float(current_timeslot_dl), 3) if current_timeslot_dl else None,
+                        current_out_per=round(float(current_out_per), 2) if current_out_per else 0,
+                        current_out_val=round(float(current_out_val), 2) if current_out_val else 0,
+                        avg_out_per=round(float(avg_out_per), 2) if avg_out_per else 0,
+                        avg_out_val=round(float(avg_out_val), 2) if avg_out_val else 0,
+                        peak_out_per=round(float(peak_out_per), 2) if peak_out_per else 0,
+                        peak_out_val=round(float(peak_out_val), 2) if peak_out_val else 0,
+                        timeslot_ul=round(float(current_timeslot_ul), 2) if current_timeslot_ul else None, 
+                        timeslot_dl=round(float(current_timeslot_dl), 2) if current_timeslot_dl else None,
                         peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
                         peak_out_duration=int(peak_out_duration) if peak_out_duration else 0,
                         sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
