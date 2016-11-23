@@ -130,9 +130,18 @@ class AlertCenterListing(ListView):
         rad5_headers = []
         rad5_customer_detail_headers = []
         rad5_polled_col = []
-        rad5_headers += [
-            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},            
+
+        # Show region column in all Network Alert Tabs
+        if page_type.lower() == 'network':
+            region_col_visible = True
+        else:
+            region_col_visible = False
+
+        region_header = [
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': region_col_visible},
         ]
+
+        rad5_headers += region_header
 
         # if Network page and data source is latency than add SE to PE min latency column.
         if page_type in ['network','customer'] and data_source == 'latency':
@@ -265,6 +274,10 @@ class AlertCenterListing(ListView):
         ptp_datatable_headers += severity_headers
         ptp_datatable_headers += ptp_starting_headers
         ptp_datatable_headers += common_headers
+
+        if page_type == 'network':
+            ptp_datatable_headers += region_header            
+
         ptp_datatable_headers += polled_headers
         ptp_datatable_headers += other_headers
 
@@ -299,6 +312,7 @@ class AlertCenterListing(ListView):
         if page_type == 'network':
             bh_datatable_headers += severity_headers
             bh_datatable_headers += common_headers
+            bh_datatable_headers += region_header
             bh_datatable_headers += bh_specific_headers
             bh_datatable_headers += polled_headers
             bh_datatable_headers += other_headers
@@ -914,6 +928,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'site_id',
             'city',
             'state',
+            'region'
         ]
 
         common_network_bh_headers = [
@@ -924,6 +939,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'site_id',
             'city',
             'state',
+            'region',
             'bh_connectivity',
             'current_value'
         ]
@@ -2482,6 +2498,7 @@ class SIAListing(ListView):
             {'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_connectivity', 'sTitle': 'BH Connectivity', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True}
         ]
@@ -2562,13 +2579,13 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     
     order_columns = [
         'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state',
-        'bh_connectivity', 'bh_type', 'eventname','traptime','uptime',
-        'alarm_count', 'first_occurred','last_occurred', 'customer_count', 
-        'sia', 'ticket_number'
+        'region', 'bh_connectivity', 'bh_type', 'eventname','traptime',
+        'uptime', 'alarm_count', 'first_occurred','last_occurred',
+        'customer_count', 'sia', 'ticket_number'
     ]
 
     other_columns = [
-        'bs_alias', 'bs_city', 'bs_state',
+        'bs_alias', 'bs_city', 'bs_state', 'region',
         'sector_id','device_type', 'bh_connectivity', 'bh_type'
     ]
 
@@ -2732,14 +2749,14 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             if ENABLE_MANUAL_TICKETING:
                 self.order_columns = [
                     'action', 'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
+                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
                     'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
                     'customer_count', 'sia', 'ticket_number'
                 ]
             else:
                 self.order_columns = [
                     'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
+                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
                     'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
                     'customer_count', 'sia', 'ticket_number'
                 ]
@@ -2776,6 +2793,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
             except ValueError:
                 sort_col = 0
+
 
             sdir = '-' if sort_dir == 'desc' else ''
             reverse = True if sort_dir == 'desc' else False
@@ -3776,6 +3794,8 @@ def prepare_snmp_gis_data(qs, tech_name):
     if tech_name in ['pmp', 'rad5k', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
+        ).annotate(
+            region=F('sector_configured_on__organization__alias'),
         ).extra(
             select={'device_type' : 'device_device.device_type'}
         ).values(
@@ -3786,13 +3806,16 @@ def prepare_snmp_gis_data(qs, tech_name):
             'base_station__state__state_name',
             'base_station__backhaul__bh_type',
             'base_station__backhaul__bh_connectivity',
-            'device_type'
+            'device_type',
+            'region'
         ).distinct()
 
         # If wimax only then check for DR device
         if tech_name in ['wimax', 'all']:
             dr_data_qs =  Sector.objects.filter(
                 dr_configured_on__ip_address__in=ip_address_list
+            ).annotate(
+                region=F('sector_configured_on__organization__alias'),
             ).extra(
                 select={'device_type' : 'device_device.device_type'}
             ).values(
@@ -3801,13 +3824,16 @@ def prepare_snmp_gis_data(qs, tech_name):
                 'base_station__city__city_name',
                 'base_station__state__state_name',
                 'dr_configured_on__ip_address',
-                'device_type'
+                'device_type',
+                'region'
             ).distinct()
 
     # If requert from converter or all tab only then check Backhaul model
     if tech_name in ['switch', 'converter', 'all']:
 
-        bh_conf_data_qs =  BaseStation.objects.extra(
+        bh_conf_data_qs =  BaseStation.objects.annotate(
+            region=F('backhaul__bh_configured_on__organization__alias'),
+        ).extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
@@ -3823,15 +3849,18 @@ def prepare_snmp_gis_data(qs, tech_name):
             'base_station__state__state_name',
             'state__state_name',
             'backhaul__bh_configured_on__ip_address',
-            'device_type'
+            'device_type',
+            'region'
         ).distinct()
 
-        bh_switch_data_qs =  BaseStation.objects.extra(
+        bh_switch_data_qs =  BaseStation.objects.annotate(
+            region=F('backhaul__bh_switch__organization__alias'),
+        ).extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'T4.device_type'
+                'device_type': 'device_device.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__isnull=False,
@@ -3843,10 +3872,13 @@ def prepare_snmp_gis_data(qs, tech_name):
             'base_station__state__state_name',
             'state__state_name',
             'backhaul__bh_switch__ip_address',
-            'device_type'
+            'device_type',
+            'region'
         ).distinct()
 
-        pop_data_qs =  BaseStation.objects.extra(
+        pop_data_qs =  BaseStation.objects.annotate(
+            region=F('backhaul__pop__organization__alias'),
+        ).extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
@@ -3863,15 +3895,18 @@ def prepare_snmp_gis_data(qs, tech_name):
             'base_station__state__state_name',
             'state__state_name',
             'backhaul__pop__ip_address',
-            'device_type'
+            'device_type',
+            'region'
         ).distinct()
 
-        aggr_data_qs =  BaseStation.objects.extra(
+        aggr_data_qs =  BaseStation.objects.annotate(
+            region=F('backhaul__aggregator__organization__alias'),
+        ).extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'T4.device_type'
+                'device_type': 'device_device.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__isnull=False,
@@ -3883,7 +3918,8 @@ def prepare_snmp_gis_data(qs, tech_name):
             'base_station__state__state_name',
             'state__state_name',
             'backhaul__aggregator__ip_address',
-            'device_type'
+            'device_type',
+            'region'
         ).distinct()
 
         mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
@@ -3931,6 +3967,7 @@ def prepare_snmp_gis_data(qs, tech_name):
             bs_alias='NA',
             bs_city='NA',
             bs_state='NA',
+            region='NA',
             sector_id='NA',
             device_type='NA',
             bh_connectivity='NA',
@@ -3952,7 +3989,8 @@ def prepare_snmp_gis_data(qs, tech_name):
                 bs_state=sector_dct.get('base_station__state__state_name', 'NA'),
                 bh_connectivity=sector_dct.get('base_station__backhaul__bh_connectivity', 'NA'),
                 bh_type=sector_dct.get('base_station__backhaul__bh_type', 'NA'),
-                device_type=device_type_dict.get(sector_dct.get('device_type'))
+                device_type=device_type_dict.get(sector_dct.get('device_type')),
+                region=sector_dct.get('region')
             )
 
     return qs_list
