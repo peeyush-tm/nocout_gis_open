@@ -1603,9 +1603,9 @@ class InventoryDeviceServiceDataSource(View):
         }
 
         # if is_util_tab is 1 then make isActive key of utilization_top_tab to 1
-        if int(is_util_tab):
-            result['data']['objects']['network_perf_tab']["isActive"] = 0
-            result['data']['objects']['utilization_top_tab']["isActive"] = 1
+        # if int(is_util_tab):
+        #     result['data']['objects']['network_perf_tab']["isActive"] = 0
+        #     result['data']['objects']['utilization_top_tab']["isActive"] = 1
 
         device = Device.objects.get(id=device_id)
         device_type = DeviceType.objects.get(id=device.device_type)

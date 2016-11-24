@@ -517,7 +517,6 @@ function nocoutPerfLib() {
      * @param device_id "INT", It contains the ID of current device.
      */
     this.getServices = function (get_service_url, device_id) {
-
         /*Show the spinner*/
         // showSpinner();
 
@@ -818,6 +817,17 @@ function nocoutPerfLib() {
                     //If parent Tab id is there & parent tab element exist in the dom.
                     if (parent_tab_id && $('#' + parent_tab_id).length && $('#' + parent_tab_id)[0].className.indexOf('hide') == -1) {
                         $('#' + parent_tab_id).trigger('click');
+                        
+                        if(parent_tab_id == 'topo_view'){
+                            perfInstance.getServiceStatus(active_tab_url, is_exact_url, function(response_type,data_obj) {
+                                if (response_type == 'success') {
+                                    // Call function to populate latest status for this service
+                                    populateServiceStatus_nocout("last_updated_" + active_tab_content_dom_id,data_obj);
+                                } else {
+                                    $("#last_updated_" + active_tab_content_dom_id).html("");
+                                }
+                            });
+                        }
                     } else {
                         // show loading spinner
                         // showSpinner();
