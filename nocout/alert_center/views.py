@@ -3234,6 +3234,8 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         'Mili Second'
     ]
 
+    manual_ticketing_bh_ips = []
+
     def get_initial_queryset(self):
         """
 
@@ -3265,6 +3267,16 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
             bh_configured_on__ip_address__isnull=False
         ).values_list('bh_configured_on__ip_address', flat=True))
 
+        included_bh_dtype_ids = list(DeviceType.objects.filter(
+            name__in=['PINE', 'RiCi', 'Converter']
+        ).values_list('id', flat=True))
+
+        specific_bh_ips = list(Backhaul.objects.filter(
+            bh_configured_on__isnull=False,
+            bh_configured_on__device_type__in=included_bh_dtype_ids,
+            bh_configured_on__ip_address__isnull=False
+        ).values_list('bh_configured_on__ip_address', flat=True))
+
         ptp_bh_ips = list(Circuit.objects.filter(
             circuit_type__iexact='backhaul',
             sector__sector_configured_on__ip_address__isnull=False
@@ -3276,6 +3288,8 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         ).values_list('sub_station__device__ip_address', flat=True))
 
         inventory_ips_list = pmp_wimax_ips + wimax_dr_ips + bh_conf_ips + ptp_bh_ips + ptp_bh_ss_ips
+
+        self.manual_ticketing_bh_ips = pmp_wimax_ips + wimax_dr_ips + specific_bh_ips + ptp_bh_ips + ptp_bh_ss_ips
 
         filter_condition = False
         ip_address_list = list()
@@ -3623,10 +3637,15 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 ip_address = dct.get('ip_address')
                 is_manual = dct.get('is_manual')
                 ticket_number = dct.get('ticket_number')
-
                 action = ''
                 formatted_uptime = uptime
                 data_source = (self.request.GET.get('data_source', None))
+
+                # Parse to integer
+                try:
+                    is_manual = int(is_manual)
+                except Exception as e:
+                    is_manual = 0
 
                 # severity icon according to user requirement
                 # Change Color "RED" in Current and "Green" in Clear. Same in History Tab
@@ -3638,7 +3657,8 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     condition2 = event_name in INCLUDED_EVENTS_FOR_MANUAL_TICKETING
                     condition3 = dct.get('device_name')
                     condition4 = self.alarm_type == 'current'
-                    manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4
+                    condition5 = ip_address in self.manual_ticketing_bh_ips
+                    manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4 and condition5
                     
                     if manual_action_condition:
                         has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
