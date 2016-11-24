@@ -4627,6 +4627,16 @@ class PlannedEventsListing(BaseDatatableView, AdvanceFilteringMixin):
             end_date = dct.get('enddate', '')
 
             try:
+                dct['service_ids'] = ', '.join(dct['service_ids'].split(','))
+            except Exception as e:
+                pass
+
+            try:
+                dct['nia'] = ', '.join(dct['nia'].split(','))
+            except Exception as e:
+                pass
+
+            try:
                 start_datetime_obj = datetime.datetime.fromtimestamp(start_date)
                 formatted_startdate = start_datetime_obj.strftime(DATE_TIME_FORMAT)
             except Exception as e:
