@@ -7,6 +7,7 @@ import datetime
 from dateutil.relativedelta import *
 from inventory.tasks import bulk_update_create
 from device.models import Device, DeviceTechnology, DeviceType
+from inventory.models import Sector
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 from nocout.settings import PLANNED_EVENTS_ENABLED, PE_REDIS_HOST, PE_REDIS_PORT, PE_REDIS_DB
@@ -246,7 +247,20 @@ def set_planned_events(dataset):
 						pass
 
 					try:
-						redis_data = (startdate, enddate, redis_nia.split(','))
+						pmp_port = None
+						if component and str(component).lower() == 'sector':
+							try:
+								sector_instance = Sector.objects.get(sector_id__iexact=sectorid)
+								pmp_port = sector_instance.sector_configured_on_port.name
+							except Exception as e:
+								logger.error('Sector Fetch Exception for === {0}'.format(str(sectorid)))
+								logger.error(e)
+								pass
+
+						if pmp_port:
+							redis_data = (startdate, enddate, redis_nia.split(','), pmp_port, resource_name)
+						else:
+							redis_data = (startdate, enddate, redis_nia.split(','))
 						redis_dataset.append(redis_data)
 					except Exception as e:
 						logger.error('Planned Events -- Redis dataset exception')
