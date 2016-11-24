@@ -247,7 +247,7 @@ def set_planned_events(dataset):
 						pass
 
 					try:
-						pmp_port = ''
+						pmp_port = None
 						if component and str(component).lower() == 'sector':
 							try:
 								sector_instance = Sector.objects.get(sector_id__iexact=sectorid)
