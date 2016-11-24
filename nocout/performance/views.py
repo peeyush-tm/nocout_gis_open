@@ -817,6 +817,7 @@ class GetPerfomance(View):
             bs_alias = realdevice.device_alias
 
         is_util_tab = request.GET.get('is_util', 0)
+        is_topo_tab = request.GET.get('is_topo_view', 0)
 
         is_dr_device = device.dr_configured_on.exists()
 
@@ -916,7 +917,8 @@ class GetPerfomance(View):
             'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id),
             'power_listing_headers': json.dumps(power_listing_headers),
             'sector_perf_url': sector_perf_url,
-            'bh_perf_url': bh_perf_url
+            'bh_perf_url': bh_perf_url,
+            'is_topo_tab': int(is_topo_tab)
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)

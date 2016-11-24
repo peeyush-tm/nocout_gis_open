@@ -811,6 +811,8 @@ function nocoutPerfLib() {
                     
                     if(is_util_tab) {
                         parent_tab_id = 'utilization_top'
+                    } else if(is_topo_tab) {
+                        parent_tab_id = 'topo_view'
                     }
 
                     //If parent Tab id is there & parent tab element exist in the dom.

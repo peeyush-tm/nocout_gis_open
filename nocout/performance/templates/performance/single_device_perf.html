@@ -508,6 +508,7 @@
             dateRangePicker_domId = "reservationtime",
             current_device = "",
             device_technology = "",
+            is_topo_tab = false,
             live_poll_condition1 = "",
             live_poll_condition2 = "",
             ptp_tech_list = ['ptp','p2p','ptp bh'],
@@ -557,6 +558,7 @@
             alert_page_url = "{{ alert_page_url }}" ? $.trim("{{ alert_page_url }}") : "";
             page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer";
             is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
+            is_topo_tab = "{{ is_topo_tab }}" ? Number($.trim("{{ is_topo_tab }}")) : 0;
             is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
             is_viewer = "{{is_viewer_flag }}" ? Number($.trim("{{ is_viewer_flag }}")) : 0;
             bs_id = '{{ bs_id|safe }}' ? '{{ bs_id|safe }}' : [];
