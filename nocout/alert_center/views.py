@@ -467,12 +467,14 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
             if page_type == 'network':
                 type_rf = 'sector'
-                if data_source.lower == 'down':
-                    ticket_number_required = True
             elif page_type == 'customer':
                 type_rf = 'ss'
             else:
                 type_rf = None
+
+
+        if page_type == 'network' and data_source.lower() == 'down':
+            ticket_number_required = True
 
         # Create instance of 'PerformanceUtilsGateway' class
         perf_utils = PerformanceUtilsGateway()
