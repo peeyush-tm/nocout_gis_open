@@ -345,11 +345,11 @@ class correlation:
 	]
 
 
-	down_device_static_dict = kwargs['static_dict']
-	idu_odu_trap_dict = kwargs['idu_odu_trap_dict']
+	down_device_static_dict = kwargs.get('static_dict')
+	idu_odu_trap_dict = kwargs.get('idu_odu_trap_dict')
 	ckt_list_for_conv_sia = kwargs.get('ckt_list_for_conv_sia')
-	#alarm_id = kwargs['alarm_id']
-	circuit_dict = kwargs['ckt_dict']
+	#alarm_id = kwargs.get('alarm_id')
+	circuit_dict = kwargs.get('ckt_dict')
 
 	event_trap_dict = {}
 	parent_alrm_id = None 
@@ -359,8 +359,7 @@ class correlation:
 	if idu_odu_trap_dict:
 
 	    for key,value in idu_odu_trap_dict.iteritems():
-
-		if down_device_static_dict.get(key).get('resource_type').lower() in ['converter','switch']:
+		if down_device_static_dict.get(key).get('resource_type').lower() in ['converter','switch','ptp']:
 
 		    impacted_circuits = ', '.join(ckt_list_for_conv_sia) if ckt_list_for_conv_sia else ''
 
@@ -442,6 +441,8 @@ class correlation:
 		event_trap_dict[key]['additional_f_2'] = 1
 		if event_trap_dict[key]['alrm_name'] in ["PD_threshold_breach_major","PD threshold breach major"]:
             	    alarm_name_in_desc = "PD threshold breach"
+		    event_trap_dict[key]['additional_f_2'] = 2
+
 		else:
 		    alarm_name_in_desc = event_trap_dict[key]['alrm_name']
 		event_trap_dict[key]['alrm_desc'] = "{0} : {1} : {2} : {3}".format(down_device_static_dict.get(key).get('city'),
@@ -471,6 +472,11 @@ class correlation:
 	    backhaul_id = kwargs.get('backhaul_id')
 	    key = backhaul_id
 	    static_data = down_device_static_dict[siteb_switch_conv_id]
+	    static_data['resource_type'] = "PTP-BH"
+	    static_data['technology'] = down_device_static_dict.get(backhaul_id).get('technology')
+	    static_data['parent_type'] = down_device_static_dict.get(backhaul_id).get('parent_type')
+	    static_data['parent_ip'] = down_device_static_dict.get(backhaul_id).get('parent_ip')
+	    static_data['parent_port'] = down_device_static_dict.get(backhaul_id).get('parent_port')
 	# Trap for switch/converter.
 	else:
 	    key = rc_element
@@ -532,11 +538,11 @@ class correlation:
 
     def make_dict_for_idu_odu_trap(self,**kwargs):
 
-	down_device_dict = kwargs['down_device_dict']
-	down_device_static_dict = kwargs['static_dict']
+	down_device_dict = kwargs.get('down_device_dict')
+	down_device_static_dict = kwargs.get('static_dict')
 	alarm_id = kwargs.get('alarm_id')
-	bs_list = kwargs['bs_list']
-	parent_ac = kwargs['parent_ac']
+	bs_list = kwargs.get('bs_list')
+	parent_ac = kwargs.get('parent_ac')
 
 	event_trap_dict = {}
         global bs_mapping_dict
@@ -760,7 +766,9 @@ class correlation:
 	#sitea_ss_down_list = list(set(ss_down_list) -set(siteb_ss_down_list)) 
 	if not rc_element:
 	    rc_element = conv_switch_siteb
-	    ckt_list_for_conv_sia,del_ss = self.extract_ckt_for_sia(rc_element, down_device_dict, static_dict, siteb_ss_down_list, del_ss)
+	    if backhaul_id:
+	        ckt_list_for_conv_sia,del_ss = self.extract_ckt_for_sia(backhaul_id, down_device_dict, static_dict, siteb_ss_down_list, del_ss)
+	    #sitea_ckt_list_for_conv_sia = ''
 	else:
 	    ckt_list_for_conv_sia,del_ss = self.extract_ckt_for_sia(rc_element, down_device_dict, static_dict, ss_list_for_sia, del_ss)
 
@@ -786,7 +794,7 @@ class correlation:
 	ckt_list_for_conv_sia = []
 	try:
 	    rc_element_dict = down_device_dict.get(rc_element)
-	    ss_list_for_conv_sia = filter(lambda x: down_device_dict.get(x).get('category') == rc_element_dict.get('category'), ss_list)
+	    ss_list_for_conv_sia = filter(lambda x: down_device_dict.get(x).get('category') & rc_element_dict.get('category'), ss_list)
 	    del_ss_list_for_sia = list(set(ss_list_for_conv_sia) - set(del_ss))
 	    del_ss.extend(del_ss_list_for_sia)
 	    for entry in ss_list_for_conv_sia:
@@ -909,7 +917,7 @@ class correlation:
 
 	customer_count = self.bs_customer_count(alarm.get('ip_address'), trap_type)
 
-	idu_odu_trap['additional_f_8'] = customer_count if customer_count else 0
+	idu_odu_trap['additional_f_8'] = customer_count if customer_count else "0"
        
         return idu_odu_trap
 
@@ -1535,24 +1543,33 @@ class correlation:
 
     def converter_customer_count(self, ip, siteb_switch_conv_id, ptp_bh_flag = 0):
         redis_conn = self.redis_conn()
+	try:
+	    if ptp_bh_flag:
+                ip = siteb_switch_conv_id
 
-	if ptp_bh_flag:
-	    ip = siteb_switch_conv_id
-
-        converter_static_data = eval(redis_conn.get("static_%s"%str(ip)))
-        bs_ips = converter_static_data.get('bs_ips')
+	    converter_static_data = eval(redis_conn.get("static_%s"%str(ip)))
+            bs_ips = converter_static_data.get('bs_ips')
 	
-        circuit_dict_data = eval(redis_conn.get('circuit_dict'))
-        circuits_list = []
-        for each_bs in bs_ips:
-	    circuit_dict = circuit_dict_data.get(each_bs)
-	    if not circuit_dict:
-		continue
-            for circuit in circuit_dict.values():
-                circuits_list = circuits_list + circuit
+	    circuit_dict_data = redis_conn.get('circuit_dict')
+            if not circuit_dict_data:
+                logger.error('Circuit dict data is not available in redis')
+                return "0"
+	    circuit_dict_data = eval(circuit_dict_data)
+            circuits_list = []
+            for each_bs in bs_ips:
+	        circuit_dict = circuit_dict_data.get(each_bs)
+	        if not circuit_dict:
+		    continue
+                for circuit in circuit_dict.values():
+                    circuits_list = circuits_list + circuit
+	except Exception as e:
+	    logger.error('Exception in finding Converter customer count: %s'%(e))
 
-	logger.info('Customer count %s'%str(len(circuits_list)))
-	return len(circuits_list)
+	if len(circuits_list):
+	    return len(circuits_list)
+	else:
+	    logger.error('Circuit dict data is not for converter ip %s'%(ip))
+	    return "0"
 
     def bs_customer_count(self, ip, trap_type):
         redis_conn = self.redis_conn()
@@ -1573,7 +1590,7 @@ class correlation:
                 circuits_list.append(circuit)
 	else:
             for circuit in circuit_dict_data.values():
-                circuits_list = circuit_list + circuit
+                circuits_list = circuits_list + circuit
 
         return len(circuits_list)
 	    

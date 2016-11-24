@@ -146,7 +146,7 @@ class manual_ticketing:
 	if final_events:
             # External Handling of data manupulation for Monolith server.
             final_events= corr_obj.final_trap_data_manupulation(final_events)
-            correlation_s3.trap_sender_task.s(final_events).apply_async()
+            correlation.trap_sender_task.s(final_events).apply_async()
 
             non_ckt_events = filter(lambda x: not x.get('impacted_circuit_ids'),final_events)
 	    is_manual = True

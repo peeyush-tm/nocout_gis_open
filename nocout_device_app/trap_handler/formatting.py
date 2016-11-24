@@ -320,9 +320,9 @@ class inventory(object):
 		aggr_switch = bs.get('AggregationSwitchIP')
 		pe_ip = bs.get('PE_IP')
 		try:
-		   region = bs_station.split('|')[-3]
-		   bs_name = bs_station.split('|')[1]
-		   city = bs_station.split('|')[-5]
+		   region = basestation_info[0].split('|')[-3]
+		   bs_name = basestation_info[0].split('|')[1]
+		   city = basestation_info[0].split('|')[-5]
 		except:
 		   region = ''
 		   bs_name = ''
@@ -384,7 +384,7 @@ class inventory(object):
 		       data_dict[bs_key]['resource_type'] = 'PTP'
 		       data_dict[bs_key]['resource_name'] = 'SS' 
 		       data_dict[bs_key]['ptp_bh_type'] = 'ne'
-		       data_dict[bs_key]['custormer_name'] = sec_list.split('|')[11]
+		       data_dict[bs_key]['customer_name'] = sec_list.split('|')[11]
 		       data_dict[bs_key]['circuit_id'] = sec_list.split('|')[10] 
 		       data_dict[bs_key]['ptp_ip'] = ptp_parent_child_dict.get(bs_ip)
 		   if bs_ip in ptp_bh_dict.values():
@@ -420,10 +420,12 @@ class inventory(object):
 	basestation_info_str = bs.get('BASESTATION','')
 	basestation_info = list(set(basestation_info_str.split('-|-|-')))
 	try:
-	   region = basestation_info[0].split('|')[5]
-	   bs_name = basestation_info[0].split('|')[1]
-	   city = basestation_info[0].split('|')[3]
-	except:
+	   basestation_info = basestation_info_str.split('-|-|-')[0]
+	   #logger.error(basestation_info)
+	   region = basestation_info.split('|')[5]
+	   bs_name = basestation_info.split('|')[1]
+	   city = basestation_info.split('|')[3]
+	except Exception as e:
 	   region = ''
 	   bs_name = ''
 	   city = ''
