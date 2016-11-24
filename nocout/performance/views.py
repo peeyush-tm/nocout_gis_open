@@ -175,6 +175,7 @@ class LivePerformance(ListView):
             name_title = 'PE Hostname'
 
         common_headers = [
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': name_key, 'sTitle': name_title, 'sWidth': 'auto', 'bSortable': True},
@@ -202,10 +203,6 @@ class LivePerformance(ListView):
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
 
-        rad5_specific_headers = [
-            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},
-        ]
-
         if page_type in ["network"]:
             specific_headers = [
                 {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
@@ -214,7 +211,6 @@ class LivePerformance(ListView):
             ]
 
             specific_headers += [{'mData': 'site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False}]
-            specific_headers += rad5_specific_headers
 
         elif page_type in ["customer"]:
             specific_headers = [
@@ -223,8 +219,6 @@ class LivePerformance(ListView):
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
                 {'mData': 'near_end_ip', 'sTitle': 'Near End Ip', 'sWidth': 'auto', 'bSortable': True},
             ]
-
-            specific_headers += rad5_specific_headers
 
         else:
             specific_headers = [
@@ -263,8 +257,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         'sector_id',
         'customer_name',
         'near_end_ip',
-        'ip_address',
         'region',
+        'ip_address',
         'device_type',
         'bs_name',
         'city',
@@ -424,6 +418,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
             columns = [
                 'id',
                 'device_technology',
+                'region',
                 'ip_address',
                 'device_type',
                 'bs_name',

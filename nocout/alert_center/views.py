@@ -132,13 +132,13 @@ class AlertCenterListing(ListView):
         rad5_polled_col = []
 
         # Show region column in all Network Alert Tabs
-        if page_type.lower() == 'network':
-            region_col_visible = True
-        else:
-            region_col_visible = False
+        # if page_type.lower() == 'network':
+        #     region_col_visible = True
+        # else:
+        #     region_col_visible = False
 
         region_header = [
-            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': region_col_visible},
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},
         ]
 
         rad5_headers += region_header
@@ -275,8 +275,7 @@ class AlertCenterListing(ListView):
         ptp_datatable_headers += ptp_starting_headers
         ptp_datatable_headers += common_headers
 
-        if page_type == 'network':
-            ptp_datatable_headers += region_header            
+        ptp_datatable_headers += region_header            
 
         ptp_datatable_headers += polled_headers
         ptp_datatable_headers += other_headers
@@ -296,6 +295,7 @@ class AlertCenterListing(ListView):
         if page_type == 'customer':
             # These headers are for Alert Center -> Customer Details -> Radwin5K Tab
             rad5_customer_detail_headers += rad5_customer_start_headers
+            rad5_customer_detail_headers += region_header
             rad5_customer_detail_headers += polled_headers
             rad5_customer_detail_headers += rad5_other_headers
 
@@ -976,6 +976,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'site_id',
             'city',
             'state',
+            'region',
             'current_value',
         ]
 
@@ -1028,7 +1029,10 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     'ptp_datatable_headers': common_network_ptp_headers + ['data_source_name', 'current_value', 'sys_timestamp', 'age', 'action'],
                     'bh_datatable_headers': [],
                     'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers+region_header+['data_source_name', 'current_value', 'sys_timestamp', 'age', 'action'],
-                    'rad5_customer_detail_headers': common_customer_pmp_wimax_headers + ['data_source_name', 'current_value', 'sys_timestamp', 'age', 'warning_threshold', 'action']
+                    'rad5_customer_detail_headers': common_customer_pmp_wimax_headers + region_header + [
+                                                                                                            'data_source_name', 'current_value',
+                                                                                                            'sys_timestamp', 'age', 'warning_threshold', 'action'
+                                                                                                        ]
                 },
                 'packet_drop' : {
                     'ptp_datatable_headers': customer_pd_and_down_ptp_datatable_headers,
@@ -1208,6 +1212,10 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
         ]
 
+        region_header = [
+            {'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
         rad5_starting_headers = [
             {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', 'bSortable': True},
@@ -1215,12 +1223,13 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'refer', 'sTitle': 'Affected Sectors', 'sWidth': 'auto', 'bSortable': True},
         ]
 
-        rad5_specific_headers = [
-            {'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},
-            # {'mData': 'customer_count', 'sTitle': 'Total Customer Count', 'sWidth': 'auto', 'bSortable': True},
-            # {'mData': 'impacted_customer', 'sTitle': 'Impacted Customer Count', 'sWidth': 'auto', 'bSortable': True},
-            # {'mData': 'impacted_customer_percent', 'sTitle': '% Impacted Customer Count', 'sWidth': 'auto', 'bSortable': True},
-        ]
+        rad5_specific_headers = []
+
+        # rad5_specific_headers += [
+        #     {'mData': 'customer_count', 'sTitle': 'Total Customer Count', 'sWidth': 'auto', 'bSortable': True},
+        #     {'mData': 'impacted_customer', 'sTitle': 'Impacted Customer Count', 'sWidth': 'auto', 'bSortable': True},
+        #     {'mData': 'impacted_customer_percent', 'sTitle': '% Impacted Customer Count', 'sWidth': 'auto', 'bSortable': True},
+        # ]
 
         specific_headers = [
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
@@ -1274,6 +1283,7 @@ class NetworkAlertDetailHeaders(ListView):
         datatable_headers += starting_headers
         datatable_headers += specific_headers
         datatable_headers += common_headers
+        datatable_headers += region_header
         datatable_headers += polled_headers
         datatable_headers += other_headers
 
@@ -1281,6 +1291,7 @@ class NetworkAlertDetailHeaders(ListView):
         backhaul_headers += starting_headers
         # backhaul_headers += specific_headers
         backhaul_headers += common_headers
+        backhaul_headers += region_header
         backhaul_headers += bh_specific_headers
         backhaul_headers += polled_headers
         backhaul_headers += other_headers
@@ -1289,6 +1300,7 @@ class NetworkAlertDetailHeaders(ListView):
         rad5_ul_issue_headers += starting_headers
         rad5_ul_issue_headers += rad5_starting_headers
         rad5_ul_issue_headers += common_headers
+        rad5_ul_issue_headers += region_header
         rad5_ul_issue_headers += rad5_specific_headers
         rad5_ul_issue_headers += polled_headers
         rad5_ul_issue_headers += other_headers
@@ -1297,6 +1309,7 @@ class NetworkAlertDetailHeaders(ListView):
         ul_issue_datatable_headers += starting_headers
         ul_issue_datatable_headers += ul_issue_specific_headers
         ul_issue_datatable_headers += common_headers
+        ul_issue_datatable_headers += region_header
         ul_issue_datatable_headers += polled_headers
         if SHOW_CUSTOMER_COUNT_IN_ALERT_LIST:
             ul_issue_datatable_headers += ul_issue_specific_headers_2
@@ -1306,6 +1319,7 @@ class NetworkAlertDetailHeaders(ListView):
         bh_dt_headers += starting_headers
         bh_dt_headers += bh_dt_specific_headers
         bh_dt_headers += common_headers
+        bh_dt_headers += region_header
         bh_dt_headers += polled_headers
         bh_dt_headers += other_headers
 
@@ -1313,13 +1327,13 @@ class NetworkAlertDetailHeaders(ListView):
         sector_util_hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            # {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
 
         sector_util_headers_1 = [
             {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
         ]
 
         sector_util_headers_2 = [
@@ -1335,7 +1349,7 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'age', 'sTitle': 'Aging (seconds)', 'sWidth': 'auto', 'bSortable': True},
         ]
 
-        sector_util_common_headers = sector_util_headers_1 + sector_util_headers_2 + sector_util_headers_3
+        sector_util_common_headers = sector_util_headers_1 + region_header + sector_util_headers_2 + sector_util_headers_3
 
         sector_utils_headers = []
         sector_utils_headers += sector_util_hidden_headers
@@ -1343,7 +1357,7 @@ class NetworkAlertDetailHeaders(ListView):
 
         rad5_sector_util_headers = []
         rad5_sector_util_headers += sector_util_headers_1
-        rad5_sector_util_headers += [{'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},]
+        rad5_sector_util_headers += region_header
         rad5_sector_util_headers += sector_util_headers_2
         rad5_sector_util_headers += [
             {'mData': 'timeslot_dl', 'sTitle': 'DL Time-slot', 'width': 'auto', 'bSortable': True },
@@ -1354,10 +1368,9 @@ class NetworkAlertDetailHeaders(ListView):
 
         bh_util_hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
 
-        bh_util_common_headers = [
+        bh_util_common_headers_1 = [
             {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto', 'bSortable': True},
             # {'mData': 'backhaul__alias', 'sTitle': 'Backhaul', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
@@ -1365,9 +1378,14 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'basestation__city__city_name', 'sTitle': 'BS City', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'basestation__state__state_name', 'sTitle': 'BS State', 'sWidth': 'auto', 'bSortable': True},
+        ]
+
+        bh_util_common_headers_2 = [
             {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'bSortable': True},
         ]
+
+        bh_util_common_headers = bh_util_common_headers_1 + region_header + bh_util_common_headers_2
 
         bh_utils_headers = []
         bh_utils_headers += bh_util_hidden_headers
@@ -1881,6 +1899,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
+                'organization__alias',
                 'data_source_name',
                 'current_value',
                 'customer_count',
@@ -1917,6 +1936,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
+                'organization__alias',
                 'bh_connectivity',
                 'data_source_name',
                 'current_value',
@@ -1939,6 +1959,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
+                'organization__alias',
                 'data_source_name',
                 'current_value',
                 'sys_timestamp',
@@ -1955,6 +1976,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
+                'organization__alias',
                 'data_source_name',
                 'current_value',
                 'sys_timestamp',
