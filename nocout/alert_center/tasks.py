@@ -5,6 +5,7 @@ from django.utils.dateformat import format
 # datetime utility
 import datetime
 from dateutil.relativedelta import *
+from operator import itemgetter
 from inventory.tasks import bulk_update_create
 from device.models import Device, DeviceTechnology, DeviceType
 from inventory.models import Sector
@@ -121,8 +122,18 @@ def set_planned_events_in_redis(dataset=[]):
 
 	if redis_conn:
 		try:
-			redis_conn.set('planned_events', dataset)
-		except Exception a1s e:
+			# format data
+			planned_event_dict ={}
+			if dataset:
+				dataset = sorted(dataset,key=itemgetter(0))
+			for entry in dataset:
+				if len(entry) == 3:
+					planned_event_dict[(entry[0],entry[1])] = (entry[2],)
+				elif len(entry) == 5:
+					planned_event_dict[(entry[0],entry[1])] = (entry[2],entry[3],entry[4])
+			# Set Data to redis 
+			redis_conn.set('planned_events', planned_event_dict)
+		except Exception as e:
 			logger.error('Set redis data exception -- PE')
 			logger.error(e)
 
