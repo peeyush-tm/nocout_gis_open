@@ -38,6 +38,28 @@ import copy
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
+STATE_WISE_MACHINE_MAPPER = {
+    "andhra pradesh": "ospf4", "bihar": "ospf4", "jharkhand": "ospf4", "orissa": "ospf4",
+    "delhi": "ospf5", "ncr": "ospf5", "gujarat": "ospf3", "karnataka": "ospf1",
+    "kerala": "ospf1", "assam": "ospf4", "west bengal": "ospf4", "chhattisgarh": "ospf4", 
+    "madhya pradesh": "ospf4", "himachal pradesh": "ospf5", "haryana": "ospf2", "jammu and kashmir": "ospf5", 
+    "punjab": "ospf2", "goa": "ospf1", "maharashtra": "ospf3", "rajasthan": "ospf2",
+    "tamil nadu": "ospf1", "uttar pradesh": "ospf5", "uttarakhand": "ospf5"
+}
+
+STATE_WISE_REGION_MAPPER = {
+    "andhra pradesh": "AP", "telangana": "AP", "bihar": "BR-JH-OR", "jharkhand": "BR-JH-OR", 
+    "orissa": "BR-JH-OR", "delhi": "Delhi-NCR", "ncr": "Delhi-NCR", "gujarat": "GJ", 
+    "daman and diu": "GJ", "dadra and nagar haveli": "GJ", "karnataka": "KA", "kerala": "KL", 
+    "lakshadweep": "KL", "arunachal pradesh": "Kol-RoWB-NESA", "assam": "Kol-RoWB-NESA", 
+    "manipur": "Kol-RoWB-NESA", "meghalaya": "Kol-RoWB-NESA", "mizoram": "Kol-RoWB-NESA", 
+    "nagaland": "Kol-RoWB-NESA", "sikkim": "Kol-RoWB-NESA", "tripura": "Kol-RoWB-NESA", 
+    "west bengal": "Kol-RoWB-NESA", "chhattisgarh": "MP-CG", "madhya pradesh": "MP-CG", 
+    "himachal pradesh": "PB-HR-HP-J&K", "haryana": "PB-HR-HP-J&K", "jammu and kashmir": "PB-HR-HP-J&K", 
+    "punjab": "PB-HR-HP-J&K", "goa": "PN-RoM-Goa", "maharashtra": "PN-RoM-Goa", "rajasthan": "RJ", 
+    "tamil nadu": "TN", "pondicherry": "TN", "uttar pradesh": "UP", "uttarakhand": "UP"
+}
+
 
 @task()
 def update_sector_frequency_per_day():
@@ -1578,6 +1600,13 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
         pine_type = getPrimaryKey(model_name='DeviceType', value='PINE')
 
         for row in complete_d:
+            
+            if not row.get('Organization'):
+                try:
+                    row['Organization'] = STATE_WISE_REGION_MAPPER[row['State'].strip().lower()]
+                except Exception as e:
+                    pass
+
             # Create organization object
             try:
                 organization = get_organization_from_sheet(row.get('Organization'))
@@ -2716,6 +2745,12 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
 
         for row in complete_d:
 
+            if not row.get('Organization'):
+                try:
+                    row['Organization'] = STATE_WISE_REGION_MAPPER[row['State'].strip().lower()]
+                except Exception as e:
+                    pass
+
             # Create organization object
             try:
                 organization = get_organization_from_sheet(row.get('Organization'))
@@ -3760,6 +3795,12 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto='', is_ra
 
         for row in complete_d:
 
+            if not row.get('Organization'):
+                try:
+                    row['Organization'] = STATE_WISE_REGION_MAPPER[row['State'].strip().lower()]
+                except Exception as e:
+                    pass
+
             # Create organization object
             try:
                 organization = get_organization_from_sheet(row.get('Organization'))
@@ -4624,17 +4665,6 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto='', is_ra
 
         for row in complete_d:
 
-            # Create organization object
-            try:
-                organization = get_organization_from_sheet(row.get('Organization'))
-            except Exception, e:
-                try:
-                    organization = Organization.objects.get(name__iexact='tcl')
-                except Exception, e:
-                    organization = ''
-                    total_organization = Organization.objects.all().count()
-                    if total_organization:
-                        organization = Organization.objects.all()[0]
 
             # increment device latest id by 1
             device_latest_id += 1
@@ -4653,6 +4683,29 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto='', is_ra
             sector = ""
             customer = ""
             circuit = ""
+
+            if not row.get('Organization'):
+                try:
+                    ss_bs_ip = ip_sanitizer(row['AP IP'] if 'AP IP' in row else "")
+                    sector = Sector.objects.get(
+                        sector_configured_on__ip_address=ss_bs_ip
+                    )
+                    row['Organization'] = sector.sector_configured_on.organization.name
+                except Exception as e:
+                    logger.error('AP IP - Org fetch exception for {0}'.format(str(row.get('AP IP'))))
+                    pass
+
+            # Create organization object
+            try:
+                organization = get_organization_from_sheet(row.get('Organization'))
+            except Exception, e:
+                try:
+                    organization = Organization.objects.get(name__iexact='tcl')
+                except Exception, e:
+                    organization = ''
+                    total_organization = Organization.objects.all().count()
+                    if total_organization:
+                        organization = Organization.objects.all()[0]
 
             # SS device vendor.
             ss_device_vendor = cambium_vendor # 4 # Name --> Cambium
@@ -4874,9 +4927,11 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype, auto='', is_ra
             sector = ""
 
             try:
-                ss_bs_ip = ip_sanitizer(row['AP IP'] if 'AP IP' in row else "")
-                sector_configured_on_device = Device.objects.get(ip_address=ss_bs_ip)
-                sector = Sector.objects.get(sector_configured_on=sector_configured_on_device)
+                if not sector:
+                    ss_bs_ip = ip_sanitizer(row['AP IP'] if 'AP IP' in row else "")
+                    sector = Sector.objects.get(
+                        sector_configured_on__ip_address=ss_bs_ip
+                    )
             except Exception as e:
                 logger.error("Sector not found. Exception:")
 
@@ -5056,6 +5111,12 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
 
         for row in complete_d:
 
+            if not row.get('Organization'):
+                try:
+                    row['Organization'] = STATE_WISE_REGION_MAPPER[row['State'].strip().lower()]
+                except Exception as e:
+                    pass
+
             # Create organization object
             try:
                 organization = get_organization_from_sheet(row.get('Organization'))
@@ -5158,6 +5219,12 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
 
                     # Machine Numbers.
                     m_numbers = []
+
+                    if not row.get('Machine Name'):
+                        try:
+                            row['Machine Name'] = STATE_WISE_MACHINE_MAPPER[str(row['State']).strip().lower()]
+                        except Exception as e:
+                            pass
 
                     if row.get('Machine Name'):
                         try:
@@ -6066,18 +6133,6 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype, auto=''):
 
         for row in complete_d:
 
-            # Create organization object
-            try:
-                organization = get_organization_from_sheet(row.get('Organization'))
-            except Exception, e:
-                try:
-                    organization = Organization.objects.get(name__iexact='tcl')
-                except Exception, e:
-                    organization = ''
-                    total_organization = Organization.objects.all().count()
-                    if total_organization:
-                        organization = Organization.objects.all()[0]
-
             # increment device latest id by 1
             device_latest_id += 1
 
@@ -6095,6 +6150,32 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype, auto=''):
             sector = ""
             customer = ""
             circuit = ""
+
+            if not row.get('Machine Name'):
+                try:
+                    sector_id = row['Sector ID'].strip() if 'Sector ID' in row.keys() else ""
+                    sector = Sector.objects.get(
+                        sector_id__iexact=sector_id
+                    )
+                    row['Machine Name'] = sector.sector_configured_on.machine.name
+
+                    if not row.get('Organization'):
+                        row['Organization'] = sector.sector_configured_on.organization.name
+                except Exception as e:
+                    logger.error('(Machine) No Sector found for {0}'.format(str(sector_id)))
+                    logger.error(e.message)
+
+            # Create organization object
+            try:
+                organization = get_organization_from_sheet(row.get('Organization'))
+            except Exception, e:
+                try:
+                    organization = Organization.objects.get(name__iexact='tcl')
+                except Exception, e:
+                    organization = ''
+                    total_organization = Organization.objects.all().count()
+                    if total_organization:
+                        organization = Organization.objects.all()[0]
 
             # SS device type
             ss_device_type = starmaxss_type # 5 # Name --> StarmaxSS
@@ -6303,13 +6384,12 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype, auto=''):
                 customer = ""
 
             # ------------------------------ GET SS SECTOR ------------------------------
-            # ss sector
-            sector = ""
-
             try:
-                sector_id = row['Sector ID'].strip() if 'Sector ID' in row.keys() else ""
-                sector = Sector.objects.filter(sector_id=sector_id)[0]
+                if not sector:
+                    sector_id = row['Sector ID'].strip() if 'Sector ID' in row.keys() else ""
+                    sector = Sector.objects.get(sector_id__iexact=sector_id)
             except Exception as e:
+                logger.error('No Sector found for {0}'.format(str(sector_id)))
                 logger.error(e.message)
 
             try:
@@ -6480,6 +6560,12 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype, auto=''):
         juniper_type = getPrimaryKey(model_name='DeviceType', value='Juniper')
 
         for row in complete_d:
+
+            if not row.get('Organization'):
+                try:
+                    row['Organization'] = STATE_WISE_REGION_MAPPER[row['State'].strip().lower()]
+                except Exception as e:
+                    pass
 
             # Create organization object
             try:
