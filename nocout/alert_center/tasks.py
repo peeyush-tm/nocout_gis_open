@@ -111,7 +111,7 @@ def get_child_ips(device):
 					'sector_configured_on__ip_address', flat=True
 				))
 
-	return ','.join(ips)
+	return ','.join(list(set(ips)))
 
 def set_planned_events_in_redis(dataset=[]):
 	"""
