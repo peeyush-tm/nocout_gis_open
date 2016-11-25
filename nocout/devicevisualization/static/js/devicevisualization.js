@@ -2918,6 +2918,7 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
         var fetched_status = info_obj.maintenance_status,
             bs_maintenance_status = fetched_status ? $.trim(fetched_status) : "No",
             bs_lat = info_obj.lat,
+            bs_topo_url = info_obj.topo_view_url ? info_obj.topo_view_url : "",
             bs_lon = info_obj.lon;
 
         required_info = {
@@ -2934,6 +2935,7 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
             dataset            : info_obj.dataset ? info_obj.dataset : [],
             bh_dataset         : info_obj.bh_dataset ? info_obj.bh_dataset : [],
             bhInfo_polled      : [],
+            topo_url           : bs_topo_url,
             bhSeverity         : "",
             bs_name            : info_obj.name,
             alias              : info_obj.alias,
@@ -2950,6 +2952,7 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
 
         var sector_perf_url = info_obj.perf_page_url ? info_obj.perf_page_url : "",
             sector_inventory_url = info_obj.inventory_url ? info_obj.inventory_url : "",
+            sector_topo_url = info_obj.topo_view_url ? info_obj.topo_view_url : "",
             fetched_azimuth = info_obj.azimuth_angle,
             fetched_beamWidth = info_obj.beam_width,
             rad = info_obj.radius && Number(info_obj.radius) > 0 ? info_obj.radius : 0.5,
@@ -2985,6 +2988,7 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
             link_status           : info_obj.link_status ? info_obj.link_status : 'NA',
             link_status_timestamp : info_obj.link_status_timestamp ? info_obj.link_status_timestamp : 'NA',
             perf_url              : sector_perf_url,
+            topo_url              : sector_topo_url,
             inventory_url         : sector_inventory_url,
             sectorName            : info_obj.ip_address,
             sector_child          : info_obj.sub_stations,
@@ -3004,6 +3008,7 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
     } else if (elem_type == 'sub_station') {
         var ss_perf_url = info_obj.perf_page_url ? info_obj.perf_page_url : "",
             ss_inventory_url = info_obj.inventory_url ? info_obj.inventory_url : "",
+            ss_topo_url = info_obj.topo_view_url ? info_obj.topo_view_url : "",
             ss_info_dict = info_obj.dataset ? info_obj.dataset : [],
             ss_pl_rta_timestamp = info_obj.pl_timestamp ? info_obj.pl_timestamp : "",
             ss_pl = info_obj.pl ? info_obj.pl : "",
@@ -3026,6 +3031,7 @@ function getMarkerInfoJson(info_obj, elem_type, extra_info) {
             link_status           :  info_obj.link_status ? info_obj.link_status : 'NA',
             link_status_timestamp :  info_obj.link_status_timestamp ? info_obj.link_status_timestamp : 'NA',
             inventory_url         :  ss_inventory_url,
+            topo_url              :  ss_topo_url,
             antenna_height        :  info_obj.antenna_height,
             name                  :  info_obj.name,
             bs_name               :  extra_info.filter_info.bs_name,

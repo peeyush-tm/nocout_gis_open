@@ -1764,6 +1764,7 @@ function devicePlottingClass_gmap() {
 					beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
 					sector_color = fetched_color,
 					sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
+					sector_topo_url = sector_array[j].topo_view_url ? sector_array[j].topo_view_url : "",
 					sector_inventory_url = sector_array[j].inventory_url ? sector_array[j].inventory_url : "",
 					sector_item_index = sector_array[j].item_index > -1 ? sector_array[j].item_index : 0,
 					sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
@@ -3011,9 +3012,9 @@ function devicePlottingClass_gmap() {
 				}
 
 			} else if (clickedType == 'sector_Marker' || clickedType == 'sector') {
-
 				var sectorWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : "Base Station Device",
 					nearend_perf_url = contentObject.perf_url ? base_url+""+contentObject.perf_url : "",
+					nearend_topo_url = contentObject.topo_url ? base_url+""+contentObject.topo_url : "",
 					nearend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
 					tools_html = "",
 					// device_info = contentObject['deviceInfo'] ? contentObject['deviceInfo'] : [],
@@ -3031,6 +3032,10 @@ function devicePlottingClass_gmap() {
 
 				if(nearend_inventory_url) {
 					tools_html += "<a href='"+nearend_inventory_url+"' target='_blank' title='Inventory'><i class='fa fa-dropbox text-info'> </i></a>";
+				}
+
+				if(nearend_topo_url) {
+					tools_html += "<a href='"+nearend_topo_url+"' target='_blank' title='Topology View'><i class='fa fa-sitemap text-info'> </i></a>";
 				}
 
 				// infoTable += "<table class='table table-bordered table-hover'><tbody>";
@@ -3205,6 +3210,7 @@ function devicePlottingClass_gmap() {
 					ss_circuit_id = "",
 					BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase(),
 					farend_perf_url = contentObject.perf_url ? base_url+""+contentObject.perf_url : "",
+					farend_topo_url = contentObject.topo_url ? base_url+""+contentObject.topo_url : "",
 					farend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
 					tools_html = "",
 					item_index = contentObject.item_index > -1 ? contentObject.item_index : 0,
@@ -3238,6 +3244,10 @@ function devicePlottingClass_gmap() {
 
 				if(farend_inventory_url) {
 					tools_html += "<a href='"+farend_inventory_url+"' target='_blank' title='Inventory'><i class='fa fa-dropbox text-info'> </i></a>";
+				}
+
+				if(farend_topo_url) {
+					tools_html += "<a href='"+farend_topo_url+"' target='_blank' title='Topology View'><i class='fa fa-sitemap text-info'> </i></a>"
 				}
 
 				/*Tab-content Start*/
@@ -3418,6 +3428,8 @@ function devicePlottingClass_gmap() {
 				var startPtInfo = [],
 					item_index = contentObject.item_index > -1 ? contentObject.item_index : 0,
 					BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase(),
+					bs_topo_url = contentObject.topo_url ? base_url+""+contentObject.topo_url : "",
+					tools_html = "",
 					bs_id = contentObject.filter_data.bs_id;
 					report_type="base_station"
 
@@ -3425,6 +3437,10 @@ function devicePlottingClass_gmap() {
 					// Rearrange BS tootip info as per actual sequence
 					var bs_actual_data = rearrangeTooltipArray(bs_toolTip_static,contentObject.dataset);
 					startPtInfo = bs_actual_data;
+				}
+
+				if(bs_topo_url) {
+					tools_html += "<a href='"+bs_topo_url+"' target='_blank' title='Topology View'><i class='fa fa-sitemap text-info'> </i></a>"
 				}
 
 				var report_download_btn = "";
@@ -3536,7 +3552,7 @@ function devicePlottingClass_gmap() {
 				/*Final infowindow content string*/
 				windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
 								  <div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  \
-								  "+BsSsWindowTitle+"</h4><div class='tools'><a class='close_info_window' title='Close'>\
+								  "+BsSsWindowTitle+"</h4><div class='tools'>"+tools_html+"<a class='close_info_window' title='Close'>\
 								  <i class='fa fa-times text-danger'></i></a></div></div>\
 								  <div class='box-body'><div align='center'>"+infoTable+"</div>\
 								  <div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'>\

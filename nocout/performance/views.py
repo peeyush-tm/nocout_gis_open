@@ -7640,6 +7640,11 @@ class GetTopology(View):
             'data': list()
         }
 
+        bs_id = ''
+        page_type = ''
+        current_device_id = ''
+        device_technology = ''
+
         bs_id = self.request.GET.get('bs_id')
         page_type = self.request.GET.get('page_type').lower()
         current_device_id = self.request.GET.get('device_id')
@@ -8408,7 +8413,6 @@ class GetTopology(View):
                         circuit_id,
                         sect_device
                     )
-
             else :
                 topology_query = ''' 
                     SELECT
