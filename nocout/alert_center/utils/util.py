@@ -551,7 +551,9 @@ def common_get_severity_icon(severity):
     elif severity in ['normal']:
         severity_icon = '<i class="fa fa-circle purple-dot" title="{0}">\
                          <span style="display:none">{0}</span></i>'.format(severity.title())
-
+    elif severity in ['indowntime']:
+        severity_icon = '<i class="fa fa-circle blue-dot" value="4" title="In Downtime"> \
+                        <span style="display:none">In Downtime</span></i>'
     else:
         severity_icon = '<i class="fa fa-circle grey-dot" title="{0}">\
                          <span style="display:none">UP</span></i>'.format(severity.title())

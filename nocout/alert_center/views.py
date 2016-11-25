@@ -669,6 +669,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
                             # if ul_uas.exists():
                             #     ul_uas = ul_uas[0]
+
                         elif data_source == 'latency':
 
                             dl_utilization = UtilizationStatus.objects.filter(
@@ -707,6 +708,13 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     dct_device_type,
                     scheduling_type
                 )
+
+                try:
+                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=dct['ip_address'])
+                    if planned_events:
+                        showIconBlue = True
+                except Exception as e:
+                    pass
 
                 if showIconBlue:
                     dct.update(severity= 'inDownTime')
@@ -1689,6 +1697,13 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                     service_tab_name = 'down'
 
             for dct in qs:
+
+                try:
+                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=dct['ip_address'])
+                    if planned_events:
+                        dct['severity'] = 'INDOWNTIME'
+                except Exception as e:
+                    pass
 
                 dct = alert_utils.common_prepare_results(dct)
 
@@ -2924,6 +2939,14 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 pk = dct.get('id')
                 ip_address = dct.get('ip_address')
                 severity = dct.get('severity')
+
+                try:
+                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=ip_address)
+                    if planned_events:
+                        severity = 'INDOWNTIME'
+                except Exception as e:
+                    pass
+
                 event_name = dct.get('eventname')
                 severity_icon = alert_utils.common_get_severity_icon(severity)
                 uptime = dct.get('uptime')
@@ -2937,16 +2960,16 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     condition3 = dct.get('device_name')
                     condition4 = self.alarm_type == 'current'
                     manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4
+                    has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
 
                     if manual_action_condition:
-                        has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
                         if not has_ticket_number and not is_manual:
                             action += '<a href="javascript:;" class="manual_ticketing_btn" data-ip="{0}" data-severity="{1}" \
                                        data-alarm="{2}" data-pk="{3}" title="Generate Manual Ticket"> \
                                        <i class="fa fa-sign-in"></i></a>&nbsp;&nbsp;'.format(ip_address, severity, event_name, pk)
 
-                        if is_manual and has_ticket_number:
-                            ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
+                    if is_manual and has_ticket_number:
+                        ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
                 except Exception, e:
                     pass
 
@@ -3215,16 +3238,19 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         'latency': {
             'warning': 'orange-dot',
             'major': 'red-dot',
-            'clear': 'green-dot'
+            'clear': 'green-dot',
+            'indowntime': 'blue-dot'
         },
         'packet_drop': {
             'warning': 'orange-dot',
             'major': 'red-dot',
-            'clear': 'green-dot'
+            'clear': 'green-dot',
+            'indowntime': 'blue-dot'
         },
         'down': {
             'critical': 'red-dot',
-            'clear': 'green-dot'
+            'clear': 'green-dot',
+            'indowntime': 'blue-dot'
         }
     }
 
@@ -3637,6 +3663,12 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 severity = dct.get('severity')
                 event_name = dct.get('eventname')
                 ip_address = dct.get('ip_address')
+                try:
+                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=ip_address)
+                    if planned_events:
+                        severity = 'indowntime'
+                except Exception as e:
+                    pass
                 is_manual = dct.get('is_manual')
                 ticket_number = dct.get('ticket_number')
                 action = ''
@@ -3661,16 +3693,16 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     condition4 = self.alarm_type == 'current'
                     condition5 = ip_address in self.manual_ticketing_bh_ips
                     manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4 and condition5
+                    has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
                     
                     if manual_action_condition:
-                        has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
                         if not has_ticket_number and not is_manual:
                             action += '<a href="javascript:;" class="manual_ticketing_btn" data-ip="{0}" data-severity="{1}" \
                                        data-alarm="{2}" data-pk="{3}" title="Generate Manual Ticket"> \
                                        <i class="fa fa-sign-in"></i></a>&nbsp;&nbsp;'.format(ip_address, severity, event_name, pk)
 
-                        if is_manual and has_ticket_number:
-                            ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
+                    if is_manual and has_ticket_number:
+                        ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
                 except Exception, e:
                     pass
 
