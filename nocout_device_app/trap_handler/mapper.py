@@ -753,11 +753,13 @@ class Eventmapper(object):
                 #logger.error("Monolith_ticket_traps {0}".format(monolith_ticket_traps))
                 #logger.error("chanish : monolith_ticket_traps {0}".format(monolith_ticket_traps))
                 traps = self.process_deviceticket(monolith_ticket_traps)
+		"""
                 table = 'device_deviceticket'
                 columns = ('ip_address','alarm_id')
                 p0 = "UPDATE  device_deviceticket SET ticket_number= %(ticket_number)s WHERE "
                 p2 = ' and '.join(map(lambda x: x+'= %('+ x + ')s', columns))
                 query_for_device_deviceticket = ''.join([p0,p2])
+		"""
                 #logger.error('Query device_deviceticket : {0}'.format(query_for_device_deviceticket))
 		query_current_alarm  =  'UPDATE alert_center_currentalarms SET ticket_number = %(ticket_number)s \
                                 	where alarm_id = %(alarm_id)s'
@@ -775,10 +777,12 @@ class Eventmapper(object):
 		    for each_trap in traps:
                         try:
                             # Store the Ticket and other information on application database.
+			    """
                             try :
 			        export_traps.exec_qry(query_for_device_deviceticket, each_trap, False, db_name='application_db')
 			    except Exception,e :
 			        print "Error in query for device_deviceticket %s",query_for_device_deviceticket
+			    """
 			    export_traps.exec_qry(query_current_alarm, each_trap, False, db_name='snmptt_db')
 			    affected_row_count = export_traps.exec_qry(query_clear_alarm, each_trap, False, db_name='snmptt_db')
 
@@ -796,7 +800,7 @@ class Eventmapper(object):
 				    monolith_ticket_alarm_data['ticket_number'] = ticket_number
 				    monolith_ticket = { eventname: monolith_ticket_alarm_data }
 			        else :
-				    #monolith_ticket = {eventname : (ticket_number,alarm_id)}
+				    monolith_ticket = {eventname : (ticket_number,alarm_id)}
 				    logger.error('Monolith ticket alarm not found')
 				redis_cnx_mat.set('monolith_ticket:' + ip_address, monolith_ticket)
 			    export_traps.exec_qry(query_history_alarm, each_trap, False,db_name='snmptt_db')
