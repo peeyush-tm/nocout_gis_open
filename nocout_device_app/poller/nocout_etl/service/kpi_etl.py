@@ -434,11 +434,12 @@ def insert_bs_ul_issue_data_to_redis(bs_service_dict_list):
 	#print "BS Dict Here",bs_service_dict
 	#bs_service_dict = self.bs_service_dict
         rds_cli = RedisInterface()
+        redis_cnx = rds_cli.redis_cnx
         #print "BS UL issue record state : %s \n" %str(bs_service_dict['state'])
         for (bs_service_dict,site) in bs_service_dict_list :
 	    machine_name = site.split('_')[0]
 	    if bs_service_dict['state'] in ['ok','warning','critical'] :
-	        rds_cli.redis_cnx.rpush('q:bs_ul_issue_event:%s' % machine_name, bs_service_dict)
+	        redis_cnx.rpush('q:bs_ul_issue_event:%s' % machine_name, bs_service_dict)
                 #print "BS UL issue record inserted in Redis : ",rds_cli.redis_cnx.lrange('q:bs_ul_issue_event',0, -1),"\n"
     except Exception ,exp :
         print "Error in Redis DB Data Insertion UL Issue : %s \n" % str(exp)
@@ -2096,6 +2097,7 @@ def extract_rad5k_ul_issue_data(**args):
     rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
     p = rds_cli.redis_cnx.pipeline()
     memc_conn  = extract_rad5k_ul_issue_data.memc_cnx
+    redis_cnx = rds_cli.redis_cnx
     args['memc'] = ''
     redis_conn =args['redis']
     args['redis'] = ''
@@ -2109,7 +2111,7 @@ def extract_rad5k_ul_issue_data(**args):
         conn_ss_ip = extract_cambium_connected_ss(host_name,memc_conn)  # used as generaic function 
 	sect_id = None
         if conn_ss_ip:
-            ss_key = map(lambda x: rds_cli.redis_cnx.keys(pattern="rad5k:ss:*:%s" %x) ,conn_ss_ip)  # getting key to data from redis
+            ss_key = map(lambda x: redis_cnx.keys(pattern="rad5k:ss:*:%s" %x) ,conn_ss_ip)  # getting key to data from redis
             [p.lrange(k[0], 0 , -1) for k  in ss_key if k]
             ss_info = p.execute()
             ss_ul_issue_data.append((ss_info,host_name,site_name,ip_address,sect_id,None))   # 6 parameter, in order to make it generic add None 
