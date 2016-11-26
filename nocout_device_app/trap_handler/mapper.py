@@ -21,6 +21,9 @@ global alarm_mask_oid
 global mat_entries
 global monolith_ticket_dict
 global correlated_trap_alarm_id
+global alarms_to_forward_to_monolith
+global alarm_mask_alarm_name
+
 formatline_indexes = {
 	# for wimax we need only these two vars
         'wimax': {
@@ -159,6 +162,32 @@ class Eventmapper(object):
 
 	return  alarm_masking_dict
 
+   def get_alarm_mask_alarm_name(self):
+        """ For every current trap, adds its corresponding clear trap
+        and vice-versa"""
+        alarm_mask_alarm_dict = defaultdict(list)
+        query = """
+        SELECT master1.alarm_name, master1.severity, master2.alarm_name,master2.severity
+        FROM
+                alarm_masking_table mask
+        INNER JOIN
+                master_alarm_table master1
+        ON
+                mask.alarm_id = master1.id
+        INNER JOIN
+                master_alarm_table master2
+        ON
+                mask.alarm_mask_id = master2.id
+
+        """
+        my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
+        cursor = my_cnx.cursor()
+        cursor.execute(query)
+        alarm_mask_data = cursor.fetchall()
+        for (name,severity,mask_name,mask_severity) in alarm_mask_data:
+                alarm_mask_alarm_dict[(name,severity)].append((mask_name,mask_severity))
+        return  alarm_mask_alarm_dict
+
    def get_mapped_mat_entries(self):
         """ Mapped MAT entries"""
         mat_entries = []
@@ -198,6 +227,25 @@ class Eventmapper(object):
 
         return mat_entries
 
+   def get_alarms_to_forward_to_monolith(self):
+        """ Mapped MAT entries for which alarm has to be forwarded to monolith"""
+        alarms_to_forward_to_monolith = []
+        query = """
+        SELECT
+                alarm_name, severity
+        FROM
+                master_alarm_table
+        WHERE
+                alarm_forward_to_monolith = 1
+        """
+        my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
+        cursor = my_cnx.cursor()
+        cursor.execute(query)
+        alarms_to_forward_to_monolith = [(item[0],item[1]) for item in cursor.fetchall()]
+        #print "alarms_to_forward_to_monolith",alarms_to_forward_to_monolith
+        return alarms_to_forward_to_monolith
+
+
    def make_unique_event_dict(self,events,flag=None):
         # Sample trap entry
         # (222026, u'RAD5K_hbsEncryptionClear', u'.1.3.6.1.4.1.4458.1000.0.237', u'10.172.207.71', 
@@ -210,7 +258,11 @@ class Eventmapper(object):
         #sorted_traps = sorted(traps.items(),key=operator.itemgetter(0))
         global alarm_mask_oid
         global mat_entries
+	global alarms_to_forward_to_monolith
+	global alarm_mask_alarm_name
         mat_entries =  self.get_mapped_mat_entries()
+	alarms_to_forward_to_monolith = self.get_alarms_to_forward_to_monolith()
+	alarm_mask_alarm_name = self.get_alarm_mask_alarm_name()
         alarm_mask_oid = self.get_alarm_mask_oids()
         mask_oid_key = None
         mat_entry = None
@@ -296,7 +348,7 @@ class Eventmapper(object):
 
    def return_ticket_details(self,ip_address,eventname,severity):
 	"""Fetch Alarm Id, Ticket Number, Manual trap bit for particular IP Address and Eventname"""
-	mask_key =  alarm_mask_oid.get((eventname,severity.lower()))
+	mask_key = alarm_mask_alarm_name.get((eventname,severity.lower()))
         mask_eventname,mask_severity = mask_key[0]
         if severity in severity_for_clear_table :
             try :
@@ -424,7 +476,7 @@ class Eventmapper(object):
                                 })
             trap = ()
             #if new_trap['eventname'] not in exclude_in_redis_event :
-            if new_trap and (new_trap['eventname'] not in exclude_in_correlation ):
+            if new_trap and (new_trap['eventname'],new_trap['severity']) in alarms_to_forward_to_monolith:
                 trap = (
                 '',
                 new_trap['eventname'],
@@ -630,8 +682,8 @@ class Eventmapper(object):
                                 new_trap['is_manual'] = None
 				current_traps.append(new_trap)
 			else:
-                                new_event['ticket_number'] = ticket_number
-                                new_event['alarm_id'] = alarm_id
+                                new_trap['ticket_number'] = ticket_number
+                                new_trap['alarm_id'] = alarm_id
                                 new_trap['is_manual'] = None
 				clear_traps.append(new_trap)
 		except IndexError as exc:
@@ -693,6 +745,7 @@ class Eventmapper(object):
                 current_traps,clear_traps,require_masking = self.process_events(other_traps,alarm_mask_oid,flag='trap')
                 self.update_db(current_traps=current_traps,clear_traps=clear_traps,\
                                 require_masking=require_masking,flag='trap')
+	self.update_trap_count(alarm_count_dict)
 
         # Traps from monolith for RF-IP correlation module
         if monolith_ticket_traps:
@@ -751,7 +804,6 @@ class Eventmapper(object):
                         except Exception as exc:
                                 inserted = False
                                 #logger.error('chanish : Exc in mysql trap insert: {0}'.format(exc))
-        self.update_trap_count(alarm_count_dict)
 
    def process_deviceticket(self,monolith_traps):
         traps = []
