@@ -878,6 +878,10 @@ class ProcessedReportEmailAPI(View):
                 except Exception, e:
                     # Generated Email for PingStabilityTest Report.
                     ip_address = processed_reports.ip_address
+                    circuit_id = processed_reports.circuit_id if processed_reports.circuit_id not in ['', None] else 'NA'
+                    customer_name = processed_reports.customer_name if processed_reports.customer_name not in ['', None] else 'NA'
+                    technology = processed_reports.technology.alias
+                    remark = processed_reports.remark if processed_reports.remark else 'NA'
                     created_at = processed_reports.created_at
                     time_duration = processed_reports.time_duration
 
@@ -889,13 +893,28 @@ class ProcessedReportEmailAPI(View):
                     else:
                         email_list = []
 
-                    subject = 'Ping Stability Test : {0}'.format(ip_address)
-                    message = "created at : {0}         time duration: {1}".format(created_at,time_duration)
-                    file_path = processed_reports.file_path
-                    file_path = file_path.split(',')
+                    # Stability test file path
+                    file_path = [processed_reports.file_path]
+                    # Email subject
+                    subject = 'Ping Stability Test Result {0}_{1}_{2}'.format(circuit_id, customer_name, technology)
+                    # Create email body
+                    message = '' 
+                    message += 'Dear Team, <br/><br/>'
+                    message += 'Please find the ping stability test result: <br/>'
+                    message += 'Created At : {0}        Time Duration : {1} <br/>'.format(created_at, time_duration)
+                    message += 'Remark: {0} <br/><br/><br/>'.format(remark)
+
+                    try:
+                        file_content = ''
+                        with open(processed_reports.file_path, 'r') as x:
+                            file_content = ' <br/>'.join(x.readlines())
+                        message += file_content
+                    except Exception as e:
+                        pass
+
                     result = {
                         "success": 0,
-                        "message": "Failed to send email.",
+                        "message": "Email sent successfully.",
                         "data": {
                             "subject": subject,
                             "message": message,
@@ -904,6 +923,7 @@ class ProcessedReportEmailAPI(View):
                             "attachment_path": file_path
                         }
                     }
+
                 # Verifying if email Report is enabled for this Report.
                 #if report_email_perm.get(page_name):
                 request_object = HttpRequest()
@@ -911,7 +931,6 @@ class ProcessedReportEmailAPI(View):
                 # Generating POST Request for EmailSender API.
                 email_sender = EmailSender()
                 email_sender.request = request_object
-
                 try:
                     email_sender.request.POST = {
                         'subject': subject,
