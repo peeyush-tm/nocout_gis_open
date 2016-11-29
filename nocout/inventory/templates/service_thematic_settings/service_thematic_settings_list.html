@@ -28,7 +28,12 @@
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
                         <li><a href="#network_wifi_block" id="network_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
-                        <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                        {% if settings.SHOW_SPRINT3 %}
+                            <li><a href="#network_rad5_block" id="network_rad5_tab" data-toggle="tab"><span class="hidden-inline-mobile">Radwin5K</span></a></li>
+                            <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">Cambium</span></a></li>
+                        {% else %}
+                            <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                        {% endif %}
                         <li class="active"><a href="#network_p2p_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
@@ -40,6 +45,12 @@
                     </div>
                     <div class="tab-pane" id="network_pmp_block">
                         <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ServiceThematicSettingsListingTable_pmp">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_rad5_block">
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ServiceThematicSettingsListingTable_rad5">
                             <thead></thead>
                             <tbody></tbody>
                         </table>

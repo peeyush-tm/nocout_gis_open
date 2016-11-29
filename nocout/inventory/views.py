@@ -34,7 +34,8 @@ from django.conf import settings
 
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_TIME_FORMAT, USE_SOAP_TICKETING
+from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_TIME_FORMAT, USE_SOAP_TICKETING, \
+    SHOW_SPRINT3
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
@@ -2523,6 +2524,15 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
         "tab_kwarg": 'technology',
         "tab_attr": "threshold_template__live_polling_template__technology__name",
     }
+
+    if SHOW_SPRINT3:
+        tab_search = {
+            "tab_kwarg": 'technology',
+            "tab_attr": "threshold_template__live_polling_template__technology__name",
+        }
+
+
+    # if SHOW_SPRINT3 and 
 
     def get_initial_queryset(self):
         is_global = 1
