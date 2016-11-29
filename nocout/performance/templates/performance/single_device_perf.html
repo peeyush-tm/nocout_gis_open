@@ -548,7 +548,8 @@
             device_reboot_url = '',
             is_others_other_tab = 0,
             is_topo_tab_clicked = false,
-            enable_reboot_btn = false;
+            enable_reboot_btn = false,
+            topo_alarms_url = '';
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -574,6 +575,7 @@
             alert_url = "",
             power_table_id = 'power_msg_listing',
             power_ajax_url = "";
+            topo_alarms_url = "{% url 'get_topology_snmp_alarms' %}"
             // Getting ssh url, username and password from settings.py
             ssh_url = '{{ settings.SSH_URL }}';
             ssh_username = '{{ settings.SSH_USERNAME }}';
