@@ -101,15 +101,27 @@
          */
         $('#test_submit_btn').click(function(e) {
             var ip_address = $.trim($('#ip_address').val()),
+                circuit_id = $('#circuit_id').length > 0 ? $.trim($('#circuit_id').val()) : true,
+                customer_name = $('#customer_name').length > 0 ? $.trim($('#customer_name').val()) : true,
                 tech_id = $.trim($('#technology').val()),
                 duration = $.trim($('#time_duration').val()),
-                email_ids = $.trim($('#email_ids').val());
+                email_ids = $.trim($('#email_ids').val()),
+                remark = $('#remark').length > 0 ? $.trim($('#remark').val()) : '';
 
-            if (ip_address && tech_id && duration) {
+            if (ip_address && circuit_id && customer_name && tech_id && duration) {
                 if (!validateIPaddress(ip_address)) {
                     $('.ip_error_msg').removeClass('hide');
                 } else {
                     $('#ip_address').closest('.form-group').removeClass('has-error');
+                    
+                    if($('#circuit_id').length > 0) {
+                        $('#circuit_id').closest('.form-group').removeClass('has-error');
+                    }
+
+                    if($('#customer_name').length > 0) {
+                        $('#customer_name').closest('.form-group').removeClass('has-error');
+                    }
+
                     $('#technology').closest('.form-group').removeClass('has-error');
                     $('#time_duration').closest('.form-group').removeClass('has-error');
                     $('.form_status_msg').addClass('hide');
@@ -126,10 +138,13 @@
                         type: 'POST',
                         data: {
                             'ip_address': ip_address,
+                            'circuit_id': circuit_id,
+                            'customer_name': customer_name,
                             'tech_id': tech_id,
                             'tech_name': tech_name,
                             'duration': duration,
-                            'email_ids': email_ids
+                            'email_ids': email_ids,
+                            'remark': remark
                         },
                         success: function(response) {
 
@@ -205,6 +220,18 @@
                     $('#time_duration').closest('.form-group').addClass('has-error');
                 } else {
                     $('#time_duration').closest('.form-group').removeClass('has-error');
+                }
+
+                if (!circuit_id) {
+                    $('#circuit_id').closest('.form-group').addClass('has-error');
+                } else {
+                    $('#circuit_id').closest('.form-group').removeClass('has-error');
+                }
+
+                if (!customer_name) {
+                    $('#customer_name').closest('.form-group').addClass('has-error');
+                } else {
+                    $('#customer_name').closest('.form-group').removeClass('has-error');
                 }
 
                 $('.form_status_msg').removeClass('hide');
