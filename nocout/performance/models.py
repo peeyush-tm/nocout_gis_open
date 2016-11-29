@@ -2105,6 +2105,8 @@ class PingStabilityTest(models.Model):
     machine = models.ForeignKey(Machine)
     site_instance = models.ForeignKey(SiteInstance)
     ip_address = models.GenericIPAddressField('IP Address', null=True, blank=True)
+    circuit_id = models.CharField('Circuit ID', max_length=256, null=True, blank=True)
+    customer_name = models.CharField('Customer Name', max_length=256, null=True, blank=True)
     technology = models.ForeignKey(DeviceTechnology)
     time_duration = models.IntegerField('Time Duration', default=1)
     file_path = models.CharField('File', max_length=512, null=True, blank=True)
