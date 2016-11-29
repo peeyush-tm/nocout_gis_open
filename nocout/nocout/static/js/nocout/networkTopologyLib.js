@@ -4,7 +4,7 @@
 * @param response {Object}, It contains the API response in JSON format
 */
 function convertToVis(response, required_dom_id) {
-
+	
     // checking size of BS_ID_LIST
     bs_list_len = typeof bs_id != 'undefined' ? (JSON.parse(bs_id)).length : 0;
     updatedSize = 50;
@@ -1081,96 +1081,97 @@ function convertToVis(response, required_dom_id) {
     * This event triggers when a node is selected/clicked
     * @event selectNode
     */
-    // network.on('selectNode', function(e){
-    //     // Further will be processed if selected node id contains 'sec_' in it.
-    //     if(e.nodes[0].toLowerCase().indexOf('sec_') > -1){
-    //         var url_with_params = '',
-    //             table_html = '',
-    //             table_data_html = '',
-    //             sector_id = e.nodes[0].split(' - ')[1].trim(),
-    //             device_ip = e.nodes[0].split(' - ')[0].trim().split('_')[1].trim();
+    network.on('selectNode', function(e){
+    	console.log(e.nodes[0])
+        // Further will be processed if selected node id contains 'sec_' in it.
+        if(e.nodes[0].toLowerCase().indexOf('sec_') > -1){
+            var url_with_params = '',
+                table_html = '',
+                table_data_html = '',
+                sector_id = e.nodes[0].split(' - ')[1].trim(),
+                device_ip = e.nodes[0].split(' - ')[0].trim().split('_')[1].trim();
 
-    //         url_with_params = topo_alarms_url + "?device_ip="+ device_ip +"&sector_id="+ sector_id;
-    //         $.ajax({
-    //             url: base_url + url_with_params,
-    //             type: 'GET',
-    //             success: function(response){
-    //                 var alarms_list = response['data']['alarms_list'],
-    //                     extra_info = response['data']['extra_info'];
+            url_with_params = topo_alarms_url + "?device_ip="+ device_ip +"&sector_id="+ sector_id;
+            $.ajax({
+                url: base_url + url_with_params,
+                type: 'GET',
+                success: function(response){
+                    var alarms_list = response['data']['alarms_list'],
+                        extra_info = response['data']['extra_info'];
 
-    //                 var bs_alias = extra_info.alias && extra_info.alias != undefined  ? extra_info.alias : 'NA',
-    //                     bs_city = extra_info.city && extra_info.city != undefined ? extra_info.city : 'NA',
-    //                     bs_state = extra_info.state && extra_info.state != undefined ? extra_info.state : 'NA',
-    //                     bh_connectivity = extra_info.bh_connectivity && extra_info.bh_connectivity != undefined ? extra_info.bh_connectivity : 'NA',
-    //                     device_type = extra_info.device_type && extra_info.device_type != undefined ? extra_info.device_type : 'NA';
+                    var bs_alias = extra_info.alias && extra_info.alias != undefined  ? extra_info.alias : 'NA',
+                        bs_city = extra_info.city && extra_info.city != undefined ? extra_info.city : 'NA',
+                        bs_state = extra_info.state && extra_info.state != undefined ? extra_info.state : 'NA',
+                        bh_connectivity = extra_info.bh_connectivity && extra_info.bh_connectivity != undefined ? extra_info.bh_connectivity : 'NA',
+                        device_type = extra_info.device_type && extra_info.device_type != undefined ? extra_info.device_type : 'NA';
 
-    //                 // Creating Table HTML for boot box.
-    //                 if(alarms_list.length > 0){
-    //                     table_data_html += '<tbody>'
-    //                     for(var i=0; i<alarms_list.length; i++){
-    //                         table_data_html +=  '<tr>\
-    //                                                 <td>'+ alarms_list[i].severity +'</td>\
-    //                                                 <td>'+ alarms_list[i].ip_address +'</td>\
-    //                                                 <td>'+ sector_id +'</td>\
-    //                                                 <td>'+ bs_alias +'</td>\
-    //                                                 <td>'+ bs_city +'</td>\
-    //                                                 <td>'+ bs_state +'</td>\
-    //                                                 <td>'+ bh_connectivity +'</td>\
-    //                                                 <td>'+ device_type +'</td>\
-    //                                                 <td>'+ alarms_list[i].eventname +'</td>\
-    //                                                 <td>'+ (alarms_list[i].uptime ? alarms_list[i].uptime :'NA') +'</td>\
-    //                                                 <td>'+ (alarms_list[i].alarm_count ? alarms_list[i].alarm_count :'NA')+'</td>\
-    //                                                 <td>'+ (alarms_list[i].first_occurred ? alarms_list[i].first_occurred :'NA') + '</td>\
-    //                                                 <td>'+ (alarms_list[i].last_occurred ? alarms_list[i].last_occurred :'NA') + '</td>\
-    //                                             </tr>'
-    //                     }
-    //                     table_data_html += '</tbody>'
-    //                 }
+                    // Creating Table HTML for boot box.
+                    if(alarms_list.length > 0){
+                        table_data_html += '<tbody>'
+                        for(var i=0; i<alarms_list.length; i++){
+                            table_data_html +=  '<tr>\
+                                                    <td>'+ alarms_list[i].severity +'</td>\
+                                                    <td>'+ alarms_list[i].ip_address +'</td>\
+                                                    <td>'+ sector_id +'</td>\
+                                                    <td>'+ bs_alias +'</td>\
+                                                    <td>'+ bs_city +'</td>\
+                                                    <td>'+ bs_state +'</td>\
+                                                    <td>'+ bh_connectivity +'</td>\
+                                                    <td>'+ device_type +'</td>\
+                                                    <td>'+ alarms_list[i].eventname +'</td>\
+                                                    <td>'+ (alarms_list[i].uptime ? alarms_list[i].uptime :'NA') +'</td>\
+                                                    <td>'+ (alarms_list[i].alarm_count ? alarms_list[i].alarm_count :'NA')+'</td>\
+                                                    <td>'+ (alarms_list[i].first_occurred ? alarms_list[i].first_occurred :'NA') + '</td>\
+                                                    <td>'+ (alarms_list[i].last_occurred ? alarms_list[i].last_occurred :'NA') + '</td>\
+                                                </tr>'
+                        }
+                        table_data_html += '</tbody>'
+                    }
 
-    //                 table_html +=   '<div style="overflow: auto">\
-    //                                     <table id="bootbox_alarms_table">\
-    //                                         <thead>\
-    //                                             <tr>\
-    //                                                 <th>Severity</th>\
-    //                                                 <th>IP</th>\
-    //                                                 <th>Sector ID</th>\
-    //                                                 <th>BS Name</th>\
-    //                                                 <th>City</th>\
-    //                                                 <th>State</th>\
-    //                                                 <th>BH Connectivity</th>\
-    //                                                 <th>Device Type</th>\
-    //                                                 <th>Event Name</th>\
-    //                                                 <th>Uptime</th>\
-    //                                                 <th>Alarm Count</th>\
-    //                                                 <th>First Occurred</th>\
-    //                                                 <th>Last Occurred</th>\
-    //                                             </tr>\
-    //                                         </thead>'
-    //                                         + table_data_html +
-    //                                     '</table>\
-    //                                 </div>'
-    //                 bootbox.dialog({
-    //                     title: 'Sector Impact',
-    //                     message: table_html,
-    //                     className: 'bootbox_large'
-    //                 });
+                    table_html +=   '<div style="overflow: auto">\
+                                        <table id="bootbox_alarms_table">\
+                                            <thead>\
+                                                <tr>\
+                                                    <th>Severity</th>\
+                                                    <th>IP</th>\
+                                                    <th>Sector ID</th>\
+                                                    <th>BS Name</th>\
+                                                    <th>City</th>\
+                                                    <th>State</th>\
+                                                    <th>BH Connectivity</th>\
+                                                    <th>Device Type</th>\
+                                                    <th>Event Name</th>\
+                                                    <th>Uptime</th>\
+                                                    <th>Alarm Count</th>\
+                                                    <th>First Occurred</th>\
+                                                    <th>Last Occurred</th>\
+                                                </tr>\
+                                            </thead>'
+                                            + table_data_html +
+                                        '</table>\
+                                    </div>'
+                    bootbox.dialog({
+                        title: 'Sector Impact',
+                        message: table_html,
+                        className: 'bootbox_large'
+                    });
                     
-    //                 // Initializing datatble.js on Alarms table.
-    //                 setTimeout(function(){
-    //                     var tableId = 'bootbox_alarms_table'
-    //                     $('#bootbox_alarms_table').DataTable({
-    //                         fnInitComplete: function(oSettings) {
-    //                             $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("form-control");
-    //                             $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("input-sm");
-    //                             $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').css("max-width","150px");
-    //                         }
-    //                     });
-    //                     console.log('done');
-    //                 }, 100)
-    //             }
-    //         })
-    //     }
-    // });
+                    // Initializing datatble.js on Alarms table.
+                    setTimeout(function(){
+                        var tableId = 'bootbox_alarms_table'
+                        $('#bootbox_alarms_table').DataTable({
+                            fnInitComplete: function(oSettings) {
+                                $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("form-control");
+                                $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("input-sm");
+                                $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').css("max-width","150px");
+                            }
+                        });
+                        console.log('done');
+                    }, 100)
+                }
+            })
+        }
+    });
 
     /**
     *  **************************************************************************************************
