@@ -582,7 +582,7 @@
             power_listing_headers = '{{ power_listing_headers }}' ? $.parseJSON('{{ power_listing_headers|safe }}') : [];
 
             // Hide topo view tab if no bs id exists in context
-            if (is_others_other_tab || is_radwin5 || (typeof(bs_id) == 'string' && bs_id == '[]') || typeof(bs_id) != 'str' && bs_id.length == 0) {
+            if (is_others_other_tab || (typeof(bs_id) == 'string' && bs_id == '[]') || typeof(bs_id) != 'str' && bs_id.length == 0) {
                 $('#topo_view').addClass('hide');
                 $('#topo_view_tab').addClass('hide');
             }
