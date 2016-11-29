@@ -2112,5 +2112,6 @@ class PingStabilityTest(models.Model):
     file_path = models.CharField('File', max_length=512, null=True, blank=True)
     status = models.BooleanField('Status', default=False)
     email_ids = models.CharField('Email IDs', null=True, blank=True, max_length=512)
+    remark = models.CharField('Remark', null=True, blank=True, max_length=512)
     is_deleted = models.BooleanField('Is Deleted',default=False)
     created_at = models.DateTimeField(auto_now_add=True)
