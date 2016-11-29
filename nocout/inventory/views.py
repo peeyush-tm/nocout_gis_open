@@ -2525,19 +2525,27 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
         "tab_attr": "threshold_template__live_polling_template__technology__name",
     }
 
-    if SHOW_SPRINT3:
-        tab_search = {
-            "tab_kwarg": 'technology',
-            "tab_attr": "threshold_template__live_polling_template__technology__name",
-        }
 
-
-    # if SHOW_SPRINT3 and 
-
-    def get_initial_queryset(self):
+    def get_initial_queryset(self, **kwargs):
         is_global = 1
         if self.request.GET.get('admin'):
             is_global = 0
+
+        tech_name = self.kwargs.get('technology')
+
+        if SHOW_SPRINT3:
+            if tech_name.lower() == 'radwin5k':
+                self.tab_search = {
+                    "tab_kwarg": 'technology',
+                    "tab_attr": "threshold_template__live_polling_template__device_type__name__icontains",
+                }
+
+            if tech_name.lower() == 'pmp':
+                self.kwargs['technology'] = 'canopy' 
+                self.tab_search = {
+                    "tab_kwarg": 'technology',
+                    "tab_attr": "threshold_template__live_polling_template__device_type__name__icontains",
+                }
 
         qs = super(ServiceThematicSettingsListingTable, self).get_initial_queryset()
 

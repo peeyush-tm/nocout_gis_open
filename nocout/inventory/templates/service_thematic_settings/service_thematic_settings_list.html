@@ -108,6 +108,7 @@
 
             var ajax_url_ptp = '{% url "ServiceThematicSettingsListingTable" technology="p2p" %}';
             var ajax_url_pmp = '{% url "ServiceThematicSettingsListingTable" technology="pmp" %}';
+            var ajax_url_rad5 = '{% url "ServiceThematicSettingsListingTable" technology="radwin5k" %}';
             var ajax_url_wimax = '{% url "ServiceThematicSettingsListingTable" technology="wimax" %}';
 
 
@@ -115,33 +116,42 @@
             if (is_global == 'true') {
                 ajax_url_ptp = '{% url "ServiceThematicSettingsListingTable" technology="p2p" %}' + '?admin=1';
                 ajax_url_pmp = '{% url "ServiceThematicSettingsListingTable" technology="pmp" %}' + '?admin=1';
+                ajax_url_rad5 = '{% url "ServiceThematicSettingsListingTable" technology="radwin5k" %}' + '?admin=1';
                 ajax_url_wimax = '{% url "ServiceThematicSettingsListingTable" technology="wimax" %}' + '?admin=1';
             }
+            
+            pmp_table_title = "{{ settings.SHOW_SPRINT3 }}" ? 'Cambium' : 'PMP';
 
+            tables_info = {
+                "network_p2p_tab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Service Thematic Settings Listing Table-PTP",
+                    "header_class_name" : "ServiceThematicSettingsList",
+                    "data_class_name" : "ServiceThematicSettingsListingTable"
 
-          tables_info = {
-            "network_p2p_tab" : {
-                "app_name" : "inventory",
-                "table_title" : "Service Thematic Settings Listing Table-PTP",
-                "header_class_name" : "ServiceThematicSettingsList",
-                "data_class_name" : "ServiceThematicSettingsListingTable"
-               
-            },
-            "network_pmp_tab" : {
-                "app_name" : "inventory",
-                "table_title" : "Service Thematic Settings Listing Table-PMP",
-                "header_class_name" : "ServiceThematicSettingsList",
-                "data_class_name" : "ServiceThematicSettingsListingTable"
-                
-            },
-            "network_wifi_tab" : {
-                "app_name" : "inventory",
-                "table_title" : "Service Thematic Settings Listing Table-Wimax",
-                "header_class_name" : "ServiceThematicSettingsList",
-                "data_class_name" : "ServiceThematicSettingsListingTable"
-                
-            }
-        };
+                },
+                "network_pmp_tab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Service Thematic Settings Listing Table-"+pmp_table_title,
+                    "header_class_name" : "ServiceThematicSettingsList",
+                    "data_class_name" : "ServiceThematicSettingsListingTable"
+
+                },
+                "network_rad5_tab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Service Thematic Settings Listing Table-Radwin5K",
+                    "header_class_name" : "ServiceThematicSettingsList",
+                    "data_class_name" : "ServiceThematicSettingsListingTable"
+
+                },
+                "network_wifi_tab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Service Thematic Settings Listing Table-Wimax",
+                    "header_class_name" : "ServiceThematicSettingsList",
+                    "data_class_name" : "ServiceThematicSettingsListingTable"
+
+                }
+            };
 
 
         $("#network_ptp_tab").attr("data_url", ajax_url_ptp);
@@ -149,6 +159,9 @@
 
         $("#network_pmp_tab").attr("data_url", ajax_url_pmp);
         $("#network_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#network_rad5_tab").attr("data_url", ajax_url_rad5);
+        $("#network_rad5_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
         $("#network_wifi_tab").attr("data_url", ajax_url_wimax);
         $("#network_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
@@ -166,6 +179,10 @@
     /*Change event for PMP checkboxes*/
     $(document).on('change', '#ServiceThematicSettingsListingTable_pmp .check_class', function() {
         updateThematicSelection("ServiceThematicSettingsListingTable_pmp", this, $(this).attr('data-devicetype'));
+    });
+    /*Change event for Radwin5K checkboxes*/
+    $(document).on('change', '#ServiceThematicSettingsListingTable_rad5 .check_class', function() {
+        updateThematicSelection("ServiceThematicSettingsListingTable_rad5", this, $(this).attr('data-devicetype'));
     });
     /*Change event for Wimax checkboxes*/
     $(document).on('change', '#ServiceThematicSettingsListingTable_wimax .check_class', function() {
