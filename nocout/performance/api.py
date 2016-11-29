@@ -24,22 +24,25 @@ from django.http.response import  HttpResponse
 from rest_framework import status
 from django.core import serializers
 from performance.models import CustomDashboard, UsersCustomDashboard, DSCustomDashboard, PingStabilityTest
-from device.models import DeviceTechnology
+from alert_center.models import CurrentAlarms
+from inventory.models import Sector, BaseStation
+from device.models import DeviceTechnology, Device, DeviceType
 from machine.models import Machine
 from site_instance.models import SiteInstance
 from service.models import ServiceDataSource
 from user_profile.models import UserProfile
-from nocout.settings import MAX_PARALLEL_STABILITY_TESTS
+from nocout.settings import MAX_PARALLEL_STABILITY_TESTS, TRAPS_DATABASE
 import json
 from IPy import IP
 import logging
 
-import ast
-# from copy import deepcopy
-import requests
-# from multiprocessing import Queue
-
 logger = logging.getLogger(__name__)
+
+# Import alert_center utils gateway class
+from alert_center.utils.util import AlertCenterUtilsGateway
+
+# Create instance of 'AlertCenterUtilsGateway' class
+alert_utils = AlertCenterUtilsGateway()
 
 
 class CustomDashboardCreate(APIView):
@@ -272,8 +275,7 @@ class StartPingStabilityTest(APIView):
                         'ip_address': ip_address,
                         'time_interval': duration,
                         'id': ping_stability_instance.id
-                    }],
-                    'mode': 'ping_test'
+                    }]
                 }
             }
 
@@ -296,8 +298,9 @@ class StartPingStabilityTest(APIView):
                 )
                 r = requests.post(url, data=encoded_data)
                 response_dict = ast.literal_eval(r.text)
-                # if len(response_dict):
-                #     temp_dict = deepcopy(response_dict)
+                if len(response_dict):
+                    temp_dict = deepcopy(response_dict)
+                    q.put(temp_dict)
             except Exception as e:
                 logger.error('Stability Test Request Exception')
                 logger.error(e)
@@ -374,3 +377,104 @@ def get_machine_site(ip_address, tech_name, duration):
                 pass
 
     return info_obj
+
+
+class GetTopologyAlarms(APIView):
+    '''
+    This class base view is for providing alarms list for topo view
+    '''
+    event_list = [
+                    'ODU1_Lost',
+                    'ODU1_Power_Amplifier_OFF',
+                    'ODU2_Lost',
+                    'ODU2_Power_Amplifier_OFF',
+                    'Synchronization_problem__no_PPS',
+                    'gpsNotSynchronized',
+                    'GPS Not Synchronized PMP.AP'
+                ]
+
+    def get(self, request):
+        # Handling GET request
+        device_ip = ''
+        result = {
+            'success': 0,
+            'message': 'Alarms list Not fetched',
+            'data': {}
+        }
+
+        device_ip = self.request.GET.get('device_ip')
+        sector_id = self.request.GET.get('sector_id')
+
+        # If there is no device ip then return blank result.
+        if not device_ip and not sector_id:
+            return Response(result)
+
+        try:
+            sector_device_id = Device.objects.get(ip_address=device_ip).id
+            sector_device_type_id = Device.objects.get(ip_address=device_ip).device_type
+            sector_obj = Sector.objects.get(sector_configured_on_id=sector_device_id, sector_id=sector_id)
+        except Exception, e:
+            # logger.error(e);
+            return Response(result)
+
+        try:
+            device_type = DeviceType.objects.get(id=sector_device_type_id).alias
+        except Exception, e:
+            device_type = ''
+        # getting alarms list from db
+        alarms_list = CurrentAlarms.objects.filter(
+            ip_address=device_ip, 
+            is_active=1, 
+            eventname__in=self.event_list
+        ).values().using(TRAPS_DATABASE)
+
+        additional_info = BaseStation.objects.filter(
+            id=sector_obj.base_station_id
+        ).values(
+            'alias', 'city__city_name', 
+            'state__state_name', 'backhaul__bh_connectivity'
+        )
+
+        if alarms_list.exists():
+            for dct in alarms_list:
+                severity = dct.get('severity')
+                severity_icon = alert_utils.common_get_severity_icon(severity)
+                uptime = dct.get('uptime')
+                formatted_uptime = uptime
+
+                try:
+                    first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                except Exception, e:
+                    first_occurred = dct.get('first_occurred')
+
+                try:
+                    last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                except Exception, e:
+                    last_occurred = dct.get('last_occurred')
+
+                if uptime:
+                    formatted_uptime = self.format_uptime_value(uptime)
+
+                dct.update(
+                    severity=severity_icon,
+                    uptime=formatted_uptime,
+                    first_occurred=first_occurred,
+                    last_occurred=last_occurred
+                )
+
+
+
+        result['data'] = {
+            'alarms_list': list(alarms_list),
+            'extra_info': {
+                'alias': additional_info[0]['alias'],
+                'city': additional_info[0]['city__city_name'],
+                'state': additional_info[0]['state__state_name'],
+                'bh_connectivity': additional_info[0]['backhaul__bh_connectivity'],
+                'device_type': device_type
+            }
+        }
+        result['success'] = 1
+        result['message'] = 'Alarms list fetched successfully.'
+
+        return Response(result)

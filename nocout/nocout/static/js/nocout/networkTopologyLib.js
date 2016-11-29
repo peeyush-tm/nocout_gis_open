@@ -96,7 +96,7 @@ function convertToVis(response, required_dom_id) {
             // shape : 'image',
             size : 40,
             shapeProperties : {
-                useBorderWithImage : true
+                useBorderWithImage : true,
             },
             borderWidth : 4,
             borderWidthSelected : 6,
@@ -684,7 +684,7 @@ function convertToVis(response, required_dom_id) {
 
 
                     nodes.add({
-                        id: 'sec_' + sectors[j].sect_ip_id_title,
+                        id: 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address,
                         label: 'Sector ID : '+sectors[j].sect_ip_id_title,
                         title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
                         shape: 'image',
@@ -699,9 +699,9 @@ function convertToVis(response, required_dom_id) {
                         pl_device_list.push(sectors[j].device_name)
                     }
                     
-                    unique_sec_list.push('sec_' + sectors[j].sect_ip_id_title)
+                    unique_sec_list.push('sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address)
                     device_nodeId_mapping[sectors[j].device_name] = unique_sec_list
-                    ip_port_dict['sec_' + sectors[j].sect_ip_id_title] = {
+                    ip_port_dict['sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address] = {
                                                                             'ip_address' : sectors[j].sect_ip_id_title,
                                                                             'port' : sectors[j].sect_port,
                                                                             'node_name' : ''
@@ -727,7 +727,7 @@ function convertToVis(response, required_dom_id) {
                     edges.add({
                         // from: 'BASESTATION_'+i,
                         from: idu_id,
-                        to: 'sec_' + sectors[j].sect_ip_id_title,
+                        to: 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address,
                         color: sec_edge_color,
                         smooth: {
                             type: 'cubicBezier',
@@ -777,7 +777,7 @@ function convertToVis(response, required_dom_id) {
                             down_devices_list.push(node_id)
                         }
 
-                        edges.add({from: 'sec_' + sectors[j].sect_ip_id_title, to: 'ss_' + sectors[j].sub_station[k].device_name, color: sec_edge_color})
+                        edges.add({from: 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address, to: 'ss_' + sectors[j].sub_station[k].device_name, color: sec_edge_color})
                     }
                 }
             }
@@ -890,7 +890,7 @@ function convertToVis(response, required_dom_id) {
 
                 if (show_sector){
                     nodes.add({
-                        id: 'sec_' + sectors[j].sect_ip_id_title,
+                        id: 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address,
                         label: 'Sector ID : '+sectors[j].sect_ip_id_title,
                         title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
                         shape: 'image',
@@ -905,9 +905,9 @@ function convertToVis(response, required_dom_id) {
                 if (pl_device_list.indexOf(sectors[j].device_name) ==-1) {
                     pl_device_list.push(sectors[j].device_name)
                 }
-                unique_sec_list.push('sec_' + sectors[j].sect_ip_id_title)
+                unique_sec_list.push('sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address)
                 device_nodeId_mapping[sectors[j].device_name] = unique_sec_list
-                ip_port_dict['sec_' + sectors[j].sect_ip_id_title] = {
+                ip_port_dict['sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address] = {
                                                                         'ip_address' : sectors[j].sect_ip_id_title,
                                                                         'port' : sectors[j].sect_port,
                                                                         'node_name' : ''
@@ -989,7 +989,7 @@ function convertToVis(response, required_dom_id) {
                     }
 
                     edges.add({
-                        from: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : idu_id,
+                        from: show_sector ? 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address : idu_id,
                         to: 'ss_' + sectors[j].sub_station[k].device_name,
                         color: ss_edge_color
                     })
@@ -998,12 +998,12 @@ function convertToVis(response, required_dom_id) {
                         down_devices_list.push(node_id)
                     }
 
-                    edges.add({from: 'sec_' + sectors[j].sect_ip_id_title, to: 'ss_' + sectors[j].sub_station[k].device_name, color: sec_edge_color})
+                    edges.add({from: 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address, to: 'ss_' + sectors[j].sub_station[k].device_name, color: sec_edge_color})
                 }
                 edges.add({
                     // from: 'BASESTATION_'+i,
                     from: idu_id,
-                    to: show_sector ? 'sec_' + sectors[j].sect_ip_id_title : unique_ss_id,
+                    to: show_sector ? 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address : unique_ss_id,
                     color: show_sector ? sec_edge_color : ss_edge_color,
                     smooth: {
                         type: 'cubicBezier',
@@ -1082,14 +1082,13 @@ function convertToVis(response, required_dom_id) {
     * @event selectNode
     */
     network.on('selectNode', function(e){
-    	console.log(e.nodes[0])
         // Further will be processed if selected node id contains 'sec_' in it.
         if(e.nodes[0].toLowerCase().indexOf('sec_') > -1){
             var url_with_params = '',
                 table_html = '',
                 table_data_html = '',
-                sector_id = e.nodes[0].split(' - ')[1].trim(),
-                device_ip = e.nodes[0].split(' - ')[0].trim().split('_')[1].trim();
+                sector_id = e.nodes[0].split('sec_')[1].split('_||_')[0].trim(),
+                device_ip = e.nodes[0].split('sec_')[1].split('_||_')[1].trim();
 
             url_with_params = topo_alarms_url + "?device_ip="+ device_ip +"&sector_id="+ sector_id;
             $.ajax({
@@ -1166,7 +1165,6 @@ function convertToVis(response, required_dom_id) {
                                 $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').css("max-width","150px");
                             }
                         });
-                        console.log('done');
                     }, 100)
                 }
             })
