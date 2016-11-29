@@ -4744,7 +4744,8 @@ class GenerateManualTicket(View):
             'success': 0,
             'message': 'Ticket generate request not sent.'
         }
-
+        traptime = None
+        current_instance = None
         try:
             current_instance = CurrentAlarms.objects.filter(
                 id=pk,
@@ -4753,6 +4754,7 @@ class GenerateManualTicket(View):
 
             if current_instance.exists():
                 current_instance = current_instance[0]
+                traptime = current_instance.traptime
         except Exception as e:
             result.update(
                 message='Invalid primary key.'
@@ -4765,7 +4767,8 @@ class GenerateManualTicket(View):
             encoded_data = {
                 'ip_address': ip_address, 
                 'severity': severity, 
-                'alarm_name': alarm_name
+                'alarm_name': alarm_name,
+                'traptime': traptime
             }
 
             # Sending post request to nocout device app to start given IP ping stability testing
