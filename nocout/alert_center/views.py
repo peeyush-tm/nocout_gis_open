@@ -2530,17 +2530,17 @@ class SIAListing(ListView):
         if ENABLE_MANUAL_TICKETING:
             manual_ticketing_columns = [{
                 'mData': 'action',
-                'sTitle': 'Action',
+                'sTitle': 'Manual Ticketing',
                 'sWidth': 'auto',
                 'bSortable': False
             }]
 
-            datatable_headers += [{
+            datatable_headers.insert(9, {
                 'mData': 'ticket_number',
                 'sTitle': 'PBI Ticket',
                 'sWidth': 'auto',
                 'bSortable': True
-            }]
+            })
 
             # is_manual_column += [{
             #   'mData': 'is_manual',
@@ -2579,9 +2579,9 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     
     order_columns = [
         'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state',
-        'bh_connectivity', 'bh_type', 'eventname','traptime','uptime',
+        'bh_connectivity', 'bh_type', 'eventname', 'ticket_number', 'traptime', 'uptime',
         'alarm_count', 'first_occurred','last_occurred', 'customer_count', 
-        'sia', 'ticket_number'
+        'sia'
     ]
 
     other_columns = [
@@ -2749,16 +2749,16 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             if ENABLE_MANUAL_TICKETING:
                 self.order_columns = [
                     'action', 'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
-                    'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
-                    'customer_count', 'sia', 'ticket_number'
+                    'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname', 
+                    'ticket_number', 'traptime', 'uptime','alarm_count','first_occurred',
+                    'last_occurred', 'customer_count', 'sia'
                 ]
             else:
                 self.order_columns = [
                     'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
-                    'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
-                    'customer_count', 'sia', 'ticket_number'
+                    'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname', 
+                    'ticket_number', 'traptime', 'uptime','alarm_count','first_occurred',
+                    'last_occurred', 'customer_count', 'sia'
                 ]
 
         # Number of columns that are used in sorting
@@ -3809,7 +3809,7 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         return ret
 
 
-@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
+# @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_snmp_gis_data(qs, tech_name):
     """
     This function fetched GIS Inventory data as per the given param & 
@@ -3835,6 +3835,7 @@ def prepare_snmp_gis_data(qs, tech_name):
         ).values(
             'sector_id',
             'sector_configured_on__ip_address',
+            'sector_configured_on_port__name',
             'base_station__alias',
             'base_station__city__city_name',
             'base_station__state__state_name',
@@ -3855,6 +3856,7 @@ def prepare_snmp_gis_data(qs, tech_name):
                 'base_station__city__city_name',
                 'base_station__state__state_name',
                 'dr_configured_on__ip_address',
+                'sector_configured_on_port__name',
                 'device_type'
             ).distinct()
 
@@ -3940,22 +3942,26 @@ def prepare_snmp_gis_data(qs, tech_name):
             'device_type'
         ).distinct()
 
-        mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
+        # mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
+        mapped_bh_conf_result = list_to_indexed_dict_alerts(
             list(bh_conf_data_qs),
             'backhaul__bh_configured_on__ip_address'
         )
 
-        mapped_bh_switch_result = inventory_utils.list_to_indexed_dict(
+        # mapped_bh_switch_result = inventory_utils.list_to_indexed_dict(
+        mapped_bh_switch_result = list_to_indexed_dict_alerts(
             list(bh_switch_data_qs),
             'backhaul__bh_switch__ip_address'
         )
 
-        mapped_pop_result = inventory_utils.list_to_indexed_dict(
+        # mapped_pop_result = inventory_utils.list_to_indexed_dict(
+        mapped_pop_result = list_to_indexed_dict_alerts(
             list(pop_data_qs),
             'backhaul__pop__ip_address'
         )
 
-        mapped_aggr_result = inventory_utils.list_to_indexed_dict(
+        # mapped_aggr_result = inventory_utils.list_to_indexed_dict(
+        mapped_aggr_result = list_to_indexed_dict_alerts(
             list(aggr_data_qs),
             'backhaul__aggregator__ip_address'
         )
@@ -3965,22 +3971,32 @@ def prepare_snmp_gis_data(qs, tech_name):
         converter_mapped_data.update(mapped_pop_result)
         converter_mapped_data.update(mapped_aggr_result)
 
-    mapped_sector_result = inventory_utils.list_to_indexed_dict(
+    # mapped_sector_result = inventory_utils.list_to_indexed_dict(
+    mapped_sector_result = list_to_indexed_dict_alerts(
         list(sectors_data_qs),
-        'sector_configured_on__ip_address'
+        'sector_configured_on__ip_address',
+        is_wimax=True
     )
 
-    mapped_dr_result = inventory_utils.list_to_indexed_dict(
+    # mapped_dr_result = inventory_utils.list_to_indexed_dict(
+    mapped_dr_result = list_to_indexed_dict_alerts(
         list(dr_data_qs),
-        'dr_configured_on__ip_address'
+        'dr_configured_on__ip_address',
+        is_wimax=True
     )
 
     mapped_result = mapped_sector_result.copy()
     mapped_result.update(mapped_dr_result)
     mapped_result.update(converter_mapped_data)
-   
+
+    try:
+        starmax_idu_id = DeviceType.objects.get(name__iexact='starmaxidu').id
+    except Exception as e:
+        starmax_idu_id = None
+
     for data in qs_list:
         ip_address = data.get('ip_address')
+        eventname = data.get('eventname')
         data.update(
             bs_alias='NA',
             bs_city='NA',
@@ -3993,11 +4009,31 @@ def prepare_snmp_gis_data(qs, tech_name):
         if not ip_address:
             continue
 
+        sector_dct = None
         try:
             sector_dct = mapped_result[ip_address]
+            if sector_dct:
+                if starmax_idu_id == sector_dct[0].get('device_type'):
+                    if 'odu1' in eventname.lower() or 'pmp1' in eventname.lower():
+                        try:
+                            sector_dct = filter(lambda x: x.get('sector_configured_on_port__name') == 'pmp1', sector_dct)[0]
+                        except Exception as e:
+                            sector_dct = sector_dct[0]
+                    elif 'odu2' in eventname.lower() or 'pmp2' in eventname.lower():
+                        try:
+                            sector_dct = filter(lambda x: x.get('sector_configured_on_port__name') == 'pmp2', sector_dct)[0]
+                        except Exception as e:
+                            sector_dct = sector_dct[0]
+                    else:
+                        try:
+                            sector_dct[0]['sector_id'] = sector_dct[0].get('sector_id', 'NA') + ', '+ sector_dct[1].get('sector_id', 'NA')
+                            sector_dct = sector_dct[0]
+                        except Exception as e:
+                            sector_dct = sector_dct[0]
+                else:
+                    sector_dct = sector_dct[0]
         except Exception, e:
-            sector_dct = None
-            pass
+            continue
         if sector_dct:
             data.update(
                 sector_id=sector_dct.get('sector_id', 'NA'),
@@ -4957,3 +4993,19 @@ class ManualTicketsListing(BaseDatatableView, AdvanceFilteringMixin):
         }
 
         return ret
+
+def list_to_indexed_dict_alerts(inventory_list=None, key='ip_address', is_wimax=False):
+    '''
+
+    '''
+    inventory_dict = dict()
+    # wimax_id = DeviceTechnology.objects.get()
+    for device_info in inventory_list:
+        if device_info[key] not in inventory_dict:
+            inventory_dict[device_info[key]] = []
+        if is_wimax:
+            inventory_dict[device_info[key]].append(device_info)
+        else:
+            inventory_dict[device_info[key]] = [device_info]
+
+    return inventory_dict
