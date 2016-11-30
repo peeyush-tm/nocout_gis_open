@@ -3649,6 +3649,22 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
         if self.request.GET.get('admin'):
             is_global = 0
 
+        tech_name = self.kwargs.get('technology')
+
+        if SHOW_SPRINT3:
+            if tech_name.lower() == 'radwin5k':
+                self.tab_search = {
+                    "tab_kwarg": 'technology',
+                    "tab_attr": "type__name__icontains",
+                }
+
+            if tech_name.lower() == 'pmp':
+                self.kwargs['technology'] = 'canopy' 
+                self.tab_search = {
+                    "tab_kwarg": 'technology',
+                    "tab_attr": "type__name__icontains",
+                }
+
         qs = super(PingThematicSettingsListingTable, self).get_initial_queryset()
 
         return qs.filter(is_global=is_global)

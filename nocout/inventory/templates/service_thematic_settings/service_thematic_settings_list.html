@@ -120,39 +120,38 @@
                 ajax_url_wimax = '{% url "ServiceThematicSettingsListingTable" technology="wimax" %}' + '?admin=1';
             }
             
-            pmp_table_title = "{{ settings.SHOW_SPRINT3 }}" ? 'Cambium' : 'PMP';
+            var pmp_table_title = "{{ settings.SHOW_SPRINT3 }}" ? 'Cambium' : 'PMP';
 
             tables_info = {
                 "network_p2p_tab" : {
                     "app_name" : "inventory",
                     "table_title" : "Service Thematic Settings Listing Table-PTP",
                     "header_class_name" : "ServiceThematicSettingsList",
-                    "data_class_name" : "ServiceThematicSettingsListingTable"
-
+                    "data_class_name" : "ServiceThematicSettingsListingTable",
+                    "data_extra_param" : "{'technology':'p2p', 'download_excel': 'yes', 'report_title' : 'Service Thematic Settings Listing Table-PTP'}"
                 },
                 "network_pmp_tab" : {
                     "app_name" : "inventory",
                     "table_title" : "Service Thematic Settings Listing Table-"+pmp_table_title,
                     "header_class_name" : "ServiceThematicSettingsList",
-                    "data_class_name" : "ServiceThematicSettingsListingTable"
-
+                    "data_class_name" : "ServiceThematicSettingsListingTable",
+                    "data_extra_param" : "{'technology':'pmp', 'download_excel': 'yes', 'report_title' : 'Service Thematic Settings Listing Table-"+ pmp_table_title + "'}"
                 },
                 "network_rad5_tab" : {
                     "app_name" : "inventory",
                     "table_title" : "Service Thematic Settings Listing Table-Radwin5K",
                     "header_class_name" : "ServiceThematicSettingsList",
-                    "data_class_name" : "ServiceThematicSettingsListingTable"
-
+                    "data_class_name" : "ServiceThematicSettingsListingTable",
+                    "data_extra_param" : "{'technology':'radwin5k', 'download_excel': 'yes', 'report_title' : 'Service Thematic Settings Listing Table-Radwin5K'}"
                 },
                 "network_wifi_tab" : {
                     "app_name" : "inventory",
                     "table_title" : "Service Thematic Settings Listing Table-Wimax",
                     "header_class_name" : "ServiceThematicSettingsList",
-                    "data_class_name" : "ServiceThematicSettingsListingTable"
-
+                    "data_class_name" : "ServiceThematicSettingsListingTable",
+                    "data_extra_param" : "{'technology':'wimax', 'download_excel': 'yes', 'report_title' : 'Service Thematic Settings Listing Table-Wimax'}"
                 }
             };
-
 
         $("#network_ptp_tab").attr("data_url", ajax_url_ptp);
         $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');

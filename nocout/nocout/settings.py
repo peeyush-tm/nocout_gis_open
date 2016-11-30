@@ -1417,6 +1417,7 @@ RADWIN5K_CONFIG = {
 # 1) Alert Centre - Alert Details - Network Details - Radwin 5k UL Alerts summary window
 # 2) Separate tab required for Radwin 5k in Device Alarms page
 # 3) Separate tab for Radwin5k in Service Thematic settings
+# 4) Separate tab for Radwin5k in Ping Thematic settings
 SHOW_SPRINT3 = False
 
 # Show/Hide features of Sprint 4 of Radwin5K
