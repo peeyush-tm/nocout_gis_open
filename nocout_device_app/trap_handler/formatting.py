@@ -35,7 +35,6 @@ class inventory(object):
 	#for pair in mapping.iteritems():
 	#	items.extend(pair)
 	mapping = self.dicts(mapping) 
-	#logger.error("mapping**********",mapping)
 	try: 
 	    [rds_cnx.set(pair[0],pair[1] ) for pair in mapping.iteritems()]  
 	except Exception as e:
@@ -321,9 +320,9 @@ class inventory(object):
 		aggr_switch = bs.get('AggregationSwitchIP')
 		pe_ip = bs.get('PE_IP')
 		try:
-		   region = bs_station.split('|')[-3]
-		   bs_name = bs_station.split('|')[1]
-		   city = bs_station.split('|')[-5]
+		   region = basestation_info[0].split('|')[-3]
+		   bs_name = basestation_info[0].split('|')[1]
+		   city = basestation_info[0].split('|')[-5]
 		except:
 		   region = ''
 		   bs_name = ''
@@ -346,6 +345,10 @@ class inventory(object):
 			
 	           ip_id[bs_ip] = obj_count
 		   bs_key = 'static_' + bs_ip
+		   try:
+		       parent_port =sec_list.split('|')[13]
+		   except:
+		       pass
 		   data_dict[bs_key]['bs_name'] = bs_name 
 		   data_dict[bs_key]['region'] = region
 		   data_dict[bs_key]['city'] = city
@@ -381,7 +384,7 @@ class inventory(object):
 		       data_dict[bs_key]['resource_type'] = 'PTP'
 		       data_dict[bs_key]['resource_name'] = 'SS' 
 		       data_dict[bs_key]['ptp_bh_type'] = 'ne'
-		       data_dict[bs_key]['custormer_name'] = sec_list.split('|')[11]
+		       data_dict[bs_key]['customer_name'] = sec_list.split('|')[11]
 		       data_dict[bs_key]['circuit_id'] = sec_list.split('|')[10] 
 		       data_dict[bs_key]['ptp_ip'] = ptp_parent_child_dict.get(bs_ip)
 		   if bs_ip in ptp_bh_dict.values():
@@ -393,7 +396,9 @@ class inventory(object):
 		       sector_id = sec_list.split('|')[1]
 		       if sector_id == 'NA':
 			   continue
-		       data_dict[bs_key].setdefault('sector_id',set()).add(sector_id)
+		       sector_port = sec_list.split('|')[14] if  sec_list.split('|')[14] != 'NA' else None
+		       data_dict[bs_key].setdefault('sector_id',set()).add(tuple([sector_port, sector_id]))
+
 		   except Exception,e:
 		       print e
 		       continue
@@ -415,10 +420,12 @@ class inventory(object):
 	basestation_info_str = bs.get('BASESTATION','')
 	basestation_info = list(set(basestation_info_str.split('-|-|-')))
 	try:
-	   region = basestation_info[0].split('|')[5]
-	   bs_name = basestation_info[0].split('|')[1]
-	   city = basestation_info[0].split('|')[3]
-	except:
+	   basestation_info = basestation_info_str.split('-|-|-')[0]
+	   #logger.error(basestation_info)
+	   region = basestation_info.split('|')[5]
+	   bs_name = basestation_info.split('|')[1]
+	   city = basestation_info.split('|')[3]
+	except Exception as e:
 	   region = ''
 	   bs_name = ''
 	   city = ''
