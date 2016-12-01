@@ -5747,26 +5747,51 @@ class GetSms(View):
 
             if 'create' in method_name.lower():
                 input_data = {
+                    # Wireless one params are commented due to error from Remedy's end.
+
+                    # 'Submitter': 'EAI',
+                    # 'Created_By': 'WirelessOne',
+                    # 'Description': '',
+                    # 'Company': 'Enterprise Business Unit',
+                    # 'z1D_Action': 'CREATE',
+                    # 'Service_ID': request_id,
+                    # 'Creation_source': 'WirelessOne*PSU Zone',
+                    # 'Severity': 'SR',
+                    # 'Worklog_Details': '',
+                    # 'Product_Categorization_Tier_3': 'PSUAlertUpDown',
+
+                    # Currently Set to Monolith params
                     'Submitter': 'EAI',
-                    'Created_By': 'WirelessOne',
-                    'Description': '',
+                    'Created_By': 'Monolith',
+                    'Description': 'PowerDownreceivedfromPSUPortal',
                     'Company': 'Enterprise Business Unit',
                     'z1D_Action': 'CREATE',
                     'Service_ID': request_id,
-                    'Creation_source': 'WirelessOne*PSU Zone',
+                    'Creation_source': 'Monolith*PSU Zone',
                     'Severity': 'SR',
                     'Worklog_Details': '',
                     'Product_Categorization_Tier_3': 'PSUAlertUpDown',
                 }
             else:
                 input_data = {
-                    'Resolution_tracking': '',
+                    # Wireless one params are commented due to error from Remedy's end.
+
+                    # 'Resolution_tracking': '',
+                    # 'Incident_number': request_id,
+                    # 'Worklog_type': 'Updated by WirelessOne',
+                    # 'Resolution_Tier_1': '',
+                    # 'Resolution_Tier_2': '',
+                    # 'Resolution_Tier_3': '',
+                    # 'Resolution': 'Resolved By WirelessOne'
+
+                    # Currently Set to Monolith params
+                    'Resolution_tracking': 'Resolved INCIDENT',
                     'Incident_number': request_id,
-                    'Worklog_type': 'Updated by WirelessOne',
+                    'Worklog_type': 'Updated by Monolith',
                     'Resolution_Tier_1': '',
                     'Resolution_Tier_2': '',
                     'Resolution_Tier_3': '',
-                    'Resolution': 'Resolved By WirelessOne'
+                    'Resolution': 'Resolved by Monolith'
                 }
 
             # Set AuthenticationInfo headers
