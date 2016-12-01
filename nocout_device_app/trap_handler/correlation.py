@@ -3,6 +3,7 @@ from start.start import app
 from handlers.db_ops import RedisInterface,DatabaseTask 
 from trap_handler.db_conn import ExportTraps,ConnectionBase
 from uuid import uuid4
+from operator import itemgetter
 from datetime import datetime, time
 from collections import defaultdict
 from copy import deepcopy
@@ -192,7 +193,6 @@ class correlation:
 	ip_id = { '10.175.44.9': 45, '121.89.44.2': 2 }
 
 	"""
-	logger.error('Starting Process with Events')
 	redis_conn = self.redis_conn()
 	clear_event_keys = []
 
@@ -206,7 +206,6 @@ class correlation:
 
 	# Get all the Events from redis queue
 	number_of_events = redis_conn.llen('queue:events')
-	logger.error('\n\nNumber of Fetched events - %s\n'%str(number_of_events))
 
 	if number_of_events > 0:
 
@@ -214,6 +213,8 @@ class correlation:
 	    [p.lpop('queue:events') for i in range(number_of_events)]        # Alarm data(traps and events) from redis
 	    event_list = p.execute()
 	    event_list = [eval(t_e) for t_e in event_list]
+
+	    time_duration_dict = self.planned_events(redis_conn)
 
 	    # Store events to event_invent_dict according to its structure show above.
 	    for each_event in event_list:
@@ -223,6 +224,11 @@ class correlation:
 	        key = (alarm_name,severity)
 	        id = ip_id.get(ip)
 
+	        #if int(self.mat_data.get(key).get('correlation')) == 1:	
+		t_time = int(datetime.strptime(each_event[8],"%Y-%m-%d %H:%M:%S").strftime('%s'))
+                drop_event_flag = 1 if sum([1 for i,v in time_duration_dict.iteritems() if ip in v and int(i[0]) <= t_time and t_time < int(i[1]) ]) >= 1 else 0 
+		if drop_event_flag:
+		    continue
 		if True:
 		    if severity == 'clear':
 		        clear_event_key = str(ip)+'_'+str(alarm_name)
@@ -254,7 +260,7 @@ class correlation:
 			    event_invent_dict[id][ip] = {}
 			    event_invent_dict[id][ip][key] = alarm
 		    else:
-			logger.error("invent id not found for ip %s"%str(ip))
+			logger.info("invent id not found for ip %s"%str(ip))
 
 	    inventory_dict = {'event_invent_dict':event_invent_dict}
             self.insert_events_into_redis(inventory_dict)
@@ -339,11 +345,11 @@ class correlation:
 	]
 
 
-	down_device_static_dict = kwargs['static_dict']
-	idu_odu_trap_dict = kwargs['idu_odu_trap_dict']
+	down_device_static_dict = kwargs.get('static_dict')
+	idu_odu_trap_dict = kwargs.get('idu_odu_trap_dict')
 	ckt_list_for_conv_sia = kwargs.get('ckt_list_for_conv_sia')
-	#alarm_id = kwargs['alarm_id']
-	circuit_dict = kwargs['ckt_dict']
+	#alarm_id = kwargs.get('alarm_id')
+	circuit_dict = kwargs.get('ckt_dict')
 
 	event_trap_dict = {}
 	parent_alrm_id = None 
@@ -353,8 +359,7 @@ class correlation:
 	if idu_odu_trap_dict:
 
 	    for key,value in idu_odu_trap_dict.iteritems():
-
-		if down_device_static_dict.get(key).get('resource_type').lower() in ['converter','switch']:
+		if down_device_static_dict.get(key).get('resource_type').lower() in ['converter','switch','ptp']:
 
 		    impacted_circuits = ', '.join(ckt_list_for_conv_sia) if ckt_list_for_conv_sia else ''
 
@@ -436,6 +441,8 @@ class correlation:
 		event_trap_dict[key]['additional_f_2'] = 1
 		if event_trap_dict[key]['alrm_name'] in ["PD_threshold_breach_major","PD threshold breach major"]:
             	    alarm_name_in_desc = "PD threshold breach"
+		    event_trap_dict[key]['additional_f_2'] = 2
+
 		else:
 		    alarm_name_in_desc = event_trap_dict[key]['alrm_name']
 		event_trap_dict[key]['alrm_desc'] = "{0} : {1} : {2} : {3}".format(down_device_static_dict.get(key).get('city'),
@@ -450,22 +457,26 @@ class correlation:
 	"""
 	global conv_switch_mapping_dict
 	event_trap_dict = {}
-	#logger.error('Kwargs for converter trap %s'%str(kwargs))
 
-	down_device_dict = kwargs['down_device_dict']
-
-	down_device_static_dict = kwargs['static_dict']
+	down_device_dict = kwargs.get('down_device_dict')
+	ptp_bh_flag = kwargs.get('ptp_bh_flag')
+	down_device_static_dict = kwargs.get('static_dict')
 	rc_element = kwargs.get('rc_element')
 	is_backhaul = kwargs.get('is_backhaul')
 	alarm_id = kwargs.get('alarm_id')
+	siteb_switch_conv_id = kwargs.get('siteb_switch_conv_id')
 
 	attr_list = converter_or_ptpbh_trap_vars
 	# If PTP bh device is faulted, Create trap for ptpbh.
 	if is_backhaul:
 	    backhaul_id = kwargs.get('backhaul_id')
 	    key = backhaul_id
-	    siteb_switch_conv_id = kwargs['siteb_switch_conv_id']
 	    static_data = down_device_static_dict[siteb_switch_conv_id]
+	    static_data['resource_type'] = "PTP-BH"
+	    static_data['technology'] = down_device_static_dict.get(backhaul_id).get('technology')
+	    static_data['parent_type'] = down_device_static_dict.get(backhaul_id).get('parent_type')
+	    static_data['parent_ip'] = down_device_static_dict.get(backhaul_id).get('parent_ip')
+	    static_data['parent_port'] = down_device_static_dict.get(backhaul_id).get('parent_port')
 	# Trap for switch/converter.
 	else:
 	    key = rc_element
@@ -508,7 +519,8 @@ class correlation:
 	event_trap_dict[key]['trap_type'] = 'converter_or_ptpbh_trap'
 	event_trap_dict[key]['additional_f_1'] = 1
 	event_trap_dict[key]['additional_f_4'] = 'Monolith-RF'
-	event_trap_dict[key]['additional_f_5'] = self.converter_customer_count(key)
+
+	event_trap_dict[key]['additional_f_5'] = self.converter_customer_count(key, siteb_switch_conv_id, ptp_bh_flag)
 	event_trap_dict[key]['base_trap_oid'] = '.1.3.6.1.4.1.43900.2.2.1.0.0.1'
 
 	if event_trap_dict[key]['alrm_name'] in ["PD_threshold_breach_major","PD threshold breach major"]:
@@ -526,11 +538,11 @@ class correlation:
 
     def make_dict_for_idu_odu_trap(self,**kwargs):
 
-	down_device_dict = kwargs['down_device_dict']
-	down_device_static_dict = kwargs['static_dict']
+	down_device_dict = kwargs.get('down_device_dict')
+	down_device_static_dict = kwargs.get('static_dict')
 	alarm_id = kwargs.get('alarm_id')
-	bs_list = kwargs['bs_list']
-	parent_ac = kwargs['parent_ac']
+	bs_list = kwargs.get('bs_list')
+	parent_ac = kwargs.get('parent_ac')
 
 	event_trap_dict = {}
         global bs_mapping_dict
@@ -574,9 +586,17 @@ class correlation:
 		    else:
 			attr_value = down_device_static_dict[key].get(bs_mapping_dict[attr],'')
 			if attr == 'impacted_sector_count':
-			    attr_value = len(down_device_static_dict[key].get(bs_mapping_dict['sector_ids'],[]))
+			    sector_count = len(down_device_static_dict[key].get(bs_mapping_dict['sector_ids'],[]))
+			    if sector_count:
+				attr_value = sector_count
+			    else:
+				attr_value = 0
 			if attr == 'sector_ids' and attr_value:
-			    attr_value = ",".join(list(attr_value))
+			    sectors = {}
+                    	    for each_sector in attr_value:
+                        	sectors[each_sector[0]]= each_sector[1]
+
+			    attr_value = ",".join(sectors.values())
 			elif attr == 'parent_alrm_id':
 			    attr_value = alarm_id
 		    event_trap_dict[key][attr] = attr_value
@@ -597,11 +617,12 @@ class correlation:
 									     down_device_static_dict.get(key).get('bs_name'),
 									     key,
 									     alarm_name_in_desc)
-		customer_count = self.bs_customer_count(key)
+		trap_type = 'event'
+		customer_count = self.bs_customer_count(key, trap_type)
 		if customer_count:
 		    event_trap_dict[key]['additional_f_8'] = customer_count
 		else:
-		    event_trap_dict[key]['additional_f_8'] = 0
+		    event_trap_dict[key]['additional_f_8'] = "0"
 		
 	return event_trap_dict
    
@@ -656,6 +677,7 @@ class correlation:
 	conv_switch_siteb = None	
 	ckt_dict = defaultdict(list)
 	del_ss = []
+	ss_list_for_sia = []
 
 	for key,value in down_device_dict.iteritems():
 
@@ -716,6 +738,7 @@ class correlation:
 			    if device_static_data.get('circuit_id'):
 				ckt_dict[key].append(device_static_data.get('circuit_id'))
 		else:
+		    ss_list_for_sia.append(key)
 		    if parent_ac:  			
 			if bool(ac & parent_ac):	# If Parent And Child have Category in common.
 			    del_ss.append(key)		# Delete child device and Store it's circuit id to Circuit dict.
@@ -739,12 +762,15 @@ class correlation:
 	ss_list =  element_dict[1]
 	ckt_list_for_conv_sia = []
 
-    	siteb_ss_down_list = filter(lambda x: static_dict[x].get('ptp_bh_flag'),ss_list)
+    	siteb_ss_down_list = filter(lambda x: static_dict[x].get('ptp_bh_flag'),ss_list_for_sia)
+	#sitea_ss_down_list = list(set(ss_down_list) -set(siteb_ss_down_list)) 
 	if not rc_element:
 	    rc_element = conv_switch_siteb
-	    ckt_list_for_conv_sia,del_ss = self.extract_ckt_for_sia(rc_element, down_device_dict, static_dict, siteb_ss_down_list, del_ss)
+	    if backhaul_id:
+	        ckt_list_for_conv_sia,del_ss = self.extract_ckt_for_sia(backhaul_id, down_device_dict, static_dict, siteb_ss_down_list, del_ss)
+	    #sitea_ckt_list_for_conv_sia = ''
 	else:
-	    ckt_list_for_conv_sia,del_ss = self.extract_ckt_for_sia(rc_element, down_device_dict, static_dict, ss_list, del_ss)
+	    ckt_list_for_conv_sia,del_ss = self.extract_ckt_for_sia(rc_element, down_device_dict, static_dict, ss_list_for_sia, del_ss)
 
 	flags = {}
 	flags['ckt_list_for_conv_sia'] = ckt_list_for_conv_sia
@@ -754,7 +780,7 @@ class correlation:
 	flags['backhaul_ended_switch_con_ip']= backhaul_ended_switch_con_ip
 	flags['bs_ss_dict']= bs_ss_dict                  # basestation substation device mapping
 	flags['conv_switch_siteb'] = conv_switch_siteb   # Siteb switch/converter ip.
-	logger.error('max value rc_element {0}'.format(rc_element))
+	logger.info('max value rc_element {0}'.format(rc_element))
 	
 	return (down_device_dict,static_dict,rc_element,non_rc_switch_conv,bs_list,ss_list,ckt_dict,flags),del_ss
 
@@ -768,7 +794,7 @@ class correlation:
 	ckt_list_for_conv_sia = []
 	try:
 	    rc_element_dict = down_device_dict.get(rc_element)
-	    ss_list_for_conv_sia = filter(lambda x: down_device_dict.get(x).get('category') == rc_element_dict.get('category'), ss_list)
+	    ss_list_for_conv_sia = filter(lambda x: down_device_dict.get(x).get('category') & rc_element_dict.get('category'), ss_list)
 	    del_ss_list_for_sia = list(set(ss_list_for_conv_sia) - set(del_ss))
 	    del_ss.extend(del_ss_list_for_sia)
 	    for entry in ss_list_for_conv_sia:
@@ -777,8 +803,7 @@ class correlation:
 		    ckt = static_dict.get(entry).get('circuit_id','')
 		    ckt_list_for_conv_sia.append(ckt)
 	        except Exception as e:
-		    logger.error(e)
-		    logger.error("Error: Could not retrieve static dict for SS")
+		    logger.info("Error: Could not retrieve static dict for SS")
 	
 	except:
 	    logger.error("Error in sending the SIA traps for Converter")
@@ -851,14 +876,23 @@ class correlation:
             else:
                 attr_value = static_inventory_data.get(bs_mapping_dict[attr],'')
                 if attr == 'impacted_sector_count':
-                    attr_value = len(static_inventory_data.get(bs_mapping_dict['sector_ids'],[]))
-                if attr == 'sector_ids' and attr_value:
 		    if trap_type == 'odu1':
-			attr_value = list(attr_value)[0]
+			attr_value = 1
 		    elif trap_type == 'odu2':
-			attr_value = list(attr_value)[1]
+			attr_value = 2
+		    else:
+                        attr_value = len(static_inventory_data.get(bs_mapping_dict['sector_ids'],[]))
+                if attr == 'sector_ids' and attr_value:
+		    sectors = {}
+		    for each_sector in attr_value:
+			sectors[each_sector[0]]= each_sector[1]	
+
+		    if trap_type == 'odu1':
+			attr_value = sectors['43']
+		    elif trap_type == 'odu2':
+			attr_value = sectors['44']
 		    else:	
-                        attr_value = ",".join(list(attr_value))
+                        attr_value = ','.join(sectors.values()) 
 
 		elif attr == 'parent_alrm_id':
                     attr_value = alarm.get(bs_mapping_dict.get('alarm_id'),'')
@@ -881,9 +915,9 @@ class correlation:
                                                                         idu_odu_trap['alrm_name'] )
        
 
-	customer_count = self.bs_customer_count(alarm.get('ip_address'))
+	customer_count = self.bs_customer_count(alarm.get('ip_address'), trap_type)
 
-	idu_odu_trap['additional_f_8'] = customer_count if customer_count else 0
+	idu_odu_trap['additional_f_8'] = customer_count if customer_count else "0"
        
         return idu_odu_trap
 
@@ -982,19 +1016,23 @@ class correlation:
                 if device_type == "BS":
 
 		    if trap_type == "ip_trap":
-
-                        for each_sector in circuit_dict_data_for_ip.keys():
-                            for each_circuit in circuit_dict_data_for_ip.get(each_sector):
-                                circuit_list.append(each_circuit)
+			# In case redis does not contain circuit ids for the odu - trap will not go
+                        if circuit_dict_data_for_ip:
+                            for each_sector in circuit_dict_data_for_ip.keys():
+                                for each_circuit in circuit_dict_data_for_ip.get(each_sector):
+                                    circuit_list.append(each_circuit)
+			else:
+			    logger.info("Circuit dict data not Found for i p: %s"%str(each_trap.get('ip_address')))
+                            circuit_list = []
 
                     else:
 			# In case redis does not contain circuit ids for the odu - trap will not go 
-			if not circuit_dict_data_for_ip.get(trap_type):
-			    logger.error("Circuit dict data not Found for trap type: %s"%str(trap_type))
-			    continue
-
-                        for each_circuit in circuit_dict_data_for_ip.get(trap_type):
-                            circuit_list.append(each_circuit)
+			if circuit_dict_data_for_ip.get(trap_type):
+                            for each_circuit in circuit_dict_data_for_ip.get(trap_type):
+                                circuit_list.append(each_circuit)
+			else:
+			    logger.info("Circuit dict data not Found for trap type: %s"%str(trap_type))
+			    circuit_list = []
 
 		    params_for_make_idu_odu_trap = {}
                     params_for_make_idu_odu_trap['mat_data'] = mat_data
@@ -1005,14 +1043,11 @@ class correlation:
 		    idu_odu_trap = self.make_idu_odu_trap(**params_for_make_idu_odu_trap)
 		    idu_odu_traps.append(idu_odu_trap)
 			
-		    #logger.error('Created IDU ODU trap- %s'%str(idu_odu_trap))
-		    #logger.error('Circuit list: %s'%str(circuit_list))
 		    
                     params_for_make_circuit_trap = {}
                     params_for_make_circuit_trap['idu_odu_trap'] = idu_odu_trap
                     params_for_make_circuit_trap['circuit_list'] = circuit_list
 		    circuit_trap = self.make_circuit_trap(**params_for_make_circuit_trap)
-		    #logger.error('Created Circuit Trap: %s'%str(circuit_trap))
 
                     circuit_traps.append(circuit_trap)
 		    
@@ -1022,7 +1057,6 @@ class correlation:
 	for each_circuit_trap in circuit_traps:
 	    final_traps.append(each_circuit_trap)
 
-	#logger.error('Final traps: %s'%str(final_traps))
 	return final_traps
 
     def create_alarms_for_events(self,**params):
@@ -1089,7 +1123,7 @@ class correlation:
 		
 
 	    rc_element_dict,rc_alarm_id = self.make_dict_for_conv_swich_trap(**params)
-	    logger.error ('RC Element Dict %s'%str(rc_element_dict))
+	    logger.info ('RC Element Dict %s'%str(rc_element_dict))
 	    if not alarm_id:
 	        params.update({'alarm_id': rc_alarm_id })
 	    # If siteb PTP-BH device is down(is_bakchaul=True) then Use PTP BH device as parent device for SiteB idu/odu. 
@@ -1138,7 +1172,7 @@ class correlation:
 	    params.update({'idu_odu_trap_dict': input_trap_dict})
 	    params.update({'ckt_list_for_conv_sia': ckt_list_for_conv_sia})
 	    ckt_element_list = self.make_dict_for_ckt(**params)
-	    logger.error('2. Circuit element list %s'%str(ckt_element_list))
+
 	    # Non Root Cause Switch Converter Traps
 	    params.update({'is_backhaul':None, 'alarm_id':None})
 	    #TODO Send the SIA traps for the NOn rc conv traps
@@ -1160,7 +1194,6 @@ class correlation:
 	    
 	    params.update({'idu_odu_trap_dict':bs_trap, 'parent_ac':set([])})
 	    ckt_element_list = self.make_dict_for_ckt(**params)
-	    logger.error('1. Circuit element list %s'%str(ckt_element_list))
 		
 	    trap_list = bs_trap.values() + ss_trap.values() + ckt_element_list
 	elif params.get('ss_list'):
@@ -1207,7 +1240,17 @@ class correlation:
 	else:
 	    return None
 
-
+    def planned_events(self,redis_conn):
+        planned_event_dict ={} 
+	planned_events_data = redis_conn.get('planned_events')
+	if planned_events_data:
+	    planned_events_data = eval(planned_events_data)
+	    planned_events_data = sorted(planned_events_data,key=itemgetter(0)) 
+	for entry in planned_events_data:
+	    planned_event_dict[(entry[0],entry[1])] = entry[2]
+	
+	#time_duration_list = planned_event_dict.keys() if planned_event_dict else list()
+	return planned_event_dict
     def update_trap_invent_dict(self):
 	"""
 	Get the data(traps) from redis.
@@ -1247,7 +1290,6 @@ class correlation:
 	for e.g. ip_id = {'10.175.44.9': 45,
 			  '121.89.44.2': 2}
 	"""
-	#logger.error('INFO: Starting Process with Traps')
 	redis_conn = self.redis_conn()
 
 	clear_trap_keys = []
@@ -1255,8 +1297,6 @@ class correlation:
 	# Get recent Trap_Invent_dict from redis.
 	try:	
 	    trap_invent_dict = eval(redis_conn.get('trap_invent_dict'))
- 	    #logger.error('\n\nEarlier trap invent dict- %s\n'%str(trap_invent_dict))
-
 	except Exception as e:
 	    trap_invent_dict = {}
 	    redis_conn.set('trap_invent_dict',{})
@@ -1267,15 +1307,14 @@ class correlation:
 
 	# Get all the traps from redis queue
 	number_of_traps = redis_conn.llen('queue:traps')
-	logger.error('\n\nNumber of traps fetched- %s\n'%str(number_of_traps))
-
+	
+	time_duration_dict = self.planned_events(redis_conn)
 	if number_of_traps > 0:
 
 	    p = redis_conn.pipeline()
 	    [p.lpop('queue:traps') for i in range(number_of_traps)]        # Alarm data(traps and events) from redis
 	    trap_list = p.execute()
 	    trap_list = [eval(t_e) for t_e in trap_list]
-	    logger.error('\n\nFetched traps %s\n'%str(trap_list))
 
 	    # Store traps to trap_invent_dict according to its structure show above.
 	    for each_trap in trap_list:
@@ -1286,6 +1325,10 @@ class correlation:
                 key = (alarm_name,severity)
                 id = ip_id.get(ip)
 
+		t_time = int(datetime.strptime(each_trap[8],"%Y-%m-%d %H:%M:%S").strftime('%s'))
+                drop_trap_flag = 1 if sum([1 for i,v in time_duration_dict.iteritems() if ip in v and int(i[0]) <= t_time and t_time < int(i[1]) ]) >= 1 else 0 
+		if drop_trap_flag:
+		    continue
 	        #if mat_data.get(key).get('correlation') == 1:
 	        if True:
 		    trap_type = self.find_trap_type(alarm_name)
@@ -1328,7 +1371,6 @@ class correlation:
 
 
 	    inventory_dict = {'trap_invent_dict':trap_invent_dict}
-	    #logger.error('\nCreated trap_invent_dict: %s'%str(inventory_dict))
             self.insert_events_into_redis(inventory_dict)
 
 	    # Clear Trap Send Task
@@ -1374,25 +1416,6 @@ class correlation:
                         return alarm
         else:
             return None
-
-    def high_priority_in_co_traps(self,alarm_name_each_co_trap,alarm_name_each_trap):
-
-	alarm_tuples = (alarm_name_each_co_trap, alarm_name_each_trap)
-        priority_values = [self.alarm_priority_dict.get(alarm) for alarm in alarm_tuples]
-        logger.error('Priority Values %s'%str(priority_values))
-        index_priority = deepcopy(priority_values)
-        logger.error('Index priority %s'%str(index_priority))
-
-        priority_values.sort()
-	if priority_values:
-            priority = priority_values[0]
-            index = index_priority.index(priority)
-            hp_alarm_in_co_traps = alarm_tuples[index]
-
-	    return hp_alarm_in_co_traps
-	else:
-	    return None
-    
  
     def update_alarms_in_database(self, non_ckt_trap_list, is_manual = False):
 
@@ -1430,7 +1453,6 @@ class correlation:
 	    redis_conn.set('monolith_ticket:' + ip_address, monolith_ticket)
 
             data_alert_center = {}
-	    logger.error('Alarm ID for ip %s is %s'%( str(trap.get('resource_name')), str( trap.get('alrm_id') )))
             data_alert_center['ip_address']=trap.get('resource_name')
             data_alert_center['alarm_id'] = trap.get('alrm_id')
             data_alert_center['ticket_number'] = 'Not Available'
@@ -1447,7 +1469,6 @@ class correlation:
 
         export_traps = ExportTraps()
 
-	logger.error(query_data_for_alert_center)
         if query_data_for_alert_center:
             try:
                 # Store the Ticket and other information on User application database.
@@ -1513,36 +1534,64 @@ class correlation:
 		pass
 		
 	    if drop_flag == True:
-		logger.error("for this ip %s trap will not go"%str(trap_ip))
+		logger.info("for this ip %s trap will not go"%str(trap_ip))
 		traps_to_be_removed.append(trap)
 
 	for trap in traps_to_be_removed:
             traps_list.remove(trap)
 	return traps_list
 
-    def converter_customer_count(self, ip):
+    def converter_customer_count(self, ip, siteb_switch_conv_id, ptp_bh_flag = 0):
         redis_conn = self.redis_conn()
-        converter_static_data = eval(redis_conn.get("static_%s"%str(ip)))
-        bs_ips = converter_static_data.get('bs_ips')
+	try:
+	    if ptp_bh_flag:
+                ip = siteb_switch_conv_id
+
+	    converter_static_data = eval(redis_conn.get("static_%s"%str(ip)))
+            bs_ips = converter_static_data.get('bs_ips')
 	
-        circuit_dict_data = eval(redis_conn.get('circuit_dict'))
+	    circuit_dict_data = redis_conn.get('circuit_dict')
+            if not circuit_dict_data:
+                logger.error('Circuit dict data is not available in redis')
+                return "0"
+	    circuit_dict_data = eval(circuit_dict_data)
+            circuits_list = []
+            for each_bs in bs_ips:
+	        circuit_dict = circuit_dict_data.get(each_bs)
+	        if not circuit_dict:
+		    continue
+                for circuit in circuit_dict.values():
+                    circuits_list = circuits_list + circuit
+	except Exception as e:
+	    logger.error('Exception in finding Converter customer count: %s'%(e))
+
+	if len(circuits_list):
+	    return len(circuits_list)
+	else:
+	    logger.error('Circuit dict data is not for converter ip %s'%(ip))
+	    return "0"
+
+    def bs_customer_count(self, ip, trap_type):
+        redis_conn = self.redis_conn()
+	
+        circuit_dict_data = redis_conn.get('circuit_dict')
+	if not circuit_dict_data:
+	    logger.error('Customer_count: Circuit dict data is not available in redis')
+	    return "0"
+
+        circuit_dict_data = eval(circuit_dict_data).get(ip)
+	if not circuit_dict_data:
+	    logger.error('Customer_count: Circuit Dict data not found for ip %s'%(ip))
+	    return "0"
+
         circuits_list = []
-        for each_bs in bs_ips:
-            for circuit in circuit_dict_data.get(each_bs).values():
+	if trap_type in ["odu1","odu2"]:
+	    for circuit in circuit_dict_data.get(trap_type):
+                circuits_list.append(circuit)
+	else:
+            for circuit in circuit_dict_data.values():
                 circuits_list = circuits_list + circuit
 
-	logger.error('Customer count %s'%str(len(circuits_list)))
-	return len(circuits_list)
-
-    def bs_customer_count(self, ip):
-        redis_conn = self.redis_conn()
-
-        circuit_dict_data = eval(redis_conn.get('circuit_dict'))
-        circuits_list = []
-        for circuit in circuit_dict_data.get(ip).values():
-            circuits_list = circuits_list + circuit
-
-        logger.error('Customer count %s'%str(len(circuits_list)))
         return len(circuits_list)
 	    
 @app.task(base=DatabaseTask, name='correlation_traps')
@@ -1580,9 +1629,7 @@ def correlation_traps():
 	    for trap_type in alarm_invent_dict.get(ip).keys():
 		final_alarm = {}
 		alarm_dict = alarm_invent_dict[ip][trap_type]	
-		#logger.error('Alarm dict befor high priority %s'%str(alarm_dict))
 	        alarm = cor_obj.find_high_priority_trap(alarm_dict)
-		#logger.error('Alarm after high priority %s'%str(alarm))
 
 		if alarm:
 		    alarm_info_dict = alarm_dict.get(alarm)
@@ -1590,7 +1637,6 @@ def correlation_traps():
 		    final_alarm['alarm_name'] = alarm_info_dict.get('alarm_name')
 		    final_alarm['severity'] = alarm_info_dict.get('severity')
 		    final_alarm['timestamp'] = alarm_info_dict.get('timestamp')
-		    #logger.error('Final Alarm %s'%str(final_alarm))
 		    ip_sector_alarms[trap_type] = final_alarm
 		    
 	    if 'ip_trap' in ip_sector_alarms.keys():
@@ -1600,7 +1646,6 @@ def correlation_traps():
 
         # Sending final list of traps to create and send alarms to monolith
         if traps_list:
-	    #logger.error('Trap list %s'%str(traps_list)) 
             send_alarms_for_traps.s(traps_list).apply_async()
 	
     
@@ -1610,7 +1655,6 @@ def clear_alarms(keys):
     Task to send Clear traps to Monolith.
     Extract traps from redis modify trap and send it to monolith.
     """
-    #logger.error('\n\nkeys for clear {0} type {1}\n'.format(keys,type(keys))) 
     cor_obj = correlation()
     redis_conn = cor_obj.redis_conn()
 
@@ -1642,7 +1686,6 @@ def correlation_update_inventory():
     """
     Starting point of this script, It calls individual functions for correlation of events and traps
     """
-    logger.error('\n\nCorrelation script starts:\n')
     cor_obj=correlation()
      
     if cor_obj.update_event_invent_dict():
@@ -1714,7 +1757,6 @@ def correlation_events():
 		del invent_down_device_dict[del_ss_key]
 	    
         params = max_value_params,invent_ids
-	#logger.error('\nINFO: Parameters for send traps- %s'%str(params))
         send_alarms_for_events.s(params).apply_async()
 
 @app.task(base=DatabaseTask, name='send_alarms_for_events')
@@ -1737,7 +1779,6 @@ def send_alarms_for_events(params):
     down_device_dict, down_device_static_dict, rc_element, non_rc_switch_conv,\
 				    bs_down_list, ss_down_list, ckt_dict, flags = trap_params
 
-    #logger.error('\n\n\nCircuit dict %s'%str(ckt_dict))
     ptp_bh_flag = flags['ptp_bh_flag']
     bs_ss_dict = flags['bs_ss_dict']
     is_backhaul =flags['is_backhaul']
@@ -1794,14 +1835,11 @@ def send_alarms_for_events(params):
 			 'sitea_rc_element':None,
 			 'ckt_list_for_conv_sia' : ckt_list_for_conv_sia,
 			 'alarm_id': None})
-    #logger.error("\n\nCreate traps params: %s\n"%str(sitea_params))
   
-    logger.error("\n\nCreate traps params: %s\n"%str(siteb_params))
     if rc_element:
 	if not down_device_static_dict[rc_element].get('ptp_bh_flag'):
 	    sitea_params.update({'rc_element':rc_element})
 	sitea_params.update({'is_backhaul':None})
-	#logger.error('\nINFO: Parameters to create trap- %s'%str(sitea_params))
 	rc_alarm_id,sitea_trap_list = cor_obj.create_alarms_for_events(**sitea_params)
     
 	if ptp_bh_flag:
@@ -1821,10 +1859,8 @@ def send_alarms_for_events(params):
 	    rc_alarm_id,siteb_trap_list = cor_obj.create_alarms_for_events(**siteb_params)
     else:
 	if ptp_bh_flag:
-	    #logger.error('\nINFO: Parameters to create trap- %s'%str(siteb_params))
 	    alarm_id,siteb_trap_list = cor_obj.create_alarms_for_events(**siteb_params)
 	sitea_params.update({'is_backhaul':None})
-	#logger.error('\nINFO: Parameters to create trap- %s'%str(sitea_params))
 	alarm_id,sitea_trap_list= cor_obj.create_alarms_for_events(**sitea_params)
     
     final_traps = sitea_trap_list + siteb_trap_list
@@ -1832,7 +1868,6 @@ def send_alarms_for_events(params):
 
 	# External Handling of data manupulation for Monolith server.
 	final_trap_list = cor_obj.final_trap_data_manupulation(final_traps)
-        #logger.error('Manupulated trap list {0}'.format(final_trap_list))
         trap_sender_task.s(final_trap_list).apply_async()
     
         non_ckt_trap_list = [trap_dict for trap_dict in final_trap_list if not trap_dict.get('impacted_circuit_ids')]
@@ -1848,11 +1883,9 @@ def send_alarms_for_traps(traps_list, is_manual = False):
     cor_obj=correlation()
     redis_conn = cor_obj.redis_conn()
 
-    #logger.error('Traps before filter %s'%str(traps_list))
 
     final_traps_list = cor_obj.filter_traps_from_sent_traps(traps_list)
 
-    #logger.error('Traps after filter %s'%str(final_traps_list))
 
     final_alarms = []
     if final_traps_list:
@@ -1861,11 +1894,9 @@ def send_alarms_for_traps(traps_list, is_manual = False):
     if final_alarms:
         # External Handling of data manupulation for Monolith server.
         final_alarm_list = cor_obj.final_trap_data_manupulation(final_alarms)
-        #logger.error('Manupulated Alarm list {0}'.format(final_alarm_list))
         trap_sender_task.s(final_alarm_list).apply_async()
 
         non_ckt_trap_list = [trap_dict for trap_dict in final_alarm_list if not trap_dict.get('impacted_circuit_ids')]
-	#logger.error('Non Circuit trap list %s'%str(non_ckt_trap_list))
         p = redis_conn.pipeline()
         # Using Redis Hash to store Traps.
         # hset('dictname',key,value)
@@ -1893,7 +1924,6 @@ def update_invent_dict(invent_ids,events = 0):
     """
     Remove inventory id's for which correlation has started.
     """
-    logger.error('Invent ids to update: %s'%str(invent_ids))
 
     #events flag to identify event_invent_dict and trap_invent_dict.
     if events:
@@ -1910,3 +1940,146 @@ def update_invent_dict(invent_ids,events = 0):
 	redis_conn.set(invent_type,invent_dict)
     except Exception as e:
 	logger.error('Exception : {0}'.format(e))
+
+class manual_ticketing:
+
+    def __init__(self):
+        pass
+    def create_events(self, corr_obj,event):
+        """
+	Comments
+	"""
+	redis_conn = corr_obj.redis_conn()
+
+	device_ip = event.get('ip_address')
+	alarm_name = event.get('alarm_name')
+	severity = event.get('severity')
+	timestamp = event.get('timestamp')
+	key_for_static_inventory_data = "static_" + str(device_ip)
+	static_inventory_data = redis_conn.get(key_for_static_inventory_data)
+	static_inventory_data = eval(static_inventory_data)
+
+	key_for_mat_data = (alarm_name,severity)
+	mat_data = redis_conn.get('mat_data')
+	mat_data = eval(mat_data)
+	mat_data = mat_data.get(key_for_mat_data)
+
+        alarm = dict()
+        alarm['alarm_name'] = alarm_name
+        #alarm['alarm_description'] = each_event[2]
+        alarm['timestamp'] = timestamp
+        alarm['severity'] = severity
+        alarm['unique_id'] = generateuuid()
+        alarm['ip_address'] = device_ip
+        #alarm['inventory_id']= id
+        alarm['category'] = mat_data.get('category')
+        #Alarm name alias for monolith
+        alarm['alias'] = ' '.join(alarm_name.split('_'))	
+	
+	down_device_dict = {}
+	static_dict = {}
+	down_device_dict[device_ip] = alarm
+	static_dict[device_ip] = static_inventory_data
+
+	device_type = static_inventory_data.get('resource_name')
+
+	# create trap for idu 
+	circuit_dict_data = {}
+	circuit_dict_data = redis_conn.get("circuit_dict")
+        circuit_dict_data = eval(circuit_dict_data)
+
+	final_events = []
+	if device_type == "BS":
+
+	    params_io = {}
+	    params_io['down_device_dict'] = down_device_dict
+            params_io['static_dict'] = static_dict
+            params_io['bs_list'] = [device_ip]
+
+	    idu_odu_event_dict = corr_obj.make_dict_for_idu_odu_trap(**params_io)
+	    final_events.append(idu_odu_event_dict.get(device_ip))
+
+	    params_ct = {}
+	    params_ct['static_dict'] = static_dict
+            params_ct['idu_odu_trap_dict'] = idu_odu_event_dict
+            params_ct['ckt_list_for_conv_sia'] = []
+            params_ct['ckt_dict'] = {}
+
+            circuit_event = corr_obj.make_dict_for_ckt(**params_ct)
+	    final_events.append(circuit_event[0])
+
+	elif device_type == "POPConverter" or device_type == "BTSConverter":
+
+	    params_cs = {}
+	    params_cs['down_device_dict'] = down_device_dict
+            params_cs['static_dict'] = static_dict
+            params_cs['rc_element'] = device_ip
+
+	    converter_events = corr_obj.make_dict_for_conv_swich_trap(**params_cs)
+	    final_events.append(converter_events[0].get(device_ip))
+
+	    params_ct = {}
+            params_ct['static_dict'] = static_dict
+            params_ct['idu_odu_trap_dict'] = converter_events[0]
+            params_ct['ckt_list_for_conv_sia'] = []
+            params_ct['ckt_dict'] = {}
+	    
+            circuit_event = corr_obj.make_dict_for_ckt(**params_ct)
+	    final_events.append(circuit_event[0])
+
+	elif device_type == "SS":
+
+	    params_ss = {}
+	    params_ss['down_device_dict'] = down_device_dict
+            params_ss['static_dict'] = static_dict
+            params_ss['ss_list'] = [device_ip]
+
+	    ss_events = corr_obj.make_dict_for_ss_trap(**params_ss)
+
+	    final_events.append(ss_events.get(device_ip))
+	pprint(final_events)
+        return final_events
+
+    def send_events(self, corr_obj, event, is_manual):
+	
+	"""
+	Comments
+	"""	
+
+	final_events = self.create_events(corr_obj,event)
+
+	if final_events:
+            # External Handling of data manupulation for Monolith server.
+            final_events= corr_obj.final_trap_data_manupulation(final_events)
+            trap_sender_task.s(final_events).apply_async()
+
+            non_ckt_events = filter(lambda x: not x.get('impacted_circuit_ids'),final_events)
+	    is_manual = True
+	    corr_obj.update_alarms_in_database(non_ckt_events, is_manual)
+
+
+@app.task(base=DatabaseTask, name='manual_ticketing_main')
+def manual_ticketing_main(alarm):
+
+    try:
+        corr_obj = correlation()
+        is_manual = True
+	alarm['timestamp'] = int(time.time())
+	alarm['is_manual'] = True
+
+	#alarm['ip_address'] = "10.191.34.9"
+	#alarm['severity'] = "critical"
+	#alarm['alarm_name'] = "Device_not_reachable"
+
+	manual_tkt_obj = manual_ticketing()
+	if alarm:
+	    alarm_type = corr_obj.find_trap_type(alarm.get('alarm_name'))
+	    if alarm_type == 'event':
+		manual_tkt_obj.send_events(corr_obj, alarm, is_manual)
+	    elif alarm_type in ('odu1','odu2','ip_trap'):
+		traps = [alarm]
+		send_alarms_for_traps.s(traps, is_manual).apply_async() 
+	    else:
+		logger.error('Alarm name is in not to be monitored')
+    except Exception as e:
+	logger.error(e)
