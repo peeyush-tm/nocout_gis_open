@@ -5,8 +5,10 @@ from django.utils.dateformat import format
 # datetime utility
 import datetime
 from dateutil.relativedelta import *
+from operator import itemgetter
 from inventory.tasks import bulk_update_create
 from device.models import Device, DeviceTechnology, DeviceType
+from inventory.models import Sector
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 from nocout.settings import PLANNED_EVENTS_ENABLED, PE_REDIS_HOST, PE_REDIS_PORT, PE_REDIS_DB
@@ -33,33 +35,60 @@ def get_child_ips(device):
 		if device.pe_ip.exists(): # PE
 			pe_data = device.pe_ip.all()
 			for bh in pe_data:
-				ips.append(bh.aggregator.ip_address)
-				ips.append(bh.pop.ip_address)
-				ips.append(bh.bh_switch.ip_address)
+				try:
+					ips.append(bh.aggregator.ip_address)
+				except Exception, e:
+					pass
+				try:
+					ips.append(bh.pop.ip_address)
+				except Exception, e:
+					pass
+				try:
+					ips.append(bh.bh_switch.ip_address)
+				except Exception, e:
+					pass
 				bs_data = bh.basestation_set.all()
 				for bs in bs_data:
-					ips.append(bs.bs_switch.ip_address)
+					try:
+						ips.append(bs.bs_switch.ip_address)
+					except Exception, e:
+						pass
 					ips += list(bs.sector.values_list(
 						'sector_configured_on__ip_address', flat=True
 					))
 		elif device.backhaul_aggregator.exists(): # Aggregator
 			aggr_data = device.backhaul_aggregator.all()
 			for bh in aggr_data:
-				ips.append(bh.pop.ip_address)
-				ips.append(bh.bh_switch.ip_address)
+				try:
+					ips.append(bh.pop.ip_address)
+				except Exception, e:
+					pass
+				try:
+					ips.append(bh.bh_switch.ip_address)
+				except Exception, e:
+					pass
 				bs_data = bh.basestation_set.all()
 				for bs in bs_data:
-					ips.append(bs.bs_switch.ip_address)
+					try:
+						ips.append(bs.bs_switch.ip_address)
+					except Exception, e:
+						pass
 					ips += list(bs.sector.values_list(
 						'sector_configured_on__ip_address', flat=True
 					))
 		elif device.backhaul_pop.exists(): # POP
 			pop_data = device.backhaul_pop.all()
 			for bh in pop_data:
-				ips.append(bh.bh_switch.ip_address)
+				try:
+					ips.append(bh.bh_switch.ip_address)
+				except Exception, e:
+					pass
 				bs_data = bh.basestation_set.all()
 				for bs in bs_data:
-					ips.append(bs.bs_switch.ip_address)
+					try:
+						ips.append(bs.bs_switch.ip_address)
+					except Exception, e:
+						pass
 					ips += list(bs.sector.values_list(
 						'sector_configured_on__ip_address', flat=True
 					))
@@ -68,7 +97,10 @@ def get_child_ips(device):
 			for bh in bh_data:
 				bs_data = bh.basestation_set.all()
 				for bs in bs_data:
-					ips.append(bs.bs_switch.ip_address)
+					try:
+						ips.append(bs.bs_switch.ip_address)
+					except Exception, e:
+						pass
 					ips += list(bs.sector.values_list(
 						'sector_configured_on__ip_address', flat=True
 					))
@@ -79,7 +111,7 @@ def get_child_ips(device):
 					'sector_configured_on__ip_address', flat=True
 				))
 
-	return ','.join(ips)
+	return ','.join(list(set(ips)))
 
 def set_planned_events_in_redis(dataset=[]):
 	"""
@@ -90,8 +122,18 @@ def set_planned_events_in_redis(dataset=[]):
 
 	if redis_conn:
 		try:
-			redis_conn.set('planned_events', dataset)
-		except Exception a1s e:
+			# format data
+			planned_event_dict ={}
+			if dataset:
+				dataset = sorted(dataset,key=itemgetter(0))
+			for entry in dataset:
+				if len(entry) == 3:
+					planned_event_dict[(entry[0],entry[1])] = (entry[2],)
+				elif len(entry) == 5:
+					planned_event_dict[(entry[0],entry[1])] = (entry[2],entry[3],entry[4])
+			# Set Data to redis 
+			redis_conn.set('planned_events', planned_event_dict)
+		except Exception as e:
 			logger.error('Set redis data exception -- PE')
 			logger.error(e)
 
@@ -216,7 +258,20 @@ def set_planned_events(dataset):
 						pass
 
 					try:
-						redis_data = (startdate, enddate, redis_nia.split(','))
+						pmp_port = None
+						if component and str(component).lower() == 'sector':
+							try:
+								sector_instance = Sector.objects.get(sector_id__iexact=sectorid)
+								pmp_port = sector_instance.sector_configured_on_port.name
+							except Exception as e:
+								logger.error('Sector Fetch Exception for === {0}'.format(str(sectorid)))
+								logger.error(e)
+								pass
+
+						if pmp_port:
+							redis_data = (startdate, enddate, redis_nia.split(','), pmp_port, resource_name)
+						else:
+							redis_data = (startdate, enddate, redis_nia.split(','))
 						redis_dataset.append(redis_data)
 					except Exception as e:
 						logger.error('Planned Events -- Redis dataset exception')

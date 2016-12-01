@@ -233,10 +233,13 @@ class StartPingStabilityTest(APIView):
             return Response(result)
 
         ip_address = request.POST.get('ip_address')
+        circuit_id = request.POST.get('circuit_id')
+        customer_name = request.POST.get('customer_name')
         duration = request.POST.get('duration', 1)
         tech_id = request.POST.get('tech_id')
         tech_name = request.POST.get('tech_name')
         email_ids = request.POST.get('email_ids', '')
+        remark = request.POST.get('remark')
 
         if not tech_name:
             try:
@@ -262,6 +265,16 @@ class StartPingStabilityTest(APIView):
                 technology=DeviceTechnology.objects.get(id=tech_id),
                 email_ids=email_ids
             )
+
+            if circuit_id not in ['', None]:
+                ping_stability_instance.circuit_id = circuit_id
+
+            if customer_name not in ['', None]:
+                ping_stability_instance.customer_name = customer_name
+
+            if remark not in ['', None]:
+                ping_stability_instance.remark = remark
+
             ping_stability_instance.save()
 
             post_data = {

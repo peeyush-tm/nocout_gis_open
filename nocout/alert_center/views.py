@@ -481,12 +481,14 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
             if page_type == 'network':
                 type_rf = 'sector'
-                if data_source.lower == 'down':
-                    ticket_number_required = True
             elif page_type == 'customer':
                 type_rf = 'ss'
             else:
                 type_rf = None
+
+
+        if page_type == 'network' and data_source.lower() == 'down':
+            ticket_number_required = True
 
         # Create instance of 'PerformanceUtilsGateway' class
         perf_utils = PerformanceUtilsGateway()
@@ -681,6 +683,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
                             # if ul_uas.exists():
                             #     ul_uas = ul_uas[0]
+
                         elif data_source == 'latency':
 
                             dl_utilization = UtilizationStatus.objects.filter(
@@ -719,6 +722,13 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     dct_device_type,
                     scheduling_type
                 )
+
+                try:
+                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=dct['ip_address'])
+                    if planned_events:
+                        showIconBlue = True
+                except Exception as e:
+                    pass
 
                 if showIconBlue:
                     dct.update(severity= 'inDownTime')
@@ -1722,6 +1732,13 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
 
             for dct in qs:
 
+                try:
+                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=dct['ip_address'])
+                    if planned_events:
+                        dct['severity'] = 'INDOWNTIME'
+                except Exception as e:
+                    pass
+
                 dct = alert_utils.common_prepare_results(dct)
 
                 performance_url = reverse(
@@ -2552,17 +2569,17 @@ class SIAListing(ListView):
         if ENABLE_MANUAL_TICKETING:
             manual_ticketing_columns = [{
                 'mData': 'action',
-                'sTitle': 'Action',
+                'sTitle': 'Manual Ticketing',
                 'sWidth': 'auto',
                 'bSortable': False
             }]
 
-            datatable_headers += [{
+            datatable_headers.insert(9, {
                 'mData': 'ticket_number',
                 'sTitle': 'PBI Ticket',
                 'sWidth': 'auto',
                 'bSortable': True
-            }]
+            })
 
             # is_manual_column += [{
             #   'mData': 'is_manual',
@@ -2601,9 +2618,9 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     
     order_columns = [
         'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state',
-        'region', 'bh_connectivity', 'bh_type', 'eventname','traptime',
-        'uptime', 'alarm_count', 'first_occurred','last_occurred',
-        'customer_count', 'sia', 'ticket_number'
+        'region', 'bh_connectivity', 'bh_type', 'eventname', 'ticket_number', 'traptime', 'uptime',
+        'alarm_count', 'first_occurred','last_occurred', 'customer_count', 
+        'sia'
     ]
 
     other_columns = [
@@ -2771,16 +2788,16 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             if ENABLE_MANUAL_TICKETING:
                 self.order_columns = [
                     'action', 'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
-                    'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
-                    'customer_count', 'sia', 'ticket_number'
+                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type', 'eventname', 
+                    'ticket_number', 'traptime', 'uptime','alarm_count','first_occurred',
+                    'last_occurred', 'customer_count', 'sia'
                 ]
             else:
                 self.order_columns = [
                     'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type', 'eventname',
-                    'traptime', 'uptime','alarm_count','first_occurred','last_occurred', 
-                    'customer_count', 'sia', 'ticket_number'
+                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type', 'eventname', 
+                    'ticket_number', 'traptime', 'uptime','alarm_count','first_occurred',
+                    'last_occurred', 'customer_count', 'sia'
                 ]
 
         # Number of columns that are used in sorting
@@ -2962,6 +2979,14 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 pk = dct.get('id')
                 ip_address = dct.get('ip_address')
                 severity = dct.get('severity')
+
+                try:
+                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=ip_address)
+                    if planned_events:
+                        severity = 'INDOWNTIME'
+                except Exception as e:
+                    pass
+
                 event_name = dct.get('eventname')
                 severity_icon = alert_utils.common_get_severity_icon(severity)
                 uptime = dct.get('uptime')
@@ -2975,16 +3000,16 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     condition3 = dct.get('device_name')
                     condition4 = self.alarm_type == 'current'
                     manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4
+                    has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
 
                     if manual_action_condition:
-                        has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
                         if not has_ticket_number and not is_manual:
                             action += '<a href="javascript:;" class="manual_ticketing_btn" data-ip="{0}" data-severity="{1}" \
                                        data-alarm="{2}" data-pk="{3}" title="Generate Manual Ticket"> \
                                        <i class="fa fa-sign-in"></i></a>&nbsp;&nbsp;'.format(ip_address, severity, event_name, pk)
 
-                        if is_manual and has_ticket_number:
-                            ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
+                    if is_manual and has_ticket_number:
+                        ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
                 except Exception, e:
                     pass
 
@@ -3253,16 +3278,19 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         'latency': {
             'warning': 'orange-dot',
             'major': 'red-dot',
-            'clear': 'green-dot'
+            'clear': 'green-dot',
+            'indowntime': 'blue-dot'
         },
         'packet_drop': {
             'warning': 'orange-dot',
             'major': 'red-dot',
-            'clear': 'green-dot'
+            'clear': 'green-dot',
+            'indowntime': 'blue-dot'
         },
         'down': {
             'critical': 'red-dot',
-            'clear': 'green-dot'
+            'clear': 'green-dot',
+            'indowntime': 'blue-dot'
         }
     }
 
@@ -3273,6 +3301,8 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         'Second',
         'Mili Second'
     ]
+
+    manual_ticketing_bh_ips = []
 
     def get_initial_queryset(self):
         """
@@ -3305,6 +3335,16 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
             bh_configured_on__ip_address__isnull=False
         ).values_list('bh_configured_on__ip_address', flat=True))
 
+        included_bh_dtype_ids = list(DeviceType.objects.filter(
+            name__in=['PINE', 'RiCi', 'Converter']
+        ).values_list('id', flat=True))
+
+        specific_bh_ips = list(Backhaul.objects.filter(
+            bh_configured_on__isnull=False,
+            bh_configured_on__device_type__in=included_bh_dtype_ids,
+            bh_configured_on__ip_address__isnull=False
+        ).values_list('bh_configured_on__ip_address', flat=True))
+
         ptp_bh_ips = list(Circuit.objects.filter(
             circuit_type__iexact='backhaul',
             sector__sector_configured_on__ip_address__isnull=False
@@ -3316,6 +3356,8 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         ).values_list('sub_station__device__ip_address', flat=True))
 
         inventory_ips_list = pmp_wimax_ips + wimax_dr_ips + bh_conf_ips + ptp_bh_ips + ptp_bh_ss_ips
+
+        self.manual_ticketing_bh_ips = pmp_wimax_ips + wimax_dr_ips + specific_bh_ips + ptp_bh_ips + ptp_bh_ss_ips
 
         filter_condition = False
         ip_address_list = list()
@@ -3661,12 +3703,23 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 severity = dct.get('severity')
                 event_name = dct.get('eventname')
                 ip_address = dct.get('ip_address')
+                try:
+                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=ip_address)
+                    if planned_events:
+                        severity = 'indowntime'
+                except Exception as e:
+                    pass
                 is_manual = dct.get('is_manual')
                 ticket_number = dct.get('ticket_number')
-
                 action = ''
                 formatted_uptime = uptime
                 data_source = (self.request.GET.get('data_source', None))
+
+                # Parse to integer
+                try:
+                    is_manual = int(is_manual)
+                except Exception as e:
+                    is_manual = 0
 
                 # severity icon according to user requirement
                 # Change Color "RED" in Current and "Green" in Clear. Same in History Tab
@@ -3678,17 +3731,18 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     condition2 = event_name in INCLUDED_EVENTS_FOR_MANUAL_TICKETING
                     condition3 = dct.get('device_name')
                     condition4 = self.alarm_type == 'current'
-                    manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4
+                    condition5 = ip_address in self.manual_ticketing_bh_ips
+                    manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4 and condition5
+                    has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
                     
                     if manual_action_condition:
-                        has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
                         if not has_ticket_number and not is_manual:
                             action += '<a href="javascript:;" class="manual_ticketing_btn" data-ip="{0}" data-severity="{1}" \
                                        data-alarm="{2}" data-pk="{3}" title="Generate Manual Ticket"> \
                                        <i class="fa fa-sign-in"></i></a>&nbsp;&nbsp;'.format(ip_address, severity, event_name, pk)
 
-                        if is_manual and has_ticket_number:
-                            ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
+                    if is_manual and has_ticket_number:
+                        ticket_number += '<i class="fa fa-ticket text-success" title="Manual Ticket"></i>'
                 except Exception, e:
                     pass
 
@@ -3795,7 +3849,7 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         return ret
 
 
-@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
+# @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_snmp_gis_data(qs, tech_name):
     """
     This function fetched GIS Inventory data as per the given param & 
@@ -3823,6 +3877,7 @@ def prepare_snmp_gis_data(qs, tech_name):
         ).values(
             'sector_id',
             'sector_configured_on__ip_address',
+            'sector_configured_on_port__name',
             'base_station__alias',
             'base_station__city__city_name',
             'base_station__state__state_name',
@@ -3846,6 +3901,7 @@ def prepare_snmp_gis_data(qs, tech_name):
                 'base_station__city__city_name',
                 'base_station__state__state_name',
                 'dr_configured_on__ip_address',
+                'sector_configured_on_port__name',
                 'device_type',
                 'region'
             ).distinct()
@@ -3944,22 +4000,26 @@ def prepare_snmp_gis_data(qs, tech_name):
             'region'
         ).distinct()
 
-        mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
+        # mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
+        mapped_bh_conf_result = list_to_indexed_dict_alerts(
             list(bh_conf_data_qs),
             'backhaul__bh_configured_on__ip_address'
         )
 
-        mapped_bh_switch_result = inventory_utils.list_to_indexed_dict(
+        # mapped_bh_switch_result = inventory_utils.list_to_indexed_dict(
+        mapped_bh_switch_result = list_to_indexed_dict_alerts(
             list(bh_switch_data_qs),
             'backhaul__bh_switch__ip_address'
         )
 
-        mapped_pop_result = inventory_utils.list_to_indexed_dict(
+        # mapped_pop_result = inventory_utils.list_to_indexed_dict(
+        mapped_pop_result = list_to_indexed_dict_alerts(
             list(pop_data_qs),
             'backhaul__pop__ip_address'
         )
 
-        mapped_aggr_result = inventory_utils.list_to_indexed_dict(
+        # mapped_aggr_result = inventory_utils.list_to_indexed_dict(
+        mapped_aggr_result = list_to_indexed_dict_alerts(
             list(aggr_data_qs),
             'backhaul__aggregator__ip_address'
         )
@@ -3969,22 +4029,32 @@ def prepare_snmp_gis_data(qs, tech_name):
         converter_mapped_data.update(mapped_pop_result)
         converter_mapped_data.update(mapped_aggr_result)
 
-    mapped_sector_result = inventory_utils.list_to_indexed_dict(
+    # mapped_sector_result = inventory_utils.list_to_indexed_dict(
+    mapped_sector_result = list_to_indexed_dict_alerts(
         list(sectors_data_qs),
-        'sector_configured_on__ip_address'
+        'sector_configured_on__ip_address',
+        is_wimax=True
     )
 
-    mapped_dr_result = inventory_utils.list_to_indexed_dict(
+    # mapped_dr_result = inventory_utils.list_to_indexed_dict(
+    mapped_dr_result = list_to_indexed_dict_alerts(
         list(dr_data_qs),
-        'dr_configured_on__ip_address'
+        'dr_configured_on__ip_address',
+        is_wimax=True
     )
 
     mapped_result = mapped_sector_result.copy()
     mapped_result.update(mapped_dr_result)
     mapped_result.update(converter_mapped_data)
-   
+
+    try:
+        starmax_idu_id = DeviceType.objects.get(name__iexact='starmaxidu').id
+    except Exception as e:
+        starmax_idu_id = None
+
     for data in qs_list:
         ip_address = data.get('ip_address')
+        eventname = data.get('eventname')
         data.update(
             bs_alias='NA',
             bs_city='NA',
@@ -3998,11 +4068,31 @@ def prepare_snmp_gis_data(qs, tech_name):
         if not ip_address:
             continue
 
+        sector_dct = None
         try:
             sector_dct = mapped_result[ip_address]
+            if sector_dct:
+                if starmax_idu_id == sector_dct[0].get('device_type'):
+                    if 'odu1' in eventname.lower() or 'pmp1' in eventname.lower():
+                        try:
+                            sector_dct = filter(lambda x: x.get('sector_configured_on_port__name') == 'pmp1', sector_dct)[0]
+                        except Exception as e:
+                            sector_dct = sector_dct[0]
+                    elif 'odu2' in eventname.lower() or 'pmp2' in eventname.lower():
+                        try:
+                            sector_dct = filter(lambda x: x.get('sector_configured_on_port__name') == 'pmp2', sector_dct)[0]
+                        except Exception as e:
+                            sector_dct = sector_dct[0]
+                    else:
+                        try:
+                            sector_dct[0]['sector_id'] = sector_dct[0].get('sector_id', 'NA') + ', '+ sector_dct[1].get('sector_id', 'NA')
+                            sector_dct = sector_dct[0]
+                        except Exception as e:
+                            sector_dct = sector_dct[0]
+                else:
+                    sector_dct = sector_dct[0]
         except Exception, e:
-            sector_dct = None
-            pass
+            continue
         if sector_dct:
             data.update(
                 sector_id=sector_dct.get('sector_id', 'NA'),
@@ -4665,6 +4755,16 @@ class PlannedEventsListing(BaseDatatableView, AdvanceFilteringMixin):
             end_date = dct.get('enddate', '')
 
             try:
+                dct['service_ids'] = ', '.join(dct['service_ids'].split(','))
+            except Exception as e:
+                pass
+
+            try:
+                dct['nia'] = ', '.join(dct['nia'].split(','))
+            except Exception as e:
+                pass
+
+            try:
                 start_datetime_obj = datetime.datetime.fromtimestamp(start_date)
                 formatted_startdate = start_datetime_obj.strftime(DATE_TIME_FORMAT)
             except Exception as e:
@@ -4740,7 +4840,8 @@ class GenerateManualTicket(View):
             'success': 0,
             'message': 'Ticket generate request not sent.'
         }
-
+        traptime = None
+        current_instance = None
         try:
             current_instance = CurrentAlarms.objects.filter(
                 id=pk,
@@ -4749,6 +4850,7 @@ class GenerateManualTicket(View):
 
             if current_instance.exists():
                 current_instance = current_instance[0]
+                traptime = current_instance.traptime
         except Exception as e:
             result.update(
                 message='Invalid primary key.'
@@ -4761,7 +4863,8 @@ class GenerateManualTicket(View):
             encoded_data = {
                 'ip_address': ip_address, 
                 'severity': severity, 
-                'alarm_name': alarm_name
+                'alarm_name': alarm_name,
+                'traptime': traptime
             }
 
             # Sending post request to nocout device app to start given IP ping stability testing
@@ -4950,3 +5053,19 @@ class ManualTicketsListing(BaseDatatableView, AdvanceFilteringMixin):
         }
 
         return ret
+
+def list_to_indexed_dict_alerts(inventory_list=None, key='ip_address', is_wimax=False):
+    '''
+
+    '''
+    inventory_dict = dict()
+    # wimax_id = DeviceTechnology.objects.get()
+    for device_info in inventory_list:
+        if device_info[key] not in inventory_dict:
+            inventory_dict[device_info[key]] = []
+        if is_wimax:
+            inventory_dict[device_info[key]].append(device_info)
+        else:
+            inventory_dict[device_info[key]] = [device_info]
+
+    return inventory_dict

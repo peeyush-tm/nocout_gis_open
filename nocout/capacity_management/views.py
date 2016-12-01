@@ -271,8 +271,14 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         technology_object = DeviceTechnology.objects.all()
 
         for item in json_data:
+            item['actions'] = ''
             try:
-                techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
+                try:
+                    techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
+                    item['sector__sector_configured_on__device_technology'] = techno_name
+                except Exception as e:
+                    pass
+
                 device_id = item['sector__sector_configured_on__id']
 
                 perf_page_link = ''
@@ -285,18 +291,17 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                         },
                         current_app='performance'
                     )
-                    perf_page_link = '<a href="' + performance_url + '?is_util=1" \
+                    item['actions'] = '<a href="' + performance_url + '?is_util=1" \
                                       title="Device Performance"><i class="fa \
                                       fa-bar-chart-o text-info"></i></a>'
-
-                item['actions'] = perf_page_link
-                item['sector__sector_configured_on__device_technology'] = techno_name
+                
                 # Format DL Peak Time
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
                 ).strftime(
                     DATE_TIME_FORMAT
                 ) if str(item['peak_out_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
+                
                 # Format UL Peak Time
                 item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_in_timestamp'])
@@ -1081,6 +1086,12 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         for item in json_data:
             item['actions'] = ''
             try:
+                try:
+                    techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
+                    item['backhaul__bh_configured_on__device_technology'] = techno_name
+                except Exception as e:
+                    pass
+
                 device_id = item['backhaul__bh_configured_on__id']
                 try:
                     techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
@@ -1088,7 +1099,6 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                 except Exception, e:
                     pass
 
-                perf_page_link = ''
                 if device_id:
                     performance_url = reverse(
                         'SingleDevicePerf',
@@ -1098,12 +1108,11 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                         },
                         current_app='performance'
                     )
-                    perf_page_link = '<a href="' + performance_url + '?is_util=1" \
+                    item['actions'] = '<a href="' + performance_url + '?is_util=1" \
                                       title="Device Performance"><i class="fa \
                                       fa-bar-chart-o text-info"></i></a>'
 
-                item['actions'] = perf_page_link
-
+                # item['actions'] = perf_page_link
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
                 ).strftime(DATE_TIME_FORMAT) if str(item['peak_out_timestamp']) not in ['', 'undefined', 'None',
@@ -1113,7 +1122,6 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                     float(item['peak_in_timestamp'])
                 ).strftime(DATE_TIME_FORMAT) if str(item['peak_in_timestamp']) not in ['', 'undefined', 'None',
                                                                                        '0'] else 'NA'
-
             except Exception, e:
                 logger.exception(e)
                 continue

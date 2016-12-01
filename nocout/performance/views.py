@@ -9772,8 +9772,21 @@ class InitStabilityTest(ListView):
             'id', 'alias', 'name'
         ))
 
+        mail_ids_list = list()
+
+        try:
+            ping_mail_ids = ','.join(list(PingStabilityTest.objects.all().values_list(
+                'email_ids', flat=True
+            )))
+            ping_mail_ids = ping_mail_ids.replace(' ', '')
+            mail_ids_list = list(set(ping_mail_ids.split(',')))
+        except Exception as e:
+            pass
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['tech_list'] = tech_list
+        context['mail_ids_list'] = json.dumps(mail_ids_list)
+        
         return context
 
 

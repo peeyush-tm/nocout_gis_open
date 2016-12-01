@@ -34,7 +34,8 @@ from django.conf import settings
 
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_TIME_FORMAT, USE_SOAP_TICKETING
+from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_TIME_FORMAT, USE_SOAP_TICKETING, \
+    SHOW_SPRINT3
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
@@ -2524,10 +2525,27 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
         "tab_attr": "threshold_template__live_polling_template__technology__name",
     }
 
-    def get_initial_queryset(self):
+
+    def get_initial_queryset(self, **kwargs):
         is_global = 1
         if self.request.GET.get('admin'):
             is_global = 0
+
+        tech_name = self.kwargs.get('technology')
+
+        if SHOW_SPRINT3:
+            if tech_name.lower() == 'radwin5k':
+                self.tab_search = {
+                    "tab_kwarg": 'technology',
+                    "tab_attr": "threshold_template__live_polling_template__device_type__name__icontains",
+                }
+
+            if tech_name.lower() == 'pmp':
+                self.kwargs['technology'] = 'canopy' 
+                self.tab_search = {
+                    "tab_kwarg": 'technology',
+                    "tab_attr": "threshold_template__live_polling_template__device_type__name__icontains",
+                }
 
         qs = super(ServiceThematicSettingsListingTable, self).get_initial_queryset()
 
@@ -3630,6 +3648,22 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
         is_global = 1
         if self.request.GET.get('admin'):
             is_global = 0
+
+        tech_name = self.kwargs.get('technology')
+
+        if SHOW_SPRINT3:
+            if tech_name.lower() == 'radwin5k':
+                self.tab_search = {
+                    "tab_kwarg": 'technology',
+                    "tab_attr": "type__name__icontains",
+                }
+
+            if tech_name.lower() == 'pmp':
+                self.kwargs['technology'] = 'canopy' 
+                self.tab_search = {
+                    "tab_kwarg": 'technology',
+                    "tab_attr": "type__name__icontains",
+                }
 
         qs = super(PingThematicSettingsListingTable, self).get_initial_queryset()
 
