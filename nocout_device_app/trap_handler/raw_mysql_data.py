@@ -16,12 +16,14 @@ SELECT
 	IF(isnull(popconverter_device.ip_address), 'NA', popconverter_device.ip_address) as POPconverterIP,
 	IF(isnull(pop_device_tech.name), 'NA', pop_device_tech.name) as POPconverterTech,
 	IF(isnull(pop_device_type.name), 'NA', pop_device_type.name) as POPconverterType,
+	IF(isnull(pop_device_vendor.name), 'NA', pop_device_vendor.name) as POPconverterDeviceVendor,
 	IF(isnull(pop_parent.ip_address), 'NA', pop_parent.ip_address) as POPconverterParentIP, 
 	IF(isnull(popconverter_device.parent_port), 'NA',popconverter_device.parent_port) as POPconverterParentPort, 
 	IF(isnull(popparent_devicetype.name), 'NA', popparent_devicetype.name) as POPconverterParentType,
 	IF(isnull(bsconverter_device.ip_address), 'NA', bsconverter_device.ip_address) as BTSconverterIP,
 	IF(isnull(bsconverter_device_tech.name), 'NA', bsconverter_device_tech.name) as BTSconverterTech,
 	IF(isnull(bsconverter_device_type.name), 'NA', bsconverter_device_type.name) as BTSconverterType,
+	IF(isnull(bsconverter_device_vendor.name), 'NA', bsconverter_device_vendor.name) as BTSconverterDeviceVendor,
 	IF(isnull(bsconverter_parent.ip_address), 'NA', bsconverter_parent.ip_address) as BTSconverterParentIP,
 	IF(isnull(bsconverter_device.parent_port), 'NA', bsconverter_device.parent_port) as BTSconverterParentPort,
 	IF(isnull(bsconverterparent_devicetype.name), 'NA', bsconverterparent_devicetype.name) as BTSconverterParentType,
@@ -29,6 +31,7 @@ SELECT
 	IF(isnull(bsswitch_device.ip_address), 'NA', bsswitch_device.ip_address) as BSswitchIP,
 	IF(isnull(bsswitch_device_tech.name), 'NA', bsswitch_device_tech.name) as BSswitchTech,
 	IF(isnull(bsswitch_device_type.name), 'NA', bsswitch_device_type.name) as BSswitchType,
+	IF(isnull(bsswitch_device_vendor.name), 'NA', bsswitch_device_vendor.name) as BSswitchDeviceVendor,
 	IF(isnull(bsswitch_parent.ip_address), 'NA', bsswitch_parent.ip_address) as BSswitchParentIP,
 	IF(isnull(bsswitchparent_devicetype.name), 'NA', bsswitchparent_devicetype.name) as BSswitchParentType,
 	IF(isnull(bsswitch_device.parent_port), 'NA', bsswitch_device.parent_port) as BSswitchParentPort,
@@ -72,7 +75,8 @@ SELECT
 		IF(isnull(ss_device_tech.name), 'NA', ss_device_tech.name), '|',
         	IF(isnull(ss.name), 'NA', ss.name), '|',
         	IF(isnull(device.ip_address), 'NA', device.ip_address),'|',
-		IF(isnull(bs_device_type.name), 'NA', bs_device_type.name)
+		IF(isnull(bs_device_type.name), 'NA', bs_device_type.name), '|',
+		IF(isnull(ss_device_vendor.name), 'NA', ss_device_vendor.name)
 	) separator '-|-|-') AS SubStation
 	FROM
 		inventory_backhaul AS backhaul
@@ -101,6 +105,10 @@ SELECT
 	ON
 		popconverter_device.device_type = pop_device_type.id
 	LEFT JOIN
+		device_devicevendor as pop_device_vendor
+	on
+		popconverter_device.device_vendor = pop_device_vendor.id
+	LEFT JOIN
 		device_device as pop_parent
 	ON
 		popconverter_device.parent_id = pop_parent.id
@@ -125,6 +133,10 @@ SELECT
 	ON
 		bsconverter_device.device_type = bsconverter_device_type.id
 	LEFT JOIN
+		device_devicevendor as bsconverter_device_vendor
+	on
+		bsconverter_device.device_vendor = bsconverter_device_vendor.id
+	LEFT JOIN
 		device_device as bsconverter_parent
 	ON
 		bsconverter_device.parent_id = bsconverter_parent.id
@@ -144,6 +156,10 @@ SELECT
 		device_devicetype AS bsswitch_device_type
 	ON
 		bsswitch_device.device_type = bsswitch_device_type.id
+	LEFT JOIN
+		device_devicevendor as bsswitch_device_vendor
+	on
+		bsswitch_device.device_vendor = bsswitch_device_vendor.id
 	LEFT JOIN
 		device_device as bsswitch_parent
 	ON
@@ -220,6 +236,10 @@ SELECT
 		device_devicetype AS ss_device_type
 	ON
 		ss_device.device_type = ss_device_type.id
+	LEFT JOIN
+		device_devicevendor as ss_device_vendor
+	on
+		ss_device.device_vendor = ss_device_vendor.id
 	WHERE
 		not isnull(backhaul.bh_configured_on_id)
 	GROUP BY
@@ -289,6 +309,26 @@ ON
 query_5 = """
 SELECT master.alarm_name,master.severity,master.priority from master_alarm_table as master
 """
+
+query6 = """
+        SELECT
+                `ic`.`circuit_id`,
+                `pt`.`ip_address`,
+                `pt`.`refer`,
+                `pt`.`sector_id`
+        FROM
+                `performance_topology` `pt`
+        LEFT JOIN
+                `inventory_sector` `is`
+        ON
+                `is`.`sector_id` = `pt`.`sector_id`
+        LEFT JOIN
+                `inventory_circuit` `ic`
+        ON
+                `ic`.`sector_id` = `is`.`id`;
+
+        """
+
 @app.task(base=DatabaseTask, name='mysql_to_inventory_data')
 def mysql_to_inventory_data():
     try: 
@@ -297,6 +337,7 @@ def mysql_to_inventory_data():
 	inv = inventory()
 	ptp_farend = list()
 	conn_historical = mysql_to_inventory_data.mysql_cnx('historical')
+	fetch_circuit_dict_from_mysql(conn_historical)
 	cur = conn_historical.cursor()
 	cur.execute(query2)
 	desc = cur.description
@@ -339,7 +380,42 @@ def mysql_to_inventory_data():
 	conn_snmptt.close()
     except Exception,e:
 	logger.error('Error in MAt data extraction %s' %(e))
+   
 
+def fetch_circuit_dict_from_mysql(conn_historical):
+    cur = conn_historical.cursor()
+    cur.execute(query6)
+    data = cur.fetchall()
+
+    circuit_dict = make_circuit_dict_from_data(data)
+    rds_cli = RedisInterface(custom_conf={'db': 5})
+    redis_conn =  rds_cli.redis_cnx
+    redis_conn.set('circuit_dict',circuit_dict)
+    logger.error('Circuit dict has been updated')
+
+def make_circuit_dict_from_data(data):
+    my_dict = {}
+    for each_tuple in data:
+        circuit_id = each_tuple [0]
+        ip_address = each_tuple[1]
+        sector_id = each_tuple[2]
+
+        if ip_address is not None and sector_id is not None and circuit_id is not None:
+            if ip_address in my_dict:
+                if sector_id in my_dict[ip_address]:
+                    if circuit_id in my_dict[ip_address][sector_id]:
+                        pass
+                    else:
+                        my_dict[ip_address][sector_id].append(circuit_id)
+                else:
+                    my_dict[ip_address][sector_id] = []
+                    my_dict[ip_address][sector_id].append(circuit_id)
+            else:
+                my_dict[ip_address] = {}
+                my_dict[ip_address][sector_id] = []
+                my_dict[ip_address][sector_id].append(circuit_id)
+
+    return my_dict
 
 if __name__ == '__main__':
     mysql_to_inventory_data.apply_async()
