@@ -819,7 +819,8 @@ class Eventmapper(object):
                 trap_dict['ip_address'] = formatline[4]
                 trap_dict['ticket_number'] = formatline[3]
                 trap_dict['alarm_id'] = formatline[2]
-		trap_dict['eventname'] = formatline[0]
+		trap_dict['eventname'] = "PD threshold breach major" if formatline[0] == "PD threshold breach" \
+					else formatline[0]
                 traps.append(trap_dict)
         #logger.error('chanish : ticket information from snmptt table {0}'.format(traps))
         return traps
