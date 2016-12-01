@@ -116,11 +116,20 @@ class DataTableDownloader(View):
 
             # get rows and headers request data
             headers_data = ""
-            rows_data = ""
+            rows_data = {}
             advance_filter = ""
             try:
-                rows_data = eval(self.request.GET.get('rows_data', None))
-                headers_data = eval(self.request.GET.get('headers_data', None))
+                try:
+                    rows_data = eval(self.request.GET.get('rows_data', None))
+                except Exception, e:
+                    # logger.info(e.message)
+                    pass
+
+                try:
+                    headers_data = eval(self.request.GET.get('headers_data', None))
+                except Exception, e:
+                    # logger.info(e.message)
+                    pass
                 # get advance filtering object
                 try:
                     advance_filter = self.request.GET.get('advance_filter', None)
@@ -128,6 +137,7 @@ class DataTableDownloader(View):
                 except Exception, e:
                     logger.info(e.message)
                     pass
+
                 response['message'] = "Inventory download started. Please check status \
                 <a href='/downloader/' target='_blank'>Here</a>."
                 response['success'] = 1
@@ -141,7 +151,7 @@ class DataTableDownloader(View):
 
             # saving downloader object
             d_obj.save()
-
+            
             # payload for celery job
             payload = {
                 'app': app,
