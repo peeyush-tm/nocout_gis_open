@@ -121,6 +121,7 @@
             // Initialize select2 multi select on 'email_ids' dom
             $('#email_ids').select2({
                 multiple: true,
+                placeholder: 'Enter Email IDs',
                 minimumInputLength: 2,
                 query: function (query) {
                     var searchPattern = new RegExp('^' + query.term, 'i'),
