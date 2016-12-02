@@ -4638,104 +4638,111 @@ ShellInABox.prototype.onReadyStateChange = function(request) {
       this.connected = true;
       var response   = eval('(' + request.responseText + ')');
 
-      if (response.data) {
-        this.vt100(response.data);
-        if(is_first_login && response.data && response.data.indexOf('login') > -1 && response.data.toLowerCase().indexOf('last login') == -1)
-        {
-           is_first_login = false;
-           this.keysPressed('tmadmin\n');
-        }
-
-        if(is_first_pass && response.data && response.data.toLowerCase().indexOf('password:') > -1)
-        {
-           is_first_pass = false
-           if(is_UAT) { 
-           		this.keysPressed('tmadmin\n');	//Login password for UAT
-           }
-           else{
-           		this.keysPressed('QWer12#$\n');	//Login password for Production
-           }
-           
-        }
-      }
-
-      if (!response.session || this.session && this.session != response.session) {
-        this.sessionClosed();
-      } else {
-        /*Code snippet to run shell script to connect to appropriate machine*/
-        if (response.data.indexOf('$') > -1 && ssh_is_first_request) {
-          ssh_is_first_request = false;
-          try {
-            info_array = this.rooturl.split('?')[1].split('&').filter(function(data) { return data.indexOf('machine=') > -1 || data.indexOf('ip=') > -1 || data.indexOf('type=') > -1; })
-          } catch(e) {
-            console.log(e);
+      if (this.rooturl.indexOf('machine=') > -1 || this.rooturl.indexOf('ip=') > -1 || this.rooturl.indexOf('type=') > -1) {
+        if (response.data) {
+          this.vt100(response.data);
+          if(is_first_login && response.data && response.data.indexOf('login') > -1 && response.data.toLowerCase().indexOf('last login') == -1)
+          {
+             is_first_login = false;
+             this.keysPressed('tmadmin\n');
           }
-          ssh_machine = info_array[0].split('=')[1];
-          ssh_ip = info_array[1].split('=')[1];
-          ssh_type = info_array[2].split('=')[1];
 
-          // If working on UAT fire these commands
-          if (is_UAT) {
-            this.keysPressed('ssh -p 5522 10.133.19.165' + '\n');
-          	// if (response.data && response.data.toLowerCase().indexOf('password:') > -1)
-          	// {
-          	//   this.keysPressed('QWer12#$' + '\n');
-          	// }
-            this.keysPressed('telnet ' + ssh_ip + '\n');	
-          }
-          else{
-          	switch (ssh_machine) {
-	          	case 'ospf1':
-	          		server = "tmadmin@115.114.79.37";
-	          		break;
-	          	case 'ospf2':
-	          		server = "tmadmin@115.114.79.38";
-	          		break;
-	          	case 'ospf3':
-	          		server = "tmadmin@115.114.79.39";
-	          		break;
-	          	case 'ospf4':
-	          		server = "tmadmin@115.114.79.40";
-	          		break;
-	          	case 'ospf5':
-	          		server = "tmadmin@115.114.79.41";
-	          		break;
-	          	case 'pub':
-	          		server = "tmadmin@115.114.85.173";
-	          		break;
-	          	case 'vrfprv':
-	          		server = "tmadmin@10.206.30.15";
-	          		break;
-          	}
-            ssh_string = 'ssh -p 5522 ' +server+ '\n'
-           	this.keysPressed(ssh_string);
-           	this.keyPressed('\n');
+          if(is_first_pass && response.data && response.data.toLowerCase().indexOf('password:') > -1)
+          {
+             is_first_pass = false
+             if(is_UAT) { 
+                this.keysPressed('tmadmin\n');  //Login password for UAT
+             }
+             else{
+                this.keysPressed('QWer12#$\n'); //Login password for Production
+             }
+             
           }
         }
 
-        this.session = response.session;
-        this.sendRequest(request);
+        if (!response.session || this.session && this.session != response.session) {
+          this.sessionClosed();
+        } else {
+          /*Code snippet to run shell script to connect to appropriate machine*/
+          if (response.data.indexOf('$') > -1 && ssh_is_first_request) {
+            ssh_is_first_request = false;
+            try {
+              info_array = this.rooturl.split('?')[1].split('&').filter(function(data) { return data.indexOf('machine=') > -1 || data.indexOf('ip=') > -1 || data.indexOf('type=') > -1; })
+            } catch(e) {
+              console.log(e);
+            }
+            ssh_machine = info_array[0].split('=')[1];
+            ssh_ip = info_array[1].split('=')[1];
+            ssh_type = info_array[2].split('=')[1];
 
-        if(!is_UAT){
-        	if (response.data && response.data.toLowerCase().indexOf('password:') > -1 && response.data.toLowerCase().indexOf('tmadmin@') > -1)
-	        {
-	           	this.keysPressed('QWer12#$' + '\n');
-	           	this.keysPressed('telnet ' + ssh_ip + '\n');
-	        }
+            // If working on UAT fire these commands
+            if (is_UAT) {
+              this.keysPressed('ssh -p 5522 10.133.19.165' + '\n');
+              // if (response.data && response.data.toLowerCase().indexOf('password:') > -1)
+              // {
+              //   this.keysPressed('QWer12#$' + '\n');
+              // }
+              this.keysPressed('telnet ' + ssh_ip + '\n');  
+            }
+            else{
+              switch (ssh_machine) {
+                case 'ospf1':
+                  server = "tmadmin@115.114.79.37";
+                  break;
+                case 'ospf2':
+                  server = "tmadmin@115.114.79.38";
+                  break;
+                case 'ospf3':
+                  server = "tmadmin@115.114.79.39";
+                  break;
+                case 'ospf4':
+                  server = "tmadmin@115.114.79.40";
+                  break;
+                case 'ospf5':
+                  server = "tmadmin@115.114.79.41";
+                  break;
+                case 'pub':
+                  server = "tmadmin@115.114.85.173";
+                  break;
+                case 'vrfprv':
+                  server = "tmadmin@10.206.30.15";
+                  break;
+              }
+              ssh_string = 'ssh -p 5522 ' +server+ '\n'
+              this.keysPressed(ssh_string);
+              this.keyPressed('\n');
+            }
+          }
 
+          this.session = response.session;
+          this.sendRequest(request);
+
+          if(!is_UAT){
+            if (response.data && response.data.toLowerCase().indexOf('password:') > -1 && response.data.toLowerCase().indexOf('tmadmin@') > -1)
+            {
+                this.keysPressed('QWer12#$' + '\n');
+                this.keysPressed('telnet ' + ssh_ip + '\n');
+            }
+
+            if (response.data && (response.data.toLowerCase().indexOf('connection closed by foreign host') > -1 || (response.data.toLowerCase().indexOf('connection') > -1 && response.data.toLowerCase().indexOf('closed') > -1) ) )
+            {
+              this.sessionClosed();
+              // this.enterWord('~.');
+            }
+        } else {
           if (response.data && (response.data.toLowerCase().indexOf('connection closed by foreign host') > -1 || (response.data.toLowerCase().indexOf('connection') > -1 && response.data.toLowerCase().indexOf('closed') > -1) ) )
-          {
-            this.sessionClosed();
-            // this.enterWord('~.');
-          }
+            {
+              // this.enterWord('~.');
+              this.sessionClosed();
+            }
+        }
+      } // 200 condition closing
       } else {
-        if (response.data && (response.data.toLowerCase().indexOf('connection closed by foreign host') > -1 || (response.data.toLowerCase().indexOf('connection') > -1 && response.data.toLowerCase().indexOf('closed') > -1) ) )
-          {
-            // this.enterWord('~.');
-            this.sessionClosed();
-          }
+        window.opener = null;
+        window.close();
       }
-    }} else if (request.status == 0) {
+        
+  } else if (request.status == 0) {
       // Time Out
       this.sendRequest(request);
     } else {
