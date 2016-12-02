@@ -1,6 +1,7 @@
 """ This module is used to hold varbind info for traps based 
 on device types. Creates and sends SNMP traps using pysnmp module"""
 import threading
+import unicodedata
 from pprint import pprint
 from pysnmp.hlapi import *
 from handlers.db_ops import *
@@ -27,7 +28,7 @@ converter_or_ptpbh_trap_vars = [
     'categorization_tier_1', 'categorization_tier_2',
     'alrm_category', 'coverage', 'resource_name', 'resource_type',
     'IOR', 'parent_alrm_id', 'additional_f_1', 'additional_f_2',
-    'additional_f_3', 'additional_f_4',
+    'additional_f_3', 'additional_f_4','additional_f_5','additional_f_6'
 ]
 idu_or_odu_trap_vars = [
         'alrm_id', 'device_ip', 'parent_type', 'parent_ip', 'parent_port',
@@ -49,7 +50,7 @@ ptp_or_ss_trap_vars = [
 ]
 circuit_ids_trap_vars = [
         'seq_num', 'parent_alrm_id', 'impacted_circuit_ids',
-        'alrm_group', 'alrm_name', 'severity', 'additional_f_1', 
+        'alrm_grp', 'alrm_name', 'severity', 'additional_f_1', 
         'additional_f_2', 'last_trap'
 ]
 
@@ -69,7 +70,7 @@ circuit_ids_partial = '.1.3.6.1.4.1.43900.2.2.1.0.3.3.1.'
 
 # OID listing based on trap type
 converter_or_ptpbh_oids = [''.join([converter_or_ptpbh_partial, str(x)])
-                           for x in range(1, 33)]
+                           for x in range(1, 35)]
 idu_or_odu_oids = [''.join([idu_or_odu_partial, str(x)]) for x in range(1, 34)]
 ptp_or_ss_oids = [''.join([ptp_or_ss_partial, str(x)]) for x in range(1, 27)]
 circuit_ids_oids = [''.join([circuit_ids_partial, str(x)]) for x in range(1, 10)]
@@ -155,8 +156,6 @@ class Trap(threading.Thread):
         # varbinds - MIB variables returned in snmp response
         error_indication, error_status, error_index, varbinds = next(
                 send_notif)
-	#print send_notif
-	#print error_indication,error_status ,error_index,varbinds
     def get_trap_varbinds(self):
         return self._generate_varbinds()
 
@@ -192,17 +191,24 @@ class Trap(threading.Thread):
             elif attr == 'base_trap_oid':
                 d_t = ObjectIdentifier
             elif data_types.get(attr) == 'i':
-                # an Integer data type
                 d_t = Integer
             else:
-                # a str data type
                 d_t = OctetString
 	    value = getattr(self,attr)
+            if attr == 'alrm_name' and value == 'PD threshold breach major' :
+		value = 'PD threshold breach'
+	    if attr == 'impacted_sector_count':
+		logger.error('impacted_sector_count %s'%str(value))
+	    if attr in ['IOR','additional_f_6'] and tp == 'converter_or_ptpbh_trap':
+	        value = unicodedata.normalize('NFKD',value).encode('ascii', 'ignore')
 	    if not value:
 		value = ''
-            #varbinds.append((oid, d_t(getattr(self, attr))))
-            varbinds.append((oid, d_t(value)))
-	logger.error('varbinds {0}'.format(varbinds))
+	    try:
+                varbinds.append((oid, d_t(value)))
+	    except Exception,e:
+		logger.error('Error in trap %s %s' % (e,attr))
+	  
+	logger.error('chanish :varbinds {0}'.format(varbinds))
         return varbinds
 
 
