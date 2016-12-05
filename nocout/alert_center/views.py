@@ -74,7 +74,7 @@ INCLUDED_EVENTS_FOR_MANUAL_TICKETING = [
     'ODU1_Lost', 'ODU1_No_Heart_Beat', 'ODU1_Output_RF_TX_Unleveled', 
     'ODU1_Input_IF_TX_Unleveled', 'ODU1_Power_Amplifier_OFF', 'ODU2_Lost', 
     'ODU2_No_Heart_Beat', 'ODU2_Output_RF_TX_Unleveled', 'ODU2_Input_IF_TX_Unleveled', 
-    'ODU2_Power_Amplifier_OFF', 'Synchronization_problem__no_PPS', 'PD_threshold_breach_major',
+    'ODU2_Power_Amplifier_OFF', 'wimax_interfaces_down__synchronization_lost', 'PD_threshold_breach_major',
     'Device_not_reachable', 'gpsNotSynchronised'
 ]
 
