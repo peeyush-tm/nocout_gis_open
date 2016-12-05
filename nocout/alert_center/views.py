@@ -1222,7 +1222,13 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
         ]
 
+        # Region and organization are same but we need two different headers becuase
+        # Util Columns are fecthed from Capacity Management module
         region_header = [
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
+        organization_header = [
             {'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True}
         ]
 
@@ -1359,7 +1365,7 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'age', 'sTitle': 'Aging (seconds)', 'sWidth': 'auto', 'bSortable': True},
         ]
 
-        sector_util_common_headers = sector_util_headers_1 + region_header + sector_util_headers_2 + sector_util_headers_3
+        sector_util_common_headers = sector_util_headers_1 + organization_header + sector_util_headers_2 + sector_util_headers_3
 
         sector_utils_headers = []
         sector_utils_headers += sector_util_hidden_headers
@@ -1367,7 +1373,7 @@ class NetworkAlertDetailHeaders(ListView):
 
         rad5_sector_util_headers = []
         rad5_sector_util_headers += sector_util_headers_1
-        rad5_sector_util_headers += region_header
+        rad5_sector_util_headers += organization_header
         rad5_sector_util_headers += sector_util_headers_2
         rad5_sector_util_headers += [
             {'mData': 'timeslot_dl', 'sTitle': 'DL Time-slot', 'width': 'auto', 'bSortable': True },
@@ -1395,7 +1401,7 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'bSortable': True},
         ]
 
-        bh_util_common_headers = bh_util_common_headers_1 + region_header + bh_util_common_headers_2
+        bh_util_common_headers = bh_util_common_headers_1 + organization_header + bh_util_common_headers_2
 
         bh_utils_headers = []
         bh_utils_headers += bh_util_hidden_headers
@@ -1916,7 +1922,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
-                'organization__alias',
+                'region',
                 'data_source_name',
                 'current_value',
                 'customer_count',
@@ -1935,7 +1941,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
-                'organization__alias',
+                'region',
                 # 'customer_count',
                 # 'impacted_customer',
                 # 'impacted_customer_percent',
@@ -1953,7 +1959,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
-                'organization__alias',
+                'region',
                 'bh_connectivity',
                 'data_source_name',
                 'current_value',
@@ -1976,7 +1982,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
-                'organization__alias',
+                'region',
                 'data_source_name',
                 'current_value',
                 'sys_timestamp',
@@ -1993,7 +1999,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
-                'organization__alias',
+                'region',
                 'data_source_name',
                 'current_value',
                 'sys_timestamp',

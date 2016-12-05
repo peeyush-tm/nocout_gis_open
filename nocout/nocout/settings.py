@@ -911,7 +911,8 @@ SETTINGS_EXPORT = [
     'ENABLE_MANUAL_TICKETING_HISTORY',
     'SHOW_SPRINT3',
     'SHOW_SPRINT4',
-    'USE_SOAP_TICKETING'
+    'USE_SOAP_TICKETING',
+    'SHOW_REGION_FILTER'
 ]
 
 # Dashbaord Settings
@@ -1422,8 +1423,10 @@ SHOW_SPRINT3 = False
 
 # Show/Hide features of Sprint 4 of Radwin5K
 # Feature list:-
-# 1) Region filter on GIS
 SHOW_SPRINT4 = False
+
+# Show/Hide Region filter on GIS
+SHOW_REGION_FILTER = False
 
 PE_REDIS_HOST = '10.133.19.165'
 PE_REDIS_PORT = '6380'
