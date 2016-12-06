@@ -17,6 +17,7 @@ from machine.models import Machine
 # For SIA Listing
 from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms, PlannedEvent, ManualTicketingHistory
 from performance.models import EventNetwork, EventService, InventoryStatus, ServiceStatus, UtilizationStatus, PerformanceService
+from download_center.models import Customer_Count_Sector
 
 from operator import itemgetter
 # Import performance utils gateway class
@@ -2556,7 +2557,7 @@ class SIAListing(ListView):
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
@@ -2794,15 +2795,15 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             if ENABLE_MANUAL_TICKETING:
                 self.order_columns = [
                     'action', 'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type', 'eventname', 
-                    'ticket_number', 'traptime', 'uptime','alarm_count','first_occurred',
-                    'last_occurred', 'customer_count', 'sia'
+                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'ticket_number',
+                    'device_type', 'eventname', 'traptime', 'uptime', 'alarm_count',
+                    'first_occurred', 'last_occurred', 'customer_count', 'sia'
                 ]
             else:
                 self.order_columns = [
                     'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type', 'eventname', 
-                    'ticket_number', 'traptime', 'uptime','alarm_count','first_occurred',
+                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type',
+                    'eventname', 'traptime', 'uptime','alarm_count','first_occurred',
                     'last_occurred', 'customer_count', 'sia'
                 ]
 
@@ -3212,7 +3213,7 @@ class AllSiaListing(ListView):
             {'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'circle', 'sTitle': 'Circle', 'sWidth': 'auto', 'bSortable': True},
-            # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_connectivity', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_type', 'sTitle': 'BH Media Type', 'sWidth': 'auto', 'bSortable': True},
@@ -3525,10 +3526,10 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
             self.order_columns += [
                 'action', 'severity', 'traptime', 'ip_address',
                 'device_type', 'bs_alias', 'bh_status', 'bs_state',
-                'bs_city', 'circle', 'ticket_number', 'bh_connectivity',
-                'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip',
-                'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'alarm_count',
-                'first_occurred', 'last_occurred'
+                'bs_city', 'circle', 'customer_count', 'ticket_number',
+                'bh_connectivity', 'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id',
+                'bs_conv_ip', 'pop_conv_ip', 'aggr_sw_ip', 'pe_ip',
+                'alarm_count', 'first_occurred', 'last_occurred'
             ]
 
         # Number of columns that are used in sorting
@@ -3871,6 +3872,11 @@ def prepare_snmp_gis_data(qs, tech_name):
     # Get IP address list from qs
     ip_address_list = [x['ip_address'] for x in qs_list]
 
+    # Get Queryset to get customer count with respect to sector id's
+    customer_count_qs = Customer_Count_Sector.objects.all().values('sector_id', 'count_of_customer')
+    # Indexed customer count With respect to Sector id
+    mapped_customer_count = list_to_key_value_dict(customer_count_qs, 'sector_id', 'count_of_customer')
+
     sectors_data_qs, dr_data_qs = '', ''
     converter_mapped_data = {}
     if tech_name in ['pmp', 'rad5k', 'wimax', 'all']:
@@ -4058,6 +4064,8 @@ def prepare_snmp_gis_data(qs, tech_name):
     except Exception as e:
         starmax_idu_id = None
 
+
+
     for data in qs_list:
         ip_address = data.get('ip_address')
         eventname = data.get('eventname')
@@ -4069,7 +4077,7 @@ def prepare_snmp_gis_data(qs, tech_name):
             sector_id='NA',
             device_type='NA',
             bh_connectivity='NA',
-            bh_type='NA'
+            bh_type='NA',
         )
         if not ip_address:
             continue
@@ -4078,6 +4086,18 @@ def prepare_snmp_gis_data(qs, tech_name):
         try:
             sector_dct = mapped_result[ip_address]
             if sector_dct:
+                for sect in sector_dct:
+                    try:
+                        sect_id = sect.get('sector_id', '')
+                    except Exception, e:
+                        pass
+
+                    customer_count = ''
+                    # Updating customer count on basis of Sector id
+                    if sect_id:
+                        customer_count = mapped_customer_count.get(sect_id, '')
+                        sect.update(customer_count=customer_count)
+
                 if starmax_idu_id == sector_dct[0].get('device_type'):
                     if 'odu1' in eventname.lower() or 'pmp1' in eventname.lower():
                         try:
@@ -4110,6 +4130,10 @@ def prepare_snmp_gis_data(qs, tech_name):
                 device_type=device_type_dict.get(sector_dct.get('device_type')),
                 region=sector_dct.get('region')
             )
+
+            # Update customer count only if it is updated on basis of sector id else let it be
+            if sector_dct.get('customer_count'):
+                data.update(customer_count=sector_dct.get('customer_count'))
 
     return qs_list
 
@@ -5075,3 +5099,39 @@ def list_to_indexed_dict_alerts(inventory_list=None, key='ip_address', is_wimax=
             inventory_dict[device_info[key]] = [device_info]
 
     return inventory_dict
+
+
+def list_to_key_value_dict(invent_list=None, key_str='', val_str=''):
+    """Convert given list of dict into dictionary with given "key" and "value" keys
+    @param invent_list : To be converted list
+    @param key_str : Key to be used as key in returned dict(Key-Value pair)
+    @param val_str : Key to be used as value in returned dict(Key-Value pair)
+
+    eg : invent_list = [
+                            {'count_of_customer': u'5', 'sector_id': u'00:0a:10:02:00:72'},
+                            {'count_of_customer': u'12', 'sector_id': u'00:0a:10:02:00:75'},
+                            {'count_of_customer': u'14', 'sector_id': u'00:0a:15:02:00:81'}
+                       ]
+         key_str = 'sector_id'
+         val_str = 'count_of_customer'
+
+         return {
+                    '00:0a:10:02:00:72' : '5',
+                    '00:0a:10:02:00:75' : '12',
+                    '00:0a:15:02:00:81' : '14',
+         }
+    """
+
+    invent_dict = dict()
+
+    if invent_list and key_str and val_str:
+        for item in invent_list:
+            try:
+                dict_key = item.get(key_str)
+                dict_val = item.get(val_str)
+                
+                invent_dict[dict_key] = dict_val
+            except Exception, e:
+                continue
+
+    return invent_dict
