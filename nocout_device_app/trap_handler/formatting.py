@@ -35,7 +35,6 @@ class inventory(object):
 	#for pair in mapping.iteritems():
 	#	items.extend(pair)
 	mapping = self.dicts(mapping) 
-	#logger.error("mapping**********",mapping)
 	try: 
 	    [rds_cnx.set(pair[0],pair[1] ) for pair in mapping.iteritems()]  
 	except Exception as e:
@@ -226,9 +225,11 @@ class inventory(object):
 	try:
 	    data = basestation_info[0].split('|')
 	    bs_name = data[1]
-	    region = data[-3]
-	    city = data[-5]
-	except:
+	    region = data[5]
+	    city = data[3]
+
+	except Exception as e:
+	    logger.error('Exception in Conv data dict: %s'%(e))
 	    bs_name = ''
 	    region = ''
 	    city = ''
@@ -242,6 +243,8 @@ class inventory(object):
 	    resource_type = 'Converter'
 	    technology = bs.get('POPconverterTech').lower()
 	    device_type = bs.get('POPconverterType')
+	    device_vendor = bs.get('POPconverterDeviceVendor')
+	    
 	if resource_name == 'BTSConverter':
 	    ip = bs.get('BTSconverterIP')
 	    parent_ip = bs.get('BTSconverterParentIP')
@@ -251,6 +254,8 @@ class inventory(object):
 	    resource_type = 'Converter'
 	    technology = bs.get('BTSconverterTech').lower()
 	    device_type = bs.get('BTSconverterType')
+	    device_vendor = bs.get('BTSconverterDeviceVendor')
+
 	if resource_name == 'BSSwitch':
 	    ip = bs.get('BSswitchIP')
 	    resource_type = 'Switch'
@@ -259,6 +264,7 @@ class inventory(object):
 	    parent_port = bs.get('BSswitchParentPort')
 	    technology = bs.get('BSswitchTech').lower()
 	    device_type = bs.get('BSswitchType')
+	    device_vendor = bs.get('BSswitchDeviceVendor')
 
 	ip_id[ip] = obj_count
 	key = 'static_' + ip
@@ -294,7 +300,8 @@ class inventory(object):
 	data_dict[key]['bs_ips'] = bs_ip_list 
 	data_dict[key]['ior'] = bs.get('ior') 
 	data_dict[key]['bso_ckt'] = bs.get('bso_ckt') 
-    
+	data_dict[key]['device_vendor'] = device_vendor
+
 	return data_dict
 
 
@@ -321,9 +328,9 @@ class inventory(object):
 		aggr_switch = bs.get('AggregationSwitchIP')
 		pe_ip = bs.get('PE_IP')
 		try:
-		   region = bs_station.split('|')[-3]
-		   bs_name = bs_station.split('|')[1]
-		   city = bs_station.split('|')[-5]
+		   region = basestation_info[0].split('|')[5]
+		   bs_name = basestation_info[0].split('|')[1]
+		   city = basestation_info[0].split('|')[3]
 		except:
 		   region = ''
 		   bs_name = ''
@@ -346,6 +353,11 @@ class inventory(object):
 			
 	           ip_id[bs_ip] = obj_count
 		   bs_key = 'static_' + bs_ip
+		   try:
+		       parent_port = sec_list.split('|')[13]
+		       device_vendor = sec_list.split('|')[3]	
+		   except:
+		       pass
 		   data_dict[bs_key]['bs_name'] = bs_name 
 		   data_dict[bs_key]['region'] = region
 		   data_dict[bs_key]['city'] = city
@@ -355,6 +367,7 @@ class inventory(object):
 		   data_dict[bs_key]['parent_ip'] = parent_ip
 		   data_dict[bs_key]['parent_type'] = parent_type
 		   data_dict[bs_key]['parent_port'] = parent_port
+		   data_dict[bs_key]['device_vendor'] = device_vendor
 		   try:
 		      tech = sec_list.split('|')[4]
 		      data_dict[bs_key]['device_type'] = tech
@@ -381,7 +394,7 @@ class inventory(object):
 		       data_dict[bs_key]['resource_type'] = 'PTP'
 		       data_dict[bs_key]['resource_name'] = 'SS' 
 		       data_dict[bs_key]['ptp_bh_type'] = 'ne'
-		       data_dict[bs_key]['custormer_name'] = sec_list.split('|')[11]
+		       data_dict[bs_key]['customer_name'] = sec_list.split('|')[11]
 		       data_dict[bs_key]['circuit_id'] = sec_list.split('|')[10] 
 		       data_dict[bs_key]['ptp_ip'] = ptp_parent_child_dict.get(bs_ip)
 		   if bs_ip in ptp_bh_dict.values():
@@ -393,9 +406,11 @@ class inventory(object):
 		       sector_id = sec_list.split('|')[1]
 		       if sector_id == 'NA':
 			   continue
-		       data_dict[bs_key].setdefault('sector_id',set()).add(sector_id)
+		       sector_port = sec_list.split('|')[14] if  sec_list.split('|')[14] != 'NA' else None
+		       data_dict[bs_key].setdefault('sector_id',set()).add(tuple([sector_port, sector_id]))
+
 		   except Exception,e:
-		       print e
+		       logger.error(e)
 		       continue
 	    return data_dict,inventory_hierarchy,ih_dynamic 
 
@@ -413,12 +428,14 @@ class inventory(object):
 	ss_info = ss_info_str.split('-|-|-')
 	ss_ip_list = list(set(map(lambda x : x.split('|')[4],ss_info)))
 	basestation_info_str = bs.get('BASESTATION','')
-	basestation_info = list(set(basestation_info_str.split('-|-|-')))
+	#basestation_info = list(set(basestation_info_str.split('-|-|-')))
 	try:
-	   region = basestation_info[0].split('|')[5]
-	   bs_name = basestation_info[0].split('|')[1]
-	   city = basestation_info[0].split('|')[3]
-	except:
+	   basestation_info = basestation_info_str.split('-|-|-')[0]
+	   #logger.error(basestation_info)
+	   region = basestation_info.split('|')[5]
+	   bs_name = basestation_info.split('|')[1]
+	   city = basestation_info.split('|')[3]
+	except Exception as e:
 	   region = ''
 	   bs_name = ''
 	   city = ''
@@ -440,6 +457,7 @@ class inventory(object):
 		ss_tech = ss_list.split('|')[5]
 		ss_parent_ip = ss_list.split('|')[10]
 		ss_parent_type = ss_list.split('|')[11]
+		ss_device_vendor = ss_list.split('|')[12]
 	    except Exception,e:
 		print e
 		continue
@@ -456,6 +474,8 @@ class inventory(object):
 	    ss_data_dict[ss_key]['parent_ip'] = ss_parent_ip
 	    ss_data_dict[ss_key]['parent_type'] = ss_parent_type
 	    ss_data_dict[ss_key]['device_type'] = ss_tech
+	    ss_data_dict[ss_key]['device_vendor'] = ss_device_vendor
+
 	    if 'starmax' in ss_tech.lower():
 		ss_data_dict[ss_key]['technology'] = 'wimax'
 		ss_data_dict[ss_key]['resource_type'] = 'SS'

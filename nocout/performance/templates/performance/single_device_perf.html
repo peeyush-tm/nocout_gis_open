@@ -495,8 +495,6 @@
     <script type="text/javascript" src={% static "js/vis/vis/dist/vis.js" %}></script>
     <!-- Populate network topology custom lib -->
     <script type="text/javascript" src={% static "js/nocout/networkTopologyLib.js" %}></script>
-    <!-- Populate network topology custom lib -->
-    <script type="text/javascript" src={% static "js/nocout/sshTerminalLib.js" %}></script>
     <!-- Populate custom dashboard script -->
     <script type="text/javascript" src={% static "js/nocout/custom_dashboard.js" %}></script>
     <!-- Datetime range picker lib -->
@@ -1135,6 +1133,8 @@
 
 
 {% block load_js %}
+    <!-- Telnet SS/BS buttons custom lib -->
+    <script type="text/javascript" src={% static "js/nocout/sshTerminalLib.js" %}></script>
     <script type="text/javascript">
         jQuery(document).ready(function () {
             App.setPage("");  //Set current page
