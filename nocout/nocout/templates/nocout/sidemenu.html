@@ -416,6 +416,7 @@
                             <span class="sub-menu-text">Other</span>
                         </a>
                     </li>
+                    
                     {% if settings.ENABLE_PE_PERF %}
                     <li>
                         <a href="{% url 'performance_listing' 'pe' %}">
@@ -423,14 +424,13 @@
                         </a>
                     </li>
                     {% endif %}
-                    {% if user.is_superuser or user.groups.all.0.name == 'Admin' %}
-                        {% if settings.ENABLE_PING_TEST %}
-                            <li>
-                                <a href="{% url 'ping_stability_test' %}">
-                                    <span class="sub-menu-text">Ping Stability Test</span>
-                                </a>
-                            </li>
-                        {% endif %}
+
+                    {% if settings.ENABLE_PING_TEST %}
+                        <li>
+                            <a href="{% url 'ping_stability_test' %}">
+                                <span class="sub-menu-text">Ping Stability Test</span>
+                            </a>
+                        </li>
                     {% endif %}
                 </ul>
             </li>
