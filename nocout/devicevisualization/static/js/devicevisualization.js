@@ -162,6 +162,17 @@ $("#city").change(function(e) {
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
+
+/**
+ * This event trigger when region dropdown value is changes
+ * @event Change
+ */
+$("#region").change(function(e) {
+    getPageType();
+    networkMapInstance.makeFiltersArray(mapPageType);
+});
+
+
 /**
  * This event trigger when vendor dropdown value is changes
  * @event Change
@@ -208,7 +219,7 @@ $("#technology").change(function(e) {
  */
 $("#resetFilters").click(function(e) {
 
-    var isBasicFilterApplied = $.trim($("#technology").val()) || $.trim($("#vendor").val()) || $.trim($("#state").val()) || $.trim($("#city").val())
+    var isBasicFilterApplied = $.trim($("#technology").val()) || $.trim($("#vendor").val()) || $.trim($("#state").val()) || $.trim($("#city").val())  || $.trim($("#region").val())
     
     if(isBasicFilterApplied) {
 
@@ -237,6 +248,7 @@ $("#resetFilters").click(function(e) {
         $("#vendor").val($("#vendor option:first").val());
         $("#state").val($("#state option:first").val());
         $("#city").val($("#city option:first").val());
+        $("#region").val($("#region option:first").val());
         
         isCallCompleted = 1;/*Remove this call if server call is started on click of reset button*/
 

@@ -7,7 +7,8 @@ var ccpl_map,
 	filtered_devices_array= [];
 
 var state_city_obj= {}, 
-	all_cities_array= [], 
+	all_cities_array= [],
+	all_region_array = [],
 	tech_vendor_obj= {}, 
 	all_vendor_array= [], 
 	sectorMarkerConfiguredOn= [], 
@@ -1785,6 +1786,7 @@ function WhiteMapClass() {
 				var current_bs = dataset[i],
 					state = current_bs['state'] && na_items_list.indexOf(current_bs['state'].toLowerCase()) == -1 ? $.trim(current_bs['state']) : '',
 					city = current_bs['city'] && na_items_list.indexOf(current_bs['city'].toLowerCase()) == -1  ? $.trim(current_bs['city']) : '';
+					region = current_bs['region'] && na_items_list.indexOf(current_bs['region'].toLowerCase()) == -1  ? $.trim(current_bs['region']) : '';
 				/*Create BS state,city object*/
 				if(state) {
 
@@ -1800,6 +1802,12 @@ function WhiteMapClass() {
 					}
 				}
 
+				if(region) {
+	                if(all_region_array.indexOf(region) == -1){
+	                    all_region_array.push(region)
+	                }
+	            }
+				
 				var sectors_data = current_bs.sectors ? current_bs.sectors : [],
 					update_state_str = state ? state : "",
 					state_lat_lon_obj = state_lat_lon_db.find({"name" : update_state_str}).length > 0 ? state_lat_lon_db.find({"name" : update_state_str})[0] : false,
