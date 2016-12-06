@@ -9,7 +9,7 @@ var console_html =  '<div style="width: 100em; min-height: 500px;" id="ssh_popup
 // Cookie for escaping COSR error
 var is_truested_ssh = Number($.cookie("is_trusted_ssh")),
     popup_txt = '<h3 class="text-danger"><i class="fa fa-warning"></i> Warning</h3> <hr style="margin: 10px 0px;"/> \
-                 <p>Please add this to your trusted sites by clicking on "OK", then click on "Leave" button on that page. \
+                 <p>Please add this to your trusted sites by clicking on "OK". \
                  Only then you can access this functionality</p>';
 
 /*Enabling Click event listener on console icon*/
