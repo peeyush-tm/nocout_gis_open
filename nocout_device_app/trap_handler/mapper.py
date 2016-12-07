@@ -799,14 +799,7 @@ class Eventmapper(object):
 				#alarm_id = each_trap.get('alarm_id')
 				if 'monolith_ticket:' + ip_address in monolith_tickets_ip :
 				    monolith_ticket = eval(redis_cnx_mat.get('monolith_ticket:' + ip_address))
-				    #monolith_ticket_alarm_data = monolith_ticket.get(eventname)
-				    #monolith_ticket_alarm_data['ticket_number'] = ticket_number
 				    monolith_ticket[eventname]['ticket_number'] = ticket_number
-				"""
-			        else :
-				    monolith_ticket = {eventname : {'ticket_number' : ticket_number, 'alarm_id' : alarm_id}}
-				    logger.error('Monolith ticket alarm not found')
-				"""
 				redis_cnx_mat.set('monolith_ticket:' + ip_address, monolith_ticket)
 			
                         except Exception as exc:
