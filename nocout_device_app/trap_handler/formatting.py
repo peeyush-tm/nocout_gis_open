@@ -225,7 +225,8 @@ class inventory(object):
 	try:
 	    data = basestation_info[0].split('|')
 	    bs_name = data[1]
-	    region = data[5]
+	    #region = data[5]
+	    region = data[8]
 	    city = data[3]
 
 	except Exception as e:
@@ -328,7 +329,8 @@ class inventory(object):
 		aggr_switch = bs.get('AggregationSwitchIP')
 		pe_ip = bs.get('PE_IP')
 		try:
-		   region = basestation_info[0].split('|')[5]
+		   region = basestation_info[0].split('|')[8]
+		   #region = basestation_info[0].split('|')[5]
 		   bs_name = basestation_info[0].split('|')[1]
 		   city = basestation_info[0].split('|')[3]
 		except:
@@ -432,7 +434,8 @@ class inventory(object):
 	try:
 	   basestation_info = basestation_info_str.split('-|-|-')[0]
 	   #logger.error(basestation_info)
-	   region = basestation_info.split('|')[5]
+	   region = basestation_info.split('|')[8]
+	   #region = basestation_info.split('|')[5]
 	   bs_name = basestation_info.split('|')[1]
 	   city = basestation_info.split('|')[3]
 	except Exception as e:

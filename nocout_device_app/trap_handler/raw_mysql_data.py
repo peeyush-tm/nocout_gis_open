@@ -43,7 +43,8 @@ SELECT
 		IF(isnull(state.state_name), 'NA', state.state_name), '|',
 		IF(isnull(region.country_name), 'NA', region.country_name),'|',
 		IF(isnull(bsswitch_parent.ip_address), 'NA', bsswitch_parent.ip_address),'|',
-		IF(isnull(bsswitchparent_devicetype.name), 'NA', bsswitchparent_devicetype.name)
+		IF(isnull(bsswitchparent_devicetype.name), 'NA', bsswitchparent_devicetype.name),'|',
+		IF(isnull(organization.alias), 'NA', organization.alias)
 	) SEPARATOR '-|-|-') AS BASESTATION,
 	GROUP_CONCAT(CONCAT(
 		IF(isnull(sect.id), 'NA', sect.id),'|',
@@ -208,6 +209,10 @@ SELECT
 		device_country as region
 	on
 		bs.country_id = region.id
+	LEFT JOIN
+                organization_organization as organization
+        on
+                bs.organization_id = organization.id
 	LEFT JOIN
 		inventory_circuit AS ckt
 	ON
@@ -399,8 +404,10 @@ def make_circuit_dict_from_data(data):
         circuit_id = each_tuple [0]
         ip_address = each_tuple[1]
         sector_id = each_tuple[2]
-
-        if ip_address is not None and sector_id is not None and circuit_id is not None:
+      	#if ip_address is not None and sector_id is not None and circuit_id is not None:
+	if ip_address is not None and circuit_id is not None:
+	    if sector_id == None:
+		sector_id = "odu"
             if ip_address in my_dict:
                 if sector_id in my_dict[ip_address]:
                     if circuit_id in my_dict[ip_address][sector_id]:
