@@ -784,6 +784,8 @@ class Eventmapper(object):
 			        print "Error in query for device_deviceticket %s",query_for_device_deviceticket
 			    """
 			    export_traps.exec_qry(query_current_alarm, each_trap, False, db_name='snmptt_db')
+			    export_traps.exec_qry(query_history_alarm, each_trap, False,db_name='snmptt_db')
+
 			    affected_row_count = export_traps.exec_qry(query_clear_alarm, each_trap, False, db_name='snmptt_db')
 
 			    print "affected_row_count" ,affected_row_count
@@ -791,19 +793,21 @@ class Eventmapper(object):
 				ip_address = each_trap.get('ip_address')
 				eventname =  re.sub('[: ]', '_', each_trap.get('eventname'))
 				ticket_number = each_trap.get('ticket_number')
+				alarm_id = each_trap.get('alarm_id')
 				print "ticket number: %s"%str(ticket_number)
 
 				#alarm_id = each_trap.get('alarm_id')
 				if 'monolith_ticket:' + ip_address in monolith_tickets_ip :
 				    monolith_ticket = eval(redis_cnx_mat.get('monolith_ticket:' + ip_address))
-				    monolith_ticket_alarm_data = monolith_ticket.get(eventname)
-				    monolith_ticket_alarm_data['ticket_number'] = ticket_number
-				    monolith_ticket = { eventname: monolith_ticket_alarm_data }
+				    #monolith_ticket_alarm_data = monolith_ticket.get(eventname)
+				    #monolith_ticket_alarm_data['ticket_number'] = ticket_number
+				    monolith_ticket[eventname]['ticket_number'] = ticket_number
+				"""
 			        else :
-				    monolith_ticket = {eventname : (ticket_number,alarm_id)}
+				    monolith_ticket = {eventname : {'ticket_number' : ticket_number, 'alarm_id' : alarm_id}}
 				    logger.error('Monolith ticket alarm not found')
+				"""
 				redis_cnx_mat.set('monolith_ticket:' + ip_address, monolith_ticket)
-			    export_traps.exec_qry(query_history_alarm, each_trap, False,db_name='snmptt_db')
 			
                         except Exception as exc:
                                 inserted = False
@@ -1160,4 +1164,3 @@ def delete_history_trap():
 
     cursor.close()
     my_cnx.close()
-
