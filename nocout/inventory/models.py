@@ -540,6 +540,35 @@ class BaseStationPpsMapper(models.Model):
     has_pps_alarm = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
+
+class IPWiseCustomerCount(models.Model):
+    '''
+    This model store IP Adress(IDU, ODU, BH Configured on) customers count
+    '''
+    ip_address = models.GenericIPAddressField('IP Address')
+    item_type = models.CharField('Item Type', max_length=64, default='sector')
+    customer_count = models.IntegerField('Customer Count', default=0)
+
+
+class SectorIDWiseCustomerCount(models.Model):
+    '''
+    This model store Sector ID customers count
+    '''
+    sector_id = models.CharField('Sector ID', max_length=256)
+    pmp_port = models.CharField('PMP Port', max_length=64, null=True, blank=True)
+    ip_address = models.GenericIPAddressField('IP Address')
+    customer_count = models.IntegerField('Customer Count', default=0)
+
+
+class BSWiseCustomerCount(models.Model):
+    '''
+    This model store BS customers count
+    '''
+    bs_id = models.IntegerField('BS ID')
+    base_station = models.CharField('BS Alias', max_length=256)
+    customer_count = models.IntegerField('Customer Count', default=0)
+
+
 # ********************* Connect Inventory Signals *******************
 pre_save.connect(inventory_signals.update_site_on_bs_bhport_change, sender=BaseStation)
 post_save.connect(inventory_signals.auto_assign_thematic, sender=UserProfile)
