@@ -1427,10 +1427,7 @@ class correlation:
             testing_db_data['severity'] = alarm.get('severity')
             testing_db_data['alarm_time'] = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(alarm.get('time_stamp')))
 	    testing_db_data['parent_alarm_id'] = alarm.get('parent_alrm_id')
-	    if is_manual:
-                testing_db_data['is_manual'] = "YES"
-	    else:
-		testing_db_data['is_manual'] = "NO"
+            testing_db_data['is_manual'] = is_manual
 	    testing_db_data['alarm_type'] = alarm.get('resource_type')
 	    testing_db_data['circuit_ids_in_sia'] = ""
 	    for sia_data in sia_trap_data_list:
@@ -1481,7 +1478,7 @@ class correlation:
                                                          trap_dict) for trap_dict in non_ckt_trap_list]
         p.execute()
 
-	all_monolith_tickets = redis_conn.keys('monolith_tickets:*')
+	all_monolith_tickets = redis_conn.keys('monolith_ticket:*')
 
         for trap in non_ckt_trap_list:
 	
@@ -1529,7 +1526,7 @@ class correlation:
     def find_trap_type(self, trap_name):
 
 	events = ('Device_not_reachable', 'PD_threshold_breach_major')
-	ip_traps = ('gpsNotSynchronised','Synchronization_problem__no_PPS')
+	ip_traps = ('gpsNotSynchronised','wimax_interfaces_down__synchronization_lost', 'Synchronization_problem__no_PPS')
 
 	if trap_name in events:
 	    trap_type = 'event'
@@ -1569,8 +1566,12 @@ class correlation:
 
 	    odu1_sent_traps = filter(odu1_r.match, sent_trap_names)
 	    odu2_sent_traps = filter(odu2_r.match, sent_trap_names)
-	    events = list( filter((lambda st_name: st_name == "Device_not_reachable" or st_name == "PD_threshold_breach_major"), sent_trap_names))	
-	    ip_traps = list( filter((lambda st_name: st_name == "gpsNotSynchronised" or st_name == "Synchronization_problem__no_PPS"), sent_trap_names))
+	    events = list( filter((lambda st_name: st_name in ( "Device_not_reachable", "PD_threshold_breach_major"), sent_trap_names)))	
+	    ip_traps = list( filter((lambda st_name: st_name in( "gpsNotSynchronised", \
+								 "wimax_interfaces_down__synchronization_lost", \
+								 "Synchronization_problem__no_PPS" \
+								), sent_trap_names)))
+
 	    if trap_name in sent_trap_names:
 		drop_flag = True
 	    elif trap_type == 'odu1' and ( odu1_sent_traps or ip_traps ):
@@ -1588,12 +1589,70 @@ class correlation:
             traps_list.remove(trap)
 	return traps_list
 
+    def fetch_connected_circuits(self, ip, sector_type = "None"):
+
+	circuits_list = []
+        redis_conn = self.redis_conn()
+
+        try:
+	    circuit_dict_data = redis_conn.get('circuit_dict')
+            if not circuit_dict_data:
+            	logger.error('Circuit dict data is not available in redis')
+                return circuits_list
+
+	    circuit_dict_data = eval(circuit_dict_data)
+
+            static_data = redis_conn.get("static_%s"%(ip))
+	    if not static_data:
+		logger.error('Static data not found for ip %s'%(ip))
+		return circuits_list
+
+	    static_data = eval(static_data)
+
+	    device_type = static_data.get('resource_name')
+
+	    if device_type == "BS":
+
+		circuit_dict = circuit_dict_data.get(ip)
+		if not circuit_dict:
+		    logger.error("Circuits list not found for ip: %s"%(ip))
+		    return circuits_list
+
+        	if sector_type == 'odu1':
+            	    for circuit in circuit_dict.get('odu1'):
+                    	circuits_list.append(circuit)
+        	elif sector_type == 'odu2':
+            	    for circuit in circuit_dict.get('odu2'):
+                    	circuits_list.append(circuit)
+        	else:
+            	    for circuit in circuit_dict.values():
+                	circuits_list = circuits_list + circuit
+
+	    elif device_type == "POPConverter" or device_type == "BTSConverter":
+
+                bs_ips = static_data.get('bs_ips')
+
+                for each_bs_ip in bs_ips:
+
+		    circuits_list_for_bs_ip = fetch_connected_circuits(each_bs_ip)
+		    circuits_list = circuits_list + circuits_list_for_bs_ip
+
+	    elif device_type == "SS":
+
+		circuit_id = static_data.get('circuit_id')
+		circuits_list.append(circuit_id)
+
+        except Exception as e:
+            logger.error('Exception in fetching connected circuits : %s'%(e))
+
+	return circuits_list
+
 
     def converter_customer_count(self, ip):
         redis_conn = self.redis_conn()
 	try:
 
-	    converter_static_data = eval(redis_conn.get("static_%s"%str(ip)))
+	    converter_static_data = eval(redis_conn.get("static_%s"%(ip)))
             bs_ips = converter_static_data.get('bs_ips')
 	
 	    circuit_dict_data = redis_conn.get('circuit_dict')
@@ -1612,7 +1671,7 @@ class correlation:
 		    ptp_static_data = eval(redis_conn.get("static_%s"%(each_bs)))
 		    circuit_ids = ptp_static_data.get('circuit_id')
 		    if not circuit_ids:
-			return 0
+			continue
 		    circuits_list = circuit_ids.split(',')
 
 		else:
@@ -1734,6 +1793,8 @@ def clear_alarms(keys):
 		remove_clear_alarms.append(alarm)
 	for alarm in remove_clear_alarms:
 	    clear_alarms.remove(alarm)
+
+	cor_obj.update_testing_db(clear_alarms)
 
         trap_sender_task.s(clear_alarms).apply_async()
 
@@ -2047,7 +2108,16 @@ class manual_ticketing:
         circuit_dict_data = eval(circuit_dict_data)
 
 	final_events = []
+	circuit_list = []
+	circuit_dict ={}
 	if device_type == "BS":
+
+	    circuit_dict_data_for_ip = circuit_dict_data.get(device_ip)
+	    if circuit_dict_data_for_ip:
+	        for each_sector in circuit_dict_data_for_ip.keys():
+		    for each_circuit in circuit_dict_data_for_ip.get(each_sector):
+		        circuit_list.append(each_circuit)
+	        circuit_dict[device_ip] = circuit_list 
 
 	    params_io = {}
 	    params_io['down_device_dict'] = down_device_dict
@@ -2061,15 +2131,30 @@ class manual_ticketing:
 	    params_ct['static_dict'] = static_dict
             params_ct['idu_odu_trap_dict'] = idu_odu_event_dict
             params_ct['ckt_list_for_conv_sia'] = []
-            params_ct['ckt_dict'] = {}
+            params_ct['ckt_dict'] = circuit_dict
 
             circuit_event = corr_obj.make_dict_for_ckt(**params_ct)
 	    final_events.append(circuit_event[0])
 
 	elif device_type == "POPConverter" or device_type == "BTSConverter":
 
-	    params_cs = {}
-	    params_cs['down_device_dict'] = down_device_dict
+	    logger.error('Manual ticketing - it is a converter')
+	    bs_ips = static_inventory_data.get('bs_ips')
+	    circuit_list = []
+	    if bs_ips:
+		logger.error("BS IPs in manual_ticketing %s"%(bs_ips))
+	        for each_bs_ip in bs_ips:
+		    circuit_dict_data_for_bs_ip = circuit_dict_data.get(each_bs_ip)
+		    logger.error("Circuit dict data in manual_ticketing %s"%(circuit_dict_data_for_bs_ip))
+            	    if circuit_dict_data_for_bs_ip:
+                        for each_sector in circuit_dict_data_for_bs_ip.keys():
+			    if each_sector:
+                                for each_circuit in circuit_dict_data_for_bs_ip.get(each_sector):
+                                    circuit_list.append(each_circuit)
+
+	    #print circuit_list		
+            params_cs = {}
+            params_cs['down_device_dict'] = down_device_dict
             params_cs['static_dict'] = static_dict
             params_cs['rc_element'] = device_ip
 
@@ -2079,7 +2164,7 @@ class manual_ticketing:
 	    params_ct = {}
             params_ct['static_dict'] = static_dict
             params_ct['idu_odu_trap_dict'] = converter_events[0]
-            params_ct['ckt_list_for_conv_sia'] = []
+            params_ct['ckt_list_for_conv_sia'] = circuit_list
             params_ct['ckt_dict'] = {}
 	    
             circuit_event = corr_obj.make_dict_for_ckt(**params_ct)
