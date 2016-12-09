@@ -141,6 +141,41 @@ def ping_file_send(file_name):
 
 
 
+def file_name_cr(ip,id):
+
+        try:
+                db_conn = mysql.connector.connect(
+                        user=db_conf.get('user'),
+                        password=db_conf.get('password'),
+                        host=db_conf.get('host'),
+                        port=int(db_conf.get('port')),
+                        db=db_conf.get('database')
+                        )
+                cur = db_conn.cursor()
+                #file_path = ping_conf.get('remote_file_path')+file_name
+                #data_values = ('1',file_path,id)
+                table = ping_conf.get('table')
+                query = "select circuit_id from `%s` " % table
+                query += "WHERE `id`=%s" %id
+		logger.info("query is "+pformat(query))
+                cur.execute(query)
+		file = cur.fetchone()
+		file = str(file[0])
+		#logger.info("file name is "+pformat(file))
+		return file
+                
+        except Exception as e :
+                logger.error('in ping filename: ' + pformat(e))
+		file = ''
+		return file
+        finally :
+                cur.close()
+                db_conn.close()
+
+
+
+
+
 
 def ping_test(id, ip, time1):   
 	try :
@@ -155,7 +190,8 @@ def ping_test(id, ip, time1):
 		#time2 = time.time()
 		# to give the name to file use epoch + ip_address
 		#epoch_time = int(time2)
-		file_name1 = ip+"_"+str(current_time) + ".txt"
+		circuit_id = str(file_name_cr(ip,id))
+		file_name1 = ip+"-"+circuit_id+"-"+str(current_time) + ".txt"
 		home1 = expanduser("~")
 		file_path = home1+ping_conf.get('local_file_path')
 		if not os.access(file_path, os.F_OK):
