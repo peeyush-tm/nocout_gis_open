@@ -1461,6 +1461,7 @@ def calculate_sector_id_customer_count():
 		sub_station__device__is_monitored_on_nms__gt=0,
 		sub_station__device__is_deleted=0
 	).values(
+		'sector__sector_configured_on_port__name',
 		'sector__sector_configured_on__ip_address', 
 		'sector__sector_id', 
 		'sub_station__device__ip_address'
@@ -1482,7 +1483,8 @@ def calculate_sector_id_customer_count():
 		if unique_key not in sector_id_wise_count_dict:
 			sector_id_wise_count_dict[unique_key] = {
 				'total_ss': 0,
-				'ss_list': []
+				'ss_list': [],
+				'pmp_port': ''
 			}
 
 		if ss_ip not in sector_id_wise_count_dict[unique_key]['ss_list']:
@@ -1494,6 +1496,7 @@ def calculate_sector_id_customer_count():
 		ip_address = item['sector__sector_configured_on__ip_address']
 		sector_id = item['sector__sector_id']
 		ss_ip = item['sub_station__device__ip_address']
+		pmp_port = item['sector__sector_configured_on_port__name']
 
 		if not (ip_address and sector_id and ss_ip):
 			continue
@@ -1503,8 +1506,11 @@ def calculate_sector_id_customer_count():
 		if unique_key not in sector_id_wise_count_dict:
 			sector_id_wise_count_dict[unique_key] = {
 				'total_ss': 0,
-				'ss_list': []
+				'ss_list': [],
+				'pmp_port': ''
 			}
+
+		sector_id_wise_count_dict[unique_key]['pmp_port'] = pmp_port
 
 		if ss_ip not in sector_id_wise_count_dict[unique_key]['ss_list']:	
 			sector_id_wise_count_dict[unique_key]['total_ss'] += 1 
@@ -1530,17 +1536,25 @@ def calculate_sector_id_customer_count():
 				customer_count = sector_id_wise_count_dict[key].get('total_ss', 0)
 			except Exception as e:
 				continue
+
+			try:
+				pmp_port = sector_id_wise_count_dict[key].get('pmp_port', '')
+			except Exception as e:
+				pmp_port = ''
+
 			try:
 				model_instance = SectorIDWiseCustomerCount.objects.get(
 					ip_address=ip,
 					sector_id=sector_id
 				)
 				model_instance.customer_count = customer_count
+				model_instance.pmp_port = pmp_port
 				bulky_update.append(model_instance)
 			except Exception as e:
 				model_instance = SectorIDWiseCustomerCount(
 					ip_address=ip,
 					sector_id=sector_id,
+					pmp_port=pmp_port,
 					customer_count=customer_count
 				)
 				bulky_create.append(model_instance)

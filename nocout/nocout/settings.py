@@ -569,7 +569,7 @@ CELERYBEAT_SCHEDULE = {
     'sector_customer_count': {
         'task': 'performance.tasks.calculate_customer_count',
         'schedule': crontab(minute='30', hour='*/6'),
-        'kwargs': {'elem_type': 'base_station'}
+        'kwargs': {'elem_type': 'sector'}
     },
     'backhaul_customer_count': {
         'task': 'performance.tasks.calculate_customer_count',

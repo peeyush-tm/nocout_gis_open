@@ -555,6 +555,7 @@ class SectorIDWiseCustomerCount(models.Model):
     This model store Sector ID customers count
     '''
     sector_id = models.CharField('Sector ID', max_length=256)
+    pmp_port = models.CharField('PMP Port', max_length=64, null=True, blank=True)
     ip_address = models.GenericIPAddressField('IP Address')
     customer_count = models.IntegerField('Customer Count', default=0)
 
