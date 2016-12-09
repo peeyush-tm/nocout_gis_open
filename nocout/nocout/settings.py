@@ -446,9 +446,9 @@ CELERYBEAT_SCHEDULE = {
         'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
         'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
         'kwargs': {
-                    'technology': 'PMP',
-                    'is_rad5': True #Flag for radwin5k devices
-                }
+            'technology': 'PMP',
+            'is_rad5': True #Flag for radwin5k devices
+        }
     },
     'calculate_rf_range_dashboards-PTP': {
         'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
@@ -540,7 +540,42 @@ CELERYBEAT_SCHEDULE = {
     'get_set_planned_events': {
         'task': 'alert_center.tasks.get_planned_events',
         'schedule': timedelta(hours=1) #crontab(hour='*/1')
-    }
+    },
+    'ptp_customer_count': {
+        'task': 'performance.tasks.calculate_customer_count',
+        'schedule': crontab(minute='0', hour='*/6'),
+        'kwargs': {'tech_name': 'p2p'}
+    },
+    'pmp_customer_count': {
+        'task': 'performance.tasks.calculate_customer_count',
+        'schedule': crontab(minute='2', hour='*/6'),
+        'kwargs': {'tech_name': 'pmp'}
+    },
+    'wimax_customer_count': {
+        'task': 'performance.tasks.calculate_customer_count',
+        'schedule': crontab(minute='8', hour='*/6'),
+        'kwargs': {'tech_name': 'wimax'}
+    },
+    'ptp_bh_customer_count': {
+        'task': 'performance.tasks.calculate_customer_count',
+        'schedule': crontab(minute='15', hour='*/6'),
+        'kwargs': {'tech_name': 'p2p', 'is_ptp_bh': True}
+    },
+    'bs_customer_count': {
+        'task': 'performance.tasks.calculate_customer_count',
+        'schedule': crontab(minute='25', hour='*/6'),
+        'kwargs': {'elem_type': 'base_station'}
+    },
+    'sector_customer_count': {
+        'task': 'performance.tasks.calculate_customer_count',
+        'schedule': crontab(minute='30', hour='*/6'),
+        'kwargs': {'elem_type': 'sector'}
+    },
+    'backhaul_customer_count': {
+        'task': 'performance.tasks.calculate_customer_count',
+        'schedule': crontab(minute='35', hour='*/6'),
+        'kwargs': {'elem_type': 'backhaul'}
+    },
 }
 
 CORS_ORIGIN_ALLOW_ALL = True
