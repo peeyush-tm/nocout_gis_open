@@ -289,7 +289,11 @@ class correlation:
 	global converter_or_ptpbh_trap_vars
 	global idu_or_odu_trap_vars
 	global ptp_or_ss_trap_vars
-	global circuit_ids_trap_vars
+	global circuit_ids_trap_vars 
+	non_compulsory_attrs_in_conv = ['pop_converter_ip', 'bs_converter_ip']
+	for each_non_compulsory_attrs_in_conv in non_compulsory_attrs_in_conv:
+	    if each_non_compulsory_attrs_in_conv in converter_or_ptpbh_trap_vars:
+	    	converter_or_ptpbh_trap_vars.remove(each_non_compulsory_attrs_in_conv)
 
 	req_fields = [
 	    'parent_port', 'severity', 'corr_req', 'tckt_req',
@@ -1554,8 +1558,12 @@ class correlation:
 	
 	    trap_type = self.find_trap_type(trap_name)
 	    sent_traps = redis_conn.get('monolith_ticket:%s' % (trap_ip))
-	    if not sent_traps:
-		logger.error('Sent traps not found for ip %s'%str(trap_ip))
+	    if sent_traps:
+		sent_traps = eval(sent_traps)
+		if not sent_traps:
+		    continue
+	    else:
+                logger.error('Sent traps not found for ip %s'%str(trap_ip))
                 continue
 
 	    sent_traps = eval(sent_traps)
@@ -1566,11 +1574,11 @@ class correlation:
 
 	    odu1_sent_traps = filter(odu1_r.match, sent_trap_names)
 	    odu2_sent_traps = filter(odu2_r.match, sent_trap_names)
-	    events = list( filter((lambda st_name: st_name in ( "Device_not_reachable", "PD_threshold_breach_major"), sent_trap_names)))	
-	    ip_traps = list( filter((lambda st_name: st_name in( "gpsNotSynchronised", \
+	    events = list( filter ( lambda st_name: st_name in ( "Device_not_reachable", "PD_threshold_breach_major"), sent_trap_names))	
+	    ip_traps = list( filter(lambda st_name: st_name in( "gpsNotSynchronised", \
 								 "wimax_interfaces_down__synchronization_lost", \
 								 "Synchronization_problem__no_PPS" \
-								), sent_trap_names)))
+								), sent_trap_names))
 
 	    if trap_name in sent_trap_names:
 		drop_flag = True
@@ -1618,11 +1626,8 @@ class correlation:
 		    logger.error("Circuits list not found for ip: %s"%(ip))
 		    return circuits_list
 
-        	if sector_type == 'odu1':
-            	    for circuit in circuit_dict.get('odu1'):
-                    	circuits_list.append(circuit)
-        	elif sector_type == 'odu2':
-            	    for circuit in circuit_dict.get('odu2'):
+        	if sector_type in ('odu1','odu2'):
+            	    for circuit in circuit_dict.get(sector_type):
                     	circuits_list.append(circuit)
         	else:
             	    for circuit in circuit_dict.values():
