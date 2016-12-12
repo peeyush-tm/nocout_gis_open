@@ -2418,21 +2418,24 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype, auto=''):
             try:
                 # ------------------------------- Base Station -------------------------------
                 # initialize name
-                name = ""
+                name = row['Site ID'] if 'Site ID' in row.keys() else None
+                if not name or name == '':
+                    logger.error('Site ID not avail.')
+                    continue
 
                 # initialize alias
                 alias = ""
 
                 # sanitize bs name
-                name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
+                # name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
 
-                try:
-                    if all(k in row for k in ("City", "State")):
-                        # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
-                except Exception as e:
-                    logger.error(e.message)
+                # try:
+                #     if all(k in row for k in ("City", "State")):
+                #         # concatinate city and state in bs name
+                #         name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                #                                  row['State'][:3].lower() if 'State' in row.keys() else "")
+                # except Exception as e:
+                #     logger.error(e.message)
 
                 # bs alias
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
@@ -3464,7 +3467,9 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
             try:
                 # ------------------------------- Base Station -------------------------------
                 # initialize name
-                name = ""
+                name = row['Site ID'] if 'Site ID' in row.keys() else None
+                if not name or name == '':
+                    continue
 
                 # initialize alias
                 alias = ""
@@ -3473,13 +3478,13 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype, auto=''):
                 # sanitize bs name
                 name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
 
-                try:
-                    if all(k in row for k in ("City", "State")):
-                        # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
-                except Exception as e:
-                    logger.error(e.message)
+                # try:
+                #     if all(k in row for k in ("City", "State")):
+                #         # concatinate city and state in bs name
+                #         name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                #                                  row['State'][:3].lower() if 'State' in row.keys() else "")
+                # except Exception as e:
+                #     logger.error(e.message)
 
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
                 basestation_data = {
@@ -4430,21 +4435,22 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype, auto='', is_ra
             try:
                 # ------------------------------- Base Station -------------------------------
                 # initialize name
-                name = ""
+                name = row['Site ID'] if 'Site ID' in row.keys() else None
+                if not name or name == '':
+                    continue
 
                 # initialize alias
                 alias = ""
 
                 # sanitize bs name
-                name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
-
-                try:
-                    if all(k in row for k in ("City", "State")):
-                        # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
-                except Exception as e:
-                    logger.error(e.message)
+                # name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
+                # try:
+                #     if all(k in row for k in ("City", "State")):
+                #         # concatinate city and state in bs name
+                #         name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                #                                  row['State'][:3].lower() if 'State' in row.keys() else "")
+                # except Exception as e:
+                #     logger.error(e.message)
 
                 # bs name
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
@@ -5780,21 +5786,22 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
             try:
                 # ------------------------------- Base Station -------------------------------
                 # initialize name
-                name = ""
+                name = row['Site ID'] if 'Site ID' in row.keys() else None
+                if not name or name == '':
+                    continue
 
                 # initialize alias
                 alias = ""
 
                 # sanitize bs name
-                name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
-
-                try:
-                    if all(k in row for k in ("City", "State")):
-                        # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
-                except Exception as e:
-                    logger.error(e.message)
+                # name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
+                # try:
+                #     if all(k in row for k in ("City", "State")):
+                #         # concatinate city and state in bs name
+                #         name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                #                                  row['State'][:3].lower() if 'State' in row.keys() else "")
+                # except Exception as e:
+                #     logger.error(e.message)
 
                 # bs name
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
@@ -9955,12 +9962,13 @@ def create_basestation(basestation_payload):
             try:
                 # update basestation if it exists in database
                 basestation = BaseStation.objects.get(name=name)
+
                 # alias
                 if alias:
                     try:
                         basestation.alias = alias
                     except Exception as e:
-                        logger.error("BH Alias: ({} - {})".format(alias, e.message))
+                        logger.error("BS Alias: ({} - {})".format(alias, e.message))
                 # bs site id
                 if bs_site_id:
                     try:
@@ -10161,24 +10169,25 @@ def create_basestation(basestation_payload):
                     try:
                         basestation.name = name
                     except Exception as e:
-                        logger.error("BH Name: ({} - {})".format(name, e.message))
+                        logger.error("BS Name: ({} - {})".format(name, e.message))
                 # alias
                 if alias:
                     try:
                         basestation.alias = alias
                     except Exception as e:
-                        logger.error("BH Alias: ({} - {})".format(alias, e.message))
+                        logger.error("BS Alias: ({} - {})".format(alias, e.message))
 
                 # Organization
                 if organization:
                     basestation.organization = organization
                     
                 # bs site id
-                if bs_site_id:
-                    try:
-                        basestation.bs_site_id = bs_site_id
-                    except Exception as e:
-                        logger.error("BS Site ID: ({} - {})".format(bs_site_id, e.message))
+                # if bs_site_id:
+                #     try:
+                #         basestation.bs_site_id = bs_site_id
+                #     except Exception as e:
+                #         logger.error("BS Site ID: ({} - {})".format(bs_site_id, e.message))
+
                 # bs site type
                 if bs_site_type:
                     try:
