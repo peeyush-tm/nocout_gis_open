@@ -1583,8 +1583,16 @@ function nocout_getPerfTabDomId() {
     } else {
         var tab_selector = $(top_tab_content_id + ' .panel .panel-body .left_tabs_container li.active a');
         if (tab_selector.length > 0) {
+            var elem_id = tab_selector.attr('id');
+            try {
+                elem_id_splitted_list = tab_selector.attr('id').split('_tab');
+                elem_id_splitted_list.pop(elem_id_splitted_list.length-1);
+                elem_id = elem_id_splitted_list.join('_tab') + '_block';
+            } catch(e) {
+                console.error(e);
+            }
             response_dict = {
-                "active_dom_id" : tab_selector.attr('id'),
+                "active_dom_id" : elem_id,
                 "active_tab_api_url" : tab_selector.attr('url')
             };
         }
