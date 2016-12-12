@@ -319,8 +319,8 @@ query6 = """
         SELECT
                 `ic`.`circuit_id`,
                 `pt`.`ip_address`,
-                `pt`.`refer`,
-                `pt`.`sector_id`
+                `is`.`sector_configured_on_port_id`,
+                `is`.`sector_id`
         FROM
                 `performance_topology` `pt`
         LEFT JOIN
@@ -330,9 +330,27 @@ query6 = """
         LEFT JOIN
                 `inventory_circuit` `ic`
         ON
-                `ic`.`sector_id` = `is`.`id`;
+                `ic`.`sector_id` = `is`.`id`
 
-        """
+      	UNION
+
+	SELECT 
+		`ic`.`circuit_id`,
+                `dd`.`ip_address`,
+		`is`.`sector_configured_on_port_id`,
+		`is`.`sector_id`
+
+	FROM
+		`inventory_sector` `is`
+	LEFT JOIN
+		`device_device` `dd`
+	ON 
+		`is`.`sector_configured_on_id` = `dd`.`id`
+	LEFT JOIN
+		`inventory_circuit` `ic`
+	ON
+		`ic`.`sector_id` = `is`.`id`;
+	"""
 
 @app.task(base=DatabaseTask, name='mysql_to_inventory_data')
 def mysql_to_inventory_data():
@@ -390,38 +408,69 @@ def mysql_to_inventory_data():
 def fetch_circuit_dict_from_mysql(conn_historical):
     cur = conn_historical.cursor()
     cur.execute(query6)
-    data = cur.fetchall()
+    data_performance_topology = cur.fetchall()
 
-    circuit_dict = make_circuit_dict_from_data(data)
+    #logger.error('Circuit_dict data %s'%(data))
+    circuit_dict = make_circuit_dict_from_data(data_performance_topology)
+    circuit_dict_new = make_circuit_dict_from_data_copy(data_performance_topology)
     rds_cli = RedisInterface(custom_conf={'db': 5})
     redis_conn =  rds_cli.redis_cnx
     redis_conn.set('circuit_dict',circuit_dict)
+    redis_conn.set('circuit_dict_new',circuit_dict_new)
     logger.error('Circuit dict has been updated')
 
-def make_circuit_dict_from_data(data):
+def make_circuit_dict_from_data(data_performance_topology):
     my_dict = {}
-    for each_tuple in data:
+    for each_tuple in data_performance_topology:
         circuit_id = each_tuple [0]
         ip_address = each_tuple[1]
-        sector_id = each_tuple[2]
-      	#if ip_address is not None and sector_id is not None and circuit_id is not None:
+        sector_type = each_tuple[2]
+        #if ip_address is not None and sector_id is not None and circuit_id is not None:
 	if ip_address is not None and circuit_id is not None:
-	    if sector_id == None:
-		sector_id = "odu"
+
+	    if sector_type == 43:
+		sector_type = "odu1"
+	    elif sector_type == 44:
+		sector_type = "odu2"
+	    else:
+		sector_type = "odu"
+
             if ip_address in my_dict:
-                if sector_id in my_dict[ip_address]:
-                    if circuit_id in my_dict[ip_address][sector_id]:
+                if sector_type in my_dict[ip_address]:
+                    if circuit_id in my_dict[ip_address][sector_type]:
                         pass
                     else:
-                        my_dict[ip_address][sector_id].append(circuit_id)
+                        my_dict[ip_address][sector_type].append(circuit_id)
                 else:
-                    my_dict[ip_address][sector_id] = []
-                    my_dict[ip_address][sector_id].append(circuit_id)
+                    my_dict[ip_address][sector_type] = []
+                    my_dict[ip_address][sector_type].append(circuit_id)
             else:
                 my_dict[ip_address] = {}
-                my_dict[ip_address][sector_id] = []
-                my_dict[ip_address][sector_id].append(circuit_id)
+                my_dict[ip_address][sector_type] = []
+                my_dict[ip_address][sector_type].append(circuit_id)
+    return my_dict
 
+def make_circuit_dict_from_data_copy(data_performance_topology):
+    #my_dict = {}
+    my_dict = defaultdict(lambda: defaultdict(list))
+    for each_tuple in data_performance_topology:
+        circuit_id = each_tuple [0]
+        ip_address = each_tuple[1]
+        sector_type = each_tuple[2]
+        #if ip_address is not None and sector_id is not None and circuit_id is not None:
+        if ip_address is not None and circuit_id is not None:
+
+            if sector_type == 43:
+                sector_type = "odu1"
+            elif sector_type == 44:
+                sector_type = "odu2"
+            else:
+                sector_type = "odu"
+
+            my_dict[ip_address][sector_type].append(circuit_id)
+
+    my_dict = dict(my_dict)
+	    
     return my_dict
 
 if __name__ == '__main__':

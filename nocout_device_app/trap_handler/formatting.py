@@ -216,8 +216,28 @@ class inventory(object):
 	#Connected base station device ip list.
 	sector_info_str = bs.get('SECT_STR', '')
 	sector_info = sector_info_str.split('-|-|-')
+	vendors = list(set(map(lambda x : x.split('|')[3],sector_info)))
 	bs_ips = list(set(map(lambda x : x.split('|')[5],sector_info)))
 	bs_ip_list = list()
+	vendors_list = list()
+
+	vendor_already = ""
+
+	for each_vendor in vendors:
+            if each_vendor!='NA' and each_vendor != vendor_already:
+		vendor_already = each_vendor
+                vendors_list.append(each_vendor)
+
+
+	tech_vendor = ""
+	if vendors_list:
+	    if len(vendors_list) >1:
+		if "Radwin" in vendors_list:
+		    vendors_list.remove('Radwin')
+	        tech_vendor = ' + '.join(vendors_list)
+	    else:
+	    	tech_vendor = vendors_list[0]
+
 	for bs_ip in bs_ips:
 	    if bs_ip!='NA':
 		bs_ip_list.append(bs_ip)
@@ -242,7 +262,7 @@ class inventory(object):
 	    parent_type ='Switch'
 	    parent_port = bs.get('POPconverterParentPort')
 	    resource_type = 'Converter'
-	    technology = bs.get('POPconverterTech').lower()
+	    technology = bs.get('POPconverterTech').lower()+" - "+tech_vendor
 	    device_type = bs.get('POPconverterType')
 	    device_vendor = bs.get('POPconverterDeviceVendor')
 	    
@@ -253,7 +273,7 @@ class inventory(object):
 	    parent_type ='Converter'
 	    parent_port = bs.get('BTSconverterParentPort')
 	    resource_type = 'Converter'
-	    technology = bs.get('BTSconverterTech').lower()
+	    technology = bs.get('BTSconverterTech').lower()+" - "+tech_vendor
 	    device_type = bs.get('BTSconverterType')
 	    device_vendor = bs.get('BTSconverterDeviceVendor')
 
@@ -263,7 +283,7 @@ class inventory(object):
 	    parent_ip = bs.get('BSswitchParentIP')
 	    parent_type = bs.get('BSswitchParentType')
 	    parent_port = bs.get('BSswitchParentPort')
-	    technology = bs.get('BSswitchTech').lower()
+	    technology = bs.get('BSswitchTech').lower()+" - "+tech_vendor
 	    device_type = bs.get('BSswitchType')
 	    device_vendor = bs.get('BSswitchDeviceVendor')
 
