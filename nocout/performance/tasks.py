@@ -1007,7 +1007,7 @@ def calculate_idu_customer_count(tech_id=None, tech_name=None):
 			topo_dataset = Topology.objects.filter(
 				device_name__in=sector_device_names_list,
 				service_name__in=TECH_WISE_SERVICE_CONFIG.get(str(tech_name).strip().upper(), [])
-			).values_list('ip_address', 'connected_device_ip')
+			).values('ip_address', 'connected_device_ip')
 
 			# Get All SS from inventory
 			inventory_dataset = Circuit.objects.filter(
