@@ -964,8 +964,8 @@ def calculate_idu_customer_count(tech_id=None, tech_name=None):
 	where_condition &= Q(sector_configured_on__is_added_to_nms__gt=0)
 	where_condition &= Q(sector_configured_on__is_monitored_on_nms__gt=0)
 	where_condition &= Q(sector_configured_on__is_deleted=0)
-	where_condition &= Q(circuit__sub_station__isnull=False)
-	where_condition &= Q(circuit__sub_station__device__isnull=False)
+	# where_condition &= Q(circuit__sub_station__isnull=False)
+	# where_condition &= Q(circuit__sub_station__device__isnull=False)
 
 	if tech_id:
 		where_condition &= Q(sector_configured_on__device_technology=tech_id)
@@ -1005,7 +1005,7 @@ def calculate_idu_customer_count(tech_id=None, tech_name=None):
 		else:
 			# Get All SS from performance_topology(Topology Model)
 			topo_dataset = Topology.objects.filter(
-				device_name__in=sector_device_names_list,
+				ip_address__in=sector_ips_list,
 				service_name__in=TECH_WISE_SERVICE_CONFIG.get(str(tech_name).strip().upper(), [])
 			).values('ip_address', 'connected_device_ip')
 
