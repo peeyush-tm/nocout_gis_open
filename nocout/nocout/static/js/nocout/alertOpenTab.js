@@ -50,9 +50,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
             if(table_id.toLowerCase().indexOf("rad5") > -1) {
                 for (var i = 0; i < grid_headers.length; i++) {
                     var column = grid_headers[i];
-                    if (column.mData.indexOf("region") > -1
-                        ||
-                        column.mData.indexOf("min_latency") > -1
+                    if (column.mData.indexOf("min_latency") > -1
                         ||
                         column.mData.indexOf("site_id") > -1
                         ||

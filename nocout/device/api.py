@@ -234,6 +234,7 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}, b
                 page_type = 'customer'
                 performance_url = ''
                 inventory_url = ''
+                topo_url = ''
 
                 if base_urls.get('performance'):
                     performance_url = base_urls.get('performance')
@@ -244,6 +245,12 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}, b
                     inventory_url = base_urls.get('inventory')
                     inventory_url = inventory_url.replace('page_type', page_type)
                     inventory_url = inventory_url.replace('0', str(device_id))
+
+                if base_urls.get('performance'):
+                    topo_url = base_urls.get('performance')
+                    topo_url = topo_url.replace('0', str(device_id))
+                    topo_url = topo_url.replace('page_type', page_type)
+                    topo_url += "?is_topo_view=1"
 
                 # Only in case if we have extra info then
                 if len(data_list) > 12:
@@ -355,6 +362,7 @@ def prepare_ss_info_dict(ss_dataset=[], device_type_dict={}, frequency_obj={}, b
                     'lon': longitude,
                     'inventory_url': inventory_url,
                     'perf_page_url': performance_url,
+                    'topo_view_url': topo_url,
                     'circuit_id': circuit_id,
                     'markerUrl': icon_url,
                     'antenna_height': antenna_height,
@@ -402,9 +410,11 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
     except Exception, e:
         inventory_base_url = ''
 
+    # Create device topology view page base url
+
     base_urls_dict = {
         'inventory': inventory_base_url,
-        'performance': perf_page_base_url
+        'performance': perf_page_base_url,
     }
 
     # Get the device type dict to get the device type gmap icon
@@ -428,6 +438,19 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
 
         sector_info_str = bs.get('SECT_STR', '')
 
+        bs_topo_view_url = ''
+        # Base URL For Performance Page and Topo View Page is SAME.
+        if perf_page_base_url:
+            try:
+                bs_topo_view_url = perf_page_base_url
+                bs_topo_view_url = bs_topo_view_url.replace('0', bs.get('BHDEVICEID'))
+                bs_topo_view_url = bs_topo_view_url.replace('page_type', 'other')
+                bs_topo_view_url += "?is_topo_view=1"
+            except Exception,e:
+                bs_topo_view_url = ''
+        else:
+            bs_topo_view_url = ''
+
         temp_dict = {
             'bs_id': bs.get('BSID'),
             'name': bs.get('BSNAME'),
@@ -446,6 +469,7 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
             'bh_device_tech': bs.get('BHDEVICETECH'),
             'maintenance_status': bs.get('BSMAINTENANCESTATUS'),
             'has_pps_alarm' : bs.get('has_pps'),
+            'topo_view_url': bs_topo_view_url,
             'tech_str': '',
             'vendor_str': '',
             'freq_str': '',
@@ -590,6 +614,7 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
 
                     perf_page_url = ''
                     inventory_url = ''
+                    topo_view_url = ''
                     page_type = 'customer'
                     # Check for technology to make perf page url
                     if technology.lower() in ['pmp', 'wimax', 'ptp bh']:
@@ -629,6 +654,29 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
                         except Exception, e:
                             pass
 
+                    # Sector Device Topology URL
+                    if perf_page_base_url:
+                        try:
+                            topo_view_url = perf_page_base_url
+                            topo_view_url = topo_view_url.replace('0', device_id)
+                            topo_view_url = topo_view_url.replace('page_type', page_type)
+                            topo_view_url += "?is_topo_view=1"
+                        except Exception,e:
+                            topo_view_url = ''
+                    else:
+                        try:
+                            topo_view_url = reverse(
+                                'SingleDevicePerf',
+                                kwargs={
+                                    'device_id': device_id,
+                                    'page_type': page_type
+                                },
+                                current_app='performance'
+                            )
+                            topo_view_url += "?is_topo_view=1"
+                        except Exception, e:
+                            pass
+
                     sector = {
                         'id': sector_pk,
                         'device_name': device_name,
@@ -643,6 +691,7 @@ def prepare_raw_result_v2(resultset=None, bs_ids=[]):
                         'radius': radius,
                         'inventory_url': inventory_url,
                         'perf_page_url': perf_page_url,
+                        'topo_view_url': topo_view_url,
                         'freq': freq_val,
                         'ip_address': sector_ip,
                         'polarization': polarization,

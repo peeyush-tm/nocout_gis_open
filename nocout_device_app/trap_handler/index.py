@@ -7,7 +7,7 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s %(message)s',
-                    filename='/omd/sites/ospf1_slave_1/nocout/performance/service/manual_ticketing.log')
+                    filename='/apps/nocout_etl/manual_ticketing.log')
 
 urls = ("/.*", "hello")
 app = web.application(urls, globals())

@@ -175,6 +175,7 @@ class LivePerformance(ListView):
             name_title = 'PE Hostname'
 
         common_headers = [
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': name_key, 'sTitle': name_title, 'sWidth': 'auto', 'bSortable': True},
@@ -202,10 +203,6 @@ class LivePerformance(ListView):
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
 
-        rad5_specific_headers = [
-            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},
-        ]
-
         if page_type in ["network"]:
             specific_headers = [
                 {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
@@ -214,7 +211,6 @@ class LivePerformance(ListView):
             ]
 
             specific_headers += [{'mData': 'site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False}]
-            specific_headers += rad5_specific_headers
 
         elif page_type in ["customer"]:
             specific_headers = [
@@ -223,8 +219,6 @@ class LivePerformance(ListView):
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
                 {'mData': 'near_end_ip', 'sTitle': 'Near End Ip', 'sWidth': 'auto', 'bSortable': True},
             ]
-
-            specific_headers += rad5_specific_headers
 
         else:
             specific_headers = [
@@ -263,8 +257,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
         'sector_id',
         'customer_name',
         'near_end_ip',
-        'ip_address',
         'region',
+        'ip_address',
         'device_type',
         'bs_name',
         'city',
@@ -424,6 +418,7 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
             columns = [
                 'id',
                 'device_technology',
+                'region',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -817,6 +812,7 @@ class GetPerfomance(View):
             bs_alias = realdevice.device_alias
 
         is_util_tab = request.GET.get('is_util', 0)
+        is_topo_tab = request.GET.get('is_topo_view', 0)
 
         is_dr_device = device.dr_configured_on.exists()
 
@@ -916,7 +912,8 @@ class GetPerfomance(View):
             'perf_base_url' : 'performance/service/srv_name/service_data_source/all/device/' + str(device_id),
             'power_listing_headers': json.dumps(power_listing_headers),
             'sector_perf_url': sector_perf_url,
-            'bh_perf_url': bh_perf_url
+            'bh_perf_url': bh_perf_url,
+            'is_topo_tab': int(is_topo_tab)
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -1606,9 +1603,9 @@ class InventoryDeviceServiceDataSource(View):
         }
 
         # if is_util_tab is 1 then make isActive key of utilization_top_tab to 1
-        if int(is_util_tab):
-            result['data']['objects']['network_perf_tab']["isActive"] = 0
-            result['data']['objects']['utilization_top_tab']["isActive"] = 1
+        # if int(is_util_tab):
+        #     result['data']['objects']['network_perf_tab']["isActive"] = 0
+        #     result['data']['objects']['utilization_top_tab']["isActive"] = 1
 
         device = Device.objects.get(id=device_id)
         device_type = DeviceType.objects.get(id=device.device_type)
@@ -7643,6 +7640,11 @@ class GetTopology(View):
             'data': list()
         }
 
+        bs_id = ''
+        page_type = ''
+        current_device_id = ''
+        device_technology = ''
+
         bs_id = self.request.GET.get('bs_id')
         page_type = self.request.GET.get('page_type').lower()
         current_device_id = self.request.GET.get('device_id')
@@ -8411,7 +8413,6 @@ class GetTopology(View):
                         circuit_id,
                         sect_device
                     )
-
             else :
                 topology_query = ''' 
                     SELECT
