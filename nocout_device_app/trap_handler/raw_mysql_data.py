@@ -412,11 +412,11 @@ def fetch_circuit_dict_from_mysql(conn_historical):
 
     #logger.error('Circuit_dict data %s'%(data))
     circuit_dict = make_circuit_dict_from_data(data_performance_topology)
-    circuit_dict_new = make_circuit_dict_from_data_copy(data_performance_topology)
+    #circuit_dict_new = make_circuit_dict_from_data_copy(data_performance_topology)
     rds_cli = RedisInterface(custom_conf={'db': 5})
     redis_conn =  rds_cli.redis_cnx
     redis_conn.set('circuit_dict',circuit_dict)
-    redis_conn.set('circuit_dict_new',circuit_dict_new)
+    #redis_conn.set('circuit_dict_new',circuit_dict_new)
     logger.error('Circuit dict has been updated')
 
 def make_circuit_dict_from_data(data_performance_topology):

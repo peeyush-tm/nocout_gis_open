@@ -1264,11 +1264,11 @@ class correlation:
 	if planned_events_data:
 	    planned_events_data = eval(planned_events_data)
 	    planned_events_data = sorted(planned_events_data,key=itemgetter(0)) 
-	for entry in planned_events_data:
-	    if len(entry) == 3:
-	        planned_event_dict[(entry[0],entry[1])] = (entry[2],)
-	    elif len(entry) == 5:
-		planned_event_dict[(entry[0],entry[1])] = (entry[2],entry[3],entry[4])
+	    for entry in planned_events_data:
+	        if len(entry) == 3:
+	            planned_event_dict[(entry[0],entry[1])] = (entry[2],)
+	        elif len(entry) == 5:
+		    planned_event_dict[(entry[0],entry[1])] = (entry[2],entry[3],entry[4])
 	
 	#time_duration_list = planned_event_dict.keys() if planned_event_dict else list()
 	return planned_event_dict

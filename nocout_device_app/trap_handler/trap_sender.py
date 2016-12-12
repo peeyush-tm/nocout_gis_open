@@ -136,8 +136,8 @@ class Trap(threading.Thread):
         # UDP transport target
         #target = UdpTransportTarget((getattr(self, 'target_ip', '10.133.12.157'),
         #        getattr(self, 'target_port', 162)))
-        target = UdpTransportTarget((getattr(self, 'target_ip', '121.244.255.122'),
-                getattr(self, 'target_port', 162)))
+        target = UdpTransportTarget((getattr(self, 'target_ip', '121.244.255.83'),
+                getattr(self, 'target_port', 163)))
         snmp_engine = SnmpEngine()
         # community data
         comm_data = CommunityData(comm_str, mpModel=0)
@@ -162,7 +162,7 @@ class Trap(threading.Thread):
     def _fill_defaults(self):
         """ Provides mandatory instance variables like 
         target_ip, target_port etc, if not provided already"""
-        defaults = (('target_ip', '121.244.255.122'), ('target_port', 162),
+        defaults = (('target_ip', '121.244.255.83'), ('target_port', 163),
                 ('time_ticks', 444555),)
         for t in defaults:
             # can't call hasattr() as we have already overrided __getattr__
@@ -197,8 +197,8 @@ class Trap(threading.Thread):
 	    value = getattr(self,attr)
             if attr == 'alrm_name' and value == 'PD threshold breach major' :
 		value = 'PD threshold breach'
-	    if attr == 'impacted_sector_count':
-		logger.error('impacted_sector_count %s'%str(value))
+	    #if attr == 'impacted_sector_count':
+	    #	logger.error('impacted_sector_count %s'%str(value))
 	    if attr in ['IOR','additional_f_6'] and tp == 'converter_or_ptpbh_trap':
 	        value = unicodedata.normalize('NFKD',value).encode('ascii', 'ignore')
 	    if not value:
