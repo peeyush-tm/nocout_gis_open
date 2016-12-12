@@ -1154,6 +1154,8 @@ function convertToVis(response, required_dom_id) {
                         message: table_html,
                         className: 'bootbox_large'
                     });
+
+                    $(".modal-dialog").css("width","80%");
                     
                     // Initializing datatble.js on Alarms table.
                     setTimeout(function(){
