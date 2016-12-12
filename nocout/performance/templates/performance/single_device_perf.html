@@ -835,6 +835,8 @@
 
                             if (my_tab_id) {
                                 $('#' + my_tab_id).trigger('click', true);
+                            } else {
+                                $('a[href="#' + active_tab_obj.active_dom_id + '"]').trigger('click', true);
                             }
                         }
                     } else if (days_diff > 30 && days_diff <= 35) {
