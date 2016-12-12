@@ -61,7 +61,6 @@ class SectorStatusHeaders(ListView):
             {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'severity', 'sTitle': 'severity', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'age', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'organization__alias', 'sTitle': 'organization', 'sClass': 'hide', 'bSortable': True},
         ]
 
         inventory_headers = [
@@ -69,6 +68,7 @@ class SectorStatusHeaders(ListView):
             {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'bSortable': True},
             {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'bSortable': True},
             {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'bSortable': True},
+            {'mData': 'organization__alias', 'sTitle': 'Region', 'bSortable': True},
             {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'IP', 'bSortable': True},
             {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'bSortable': True},
         ]
@@ -129,6 +129,7 @@ class SectorStatusHeaders(ListView):
             {'mData': 'peak_out_duration', 'sTitle': 'Duration', 'bSortable': True},
             {'mData': 'actions', 'sTitle': 'Actions', 'bSortable': False}
         ])
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['rad5k_datatable_headers'] = json.dumps(rad5k_datatable_headers)
         return context
@@ -148,23 +149,22 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
 
     columns = [
         'id', 'sector__sector_id', 'sector_sector_id', 'sector__base_station__alias',
-        'sector__base_station__city__city_name', 'sector__base_station__state__state_name', 
+        'sector__base_station__city__city_name', 'sector__base_station__state__state_name', 'organization__alias',
         'sector__sector_configured_on__ip_address', 'sector__sector_configured_on__device_technology',
         'sector__sector_configured_on__id', 'sector_capacity', 'sector_capacity_in',
         'sector_capacity_out', 'current_in_per', 'current_in_val', 'avg_in_per',
         'avg_in_val', 'peak_in_per', 'peak_in_val', 'peak_in_timestamp', 'peak_in_duration', 'current_out_per',
         'current_out_val', 'avg_out_per', 'avg_out_val', 'peak_out_per', 'peak_out_val',
-        'peak_out_timestamp', 'peak_out_duration', 'organization__alias', 'severity', 'age'
+        'peak_out_timestamp', 'peak_out_duration', 'severity', 'age'
     ]
 
     order_columns = [
-        'id', 'sector__sector_id', 'severity', 'age', 'organization__alias',
-        'sector_sector_id', 'sector__base_station__alias', 'sector__base_station__city__city_name',
-        'sector__base_station__state__state_name', 'sector__sector_configured_on__ip_address', 
-        'sector__sector_configured_on__device_technology', 'sector_capacity', 'current_in_per', 'current_in_val',
-        'sector_capacity_in', 'avg_in_per', 'avg_in_val', 'peak_in_per', 'peak_in_val',
-        'peak_in_timestamp', 'current_out_per', 'current_out_val', 'sector_capacity_out', 'avg_out_per',
-        'avg_out_val', 'peak_out_per', 'peak_out_val', 'peak_out_timestamp'
+        'id', 'sector__sector_id', 'severity', 'age', 'sector_sector_id', 'sector__base_station__alias',
+        'sector__base_station__city__city_name', 'sector__base_station__state__state_name', 'organization__alias',
+        'sector__sector_configured_on__ip_address', 'sector__sector_configured_on__device_technology',
+        'sector_capacity', 'current_in_per', 'current_in_val', 'sector_capacity_in', 'avg_in_per', 'avg_in_val',
+        'peak_in_per', 'peak_in_val', 'peak_in_timestamp', 'current_out_per', 'current_out_val',
+        'sector_capacity_out', 'avg_out_per', 'avg_out_val', 'peak_out_per', 'peak_out_val', 'peak_out_timestamp'
     ]
 
     related_columns = [
@@ -320,13 +320,12 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         """
         if 'Radwin5K' in self.technology and self.is_type:
             self.order_columns = [
-                'id', 'sector__sector_id', 'severity', 'age', 'organization__alias',
-                'sector_sector_id', 'sector__base_station__alias', 'sector__base_station__city__city_name',
-                'sector__base_station__state__state_name', 'sector__sector_configured_on__ip_address', 
-                'sector__sector_configured_on__device_technology', 'sector_capacity', 'current_in_per', 'current_in_val',
-                'sector_capacity_in', 'peak_in_per', 'peak_in_val', 'peak_in_timestamp', 'peak_in_duration',
-                'current_out_per', 'current_out_val', 'sector_capacity_out', 'peak_out_per', 
-                'peak_out_val', 'peak_out_timestamp', 'peak_out_duration'
+                'id', 'sector__sector_id', 'severity', 'age', 'sector_sector_id', 'sector__base_station__alias',
+                'sector__base_station__city__city_name', 'sector__base_station__state__state_name', 'organization__alias',
+                'sector__sector_configured_on__ip_address', 'sector__sector_configured_on__device_technology',
+                'sector_capacity', 'current_in_per', 'current_in_val', 'sector_capacity_in', 'peak_in_per',
+                'peak_in_val', 'peak_in_timestamp', 'peak_in_duration', 'current_out_per', 'current_out_val',
+                'sector_capacity_out', 'peak_out_per', 'peak_out_val', 'peak_out_timestamp', 'peak_out_duration'
             ]
 
         return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
@@ -398,30 +397,51 @@ class SectorAugmentationAlertsHerders(ListView):
 
         hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide',
-             'bSortable': True},
+            {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True}
         ]
 
         common_headers = [
-            {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto',
-             'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto',
-             'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'BS IP', 'sWidth': 'auto',
-             'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto',
-             'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'current_in_per', 'sTitle': '% DL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {
+                'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto',
+                'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto',
+                'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto',
+                'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True
+            },
+            {
+                'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'BS IP', 'sWidth': 'auto',
+                'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto',
+                'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto',
+                'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto',
+                'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'current_in_per', 'sTitle': '% DL Utilization', 'sWidth': 'auto',
+                'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True
+            },
         ]
         # datatable_headers = list()
         datatable_headers = hidden_headers
@@ -450,10 +470,10 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
     columns = [
         'id',
         'sector__sector_id',
-        'organization__alias',
         'sector__base_station__alias',
-        'sector__base_station__state__state_name',
         'sector__base_station__city__city_name',
+        'sector__base_station__state__state_name',
+        'organization__alias',
         'sector__sector_configured_on__ip_address',
         'sector__sector_configured_on__device_technology',
         'sector_sector_id',
@@ -648,8 +668,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         if self.is_rad5:
             self.columns = [
                 'sector__base_station__alias',
-                'sector__base_station__state__state_name',
                 'sector__base_station__city__city_name',
+                'sector__base_station__state__state_name',
                 'organization__alias',
                 'sector__sector_configured_on__ip_address',
                 'sector__sector_configured_on__device_technology',
@@ -722,58 +742,109 @@ class BackhaulStatusHeaders(ListView):
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'severity', 'sTitle': 'severity', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'age', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'organization__alias', 'sTitle': 'organization', 'sWidth': 'auto', 'sClass': 'hide',
-             'bSortable': True},
         ]
 
         common_headers = [
-            {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto',
-             'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'backhaul__alias', 'sTitle': 'Backhaul', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'backhaul__bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'backhaul__bh_connectivity', 'sTitle': 'Onnet/Offnet', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'basestation__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'basestation__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sClass': 'hidden-xs',
-             'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'backhaul_capacity', 'sTitle': 'BH Capacity (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            {
+                'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto',
+                'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'backhaul__alias', 'sTitle': 'Backhaul', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True
+            },
+            {
+                'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'backhaul__bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'backhaul__bh_connectivity', 'sTitle': 'Onnet/Offnet', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'bSortable': True
+            },
+            {
+                'mData': 'basestation__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'basestation__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True
+            },
+            {
+                'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sClass': 'hidden-xs',
+                'sWidth': 'auto', 'bSortable': True
+            },
+            {
+                'mData': 'backhaul_capacity', 'sTitle': 'BH Capacity (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
 
-            {'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'avg_in_per', 'sTitle': 'AVG DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'avg_in_val', 'sTitle': 'AVG DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_in_per', 'sTitle': 'PEAK DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_in_val', 'sTitle': 'PEAK DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_in_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            {
+                'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'avg_in_per', 'sTitle': 'AVG DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'avg_in_val', 'sTitle': 'AVG DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'peak_in_per', 'sTitle': 'PEAK DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'peak_in_val', 'sTitle': 'PEAK DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'peak_in_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
 
-            {'mData': 'current_out_per', 'sTitle': 'UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'current_out_val', 'sTitle': 'UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'avg_out_per', 'sTitle': 'AVG UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'avg_out_val', 'sTitle': 'AVG UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': 'auto', 'bSortable': False},
+            {
+                'mData': 'current_out_per', 'sTitle': 'UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'current_out_val', 'sTitle': 'UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'avg_out_per', 'sTitle': 'AVG UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'avg_out_val', 'sTitle': 'AVG UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'actions', 'sTitle': 'Actions', 'sWidth': 'auto', 'bSortable': False
+            }
         ]
 
         datatable_headers = []
@@ -801,7 +872,6 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         'id',
         'severity',
         'age',
-        'organization__alias',
         'backhaul__bh_configured_on__ip_address',
         'backhaul__bh_configured_on__id',
         'backhaul__alias',
@@ -812,6 +882,7 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         'backhaul__bh_configured_on__device_technology',
         'basestation__city__city_name',
         'basestation__state__state_name',
+        'organization__alias',
         'backhaul_capacity',
         'current_in_per',
         'current_in_val',
@@ -826,14 +897,13 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         'avg_out_val',
         'peak_out_per',
         'peak_out_val',
-        'peak_out_timestamp'
+        'peak_out_timestamp',
     ]
 
     order_columns = [
         'id',
         'severity',
         'age',
-        'organization__alias',
         'backhaul__bh_configured_on__ip_address',
         'backhaul__alias',
         'basestation__alias',
@@ -842,6 +912,7 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         'bh_port_name',
         'basestation__city__city_name',
         'basestation__state__state_name',
+        'organization__alias',
         'backhaul__bh_configured_on__device_technology',
         'backhaul_capacity',
         'current_in_per',
@@ -857,7 +928,8 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
         'avg_out_val',
         'peak_out_per',
         'peak_out_val',
-        'peak_out_timestamp'
+        'peak_out_timestamp',
+        'actions'
     ]
 
     related_columns = [
@@ -1005,6 +1077,7 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
     def prepare_results(self, qs):
         """
         """
+
         # data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         json_data = [{key: val if val not in ['', 'undefined', 'None'] else "NA" for key, val in dct.items()} for dct in
                      qs]
@@ -1020,6 +1093,11 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                     pass
 
                 device_id = item['backhaul__bh_configured_on__id']
+                try:
+                    techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
+                    item['backhaul__bh_configured_on__device_technology'] = techno_name
+                except Exception, e:
+                    pass
 
                 if device_id:
                     performance_url = reverse(
@@ -1034,6 +1112,7 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
                                       title="Device Performance"><i class="fa \
                                       fa-bar-chart-o text-info"></i></a>'
 
+                # item['actions'] = perf_page_link
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
                 ).strftime(DATE_TIME_FORMAT) if str(item['peak_out_timestamp']) not in ['', 'undefined', 'None',
@@ -1117,30 +1196,57 @@ class BackhaulAugmentationAlertsHeaders(ListView):
 
         hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide',
-             'bSortable': True},
         ]
 
         common_headers = [
-            {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto',
-             'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'backhaul__bh_connectivity', 'sTitle': 'Onnet/Offnet', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto',
-             'bSortable': True},
-            {'mData': 'backhaul_capacity', 'sTitle': 'BH Capacity (mbps)', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'backhaul__bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'basestation__city__city_name', 'sTitle': 'BS City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'basestation__state__state_name', 'sTitle': 'BS State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'current_in_per', 'sTitle': '% DL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {
+                'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto',
+                'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True
+            },
+            {
+                'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'bSortable': True
+            },
+            {
+                'mData': 'backhaul__bh_connectivity', 'sTitle': 'Onnet/Offnet', 'sWidth': 'auto', 'bSortable': True
+            },
+            {
+                'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto',
+                'bSortable': True
+            },
+            {
+                'mData': 'backhaul_capacity', 'sTitle': 'BH Capacity (mbps)', 'sWidth': 'auto', 'bSortable': True
+            },
+            {
+                'mData': 'backhaul__bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True
+            },
+            {
+                'mData': 'basestation__city__city_name', 'sTitle': 'BS City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'basestation__state__state_name', 'sTitle': 'BS State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'bSortable': True
+            },
+            {
+                'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'current_in_per', 'sTitle': '% DL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                'bSortable': True
+            },
+            {
+                'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True
+            },
+            {
+                'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True
+            },
         ]
 
         datatable_headers = hidden_headers
@@ -1183,7 +1289,6 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
 
     order_columns = [
         'id',
-        'organization__alias',
         'backhaul__bh_configured_on__ip_address',
         'basestation__alias',
         'bh_port_name',
@@ -1193,6 +1298,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         'backhaul__bh_type',
         'basestation__city__city_name',
         'basestation__state__state_name',
+        'organization__alias',
         'current_out_per',
         'current_in_per',
         'severity',
@@ -1264,13 +1370,13 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         if int(is_alert_page):
             self.order_columns = [
                 'id',
-                'organization__alias',
                 'backhaul__bh_configured_on__ip_address',
                 'basestation__alias',
                 'bh_port_name',
                 'backhaul__bh_configured_on__device_technology',
                 'basestation__city__city_name',
                 'basestation__state__state_name',
+                'organization__alias',
                 'severity',
                 'age'
             ]
