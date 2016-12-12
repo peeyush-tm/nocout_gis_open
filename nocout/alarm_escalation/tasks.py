@@ -931,9 +931,14 @@ def mail_send(result):
                                 "success": 1
                             }
     """
-    mail = EmailMessage(result['data']['subject'], result['data']['message'],
-                        result['data']['from_email'],
-                        result['data']['to_email'])
+    mail = EmailMessage(
+        result['data']['subject'], 
+        result['data']['message'],
+        result['data']['from_email'],
+        result['data']['to_email']
+    )
+
+    mail.content_subtype = "html"
     # Handling mail without an attachment.
     if result['data']['attachments']:
         for attachment in result['data']['attachments']:
