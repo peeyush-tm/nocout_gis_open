@@ -45,10 +45,13 @@ technology = {
         'radwin5k' : 'rad5k',
         'converter' : 'converter',
 }
-
-
-include_in_redis_event = [ "PD_threshold_breach_major",\
-                           "Device_not_reachable",\
+include_in_redis_event = [ 
+                           "Device_not_reachable",
+			   "PD_threshold_breach_major",
+                            "Latency_Threshold_Breach_major",\
+                           "Latency_Threshold_Breach_warning",\
+                           "PD_threshold_breach_warning",\
+                           "Uplink_Issue_threshold_Breach",\
                          ]
 
 exclude_in_correlation = [ "Latency_Threshold_Breach_major",\
@@ -348,14 +351,19 @@ class Eventmapper(object):
 
    def return_ticket_details(self,ip_address,eventname,severity):
 	"""Fetch Alarm Id, Ticket Number, Manual trap bit for particular IP Address and Eventname"""
-	mask_key = alarm_mask_alarm_name.get((eventname,severity.lower()))
-        mask_eventname,mask_severity = mask_key[0]
-        if severity in severity_for_clear_table :
-            try :
-                alarm_id = monolith_ticket_dict[ip_address][mask_eventname]['alarm_id']
-		ticket_number = monolith_ticket_dict[ip_address][mask_eventname]['ticket_number']
-		is_manual =  monolith_ticket_dict[ip_address][mask_eventname]['is_manual']
-		self.delete_cleared_monolith_ticket(ip_address,mask_eventname)
+	try :
+	    if 'PMP_' in eventname :
+	        eventname = eventname.split('_')[1]
+	    mask_key = alarm_mask_alarm_name.get((eventname,severity.lower()))
+            mask_eventname,mask_severity = mask_key[0]
+	    is_manual = None
+	    alarm_id = None
+            if severity in severity_for_clear_table :
+                try :
+                    alarm_id = monolith_ticket_dict[ip_address][mask_eventname]['alarm_id']
+		    ticket_number = monolith_ticket_dict[ip_address][mask_eventname]['ticket_number']
+                    is_manual =  monolith_ticket_dict[ip_address][mask_eventname]['is_manual']
+                    self.delete_cleared_monolith_ticket(ip_address,mask_eventname)
             except Exception,e :
 		print "Exception in fetch alarm_id in mapper: %s"%str(e) 
                 ticket_number = None
@@ -369,6 +377,11 @@ class Eventmapper(object):
 	    ticket_number = None
 	    alarm_id = None
 	    is_manual = None
+	except Exception,e:
+	    print "Mask Event name not found", eventname,severity.lower()
+	    is_manual = None
+	    alarm_id = None
+	    ticket_number = None 
         return (ticket_number,alarm_id,is_manual)
 
    def update_trap_count(self,event_count_dict):
@@ -1157,3 +1170,4 @@ def delete_history_trap():
 
     cursor.close()
     my_cnx.close()
+
