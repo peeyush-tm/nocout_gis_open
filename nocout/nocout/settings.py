@@ -946,7 +946,9 @@ SETTINGS_EXPORT = [
     'ENABLE_MANUAL_TICKETING_HISTORY',
     'SHOW_SPRINT3',
     'SHOW_SPRINT4',
-    'USE_SOAP_TICKETING'
+    'USE_SOAP_TICKETING',
+    'SHOW_REGION_FILTER',
+    'SHOW_BS_TOPO_ICON'
 ]
 
 # Dashbaord Settings
@@ -1457,12 +1459,19 @@ SHOW_SPRINT3 = False
 
 # Show/Hide features of Sprint 4 of Radwin5K
 # Feature list:-
-# 1) Region filter on GIS
 SHOW_SPRINT4 = False
+
+# Show/Hide Region filter on GIS
+SHOW_REGION_FILTER = False
 
 PE_REDIS_HOST = '10.133.19.165'
 PE_REDIS_PORT = '6380'
 PE_REDIS_DB = '5'
+
+# Show/Hide Topology page cross launcher icon in:
+# 1) Global search by BS Name
+# 2) Google Map BS tooltip
+SHOW_BS_TOPO_ICON = False
 
 # Import the local_settings.py file to override global settings
 try:

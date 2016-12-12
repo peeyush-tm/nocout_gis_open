@@ -134,7 +134,8 @@
 
         var dataTableInstance = "",
             base_url = "",
-            excel_columns = [];
+            excel_columns = [],
+            page_type = "{{ page_type|title }}";
 
         /*This is a temporary code which is replace when data for data table is provided*/
         $(document).ready(function (e) {
@@ -154,8 +155,7 @@
                 sort_index = 10;
             }
 
-            var page_type = "{{ page_type|title }}",
-                ds_name = "{{ data_source|title }}",
+            var ds_name = "{{ data_source|title }}",
                 ptp_tech_txt = "PTP",
                 ptp_excluded_columns = "'sector_id'";
 

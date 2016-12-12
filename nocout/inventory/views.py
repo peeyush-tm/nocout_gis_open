@@ -35,7 +35,7 @@ from django.conf import settings
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_TIME_FORMAT, USE_SOAP_TICKETING, \
-    SHOW_SPRINT3
+    SHOW_SPRINT3, SHOW_BS_TOPO_ICON
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
@@ -5436,9 +5436,13 @@ def getSearchData(request, search_by="default", pk=0):
             "perf_page_url": '',
             "alert_page_url": '',
             "circuit_inventory_url": '',
-            "sector_inventory_url": ''
+            "sector_inventory_url": '',
+            "topo_view_url": ''
         }
     }
+
+    # Topology View URL will be updated only if search is from BS Name
+    topo_view_url = ''
 
     # Get model & organization as per the search criteria
     search_model, \
@@ -5511,12 +5515,16 @@ def getSearchData(request, search_by="default", pk=0):
 
 
                     # Single Device perf page url
-                    perf_page_url = reverse(
+                    perf_url = reverse(
                         'SingleDevicePerf',
                         kwargs={'page_type': page_type, 'device_id': backhaul_device_id},
                         current_app='performance'
                     )
-                    perf_page_url = perf_page_url + "?is_util=1"
+                    perf_page_url = perf_url + "?is_util=1"
+
+                    # Temperoray hidden till BaseStation topology page is not ready.
+                    if SHOW_BS_TOPO_ICON:
+                        topo_view_url = perf_url + "?is_topo_view=1"
 
                     # BS inventory page url
                     inventory_page_url = reverse(
@@ -5635,6 +5643,8 @@ def getSearchData(request, search_by="default", pk=0):
                 result["data"]["alert_page_url"] = alert_page_url
                 result["data"]["circuit_inventory_url"] = circuit_inventory_url
                 result["data"]["sector_inventory_url"] = sector_inventory_url
+                result["data"]["topo_view_url"] = topo_view_url
+
 
             except Exception, e:
                 result["message"] = "Exception occurs."

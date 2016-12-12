@@ -25,6 +25,15 @@
         <option value="">Select City</option>
     </select>
 </li>
+{% if settings.SHOW_REGION_FILTER %}
+    <li>
+        <!--Region Filter-->
+        <select name="region" id="region" class="form-control col-xs-1 input-sm" style="width: 150px;">
+            <option value="">Select Region</option>
+        </select>
+    </li>
+{% endif %}
+
 <li>
     <!--Reset Button-->
     <button type="button" class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters"

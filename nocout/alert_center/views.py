@@ -17,6 +17,7 @@ from machine.models import Machine
 # For SIA Listing
 from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms, PlannedEvent, ManualTicketingHistory
 from performance.models import EventNetwork, EventService, InventoryStatus, ServiceStatus, UtilizationStatus, PerformanceService
+from download_center.models import Customer_Count_Sector
 
 from operator import itemgetter
 # Import performance utils gateway class
@@ -130,9 +131,18 @@ class AlertCenterListing(ListView):
         rad5_headers = []
         rad5_customer_detail_headers = []
         rad5_polled_col = []
-        rad5_headers += [
-            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False},            
+
+        # Show region column in all Network Alert Tabs
+        # if page_type.lower() == 'network':
+        #     region_col_visible = True
+        # else:
+        #     region_col_visible = False
+
+        region_header = [
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},
         ]
+
+        rad5_headers += region_header
 
         # if Network page and data source is latency than add SE to PE min latency column.
         if page_type in ['network','customer'] and data_source == 'latency':
@@ -265,6 +275,9 @@ class AlertCenterListing(ListView):
         ptp_datatable_headers += severity_headers
         ptp_datatable_headers += ptp_starting_headers
         ptp_datatable_headers += common_headers
+
+        ptp_datatable_headers += region_header            
+
         ptp_datatable_headers += polled_headers
         ptp_datatable_headers += other_headers
 
@@ -283,6 +296,7 @@ class AlertCenterListing(ListView):
         if page_type == 'customer':
             # These headers are for Alert Center -> Customer Details -> Radwin5K Tab
             rad5_customer_detail_headers += rad5_customer_start_headers
+            rad5_customer_detail_headers += region_header
             rad5_customer_detail_headers += polled_headers
             rad5_customer_detail_headers += rad5_other_headers
 
@@ -299,6 +313,7 @@ class AlertCenterListing(ListView):
         if page_type == 'network':
             bh_datatable_headers += severity_headers
             bh_datatable_headers += common_headers
+            bh_datatable_headers += region_header
             bh_datatable_headers += bh_specific_headers
             bh_datatable_headers += polled_headers
             bh_datatable_headers += other_headers
@@ -924,6 +939,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'site_id',
             'city',
             'state',
+            'region'
         ]
 
         common_network_bh_headers = [
@@ -934,6 +950,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'site_id',
             'city',
             'state',
+            'region',
             'bh_connectivity',
             'current_value'
         ]
@@ -970,6 +987,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'site_id',
             'city',
             'state',
+            'region',
             'current_value',
         ]
 
@@ -1022,7 +1040,10 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     'ptp_datatable_headers': common_network_ptp_headers + ['data_source_name', 'current_value', 'sys_timestamp', 'age', 'action'],
                     'bh_datatable_headers': [],
                     'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers+region_header+['data_source_name', 'current_value', 'sys_timestamp', 'age', 'action'],
-                    'rad5_customer_detail_headers': common_customer_pmp_wimax_headers + ['data_source_name', 'current_value', 'sys_timestamp', 'age', 'warning_threshold', 'action']
+                    'rad5_customer_detail_headers': common_customer_pmp_wimax_headers + region_header + [
+                                                                                                            'data_source_name', 'current_value',
+                                                                                                            'sys_timestamp', 'age', 'warning_threshold', 'action'
+                                                                                                        ]
                 },
                 'packet_drop' : {
                     'ptp_datatable_headers': customer_pd_and_down_ptp_datatable_headers,
@@ -1202,6 +1223,16 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
         ]
 
+        # Region and organization are same but we need two different headers becuase
+        # Util Columns are fecthed from Capacity Management module
+        region_header = [
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
+        organization_header = [
+            {'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True}
+        ]
+
         rad5_starting_headers = [
             {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', 'bSortable': True},
@@ -1209,12 +1240,13 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'refer', 'sTitle': 'Affected Sectors', 'sWidth': 'auto', 'bSortable': True},
         ]
 
-        rad5_specific_headers = [
-            {'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},
-            # {'mData': 'customer_count', 'sTitle': 'Total Customer Count', 'sWidth': 'auto', 'bSortable': True},
-            # {'mData': 'impacted_customer', 'sTitle': 'Impacted Customer Count', 'sWidth': 'auto', 'bSortable': True},
-            # {'mData': 'impacted_customer_percent', 'sTitle': '% Impacted Customer Count', 'sWidth': 'auto', 'bSortable': True},
-        ]
+        rad5_specific_headers = []
+
+        # rad5_specific_headers += [
+        #     {'mData': 'customer_count', 'sTitle': 'Total Customer Count', 'sWidth': 'auto', 'bSortable': True},
+        #     {'mData': 'impacted_customer', 'sTitle': 'Impacted Customer Count', 'sWidth': 'auto', 'bSortable': True},
+        #     {'mData': 'impacted_customer_percent', 'sTitle': '% Impacted Customer Count', 'sWidth': 'auto', 'bSortable': True},
+        # ]
 
         specific_headers = [
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
@@ -1268,6 +1300,7 @@ class NetworkAlertDetailHeaders(ListView):
         datatable_headers += starting_headers
         datatable_headers += specific_headers
         datatable_headers += common_headers
+        datatable_headers += region_header
         datatable_headers += polled_headers
         datatable_headers += other_headers
 
@@ -1275,6 +1308,7 @@ class NetworkAlertDetailHeaders(ListView):
         backhaul_headers += starting_headers
         # backhaul_headers += specific_headers
         backhaul_headers += common_headers
+        backhaul_headers += region_header
         backhaul_headers += bh_specific_headers
         backhaul_headers += polled_headers
         backhaul_headers += other_headers
@@ -1283,6 +1317,7 @@ class NetworkAlertDetailHeaders(ListView):
         rad5_ul_issue_headers += starting_headers
         rad5_ul_issue_headers += rad5_starting_headers
         rad5_ul_issue_headers += common_headers
+        rad5_ul_issue_headers += region_header
         rad5_ul_issue_headers += rad5_specific_headers
         rad5_ul_issue_headers += polled_headers
         rad5_ul_issue_headers += other_headers
@@ -1291,6 +1326,7 @@ class NetworkAlertDetailHeaders(ListView):
         ul_issue_datatable_headers += starting_headers
         ul_issue_datatable_headers += ul_issue_specific_headers
         ul_issue_datatable_headers += common_headers
+        ul_issue_datatable_headers += region_header
         ul_issue_datatable_headers += polled_headers
         if SHOW_CUSTOMER_COUNT_IN_ALERT_LIST:
             ul_issue_datatable_headers += ul_issue_specific_headers_2
@@ -1300,6 +1336,7 @@ class NetworkAlertDetailHeaders(ListView):
         bh_dt_headers += starting_headers
         bh_dt_headers += bh_dt_specific_headers
         bh_dt_headers += common_headers
+        bh_dt_headers += region_header
         bh_dt_headers += polled_headers
         bh_dt_headers += other_headers
 
@@ -1307,13 +1344,13 @@ class NetworkAlertDetailHeaders(ListView):
         sector_util_hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            # {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
 
         sector_util_headers_1 = [
             {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
         ]
 
         sector_util_headers_2 = [
@@ -1329,7 +1366,7 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'age', 'sTitle': 'Aging (seconds)', 'sWidth': 'auto', 'bSortable': True},
         ]
 
-        sector_util_common_headers = sector_util_headers_1 + sector_util_headers_2 + sector_util_headers_3
+        sector_util_common_headers = sector_util_headers_1 + organization_header + sector_util_headers_2 + sector_util_headers_3
 
         sector_utils_headers = []
         sector_utils_headers += sector_util_hidden_headers
@@ -1337,7 +1374,7 @@ class NetworkAlertDetailHeaders(ListView):
 
         rad5_sector_util_headers = []
         rad5_sector_util_headers += sector_util_headers_1
-        rad5_sector_util_headers += [{'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},]
+        rad5_sector_util_headers += organization_header
         rad5_sector_util_headers += sector_util_headers_2
         rad5_sector_util_headers += [
             {'mData': 'timeslot_dl', 'sTitle': 'DL Time-slot', 'width': 'auto', 'bSortable': True },
@@ -1348,10 +1385,9 @@ class NetworkAlertDetailHeaders(ListView):
 
         bh_util_hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
 
-        bh_util_common_headers = [
+        bh_util_common_headers_1 = [
             {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto', 'bSortable': True},
             # {'mData': 'backhaul__alias', 'sTitle': 'Backhaul', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
@@ -1359,9 +1395,14 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'basestation__city__city_name', 'sTitle': 'BS City', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'basestation__state__state_name', 'sTitle': 'BS State', 'sWidth': 'auto', 'bSortable': True},
+        ]
+
+        bh_util_common_headers_2 = [
             {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'bSortable': True},
         ]
+
+        bh_util_common_headers = bh_util_common_headers_1 + organization_header + bh_util_common_headers_2
 
         bh_utils_headers = []
         bh_utils_headers += bh_util_hidden_headers
@@ -1882,6 +1923,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
+                'region',
                 'data_source_name',
                 'current_value',
                 'customer_count',
@@ -1900,7 +1942,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
-                'organization__alias',
+                'region',
                 # 'customer_count',
                 # 'impacted_customer',
                 # 'impacted_customer_percent',
@@ -1918,6 +1960,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
+                'region',
                 'bh_connectivity',
                 'data_source_name',
                 'current_value',
@@ -1940,6 +1983,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
+                'region',
                 'data_source_name',
                 'current_value',
                 'sys_timestamp',
@@ -1956,6 +2000,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 'bs_name',
                 'city',
                 'state',
+                'region',
                 'data_source_name',
                 'current_value',
                 'sys_timestamp',
@@ -2499,6 +2544,7 @@ class SIAListing(ListView):
             {'mData': 'bs_alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'region', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_connectivity', 'sTitle': 'BH Connectivity', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True}
         ]
@@ -2511,7 +2557,7 @@ class SIAListing(ListView):
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
@@ -2579,13 +2625,13 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     
     order_columns = [
         'severity', 'ip_address', 'bs_alias', 'bs_city', 'bs_state',
-        'bh_connectivity', 'bh_type', 'eventname', 'ticket_number', 'traptime', 'uptime',
+        'region', 'bh_connectivity', 'bh_type', 'eventname', 'ticket_number', 'traptime', 'uptime',
         'alarm_count', 'first_occurred','last_occurred', 'customer_count', 
         'sia'
     ]
 
     other_columns = [
-        'bs_alias', 'bs_city', 'bs_state',
+        'bs_alias', 'bs_city', 'bs_state', 'region',
         'sector_id','device_type', 'bh_connectivity', 'bh_type'
     ]
 
@@ -2749,15 +2795,15 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             if ENABLE_MANUAL_TICKETING:
                 self.order_columns = [
                     'action', 'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname', 
-                    'ticket_number', 'traptime', 'uptime','alarm_count','first_occurred',
-                    'last_occurred', 'customer_count', 'sia'
+                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'ticket_number',
+                    'device_type', 'eventname', 'traptime', 'uptime', 'alarm_count',
+                    'first_occurred', 'last_occurred', 'customer_count', 'sia'
                 ]
             else:
                 self.order_columns = [
                     'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'bh_connectivity', 'bh_type', 'device_type', 'eventname', 
-                    'ticket_number', 'traptime', 'uptime','alarm_count','first_occurred',
+                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type',
+                    'eventname', 'traptime', 'uptime','alarm_count','first_occurred',
                     'last_occurred', 'customer_count', 'sia'
                 ]
 
@@ -2793,6 +2839,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
             except ValueError:
                 sort_col = 0
+
 
             sdir = '-' if sort_dir == 'desc' else ''
             reverse = True if sort_dir == 'desc' else False
@@ -3167,7 +3214,7 @@ class AllSiaListing(ListView):
             {'mData': 'bs_state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bs_city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'circle', 'sTitle': 'Circle', 'sWidth': 'auto', 'bSortable': True},
-            # {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sClass': 'hide', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'ticket_number', 'sTitle': 'PB TT No.', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_connectivity', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_type', 'sTitle': 'BH Media Type', 'sWidth': 'auto', 'bSortable': True},
@@ -3480,10 +3527,10 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
             self.order_columns += [
                 'action', 'severity', 'traptime', 'ip_address',
                 'device_type', 'bs_alias', 'bh_status', 'bs_state',
-                'bs_city', 'circle', 'ticket_number', 'bh_connectivity',
-                'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id', 'bs_conv_ip',
-                'pop_conv_ip', 'aggr_sw_ip', 'pe_ip', 'alarm_count',
-                'first_occurred', 'last_occurred'
+                'bs_city', 'circle', 'customer_count', 'ticket_number',
+                'bh_connectivity', 'bh_type', 'bh_ckt_id', 'bh_ttsl_ckt_id',
+                'bs_conv_ip', 'pop_conv_ip', 'aggr_sw_ip', 'pe_ip',
+                'alarm_count', 'first_occurred', 'last_occurred'
             ]
 
         # Number of columns that are used in sorting
@@ -3827,11 +3874,18 @@ def prepare_snmp_gis_data(qs, tech_name):
     # Get IP address list from qs
     ip_address_list = [x['ip_address'] for x in qs_list]
 
+    # Get Queryset to get customer count with respect to sector id's
+    customer_count_qs = Customer_Count_Sector.objects.all().values('sector_id', 'count_of_customer')
+    # Indexed customer count With respect to Sector id
+    mapped_customer_count = list_to_key_value_dict(customer_count_qs, 'sector_id', 'count_of_customer')
+
     sectors_data_qs, dr_data_qs = '', ''
     converter_mapped_data = {}
     if tech_name in ['pmp', 'rad5k', 'wimax', 'all']:
         sectors_data_qs =  Sector.objects.filter(
             sector_configured_on__ip_address__in=ip_address_list
+        ).annotate(
+            region=F('sector_configured_on__organization__alias'),
         ).extra(
             select={'device_type' : 'device_device.device_type'}
         ).values(
@@ -3843,13 +3897,16 @@ def prepare_snmp_gis_data(qs, tech_name):
             'base_station__state__state_name',
             'base_station__backhaul__bh_type',
             'base_station__backhaul__bh_connectivity',
-            'device_type'
+            'device_type',
+            'region'
         ).distinct()
 
         # If wimax only then check for DR device
         if tech_name in ['wimax', 'all']:
             dr_data_qs =  Sector.objects.filter(
                 dr_configured_on__ip_address__in=ip_address_list
+            ).annotate(
+                region=F('sector_configured_on__organization__alias'),
             ).extra(
                 select={'device_type' : 'device_device.device_type'}
             ).values(
@@ -3859,13 +3916,16 @@ def prepare_snmp_gis_data(qs, tech_name):
                 'base_station__state__state_name',
                 'dr_configured_on__ip_address',
                 'sector_configured_on_port__name',
-                'device_type'
+                'device_type',
+                'region'
             ).distinct()
 
     # If requert from converter or all tab only then check Backhaul model
     if tech_name in ['switch', 'converter', 'all']:
 
-        bh_conf_data_qs =  BaseStation.objects.extra(
+        bh_conf_data_qs =  BaseStation.objects.annotate(
+            region=F('backhaul__bh_configured_on__organization__alias'),
+        ).extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
@@ -3881,15 +3941,18 @@ def prepare_snmp_gis_data(qs, tech_name):
             'base_station__state__state_name',
             'state__state_name',
             'backhaul__bh_configured_on__ip_address',
-            'device_type'
+            'device_type',
+            'region'
         ).distinct()
 
-        bh_switch_data_qs =  BaseStation.objects.extra(
+        bh_switch_data_qs =  BaseStation.objects.annotate(
+            region=F('backhaul__bh_switch__organization__alias'),
+        ).extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'T4.device_type'
+                'device_type': 'device_device.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__isnull=False,
@@ -3901,10 +3964,13 @@ def prepare_snmp_gis_data(qs, tech_name):
             'base_station__state__state_name',
             'state__state_name',
             'backhaul__bh_switch__ip_address',
-            'device_type'
+            'device_type',
+            'region'
         ).distinct()
 
-        pop_data_qs =  BaseStation.objects.extra(
+        pop_data_qs =  BaseStation.objects.annotate(
+            region=F('backhaul__pop__organization__alias'),
+        ).extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
@@ -3921,15 +3987,18 @@ def prepare_snmp_gis_data(qs, tech_name):
             'base_station__state__state_name',
             'state__state_name',
             'backhaul__pop__ip_address',
-            'device_type'
+            'device_type',
+            'region'
         ).distinct()
 
-        aggr_data_qs =  BaseStation.objects.extra(
+        aggr_data_qs =  BaseStation.objects.annotate(
+            region=F('backhaul__aggregator__organization__alias'),
+        ).extra(
             select={
                 'base_station__alias' : 'inventory_basestation.alias',
                 'base_station__city__city_name' : 'device_city.city_name',
                 'base_station__state__state_name' : 'device_state.state_name',
-                'device_type': 'T4.device_type'
+                'device_type': 'device_device.device_type'
             }
         ).filter(
             backhaul__bh_configured_on__isnull=False,
@@ -3941,7 +4010,8 @@ def prepare_snmp_gis_data(qs, tech_name):
             'base_station__state__state_name',
             'state__state_name',
             'backhaul__aggregator__ip_address',
-            'device_type'
+            'device_type',
+            'region'
         ).distinct()
 
         # mapped_bh_conf_result = inventory_utils.list_to_indexed_dict(
@@ -3996,6 +4066,8 @@ def prepare_snmp_gis_data(qs, tech_name):
     except Exception as e:
         starmax_idu_id = None
 
+
+
     for data in qs_list:
         ip_address = data.get('ip_address')
         eventname = data.get('eventname')
@@ -4003,10 +4075,11 @@ def prepare_snmp_gis_data(qs, tech_name):
             bs_alias='NA',
             bs_city='NA',
             bs_state='NA',
+            region='NA',
             sector_id='NA',
             device_type='NA',
             bh_connectivity='NA',
-            bh_type='NA'
+            bh_type='NA',
         )
         if not ip_address:
             continue
@@ -4015,6 +4088,18 @@ def prepare_snmp_gis_data(qs, tech_name):
         try:
             sector_dct = mapped_result[ip_address]
             if sector_dct:
+                for sect in sector_dct:
+                    try:
+                        sect_id = sect.get('sector_id', '')
+                    except Exception, e:
+                        pass
+
+                    customer_count = ''
+                    # Updating customer count on basis of Sector id
+                    if sect_id:
+                        customer_count = mapped_customer_count.get(sect_id, '')
+                        sect.update(customer_count=customer_count)
+
                 if starmax_idu_id == sector_dct[0].get('device_type'):
                     if 'odu1' in eventname.lower() or 'pmp1' in eventname.lower():
                         try:
@@ -4044,8 +4129,13 @@ def prepare_snmp_gis_data(qs, tech_name):
                 bs_state=sector_dct.get('base_station__state__state_name', 'NA'),
                 bh_connectivity=sector_dct.get('base_station__backhaul__bh_connectivity', 'NA'),
                 bh_type=sector_dct.get('base_station__backhaul__bh_type', 'NA'),
-                device_type=device_type_dict.get(sector_dct.get('device_type'))
+                device_type=device_type_dict.get(sector_dct.get('device_type')),
+                region=sector_dct.get('region')
             )
+
+            # Update customer count only if it is updated on basis of sector id else let it be
+            if sector_dct.get('customer_count'):
+                data.update(customer_count=sector_dct.get('customer_count'))
 
     return qs_list
 
@@ -5011,3 +5101,39 @@ def list_to_indexed_dict_alerts(inventory_list=None, key='ip_address', is_wimax=
             inventory_dict[device_info[key]] = [device_info]
 
     return inventory_dict
+
+
+def list_to_key_value_dict(invent_list=None, key_str='', val_str=''):
+    """Convert given list of dict into dictionary with given "key" and "value" keys
+    @param invent_list : To be converted list
+    @param key_str : Key to be used as key in returned dict(Key-Value pair)
+    @param val_str : Key to be used as value in returned dict(Key-Value pair)
+
+    eg : invent_list = [
+                            {'count_of_customer': u'5', 'sector_id': u'00:0a:10:02:00:72'},
+                            {'count_of_customer': u'12', 'sector_id': u'00:0a:10:02:00:75'},
+                            {'count_of_customer': u'14', 'sector_id': u'00:0a:15:02:00:81'}
+                       ]
+         key_str = 'sector_id'
+         val_str = 'count_of_customer'
+
+         return {
+                    '00:0a:10:02:00:72' : '5',
+                    '00:0a:10:02:00:75' : '12',
+                    '00:0a:15:02:00:81' : '14',
+         }
+    """
+
+    invent_dict = dict()
+
+    if invent_list and key_str and val_str:
+        for item in invent_list:
+            try:
+                dict_key = item.get(key_str)
+                dict_val = item.get(val_str)
+                
+                invent_dict[dict_key] = dict_val
+            except Exception, e:
+                continue
+
+    return invent_dict

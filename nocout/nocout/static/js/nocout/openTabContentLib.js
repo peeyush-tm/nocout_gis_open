@@ -126,11 +126,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                 for (var i = 0; i < grid_headers.length; i++) {
                     var column = grid_headers[i];
                     if (page_type != 'customer'){
-                        if (
-                                column.mData.indexOf("region") > -1 
-                                ||
-                                column.mData.indexOf("site_id") > -1
-                            ) {
+                        if (column.mData.indexOf("site_id") > -1) {
                             if (!column.bVisible) {
                                 column.bVisible = true;
                             } else {

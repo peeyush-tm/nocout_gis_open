@@ -202,6 +202,11 @@ $("#global_search_btn").click(function(e) {
 				link_html += '<a href="'+alert_url+'" class="btn btn-default btn-sm" title="Alerts" target="_blank"><i class="fa fa-warning text-primary"></i></a>';
 			}
 
+			if(search_data["topo_view_url"]) {
+				var topo_url = base_url+""+search_data["topo_view_url"];
+				link_html += '<a href="'+topo_url+'" class="btn btn-default btn-sm" title="Topology View" target="_blank"><i class="fa fa-sitemap text-primary"></i></a>';
+			}
+
 			if (svp_link_html) {
 				link_html += svp_link_html;
 			}
