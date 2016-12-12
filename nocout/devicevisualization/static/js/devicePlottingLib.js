@@ -3439,7 +3439,7 @@ function devicePlottingClass_gmap() {
                 var startPtInfo = [],
                     item_index = contentObject.item_index > -1 ? contentObject.item_index : 0,
                     BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase(),
-                    bs_topo_url = contentObject.topo_url ? base_url+""+contentObject.topo_url : "",
+                    bs_topo_url = show_bs_topo_icon && contentObject.topo_url ? base_url+""+contentObject.topo_url : "",
                     tools_html = "",
                     bs_id = contentObject.filter_data.bs_id;
                     report_type="base_station"

@@ -166,7 +166,8 @@
         save_power_log_url = '',
         enable_reboot_btn = false,
         show_link_status = false,
-        show_link_status_rad5 = false;
+        show_link_status_rad5 = false,
+        show_bs_topo_icon = false;
 
     $(document).ready(function (e) {
         // Update z-index of live polling panel due to higher z-index of wmap
@@ -177,6 +178,12 @@
         tech_type_api = "{% url 'get_types_for_tech' 123 %}";
         device_reboot_url = "{% url 'init_device_reboot' %}";
         save_power_log_url = "{% url 'save_power_log' %}";
+
+        // Global variable for showing BS Topology page cross launcher icon on BS tooltip
+        {% if settings.SHOW_BS_TOPO_ICON %}
+            show_bs_topo_icon = true
+        {% endif %}
+
         {% if settings.ENABLE_DEVICE_REBOOT_BTN %}
             enable_reboot_btn = true;
         {% endif %}
