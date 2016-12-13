@@ -1004,19 +1004,27 @@ def calculate_idu_customer_count(tech_id=None, tech_name=None):
 				}
 		else:
 			# Get All SS from performance_topology(Topology Model)
-			topo_dataset = Topology.objects.filter(
+			topo_dataset = list(Topology.objects.filter(
 				ip_address__in=sector_ips_list,
 				service_name__in=TECH_WISE_SERVICE_CONFIG.get(str(tech_name).strip().upper(), [])
-			).values('ip_address', 'connected_device_ip')
+			).values('ip_address', 'connected_device_ip'))
 
 			# Get All SS from inventory
-			inventory_dataset = Circuit.objects.filter(
+			inventory_dataset = list(Circuit.objects.filter(
 				sector_id__in=sector_pk_list,
 				sub_station__isnull=False,
 				sub_station__device__is_added_to_nms__gt=0,
 				sub_station__device__is_monitored_on_nms__gt=0,
 				sub_station__device__is_deleted=0
-			).values('sector__sector_configured_on__ip_address', 'sub_station__device__ip_address')
+			).values('sector__sector_configured_on__ip_address', 'sub_station__device__ip_address'))
+
+			# Initialize all IP's with 0 customer_count
+			for ip in sector_ips_list:
+				if ip not in ip_wise_count_dict:
+					ip_wise_count_dict[ip] = {
+						'total_ss': 0,
+						'ss_list': []
+					}
 
 			# Loop-in topo_dataset to get ip wise SS count
 			for item in topo_dataset:
@@ -1367,7 +1375,9 @@ def calculate_base_station_customer_count():
 				continue
 
 			try:
-				model_instance = BSWiseCustomerCount.objects.get(bs_id=bs_pk)
+				model_instance = BSWiseCustomerCount.objects.get(
+					bs_id=bs_pk
+				)
 				model_instance.base_station = bs_alias
 				model_instance.customer_count = customer_count
 				bulky_update.append(model_instance)
@@ -1426,6 +1436,10 @@ def calculate_sector_id_customer_count():
 		'id', flat=True
 	))
 
+	sectors_info_dataset = sectors_dataset.values_list(
+		'sector_configured_on__ip_address', 'sector_id', 'sector_configured_on_port__name'
+	)
+
 	sectors_dataset = sectors_dataset.values_list(
 		'sector_configured_on__ip_address', 'sector_id'
 	)
@@ -1440,11 +1454,13 @@ def calculate_sector_id_customer_count():
 	# Fetch ip+sector wise customers from performance_topology
 	topo_query = '''
 				SELECT
-					ip_address, sector_id, connected_device_ip
+					topo.ip_address ip_address,
+					topo.sector_id sector_id,
+					topo.connected_device_ip connected_device_ip
 				FROM
-					performance_topology
+					performance_topology topo
 				where 
-					(ip_address, sector_id) in ({0})
+					(topo.ip_address, topo.sector_id) in ({0})
 	'''.format(','.join(sectors_dataset_str_tuple_list))
 
 	# Create instance of 'NocoutUtilsGateway' class
@@ -1461,7 +1477,6 @@ def calculate_sector_id_customer_count():
 		sub_station__device__is_monitored_on_nms__gt=0,
 		sub_station__device__is_deleted=0
 	).values(
-		'sector__sector_configured_on_port__name',
 		'sector__sector_configured_on__ip_address', 
 		'sector__sector_id', 
 		'sub_station__device__ip_address'
@@ -1469,11 +1484,32 @@ def calculate_sector_id_customer_count():
 
 	sector_id_wise_count_dict = {}
 
+	# Initialize all IP's with 0 customer_count
+	for item in sectors_info_dataset:
+		try:
+			ip_address = str(item[0])
+			sector_id = str(item[1])
+			pmp_port = str(item[2])
+		except Exception as e:
+			ip_address = ''
+			sector_id = ''
+			pmp_port = ''
+			continue
+
+		unique_key = (ip_address, sector_id)
+		if unique_key not in sector_id_wise_count_dict:
+			sector_id_wise_count_dict[unique_key] = {
+				'total_ss': 0,
+				'ss_list': [],
+				'pmp_port': pmp_port
+			}
+
 	# Loop-in topo_dataset to get ip wise SS count
 	for item in topo_dataset:
-		ip_address = item['ip_address']
-		sector_id = item['sector_id']
-		ss_ip = item['connected_device_ip']
+		ip_address = item.get('ip_address')
+		sector_id = item.get('sector_id')
+		ss_ip = item.get('connected_device_ip')
+		# port_name = item.get('port_name', '')
 
 		if not (ip_address and sector_id and ss_ip):
 			continue
@@ -1481,11 +1517,7 @@ def calculate_sector_id_customer_count():
 		unique_key = (ip_address, sector_id)
 
 		if unique_key not in sector_id_wise_count_dict:
-			sector_id_wise_count_dict[unique_key] = {
-				'total_ss': 0,
-				'ss_list': [],
-				'pmp_port': ''
-			}
+			continue
 
 		if ss_ip not in sector_id_wise_count_dict[unique_key]['ss_list']:
 			sector_id_wise_count_dict[unique_key]['total_ss'] += 1 
@@ -1496,7 +1528,6 @@ def calculate_sector_id_customer_count():
 		ip_address = item['sector__sector_configured_on__ip_address']
 		sector_id = item['sector__sector_id']
 		ss_ip = item['sub_station__device__ip_address']
-		pmp_port = item['sector__sector_configured_on_port__name']
 
 		if not (ip_address and sector_id and ss_ip):
 			continue
@@ -1504,13 +1535,7 @@ def calculate_sector_id_customer_count():
 		unique_key = (ip_address, sector_id)
 
 		if unique_key not in sector_id_wise_count_dict:
-			sector_id_wise_count_dict[unique_key] = {
-				'total_ss': 0,
-				'ss_list': [],
-				'pmp_port': ''
-			}
-
-		sector_id_wise_count_dict[unique_key]['pmp_port'] = pmp_port
+			continue
 
 		if ss_ip not in sector_id_wise_count_dict[unique_key]['ss_list']:	
 			sector_id_wise_count_dict[unique_key]['total_ss'] += 1 
@@ -1545,7 +1570,7 @@ def calculate_sector_id_customer_count():
 			try:
 				model_instance = SectorIDWiseCustomerCount.objects.get(
 					ip_address=ip,
-					sector_id=sector_id
+					sector_id__iexact=sector_id
 				)
 				model_instance.customer_count = customer_count
 				model_instance.pmp_port = pmp_port
