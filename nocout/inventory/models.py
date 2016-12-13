@@ -55,6 +55,8 @@ class Antenna(models.Model):
     sync_splitter_used = models.CharField('Sync Splitter User', max_length=4, null=True, blank=True)
     make_of_antenna = models.CharField('Make Of Antenna', max_length=40, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    gsu_ip = models.CharField('GSU IP', max_length=256, null=True, blank=True)
+    gps = models.CharField('GPS', max_length=256, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -135,7 +137,7 @@ class BaseStation(models.Model):
     site_sap_id = models.CharField('Site SAP ID', max_length=250, null=True, blank=True)
     mgmt_vlan = models.CharField('MGMT VLAN', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    # has_pps_alarm = models.BooleanField('Has PPS Alarm', default=False)
+    sdh_pdh = models.CharField('SDH/PDH', max_length=256, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
