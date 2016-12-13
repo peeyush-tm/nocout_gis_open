@@ -112,7 +112,12 @@ class AntennaForm(forms.ModelForm):
         Meta Information
         """
         model = Antenna
-        fields = "__all__"
+        fields = [
+        	'name', 'alias', 'organization', 'antenna_type', 'height', 
+        	'polarization', 'tilt', 'gain', 'mount_type', 'beam_width', 
+        	'azimuth_angle', 'reflector', 'splitter_installed', 'sync_splitter_used', 
+        	'make_of_antenna', 'gsu_ip', 'gps', 'description'
+        ]
 
     def clean_name(self):
         """
@@ -307,6 +312,7 @@ class BaseStationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
+
         super(BaseStationForm, self).__init__(*args, **kwargs)
         self.fields['bs_switch'].empty_label = 'Select'
         self.fields['backhaul'].empty_label = 'Select'
@@ -362,8 +368,15 @@ class BaseStationForm(forms.ModelForm):
         Meta Information
         """
         model = BaseStation
-        # fields = "__all__"
-        exclude = ['site_ams', 'site_infra_type', 'site_sap_id', 'mgmt_vlan', 'has_pps_alarm']
+        fields = [
+			'name', 'alias', 'organization', 'bs_site_id', 'bs_site_type', 
+			'bs_switch', 'backhaul', 'bh_port_name', 'bh_port', 'bh_capacity', 
+			'bs_type', 'bh_bso', 'hssu_used', 'hssu_port', 'latitude', 
+			'longitude', 'infra_provider', 'gps_type', 'building_height', 
+			'tower_height', 'country', 'state', 'city', 'address', 'maintenance_status', 
+			'provisioning_status', 'sdh_pdh', 'tag1', 'tag2', 'description'
+        ]
+        # exclude = ['site_ams', 'site_infra_type', 'site_sap_id', 'mgmt_vlan', 'has_pps_alarm']
 
     def clean_name(self):
         """
@@ -1575,9 +1588,9 @@ class WizardBaseStationForm(BaseStationForm):
         """
         model = BaseStation
         fields = (
-        'alias', 'organization', 'backhaul', 'latitude', 'longitude', 'building_height', 'tower_height', 'country',
-        'state', 'city', 'address', 'bs_site_id', 'bs_site_type', 'bs_switch', 'bs_type', 'bh_bso', 'hssu_used',
-        'infra_provider', 'gps_type', 'tag1', 'tag2', 'description',
+			'alias', 'organization', 'backhaul', 'latitude', 'longitude', 'building_height', 'tower_height', 'country',
+			'state', 'city', 'address', 'bs_site_id', 'bs_site_type', 'bs_switch', 'bs_type', 'bh_bso', 'hssu_used',
+			'infra_provider', 'gps_type', 'sdh_pdh', 'tag1', 'tag2', 'description'
         )
 
     def clean(self):
