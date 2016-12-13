@@ -266,6 +266,13 @@ class AlertCenterListing(ListView):
         ]
 
 
+        # Customer Count Header
+        customer_count_header = [{
+            'mData': 'customer_count',
+            'sTitle': 'Customer Count',
+            'sWidth': 'auto',
+            'bSortable': True
+        }]
         
         # Initialize headers list for all tabs
         ptp_datatable_headers = []
@@ -275,23 +282,19 @@ class AlertCenterListing(ListView):
         ptp_datatable_headers += severity_headers
         ptp_datatable_headers += ptp_starting_headers
         ptp_datatable_headers += common_headers
-
-        ptp_datatable_headers += region_header            
-
-        ptp_datatable_headers += polled_headers
-        ptp_datatable_headers += other_headers
-
+        
         pmp_wimax_datatable_headers += severity_headers
         pmp_wimax_datatable_headers += pmp_wimax_starting_headers
         pmp_wimax_datatable_headers += common_headers
-
+        
         if SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT and page_type == 'network':
-            pmp_wimax_datatable_headers += [{
-                'mData': 'customer_count',
-                'sTitle': 'Customer Count',
-                'sWidth': 'auto',
-                'bSortable': True
-            }]
+            pmp_wimax_datatable_headers += customer_count_header
+            ptp_datatable_headers += customer_count_header
+
+        ptp_datatable_headers += region_header            
+        ptp_datatable_headers += polled_headers
+        ptp_datatable_headers += other_headers
+
 
         if page_type == 'customer':
             # These headers are for Alert Center -> Customer Details -> Radwin5K Tab
@@ -313,6 +316,11 @@ class AlertCenterListing(ListView):
         if page_type == 'network':
             bh_datatable_headers += severity_headers
             bh_datatable_headers += common_headers
+
+            # Add Customer Count Header in Backhaul Tab
+            if SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT:
+                bh_datatable_headers += customer_count_header
+
             bh_datatable_headers += region_header
             bh_datatable_headers += bh_specific_headers
             bh_datatable_headers += polled_headers
@@ -939,7 +947,6 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'site_id',
             'city',
             'state',
-            'region'
         ]
 
         common_network_bh_headers = [
@@ -950,13 +957,9 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             'site_id',
             'city',
             'state',
-            'region',
-            'bh_connectivity',
-            'current_value'
         ]
-
-        common_network_pmp_wimax_headers = []
-        common_network_pmp_wimax_headers += [
+        
+        common_network_pmp_wimax_headers = [
             'severity',
             'sector_id',
             'ip_address',
@@ -969,10 +972,22 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         
         if SHOW_CUSTOMER_COUNT_IN_NETWORK_ALERT:             
             common_network_pmp_wimax_headers += ['customer_count']
+            common_network_bh_headers += ['customer_count']
+            common_network_ptp_headers += ['customer_count']
 
         common_network_pmp_wimax_headers += [
             'region',
             'current_value',
+        ]
+
+        common_network_ptp_headers += [
+            'region'
+        ]
+
+        common_network_bh_headers += [   
+            'region',
+            'bh_connectivity',
+            'current_value'
         ]
 
         # Common Customer Datatable headers used in ordering
@@ -2632,7 +2647,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
     other_columns = [
         'bs_alias', 'bs_city', 'bs_state', 'region',
-        'sector_id','device_type', 'bh_connectivity', 'bh_type'
+        'sector_id','device_type', 'bh_connectivity', 'bh_type', 'customer_count'
     ]
 
     excluded_events = [
@@ -4072,6 +4087,7 @@ def prepare_snmp_gis_data(qs, tech_name):
         ip_address = data.get('ip_address')
         eventname = data.get('eventname')
         data.update(
+            customer_count = 'NA',
             bs_alias='NA',
             bs_city='NA',
             bs_state='NA',
@@ -4094,10 +4110,10 @@ def prepare_snmp_gis_data(qs, tech_name):
                     except Exception, e:
                         pass
 
-                    customer_count = ''
+                    customer_count = 'NA'
                     # Updating customer count on basis of Sector id
                     if sect_id:
-                        customer_count = mapped_customer_count.get(sect_id, '')
+                        customer_count = mapped_customer_count.get(sect_id, 'NA')
                         sect.update(customer_count=customer_count)
 
                 if starmax_idu_id == sector_dct[0].get('device_type'):
@@ -4608,6 +4624,9 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
 
             packet_loss = perf_result.get(bh_device_name, {}).get('packet_loss', None)
             bh_status = ('DOWN' if packet_loss == 100 else 'UP') if packet_loss not in [None, ''] else "NA"
+
+            if not data.get('customer_count'):
+                data.update(customer_count='NA')
 
             data.update(
                 sector_id=sector_dct.get('sector_id', 'NA'),

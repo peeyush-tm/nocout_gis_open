@@ -1858,13 +1858,13 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
             FROM (
                 SELECT
                     circuit.sector_id AS SECT_ID,
-                    circuit.circuit_id AS CCID,
+                    IF(not isnull(circuit.circuit_id), circuit.circuit_id, 'NA') AS CCID,
                     circuit.id AS CID,
                     IF(circuit.qos_bandwidth, circuit.qos_bandwidth/1000, 'NA') AS CKT_QOS,
                     substation.alias AS SSALIAS,
                     substation.id AS SSID,
                     
-                    customer.alias AS CUST,
+                    IF(not isnull(customer.alias), customer.alias, 'NA') AS CUST,
                     customer.id AS CUSTID,
 
                     device_info.SSIP AS SSIP,
@@ -1901,21 +1901,23 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
                 ON
                     device_info.DEVICE_ID = substation.device_id
                 LEFT JOIN (
-                    inventory_circuit AS circuit,
-                    inventory_customer AS customer,
                     device_devicetechnology AS technology,
                     device_devicetype AS devicetype
                 )
                 ON (
-                    substation.id = circuit.sub_station_id
-                    AND
-                    customer.id = circuit.customer_id
-                    AND
                     technology.id = device_info.device_technology_id
                     AND
                     devicetype.id = device_info.device_type_id
                     {0}
                 )
+                LEFT JOIN 
+                    inventory_circuit AS circuit
+                ON 
+                    substation.id = circuit.sub_station_id
+                LEFT JOIN 
+                    inventory_customer AS customer
+                ON 
+                    customer.id = circuit.customer_id
                 where
                     {3}
             ) as only_ss_info
