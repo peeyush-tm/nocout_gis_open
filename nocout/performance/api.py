@@ -397,13 +397,8 @@ class GetTopologyAlarms(APIView):
     This class base view is for providing alarms list for topo view
     '''
     event_list = [
-                    'ODU1_Lost',
-                    'ODU1_Power_Amplifier_OFF',
-                    'ODU2_Lost',
-                    'ODU2_Power_Amplifier_OFF',
-                    'Synchronization_problem__no_PPS',
                     'gpsNotSynchronized',
-                    'GPS Not Synchronized PMP.AP'
+                    'gpsNotSynchronised'
                 ]
 
     def get(self, request):
@@ -415,25 +410,40 @@ class GetTopologyAlarms(APIView):
             'data': {}
         }
 
-        device_ip = self.request.GET.get('device_ip')
-        sector_id = self.request.GET.get('sector_id')
+        device_ip = self.request.GET.get('device_ip').strip()
+        sector_id = self.request.GET.get('sector_id').strip()
 
         # If there is no device ip then return blank result.
         if not device_ip and not sector_id:
             return Response(result)
 
         try:
-            sector_device_id = Device.objects.get(ip_address=device_ip).id
+            # sector_device_id = Device.objects.get(ip_address=device_ip).id
             sector_device_type_id = Device.objects.get(ip_address=device_ip).device_type
-            sector_obj = Sector.objects.get(sector_configured_on_id=sector_device_id, sector_id=sector_id)
+            sector_obj = Sector.objects.get(sector_configured_on__ip_address=device_ip, sector_id=sector_id)
         except Exception, e:
             # logger.error(e);
             return Response(result)
 
         try:
+            # Get Sector Port Name for checking if its ODU1 or ODU2
+            sec_port = sector_obj.sector_configured_on_port.name
+        except Exception, e:
+            sec_port = ''
+
+        try:
             device_type = DeviceType.objects.get(id=sector_device_type_id).alias
         except Exception, e:
             device_type = ''
+
+        # Change event Filter list accordingly.
+        if sec_port.lower() == 'pmp1':
+            self.event_list = ['Synchronization_problem__no_PPS', 'ODU1_Lost', 'ODU1_Power_Amplifier_OFF']
+        elif sec_port.lower() == 'pmp2':
+            self.event_list = ['Synchronization_problem__no_PPS', 'ODU2_Lost', 'ODU2_Power_Amplifier_OFF']
+        else:
+            pass
+
         # getting alarms list from db
         alarms_list = CurrentAlarms.objects.filter(
             ip_address=device_ip, 
@@ -489,5 +499,76 @@ class GetTopologyAlarms(APIView):
         }
         result['success'] = 1
         result['message'] = 'Alarms list fetched successfully.'
+
+        return Response(result)
+
+
+class GetTopologyAlarmsStatus(APIView):
+    """
+    Class based view to check if SNMP alarms present on given sector
+    """
+
+    def get(self, request):
+
+        # Event Name list for filtering
+        event_list = [
+            # 'ODU1_Lost',
+            # 'ODU1_Power_Amplifier_OFF',
+            # 'ODU2_Lost',
+            # 'ODU2_Power_Amplifier_OFF',
+            'Synchronization_problem__no_PPS',
+            'gpsNotSynchronized',
+            'gpsNotSynchronised'
+        ]
+
+        result = {
+            'success': 0,
+            'message': 'Alarm status not fetched Successfully',
+            'data': {}
+        }
+
+        # Get Sector ID list from request
+        sec_id_list = json.loads(self.request.GET.get('sec_id_list', ''))
+
+        if sec_id_list:
+
+            for info_str in sec_id_list:
+                # Splitting info str for getting Sector ID and Device IP
+                # eg: info_str -> "sec_00:0a:11:54:00:13_||_10.190.250.2"
+                id_ip_list = info_str.split('sec_')[1].split('_||_')
+                sec_id = id_ip_list[0].strip()
+                device_ip = id_ip_list[1].strip()
+
+                try:
+                    # Get Sector Port Name for checking if its ODU1 or ODU2
+                    sec_port = Sector.objects.get(sector_id=sec_id).sector_configured_on_port.name
+                except Exception, e:
+                    sec_port = ''
+
+
+                if sec_port.lower() == 'pmp1':
+                    filter_events = event_list + ['ODU1_Lost', 'ODU1_Power_Amplifier_OFF']
+                elif sec_port.lower() == 'pmp2':
+                    filter_events = event_list + ['ODU2_Lost', 'ODU2_Power_Amplifier_OFF']
+                else:
+                    filter_events = event_list
+
+                # Getting alarms_list
+                alarms_list = CurrentAlarms.objects.filter(
+                    ip_address=device_ip, 
+                    is_active=1, 
+                    eventname__in=filter_events
+                ).using(TRAPS_DATABASE)
+
+
+                # Set Status to 1 if alarm exist on that device
+                if alarms_list.exists():
+                    result['data'][info_str] = 1
+                else:
+                    result['data'][info_str] = 0
+
+            result['success'] = 1
+            result['message'] = 'Alarms status fetched successfully'
+
 
         return Response(result)
