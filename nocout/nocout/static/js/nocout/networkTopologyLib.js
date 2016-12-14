@@ -686,7 +686,7 @@ function convertToVis(response, required_dom_id) {
                     nodes.add({
                         id: 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address,
                         label: 'Sector ID : '+sectors[j].sect_ip_id_title,
-                        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
+                        // title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
                         shape: 'image',
                         shapeProperties : {
                             useBorderWithImage : false
@@ -726,6 +726,7 @@ function convertToVis(response, required_dom_id) {
 
                     edges.add({
                         // from: 'BASESTATION_'+i,
+                        id: 'edge_' + 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address,
                         from: idu_id,
                         to: 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address,
                         color: sec_edge_color,
@@ -780,6 +781,33 @@ function convertToVis(response, required_dom_id) {
                         edges.add({from: 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address, to: 'ss_' + sectors[j].sub_station[k].device_name, color: sec_edge_color})
                     }
                 }
+
+                // Getting Status of alarms on Sectors and Showing sector RED if
+                // there is a alarm present on that sector.
+                getAlarmsStatus(JSON.stringify(unique_sec_list), function(response) {
+                    // Execute only if Successfull Response from API
+                    if (Number(response['success'])){
+                        // Get Status Data
+                        var sec_alarm_status = response['data']
+
+                        // Looping through each Sector Node ID to update Sector Image
+                        for(var node_id in sec_alarm_status){
+                            // If Status is Set to 1 that means Alarm Exist on That sector.
+                            if(Number(sec_alarm_status[node_id])){
+
+                                nodes.update({
+                                    id: node_id,
+                                    image: sector_down_image_url 
+                                });
+
+                                edges.update({
+                                    id: 'edge_' + node_id,
+                                    color: '#b94a48'
+                                });
+                            }
+                        }
+                    }
+                });
             }
             
         }
@@ -892,7 +920,7 @@ function convertToVis(response, required_dom_id) {
                     nodes.add({
                         id: 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address,
                         label: 'Sector ID : '+sectors[j].sect_ip_id_title,
-                        title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
+                        // title: '<span style="color:'+sect_color_info_object.color+'"><i class="fa '+sect_color_info_object.icon+'""></i> ' + sector_severity + ' - ' + sector_polled_val + '</span>',
                         shape: 'image',
                         shapeProperties : {
                             useBorderWithImage : false
@@ -912,6 +940,7 @@ function convertToVis(response, required_dom_id) {
                                                                         'port' : sectors[j].sect_port,
                                                                         'node_name' : ''
                                                                     }
+                
 
                 if(current_device_ip == sectors[j].ip_address){
                     highlight_id = sectors[j].sect_ip_id_title
@@ -1002,6 +1031,7 @@ function convertToVis(response, required_dom_id) {
                 }
                 edges.add({
                     // from: 'BASESTATION_'+i,
+                    id: 'edge_' + (show_sector ? 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address : unique_ss_id),
                     from: idu_id,
                     to: show_sector ? 'sec_' + sectors[j].sect_ip_id_title + '_||_' + sectors[j].ip_address : unique_ss_id,
                     color: show_sector ? sec_edge_color : ss_edge_color,
@@ -1012,6 +1042,33 @@ function convertToVis(response, required_dom_id) {
                     }
                 });
             }
+
+            // Getting Status of alarms on Sectors and Showing sector RED if
+            // there is a alarm present on that sector.
+            getAlarmsStatus(JSON.stringify(unique_sec_list), function(response) {
+                // Execute only if Successfull Response from API
+                if (Number(response['success'])){
+                    // Get Status Data
+                    var sec_alarm_status = response['data']
+
+                    // Looping through each Sector Node ID to update Sector Image
+                    for(var node_id in sec_alarm_status){
+                        // If Status is Set to 1 that means Alarm Exist on That sector.
+                        if(Number(sec_alarm_status[node_id])){
+
+                            nodes.update({
+                                id: node_id,
+                                image: sector_down_image_url 
+                            });
+
+                            edges.update({
+                                id: 'edge_' + node_id,
+                                color: '#b94a48'
+                            });
+                        }
+                    }
+                }
+            });
         }       
     }
 
@@ -1125,37 +1182,40 @@ function convertToVis(response, required_dom_id) {
                                                 </tr>'
                         }
                         table_data_html += '</tbody>'
+
+                        table_html +=   '<div style="overflow: auto">\
+                                            <table id="bootbox_alarms_table">\
+                                                <thead>\
+                                                    <tr>\
+                                                        <th>Severity</th>\
+                                                        <th>IP</th>\
+                                                        <th>Sector ID</th>\
+                                                        <th>BS Name</th>\
+                                                        <th>City</th>\
+                                                        <th>State</th>\
+                                                        <th>BH Connectivity</th>\
+                                                        <th>Device Type</th>\
+                                                        <th>Event Name</th>\
+                                                        <th>Uptime</th>\
+                                                        <th>Alarm Count</th>\
+                                                        <th>First Occurred</th>\
+                                                        <th>Last Occurred</th>\
+                                                    </tr>\
+                                                </thead>'
+                                                + table_data_html +
+                                            '</table>\
+                                        </div>'
+                        bootbox.dialog({
+                            title: 'Sector Impact',
+                            message: table_html,
+                            className: 'bootbox_large'
+                        });
+
+                        $(".modal-dialog").css("width","80%");
+
+                        // Removing selection Once alarms table Popup Shows up.
+                        network.unselectAll();
                     }
-
-                    table_html +=   '<div style="overflow: auto">\
-                                        <table id="bootbox_alarms_table">\
-                                            <thead>\
-                                                <tr>\
-                                                    <th>Severity</th>\
-                                                    <th>IP</th>\
-                                                    <th>Sector ID</th>\
-                                                    <th>BS Name</th>\
-                                                    <th>City</th>\
-                                                    <th>State</th>\
-                                                    <th>BH Connectivity</th>\
-                                                    <th>Device Type</th>\
-                                                    <th>Event Name</th>\
-                                                    <th>Uptime</th>\
-                                                    <th>Alarm Count</th>\
-                                                    <th>First Occurred</th>\
-                                                    <th>Last Occurred</th>\
-                                                </tr>\
-                                            </thead>'
-                                            + table_data_html +
-                                        '</table>\
-                                    </div>'
-                    bootbox.dialog({
-                        title: 'Sector Impact',
-                        message: table_html,
-                        className: 'bootbox_large'
-                    });
-
-                    $(".modal-dialog").css("width","80%");
                     
                     // Initializing datatble.js on Alarms table.
                     setTimeout(function(){
@@ -1577,6 +1637,42 @@ function createNodeLabel(ip_addr, port, pack_drop, latency, node_name) {
 
     return result_str
 }
+
+/**
+* This function send a ajax request for alarms status
+* and return status object
+* @method getAlarmsStatus
+* @param sec_info_list {array}, array of string of sector info ['sec_id_||_device_ip', ....]
+*/
+function getAlarmsStatus(sec_info_list, callback) {
+    
+    // Creating fall back result object
+    result = {
+        'message' : 'Sector info list is blank.',
+        'success' : 0,
+        'data' : []
+    }
+
+    if (sec_info_list.length > 0){
+        
+        var url_with_params = topo_alarms_status_url + "?sec_id_list=" + sec_info_list
+        
+        $.ajax({
+            url: base_url + url_with_params,
+            type: 'GET',
+            success: function(response){
+                callback(response)
+            },
+            error: function(err) {
+                callback(result);
+            }
+        });
+    } else {
+        callback(result);
+    }
+}
+
+
 
 /**
 * This function update Node pl info periodically
