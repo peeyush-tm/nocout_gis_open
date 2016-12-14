@@ -401,6 +401,14 @@ class GetTopologyAlarms(APIView):
                     'gpsNotSynchronised'
                 ]
 
+    up_since_format_array = [
+        'Day',
+        'Hour',
+        'Minute',
+        'Second',
+        'Mili Second'
+    ]
+
     def get(self, request):
         # Handling GET request
         device_ip = ''
@@ -502,6 +510,31 @@ class GetTopologyAlarms(APIView):
 
         return Response(result)
 
+    def format_uptime_value(self, uptime):
+        """
+        This function format uptime value
+        """
+        splitted_uptime = uptime.split(':')
+
+        formatted_string = ''
+
+        for i in range(len(splitted_uptime)):
+            suffix_val = str(self.up_since_format_array[i])
+            timestamp_val = splitted_uptime[i]
+            try:
+                if not int(timestamp_val):
+                    continue
+            except Exception, e:
+                pass
+
+            try:
+                if int(timestamp_val) > 1:
+                    suffix_val += 's'
+            except Exception, e:
+                pass
+            formatted_string += ' {} {} '.format(str(timestamp_val), suffix_val)
+
+        return formatted_string
 
 class GetTopologyAlarmsStatus(APIView):
     """
