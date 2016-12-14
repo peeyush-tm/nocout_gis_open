@@ -512,11 +512,11 @@
                                     <span class="sub-menu-text">Duplex Report</span>
                                 </a>
                             </li>
-                            <!-- <li>
-                                <a href="javascript:;">
-                                    <span class="sub-menu-text">PMP Rogue SM</span>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'customer_tot' %}">
+                                    <span class="sub-menu-text">Customer TOT Report</span>
                                 </a>
-                            </li> -->
+                            </li>
                         </ul>
                     </li>
                     <li class="has-sub-sub">
@@ -607,6 +607,16 @@
                                 </a>
                             </li>
                             {% endif %}
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'sector_tot_weekly' %}">
+                                    <span class="sub-menu-text">Sector TOT Report</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'backhaul_tot' %}">
+                                    <span class="sub-menu-text">Backhaul TOT Report</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <li>
