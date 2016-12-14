@@ -7,4 +7,5 @@ urlpatterns = [
 	url(r'^get_data_source_delete/$', api.CustomDashboardDelete.as_view(),name='delete_ds'),
 	url(r'^ping_stability_testing/$', api.StartPingStabilityTest.as_view(),name='start_ping_stability_test'),
 	url(r'^get_alarms/$', api.GetTopologyAlarms.as_view(), name='get_topology_snmp_alarms'),
+	url(r'^get_alarms_status/$', api.GetTopologyAlarmsStatus.as_view(), name='get_topology_snmp_alarms_status'),
 ]
