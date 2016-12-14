@@ -85,6 +85,10 @@ class DownloadCenter(ListView):
             report_title = 'Backhaul Summary Report'
             self.template_name = 'download_center/bs_outage_list.html'
 
+        if 'sector_tot_weekly' in page_type:
+            report_title = 'Sector TOT Report'
+            self.template_name = 'download_center/bs_outage_list.html'            
+
         context = super(DownloadCenter, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'report_name', 'sTitle': 'Name', 'sWidth': 'auto'},
