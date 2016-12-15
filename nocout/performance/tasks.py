@@ -27,7 +27,7 @@ from inventory.tasks import bulk_update_create
 logger = get_task_logger(__name__)
 
 TECH_WISE_SERVICE_CONFIG = {
-	'PMP': ['rad5k_topology_discover'],
+	'PMP': ['cambium_topology_discover ', 'rad5k_topology_discover'],
 	'WIMAX': ['wimax_topology']
 }
 

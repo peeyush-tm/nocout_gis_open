@@ -2995,9 +2995,14 @@ class GetServiceTypePerformanceData(View):
             result = self.get_performance_data_result(performance_data, data_source="availability")
 
         elif "topology" in service_name or service_data_source_type in ['topology']:
-            if not isSet:
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+            start_date = None
+            end_date = None
+            '''
+            ===> Commented because we are fetching all the entries from topology table instead of last 7 days
+            '''
+            # if not isSet:
+            #     end_date = format(datetime.datetime.now(), 'U')
+            #     start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
             
             dr_devices_ip = None
             # for wimax devices there can be a case of DR

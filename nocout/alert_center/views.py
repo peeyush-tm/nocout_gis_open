@@ -2997,6 +2997,11 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         if not qs:
             return list(qs)
         else:
+            current_user_roles = map(lambda name: str(name).lower(), list(self.request.user.groups.all().values_list(
+                'name', flat=True
+            )))
+
+            is_admin_operator = 'admin' in current_user_roles or 'operator' in current_user_roles
             for dct in  qs:
                 pk = dct.get('id')
                 ip_address = dct.get('ip_address')
@@ -3018,15 +3023,20 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 formatted_uptime = uptime
 
                 try:
+                    is_manual = int(is_manual)
+                except Exception as e:
+                    is_manual = 0
+
+                try:
                     condition2 = event_name in INCLUDED_EVENTS_FOR_MANUAL_TICKETING
                     condition3 = dct.get('device_name')
                     condition4 = self.alarm_type == 'current'
                     condition5 = str(severity).lower() != 'indowntime'
-                    manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4 and condition5
+                    manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4 and condition5 and is_admin_operator
                     has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
-
+                    
                     if manual_action_condition:
-                        if not has_ticket_number and not is_manual:
+                        if not (has_ticket_number and is_manual):
                             action += '<a href="javascript:;" class="manual_ticketing_btn" data-ip="{0}" data-severity="{1}" \
                                        data-alarm="{2}" data-pk="{3}" title="Generate Manual Ticket"> \
                                        <i class="fa fa-sign-in"></i></a>&nbsp;&nbsp;'.format(ip_address, severity, event_name, pk)
@@ -3720,6 +3730,11 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
         if not qs:
             return list(qs)
         else:
+            current_user_roles = map(lambda name: str(name).lower(), list(self.request.user.groups.all().values_list(
+                'name', flat=True
+            )))
+
+            is_admin_operator = 'admin' in current_user_roles or 'operator' in current_user_roles
             for dct in  qs:
                 pk = dct.get('id')
                 uptime = dct.get('uptime')
@@ -3756,7 +3771,7 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     condition4 = self.alarm_type == 'current'
                     condition5 = ip_address in self.manual_ticketing_bh_ips
                     condition6 = str(severity).lower() != 'indowntime'
-                    manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4 and condition5 and condition6
+                    manual_action_condition = ENABLE_MANUAL_TICKETING and condition2 and condition3 and condition4 and condition5 and condition6 and is_admin_operator
                     has_ticket_number = ticket_number and ticket_number not in ['NA', 'N/A', 'na', 'n/a']
                     
                     if manual_action_condition:
@@ -5045,7 +5060,7 @@ class ManualTicketsListing(BaseDatatableView, AdvanceFilteringMixin):
 
         qs = self.model.objects.values(*self.columns).order_by(
             '-created_at'
-        ).using(TRAPS_DATABASE)
+        ) #.using(TRAPS_DATABASE)
 
         return qs
 
