@@ -474,12 +474,14 @@ class GetTopologyAlarms(APIView):
                 formatted_uptime = uptime
 
                 try:
-                    first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                    first_occurred = dct.get('first_occurred').strftime('%Y-%m-%d %H-%M-%S')
+                    # first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
                 except Exception, e:
                     first_occurred = dct.get('first_occurred')
 
                 try:
-                    last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                    last_occurred = dct.get('last_occurred').strftime('%Y-%m-%d %H-%M-%S')
+                    # last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
                 except Exception, e:
                     last_occurred = dct.get('last_occurred')
 
