@@ -7651,6 +7651,7 @@ class GetTopology(View):
         device_technology = ''
 
         bs_id = self.request.GET.get('bs_id')
+
         page_type = self.request.GET.get('page_type').lower()
         current_device_id = self.request.GET.get('device_id')
         device_technology = self.request.GET.get('device_tech')
@@ -8134,7 +8135,7 @@ class GetTopology(View):
                         far_end_bs_id = 0
 
                     try:
-                        near_end_bs_id = BaseStation.objects.filter(alias__iexact=near_end_bs[0]).id
+                        near_end_bs_id = BaseStation.objects.filter(alias__iexact=near_end_bs)[0].id
                     except Exception, e:
                         near_end_bs_id = 0
 
@@ -8410,6 +8411,7 @@ class GetTopology(View):
                         bs.id in ({0})
                         AND
                         {5}.id = {1}
+                    GROUP BY far_end_ss_device_name
                 '''.format(
                         near_end_bs_id,
                         current_sector_device_id,
