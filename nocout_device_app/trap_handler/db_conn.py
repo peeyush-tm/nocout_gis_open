@@ -224,8 +224,7 @@ class ExportTraps(object):
                 update_columns = (
 		                'severity', 'uptime', 'traptime',
                                 'description', 'last_occurred', 'sia',
-				'customer_count','technology','ticket_number','alarm_id','is_manual'
-                          )
+				'customer_count','technology')
 
 		p0 = "INSERT INTO %(table)s" % {'table': table}
 		p1 = ' (%s)' % ','.join(default_columns)

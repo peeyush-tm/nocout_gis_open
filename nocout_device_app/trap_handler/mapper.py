@@ -67,7 +67,7 @@ class Eventmapper(object):
 	self.inventory_info = self.read_cached_inventory()
 	# `id` of the most latest row read from MySQL
 	self.mat_entry_details = self.read_mat_entries()
-	self.customer_count_details = self.read_customer_count_from_redis()
+	self.customer_count_details, self.sector_customer_count_details = self.read_customer_count_from_redis()
 	self.latest_id = None
 
    def read_cached_inventory(self):
@@ -97,17 +97,42 @@ class Eventmapper(object):
         return mat_entry_details
 
    def read_customer_count_from_redis(self):
-        customer_count_dict = defaultdict(list)
+	customer_count_dict = defaultdict(list)
+        sector_customer_count_dict = defaultdict(list)
+        try :
+                redis_cnx = self.conn_base.redis_cnx(db_name='redis')
+                customer_count_data = redis_cnx.keys('customer_count:*')
+                for entry in customer_count_data :
+                        key = entry.split(':')[-1]
+			entry_value = eval(redis_cnx.get(entry))
+                        customer_count_dict[key] = entry_value
+
+		sector_customer_count = redis_cnx.keys('sector_customer_count:*')
+		#print sector_customer_count
+		for entry in sector_customer_count :
+			key = entry.split(':')[-1]
+                        entry_value = eval(redis_cnx.get(entry))
+			#print "entry_value",entry_value
+                        sector_customer_count_dict[key] = entry_value
+
+        except Exception,exc :
+                print 'Error in reading customer count from redis: {0}'.format(exc)
+        return (customer_count_dict, sector_customer_count_dict)
+
+   def calculate_customer_count(self, eventname, ip_address) :
 	try :
-		redis_cnx = self.conn_base.redis_cnx(db_name='redis')
-		customer_count_data = redis_cnx.keys('customer_count:*')
-		for entry in customer_count_data :
-        		key = entry.split(':')[-1]
-        		customer_count_dict[key] = int(redis_cnx.get(entry))
-	except Exception,exc :
-		logger.error('Error in reading customer count from redis: {0}'.format(exc))
-  		#print 'Error in reading customer count from redis: {0}'.format(exc)
-	return customer_count_dict
+             if 'odu1' in eventname.lower() or  'pmp1' in eventname.lower() :
+                customer_count = self.sector_customer_count_details[ip_address]['pmp1'] \
+                                  if str(ip_address) in self.sector_customer_count_details else None
+             elif 'odu2'in eventname.lower() or  'pmp2' in eventname.lower() :
+                customer_count = self.sector_customer_count_details[ip_address]['pmp2'] \
+                                  if str(ip_address) in self.sector_customer_count_details else None
+             else :
+                customer_count = self.customer_count_details[ip_address] \
+                                  if str(ip_address) in self.customer_count_details else None
+	except Exception, e :
+	     customer_count = None
+	return customer_count
 
    def get_alarm_mask_oids(self):
 	""" For every current trap, adds its corresponding clear trap 
@@ -263,6 +288,8 @@ class Eventmapper(object):
         global mat_entries
 	global alarms_to_forward_to_monolith
 	global alarm_mask_alarm_name
+	global monolith_ticket_dict
+	monolith_ticket_dict = self.get_monolith_ticket_dict()
         mat_entries =  self.get_mapped_mat_entries()
 	alarms_to_forward_to_monolith = self.get_alarms_to_forward_to_monolith()
 	alarm_mask_alarm_name = self.get_alarm_mask_alarm_name()
@@ -349,7 +376,7 @@ class Eventmapper(object):
 	    	correlated_trap[key] = eval(value)['alrm_id']
 	return correlated_trap
 
-   def return_ticket_details(self,ip_address,eventname,severity):
+   def return_ticket_details(self,ip_address,eventname,severity,flag = 0):
 	"""Fetch Alarm Id, Ticket Number, Manual trap bit for particular IP Address and Eventname"""
 	try :
 	    if 'PMP_' in eventname :
@@ -360,23 +387,25 @@ class Eventmapper(object):
 	    alarm_id = None
             if severity in severity_for_clear_table :
                 try :
-                    alarm_id = monolith_ticket_dict[ip_address][mask_eventname]['alarm_id']
-		    ticket_number = monolith_ticket_dict[ip_address][mask_eventname]['ticket_number']
-                    is_manual =  monolith_ticket_dict[ip_address][mask_eventname]['is_manual']
-                    self.delete_cleared_monolith_ticket(ip_address,mask_eventname)
-            except Exception,e :
-		print "Exception in fetch alarm_id in mapper: %s"%str(e) 
-                ticket_number = None
-		"""
-		try :
-		    alarm_id = correlated_trap_alarm_id[ip_address+'_'+eventname] 
-		except Exception,e :
-                    alarm_id = None
-		"""
-	else :
-	    ticket_number = None
-	    alarm_id = None
-	    is_manual = None
+                    alarm_id = monolith_ticket_dict[ip_address][mask_eventname].get('alarm_id')
+		    ticket_number = monolith_ticket_dict[ip_address][mask_eventname].get('ticket_number')
+		    is_manual =  monolith_ticket_dict[ip_address][mask_eventname].get('is_manual')
+		    #logger.error("return_ticket_details details : %s"% str([alarm_id,ticket_number,is_manual]))
+		    if flag == 1 :
+			self.delete_cleared_monolith_ticket(ip_address,mask_eventname)
+                except Exception,e :
+		    print "Exception in fetch alarm_id in mapper: %s"%str(e)
+                    ticket_number = None
+		    """
+		    try :
+		        alarm_id = correlated_trap_alarm_id[ip_address+'_'+eventname]
+		    except Exception,e :
+                        alarm_id = None
+		    """
+	    else :
+	        ticket_number = None
+	        alarm_id = None
+	        is_manual = None
 	except Exception,e:
 	    print "Mask Event name not found", eventname,severity.lower()
 	    is_manual = None
@@ -412,7 +441,7 @@ class Eventmapper(object):
                 except :
                     last_occurred = trap[8]
                 eventname = re.sub('[: ]', '_', formatline[indexes['event_name']])
-		ticket_number, alarm_id, is_manual = self.return_ticket_details(trap[3],eventname,severity)	
+		ticket_number, alarm_id, is_manual = self.return_ticket_details(trap[3],eventname,severity, flag = 1)	
                 try:
                     sia = sia_value[str(self.mat_entry_details[(eventname,severity)]['sia'])]
                     device_type = technology[str(self.mat_entry_details[(eventname,severity)]['device_type']).lower()]
@@ -421,6 +450,8 @@ class Eventmapper(object):
                     #print e
                     sia = ''
                     device_type = ''
+
+		customer_count = self.calculate_customer_count(eventname,str(trap[3]))
 
                 new_trap.update({
                                 'ip_address': trap[3],
@@ -437,8 +468,7 @@ class Eventmapper(object):
                                 'description': trap[-1],
                                 'is_active': 0,
                                 'sia': sia,
-                                'customer_count': self.customer_count_details[str(trap[3])] \
-                                                if str(trap[3]) in self.customer_count_details else None,
+                                'customer_count': customer_count,
                                 'technology': device_type,
 				'ticket_number' : None,
 				'alarm_id' : None,
@@ -465,6 +495,7 @@ class Eventmapper(object):
                         #print e
                         sia = ''
                         device_type = ''
+		customer_count = self.calculate_customer_count(eventname,str(trap[3]))
                 new_trap.update({
                                 'ip_address': str(trap[3]),
                                 'device_name': self.inventory_info.get(trap[3]) if self.inventory_info.get(trap[3]) is not None else '',
@@ -480,8 +511,7 @@ class Eventmapper(object):
                                 'description': trap[-1],
                                 'is_active': 0,
                                 'sia': sia,
-                                'customer_count': self.customer_count_details[str(trap[3])] \
-                                                if str(trap[3]) in self.customer_count_details else None,
+                                'customer_count': customer_count,
                                 'technology':device_type,
 				'ticket_number' : None,
 				'alarm_id' : None,
@@ -509,6 +539,10 @@ class Eventmapper(object):
 
 
             if severity.lower() not in severity_for_clear_table:
+		# Added for ticketing
+		new_trap['ticket_number'] = ticket_number
+		new_trap['alarm_id'] = alarm_id
+                new_trap['is_manual'] = is_manual
                 current_events_update.append(new_trap)
             else:
 		new_trap['ticket_number'] = ticket_number
@@ -560,6 +594,7 @@ class Eventmapper(object):
                                 if 'PMP_' in eventname :
                                     sia = sia_value[str(self.mat_entry_details[(eventname.split('_')[1],event[6].lower())]['sia'])]
                                     device_type = technology[str(self.mat_entry_details[(eventname.split('_')[1],event[6].lower())]['device_type']).lower()]
+				    eventname = eventname.split('_')[1]
                                 else :
                                     sia = sia_value[str(self.mat_entry_details[(eventname,event[6].lower())]['sia'])]
                                     device_type = technology[str(self.mat_entry_details[(eventname,event[6].lower())]['device_type']).lower()]
@@ -567,7 +602,7 @@ class Eventmapper(object):
                                 #print "EventName doesn't match with mapped EventName",e
                                 sia = ''
                                 device_type = ''
-
+			customer_count = self.calculate_customer_count(eventname,str(event[3]))
                         new_event.update({
                                 'ip_address': str(event[3]),
                                 'device_name': self.inventory_info.get(event[3]) if self.inventory_info.get(event[3]) is not None else '',
@@ -583,19 +618,18 @@ class Eventmapper(object):
                                 'description': event[-1],
                                 'is_active': 1,
                                 'sia': sia,
-                                'customer_count': self.customer_count_details[str(event[3])]
-						 if str(event[3]) in self.customer_count_details else None,
+                                'customer_count': customer_count,
                                 'technology': device_type
 				})
 			if event[6].lower() not in severity_for_clear_table:
-				new_event['ticket_number'] = None
-				new_event['alarm_id'] = None
-                                new_event['is_manual'] = None
+				new_event['ticket_number'] = ticket_number
+				new_event['alarm_id'] = alarm_id
+                                new_event['is_manual'] = is_manual
 				current_events.append(new_event)
 			else:
 				new_event['ticket_number'] = ticket_number
 				new_event['alarm_id'] = alarm_id
-                                new_event['is_manual'] = None
+                                new_event['is_manual'] = is_manual
 				clear_events.append(new_event)
 		except Exception as exc:
 			#print 'Exc in normalize traps: {0}'.format(exc)
@@ -668,7 +702,7 @@ class Eventmapper(object):
                             print e
                             sia = 'NA'
                             device_type = ''
-
+			customer_count = self.calculate_customer_count(eventname,str(trap[3]))
                         new_trap.update({
                                 'ip_address': trap[3],
                                 'device_name': self.inventory_info.get(trap[3]) if self.inventory_info.get(trap[3]) is not None else '',
@@ -684,20 +718,19 @@ class Eventmapper(object):
                                 'description': trap[-1],
                                 'is_active': 1,
                                 'sia': sia,
-                                'customer_count': self.customer_count_details[str(trap[3])]
-                                                if str(trap[3]) in self.customer_count_details else None,
+                                'customer_count': customer_count,
                                 'technology': device_type
                                 })
 
-			if severity not in severity_for_clear_table:
-				new_trap['ticket_number'] = None
-				new_trap['alarm_id'] = None
-                                new_trap['is_manual'] = None
-				current_traps.append(new_trap)
-			else:
+                        if severity not in severity_for_clear_table:
+				new_trap['ticket_number'] = ticket_number
+				new_trap['alarm_id'] = alarm_id
+                                new_trap['is_manual'] = is_manual
+                                current_traps.append(new_trap)
+                        else:
                                 new_trap['ticket_number'] = ticket_number
                                 new_trap['alarm_id'] = alarm_id
-                                new_trap['is_manual'] = None
+                                new_trap['is_manual'] = is_manual
 				clear_traps.append(new_trap)
 		except IndexError as exc:
 			continue
@@ -893,27 +926,88 @@ def load_customer_count_in_redis():
     conn_base = ConnectionBase()
     my_cnx = conn_base.mysql_cnx(db_name='application_db')
     cursor = my_cnx.cursor()
-    query = """
+    sector_customer_count = {}
+    sector_ip_mapping = {}
+    try :
+        redis_cnx = conn_base.redis_cnx(db_name='redis')
+	query1 = """
             SELECT
                 `sector_config_ip`,`count_of_customer`
             FROM
                 download_center_customer_count_ipaddress
-            """
-    try:
-        cursor.execute(query)
+	"""
+        cursor = my_cnx.cursor()
+        cursor.execute(query1)
         customer_count_data = cursor.fetchall()
-    except Exception ,e:
-        #print "MySQL exception : %s" % e
-	logger.error("MySQL exception : %s", e)
         cursor.close()
-    try :
-	redis_cnx = conn_base.redis_cnx(db_name='redis')
-	p = redis_cnx.pipeline()
-	for (sector_config_ip,customer_count) in customer_count_data:
-	    p.set('customer_count:%s' % sector_config_ip,customer_count)
-	    p.execute()
+        p = redis_cnx.pipeline()
+        for (ip_address,customer_count) in customer_count_data:
+           p.set('customer_count:%s' % ip_address,customer_count)
+        p.execute()
+
+	query2 = """
+         SELECT
+               `pt`.`ip_address`,
+               `is`.`sector_configured_on_port_id`,
+               `is`.`sector_id`
+         FROM
+               `performance_topology` `pt`
+         LEFT JOIN
+               `inventory_sector` `is`
+         ON
+               `is`.`sector_id` = `pt`.`sector_id`
+         LEFT JOIN
+               `inventory_circuit` `ic`
+         ON
+               `ic`.`sector_id` = `is`.`id`
+         UNION
+         SELECT
+               `dd`.`ip_address`,
+               `is`.`sector_configured_on_port_id`,
+               `is`.`sector_id`
+         FROM
+               `inventory_sector` `is`
+         LEFT JOIN
+               `device_device` `dd`
+         ON
+               `is`.`sector_configured_on_id` = `dd`.`id`
+         LEFT JOIN
+               `inventory_circuit` `ic`
+         ON
+               `ic`.`sector_id` = `is`.`id`; """
+        cursor = my_cnx.cursor()
+        cursor.execute(query2)
+        sector_ip_data = cursor.fetchall()
+        cursor.close()
+        for  (ip_address ,sector_configured_on_port_id ,sector_id) in sector_ip_data :
+	    if sector_configured_on_port_id :
+		if sector_configured_on_port_id == 43 :
+		    pmp_port = 'pmp1'
+		elif sector_configured_on_port_id == 44 :
+                    pmp_port = 'pmp2'
+		if ip_address in sector_ip_mapping.keys() :
+			sector_ip_mapping[ip_address].update({sector_id : pmp_port})
+		else :
+			sector_ip_mapping[ip_address] = {sector_id : pmp_port}
+        query3 = "select sector_config_ip, sector_id, count_of_customer  from download_center_customer_count_sector"
+        cursor = my_cnx.cursor()
+        cursor.execute(query3)
+        sector_customer_count_data = cursor.fetchall()
+        cursor.close()
+        for sector_config_ip, sector_id, count_of_customer in sector_customer_count_data :
+	    if sector_config_ip in sector_ip_mapping.keys() :
+		try :
+		    if sector_config_ip in sector_customer_count.keys() :
+		        sector_customer_count[sector_config_ip].update({sector_ip_mapping[sector_config_ip][sector_id] : int(count_of_customer)})
+		    else :
+		        sector_customer_count[sector_config_ip] = {sector_ip_mapping[sector_config_ip][sector_id] : int(count_of_customer)}
+		except Exception,e :
+		    print "Exception",e
+	for ip_address , value in sector_customer_count.iteritems():
+           p.set('sector_customer_count:%s' % ip_address,str(value))
+	p.execute()
     except Exception,exc :
-        #print 'Error in writing customer count to redis: {0}'.format(exc)
+        print 'Error in writing customer count to redis: {0}'.format(exc)
 	logger.error('Error in writing customer count to redis: {0}'.format(exc))
 
 @app.task(name='delete_history_trap')
@@ -1170,4 +1264,3 @@ def delete_history_trap():
 
     cursor.close()
     my_cnx.close()
-
