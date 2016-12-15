@@ -4640,7 +4640,12 @@ def prepare_snmp_gis_data_all_tab(qs, tech_name):
             packet_loss = perf_result.get(bh_device_name, {}).get('packet_loss', None)
             bh_status = ('DOWN' if packet_loss == 100 else 'UP') if packet_loss not in [None, ''] else "NA"
 
-            if not data.get('customer_count'):
+
+            # Set Customer Count to 'NA' if there is no Customer count in Alarms table
+            # Skip the case where customer count = 0
+            # (In Python 0 is considered as False)
+            cust_count = data.get('customer_count')
+            if cust_count != 0 and not cust_count:
                 data.update(customer_count='NA')
 
             data.update(
