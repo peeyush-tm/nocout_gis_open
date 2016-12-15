@@ -2090,17 +2090,19 @@ def get_inventory_sector_query(
                                              LEFT JOIN
                                                 download_center_customer_count_sector AS customer_count_sec
                                             ON 
-                                                customer_count_sec.sector_id = sector_info.SECTOR_SECTOR_ID 
+                                                customer_count_sec.sector_id = sector_info.SECTOR_SECTOR_ID
+                                                AND
+                                                customer_count_sec.sector_config_ip = sector_info.SECTOR_CONF_ON_IP
                                         '''
 
-    if SHOW_TICKET_NUMBER:
-        fetch_cutomer_count_query_1 += "IF(not isnull(device_ticket.ticket_number), device_ticket.ticket_number, 'NA') AS TICKET_NUMBER,"
-        fetch_cutomer_count_query_2 +=  '''
-                                             LEFT JOIN
-                                                device_deviceticket AS device_ticket
-                                            ON
-                                                sector_info.SECTOR_CONF_ON_IP = device_ticket.ip_address 
-                                        '''
+    # if SHOW_TICKET_NUMBER:
+    #     fetch_cutomer_count_query_1 += "IF(not isnull(device_ticket.ticket_number), device_ticket.ticket_number, 'NA') AS TICKET_NUMBER,"
+    #     fetch_cutomer_count_query_2 +=  '''
+    #                                          LEFT JOIN
+    #                                             device_deviceticket AS device_ticket
+    #                                         ON
+    #                                             sector_info.SECTOR_CONF_ON_IP = device_ticket.ip_address 
+    #                                     '''
 
     sector_query = '''
         SELECT 
