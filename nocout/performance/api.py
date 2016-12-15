@@ -401,6 +401,14 @@ class GetTopologyAlarms(APIView):
                     'gpsNotSynchronised'
                 ]
 
+    up_since_format_array = [
+        'Day',
+        'Hour',
+        'Minute',
+        'Second',
+        'Mili Second'
+    ]
+
     def get(self, request):
         # Handling GET request
         device_ip = ''
@@ -466,12 +474,14 @@ class GetTopologyAlarms(APIView):
                 formatted_uptime = uptime
 
                 try:
-                    first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                    first_occurred = dct.get('first_occurred').strftime('%Y-%m-%d %H-%M-%S')
+                    # first_occurred = dct.get('first_occurred').strftime(DATE_TIME_FORMAT + ':%S')
                 except Exception, e:
                     first_occurred = dct.get('first_occurred')
 
                 try:
-                    last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
+                    last_occurred = dct.get('last_occurred').strftime('%Y-%m-%d %H-%M-%S')
+                    # last_occurred = dct.get('last_occurred').strftime(DATE_TIME_FORMAT + ':%S')
                 except Exception, e:
                     last_occurred = dct.get('last_occurred')
 
@@ -502,6 +512,31 @@ class GetTopologyAlarms(APIView):
 
         return Response(result)
 
+    def format_uptime_value(self, uptime):
+        """
+        This function format uptime value
+        """
+        splitted_uptime = uptime.split(':')
+
+        formatted_string = ''
+
+        for i in range(len(splitted_uptime)):
+            suffix_val = str(self.up_since_format_array[i])
+            timestamp_val = splitted_uptime[i]
+            try:
+                if not int(timestamp_val):
+                    continue
+            except Exception, e:
+                pass
+
+            try:
+                if int(timestamp_val) > 1:
+                    suffix_val += 's'
+            except Exception, e:
+                pass
+            formatted_string += ' {} {} '.format(str(timestamp_val), suffix_val)
+
+        return formatted_string
 
 class GetTopologyAlarmsStatus(APIView):
     """

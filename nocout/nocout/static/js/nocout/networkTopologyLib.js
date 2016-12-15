@@ -1205,17 +1205,24 @@ function convertToVis(response, required_dom_id) {
                                                 + table_data_html +
                                             '</table>\
                                         </div>'
-                        bootbox.dialog({
-                            title: 'Sector Impact',
-                            message: table_html,
-                            className: 'bootbox_large'
-                        });
-
-                        $(".modal-dialog").css("width","80%");
-
-                        // Removing selection Once alarms table Popup Shows up.
-                        network.unselectAll();
+                    } else{
+                        table_html =    '<div style="overflow: auto; text-align: center;">\
+                                            <h3 class="text-success"><i class="fa fa-info-circle"\
+                                            style="margin-right: 10px;"\
+                                            aria-hidden="true"></i>No alarms present on this sector.</h3>\
+                                        </div>'
                     }
+
+                    bootbox.dialog({
+                        title: 'Sector Impact',
+                        message: table_html,
+                        className: 'bootbox_large'
+                    });
+
+                    $(".modal-dialog").css("width","80%");
+
+                    // Removing selection Once alarms table Popup Shows up.
+                    network.unselectAll();
                     
                     // Initializing datatble.js on Alarms table.
                     setTimeout(function(){
