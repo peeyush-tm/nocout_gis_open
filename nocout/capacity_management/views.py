@@ -232,6 +232,8 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
             sectors = self.model.objects.filter(
                 sector__sector_configured_on__isnull=False,
                 organization__in=kwargs['organizations']
+            ).annotate(
+                organization__alias=F('sector__sector_configured_on__organization__alias')
             ).prefetch_related(*self.related_columns).values(*self.columns)
         else:
             where_condition = Q()
@@ -259,6 +261,8 @@ class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
 
             sectors = self.model.objects.filter(
                 where_condition
+            ).annotate(
+                organization__alias=F('sector__sector_configured_on__organization__alias')
             ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
@@ -580,6 +584,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                     Q(severity__in=['warning', 'critical']),
                     sector__sector_configured_on__isnull=False,
                     organization__in=kwargs['organizations'],
+                ).annotate(
+                    organization__alias=F('sector__sector_configured_on__organization__alias')
                 ).prefetch_related(*self.related_columns).values(*self.columns)
             else:
                 where_condition = Q()
@@ -616,6 +622,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                     where_condition
                     &
                     Q(severity__in=['warning', 'critical'])
+                ).annotate(
+                    organization__alias=F('sector__sector_configured_on__organization__alias')
                 ).prefetch_related(*self.related_columns).values(*self.columns)
         return sectors
 
@@ -1070,6 +1078,8 @@ class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
 
         sectors = self.model.objects.filter(
             Q(organization__in=kwargs['organizations'])
+        ).annotate(
+            organization__alias=F('backhaul__bh_configured_on__organization__alias')
         ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
@@ -1231,7 +1241,7 @@ class BackhaulAugmentationAlertsHeaders(ListView):
                 'bSortable': True
             },
             {
-                'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'bSortable': True
+                'mData': 'organization__alias', 'sTitle': 'Region', 'sWidth': 'auto', 'bSortable': True
             },
             {
                 'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs',
@@ -1499,6 +1509,8 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
                 Q(severity__in=['warning', 'critical']),
                 Q(sys_timestamp__gte=max_timestamp - 420)
                 # Q(age__lte=F('sys_timestamp') - 600)
+            ).annotate(
+                organization__alias=F('backhaul__bh_configured_on__organization__alias')
             ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return backhauls

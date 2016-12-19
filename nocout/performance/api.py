@@ -428,7 +428,14 @@ class GetTopologyAlarms(APIView):
         try:
             # sector_device_id = Device.objects.get(ip_address=device_ip).id
             sector_device_type_id = Device.objects.get(ip_address=device_ip).device_type
-            sector_obj = Sector.objects.get(sector_configured_on__ip_address=device_ip, sector_id=sector_id)
+            sector_obj = Sector.objects.get(
+                (
+                    Q(sector_configured_on__ip_address=device_ip)
+                    |
+                    Q(dr_configured_on__ip_address=device_ip)
+                ),
+                sector_id=sector_id
+            )
         except Exception, e:
             # logger.error(e);
             return Response(result)

@@ -8000,7 +8000,7 @@ class GetTopology(View):
                         IF(isnull(device.device_name), 'NA', device.device_name) AS sect_device_name,
                         IF(isnull(sect_device_tech.name), 'NA', sect_device_tech.name) AS sect_device_tech,
                         IF(isnull(sect_device_type.name), 'NA', sect_device_type.name) AS sect_device_type,
-                        IF(isnull(device.ip_address), 'NA', device.ip_address) AS sect_device_ip,
+                        IF(isnull(sect_device.ip_address), 'NA', sect_device.ip_address) AS sect_device_ip,
                         IF(not isnull(sect.sector_id), sect.sector_id, device.ip_address) AS sect_ip_id_title,
                         'NA' AS ss_circuit_id,
                         'NA' AS ss_id,
@@ -8064,6 +8064,8 @@ class GetTopology(View):
                         device_device AS device
                     ON
                         sect.sector_configured_on_id = device.id
+                        OR
+                        sect.dr_configured_on_id = device.id
                     LEFT JOIN 
                         device_devicetechnology AS sect_device_tech
                     ON
@@ -8072,6 +8074,8 @@ class GetTopology(View):
                         device_device as sect_device
                     ON
                         sect.sector_configured_on_id = sect_device.id
+                        OR
+                        sect.dr_configured_on_id = sect_device.id
                     LEFT JOIN
                         inventory_circuit AS ckt
                     ON

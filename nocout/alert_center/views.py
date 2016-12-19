@@ -2572,12 +2572,12 @@ class SIAListing(ListView):
             {'mData': 'alarm_count', 'sTitle': 'Alarm Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'first_occurred', 'sTitle': 'First Occurred', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'last_occurred', 'sTitle': 'Last Occurred', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sia', 'sTitle': 'Service Impacting', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         specific_invent_columns = [
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'customer_count', 'sTitle': 'Customer Count', 'sWidth': 'auto', 'bSortable': True},
         ]
 
         datatable_headers = list()
@@ -2596,7 +2596,7 @@ class SIAListing(ListView):
                 'bSortable': False
             }]
 
-            datatable_headers.insert(9, {
+            datatable_headers.insert(10, {
                 'mData': 'ticket_number',
                 'sTitle': 'PBI Ticket',
                 'sWidth': 'auto',
@@ -2809,17 +2809,17 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         if self.tech_name in ['pmp', 'wimax', 'all']:
             if ENABLE_MANUAL_TICKETING:
                 self.order_columns = [
-                    'action', 'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'ticket_number',
-                    'device_type', 'eventname', 'traptime', 'uptime', 'alarm_count',
-                    'first_occurred', 'last_occurred', 'customer_count', 'sia'
+                    'action', 'severity', 'ip_address', 'sector_id', 'customer_count',
+                    'bs_alias', 'bs_city', 'bs_state', 'region', 'bh_connectivity', 'bh_type',
+                    'ticket_number', 'device_type', 'eventname', 'traptime', 'uptime',
+                    'alarm_count', 'first_occurred', 'last_occurred', 'sia'
                 ]
             else:
                 self.order_columns = [
-                    'severity', 'ip_address', 'sector_id', 'bs_alias', 'bs_city',
-                    'bs_state', 'region', 'bh_connectivity', 'bh_type', 'device_type',
-                    'eventname', 'traptime', 'uptime','alarm_count','first_occurred',
-                    'last_occurred', 'customer_count', 'sia'
+                    'severity', 'ip_address', 'sector_id', 'customer_count',
+                    'bs_alias', 'bs_city', 'bs_state', 'region', 'bh_connectivity', 'bh_type',
+                    'device_type', 'eventname', 'traptime', 'uptime','alarm_count',
+                    'first_occurred', 'last_occurred', 'sia'
                 ]
 
         # Number of columns that are used in sorting
