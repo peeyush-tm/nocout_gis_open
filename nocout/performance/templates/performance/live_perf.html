@@ -166,7 +166,7 @@
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
                         "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'other_type': 'backhaul', 'report_title' : '"+other_bh_title+"', 'download_excel': 'yes' }",
-                        "excluded" : "[]"
+                        "excluded" : "['min_latency']"
                     },
                     "other_other_tab" : {
                         "app_name" : "performance",
@@ -175,7 +175,7 @@
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
                         "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'other_type': 'other', 'report_title' : '"+other_other_title+"', 'download_excel': 'yes' }",
-                        "excluded" : "[]"
+                        "excluded" : "['min_latency']"
                     }
                 };
 
@@ -229,7 +229,7 @@
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
                         "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'report_title' : '"+network_wifi_title+"', 'download_excel': 'yes' }",
-                        "excluded" : "['circuit_id','customer_name']"
+                        "excluded" : "['circuit_id','customer_name', 'min_latency']"
                     },
                     "network_ptp_tab" : {
                         "app_name" : "performance",
@@ -238,7 +238,7 @@
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
                         "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'report_title' : '"+network_ptp_title+"', 'download_excel': 'yes' }",
-                        "excluded" : "['sector_id']"
+                        "excluded" : "['sector_id', 'min_latency']"
                     },
                     "network_pmp_tab" : {
                         "app_name" : "performance",
@@ -247,7 +247,7 @@
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
                         "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'report_title' : '"+network_pmp_title+"', 'download_excel': 'yes' }",
-                        "excluded" : "['circuit_id','customer_name']"
+                        "excluded" : "['circuit_id','customer_name', 'min_latency']"
                     },
                     "network_rad5_tab" : {
                         "app_name" : "performance",
@@ -255,7 +255,7 @@
                         "header_class_name" : "LivePerformance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'RADWIN5', 'report_title' : '"+network_rad5_title+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'RADWIN5', 'report_title' : '"+network_rad5_title+"', 'download_excel': 'yes', 'is_rad5': '1' }",
                         "excluded" : "['circuit_id','customer_name']"
                     },
                     "customer_wifi_tab" : {
@@ -264,7 +264,8 @@
                         "header_class_name" : "LivePerformance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'report_title' : '"+customer_wifi_title+"', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'report_title' : '"+customer_wifi_title+"', 'download_excel': 'yes' }",
+                        "excluded" : "['min_latency']"
                     },
                     "customer_ptp_tab" : {
                         "app_name" : "performance",
@@ -273,7 +274,7 @@
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
                         "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'report_title' : '"+customer_ptp_title+"', 'download_excel': 'yes' }",
-                        "excluded" : "['sector_id']"
+                        "excluded" : "['sector_id', 'min_latency']"
                     },
                     "customer_pmp_tab" : {
                         "app_name" : "performance",
@@ -281,7 +282,8 @@
                         "header_class_name" : "LivePerformance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'report_title' : '"+customer_pmp_title+"', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'report_title' : '"+customer_pmp_title+"', 'download_excel': 'yes' }",
+                        "excluded" : "['min_latency']"
                     },
                     "customer_rad5_tab" : {
                         "app_name" : "performance",
@@ -289,7 +291,7 @@
                         "header_class_name" : "LivePerformance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'RADWIN5', 'report_title' : '"+customer_rad5_title+"', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'RADWIN5', 'report_title' : '"+customer_rad5_title+"', 'download_excel': 'yes', 'is_rad5':'1'}"
                     }
                 };
 
