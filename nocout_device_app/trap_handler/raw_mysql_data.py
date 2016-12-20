@@ -35,6 +35,10 @@ SELECT
 	IF(isnull(bsswitch_parent.ip_address), 'NA', bsswitch_parent.ip_address) as BSswitchParentIP,
 	IF(isnull(bsswitchparent_devicetype.name), 'NA', bsswitchparent_devicetype.name) as BSswitchParentType,
 	IF(isnull(bsswitch_device.parent_port), 'NA', bsswitch_device.parent_port) as BSswitchParentPort,
+	IF(isnull(pop_org.alias), 'NA', pop_org.alias) as POPconverterorg,
+	IF(isnull(bsconverter_org.alias), 'NA', bsconverter_org.alias) as BTSconverterorg,
+	IF(isnull(bsswitch_org.alias), 'NA', bsswitch_org.alias) as BSswitchorg,
+	
 	GROUP_CONCAT(CONCAT(
 		IF(isnull(bs.id), 'NA', bs.id), '|',
 		IF(isnull(bs.alias), 'NA', bs.alias), '|',
@@ -61,8 +65,8 @@ SELECT
         	IF(isnull(customer.alias), 'NA', customer.alias), '|',
         	IF(isnull(device.parent_type), 'NA', device.parent_type),'|',
         	IF(isnull(device.parent_port), 'NA', device.parent_port),'|',
-		IF(isnull(sect.sector_configured_on_port_id), 'NA', sect.sector_configured_on_port_id)
-
+		IF(isnull(sect.sector_configured_on_port_id), 'NA', sect.sector_configured_on_port_id),'|',
+		IF(isnull(device_org.alias), 'NA', device_org.alias)
 	) SEPARATOR '-|-|-') AS SECT_STR,
 	GROUP_CONCAT(CONCAT(
 		IF(isnull(sect.id), 'NA', sect.id),'|',
@@ -118,6 +122,10 @@ SELECT
 	ON
 		pop_parent.device_type = popparent_devicetype.id
 	LEFT JOIN
+		organization_organization as pop_org
+	ON     
+		pop_parent.organization_id = pop_org.id 
+	LEFT JOIN
 		device_device as bsconverter_device
 	on
 		bsconverter_device.id = backhaul.bh_switch_id
@@ -146,6 +154,10 @@ SELECT
 	ON
 		bsconverter_parent.device_type = bsconverterparent_devicetype.id
 	LEFT JOIN
+		organization_organization as bsconverter_org
+	ON     
+		bsconverter_parent.organization_id = bsconverter_org.id 
+	LEFT JOIN
 		device_device as bsswitch_device
 	on
 		bs.bs_switch_id = bsswitch_device.id
@@ -170,6 +182,10 @@ SELECT
 	ON
 		bsswitch_parent.device_type = bsswitchparent_devicetype.id
 	LEFT JOIN
+		organization_organization as bsswitch_org
+	ON     
+		bsswitch_parent.organization_id = bsswitch_org.id 
+	LEFT JOIN
 		inventory_sector AS sect
 	ON
 		bs.id = sect.base_station_id
@@ -181,6 +197,10 @@ SELECT
 		device_device AS device_parent
 	ON
 		device.parent_id = device_parent.id
+	LEFT JOIN 
+		organization_organization as device_org
+	ON
+	        device.organization_id = device_org.id
 	LEFT JOIN
 		device_devicetype as deviceparent_devicetype
 	ON
