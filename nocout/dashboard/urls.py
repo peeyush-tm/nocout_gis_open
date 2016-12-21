@@ -213,6 +213,11 @@ urlpatterns = patterns('',
         name='sector-capacity-pmp'
     ),
     url(
+        r'^sector-capacity/radwin5k/$',
+        cache_page(60 * 2)(views.Rad5SectorCapacity.as_view()),
+        name='sector-capacity-rad5'
+    ),
+    url(
         r'^sector-capacity/wimax/$',
         cache_page(60 * 2)(views.WiMAXSectorCapacity.as_view()),
         name='sector-capacity-wimax'
@@ -246,6 +251,11 @@ urlpatterns = patterns('',
         r'^trend-monthly-sector/pmp/$',
         cache_page(60 * 60)(views.MonthlyTrendSectorPMP.as_view()),
         name='trend-monthly-sector-pmp'
+    ),
+    url(
+        r'^trend-monthly-sector/radwin5k/$',
+        cache_page(60 * 60)(views.MonthlyTrendSectorRad5.as_view()),
+        name='trend-monthly-sector-rad5'
     ),
     url(
         r'^trend-monthly-sector/wimax/$',

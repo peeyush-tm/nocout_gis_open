@@ -271,7 +271,7 @@ def calculate_status_dashboards(technology):
 
 
 @task()
-def calculate_range_dashboards(technology, type):
+def calculate_range_dashboards(technology, type, is_rad5=False):
     """
     This Function calls from settings file Project and initialise Sector Capacity & Sales Opportunity 
     dashboards for particular technology and divide the celery tasks according to No. of Dashboards 
@@ -298,7 +298,8 @@ def calculate_range_dashboards(technology, type):
                 user_organizations,
                 technology=tech,
                 model=DashboardSeverityStatusTimely,
-                processed_for=processed_for
+                processed_for=processed_for,
+                is_rad5=is_rad5
             )
         )
 
@@ -335,7 +336,7 @@ def calculate_range_dashboards(technology, type):
 
 
 @task()
-def calculate_timely_sector_capacity(organizations, technology, model, processed_for):
+def calculate_timely_sector_capacity(organizations, technology, model, processed_for, is_rad5=False):
     """
     This is celery task function which insert Bulk entries in table/model as per calculation of particular Dashboard & Technology.
 
@@ -343,14 +344,21 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
         organizations : object of all organizations 
         technology : PMP/WiMAX
         model : DashboardSeverityStatusTimely
-        processed_for : Datetime Field 
+        processed_for : Datetime Field
+        is_rad5 : Flag for Radwin5K case
 
     :return:
         True/False
     """
+    # try:
+    #     sector_technology = eval(technology)
+    # except Exception as e:
+    #     logger.exception(e)
+    #     return False
+
     try:
-        sector_technology = eval(technology)
-    except Exception as e:
+        sector_technology = DeviceTechnology.objects.get(name__iexact=technology.strip().lower())
+    except Exception, e:
         logger.exception(e)
         return False
 
@@ -364,7 +372,34 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
         'organization'
     ]
 
-    dashboard_name = '%s_sector_capacity' % (sector_technology.NAME.lower())
+    tech_name_lowercase = sector_technology.name.lower()
+    
+    # Name to be stored in DB for dashboard
+    # In Case of Radwin5K change it to radwin5k instead of PMP
+    if is_rad5:
+        dash_name = 'radwin5k'
+    else:
+        dash_name = tech_name_lowercase
+
+    # If case of Radwin5K then the query needs to be changed
+    # According to device type, because Radwin5K is a device type and not Device Tech
+    device_type_condition = ''
+
+    # In both Cambium and Radwin5k cases tech will be PMP
+    if tech_name_lowercase == 'pmp':
+        # Get Device Type obj for Radwin5kBS
+        try:
+            sec_device_type = DeviceType.objects.get(name__iexact='radwin5kbs')
+        except Exception, e:
+            logger.exception(e)
+            return False
+
+        if is_rad5:
+            device_type_condition = 'Q(sector__sector_configured_on__device_type={0}),'.format(sec_device_type.id)
+        else:
+            device_type_condition = '~Q(sector__sector_configured_on__device_type={0}),'.format(sec_device_type.id)
+
+    dashboard_name = '%s_sector_capacity' % (dash_name)
 
     for organization in organizations:
         max_timestamp = None
@@ -379,12 +414,17 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
             logger.error('Sector Capacity MAX Timestamp Exception --------')
             pass
 
-        sector_objects = SectorCapacityStatus.objects.filter(
-            Q(organization__in=[organization]),
-            Q(sector__sector_configured_on__device_technology=sector_technology.ID),
-            Q(severity__in=['warning', 'critical', 'ok', 'unknown'])
-        )
-
+        query = '''sector_objects = SectorCapacityStatus.objects.filter(
+                                    Q(organization__in=[organization]),
+                                    Q(sector__sector_configured_on__device_technology=sector_technology.id),
+                                    {0}
+                                    Q(severity__in=['warning', 'critical', 'ok', 'unknown'])
+                                )'''.format(device_type_condition)
+        try:
+            exec query
+        except Exception, e:
+            logger.error('calculate_timely_sector_capacity query Execution error---------------> %s'%e)
+            return False
 
         if sector_objects.exists():
             # Create the range_counter dictionay containg the model's field name as key

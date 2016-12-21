@@ -820,6 +820,7 @@ class MainDashboard(View):
 
         - WiMAX Sector Capicity
         - PMP Sector Capicity
+        - Radwin5K Sector Capacity
         - WiMAX Sales Oppurtunity
         - PMP Sales Oppurtunity
         - WiMAX Backhaul Capicity
@@ -1086,7 +1087,8 @@ class SectorCapacityMixin(object):
         """
         tech_name = self.tech_name
         organization = nocout_utils.logged_in_user_organizations(self)
-        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+        
+        # technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         # Get the status of the dashboard.
@@ -1123,6 +1125,11 @@ class PMPSectorCapacity(SectorCapacityMixin, View):
     """
     tech_name = 'PMP'
 
+class Rad5SectorCapacity(SectorCapacityMixin, View):
+    """
+    Class Based View for the Radwin5K Sector Capacity Dashboard.
+    """
+    tech_name = 'Radwin5K'
 
 class WiMAXSectorCapacity(SectorCapacityMixin, View):
     """
@@ -1893,6 +1900,12 @@ class MonthlyTrendSectorPMP(MonthlyTrendSectorMixin, View):
     Class Based View for the PMP Sector Capacity Dashboard Trends.
     """
     tech_name = 'PMP'
+
+class MonthlyTrendSectorRad5(MonthlyTrendSectorMixin, View):
+    """
+    Class Based View for the PMP Sector Capacity Dashboard Trends.
+    """
+    tech_name = 'Radwin5K'
 
 
 class MonthlyTrendSectorWIMAX(MonthlyTrendSectorMixin, View):
