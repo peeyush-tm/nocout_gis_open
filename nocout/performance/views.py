@@ -192,12 +192,17 @@ class LivePerformance(ListView):
             {'mData': 'min_latency', 'sTitle': 'SE to PE Latency Min', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
         ]
 
+        UAS_headers = [
+            {'mData': 'dl_uas', 'sTitle': 'UAS DL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False},
+            {'mData': 'ul_uas', 'sTitle': 'UAS UL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
+        ]
+
         polled_headers_2 = [
             {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
         ]
 
-        polled_headers = polled_headers_1 + se_to_pe_header + polled_headers_2
+        polled_headers = polled_headers_1 + se_to_pe_header + UAS_headers + polled_headers_2
 
         action_headers = [
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
@@ -392,8 +397,10 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'packet_loss',
                 'latency',
                 'min_latency',
+                'dl_uas',
+                'ul_uas',
                 'last_updated',
-                'age',
+                'age'
             ]
         elif page_type == 'network':
             columns = [
@@ -411,6 +418,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'packet_loss',
                 'latency',
                 'min_latency',
+                'dl_uas',
+                'ul_uas',
                 'last_updated',
                 'age'
             ]
@@ -426,6 +435,9 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
                 'state',
                 'packet_loss',
                 'latency',
+                'min_latency',
+                'dl_uas',
+                'ul_uas',
                 'last_updated',
                 'age'
             ]
@@ -580,13 +592,44 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
             page_type = 'pe'
             alert_page_type = 'network'
 
-        min_latency = ''
         if qs:
             for dct in qs:
+                dl_uas = ''
+                ul_uas = ''
+                min_latency = ''
                 # for getting SE to PE min. latency
                 if is_rad5:
                     device_id = dct.get('id', 0)
                     min_latency = perf_utils.get_se_to_pe_min_latency(device_id, page_type)
+
+                    # Calculate DL UAS, UL UAS only for radwin5k Customer Live page
+                    if page_type == 'customer':
+
+                        machine_name = dct.get('machine_name', '')
+
+                        # getting UAS DL and UAS UL for each device
+                        dl_uas = ServiceStatus.objects.filter(
+                            ip_address=dct.get('ip_address', None),
+                            service_name='rad5k_ss_dl_uas',
+                            data_source='dl_uas'
+                        ).using(
+                            machine_name
+                        )
+
+                        if dl_uas.exists():
+                            dl_uas = dl_uas[0].current_value
+
+                        ul_uas = ServiceStatus.objects.filter(
+                                ip_address=dct.get('ip_address', None),
+                                service_name='rad5k_ss_ul_uas',
+                                data_source='ul_uas'
+                        ).using(
+                            machine_name
+                        )
+
+                        if ul_uas.exists():
+                            ul_uas = ul_uas[0].current_value
+
 
                 try:
                     if int(dct['packet_loss']) == 100:
@@ -636,6 +679,8 @@ class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
 
                 dct.update(
                     min_latency= min_latency if min_latency else 'NA',
+                    dl_uas=dl_uas if dl_uas else 'NA',
+                    ul_uas=ul_uas if ul_uas else 'NA',
                     latency=latency,
                     packet_loss=packet_loss,
                     actions='<a href="' + performance_url + '" title="Device Performance">\

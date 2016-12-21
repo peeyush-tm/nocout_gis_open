@@ -169,8 +169,8 @@ class AlertCenterListing(ListView):
             # For saving if else hassle we have used a dict over here
             rad5_polled_col_dict = {
                 'packet_drop':[
-                    # {'mData': 'dl_uas', 'sTitle': 'UAS DL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False},
-                    # {'mData': 'ul_uas', 'sTitle': 'UAS UL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
+                    {'mData': 'dl_uas', 'sTitle': 'UAS DL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False},
+                    {'mData': 'ul_uas', 'sTitle': 'UAS UL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
                 ],
                 'latency': [
                     {'mData': 'dl_utilization', 'sTitle': 'Utilisation DL%', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False},
@@ -666,32 +666,29 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                             machine_name = ''
 
                         if data_source == 'packet_drop':
-                            pass
                             # Machine name for each device
                             # getting UAS DL and UAS UL for each device
-                            # dl_uas = InventoryStatus.objects.filter(
-                            #         ip_address=dct.get('ip_address', None),
-                            #         service_name='rad5k_dl_uas_invent',
-                            #         data_source='dl_uas'
-                            #     ).using(machine_name).values_list(
-                            #         'current_value',
-                            #         flat=True
-                            #         )
+                            dl_uas = ServiceStatus.objects.filter(
+                                ip_address=dct.get('ip_address', None),
+                                service_name='rad5k_ss_dl_uas',
+                                data_source='dl_uas'
+                            ).using(
+                                machine_name
+                            )
 
-                            # if dl_uas.exists():
-                            #     dl_uas = dl_uas[0]
+                            if dl_uas.exists():
+                                dl_uas = dl_uas[0].current_value
 
-                            # ul_uas = InventoryStatus.objects.filter(
-                            #         ip_address=dct.get('ip_address', None),
-                            #         service_name='rad5k_ul_uas_invent',
-                            #         data_source='ul_uas'
-                            #     ).using(machine_name).values_list(
-                            #         'current_value',
-                            #         flat=True
-                            #         )
+                            ul_uas = ServiceStatus.objects.filter(
+                                    ip_address=dct.get('ip_address', None),
+                                    service_name='rad5k_ss_ul_uas',
+                                    data_source='ul_uas'
+                            ).using(
+                                machine_name
+                            )
 
-                            # if ul_uas.exists():
-                            #     ul_uas = ul_uas[0]
+                            if ul_uas.exists():
+                                ul_uas = ul_uas[0].current_value
 
                         elif data_source == 'latency':
 
@@ -779,8 +776,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                         sys_timestamp=datetime.datetime.fromtimestamp(dct.get('sys_timestamp')).strftime(DATE_TIME_FORMAT) if dct.get('sys_timestamp') else "",
                         age=datetime.datetime.fromtimestamp(dct.get('age')).strftime(DATE_TIME_FORMAT) if dct.get('age') else "",
                         min_latency=min_latency if min_latency else 'N/A',
-                        # dl_uas=dl_uas if dl_uas else 'N/A',
-                        # ul_uas=ul_uas if ul_uas else 'N/A',
+                        dl_uas=dl_uas if dl_uas else 'N/A',
+                        ul_uas=ul_uas if ul_uas else 'N/A',
                         dl_utilization=dl_utilization if dl_utilization else 'N/A',
                         ul_utilization=ul_utilization if ul_utilization else 'N/A',
                         device_uptime=device_uptime if device_uptime else 'N/A',
@@ -1064,7 +1061,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     'ptp_datatable_headers': customer_pd_and_down_ptp_datatable_headers,
                     'bh_datatable_headers': [],
                     'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers+region_header+ [
-                                                                                                        'current_value', #'dl_uas', 'ul_uas',
+                                                                                                        'current_value', 'dl_uas', 'ul_uas',
                                                                                                         'sys_timestamp', 'age', 'action'
                                                                                                     ]
                 },

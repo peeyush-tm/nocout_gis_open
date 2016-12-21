@@ -133,7 +133,19 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                                 column["bVisible"] = true;
                             }
                         } 
-                    } 
+                    } else{
+                        if (
+                            column.mData.indexOf("dl_uas") > -1
+                            ||
+                            column.mData.indexOf("ul_uas") > -1
+                        ){
+                            if (!column.bVisible) {
+                                column.bVisible = true;
+                            } else {
+                                column["bVisible"] = true;
+                            }
+                        } 
+                    }
 
                     if (page_type == 'customer' || page_type == 'network'){
                         if (column.mData.indexOf("min_latency") > -1){
