@@ -212,7 +212,7 @@ class inventory(object):
 	basestation_info_str = bs.get('BASESTATION', '')
 	basestation_info = list(set(basestation_info_str.split('-|-|-')))
 	bsswitch_ip_list = list(set(map(lambda x : x.split('|')[2],basestation_info)))
-
+	region = ''
 	#Connected base station device ip list.
 	sector_info_str = bs.get('SECT_STR', '')
 	sector_info = sector_info_str.split('-|-|-')
@@ -246,13 +246,11 @@ class inventory(object):
 	    data = basestation_info[0].split('|')
 	    bs_name = data[1]
 	    #region = data[5]
-	    region = data[8]
 	    city = data[3]
 
 	except Exception as e:
 	    logger.error('Exception in Conv data dict: %s'%(e))
 	    bs_name = ''
-	    region = ''
 	    city = ''
 	    pass
 	if resource_name == 'POPConverter':  
@@ -265,7 +263,7 @@ class inventory(object):
 	    technology = bs.get('POPconverterTech').lower()+" - "+tech_vendor
 	    device_type = bs.get('POPconverterType')
 	    device_vendor = bs.get('POPconverterDeviceVendor')
-	    
+	    region = bs.get('POPconverterorg') 
 	if resource_name == 'BTSConverter':
 	    ip = bs.get('BTSconverterIP')
 	    parent_ip = bs.get('BTSconverterParentIP')
@@ -276,6 +274,7 @@ class inventory(object):
 	    technology = bs.get('BTSconverterTech').lower()+" - "+tech_vendor
 	    device_type = bs.get('BTSconverterType')
 	    device_vendor = bs.get('BTSconverterDeviceVendor')
+	    region = bs.get('BTSconverterorg') 
 
 	if resource_name == 'BSSwitch':
 	    ip = bs.get('BSswitchIP')
@@ -286,6 +285,7 @@ class inventory(object):
 	    technology = bs.get('BSswitchTech').lower()+" - "+tech_vendor
 	    device_type = bs.get('BSswitchType')
 	    device_vendor = bs.get('BSswitchDeviceVendor')
+	    region = bs.get('BSswitchorg') 
 
 	ip_id[ip] = obj_count
 	key = 'static_' + ip
@@ -348,13 +348,14 @@ class inventory(object):
 		bs_station = bs.get('BASESTATION')
 		aggr_switch = bs.get('AggregationSwitchIP')
 		pe_ip = bs.get('PE_IP')
+		region = ''
 		try:
-		   region = basestation_info[0].split('|')[8]
+		   #region = basestation_info[0].split('|')[8]
 		   #region = basestation_info[0].split('|')[5]
 		   bs_name = basestation_info[0].split('|')[1]
 		   city = basestation_info[0].split('|')[3]
 		except:
-		   region = ''
+		   #region = ''
 		   bs_name = ''
 		   city = ''
 		   pass
@@ -378,6 +379,7 @@ class inventory(object):
 		   try:
 		       parent_port = sec_list.split('|')[13]
 		       device_vendor = sec_list.split('|')[3]	
+		       region = sec_list.split('|')[15]
 		   except:
 		       pass
 		   data_dict[bs_key]['bs_name'] = bs_name 
