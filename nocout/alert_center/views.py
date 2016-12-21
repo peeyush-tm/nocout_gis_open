@@ -1682,6 +1682,12 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         type_rf = 'sector'
         device_name_list = list()
         device_tab_technology = ""
+        # Flag for checking if customer count has to been shown
+        # on basis of Affected Sectors (refer column)
+        cust_count_on_affected_sec = False
+
+        if data_source in ['PMPULIssue', 'RAD5ULIssue', 'WiMAXULIssue']:
+            cust_count_on_affected_sec = True            
 
         if data_source in ['PMP', 'P2P', 'WiMAX']:
             device_tab_technology = data_source
@@ -1725,6 +1731,10 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
             type_rf=type_rf,
             device_name_list=device_name_list
         )
+
+        if cust_count_on_affected_sec:
+            result = self.update_cust_count_for_affected_sector(result)
+
         return result
 
     def prepare_results(self, qs):
@@ -2023,6 +2033,33 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
             ]
 
         return True
+
+    def update_cust_count_for_affected_sector(self, qs):
+        """
+        This function update customer count
+        on basis of Affected Sectors
+        """
+
+        # Get Queryset to get customer count with respect to sector id's
+        customer_count_qs = Customer_Count_Sector.objects.all().values('sector_id', 'count_of_customer')
+
+        for data_row in qs:
+            affected_sec_id = data_row.get('refer', '')
+
+            # if there is no Sector ID
+            # then do not change customer Count
+            if not affected_sec_id:
+                continue
+
+            try:
+                cust_count = customer_count_qs.get(sector_id=affected_sec_id).get('count_of_customer')
+            except Exception, e:
+                logger.error('Update Customer Count on basis of Affected Sector error---------------> %s'%e)
+                continue
+
+            data_row.update({'customer_count': cust_count})
+
+        return qs
 
     def get_context_data(self, *args, **kwargs):
         """

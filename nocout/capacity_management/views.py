@@ -575,12 +575,12 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         if max_timestamp:
             if self.technology == 'ALL':
                 # Excluding Radwin5K devices
-                excluded_device_type = DeviceType.objects.filter(
-                    name__icontains='radwin5'
-                ).values_list('id', flat=True)
+                # excluded_device_type = DeviceType.objects.filter(
+                #     name__icontains='radwin5'
+                # ).values_list('id', flat=True)
 
                 sectors = self.model.objects.filter(
-                    ~Q(sector__sector_configured_on__device_type__in=excluded_device_type),
+                    # ~Q(sector__sector_configured_on__device_type__in=excluded_device_type),
                     Q(severity__in=['warning', 'critical']),
                     sector__sector_configured_on__isnull=False,
                     organization__in=kwargs['organizations'],
@@ -625,6 +625,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                 ).annotate(
                     organization__alias=F('sector__sector_configured_on__organization__alias')
                 ).prefetch_related(*self.related_columns).values(*self.columns)
+                
         return sectors
 
     def prepare_results(self, qs):
