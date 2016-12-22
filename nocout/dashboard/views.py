@@ -166,7 +166,7 @@ class DashbaordSettingsCreateView(SuperUserRequiredMixin, CreateView):
         technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
         return context
-
+        
 
 class DashbaordSettingsDetailView(DetailView):
     """
@@ -359,10 +359,10 @@ class RAD5_Performance_Dashboard(PerformanceDashboardMixin, View):
         data_source_config = {
             'ul_rssi': {'service_name': 'rad5k_ul_rssi', 'model': ServiceStatus},
             'dl_rssi': {'service_name': 'rad5k_dl_rssi', 'model': ServiceStatus},
-            'ul_uas': {'service_name': 'rad5k_ul_uas_invent', 'model': ServiceStatus},
-            'dl_uas': {'service_name': 'rad5k_dl_uas_invent', 'model': ServiceStatus},
-            'rad5k_ss_ul_modulation': {'service_name': 'rad5k_ss_ul_modulation', 'model': ServiceStatus},
-            'rad5k_ss_dl_modulation': {'service_name': 'rad5k_ss_dl_modulation', 'model': ServiceStatus},
+            'ul_uas': {'service_name': 'rad5k_ss_ul_uas', 'model': ServiceStatus},
+            'dl_uas': {'service_name': 'rad5k_ss_dl_uas', 'model': ServiceStatus},
+            'ul_modulation': {'service_name': 'rad5k_ss_ul_modulation', 'model': ServiceStatus},
+            'dl_modulation': {'service_name': 'rad5k_ss_dl_modulation', 'model': ServiceStatus},
         }
         tech_name = 'PMP'
         is_bh = False
