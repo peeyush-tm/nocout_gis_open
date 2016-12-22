@@ -124,7 +124,7 @@ SELECT
 	LEFT JOIN
 		organization_organization as pop_org
 	ON     
-		pop_parent.organization_id = pop_org.id 
+		popconverter_device.organization_id = pop_org.id 
 	LEFT JOIN
 		device_device as bsconverter_device
 	on
@@ -156,7 +156,7 @@ SELECT
 	LEFT JOIN
 		organization_organization as bsconverter_org
 	ON     
-		bsconverter_parent.organization_id = bsconverter_org.id 
+		bsconverter_device.organization_id = bsconverter_org.id 
 	LEFT JOIN
 		device_device as bsswitch_device
 	on
@@ -184,7 +184,7 @@ SELECT
 	LEFT JOIN
 		organization_organization as bsswitch_org
 	ON     
-		bsswitch_parent.organization_id = bsswitch_org.id 
+		bsswitch_device.organization_id = bsswitch_org.id 
 	LEFT JOIN
 		inventory_sector AS sect
 	ON
@@ -192,7 +192,7 @@ SELECT
 	LEFT JOIN
 		device_device AS device
 	ON
-		sect.sector_configured_on_id = device.id
+		sect.sector_configured_on_id = device.id or sect.dr_configured_on_id = device.id
 	LEFT JOIN
 		device_device AS device_parent
 	ON
@@ -365,7 +365,7 @@ query6 = """
 	LEFT JOIN
 		`device_device` `dd`
 	ON 
-		`is`.`sector_configured_on_id` = `dd`.`id`
+		`is`.`sector_configured_on_id` = `dd`.`id` or `is`.`dr_configured_on_id` = `dd`.`id`
 	LEFT JOIN
 		`inventory_circuit` `ic`
 	ON
@@ -389,10 +389,14 @@ def mysql_to_inventory_data():
 	    ptp_farend.append(ip_tuple[0])
 	cur.execute(query1)
 	desc =  cur.description
-	my_list = [dict(zip([col[0] for col in desc ],row)) for row in cur.fetchall()]
+	query1_data = cur.fetchall()
+	my_list = [dict(zip([col[0] for col in desc ],row)) for row in query1_data]
         inv.create_inventory_data(my_list,ptp_farend)
 	cur.close()
 	conn_historical.close()
+	f = open("/apps/nocout_etl/prashant", 'w')
+    	f.write(str(my_list))
+    	f.close()
     except Exception,e:
 	logger.error('Error in Mysql data extraction %s' %(e))
     #print mylist

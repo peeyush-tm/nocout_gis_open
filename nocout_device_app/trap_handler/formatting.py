@@ -260,7 +260,10 @@ class inventory(object):
 	    parent_type ='Switch'
 	    parent_port = bs.get('POPconverterParentPort')
 	    resource_type = 'Converter'
-	    technology = bs.get('POPconverterTech').lower()+" - "+tech_vendor
+	    if bs.get('POPconverterTech').lower() in ('tcl pop','tclpop'):
+		technology = 'RAP'
+	    else:
+	        technology = bs.get('POPconverterTech').lower()+" - "+tech_vendor
 	    device_type = bs.get('POPconverterType')
 	    device_vendor = bs.get('POPconverterDeviceVendor')
 	    region = bs.get('POPconverterorg') 
@@ -271,7 +274,10 @@ class inventory(object):
 	    parent_type ='Converter'
 	    parent_port = bs.get('BTSconverterParentPort')
 	    resource_type = 'Converter'
-	    technology = bs.get('BTSconverterTech').lower()+" - "+tech_vendor
+	    if bs.get('BTSconverterTech').lower() in ('tcl pop','tclpop'):
+		technology = 'RAP'
+	    else:
+	        technology = bs.get('BTSconverterTech').lower()+" - "+tech_vendor
 	    device_type = bs.get('BTSconverterType')
 	    device_vendor = bs.get('BTSconverterDeviceVendor')
 	    region = bs.get('BTSconverterorg') 
