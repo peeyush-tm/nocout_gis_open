@@ -987,21 +987,21 @@ def calculate_RF_Performance_dashboards(technology, is_rad5=False, is_bh = False
                 'ul_uas':{
                     'model': ServiceStatus,
                     'data_source': ['ul_uas'],
-                    'service_name': ['rad5k_ul_uas_invent']
+                    'service_name': ['rad5k_ss_ul_uas']
                 },
                 'dl_uas':{
                     'model': ServiceStatus,
                     'data_source': ['dl_uas'],
-                    'service_name': ['rad5k_dl_uas_invent']
+                    'service_name': ['rad5k_ss_dl_uas']
                 },
-                'rad5k_ss_ul_modulation':{
+                'ul_modulation':{
                     'model': ServiceStatus,
-                    'data_source': ['rad5k_ss_ul_modulation'],
+                    'data_source': ['ul_modulation'],
                     'service_name': ['rad5k_ss_ul_modulation']
                 },
-                'rad5k_ss_dl_modulation':{
+                'dl_modulation':{
                     'model': ServiceStatus,
-                    'data_source': ['rad5k_ss_dl_modulation'],
+                    'data_source': ['dl_modulation'],
                     'service_name': ['rad5k_ss_dl_modulation']
                 }
             }
@@ -1143,11 +1143,20 @@ def prepare_Rf_dashboard_devices(organizations,
 
     # Handling Radwin5K Case
     filter_condition = ''
+    
+    try:
+        rad5_device_type = DeviceType.objects.get(name='Radwin5KSS').id
+    except Exception, e:
+        rad5_device_type = ''
+
     if is_rad5:
-        device_type = DeviceType.objects.get(name='Radwin5KSS').id
-        filter_condition = 'device_type={0}'.format(str(device_type))
+        filter_condition = 'device_type={0}'.format(str(rad5_device_type))
     else:
-        filter_condition = 'technology_id={0}'.format(str(technology_id))
+        filter_condition = 'Q(technology_id={0})'.format(str(technology_id))
+
+        # In case of cambium we need to exclued cases of Radwin5K
+        if technology.lower() == 'pmp':
+            filter_condition += ",~Q(device_type={0})".format(rad5_device_type)
 
     try:
         query = """dashboard_setting = DashboardSetting.objects.get(
@@ -1162,6 +1171,10 @@ def prepare_Rf_dashboard_devices(organizations,
         return False
 
     dashboard_name = dashboard_name+'_'+technology
+
+    if is_rad5:
+        dashboard_name += '_rad5'        
+
     if is_bh:
         dashboard_name = dashboard_name+'_bh' 
 

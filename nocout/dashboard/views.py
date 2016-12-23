@@ -259,6 +259,10 @@ class PerformanceDashboardMixin(object):
         data_source = request.GET.get('data_source')
         data_source=str(data_source)
         dashboard_name=data_source+'_'+tech_name
+
+        if is_rad5:
+            dashboard_name += '_rad5'
+
         if is_bh:
             dashboard_name=dashboard_name+'_bh'
         
@@ -350,6 +354,7 @@ class PMP_Performance_Dashboard(PerformanceDashboardMixin, View):
         is_bh = False
 
         return data_source_config, tech_name, is_bh
+
 
 class RAD5_Performance_Dashboard(PerformanceDashboardMixin, View):
     """
@@ -2018,6 +2023,10 @@ class GetMonthlyRFTrendData(View):
         dashboard_name = self.request.GET.get('dashboard_name')
         is_bh = self.request.GET.get('is_bh',0)
         tech_name = self.request.GET.get('technology')
+
+        # Getting params from request
+        is_rad5 = int(self.request.GET.get('is_rad5', 0))
+
         dashboard_status_name=dashboard_name
         response=''
         technology = DeviceTechnology.objects.get(name=tech_name).id
@@ -2027,11 +2036,34 @@ class GetMonthlyRFTrendData(View):
         dashboard_status_name=dashboard_name+'_'+tech_name
         if int(is_bh):
             dashboard_status_name=dashboard_status_name+'_bh'
+
+        if is_rad5:
+            dashboard_status_name += '_rad5'
+
+        try:
+            rad5_device_type = DeviceType.objects.get(name='Radwin5KSS').id
+            if is_rad5:
+                filter_condition = 'device_type={0}'.format(rad5_device_type)
+            else:
+                technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+                filter_condition = 'Q(technology={0})'.format(technology)
+
+                # In case of cambium we need to exclued cases of Radwin5K
+                if tech_name.lower() == 'pmp':
+                    filter_condition += ",~Q(device_type={0})".format(rad5_device_type)
+
+        except Exception, e:
+            technology = ""
+            rad5_device_type = ""
+
         organization = nocout_utils.logged_in_user_organizations(self)
         try:
-            dashboard_setting = DashboardSetting.objects.get(technology=technology,
-                                                             page_name='rf_dashboard',
-                                                             name=dashboard_name, is_bh=is_bh)
+            query = '''dashboard_setting = DashboardSetting.objects.get(
+                                                    {0},
+                                                    page_name='rf_dashboard',
+                                                    name=dashboard_name, is_bh=is_bh
+                                                )'''.format(filter_condition)
+            exec query
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
                 "message": "Corresponding dashboard setting is not available.",
