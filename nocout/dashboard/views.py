@@ -244,7 +244,7 @@ class PerformanceDashboardMixin(object):
             rad5_device_type = DeviceType.objects.get(name='Radwin5KSS').id
             if is_rad5:
                 filter_condition = 'device_type={0}'.format(rad5_device_type)
-                        else:
+            else:
                 technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
                 filter_condition = 'Q(technology={0})'.format(technology)
 
