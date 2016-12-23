@@ -241,15 +241,20 @@ class PerformanceDashboardMixin(object):
 
         filter_condition = ''
         try:
+            rad5_device_type = DeviceType.objects.get(name='Radwin5KSS').id
             if is_rad5:
-                device_type = DeviceType.objects.get(name='Radwin5KSS').id
-                filter_condition = 'device_type={0}'.format(device_type)
-            else:
+                filter_condition = 'device_type={0}'.format(rad5_device_type)
+                        else:
                 technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
-                filter_condition = 'technology={0}'.format(technology)
+                filter_condition = 'Q(technology={0})'.format(technology)
+
+                # In case of cambium we need to exclued cases of Radwin5K
+                if tech_name.lower() == 'pmp':
+                    filter_condition += ",~Q(device_type={0})".format(rad5_device_type)
+
         except Exception, e:
             technology = ""
-            device_type = ""
+            rad5_device_type = ""
 
         data_source = request.GET.get('data_source')
         data_source=str(data_source)
