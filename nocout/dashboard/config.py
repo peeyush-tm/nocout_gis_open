@@ -124,7 +124,7 @@ dashboards = [
         "technology": "PMP",
         "device_type": "Radwin5KSS",
         "dashboard_name" : "ul_modulation",
-        "dashboard_type" : "numeric",
+        "dashboard_type" : "string",
         "is_bh": False,
     },
     {
@@ -132,7 +132,7 @@ dashboards = [
         "technology": "PMP",
         "device_type": "Radwin5KSS",
         "dashboard_name" : "dl_modulation",
-        "dashboard_type" : "numeric",
+        "dashboard_type" : "string",
         "is_bh": False,
     },
     {
