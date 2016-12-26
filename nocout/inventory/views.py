@@ -5740,6 +5740,7 @@ class GetSms(View):
 
         result_dict = {
             'success': 0,
+            'message': '',
             'ticket_id': ''
         }
 
@@ -5779,7 +5780,7 @@ class GetSms(View):
                     'Service_ID': request_id,
                     'Creation_source': 'Monolith*PSU Zone',
                     'Severity': 'SR',
-                    'Worklog_Details': '',
+                    'Worklog_Details': 'REACT POWER Down Detected & {0}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
                     'Product_Categorization_Tier_3': 'PSUAlertUpDown',
                 }
             else:
@@ -5795,19 +5796,19 @@ class GetSms(View):
                     # 'Resolution': 'Resolved By WirelessOne'
 
                     # Currently Set to Monolith params
-                    'Resolution_tracking': 'Resolved INCIDENT',
+                    'Resolution_tracking': '',
                     'Incident_number': request_id,
                     'Worklog_type': 'Updated by Monolith',
-                    'Resolution_Tier_1': '',
-                    'Resolution_Tier_2': '',
-                    'Resolution_Tier_3': '',
-                    'Resolution': 'Resolved by Monolith'
+                    'Resolution_Tier_1': 'Customer',
+                    'Resolution_Tier_2': 'Power Problem at Customer End',
+                    'Resolution_Tier_3': 'PSU Alert',
+                    'Resolution': 'Resolved By WirelessOne'
                 }
 
             # Set AuthenticationInfo headers
             headers = client.factory.create('AuthenticationInfo')
             headers.userName = 'EAI'
-            headers.password = 'eai1234'
+            headers.password = 'eai123'
             client.set_options(soapheaders=headers)
 
             # Call method with our data
@@ -5822,8 +5823,10 @@ class GetSms(View):
             if ticket_id:
                 result_dict['success'] = 1
                 result_dict['ticket_id'] = ticket_id
+                result_dict['message'] = 'Successfully '+ api_mode +'d'
         except Exception, e:
             logger.error('remedy ticket'+ api_mode +'logging-------')
             logger.error(e)
+            result_dict['message'] = e
 
         return result_dict
