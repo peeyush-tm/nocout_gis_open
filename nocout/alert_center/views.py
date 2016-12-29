@@ -1577,7 +1577,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 technology = None
                 is_bh = True
                 page_type = "other"
-                is_other = True
+                is_other = False
                 self.table_name = 'performance_networkstatus'
                 self.data_sources = ''
                 # Onnet/Offnet column added for Backhaul tab
@@ -1700,13 +1700,9 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         if data_source in ['PMPULIssue', 'RAD5ULIssue']:
             device_tab_technology = 'PMP'
 
-        if data_source in ['Backhaul', 'Temperature_bh']:
+        if data_source in ['Backhaul', 'Temperature_bh', 'Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
             page_type = 'other'
             type_rf = "backhaul"
-
-        if data_source in ['Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
-            page_type = 'other'
-            type_rf = "all"
 
         # GET all device name list from the list
         try:
