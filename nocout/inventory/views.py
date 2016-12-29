@@ -5685,7 +5685,7 @@ class GetSms(View):
 
             if filtered_qs.count() == 1:
                 # Call soap api and Create or Close Ticket for that circuit_id.
-
+                down_timestamp = ''
                 if USE_SOAP_TICKETING:
                     # If status is down, Create ticket else close ticket
                     if message.lower() == 'down':
@@ -5694,20 +5694,26 @@ class GetSms(View):
                         request_id = filtered_qs[0].circuit.circuit_id
                     elif message.lower() == 'up':
                         call_mode = 'update'
-                        # in case of closing a ticket we need ticket id
-                        request_id = PowerSignals.objects.filter(
-                            circuit_contacts=filtered_qs[0]
+                        # Get last created entry in DB with message down, and corresponding circuit id
+                        PS_instance = PowerSignals.objects.filter(
+                            circuit_contacts=filtered_qs[0],
+                            message__icontains='down'
                         ).latest(
                             'created_at'
-                        ).ticket_id
+                        )
+                        # in case of closing a ticket we need ticket id
+                        request_id = PS_instance.ticket_id
+                        # in case of closing a ticket we need timestamp at which ticket was created
+                        down_timestamp = PS_instance.created_at
                     else:
                         call_mode = ''
                         request_id = ''
+                        down_timestamp = ''
                     
                     # Call API Only in UP/DOWN event
                     soap_result = {}
                     if call_mode and request_id:
-                        soap_result = self.call_soap_api(api_mode=call_mode, request_id=request_id)
+                        soap_result = self.call_soap_api(api_mode=call_mode, request_id=request_id, down_create_time=down_timestamp)
 
                 try:
                     power_instance = PowerSignals()
@@ -5728,7 +5734,7 @@ class GetSms(View):
         
         return HttpResponse(json.dumps(result))
 
-    def call_soap_api(self, api_mode='', request_id=''):
+    def call_soap_api(self, api_mode='', request_id='', down_create_time=''):
         """
         Method calls SOAP Api for ticket Creation or Updation in remedy tool.
 
@@ -5784,6 +5790,12 @@ class GetSms(View):
                     'Product_Categorization_Tier_3': 'PSUAlertUpDown',
                 }
             else:
+                resolution_trk_str = '{0} PSU Power Down for ServiceID: {1} Resolved at Time: {2}'.format(
+                    down_create_time.strftime("%c"),
+                    request_id,
+                    datetime.now().strftime("%c")
+                )
+
                 input_data = {
                     # Wireless one params are commented due to error from Remedy's end.
 
@@ -5796,7 +5808,7 @@ class GetSms(View):
                     # 'Resolution': 'Resolved By WirelessOne'
 
                     # Currently Set to Monolith params
-                    'Resolution_tracking': '',
+                    'Resolution_tracking': resolution_trk_str,
                     'Incident_number': request_id,
                     'Worklog_type': 'Updated by Monolith',
                     'Resolution_Tier_1': 'Customer',
