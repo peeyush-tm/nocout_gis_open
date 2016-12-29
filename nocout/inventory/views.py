@@ -5820,7 +5820,7 @@ class GetSms(View):
             # Set AuthenticationInfo headers
             headers = client.factory.create('AuthenticationInfo')
             headers.userName = 'EAI'
-            headers.password = 'eai123'
+            headers.password = 'eai1234'
             client.set_options(soapheaders=headers)
 
             # Call method with our data
