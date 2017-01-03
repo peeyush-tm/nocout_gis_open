@@ -76,6 +76,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                 isOther = other_list.filter(function(list_val) {
                     return tab_id.search(list_val) > -1
                 }).length;
+
             // If tab is ptp
             if (isPtp > 0) {
                 for (var i = 0; i < grid_headers.length; i++) {
@@ -153,6 +154,21 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                                 column.bVisible = true;
                             } else {
                                 column["bVisible"] = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(pmpLength > 0) {
+                if (window.location.href.search("network_detail") > -1) {
+                    for (var i = 0; i < grid_headers.length; i++) {
+                        var column = grid_headers[i];
+                        if (column.mData.indexOf("refer") > -1) {
+                            if (column.bVisible) {
+                                column.sClass = "hide";
+                            } else {
+                                column["sClass"] = "hide";
                             }
                         }
                     }

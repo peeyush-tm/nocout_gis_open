@@ -1647,8 +1647,8 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         extra_query_condition = ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
 
         # Add extra condition for UL Issues listing
-        if self.data_sources and 'ul_issue' in ', '.join(self.data_sources):
-            extra_query_condition += " AND `{0}`.`current_value` > 0 "
+        # if self.data_sources and 'ul_issue' in ', '.join(self.data_sources):
+        #     extra_query_condition += " AND `{0}`.`current_value` > 0 "
 
         get_param = self.request.GET.get("data_source")
 
