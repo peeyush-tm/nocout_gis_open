@@ -574,6 +574,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         extra_query_condition = None
         is_customer_detail_page = False
 
+        secondary_table_info = None
+
         if data_source in ['latency']:
             extra_query_condition = ' AND (`{0}`.`current_value` > 0 ) '
             extra_query_condition += severity_condition
@@ -593,7 +595,6 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
             # In case of Radwin5k Customer details
             # We also have to monitor KPI services from performance_utilizationstatus table
-            secondary_table_info = None
             if self.is_rad5:
                 # In case of Radwin5k secondary table info also needs to be passed.
                 # Result of this table needs to be unioned with 1st table
