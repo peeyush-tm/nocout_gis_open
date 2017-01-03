@@ -428,6 +428,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
         other_type = self.request.GET.get('other_type', None)
         is_rad5 = int(self.request.GET.get('is_rad5', 0))
+
+        self.is_rad5 = is_rad5
         
         device_tab_technology = self.request.GET.get('data_tab')
 
@@ -589,6 +591,20 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             extra_query_condition = severity_condition
             search_table = "performance_servicestatus"
 
+            # In case of Radwin5k Customer details
+            # We also have to monitor KPI services from performance_utilizationstatus table
+            secondary_table_info = None
+            if self.is_rad5:
+                # In case of Radwin5k secondary table info also needs to be passed.
+                # Result of this table needs to be unioned with 1st table
+                secondary_table_info = {
+                    'table_name': 'performance_utilizationstatus',
+                    'data_source': ["rad5k_ss_dl_util_kpi", "rad5k_ss_ul_util_kpi"],
+                    'condition': severity_condition
+                }
+
+
+
         required_data_columns = self.polled_columns
 
         sorted_device_list = alert_utils.polled_results(
@@ -597,7 +613,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             table_name=search_table,
             data_sources=data_sources_list,
             columns=required_data_columns,
-            condition=extra_query_condition if extra_query_condition else None
+            condition=extra_query_condition if extra_query_condition else None,
+            secondary_table_info=secondary_table_info
         )
 
         return sorted_device_list

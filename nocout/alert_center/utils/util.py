@@ -36,7 +36,8 @@ class AlertCenterUtilsGateway:
         columns=None, 
         condition=None, 
         offset=None, 
-        limit=None
+        limit=None,
+        secondary_table_info=None
     ):
         """
 
@@ -55,7 +56,8 @@ class AlertCenterUtilsGateway:
             columns=columns, 
             condition=condition, 
             offset=offset, 
-            limit=limit
+            limit=limit,
+            secondary_table_info=secondary_table_info
         )
 
         return param1
@@ -168,7 +170,8 @@ class AlertCenterUtilsGateway:
         table_name=None,
         data_sources=None,
         columns=None,
-        condition=None
+        condition=None,
+        secondary_table_info=None
     ):
         """
         """
@@ -178,7 +181,8 @@ class AlertCenterUtilsGateway:
             table_name=table_name,
             data_sources=data_sources,
             columns=columns,
-            condition=condition
+            condition=condition,
+            secondary_table_info=secondary_table_info
         )
 
         return param1
@@ -220,7 +224,8 @@ def prepare_query(
     columns=None, 
     condition=None, 
     offset=None, 
-    limit=None
+    limit=None,
+    secondary_table_info=None
 ):
     """
 
@@ -240,15 +245,49 @@ def prepare_query(
     if not columns:
         return None
 
+    # If there is info about the table, which has to be unioned with 1st one
+    # then extend query
+    extended_query = ""
+    if secondary_table_info:
+        secondary_table = secondary_table_info.get('table_name', '')
+        secondary_data_sources = secondary_table_info.get('data_source', '')
+        secondary_condition = secondary_table_info.get('condition', '')
+
+        if secondary_table:
+            extended_query = """
+            UNION
+            (
+                SELECT {0} FROM {1} AS second_table
+                WHERE (
+                    second_table.device_name IN ( {2} )
+                    {3}
+                    {4}
+                )
+                ORDER BY second_table.id DESC
+            )
+            """.format(
+                ','.join(["second_table.`" + col_name + "`" for col_name in columns]),
+                secondary_table,
+                (",".join(map(in_string, devices))),
+                "AND second_table.data_source in ( {0} )".format(
+                    ','.join(map(in_string, secondary_data_sources))
+                ) if secondary_data_sources else "",
+                secondary_condition.format("second_table") if secondary_condition else "",
+            )
+
+
     if table_name and devices:
         query = """
-        SELECT {0} FROM {1} AS original_table
-        WHERE (
-            original_table.device_name IN ( {2} )
-            {3}
-            {4}
+        (
+            SELECT {0} FROM {1} AS original_table
+            WHERE (
+                original_table.device_name IN ( {2} )
+                {3}
+                {4}
+            )
+            ORDER BY original_table.id DESC
         )
-        ORDER BY original_table.id DESC
+        {5}
         """.format(
             ','.join(["original_table.`" + col_name + "`" for col_name in columns]),
             table_name,
@@ -257,6 +296,7 @@ def prepare_query(
                 ','.join(map(in_string, data_sources))
             ) if data_sources else "",
             condition.format("original_table") if condition else "",
+            extended_query
         )
 
         if limit is not None and offset is not None:
@@ -571,7 +611,8 @@ def polled_results(
                    table_name=None,
                    data_sources=None,
                    columns=None,
-                   condition=None
+                   condition=None,
+                   secondary_table_info=None
                    ):
     """
     since the perfomance status data would be refreshed per 5 minutes## we will cache it
@@ -610,7 +651,7 @@ def polled_results(
         for machine, machine_device_list in machine_dict.items():
             perf_result.extend(
                 get_performance_data(
-                    machine_device_list, machine, data_sources, columns, condition, table_name
+                    machine_device_list, machine, data_sources, columns, condition, table_name, secondary_table_info
                 )
             )
 
@@ -638,7 +679,7 @@ def get_multiprocessing_performance_data(q, machine_device_list, machine, data_s
         logger.exception(e.message)
 
 
-def get_performance_data(machine_device_list, machine, data_sources, columns, condition, table_name):
+def get_performance_data(machine_device_list, machine, data_sources, columns, condition, table_name, secondary_table_info):
     """
 
     :return:
@@ -648,8 +689,10 @@ def get_performance_data(machine_device_list, machine, data_sources, columns, co
         devices=machine_device_list,
         data_sources=data_sources,
         columns=columns,
-        condition=condition
+        condition=condition,
+        secondary_table_info=secondary_table_info
     )
+    
     return prepare_raw_alert_results(nocout_utils.fetch_raw_result(query, machine))
 
 def get_ping_status(device_list, machine, model):
