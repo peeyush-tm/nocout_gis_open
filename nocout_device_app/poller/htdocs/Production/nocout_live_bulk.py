@@ -26,6 +26,7 @@ import mysql.connector
 import requests
 from configobj import ConfigObj
 from os.path import expanduser
+import re
 logger = nocout_log()
 
 config_file = "/omd/versions/1.10/lib/python/handlers/redis_config.ini"
@@ -160,6 +161,8 @@ def file_name_cr(ip,id):
                 cur.execute(query)
 		file = cur.fetchone()
 		file = str(file[0])
+		file = re.sub('[^a-zA-Z0-9 \n\.]', ' ', file)
+		file = file.replace(" ","_")
 		#logger.info("file name is "+pformat(file))
 		return file
                 
