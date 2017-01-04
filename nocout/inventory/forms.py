@@ -502,8 +502,8 @@ class SectorForm(forms.ModelForm):
         Meta Information
         """
         model = Sector
-        # fields = "__all__"
-        exclude = ['rfs_date']
+        fields = "__all__"
+        # exclude = ['rfs_date']
 
     def clean_name(self):
         """

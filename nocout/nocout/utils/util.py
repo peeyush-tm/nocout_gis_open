@@ -548,10 +548,10 @@ class NocoutUtilsGateway:
 
         return param1
 
-    def get_current_planned_event_ips(self, ip_address=None):
+    def get_current_planned_event_ips(self, ip_address=None, sector_id='', check_sector=True):
         '''
         '''
-        result = get_current_planned_event_ips(ip_address=ip_address)
+        result = get_current_planned_event_ips(ip_address=ip_address, sector_id=sector_id, check_sector=check_sector)
         return result
 
 class DictDiffer(object):
@@ -3197,29 +3197,48 @@ def getSectorInventoryInfo(sector_id=None):
     return sector_info
 
 
-def get_current_planned_event_ips(ip_address=None):
+def get_current_planned_event_ips(ip_address=None, sector_id='', check_sector=True):
     """
     This function return 'Planned Events' ips for current timestamp
     """
     planned_ips = list()
     if PLANNED_EVENTS_ENABLED:
         from alert_center.models import PlannedEvent
+
+        filter_cond = ''
+        # Add sector ID filter condition only if sector id is present
+        if sector_id:
+            filter_cond = 'Q(sectorid__in=sector_id),'
+
+        sector_condition = ''
+        # Alarms which are Based on Device, Not on a particular Sector
+        # For them we will skip the entries which are for specifically sectors
+        if not check_sector:
+            sector_condition = "~Q(component__iexact='sector'),"
+
         try:
             now_datetime = datetime.datetime.now()
             start_date = float(format(now_datetime, 'U'))
 
             if ip_address:
-                planned_ips = list(PlannedEvent.objects.filter(
-                    startdate__lte=start_date,
-                    enddate__gte=start_date,
-                    nia__icontains=ip_address
+                query = '''planned_ips = list(PlannedEvent.objects.filter(
+                {0}
+                {1}
+                startdate__lte=start_date,
+                enddate__gte=start_date,
+                nia__icontains=ip_address
                 ).values_list('nia', flat=True))
+                '''.format(sector_condition, filter_cond)
             else:
-                planned_ips = list(PlannedEvent.objects.filter(
-                    startdate__lte=start_date,
-                    enddate__gte=start_date,
-                    resource_name__isnull=False
+                query = '''planned_ips = list(PlannedEvent.objects.filter(
+                {0}
+                {1}
+                startdate__lte=start_date,
+                enddate__gte=start_date,
+                resource_name__isnull=False
                 ).values_list('nia', flat=True))
+                '''.format(sector_condition, filter_cond)
+            exec query
 
             # In 'nia' column we have comma seperated ip addresses.
             # So make a list of individual ip address

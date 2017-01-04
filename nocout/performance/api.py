@@ -16,6 +16,8 @@ Methods
 
 """
 import urllib
+import requests
+import ast
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from django.db.models import Q, Count
@@ -311,9 +313,9 @@ class StartPingStabilityTest(APIView):
                 )
                 r = requests.post(url, data=encoded_data)
                 response_dict = ast.literal_eval(r.text)
-                if len(response_dict):
-                    temp_dict = deepcopy(response_dict)
-                    q.put(temp_dict)
+                # if len(response_dict):
+                #     temp_dict = deepcopy(response_dict)
+                #     q.put(temp_dict)
             except Exception as e:
                 logger.error('Stability Test Request Exception')
                 logger.error(e)

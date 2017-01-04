@@ -1605,6 +1605,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
         else:
             processed_sectors[sector.sector_id] = sector.sector_id
 
+
+        rad5_sector = False
         # start with single sector
         # get the sector --> device
         # stitch together values
@@ -1861,6 +1863,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             cbw_index = None
             try:
                 if sector.sector_configured_on.device_type == rad5k_type_id:
+                    rad5_sector = True
                     # index for dl values
                     in_value_index = (sector_device_name, 'rad5k_bs_dl_utilization', 'dl_utilization')
                     # index for ul values
@@ -1883,6 +1886,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         current_timeslot_ul = float(indexed_rad5_val.get(timeslot_ul_index)[0]['current_value'])
                     if indexed_rad5_val.get(timeslot_dl_index):
                         current_timeslot_dl = float(indexed_rad5_val.get(timeslot_dl_index)[0]['current_value'])
+
                 else:
                     # index for dl values
                     in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
@@ -1970,6 +1974,14 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             # stop provisioning state
             if Topology.objects.filter(device_name=sector.sector_configured_on.device_name).count() >= 8:
                 severity = 'critical'
+            elif rad5_sector and current_timeslot_ul and current_timeslot_dl:
+                # threshold --> 90% of 64
+                try:
+                    if current_timeslot_ul >= (0.9*64) or current_timeslot_dl >= (0.9*64):
+                        severity = 'critical'
+                except Exception, e:
+                    logger.error('change severity for current_timeslot_ul/current_timeslot_dl error')
+
 
 
             # Commented------------------------------------

@@ -26,13 +26,13 @@ class Select2Mixin(object):
         org_id = self.request.GET.get('org', '0')
         sSearch = self.request.GET.get('sSearch', None)
         tech_name = self.request.GET.get('tech_name', None)
-        if str(org_id) == "0":
+        # if str(org_id) == "0":
             # Create instance of 'NocoutUtilsGateway' class
-            nocout_utils = NocoutUtilsGateway()
-            organizations = nocout_utils.logged_in_user_organizations(self)
-            qs = qs.filter(organization__id__in=organizations)
-        else:
-            qs = qs.filter(organization_id=org_id)
+        nocout_utils = NocoutUtilsGateway()
+        organizations = nocout_utils.logged_in_user_organizations(self)
+        qs = qs.filter(organization__id__in=organizations)
+        # else:
+        #     qs = qs.filter(organization_id=org_id)
 
         if str(qs.model.__name__).strip().lower() == 'sector':
             sector_required_list = ['id', self.obj_alias, 'name', 'sector_configured_on__ip_address', 'sector_id']

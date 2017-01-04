@@ -86,7 +86,7 @@ class DownloadCenter(ListView):
             self.template_name = 'download_center/bs_outage_list.html'
 
         if 'sector_tot_weekly' in page_type:
-            report_title = 'Sector TOT Report'
+            report_title = 'Sector Utilization TOT Report'
             self.template_name = 'download_center/bs_outage_list.html'            
 
         context = super(DownloadCenter, self).get_context_data(**kwargs)

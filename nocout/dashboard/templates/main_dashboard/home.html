@@ -159,8 +159,8 @@
             <h4 class="bigger dashboard_headings">- Sales Opportunity</h4><br/>
 
              <!-- Capacity pie Charts & city table Start -->
-            <div class="row col-md-6" align="center">
-                <div class="custom_seperator">&nbsp;</div>
+            <div class="row col-md-12" align="center">
+                <!-- <div class="custom_seperator">&nbsp;</div> -->
                 <div class="dashboard_main">
                     <div class="pull-left">
                     <!--TITLE BLOCK - START -->
@@ -180,7 +180,7 @@
                 <!--CHART BLOCK - START -->
                 <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
             </div>
-            <div class="row col-md-6 pull-right" align="center">
+            <div class="row col-md-12 pull-right" align="center">
                 <div class="dashboard_main">
                     <div class="pull-left">
                     <!--TITLE BLOCK - START -->
@@ -208,46 +208,67 @@
             <h4 class="bigger dashboard_headings">- Sector Capacity</h4><br/>
 
             <div class="row col-md-6" align="center">
-            <div class="custom_seperator">&nbsp;</div>
-            <div class="">
-                <div class="pull-left">
-                <!--TITLE BLOCK - START -->
-                <h5 class="bigger">
-                    Wimax 
-                    <!--TIMESTAMP BLOCK - START -->
-                    <small id="wimax_sector_capacity_timestamp"></small>
-                     <!--TIMESTAMP BLOCK - END -->
-                </h5>
-            <!--TITLE BLOCK - END -->
-            </div>
-                <div class="pull-right">
-                    <i class="fa fa-line-chart trends_icon" id="wimax_sector_capacity_trend" title="Wimax Sector Capacity Trends"> </i>
+                <div class="custom_seperator">&nbsp;</div>
+                <div class="">
+                    <div class="pull-left">
+                    <!--TITLE BLOCK - START -->
+                    <h5 class="bigger">
+                        Wimax 
+                        <!--TIMESTAMP BLOCK - START -->
+                        <small id="wimax_sector_capacity_timestamp"></small>
+                         <!--TIMESTAMP BLOCK - END -->
+                    </h5>
+                <!--TITLE BLOCK - END -->
                 </div>
-                <div class="clearfix"></div>
-            </div>
-            <!--CHART BLOCK - START -->
-            <div id="wimax_sector_capacity" class="rf_chart_style"></div>
-        </div>
-        <div class="row col-md-6 pull-right" align="center">      
-            <div class="">
-                <div class="pull-left">
-                <!--TITLE BLOCK - START -->
-                <h5 class="bigger">
-                    PMP             
-                    <!--TIMESTAMP BLOCK - START -->
-                    <small id="pmp_sector_capacity_timestamp"></small>
-                     <!--TIMESTAMP BLOCK - END -->
-                </h5>
-            <!--TITLE BLOCK - END -->
-            </div>
-                <div class="pull-right">
-                    <i class="fa fa-line-chart trends_icon" id="pmp_sector_capacity_trend" title="PMP Sector Capacity Trends"> </i>
+                    <div class="pull-right">
+                        <i class="fa fa-line-chart trends_icon" id="wimax_sector_capacity_trend" title="Wimax Sector Capacity Trends"> </i>
+                    </div>
+                    <div class="clearfix"></div>
                 </div>
-                <div class="clearfix"></div>
+                <!--CHART BLOCK - START -->
+                <div id="wimax_sector_capacity" class="rf_chart_style"></div>
             </div>
-            <!--CHART BLOCK - START -->
-            <div id="pmp_sector_capacity" class="rf_chart_style"></div>
-        </div>
+            <div class="row col-md-6 pull-right" align="center">      
+                <div class="">
+                    <div class="pull-left">
+                    <!--TITLE BLOCK - START -->
+                    <h5 class="bigger">
+                        Cambium             
+                        <!--TIMESTAMP BLOCK - START -->
+                        <small id="pmp_sector_capacity_timestamp"></small>
+                         <!--TIMESTAMP BLOCK - END -->
+                    </h5>
+                <!--TITLE BLOCK - END -->
+                </div>
+                    <div class="pull-right">
+                        <i class="fa fa-line-chart trends_icon" id="pmp_sector_capacity_trend" title="Cambium Sector Capacity Trends"> </i>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <!--CHART BLOCK - START -->
+                <div id="pmp_sector_capacity" class="rf_chart_style"></div>
+            </div>
+            <div class="row col-md-12 pull-right" align="center">
+                <!-- <div class="custom_seperator">&nbsp;</div>      -->
+                <div class="">
+                    <div class="pull-left">
+                    <!--TITLE BLOCK - START -->
+                    <h5 class="bigger">
+                        Radwin5K             
+                        <!--TIMESTAMP BLOCK - START -->
+                        <small id="rad5_sector_capacity_timestamp"></small>
+                         <!--TIMESTAMP BLOCK - END -->
+                    </h5>
+                <!--TITLE BLOCK - END -->
+                </div>
+                    <div class="pull-right">
+                        <i class="fa fa-line-chart trends_icon" id="rad5_sector_capacity_trend" title="Radwin5K Sector Capacity Trends"> </i>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <!--CHART BLOCK - START -->
+                <div id="rad5_sector_capacity" class="rf_chart_style"></div>
+            </div>
 
         </div>
         
@@ -588,6 +609,9 @@
         
         pie_chart_url_obj["pmp_sector_capacity"]["url"] = "{% url 'sector-capacity-pmp' %}";
         pie_chart_url_obj["pmp_sector_capacity"]["trends_url"] = "{% url 'trend-monthly-sector-pmp' %}";
+
+        pie_chart_url_obj["rad5_sector_capacity"]["url"] = "{% url 'sector-capacity-rad5' %}";
+        pie_chart_url_obj["rad5_sector_capacity"]["trends_url"] = "{% url 'trend-monthly-sector-rad5' %}";
 
         pie_chart_url_obj["wimax_sector_capacity"]["url"] = "{% url 'sector-capacity-wimax' %}";
         pie_chart_url_obj["wimax_sector_capacity"]["trends_url"] = "{% url 'trend-monthly-sector-wimax' %}";

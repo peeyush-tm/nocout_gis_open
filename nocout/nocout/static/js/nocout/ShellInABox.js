@@ -3,7 +3,9 @@ disableSSLMenu    = false;
 suppressAllAudio  = true;
 is_first_login = true;
 is_first_pass = true;
+telnet_count = 0
 is_UAT = false; //in case of production make it false.
+is_ospf3 = false;
 ssh_ip = ''
 linkifyURLs       = 1;
 userCSSList       = [ [ 'Black on White', true, true ], [ 'White On Black', false, false ], [ 'Color Terminal', true, true ], [ 'Monochrome', false, false ] ];
@@ -4675,6 +4677,10 @@ ShellInABox.prototype.onReadyStateChange = function(request) {
             ssh_ip = info_array[1].split('=')[1];
             ssh_type = info_array[2].split('=')[1];
 
+            if(ssh_machine=='ospf3'){
+              is_ospf3 = true
+            }
+
             // If working on UAT fire these commands
             if (is_UAT) {
               this.keysPressed('ssh -p 5522 10.133.19.165' + '\n');
@@ -4685,6 +4691,7 @@ ShellInABox.prototype.onReadyStateChange = function(request) {
               this.keysPressed('telnet ' + ssh_ip + '\n');  
             }
             else{
+              // var is_ospf3 = false
               switch (ssh_machine) {
                 case 'ospf1':
                   server = "tmadmin@115.114.79.37";
@@ -4694,6 +4701,7 @@ ShellInABox.prototype.onReadyStateChange = function(request) {
                   break;
                 case 'ospf3':
                   server = "tmadmin@115.114.79.39";
+                  is_ospf3 = true;
                   break;
                 case 'ospf4':
                   server = "tmadmin@115.114.79.40";
@@ -4718,10 +4726,21 @@ ShellInABox.prototype.onReadyStateChange = function(request) {
           this.sendRequest(request);
 
           if(!is_UAT){
-            if (response.data && response.data.toLowerCase().indexOf('password:') > -1 && response.data.toLowerCase().indexOf('tmadmin@') > -1)
-            {
-                this.keysPressed('QWer12#$' + '\n');
-                this.keysPressed('telnet ' + ssh_ip + '\n');
+            if (!is_ospf3){
+              if (response.data.toLowerCase().indexOf('tmadmin@') > -1 && telnet_count == 0){
+                  this.keysPressed('telnet ' + ssh_ip + '\n');
+                  telnet_count += 1
+              }
+            }
+            else {
+              if (response.data && response.data.toLowerCase().indexOf('password:') > -1 && response.data.toLowerCase().indexOf('tmadmin@') > -1)
+              {
+                  this.keysPressed('QWer12#$' + '\n');
+                  if (telnet_count == 0){
+                    this.keysPressed('telnet ' + ssh_ip + '\n');
+                    telnet_count += 1
+                  }
+              }
             }
 
             if (response.data && (response.data.toLowerCase().indexOf('connection closed by foreign host') > -1 || (response.data.toLowerCase().indexOf('connection') > -1 && response.data.toLowerCase().indexOf('closed') > -1) ) )

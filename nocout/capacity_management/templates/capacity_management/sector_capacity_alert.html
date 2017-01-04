@@ -128,7 +128,8 @@
                 "header_class_name" : "SectorAugmentationAlertsHerders",
                 "data_class_name" : "SectorAugmentationAlertsListing",
                 "header_extra_param" : "{"+common_param+"}",
-                "data_extra_param" : "{'report_title' : '"+all_title+"', "+common_param+"}"
+                "data_extra_param" : "{'report_title' : '"+all_title+"', "+common_param+"}",
+                "excluded" : "['consumed_dl_ts','consumed_ul_ts', 'total_timeslots', 'timeslot_dl', 'timeslot_ul']"
             },
             "pmp_augment_tab" : {
                 "app_name" : "capacity_management",
@@ -136,7 +137,8 @@
                 "header_class_name" : "SectorAugmentationAlertsHerders",
                 "data_class_name" : "SectorAugmentationAlertsListing",
                 "header_extra_param" : "{"+common_param+"}",
-                "data_extra_param" : "{'technology': 'PMP', 'report_title' : '"+pmp_title+"', "+common_param+"}"
+                "data_extra_param" : "{'technology': 'PMP', 'report_title' : '"+pmp_title+"', "+common_param+"}",
+                "excluded" : "['consumed_dl_ts','consumed_ul_ts', 'total_timeslots', 'timeslot_dl', 'timeslot_ul']"
             },
             "rad5k_augment_tab" : {
                 "app_name" : "capacity_management",
@@ -152,7 +154,8 @@
                 "header_class_name" : "SectorAugmentationAlertsHerders",
                 "data_class_name" : "SectorAugmentationAlertsListing",
                 "header_extra_param" : "{"+common_param+"}",
-                "data_extra_param" : "{'technology': 'WiMAX', 'report_title' : '"+wimax_title+"', "+common_param+"}"
+                "data_extra_param" : "{'technology': 'WiMAX', 'report_title' : '"+wimax_title+"', "+common_param+"}",
+                "excluded" : "['consumed_dl_ts','consumed_ul_ts', 'total_timeslots', 'timeslot_dl', 'timeslot_ul']"
             }
         };
 

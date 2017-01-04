@@ -166,7 +166,7 @@ class DashbaordSettingsCreateView(SuperUserRequiredMixin, CreateView):
         technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
         return context
-
+        
 
 class DashbaordSettingsDetailView(DetailView):
     """
@@ -241,19 +241,28 @@ class PerformanceDashboardMixin(object):
 
         filter_condition = ''
         try:
+            rad5_device_type = DeviceType.objects.get(name='Radwin5KSS').id
             if is_rad5:
-                device_type = DeviceType.objects.get(name='Radwin5KSS').id
-                filter_condition = 'device_type={0}'.format(device_type)
+                filter_condition = 'device_type={0}'.format(rad5_device_type)
             else:
                 technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
-                filter_condition = 'technology={0}'.format(technology)
+                filter_condition = 'Q(technology={0})'.format(technology)
+
+                # In case of cambium we need to exclued cases of Radwin5K
+                if tech_name.lower() == 'pmp':
+                    filter_condition += ",~Q(device_type={0})".format(rad5_device_type)
+
         except Exception, e:
             technology = ""
-            device_type = ""
+            rad5_device_type = ""
 
         data_source = request.GET.get('data_source')
         data_source=str(data_source)
         dashboard_name=data_source+'_'+tech_name
+
+        if is_rad5:
+            dashboard_name += '_rad5'
+
         if is_bh:
             dashboard_name=dashboard_name+'_bh'
         
@@ -346,6 +355,7 @@ class PMP_Performance_Dashboard(PerformanceDashboardMixin, View):
 
         return data_source_config, tech_name, is_bh
 
+
 class RAD5_Performance_Dashboard(PerformanceDashboardMixin, View):
     """
     The Class based View to get performance dashboard page requested.
@@ -359,10 +369,10 @@ class RAD5_Performance_Dashboard(PerformanceDashboardMixin, View):
         data_source_config = {
             'ul_rssi': {'service_name': 'rad5k_ul_rssi', 'model': ServiceStatus},
             'dl_rssi': {'service_name': 'rad5k_dl_rssi', 'model': ServiceStatus},
-            'ul_uas': {'service_name': 'rad5k_ul_uas_invent', 'model': ServiceStatus},
-            'dl_uas': {'service_name': 'rad5k_dl_uas_invent', 'model': ServiceStatus},
-            'rad5k_ss_ul_modulation': {'service_name': 'rad5k_ss_ul_modulation', 'model': ServiceStatus},
-            'rad5k_ss_dl_modulation': {'service_name': 'rad5k_ss_dl_modulation', 'model': ServiceStatus},
+            'ul_uas': {'service_name': 'rad5k_ss_ul_uas', 'model': ServiceStatus},
+            'dl_uas': {'service_name': 'rad5k_ss_dl_uas', 'model': ServiceStatus},
+            'ul_modulation': {'service_name': 'rad5k_ss_ul_modulation', 'model': ServiceStatus},
+            'dl_modulation': {'service_name': 'rad5k_ss_dl_modulation', 'model': ServiceStatus},
         }
         tech_name = 'PMP'
         is_bh = False
@@ -820,6 +830,7 @@ class MainDashboard(View):
 
         - WiMAX Sector Capicity
         - PMP Sector Capicity
+        - Radwin5K Sector Capacity
         - WiMAX Sales Oppurtunity
         - PMP Sales Oppurtunity
         - WiMAX Backhaul Capicity
@@ -1086,7 +1097,8 @@ class SectorCapacityMixin(object):
         """
         tech_name = self.tech_name
         organization = nocout_utils.logged_in_user_organizations(self)
-        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+        
+        # technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         # Get the status of the dashboard.
@@ -1123,6 +1135,11 @@ class PMPSectorCapacity(SectorCapacityMixin, View):
     """
     tech_name = 'PMP'
 
+class Rad5SectorCapacity(SectorCapacityMixin, View):
+    """
+    Class Based View for the Radwin5K Sector Capacity Dashboard.
+    """
+    tech_name = 'Radwin5K'
 
 class WiMAXSectorCapacity(SectorCapacityMixin, View):
     """
@@ -1894,6 +1911,12 @@ class MonthlyTrendSectorPMP(MonthlyTrendSectorMixin, View):
     """
     tech_name = 'PMP'
 
+class MonthlyTrendSectorRad5(MonthlyTrendSectorMixin, View):
+    """
+    Class Based View for the PMP Sector Capacity Dashboard Trends.
+    """
+    tech_name = 'Radwin5K'
+
 
 class MonthlyTrendSectorWIMAX(MonthlyTrendSectorMixin, View):
     """
@@ -2000,6 +2023,10 @@ class GetMonthlyRFTrendData(View):
         dashboard_name = self.request.GET.get('dashboard_name')
         is_bh = self.request.GET.get('is_bh',0)
         tech_name = self.request.GET.get('technology')
+
+        # Getting params from request
+        is_rad5 = int(self.request.GET.get('is_rad5', 0))
+
         dashboard_status_name=dashboard_name
         response=''
         technology = DeviceTechnology.objects.get(name=tech_name).id
@@ -2009,11 +2036,34 @@ class GetMonthlyRFTrendData(View):
         dashboard_status_name=dashboard_name+'_'+tech_name
         if int(is_bh):
             dashboard_status_name=dashboard_status_name+'_bh'
+
+        if is_rad5:
+            dashboard_status_name += '_rad5'
+
+        try:
+            rad5_device_type = DeviceType.objects.get(name='Radwin5KSS').id
+            if is_rad5:
+                filter_condition = 'device_type={0}'.format(rad5_device_type)
+            else:
+                technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+                filter_condition = 'Q(technology={0})'.format(technology)
+
+                # In case of cambium we need to exclued cases of Radwin5K
+                if tech_name.lower() == 'pmp':
+                    filter_condition += ",~Q(device_type={0})".format(rad5_device_type)
+
+        except Exception, e:
+            technology = ""
+            rad5_device_type = ""
+
         organization = nocout_utils.logged_in_user_organizations(self)
         try:
-            dashboard_setting = DashboardSetting.objects.get(technology=technology,
-                                                             page_name='rf_dashboard',
-                                                             name=dashboard_name, is_bh=is_bh)
+            query = '''dashboard_setting = DashboardSetting.objects.get(
+                                                    {0},
+                                                    page_name='rf_dashboard',
+                                                    name=dashboard_name, is_bh=is_bh
+                                                )'''.format(filter_condition)
+            exec query
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
                 "message": "Corresponding dashboard setting is not available.",

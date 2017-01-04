@@ -367,8 +367,8 @@
                 wimax_title = "Network Alert Details: WiMAX BS",
                 pmp_title = "Network Alert Details: PMP BS",
                 ptp_title = "Network Alert Details: PTP BH",
-                pmp_ulIssue_extra_param = "{'data_source' : 'PMPULIssue', 'report_title' : '"+rad5_ulIssue_title+"', "+common_extra_param+"}",
-                rad5_ulIssue_extra_param = "{'data_source' : 'RAD5ULIssue', 'report_title' : '"+pmp_ulIssue_title+"', "+common_extra_param+"}",
+                pmp_ulIssue_extra_param = "{'data_source' : 'PMPULIssue', 'report_title' : '"+pmp_ulIssue_title+"', "+common_extra_param+"}",
+                rad5_ulIssue_extra_param = "{'data_source' : 'RAD5ULIssue', 'report_title' : '"+rad5_ulIssue_title+"', "+common_extra_param+"}",
                 wimax_ulIssue_extra_param = "{'data_source' : 'WiMAXULIssue', 'report_title' : '"+wimax_ulIssue_title+"', "+common_extra_param+"}",
                 converter_extra_param = "{'data_source' : 'Backhaul', 'report_title' : '"+converter_title+"', "+common_extra_param+"}",
                 bh_temp_extra_param = "{'data_source' : 'Temperature_bh', 'report_title' : '"+bh_temp_title+"', "+common_extra_param+"}",
@@ -415,7 +415,7 @@
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{'headers_data_key' : 'ul_issue_headers',"+common_extra_param+"}",
                     "data_extra_param" : pmp_ulIssue_extra_param,
-                    "excluded" : "["+common_hidden_columns+"]"
+                    "excluded" : "["+common_hidden_columns+", 'refer']"
                 },
                 "wimax_ulIssue_tab" : {
                     "app_name" : "alert_center",
@@ -486,7 +486,7 @@
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{'headers_data_key' : 'rad5_ul_issue_headers',"+common_extra_param+"}",
                     "data_extra_param" : rad5_ulIssue_extra_param,
-                    "excluded" : "["+common_hidden_columns+"]"
+                    "excluded" : "["+common_hidden_columns+", 'refer']"
                 },
             };
 

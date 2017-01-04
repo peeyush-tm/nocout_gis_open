@@ -75,7 +75,7 @@ class DashboardSetting(models.Model):
     range10_color_hex_value = models.CharField('Range-10 Color', max_length=100, null=True, blank=True)
 
     class Meta:
-        unique_together = ('name', 'page_name', 'technology', 'is_bh')
+        unique_together = ('name', 'page_name', 'technology', 'is_bh', 'device_type')
         verbose_name = "dashboard setting"
         verbose_name_plural = "dashboard settings"
 

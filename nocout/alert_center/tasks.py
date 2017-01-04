@@ -261,7 +261,7 @@ def set_planned_events(dataset):
 						pmp_port = None
 						if component and str(component).lower() == 'sector':
 							try:
-								sector_instance = Sector.objects.get(sector_id__iexact=sectorid)
+								sector_instance = Sector.objects.get(sector_id__iexact=sectorid)   #After DR Handle this accordingly
 								pmp_port = sector_instance.sector_configured_on_port.name
 							except Exception as e:
 								logger.error('Sector Fetch Exception for === {0}'.format(str(sectorid)))

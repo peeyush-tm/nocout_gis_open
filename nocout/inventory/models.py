@@ -241,6 +241,7 @@ class Circuit(models.Model):
     sold_cir = models.FloatField('Customer Sold CIR', null=True, blank=True, help_text='(mbps) Enter a number.')
     dl_rssi_during_acceptance = models.CharField('RSSI During Acceptance', max_length=100, null=True, blank=True)
     dl_cinr_during_acceptance = models.CharField('CINR During Acceptance', max_length=100, null=True, blank=True)
+    modulation_dl_during_acceptance = models.CharField('Modulation DL during Acceptance', max_length=100, null=True, blank=True)
     jitter_value_during_acceptance = models.CharField('Jitter Value During Acceptance', max_length=100, null=True, blank=True)
     throughput_during_acceptance = models.CharField('Throughput During Acceptance', max_length=100, null=True, blank=True)
     date_of_acceptance = models.DateField('Date of Acceptance', null=True, blank=True)

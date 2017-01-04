@@ -11,6 +11,7 @@ from django.core.urlresolvers import reverse
 from django.db.models.expressions import RawSQL
 from django.views.generic import ListView, View
 from django.http import HttpResponse
+from copy import deepcopy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceTechnology, DeviceType, DeviceTicket
 from machine.models import Machine
@@ -169,8 +170,8 @@ class AlertCenterListing(ListView):
             # For saving if else hassle we have used a dict over here
             rad5_polled_col_dict = {
                 'packet_drop':[
-                    # {'mData': 'dl_uas', 'sTitle': 'UAS DL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False},
-                    # {'mData': 'ul_uas', 'sTitle': 'UAS UL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
+                    {'mData': 'dl_uas', 'sTitle': 'UAS DL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False},
+                    {'mData': 'ul_uas', 'sTitle': 'UAS UL', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False}
                 ],
                 'latency': [
                     {'mData': 'dl_utilization', 'sTitle': 'Utilisation DL%', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False},
@@ -427,6 +428,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
         other_type = self.request.GET.get('other_type', None)
         is_rad5 = int(self.request.GET.get('is_rad5', 0))
+
+        self.is_rad5 = is_rad5
         
         device_tab_technology = self.request.GET.get('data_tab')
 
@@ -571,6 +574,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
         extra_query_condition = None
         is_customer_detail_page = False
 
+        secondary_table_info = None
+
         if data_source in ['latency']:
             extra_query_condition = ' AND (`{0}`.`current_value` > 0 ) '
             extra_query_condition += severity_condition
@@ -588,6 +593,19 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             extra_query_condition = severity_condition
             search_table = "performance_servicestatus"
 
+            # In case of Radwin5k Customer details
+            # We also have to monitor KPI services from performance_utilizationstatus table
+            if self.is_rad5:
+                # In case of Radwin5k secondary table info also needs to be passed.
+                # Result of this table needs to be unioned with 1st table
+                secondary_table_info = {
+                    'table_name': 'performance_utilizationstatus',
+                    'data_source': ["rad5k_ss_dl_util_kpi", "rad5k_ss_ul_util_kpi"],
+                    'condition': severity_condition
+                }
+
+
+
         required_data_columns = self.polled_columns
 
         sorted_device_list = alert_utils.polled_results(
@@ -596,7 +614,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
             table_name=search_table,
             data_sources=data_sources_list,
             columns=required_data_columns,
-            condition=extra_query_condition if extra_query_condition else None
+            condition=extra_query_condition if extra_query_condition else None,
+            secondary_table_info=secondary_table_info
         )
 
         return sorted_device_list
@@ -666,32 +685,29 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                             machine_name = ''
 
                         if data_source == 'packet_drop':
-                            pass
                             # Machine name for each device
                             # getting UAS DL and UAS UL for each device
-                            # dl_uas = InventoryStatus.objects.filter(
-                            #         ip_address=dct.get('ip_address', None),
-                            #         service_name='rad5k_dl_uas_invent',
-                            #         data_source='dl_uas'
-                            #     ).using(machine_name).values_list(
-                            #         'current_value',
-                            #         flat=True
-                            #         )
+                            dl_uas = ServiceStatus.objects.filter(
+                                ip_address=dct.get('ip_address', None),
+                                service_name='rad5k_ss_dl_uas',
+                                data_source='dl_uas'
+                            ).using(
+                                machine_name
+                            )
 
-                            # if dl_uas.exists():
-                            #     dl_uas = dl_uas[0]
+                            if dl_uas.exists():
+                                dl_uas = dl_uas[0].current_value
 
-                            # ul_uas = InventoryStatus.objects.filter(
-                            #         ip_address=dct.get('ip_address', None),
-                            #         service_name='rad5k_ul_uas_invent',
-                            #         data_source='ul_uas'
-                            #     ).using(machine_name).values_list(
-                            #         'current_value',
-                            #         flat=True
-                            #         )
+                            ul_uas = ServiceStatus.objects.filter(
+                                    ip_address=dct.get('ip_address', None),
+                                    service_name='rad5k_ss_ul_uas',
+                                    data_source='ul_uas'
+                            ).using(
+                                machine_name
+                            )
 
-                            # if ul_uas.exists():
-                            #     ul_uas = ul_uas[0]
+                            if ul_uas.exists():
+                                ul_uas = ul_uas[0].current_value
 
                         elif data_source == 'latency':
 
@@ -733,7 +749,10 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 )
 
                 try:
-                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=dct['ip_address'])
+                    planned_events = nocout_utils.get_current_planned_event_ips(
+                        ip_address=dct['ip_address'],
+                        check_sector=False
+                    )
                     if planned_events:
                         showIconBlue = True
                 except Exception as e:
@@ -779,8 +798,8 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                         sys_timestamp=datetime.datetime.fromtimestamp(dct.get('sys_timestamp')).strftime(DATE_TIME_FORMAT) if dct.get('sys_timestamp') else "",
                         age=datetime.datetime.fromtimestamp(dct.get('age')).strftime(DATE_TIME_FORMAT) if dct.get('age') else "",
                         min_latency=min_latency if min_latency else 'N/A',
-                        # dl_uas=dl_uas if dl_uas else 'N/A',
-                        # ul_uas=ul_uas if ul_uas else 'N/A',
+                        dl_uas=dl_uas if dl_uas else 'N/A',
+                        ul_uas=ul_uas if ul_uas else 'N/A',
                         dl_utilization=dl_utilization if dl_utilization else 'N/A',
                         ul_utilization=ul_utilization if ul_utilization else 'N/A',
                         device_uptime=device_uptime if device_uptime else 'N/A',
@@ -1064,7 +1083,7 @@ class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
                     'ptp_datatable_headers': customer_pd_and_down_ptp_datatable_headers,
                     'bh_datatable_headers': [],
                     'pmp_wimax_datatable_headers': common_customer_pmp_wimax_headers+region_header+ [
-                                                                                                        'current_value', #'dl_uas', 'ul_uas',
+                                                                                                        'current_value', 'dl_uas', 'ul_uas',
                                                                                                         'sys_timestamp', 'age', 'action'
                                                                                                     ]
                 },
@@ -1495,6 +1514,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
     ]
 
     main_qs = []
+    NA_list = ['NA', 'N/A', 'na', 'n/a'] 
 
     def get_initial_queryset(self):
         """
@@ -1575,7 +1595,7 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 technology = None
                 is_bh = True
                 page_type = "other"
-                is_other = True
+                is_other = False
                 self.table_name = 'performance_networkstatus'
                 self.data_sources = ''
                 # Onnet/Offnet column added for Backhaul tab
@@ -1645,8 +1665,8 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         extra_query_condition = ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
 
         # Add extra condition for UL Issues listing
-        if self.data_sources and 'ul_issue' in ', '.join(self.data_sources):
-            extra_query_condition += " AND `{0}`.`current_value` > 0 "
+        # if self.data_sources and 'ul_issue' in ', '.join(self.data_sources):
+        #     extra_query_condition += " AND `{0}`.`current_value` > 0 "
 
         get_param = self.request.GET.get("data_source")
 
@@ -1698,13 +1718,9 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
         if data_source in ['PMPULIssue', 'RAD5ULIssue']:
             device_tab_technology = 'PMP'
 
-        if data_source in ['Backhaul', 'Temperature_bh']:
+        if data_source in ['Backhaul', 'Temperature_bh', 'Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
             page_type = 'other'
             type_rf = "backhaul"
-
-        if data_source in ['Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
-            page_type = 'other'
-            type_rf = "all"
 
         # GET all device name list from the list
         try:
@@ -1762,10 +1778,26 @@ class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
                 except Exception, e:
                     service_tab_name = 'down'
 
+            # Get List of IP for which Component is "Sector" in Planned Event Table
+            sector_component_ips = PlannedEvent.objects.filter(
+                component__iexact='sector'
+            ).values_list('resource_name', flat=True)
+
             for dct in qs:
 
+                # Intialize sector id
+                sector_id = ''
+                if dct.get('ip_address') in sector_component_ips:
+                    # Check sector id is not 'NA'
+                    if dct.get('sector_id') not in self.NA_list:
+                        sector_id = dct.get('sector_id')
+
+                        # In case of , seperated Sector Id's split it in a list of sector ID
+                        # and remove whitespaces
+                        sector_id = [x.strip() for x in sector_id.split(',')]
+
                 try:
-                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=dct['ip_address'])
+                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=dct['ip_address'], sector_id=sector_id)
                     if planned_events:
                         dct['severity'] = 'INDOWNTIME'
                 except Exception as e:
@@ -2696,6 +2728,7 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
     is_ordered = False
     is_searched = False
+    NA_list = ['NA', 'N/A', 'na', 'n/a'] 
 
     up_since_format_array = [
         'Day',
@@ -2846,11 +2879,14 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
         if self.tech_name in ['pmp', 'wimax', 'all']:
             if ENABLE_MANUAL_TICKETING:
                 self.order_columns = [
-                    'action', 'severity', 'ip_address', 'sector_id', 'customer_count',
+                    'severity', 'ip_address', 'sector_id', 'customer_count',
                     'bs_alias', 'bs_city', 'bs_state', 'region', 'bh_connectivity', 'bh_type',
                     'ticket_number', 'device_type', 'eventname', 'traptime', 'uptime',
                     'alarm_count', 'first_occurred', 'last_occurred', 'sia'
                 ]
+
+                if self.alarm_type in ['current']:
+                    self.order_columns = ['action'] + self.order_columns
             else:
                 self.order_columns = [
                     'severity', 'ip_address', 'sector_id', 'customer_count',
@@ -3039,13 +3075,43 @@ class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
             )))
 
             is_admin_operator = 'admin' in current_user_roles or 'operator' in current_user_roles
+
+            # Get List of IP for which Component is "Sector" in Planned Event Table
+            sector_component_ips = PlannedEvent.objects.filter(
+                component__iexact='sector'
+            ).values_list('resource_name', flat=True)
+
             for dct in  qs:
                 pk = dct.get('id')
                 ip_address = dct.get('ip_address')
                 severity = dct.get('severity')
 
+                # Intialize sector id
+                sector_id = ''
+                # Flag if there is single Sector ID or More than one
+                multiple_sec_id = False
+
+                if ip_address in sector_component_ips:
+                    # Check sector id is not 'NA'
+                    if dct.get('sector_id') not in self.NA_list:
+                        sector_id = dct.get('sector_id')
+
+                        # In case of , seperated Sector Id's split it in a list of sector ID
+                        # and remove whitespaces
+                        sector_id = [x.strip() for x in sector_id.split(',')]
+
+                        # In Case of Multiple sec id in one row, we need to check it device wise
+                        # not Sector wise
+                        if len(sector_id) > 1:
+                            sector_id = ''
+                            multiple_sec_id = True
+
                 try:
-                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=ip_address)
+                    planned_events = nocout_utils.get_current_planned_event_ips(
+                        ip_address=ip_address,
+                        sector_id=sector_id,
+                        check_sector= not multiple_sec_id
+                    )
                     if planned_events:
                         severity = 'INDOWNTIME'
                 except Exception as e:
@@ -3778,8 +3844,13 @@ class AllSiaListingTable(BaseDatatableView, AdvanceFilteringMixin):
                 severity = dct.get('severity')
                 event_name = dct.get('eventname')
                 ip_address = dct.get('ip_address')
+
                 try:
-                    planned_events = nocout_utils.get_current_planned_event_ips(ip_address=ip_address)
+                    planned_events = nocout_utils.get_current_planned_event_ips(
+                        ip_address=ip_address,
+                        check_sector=False
+                    )
+
                     if planned_events:
                         severity = 'indowntime'
                 except Exception as e:
@@ -3942,9 +4013,9 @@ def prepare_snmp_gis_data(qs, tech_name):
     ip_address_list = [x['ip_address'] for x in qs_list]
 
     # Get Queryset to get customer count with respect to sector id's
-    customer_count_qs = Customer_Count_Sector.objects.all().values('sector_id', 'count_of_customer')
-    # Indexed customer count With respect to Sector id
-    mapped_customer_count = list_to_key_value_dict(customer_count_qs, 'sector_id', 'count_of_customer')
+    # customer_count_qs = Customer_Count_Sector.objects.all().values('sector_id', 'count_of_customer')
+    # # Indexed customer count With respect to Sector id
+    # mapped_customer_count = list_to_key_value_dict(customer_count_qs, 'sector_id', 'count_of_customer')
 
     sectors_data_qs, dr_data_qs = '', ''
     converter_mapped_data = {}
@@ -4139,7 +4210,7 @@ def prepare_snmp_gis_data(qs, tech_name):
         ip_address = data.get('ip_address')
         eventname = data.get('eventname')
         data.update(
-            customer_count = 'NA',
+            # customer_count = 'NA',
             bs_alias='NA',
             bs_city='NA',
             bs_state='NA',
@@ -4154,20 +4225,48 @@ def prepare_snmp_gis_data(qs, tech_name):
 
         sector_dct = None
         try:
-            sector_dct = mapped_result[ip_address]
+            sector_dct_original = mapped_result[ip_address]
+            sector_dct = deepcopy(sector_dct_original)
+           
             if sector_dct:
-                for sect in sector_dct:
-                    try:
-                        sect_id = sect.get('sector_id', '')
-                    except Exception, e:
-                        pass
 
-                    customer_count = 'NA'
-                    # Updating customer count on basis of Sector id
-                    if sect_id:
-                        customer_count = mapped_customer_count.get(sect_id, 'NA')
-                        sect.update(customer_count=customer_count)
-
+                # Because of this snippet a need of DeepCopy occured.
+                # because when in case of ELSE ',' seperated ID has been updated in 1st dict
+                # eg. eventname = 'wimax_interfaces_down__synchronization_lost' , ELSE cond.
+                # Before sector_dct 
+                # [
+                #     {
+                #         --- some key values were here -- 
+                #         'sector_id': u'00:0a:10:09:00:12',
+                #         'sector_configured_on__ip_address': u'10.172.7.3',
+                #         'base_station__backhaul__bh_type': u'Dark Fibre',
+                #         --- some key values were here -- 
+                #     },
+                #     {
+                #         --- some key values were here -- 
+                #         'sector_id': u'00:0a:10:09:00:14',
+                #         'sector_configured_on__ip_address': u'10.172.7.3',
+                #         'base_station__backhaul__bh_type': u'Dark Fibre',
+                #         --- some key values were here -- 
+                #     }
+                # ]
+                # after ELSE: 
+                # [
+                #     {
+                #         --- some key values were here -- 
+                #         'sector_id': u'00:0a:10:09:00:12, 00:0a:10:09:00:14',
+                #         'sector_configured_on__ip_address': u'10.172.7.3',
+                #         'base_station__backhaul__bh_type': u'Dark Fibre',
+                #         --- some key values were here -- 
+                #     },
+                #     {
+                #         --- some key values were here -- 
+                #         'sector_id': u'00:0a:10:09:00:14',
+                #         'sector_configured_on__ip_address': u'10.172.7.3',
+                #         'base_station__backhaul__bh_type': u'Dark Fibre',
+                #         --- some key values were here -- 
+                #     }
+                # ]
                 if starmax_idu_id == sector_dct[0].get('device_type'):
                     if 'odu1' in eventname.lower() or 'pmp1' in eventname.lower():
                         try:
@@ -4202,8 +4301,8 @@ def prepare_snmp_gis_data(qs, tech_name):
             )
 
             # Update customer count only if it is updated on basis of sector id else let it be
-            if sector_dct.get('customer_count'):
-                data.update(customer_count=sector_dct.get('customer_count'))
+            # if sector_dct.get('customer_count'):
+            #     data.update(customer_count=sector_dct.get('customer_count'))
 
     return qs_list
 

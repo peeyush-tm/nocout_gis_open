@@ -274,6 +274,10 @@ $(".tab-content i").click(function(e) {
     if(ds_name && trends_ajax_url) {
         var get_params = "dashboard_name="+ds_name+"&is_bh="+is_bh+"&technology="+tech_name;
 
+        // Adding extra flag in case if request is from rad5 page
+        if (is_rad5){
+            get_params += '&is_rad5=1'
+        }
         $.ajax({
             url : base_url+""+trends_ajax_url+"?"+get_params,
             type : "GET",

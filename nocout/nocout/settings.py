@@ -401,6 +401,11 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
         'kwargs': {'technology': 'PMP', 'type': 'sector'}
     },
+    'calculate_range_dashboards-RADWIN5K': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP', 'type': 'sector', 'is_rad5': True}
+    },
     'calculate_range_dashboards-WiMAX': {
         'task': 'dashboard.tasks.calculate_range_dashboards',
         'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),

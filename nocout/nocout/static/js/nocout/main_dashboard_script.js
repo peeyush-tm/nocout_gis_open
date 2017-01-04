@@ -91,6 +91,7 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
         "pmp_sales_opportunity",
         "wimax_sector_capacity",
         "pmp_sector_capacity",
+        "rad5_sector_capacity",
         "wimax_backhaul_capacity",
         "pmp_backhaul_capacity",
         "mfr_cause_code",
@@ -115,7 +116,12 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
         "pmp_sector_capacity" : {
             "url" : "",
             "trends_url" : "",
-            "text" : "PMP Sector Capacity"
+            "text" : "Cambium Sector Capacity"
+        },
+        "rad5_sector_capacity" : {
+            "url" : "",
+            "trends_url" : "",
+            "text" : "Radwin5K Sector Capacity"
         },
         "wimax_backhaul_capacity" : {
             "url" : "",
