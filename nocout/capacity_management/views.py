@@ -520,7 +520,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         'current_in_per',
         'consumed_dl_ts',
         'consumed_ul_ts',
-        'total_timeslots'
+        'total_timeslots',
         'timeslot_dl',
         'timeslot_ul',
         'severity',
@@ -666,6 +666,12 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                 
         return sectors
 
+    def ordering(self, qs):
+        """
+        Get parameters from the request and prepare order by clause
+        """
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
+
     def prepare_results(self, qs):
         """
         """
@@ -703,7 +709,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                     timeslot_ul = 0
                 
                 try:
-                    total_timeslots = timeslot_dl + timeslot_ul
+                    total_timeslots = round(Decimal(timeslot_dl + timeslot_ul), 2)
                 except Exception, e:
                     total_timeslots = 'NA'
 
