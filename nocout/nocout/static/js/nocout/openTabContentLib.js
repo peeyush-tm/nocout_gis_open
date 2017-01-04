@@ -55,7 +55,6 @@ $(".nav-tabs li a").click(function (e, isFirst) {
         grid_headers = header_attr && header_attr.value ? JSON.parse(header_attr.value) : "",
         isTab = $('.nav li.active .hidden-inline-mobile');
 
-
     if (table_id && ajax_url && grid_headers) {
         if (last_clicked_tab != e.currentTarget.id || second_condition) {
             var tab_id = table_id ? table_id.toLowerCase() : "";
@@ -127,7 +126,19 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                 for (var i = 0; i < grid_headers.length; i++) {
                     var column = grid_headers[i];
                     if (page_type != 'customer'){
-                        if (column.mData.indexOf("site_id") > -1) {
+                        if (
+                                column.mData.indexOf("site_id") > -1
+                                ||
+                                column.mData.indexOf("consumed_dl_ts") > -1
+                                ||
+                                column.mData.indexOf("consumed_ul_ts") > -1
+                                ||
+                                column.mData.indexOf("total_timeslots") > -1
+                                ||
+                                column.mData.indexOf("timeslot_dl") > -1
+                                ||
+                                column.mData.indexOf("timeslot_ul") > -1
+                        ) {
                             if (!column.bVisible) {
                                 column.bVisible = true;
                             } else {

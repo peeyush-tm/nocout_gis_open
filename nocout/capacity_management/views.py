@@ -16,6 +16,7 @@ from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 import ujson as json
+from decimal import Decimal
 
 from device.models import DeviceTechnology, Device, DeviceType
 
@@ -441,6 +442,21 @@ class SectorAugmentationAlertsHerders(ListView):
                 'sClass': 'hidden-xs', 'bSortable': True
             },
             {
+                'mData': 'consumed_dl_ts', 'sTitle': '% DL Time slots consumed', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False
+            },
+            {
+                'mData': 'consumed_ul_ts', 'sTitle': '% UL Time slots consumed', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False
+            },
+            {
+                'mData': 'total_timeslots', 'sTitle': 'Total Timeslots', 'sWidth': 'auto', 'bSortable': False, 'bVisible': False
+            },
+            {
+                'mData': 'timeslot_dl', 'sTitle': 'DL Timeslots', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False
+            },
+            {
+                'mData': 'timeslot_ul', 'sTitle': 'UL Timeslots', 'sWidth': 'auto', 'bSortable': True, 'bVisible': False
+            },
+            {
                 'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True
             },
             {
@@ -483,12 +499,34 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         'sector_sector_id',
         'current_out_per',
         'current_in_per',
+        'timeslot_dl',
+        'timeslot_ul',
         'severity',
         'age',
         'sys_timestamp'
     ]
 
-    order_columns = columns
+    order_columns = [
+        'id',
+        'sector__sector_id',
+        'sector__base_station__alias',
+        'sector__base_station__city__city_name',
+        'sector__base_station__state__state_name',
+        'organization__alias',
+        'sector__sector_configured_on__ip_address',
+        'sector__sector_configured_on__device_technology',
+        'sector_sector_id',
+        'current_out_per',
+        'current_in_per',
+        'consumed_dl_ts',
+        'consumed_ul_ts',
+        'total_timeslots'
+        'timeslot_dl',
+        'timeslot_ul',
+        'severity',
+        'age',
+        'sys_timestamp'
+    ]
 
     related_columns = [
         'sector__base_station',
@@ -650,6 +688,43 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                 else:
                     item['age'] = str(item['age']) + ' second'
 
+                # Update Total TimeSlot, Consumed Timeslot %DL and %UL
+                display_timeslot_dl = item['timeslot_dl']
+                timeslot_dl = display_timeslot_dl
+                if not display_timeslot_dl and display_timeslot_dl != 0:
+                    display_timeslot_dl = 'NA'
+                    timeslot_dl = 0
+
+
+                display_timeslot_ul = item['timeslot_ul']
+                timeslot_ul = display_timeslot_ul
+                if not display_timeslot_ul and display_timeslot_ul != 0:
+                    display_timeslot_ul = 'NA'
+                    timeslot_ul = 0
+                
+                try:
+                    total_timeslots = timeslot_dl + timeslot_ul
+                except Exception, e:
+                    total_timeslots = 'NA'
+
+                try:
+                    consumed_dl_ts = round(Decimal(display_timeslot_dl/64 * 100), 2)
+                except Exception, e:
+                    consumed_dl_ts = 'NA'
+
+                try:
+                    consumed_ul_ts = round(Decimal(display_timeslot_ul/64 * 100), 2)
+                except Exception, e:
+                    consumed_ul_ts = 'NA'
+
+                item.update({
+                    'consumed_dl_ts' : consumed_dl_ts,
+                    'consumed_ul_ts' : consumed_ul_ts,
+                    'total_timeslots' : total_timeslots,
+                    'timeslot_dl' : display_timeslot_dl,
+                    'timeslot_ul' : display_timeslot_ul
+                })
+
                 if item['severity'].strip().lower() == 'warning':
                     item['severity'] = "Needs Augmentation"
                 elif item['severity'].strip().lower() == 'critical':
@@ -673,27 +748,6 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         self.technology = request.GET['technology'] if 'technology' in request.GET else 'ALL'
         self.is_type = request.GET.get('is_type', 0)
         self.is_rad5 = int(request.GET.get('is_rad5', 0))
-
-        if self.is_rad5:
-            self.columns = [
-                'sector__base_station__alias',
-                'sector__base_station__city__city_name',
-                'sector__base_station__state__state_name',
-                'organization__alias',
-                'sector__sector_configured_on__ip_address',
-                'sector__sector_configured_on__device_technology',
-                'sector_sector_id',
-                'current_out_per',
-                'current_in_per',
-                'timeslot_dl',
-                'timeslot_ul',
-                'severity',
-                'age',
-                'sector__base_station__bs_site_id',
-                'sys_timestamp'
-            ]
-
-            self.order_columns = self.columns
 
         qs = self.get_initial_queryset()
 
