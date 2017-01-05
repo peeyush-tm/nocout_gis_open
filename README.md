@@ -149,3 +149,47 @@ TODO:
 1. pip install backports.ssl_match_hostname-3.4.0.2.tar.gz certifi-2015.04.28.tar.gz tornado-4.1.tar.gz pytz-2015.2.tar.bz2 futures-3.0.1.tar.gz backports.ssl_match_hostname-3.4.0.2.tar.gz Babel-1.3.tar.gz certifi-2015.04.28.tar.gz flower-0.8.2.tar.gz
 2. Packages available in `requirements/requirements_user_app/Celery/2015-05-MAY-06`
 
+**Update SNMPTT trap handler to snmptthandler-embedded**
+
+1. Install net-snmp-perl package
+    ```
+    sudo yum install net-snmp-perl
+    ```
+2. Create a file snmptthandler-embedded
+
+    ```
+    vim usr/sbin/snmptthandler-embedded
+    ```
+    And paste the content of the snmptthandler-embedded file available at location `nocout_device_app/trap_handler` in it.
+    
+3. Update snmptrapd.conf
+
+    ```
+    sudo vim /etc/snmp/snmptrapd.conf
+    ```
+    
+    Replace :
+    
+    ```
+    traphandle default /usr/sbin/snmptthandler
+    ```
+    
+    With :
+    
+    ```
+    perl do "/usr/sbin/snmptthandler-embedded";
+    ```
+    
+4. Restart snmptrapd service
+
+    ```
+    sudo service snmptrapd restart
+    ```
+    
+5. Restart snmptt service
+
+    ```
+    sudo service snmptt restart
+    ```
+    
+
