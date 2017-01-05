@@ -549,9 +549,9 @@ def gather_sector_status(technology):
         sector_val = None
 
         # values for current utilization of rad5 devices
-        sector_kpi_rad5 = None
+        sector_val_rad5 = None
         if technology_low == 'pmp' and machine in rad5k_machine_dict:
-            sector_kpi_rad5 = get_sectors_cbw_val_kpi(
+            sector_val_rad5 = get_sectors_cbw_val_kpi(
                 devices=rad5k_machine_dict[machine],
                 service_name=['radwin5k_ul_dyn_tl_kpi', 'radwin5k_dl_dyn_tl_kpi'],
                 data_source=['rad5k_ul_dyn_tl', 'rad5k_dl_dyn_tl'],
