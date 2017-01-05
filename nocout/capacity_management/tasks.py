@@ -549,9 +549,9 @@ def gather_sector_status(technology):
         sector_val = None
 
         # values for current utilization of rad5 devices
-        sector_val_rad5 = None
+        sector_kpi_rad5 = None
         if technology_low == 'pmp' and machine in rad5k_machine_dict:
-            sector_val_rad5 = get_sectors_cbw_val_kpi(
+            sector_kpi_rad5 = get_sectors_cbw_val_kpi(
                 devices=rad5k_machine_dict[machine],
                 service_name=['radwin5k_ul_dyn_tl_kpi', 'radwin5k_dl_dyn_tl_kpi'],
                 data_source=['rad5k_ul_dyn_tl', 'rad5k_dl_dyn_tl'],
@@ -1861,6 +1861,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             except Exception as e:
                 sector_device_name = 0
             cbw_index = None
+            
             try:
                 if sector.sector_configured_on.device_type == rad5k_type_id:
                     rad5_sector = True
@@ -1881,11 +1882,15 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                     current_timeslot_ul = None
                     current_timeslot_dl = None
+
+                    # Temp variables
+                    temp_ul_index = indexed_rad5_val.get(timeslot_ul_index)
+                    temp_dl_index = indexed_rad5_val.get(timeslot_dl_index)
                     # Current values for Dynamic TS-UL and Dynamic TS-DL for rad5 devices
-                    if indexed_rad5_val.get(timeslot_ul_index):
-                        current_timeslot_ul = float(indexed_rad5_val.get(timeslot_ul_index)[0]['current_value'])
-                    if indexed_rad5_val.get(timeslot_dl_index):
-                        current_timeslot_dl = float(indexed_rad5_val.get(timeslot_dl_index)[0]['current_value'])
+                    if temp_ul_index and temp_ul_index[0]['current_value'] not in ['', None, 'None']:
+                        current_timeslot_ul = float(temp_ul_index[0]['current_value'])
+                    if temp_dl_index and temp_dl_index[0]['current_value'] not in ['', None, 'None']:
+                        current_timeslot_dl = float(temp_dl_index[0]['current_value'])
 
                 else:
                     # index for dl values
@@ -1899,14 +1904,33 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             except Exception as e:
                 logger.error('PMP index creation exception')
                 logger.error(e)
-                # index for dl values
-                in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
-                # index for ul values
-                out_value_index = (sector_device_name, 'cambium_ul_utilization', 'ul_utilization')
-                # in % values index
-                in_per_index = (sector_device_name, 'cambium_dl_util_kpi', 'cam_dl_util_kpi')
-                # out % values index
-                out_per_index = (sector_device_name, 'cambium_ul_util_kpi', 'cam_ul_util_kpi')
+                if sector.sector_configured_on.device_type == rad5k_type_id:
+                    # index for dl values
+                    in_value_index = (sector_device_name, 'rad5k_bs_dl_utilization', 'dl_utilization')
+                    # index for ul values
+                    out_value_index = (sector_device_name, 'rad5k_bs_ul_utilization', 'ul_utilization')
+                    # in % values index
+                    in_per_index = (sector_device_name, 'radwin5k_dl_util_kpi', 'rad5k_dl_util_kpi')
+                    # out % values index
+                    out_per_index = (sector_device_name, 'radwin5k_ul_util_kpi', 'rad5k_ul_util_kpi')
+                    # index for dl_timeslot values
+                    timeslot_ul_index = (sector_device_name, 'radwin5k_ul_dyn_tl_kpi', 'rad5k_ul_dyn_tl')
+                    # index for ul values
+                    timeslot_dl_index = (sector_device_name, 'radwin5k_dl_dyn_tl_kpi', 'rad5k_dl_dyn_tl')
+                    # index for cbw values
+                    cbw_index = (sector_device_name, 'rad5k_channel_bw_invent', 'cbw')
+
+                    current_timeslot_ul = None
+                    current_timeslot_dl = None
+                else:
+                    # index for dl values
+                    in_value_index = (sector_device_name, 'cambium_dl_utilization', 'dl_utilization')
+                    # index for ul values
+                    out_value_index = (sector_device_name, 'cambium_ul_utilization', 'ul_utilization')
+                    # in % values index
+                    in_per_index = (sector_device_name, 'cambium_dl_util_kpi', 'cam_dl_util_kpi')
+                    # out % values index
+                    out_per_index = (sector_device_name, 'cambium_ul_util_kpi', 'cam_ul_util_kpi')
 
             severity_s = dict()
 
