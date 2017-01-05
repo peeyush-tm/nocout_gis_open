@@ -485,6 +485,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
     technology = 'ALL'
     is_type = 0
     is_rad5 = 0
+    is_sec_util_tab = False
     call_from_alert = False
 
     columns = [
@@ -493,34 +494,13 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         'sector__base_station__alias',
         'sector__base_station__city__city_name',
         'sector__base_station__state__state_name',
+        'sector__base_station__bs_site_id',
         'organization__alias',
         'sector__sector_configured_on__ip_address',
         'sector__sector_configured_on__device_technology',
         'sector_sector_id',
         'current_out_per',
         'current_in_per',
-        'timeslot_dl',
-        'timeslot_ul',
-        'severity',
-        'age',
-        'sys_timestamp'
-    ]
-
-    order_columns = [
-        'id',
-        'sector__sector_id',
-        'sector__base_station__alias',
-        'sector__base_station__city__city_name',
-        'sector__base_station__state__state_name',
-        'organization__alias',
-        'sector__sector_configured_on__ip_address',
-        'sector__sector_configured_on__device_technology',
-        'sector_sector_id',
-        'current_out_per',
-        'current_in_per',
-        'consumed_dl_ts',
-        'consumed_ul_ts',
-        'total_timeslots',
         'timeslot_dl',
         'timeslot_ul',
         'severity',
@@ -608,6 +588,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
 
         # Set Flag if request is from alert_center -> Network details -> Radwin5k sector util. tab
         self.call_from_alert = int(self.request.GET.get('call_from_alert', 0))
+        # Set Flag if request is from alert_center -> Network details -> Sector util. tab
+        self.is_sec_util_tab = int(self.request.GET.get('sec_util_tab', 0))
 
         sectors = list()
         if max_timestamp:
@@ -670,6 +652,65 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         """
         Get parameters from the request and prepare order by clause
         """
+
+        # Ordering of columns in case of Capacity management is different
+        # than Network Alert Detail page
+        if not self.call_from_alert:
+            self.order_columns = [
+                'id',
+                'sector__sector_id',
+                'sector__base_station__alias',
+                'sector__base_station__city__city_name',
+                'sector__base_station__state__state_name',
+                'organization__alias',
+                'sector__sector_configured_on__ip_address',
+                'sector__sector_configured_on__device_technology',
+                'sector_sector_id',
+                'current_out_per',
+                'current_in_per',
+                'consumed_dl_ts',
+                'consumed_ul_ts',
+                'total_timeslots',
+                'timeslot_dl',
+                'timeslot_ul',
+                'severity',
+                'age',
+                'sys_timestamp'
+            ]
+        else:
+            hidden_headers = [
+                'id',
+                'sector__sector_id',
+            ]
+
+            timeslot_headers = [
+                'timeslot_dl',
+                'timeslot_ul',
+            ]
+
+            common_headers_1 = [
+                'sector__base_station__alias',
+                'sector__base_station__city__city_name',
+                'sector__base_station__state__state_name',
+                'organization__alias',
+                'sector__sector_configured_on__ip_address',
+                'sector__sector_configured_on__device_technology',
+                'sector_sector_id',
+                'current_out_per',
+                'current_in_per'
+            ]
+
+            common_headers_2 = [
+                'severity',
+                'age',
+            ]
+            if self.is_rad5:
+                # In Case of Network Details -> Radwin5k Sector Utilization tab
+                self.order_columns = common_headers_1 + timeslot_headers + common_headers_2 + ['sector__base_station__bs_site_id']
+            elif self.is_sec_util_tab:
+                # In Case of Network Details -> Sector Utilization tab
+                self.order_columns = hidden_headers + common_headers_1 + common_headers_2
+
         return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def prepare_results(self, qs):

@@ -340,7 +340,7 @@
                 ajax_url_pmp_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=PMPULIssue',
                 ajax_url_rad5_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=RAD5ULIssue',
                 ajax_url_wimax_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=WiMAXULIssue',
-                ajax_url_sectorutil = '{% url "SectorAugmentationAlertsListing" %}',
+                ajax_url_sectorutil = '{% url "SectorAugmentationAlertsListing" %}' + '?call_from_alert=1&sec_util_tab=1',
                 ajax_url_rad5_sectorutil = '{% url "SectorAugmentationAlertsListing" %}' + '?is_rad5=1&technology=pmp&call_from_alert=1',
                 ajax_url_bhutil = '{% url "BackhaulAugmentationAlertsListing" %}';
 
