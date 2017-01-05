@@ -155,11 +155,12 @@ TODO:
     ```
     sudo yum install net-snmp-perl
     ```
-2. Create snmptthandler-embedded file and place the content of the snmptthandler-embedded available at location `nocout_device_app/trap_handler`
+2. Create a file snmptthandler-embedded
 
     ```
     vim usr/sbin/snmptthandler-embedded
     ```
+    And paste the content of the snmptthandler-embedded file available at location `nocout_device_app/trap_handler` in it.
     
 3. Update snmptrapd.conf
 
