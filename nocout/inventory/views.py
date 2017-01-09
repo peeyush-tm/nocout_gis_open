@@ -5721,14 +5721,15 @@ class GetSms(View):
                     power_instance.message = message
 
                     # Store Ticket ID only for DOWN Event
-                    if soap_result.get('success', 0) and USE_SOAP_TICKETING and message.lower() == 'down':
+                    if USE_SOAP_TICKETING and soap_result.get('success', 0) and message.lower() == 'down':
                         power_instance.ticket_id = soap_result.get('ticket_id', '')
 
                     power_instance.save()
 
                     result.update(message= 'Successfully Saved', success=1 )
-                except:
+                except Exception as e:
                     result.update(message= 'Invalid data')
+                    logger.error('GetSms Error ----------> %s'%e)
             else:
                 result['message'] = 'None or Multiple circuit id for the given number'
         
