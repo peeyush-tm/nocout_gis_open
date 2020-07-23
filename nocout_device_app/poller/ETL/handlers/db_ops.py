@@ -75,7 +75,7 @@ class RedisInterface(object):
 			SENTINELS.append((sentinel_info.get('vrfprv_host'),int(sentinel_info.get('vrfprv_port'))))		
 			SENTINELS.append((sentinel_info.get('pub_host'),int(sentinel_info.get('pub_port'))))		
 			sentinel = Sentinel(SENTINELS, **re_conf)
-			self.redis_conn = sentinel.master_for(service_name) 
+			self.redis_conn = sentinel.main_for(service_name) 
 		except Exception as exc:
 			print exc
 

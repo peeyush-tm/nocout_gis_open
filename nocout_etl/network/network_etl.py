@@ -278,7 +278,7 @@ def pivot_timestamp_fwd(timestamp):
 
 @app.task(name='network-main-pub')
 def main(**opts):
-	opts = {'site_name': 'pardeep_slave_1'}
+	opts = {'site_name': 'pardeep_subordinate_1'}
 	get_host_checks_output.s(**opts).apply_async()
 
 

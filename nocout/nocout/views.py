@@ -233,7 +233,7 @@ class AuthView(View):
     def userprofile_status(self, user):
         '''
         '''
-# >>>>>>> dev_master
+# >>>>>>> dev_main
         already_logged = user.userprofile.password_changed_at
         password_expire = True
         password_expire_alert = False

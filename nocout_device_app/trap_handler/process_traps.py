@@ -187,17 +187,17 @@ class ProcessTraps(object):
 		and vice-versa"""
 		qry = """
 		SELECT 
-			master1.oid, master2.oid mask_oid
+			main1.oid, main2.oid mask_oid
 		FROM
 			alarm_masking_table mask
 		INNER JOIN
-			master_alarm_table master1
+			main_alarm_table main1
 		ON
-			mask.alarm_id = master1.id
+			mask.alarm_id = main1.id
 		INNER JOIN
-			master_alarm_table master2
+			main_alarm_table main2
 		ON
-			mask.alarm_mask_id = master2.id
+			mask.alarm_mask_id = main2.id
 		"""
 		my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
 		cursor = my_cnx.cursor()
@@ -208,7 +208,7 @@ class ProcessTraps(object):
 		return data
 
 	def read_cached_inventory(self):
-		redis_cnx = self.conn_base.redis_cnx(db_name='redis_master')
+		redis_cnx = self.conn_base.redis_cnx(db_name='redis_main')
 		try:
 			p = redis_cnx.pipeline()
 			p.hgetall('ip:host')

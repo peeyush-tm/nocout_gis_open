@@ -22,6 +22,6 @@ class Command(BaseCommand):
                 cursor = connections[machine].cursor()
                 cursor.execute(query)
             #mysql cache clear #only for primary machines
-            #to do check for slaves reset as well? or would it happen automatically ?
+            #to do check for subordinates reset as well? or would it happen automatically ?
         except Exception as e:
             logger.exception(e.message)

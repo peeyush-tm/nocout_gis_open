@@ -697,7 +697,7 @@ class PTPDump(ReportCommonParameters):
     MAC = models.CharField('MAC', max_length=128, null=True, blank=True)
     product_type = models.CharField('product_type', max_length=128, null=True, blank=True)
     ssid = models.CharField('ssid', max_length=128, null=True, blank=True)
-    master_slave = models.CharField('master_slave', max_length=128, null=True, blank=True)
+    main_subordinate = models.CharField('main_subordinate', max_length=128, null=True, blank=True)
     frequency = models.CharField('frequency', max_length=128, null=True, blank=True)
     uas = models.CharField('uas', max_length=128, null=True, blank=True)
     rssi = models.CharField('rssi', max_length=128, null=True, blank=True)
@@ -717,7 +717,7 @@ class PTPDump(ReportCommonParameters):
     odusn = models.CharField('odusn', max_length=128, null=True, blank=True)
     ss_product_type = models.CharField('ss_product_type', max_length=128, null=True, blank=True)
     ss_ssid = models.CharField('ss_ssid', max_length=128, null=True, blank=True)
-    ss_master_slave = models.CharField('ss_master_slave', max_length=128, null=True, blank=True)
+    ss_main_subordinate = models.CharField('ss_main_subordinate', max_length=128, null=True, blank=True)
     ss_frequency = models.CharField('ss_frequency', max_length=128, null=True, blank=True)
     ss_uas = models.CharField('ss_uas', max_length=128, null=True, blank=True)
     ss_rssi = models.CharField('ss_rssi', max_length=128, null=True, blank=True)
@@ -786,7 +786,7 @@ class BSDumpPMP(ReportCommonParameters):
     system_uptime = models.CharField('circuit_id', max_length=128, null=True, blank=True)
     cell_radius = models.CharField('circuit_id', max_length=128, null=True, blank=True)
     modulation = models.CharField('circuit_id', max_length=128, null=True, blank=True)
-    master_slave = models.CharField('circuit_id', max_length=128, null=True, blank=True)
+    main_subordinate = models.CharField('circuit_id', max_length=128, null=True, blank=True)
     sn_odu = models.CharField('circuit_id', max_length=128, null=True, blank=True)
 
 
@@ -829,7 +829,7 @@ class BSDumpWimax(ReportCommonParameters):
     pe_ip = models.CharField('circuit_id', max_length=128, null=True, blank=True)
     dr_site = models.CharField('circuit_id', max_length=128, null=True, blank=True)
     ttsl_circuit_id = models.CharField('circuit_id', max_length=128, null=True, blank=True)
-    dr_master_slave = models.CharField('circuit_id', max_length=128, null=True, blank=True)
+    dr_main_subordinate = models.CharField('circuit_id', max_length=128, null=True, blank=True)
     mrc = models.CharField('circuit_id', max_length=128, null=True, blank=True)
     sector_id = models.CharField('circuit_id', max_length=128, null=True, blank=True)
     sector_ul_utilization = models.CharField('circuit_id', max_length=128, null=True, blank=True)
@@ -990,7 +990,7 @@ class BSOutageReports(models.Model):
         return self.name
 
 
-class BSOutageMasterStructure(models.Model):
+class BSOutageMainStructure(models.Model):
     """
 
     """
@@ -1047,21 +1047,21 @@ class BSOutageMasterStructure(models.Model):
     class Meta:
         abstract = True    
 
-class BSOutageMasterDaily(BSOutageMasterStructure):
+class BSOutageMainDaily(BSOutageMainStructure):
     """
 
     """
     pass
 
 
-class BSOutageMasterWeekly(BSOutageMasterStructure):
+class BSOutageMainWeekly(BSOutageMainStructure):
     """
 
     """
     pass
 
 
-class BSOutageMasterMonthly(BSOutageMasterStructure):
+class BSOutageMainMonthly(BSOutageMainStructure):
     """
 
     """

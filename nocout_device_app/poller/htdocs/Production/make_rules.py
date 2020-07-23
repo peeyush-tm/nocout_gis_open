@@ -67,7 +67,7 @@ def main():
         default_snmp_ports = snmp_ports_db
     #pprint(default_snmp_ports)
     #pprint(default_snmp_communities)
-    with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
+    with open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
         f.write("# encoding: utf-8")
         f.write("\n\n\n")
         f.write("bulkwalk_hosts += %s" % pformat(bulkwalk_hosts))

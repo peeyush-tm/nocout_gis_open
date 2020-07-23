@@ -41,7 +41,7 @@ def main(**configs):
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
 
     # Get site specific configurations for Mongodb connection
-    # Ex conf : ('ospf4_slave_1', 'localhost', 27018)
+    # Ex conf : ('ospf4_subordinate_1', 'localhost', 27018)
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
    
     # Read data function reads the data from mongodb and insert into mysql

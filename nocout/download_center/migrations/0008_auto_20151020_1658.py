@@ -12,17 +12,17 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='bsoutagemasterdaily',
+            model_name='bsoutagemaindaily',
             name='processed_report',
             field=models.ForeignKey(blank=True, to='download_center.ProcessedReportDetails', null=True),
         ),
         migrations.AddField(
-            model_name='bsoutagemastermonthly',
+            model_name='bsoutagemainmonthly',
             name='processed_report',
             field=models.ForeignKey(blank=True, to='download_center.ProcessedReportDetails', null=True),
         ),
         migrations.AddField(
-            model_name='bsoutagemasterweekly',
+            model_name='bsoutagemainweekly',
             name='processed_report',
             field=models.ForeignKey(blank=True, to='download_center.ProcessedReportDetails', null=True),
         ),

@@ -14,7 +14,7 @@ SHOW_TICKET_NUMBER
 
 date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
-# for managing the slave-master connections
+# for managing the subordinate-main connections
 from django.conf import settings
 import socket
 # http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
@@ -681,9 +681,9 @@ def fetch_raw_result(query, machine='default'):
     :return:the data fetched in form of a dictionary
     """
     db = machine
-    db_slave = db + "_slave"
-    if test_connection_to_db(database_name=db_slave):
-        db = db_slave
+    db_subordinate = db + "_subordinate"
+    if test_connection_to_db(database_name=db_subordinate):
+        db = db_subordinate
 
     cursor = connections[db].cursor()
     cursor.execute(query)
@@ -1712,25 +1712,25 @@ def nocout_db_router(db='default', levels=0):
     we will test the connection
     and we will return the results of the database to be used
     :param db: pass the name for the database
-    :param levels: number of slaves available
+    :param levels: number of subordinates available
     :return:the database to be queried on
     """
-    db_slave_up = list()
-    # can choose from master db as well
-    db_slave_up.append(db)
-    db_slave = db + "_slave"
+    db_subordinate_up = list()
+    # can choose from main db as well
+    db_subordinate_up.append(db)
+    db_subordinate = db + "_subordinate"
     if levels and levels != -1:
         for x in range(1, levels):
-            db_slave = db + "_slave_" + str(x)
-            if test_connection_to_db(db_slave):
-                db_slave_up.append(db_slave)
+            db_subordinate = db + "_subordinate_" + str(x)
+            if test_connection_to_db(db_subordinate):
+                db_subordinate_up.append(db_subordinate)
     elif levels == -1:
         return db
     else:
-        if test_connection_to_db(db_slave):
-            db_slave_up.append(db_slave)
+        if test_connection_to_db(db_subordinate):
+            db_subordinate_up.append(db_subordinate)
 
-    return random.choice(db_slave_up)
+    return random.choice(db_subordinate_up)
 
 
 @time_it()
@@ -1739,11 +1739,11 @@ def nocout_query_results(query_set=None, using='default', levels=0):
 
     :param query_set: query set to be executed
     :param using: the db alias
-    :param levels: levels of slaves default = 0, that is one slave is present, -1 means no slave
+    :param levels: levels of subordinates default = 0, that is one subordinate is present, -1 means no subordinate
     :return:
     """
     if query_set:
-        # choose a random database : slave // master
+        # choose a random database : subordinate // main
         if levels == -1:
             return query_set.using(alias=using)
         else:

@@ -30,7 +30,7 @@ def main(**configs):
     as configuration variables, read from main configuration file <site_name>.ini
     Example:
         {
-    "site": "nocout_gis_slave",
+    "site": "nocout_gis_subordinate",
     "host": "localhost",
     "user": "root",
     "ip": "localhost",

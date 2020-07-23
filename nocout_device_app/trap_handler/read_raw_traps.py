@@ -74,7 +74,7 @@ class RawTraps(object):
 			mapping = {}
 			[mapping.update({k: v}) for (k, v) in data]
 			# load these ip --> device name mapping into redis hash table
-			redis_cnx = self.conn_base.redis_cnx(db_name='redis_master')
+			redis_cnx = self.conn_base.redis_cnx(db_name='redis_main')
 			try:
 				p = redis_cnx.pipeline()
 				p.hmset('ip:host', mapping)

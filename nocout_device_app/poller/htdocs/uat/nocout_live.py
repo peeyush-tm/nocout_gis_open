@@ -23,7 +23,7 @@ def get_site_name(site=None):
     return site
 
 db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % get_site_name())
-#db_ops_module = imp.load_source('db_ops', '/omd/sites/ospf2_slave_1/lib/python/handlers/db_ops.py' )
+#db_ops_module = imp.load_source('db_ops', '/omd/sites/ospf2_subordinate_1/lib/python/handlers/db_ops.py' )
 
 
 try:

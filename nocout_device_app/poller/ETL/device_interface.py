@@ -16,7 +16,7 @@ g_services = ('radwin_rssi', 'radwin_uptime', 'radwin_uas', 'radwin_service_thro
 		'radwin_idu_sn_invent', 'radwin_cbw_invent', 'radwin_mimo_diversity_invent',
 		'radwin_link_distance_invent', 'radwin_ssid_invent')
 config = {}
-url  = 'http://omdadmin:omd@121.244.255.107:5000/master_UA/check_mk/nocout.py'
+url  = 'http://omdadmin:omd@121.244.255.107:5000/main_UA/check_mk/nocout.py'
 
 def main():
 	p2p_query = """
@@ -450,7 +450,7 @@ def entry(**kw):
 	config = {}
 	config.update({
 		'user': kw.get('user', 'nocout_root'),
-		'password': kw.get('sql_passwd', 'nocout_root_master_UA@123'),
+		'password': kw.get('sql_passwd', 'nocout_root_main_UA@123'),
 		'host': kw.get('ip', '121.244.255.107'),
 		'database': kw.get('sql_db', 'nocout_14_10_14'),
 		'port': kw.get('sql_port', 3200)

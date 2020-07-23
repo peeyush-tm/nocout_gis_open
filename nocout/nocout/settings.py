@@ -647,7 +647,7 @@ EXCEPTIONAL_SERVICES = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
 
 DEVICE_APPLICATION = {
     'default': {
-        'NAME': 'master_UA',  # Or path to database file if using sqlite3.
+        'NAME': 'main_UA',  # Or path to database file if using sqlite3.
     }
 }
 

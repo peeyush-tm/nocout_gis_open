@@ -1041,8 +1041,8 @@ def sync():
         "message": "Config pushed to "
     }
     # Create an archive of current folder state, to be used for rollback
-    os.chdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
-    out = tarfile.open('/omd/sites/master_UA/etc/check_mk/conf.d/wato_backup.tar.gz', mode='w:gz')
+    os.chdir('/omd/sites/main_UA/etc/check_mk/conf.d/wato/')
+    out = tarfile.open('/omd/sites/main_UA/etc/check_mk/conf.d/wato_backup.tar.gz', mode='w:gz')
     try:
         for entry in os.listdir('.'):
             if entry not in ['..', '.']:
@@ -1057,9 +1057,9 @@ def sync():
     nocout_sites = extract_affected_sites()
     logger.debug('Nocout_sites: ' + pprint.pformat(nocout_sites))
    
-    # Remove master_UA from nocout_sites, we dont need to push conf to master_UA
-    nocout_sites = dict(filter(lambda d: d[1].get('replication') == 'slave', nocout_sites.items()))
-    #logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_sites))
+    # Remove main_UA from nocout_sites, we dont need to push conf to main_UA
+    nocout_sites = dict(filter(lambda d: d[1].get('replication') == 'subordinate', nocout_sites.items()))
+    #logger.debug('Subordinate sites to push data to - ' + pprint.pformat(nocout_sites))
 
     try:
         # Generate hosts n rules file, read configurations from db
@@ -1078,8 +1078,8 @@ def sync():
         logger.error('[sync]' + pprint.pformat(e))
     # Some syntax error with hosts.mk or rules.mk
     if f != 0:
-        logger.info("Could not cmk -R master_UA")
-        # Perform rollback if problem with master_UA
+        logger.info("Could not cmk -R main_UA")
+        # Perform rollback if problem with main_UA
         nocout_rollback_action(nocout_sites, response, proceed=False)
 	
         return response
@@ -1107,8 +1107,8 @@ def sync():
         # perform rollback for dirty sites, only
         nocout_rollback_action(dirty_sites, response, all_sites=False)
     if sites_affected:
-        # adding master_UA site in affected site as master_UA is always affected.
-	sites_affected.append('master_UA')
+        # adding main_UA site in affected site as main_UA is always affected.
+	sites_affected.append('main_UA')
 	set_site_affected_bit_on_mysql(sites_affected)
     logger.debug('[-- sync finish --]')
 
@@ -1125,7 +1125,7 @@ def nocout_rollback_action(nocout_sites, response, all_sites=True, proceed=True)
         os.system('~/bin/cmk -R')
     else:
         # copy wato_backup.tar into sync_snapshot_file
-        # do not change the configuration present @ master_UA
+        # do not change the configuration present @ main_UA
         copy('../wato_backup.tar', sync_snapshot_file)
     if proceed is False:
         response.update({
@@ -1147,7 +1147,7 @@ def nocout_rollback_action(nocout_sites, response, all_sites=True, proceed=True)
 
 def nocout_untar_backup_folder():
     # Clean the wato folder first
-    os.chdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
+    os.chdir('/omd/sites/main_UA/etc/check_mk/conf.d/wato/')
     for entry in os.listdir('.'):
         if entry not in ['..', '.']:
             if os.path.isdir(entry):
@@ -1156,8 +1156,8 @@ def nocout_untar_backup_folder():
                 os.remove(entry)
     # Untar the content and place in wato folder
     try:
-        t = tarfile.open('/omd/sites/master_UA/etc/check_mk/conf.d/wato_backup.tar.gz', 'r:gz')
-        t.extractall('/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
+        t = tarfile.open('/omd/sites/main_UA/etc/check_mk/conf.d/wato_backup.tar.gz', 'r:gz')
+        t.extractall('/omd/sites/main_UA/etc/check_mk/conf.d/wato/')
     except Exception, err:
         logger.error('Exception in opening backup  tarfile: ' + pprint.pformat(err))
 
@@ -1204,7 +1204,7 @@ def nocout_distributed_sites():
 
 
 def nocout_push_snapshot_to_site(site, site_attrs, restart):
-    mode = "slave"
+    mode = "subordinate"
     url_base = site_attrs.get('multisiteurl') + "automation.py?"
     var_string = htmllib.urlencode_vars([
         ("command", "push-snapshot"),
@@ -1218,7 +1218,7 @@ def nocout_push_snapshot_to_site(site, site_attrs, restart):
     try:
             response_text = upload_file(url, sync_snapshot_file, '')
     except:
-        logger.debug('Slave site ' + pprint.pformat(site) + ' not running')
+        logger.debug('Subordinate site ' + pprint.pformat(site) + ' not running')
         return "Garbled response from automation"
 
     try:

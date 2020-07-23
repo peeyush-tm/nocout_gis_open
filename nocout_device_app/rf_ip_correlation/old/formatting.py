@@ -461,8 +461,8 @@ class inventory(object):
 
     def insert_mat_data_in_redis(self,resultset=None):
 	"""
-	This function create dictionary type data structure for master alarm table.
-	for each unique key('rf_ip_'+alarm_name+'_'+severity) value contains the alarm information from mysql table of master_alarm_table.
+	This function create dictionary type data structure for main alarm table.
+	for each unique key('rf_ip_'+alarm_name+'_'+severity) value contains the alarm information from mysql table of main_alarm_table.
 	mat_data dictionary data structure is stored in Redis database.
 	"""
 	mat_data = dict()

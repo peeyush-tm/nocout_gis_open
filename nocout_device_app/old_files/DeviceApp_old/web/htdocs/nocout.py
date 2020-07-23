@@ -18,7 +18,7 @@ from nocout_logger import nocout_log
 import mysql.connector
 
 logger = nocout_log()
-sys.path.insert(0, '/omd/sites/master_UA/nocout')
+sys.path.insert(0, '/omd/sites/main_UA/nocout')
 try:
 	from device_interface import *
 except Exception, e:
@@ -1039,7 +1039,7 @@ def sync():
         "success": 1,
         "message": "Config pushed to "
     }
-    # Snapshot for the local-site; to be used only by master site
+    # Snapshot for the local-site; to be used only by main site
     #nocout_create_snapshot()
 
     # Create backup for the hosts and rules file
@@ -1122,14 +1122,14 @@ def nocout_distributed_sites():
     sites_file = defaults.default_config_dir + "/multisite.d/sites.mk"
     if os.path.exists(sites_file):
         execfile(sites_file, nocout_site_vars, nocout_site_vars)
-    logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_site_vars.get('sites')))
+    logger.debug('Subordinate sites to push data to - ' + pprint.pformat(nocout_site_vars.get('sites')))
     logger.debug('[--]')
 
     return nocout_site_vars.get('sites')
 
 
 def nocout_push_snapshot_to_site(site, site_attrs, restart):
-    mode = "slave"
+    mode = "subordinate"
     url_base = site_attrs.get('multisiteurl') + "automation.py?"
     var_string = htmllib.urlencode_vars([
         ("command", "push-snapshot"),
@@ -1143,7 +1143,7 @@ def nocout_push_snapshot_to_site(site, site_attrs, restart):
     try:
             response_text = upload_file(url, sync_snapshot_file, '')
     except:
-	    logger.debug('Slave site ' + pprint.pformat(site) + ' not running')
+	    logger.debug('Subordinate site ' + pprint.pformat(site) + ' not running')
             return "Garbled response from automation"
 
     try:

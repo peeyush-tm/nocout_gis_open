@@ -59,7 +59,7 @@ class SessionSecurityMiddleware(object):
             # if session_key_in_visitor_db != key_from_cookie and request.path != '/sm/dialog_action/' and request.path != '/favicon.ico':
                 # logout(request)
 # =======
-# >>>>>>> dev_master
+# >>>>>>> dev_main
 
         now = datetime.now()
         self.update_last_activity(request, now)

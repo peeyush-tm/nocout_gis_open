@@ -16,7 +16,7 @@ g_services = ('radwin_rssi', 'radwin_uptime', 'radwin_uas', 'radwin_service_thro
 		'radwin_idu_sn_invent', 'radwin_cbw_invent', 'radwin_mimo_diversity_invent',
 		'radwin_link_distance_invent', 'radwin_ssid_invent')
 config = {}
-url  = 'http://omdadmin:omd@10.133.12.163:5000/master_UA/check_mk/nocout.py'
+url  = 'http://omdadmin:omd@10.133.12.163:5000/main_UA/check_mk/nocout.py'
 
 def main():
 	p2p_query = """

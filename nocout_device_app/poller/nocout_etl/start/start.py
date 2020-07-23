@@ -81,82 +81,82 @@ class Config:
 	     'get-ul-issue-service-checks-ospf2-1':{
 	        'task' : 'get-ul-issue-service-checks',
 	        'schedule': crontab(minute='*/2'),
-	        'kwargs':{'site_name':'ospf2_slave_1'}
+	        'kwargs':{'site_name':'ospf2_subordinate_1'}
 	     },
 	     'call_kpi_services-ospf2-1':{
 	        'task' : 'call_kpi_services',
 	        'schedule': crontab(minute='*/5'),
-	        'kwargs':{'site_name':'ospf2_slave_1'}
+	        'kwargs':{'site_name':'ospf2_subordinate_1'}
 	      },
 	     'get-ul-issue-service-checks-ospf2-2':{
 	        'task' : 'get-ul-issue-service-checks',
 	        'schedule': crontab(minute='*/2'),
-	        'kwargs':{'site_name':'ospf2_slave_2'}
+	        'kwargs':{'site_name':'ospf2_subordinate_2'}
 	     },
 	     'call_kpi_services-ospf2-2':{
 	        'task' : 'call_kpi_services',
 	        'schedule': crontab(minute='*/5'),
-	        'kwargs':{'site_name':'ospf2_slave_2'}
+	        'kwargs':{'site_name':'ospf2_subordinate_2'}
 	      },
 	     'get-ul-issue-service-checks-ospf2-3':{
 	        'task' : 'get-ul-issue-service-checks',
 	        'schedule': crontab(minute='*/2'),
-	        'kwargs':{'site_name':'ospf2_slave_3'}
+	        'kwargs':{'site_name':'ospf2_subordinate_3'}
 	     },
 	     'call_kpi_services-ospf2-3':{
 	        'task' : 'call_kpi_services',
 	        'schedule': crontab(minute='*/5'),
-	        'kwargs':{'site_name':'ospf2_slave_3'}
+	        'kwargs':{'site_name':'ospf2_subordinate_3'}
 	      },
 	     'get-ul-issue-service-checks-ospf2-4':{
 	        'task' : 'get-ul-issue-service-checks',
 	        'schedule': crontab(minute='*/2'),
-	        'kwargs':{'site_name':'ospf2_slave_4'}
+	        'kwargs':{'site_name':'ospf2_subordinate_4'}
 	     },
 	     'call_kpi_services-ospf2-4':{
 	        'task' : 'call_kpi_services',
 	        'schedule': crontab(minute='*/5'),
-	        'kwargs':{'site_name':'ospf2_slave_4'}
+	        'kwargs':{'site_name':'ospf2_subordinate_4'}
 	      },
 	     'get-ul-issue-service-checks-ospf2-5':{
 	        'task' : 'get-ul-issue-service-checks',
 	        'schedule': crontab(minute='*/2'),
-	        'kwargs':{'site_name':'ospf2_slave_5'}
+	        'kwargs':{'site_name':'ospf2_subordinate_5'}
 	     },
 	     'call_kpi_services-ospf2-5':{
 	        'task' : 'call_kpi_services',
 	        'schedule': crontab(minute='*/5'),
-	        'kwargs':{'site_name':'ospf2_slave_5'}
+	        'kwargs':{'site_name':'ospf2_subordinate_5'}
 	      },
 	     'get-ul-issue-service-checks-ospf2-6':{
 	        'task' : 'get-ul-issue-service-checks',
 	        'schedule': crontab(minute='*/2'),
-	        'kwargs':{'site_name':'ospf2_slave_6'}
+	        'kwargs':{'site_name':'ospf2_subordinate_6'}
 	     },
 	     'call_kpi_services-ospf2-6':{
 	        'task' : 'call_kpi_services',
 	        'schedule': crontab(minute='*/5'),
-	        'kwargs':{'site_name':'ospf2_slave_6'}
+	        'kwargs':{'site_name':'ospf2_subordinate_6'}
 	      },
 	     'get-ul-issue-service-checks-ospf2-7':{
 	        'task' : 'get-ul-issue-service-checks',
 	        'schedule': crontab(minute='*/2'),
-	        'kwargs':{'site_name':'ospf2_slave_7'}
+	        'kwargs':{'site_name':'ospf2_subordinate_7'}
 	     },
 	     'call_kpi_services-ospf2-7':{
 	        'task' : 'call_kpi_services',
 	        'schedule': crontab(minute='*/5'),
-	        'kwargs':{'site_name':'ospf2_slave_7'}
+	        'kwargs':{'site_name':'ospf2_subordinate_7'}
 	      },
 	     'get-ul-issue-service-checks-ospf2-8':{
 	        'task' : 'get-ul-issue-service-checks',
 	        'schedule': crontab(minute='*/2'),
-	        'kwargs':{'site_name':'ospf2_slave_8'}
+	        'kwargs':{'site_name':'ospf2_subordinate_8'}
 	     },
 	     'call_kpi_services-ospf2-8':{
 	        'task' : 'call_kpi_services',
 	        'schedule': crontab(minute='*/5'),
-	        'kwargs':{'site_name':'ospf2_slave_8'}
+	        'kwargs':{'site_name':'ospf2_subordinate_8'}
 	      },
             'insert-network-event-ospf1': {
                 'task': 'insert_network_event',
@@ -171,12 +171,12 @@ class Config:
             'get_passive_checks-ospf2-1-service': {
                'task': 'get_passive_checks_output',
                'schedule': crontab(minute='*/5'),
-               'kwargs': {'site_name': 'ospf2_slave_1'}
+               'kwargs': {'site_name': 'ospf2_subordinate_1'}
                },
             'get_passive_checks-ospf2-1-interface': {
                'task': 'get_passive_checks_output',
                'schedule': crontab(minute=4),
-               'kwargs': {'site_name': 'ospf2_slave_1',
+               'kwargs': {'site_name': 'ospf2_subordinate_1',
                           'ends_with' : 'status'
                          }
                },

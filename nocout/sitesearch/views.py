@@ -30,16 +30,16 @@ def tech_marker_url(device_type, techno, ms=True):
             return "static/img/icons/mobilephonetower10.png"
 
     except:
-        return tech_marker_url_master(techno, ms)
+        return tech_marker_url_main(techno, ms)
 
 
-def tech_marker_url_master(techno, master=True):
+def tech_marker_url_main(techno, main=True):
     """
 
     :param techno: technology P2P,
     :return: technology markers
     """
-    if master:
+    if main:
         if techno == "P2P":
             return "static/img/icons/mobilephonetower1.png"
         elif techno == "PMP":
@@ -49,10 +49,10 @@ def tech_marker_url_master(techno, master=True):
         else:
             return "static/img/marker/icon2_small.png"
     else:
-        return tech_marker_url_slave(techno)
+        return tech_marker_url_subordinate(techno)
 
 
-def tech_marker_url_slave(techno):
+def tech_marker_url_subordinate(techno):
     """
 
     :param techno: technology P2P,
@@ -459,7 +459,7 @@ def prepare_raw_sector(sectors=None,with_data=False):
                     'beam_width': nocout_utils.format_value(format_this=sector['SECTOR_BEAM_WIDTH'],type_of='integer'),
                     'planned_frequency': nocout_utils.format_value(format_this=sector['SECTOR_FREQUENCY']),
                     'frequency': nocout_utils.format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']),
-                    # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
+                    # "markerUrl": tech_marker_url_main(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
                     'orientation': nocout_utils.format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'],type_of='antenna'),
                     'technology': techno_to_append,
                     'device_type': type_to_append,

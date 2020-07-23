@@ -2351,7 +2351,7 @@ class BulkFetchLPDataApi(View):
                     #                              u'3335': u'00:02:73:91:99:1d'
                     #                          },
                     #   'mode': 'live',
-                    #   'dr_master_slave': {},
+                    #   'dr_main_subordinate': {},
                     #   'ds': ['dl_rssi']
                     # }
                     lp_data = dict()
@@ -3708,7 +3708,7 @@ class AddDeviceToNMS(APIView):
                               {
                                   'message': 'Deviceaddedsuccessfully.',
                                   'data': {
-                                      'site': u'nocout_gis_slave',
+                                      'site': u'nocout_gis_subordinate',
                                       'agent_tag': u'snmp',
                                       'mode': 'addhost',
                                       'device_name': u'device_116',
@@ -3849,7 +3849,7 @@ class EditDeviceInNMS(APIView):
                               {
                                   'message': 'Deviceeditedsuccessfully.',
                                   'data': {
-                                      'site': u'nocout_gis_slave',
+                                      'site': u'nocout_gis_subordinate',
                                       'agent_tag': u'snmp',
                                       'mode': 'edithost',
                                       'device_name': u'device_116',
@@ -4091,7 +4091,7 @@ class SyncDevicesInNMS(APIView):
             result (dict): Dictionary of device info.
                         For e.g.,
                              {
-                                'message': 'Configpushedtomysite,nocout_gis_slave',
+                                'message': 'Configpushedtomysite,nocout_gis_subordinate',
                                 'data': {
                                     'mode': 'sync'
                                 },
@@ -4149,14 +4149,14 @@ class SyncDevicesInNMS(APIView):
             }
 
             # Site to which configuration needs to be pushed.
-            master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
+            main_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
 
             # URL for nocout.py.
-            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
-                                                                    master_site.password,
-                                                                    master_site.machine.machine_ip,
-                                                                    master_site.web_service_port,
-                                                                    master_site.name)
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(main_site.username,
+                                                                    main_site.password,
+                                                                    main_site.machine.machine_ip,
+                                                                    main_site.web_service_port,
+                                                                    main_site.name)
 
             # Sending post request to device app for syncing configuration to associated sites.
             r = requests.post(url, data=device_data)
@@ -4500,14 +4500,14 @@ class EditSingleService(APIView):
                 service_data['snmp_port'] = str(dsc.port)
                 service_data['agent_tag'] = str(dsc.agent_tag) if eval(dsc.agent_tag) is not None else "snmp"
 
-                # Master site on which service needs to be added.
-                master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
+                # Main site on which service needs to be added.
+                main_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
                 # URL for nocout.py.
-                url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
-                                                                        master_site.password,
-                                                                        master_site.machine.machine_ip,
-                                                                        master_site.web_service_port,
-                                                                        master_site.name)
+                url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(main_site.username,
+                                                                        main_site.password,
+                                                                        main_site.machine.machine_ip,
+                                                                        main_site.web_service_port,
+                                                                        main_site.name)
                 # Encode payload data.
                 encoded_data = urllib.urlencode(service_data)
 
@@ -4684,13 +4684,13 @@ class DeleteSingleService(APIView):
                 'service_name': str(service_name)
             }
 
-            master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
+            main_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
             # URL for nocout.py.
-            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
-                                                                    master_site.password,
-                                                                    master_site.machine.machine_ip,
-                                                                    master_site.web_service_port,
-                                                                    master_site.name)
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(main_site.username,
+                                                                    main_site.password,
+                                                                    main_site.machine.machine_ip,
+                                                                    main_site.web_service_port,
+                                                                    main_site.name)
 
             # Encode service payload data.
             encoded_data = urllib.urlencode(service_data)
@@ -4747,7 +4747,7 @@ class EditServiceDisplayData(APIView):
                                     'data': {
                                         'meta': '',
                                         'objects': {
-                                            'master_site': u'master_UA',
+                                            'main_site': u'main_UA',
                                             'device_alias': u'Device116',
                                             'is_added': 1L,
                                             'services': [
@@ -4776,7 +4776,7 @@ class EditServiceDisplayData(APIView):
         result['data']['objects']['device_name'] = device.device_name
         result['data']['objects']['device_alias'] = device.device_alias
         result['data']['objects']['services'] = []
-        result['data']['objects']['master_site'] = ""
+        result['data']['objects']['main_site'] = ""
         result['data']['objects']['is_added'] = device.is_added_to_nms
 
         # Get device type.
@@ -4807,10 +4807,10 @@ class EditServiceDisplayData(APIView):
         # Get services associated with device.
         try:
             try:
-                master_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
-                result['data']['objects']['master_site'] = master_site_name
+                main_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
+                result['data']['objects']['main_site'] = main_site_name
             except Exception as e:
-                logger.info("Master site doesn't exist.")
+                logger.info("Main site doesn't exist.")
 
             if device.is_added_to_nms == 1:
                 result['data']['objects']['services'] = []
@@ -5555,7 +5555,7 @@ class DeleteServiceDisplayData(APIView):
                                     "data": {
                                         "meta": "",
                                         "objects": {
-                                            "master_site": "master_UA",
+                                            "main_site": "main_UA",
                                             "device_alias": "1131208803",
                                             "is_added": 1,
                                             "services": [
@@ -5600,7 +5600,7 @@ class DeleteServiceDisplayData(APIView):
         result['data']['objects']['device_name'] = device.device_name
         result['data']['objects']['device_alias'] = device.device_alias
         result['data']['objects']['services'] = []
-        result['data']['objects']['master_site'] = ""
+        result['data']['objects']['main_site'] = ""
         result['data']['objects']['is_added'] = device.is_added_to_nms
 
         # Get device type.
@@ -5612,10 +5612,10 @@ class DeleteServiceDisplayData(APIView):
         # Get services associated with the device.
         try:
             try:
-                master_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
-                result['data']['objects']['master_site'] = master_site_name
+                main_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
+                result['data']['objects']['main_site'] = main_site_name
             except Exception as e:
-                logger.info("Master site doesn't exist.")
+                logger.info("Main site doesn't exist.")
             if device.is_added_to_nms == 1:
                 # Fetching all services those were already deleted from 'service device configuration' table.
                 dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name, operation='d')
@@ -5766,7 +5766,7 @@ class AddServiceDisplayData(APIView):
                                     "data": {
                                         "meta": "",
                                         "objects": {
-                                            "master_site": "master_UA",
+                                            "main_site": "main_UA",
                                             "device_alias": "1131208803",
                                             "is_added": 1,
                                             "services": [
@@ -5815,14 +5815,14 @@ class AddServiceDisplayData(APIView):
         result['data']['objects']['device_name'] = device.device_name
         result['data']['objects']['device_alias'] = device.device_alias
         result['data']['objects']['services'] = []
-        result['data']['objects']['master_site'] = ""
+        result['data']['objects']['main_site'] = ""
         result['data']['objects']['is_added'] = device.is_added_to_nms
 
         # Get services associated with device.
         try:
             try:
-                master_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
-                result['data']['objects']['master_site'] = master_site_name
+                main_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
+                result['data']['objects']['main_site'] = main_site_name
             except Exception as e:
                 logger.info(e.message)
 
@@ -6238,7 +6238,7 @@ class DeviceServiceStatus(APIView):
 
                                         },
                                         'objects': {
-                                            'site_instance': 'nocout_gis_slave',
+                                            'site_instance': 'nocout_gis_subordinate',
                                             'inactive_services': [
                                                 {
                                                     'service': u'Receivedsignalstrength',

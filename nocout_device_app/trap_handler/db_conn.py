@@ -41,7 +41,7 @@ class ConnectionBase(object):
 
 	def redis_cnx(self, db_name=None):
 		redis_config = self.configs.get(db_name)
-		# TODO: Use sentinel to make connection to master
+		# TODO: Use sentinel to make connection to main
 		try:
 			redis_db = StrictRedis(**redis_config) 
 		except Exception as exc:
