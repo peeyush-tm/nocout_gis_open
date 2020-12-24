@@ -12,27 +12,27 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RemoveField(
-            model_name='bsoutagemasterdaily',
+            model_name='bsoutagemaindaily',
             name='organization',
         ),
         migrations.RemoveField(
-            model_name='bsoutagemasterdaily',
+            model_name='bsoutagemaindaily',
             name='report_id',
         ),
         migrations.RemoveField(
-            model_name='bsoutagemastermonthly',
+            model_name='bsoutagemainmonthly',
             name='organization',
         ),
         migrations.RemoveField(
-            model_name='bsoutagemastermonthly',
+            model_name='bsoutagemainmonthly',
             name='report_id',
         ),
         migrations.RemoveField(
-            model_name='bsoutagemasterweekly',
+            model_name='bsoutagemainweekly',
             name='organization',
         ),
         migrations.RemoveField(
-            model_name='bsoutagemasterweekly',
+            model_name='bsoutagemainweekly',
             name='report_id',
         ),
     ]

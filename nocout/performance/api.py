@@ -61,7 +61,7 @@ class CustomDashboardCreate(APIView):
         ds_srv_list =   self.request.POST.getlist('ds_name[]', '')
         is_public =  json.loads(self.request.POST.get('is_public_dashboard', ''))    
 
-        # Save custom dashboard master
+        # Save custom dashboard main
         dashboard_name_count = CustomDashboard.objects.filter(name=name)
         dashboard_title_count = CustomDashboard.objects.filter(title=title)
 
@@ -323,10 +323,10 @@ def get_machine_site(ip_address, tech_name, duration):
             test_ip = IP(ip_address)
             if test_ip.iptype() == 'PRIVATE':
                 info_obj['machine'] = Machine.objects.get(name='vrfprv')
-                info_obj['site'] = SiteInstance.objects.get(name='vrfprv_slave_1')
+                info_obj['site'] = SiteInstance.objects.get(name='vrfprv_subordinate_1')
             elif test_ip.iptype() == 'PUBLIC':
                 info_obj['machine'] = Machine.objects.get(name='pub')
-                info_obj['site'] = SiteInstance.objects.get(name='pub_slave_1')
+                info_obj['site'] = SiteInstance.objects.get(name='pub_subordinate_1')
             else:
                 pass
         except Exception as e:
@@ -347,7 +347,7 @@ def get_machine_site(ip_address, tech_name, duration):
             machine_name = unused_machines[0]
             try:
                 info_obj['machine'] = Machine.objects.get(name=machine_name)
-                info_obj['site'] = SiteInstance.objects.get(name=str(machine_name)+'_slave_1')
+                info_obj['site'] = SiteInstance.objects.get(name=str(machine_name)+'_subordinate_1')
             except Exception, e:
                 logger.error('Machine Allotment Error 1')
                 logger.error(unused_machines)
@@ -366,7 +366,7 @@ def get_machine_site(ip_address, tech_name, duration):
 
             try:
                 info_obj['machine'] = Machine.objects.get(name=least_ip_machine_name)
-                info_obj['site'] = SiteInstance.objects.get(name=str(least_ip_machine_name)+'_slave_1')
+                info_obj['site'] = SiteInstance.objects.get(name=str(least_ip_machine_name)+'_subordinate_1')
             except Exception, e:
                 logger.error('Machine Allotment Error 2')
                 logger.error(machine_wise_active_tests)

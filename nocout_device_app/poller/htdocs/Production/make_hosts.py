@@ -14,7 +14,7 @@ def main():
 	global ipaddresses
 	global host_attributes
 	# This file contains device names, to be updated in configuration db
-	open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
+	open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
 	db = mysql_conn()
 	make_BS_data()
 	make_SS_data()
@@ -52,7 +52,7 @@ def make_BS_data():
 	data = cur.fetchall() 
 	cur.close() 
         processed = []
-	hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+	hosts_only = open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 	for device in data:
                 if  str(device[1]) in processed:
                     continue
@@ -72,7 +72,7 @@ def make_BS_data():
 
 
 def write_data():
-	with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
+	with open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
 		f.write("# encoding: utf-8\n\n")
 		f.write("\nhost_contactgroups += []\n\n\n")
 		f.write("all_hosts += %s\n" % pformat(all_hosts))
@@ -137,7 +137,7 @@ def make_SS_data():
 	data = cur.fetchall()
 	cur.close()
         processed = []
-	hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+	hosts_only = open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 	for device in data:
                 if str(device[4]) in processed:
                     continue
@@ -159,7 +159,7 @@ def make_SS_data():
 
 def update_configuration_db():
 	hosts = []
-	with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
+	with open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
 		hosts = map(lambda t: t.strip(), list(f))
 	query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
 	query += " WHERE device_name IN %s" % pformat(tuple(hosts))

@@ -137,11 +137,11 @@ class RedisInterface(object):
 			'db': int(conf.get('redis', 'db'))
 		}
 		re_conf.update(self.custom_conf) if self.custom_conf else re_conf
-		service_name = conf.get('redis', 'service_name', 'mymaster')
+		service_name = conf.get('redis', 'service_name', 'mymain')
 		try:
 			#self.redis_conn = StrictRedis(**re_conf)
 			sentinel = Sentinel(SENTINELS, **re_conf)
-			self.redis_conn = sentinel.master_for(service_name) 
+			self.redis_conn = sentinel.main_for(service_name) 
 		except Exception as exc:
 			error('Redis connection error... {0}'.format(exc))
 

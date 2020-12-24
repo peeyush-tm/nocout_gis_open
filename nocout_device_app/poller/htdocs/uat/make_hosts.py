@@ -20,7 +20,7 @@ def main():
 	global ipaddresses
 	global host_attributes
 	# This file contains device names, to be updated in configuration db
-	open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
+	open('/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
 	#try:
 	make_BS_data()
 	#except Exception, exp:
@@ -81,7 +81,7 @@ def make_BS_data():
 	#print len(dr_en_devices)
 	data = filter(lambda e: e[9] == '' or (e[9] and e[9].lower() == 'no'), data)
 	# dr_enabled devices ids
-	# dr_configured_on_devices would be treated as master device
+	# dr_configured_on_devices would be treated as main device
 	dr_configured_on_ids = map(lambda e: e[10], dr_en_devices)
 	#print '--dr_configured_on_ids----'
 	#print len(dr_configured_on_ids)
@@ -90,7 +90,7 @@ def make_BS_data():
 	final_dr_devices = zip(dr_en_devices, dr_configured_on_devices)
 	#print '-- final_dr_devices --'
 	#print len(final_dr_devices)
-	hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+	hosts_only = open('/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 
 	for entry in final_dr_devices:
 		if str(entry[0][1]) in processed:
@@ -101,7 +101,7 @@ def make_BS_data():
 		processed.append(str(entry[1][0]))
 		# Entries for dr device
 		dr_device_entry = str(entry[0][1]) + '|' + str(entry[0][2]) + '|' + str(entry[0][3]) + \
-				'| dr: ' + str(entry[1][0]) + '|dr_slave|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
+				'| dr: ' + str(entry[1][0]) + '|dr_subordinate|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
 		all_hosts.append(dr_device_entry)
 		ipaddresses.update({str(entry[0][1]): str(entry[0][0])})
 		host_attributes.update({str(entry[0][1]):
@@ -112,11 +112,11 @@ def make_BS_data():
 				'tag_agent': str(entry[0][5])
 				}
 			})
-		# Entries for master dr device
-		# master dr device stands for device which got its entry as `dr_configured_on_id` in
+		# Entries for main dr device
+		# main dr device stands for device which got its entry as `dr_configured_on_id` in
 		# inventory_sector table
 		dr_device_entry = str(entry[1][0]) + '|' + str(entry[0][2]) + '|' + str(entry[1][2]) + \
-				'| dr: ' + str(entry[0][1]) + '|dr_master|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
+				'| dr: ' + str(entry[0][1]) + '|dr_main|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
 		all_hosts.append(dr_device_entry)
 		ipaddresses.update({str(entry[1][0]): str(entry[1][1])})
 		host_attributes.update({str(entry[1][0]):
@@ -151,7 +151,7 @@ def make_BS_data():
 def get_dr_configured_on_devices(device_ids=[]):
 	"""
 	dr_configured_on_devices would be treaed as
-	master device in this case
+	main device in this case
 	"""
 	dr_configured_on_devices = []
 	if device_ids:
@@ -166,7 +166,7 @@ def get_dr_configured_on_devices(device_ids=[]):
 
 
 def write_data():
-	with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
+	with open('/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
 		f.write("# encoding: utf-8\n\n")
 		f.write("\nhost_contactgroups += []\n\n\n")
 		f.write("all_hosts += %s\n" % pformat(all_hosts))
@@ -176,7 +176,7 @@ def write_data():
 
 	
 	## Write DR enabled devices to seperate .mk file
-	#with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/wimax_dr_en.mk', 'w') as f:
+	#with open('/omd/sites/main_UA/etc/check_mk/conf.d/wato/wimax_dr_en.mk', 'w') as f:
 	#	f.write("# encoding: utf-8\n\n")
 	#	f.write("\nhost_contactgroups += []\n\n\n")
 	#	f.write("all_hosts += %s\n" % pformat(dr_all_hosts))
@@ -242,7 +242,7 @@ def make_SS_data():
 	cur.close()
 	db.close()
         processed = []
-	hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+	hosts_only = open('/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 	for device in data:
                 if str(device[4]) in processed:
                     continue
@@ -264,7 +264,7 @@ def make_SS_data():
 
 def update_configuration_db():
 	hosts = []
-	with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
+	with open('/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
 		hosts = map(lambda t: t.strip(), list(f))
 	query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
 	query += " WHERE device_name IN %s" % pformat(tuple(hosts))

@@ -103,10 +103,10 @@ class Singleton(type):
 	    redis_conn =  rds_cli.redis_cnx
 	    try:
 		mat_flag = redis_conn.exists('mat_data')
-		# Run script raw_mysql_data if Master Alarm Table not available in database.
+		# Run script raw_mysql_data if Main Alarm Table not available in database.
 		# Sleep programm  for 10 second meanwhile data will be restored.
 		if not mat_flag:
-		    system('python /omd/sites/ospf1_slave_1/nocout/performance/service/raw_mysql_data.py')
+		    system('python /omd/sites/ospf1_subordinate_1/nocout/performance/service/raw_mysql_data.py')
 		    sleep(10)
 	        mat_data = redis_conn.get('mat_data')
 	        cls._instance[cls].mat_data = eval(mat_data)
@@ -287,7 +287,7 @@ class correlation:
 	for key,value in down_device_dict.iteritems():
 	    alarm_name= value.get(ss_mapping_dict['alrm_name'],'')
 	    severity = value.get(ss_mapping_dict['severity'],'') 
-	    mat_key = (alarm_name,severity)                     # Master Alarm Table key.
+	    mat_key = (alarm_name,severity)                     # Main Alarm Table key.
 	    if key in ss_list :
 		event_trap_dict[key] ={} 
 		tech = down_device_static_dict[key].get(ss_mapping_dict['tech'],'')
@@ -382,7 +382,7 @@ class correlation:
 	    if key in bs_list:
 		alarm_name= value.get(bs_mapping_dict['alrm_name'],'')
 		severity = value.get(bs_mapping_dict['severity'],'') 
-		mat_key = (alarm_name,severity)                     # Master Alarm Table key.
+		mat_key = (alarm_name,severity)                     # Main Alarm Table key.
 		ac = down_device_dict.get(key).get('category')      # Device alarm category.
 		# If parent, child alarm category doesn't match then parent alarm id = None.
 		if parent_ac:

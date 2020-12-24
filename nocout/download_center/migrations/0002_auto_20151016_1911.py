@@ -59,7 +59,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='BSOutageMasterDaily',
+            name='BSOutageMainDaily',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('organization', models.CharField(max_length=150, verbose_name=b'Organization')),
@@ -114,7 +114,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='BSOutageMasterMonthly',
+            name='BSOutageMainMonthly',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('organization', models.CharField(max_length=150, verbose_name=b'Organization')),
@@ -169,7 +169,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='BSOutageMasterWeekly',
+            name='BSOutageMainWeekly',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('organization', models.CharField(max_length=150, verbose_name=b'Organization')),
@@ -267,17 +267,17 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(to='download_center.BSOutageReports'),
         ),
         migrations.AddField(
-            model_name='bsoutagemasterweekly',
+            model_name='bsoutagemainweekly',
             name='report_id',
             field=models.ForeignKey(to='download_center.BSOutageReports'),
         ),
         migrations.AddField(
-            model_name='bsoutagemastermonthly',
+            model_name='bsoutagemainmonthly',
             name='report_id',
             field=models.ForeignKey(to='download_center.BSOutageReports'),
         ),
         migrations.AddField(
-            model_name='bsoutagemasterdaily',
+            model_name='bsoutagemaindaily',
             name='report_id',
             field=models.ForeignKey(to='download_center.BSOutageReports'),
         ),

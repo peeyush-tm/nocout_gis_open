@@ -38,7 +38,7 @@ def parse_config_obj(historical_conf=False):
 def get_config_file(conf_file=None, historical_conf=False):
 	"""
 	Reads the appropriate config.ini file from conf.d/,
-	based on poller slave site name
+	based on poller subordinate site name
 	"""
 
 	config_file_list = os.listdir('/omd/sites/%s/nocout/conf.d' % nocout_site_name)

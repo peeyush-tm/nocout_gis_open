@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('alert_center', '0007_masteralarm'),
+        ('alert_center', '0007_mainalarm'),
     ]
 
     operations = [

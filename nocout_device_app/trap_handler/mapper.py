@@ -7,7 +7,7 @@ from collections import defaultdict
 # changed module for production
 from trap_handler.db_conn import ConnectionBase, ExportTraps
 from start.start import app
-#start_app_module = imp.load_source('start_pub', '/omd/sites/ospf1_slave_1/lib/python/start_pub.py')
+#start_app_module = imp.load_source('start_pub', '/omd/sites/ospf1_subordinate_1/lib/python/start_pub.py')
 #app = start_app_module.app
 from copy import deepcopy
 
@@ -39,7 +39,7 @@ class Eventmapper(object):
 	self.latest_id = None
 
    def read_cached_inventory(self):
-	redis_cnx = self.conn_base.redis_cnx(db_name='redis_master')
+	redis_cnx = self.conn_base.redis_cnx(db_name='redis_main')
 	try:
 		p = redis_cnx.pipeline()
 		p.hgetall('ip:host')
@@ -79,35 +79,35 @@ class Eventmapper(object):
 	and vice-versa"""
         alarm_masking_dict = defaultdict(list)
         query_1 = """
-	SELECT master1.alarm_name, master1.severity, master2.alarm_name,master2.severity
+	SELECT main1.alarm_name, main1.severity, main2.alarm_name,main2.severity
 	FROM
 		alarm_masking_table mask
 	INNER JOIN
-		master_alarm_table master1
+		main_alarm_table main1
 	ON
-		mask.alarm_id = master1.id
+		mask.alarm_id = main1.id
 	INNER JOIN
-		master_alarm_table master2
+		main_alarm_table main2
 	ON
-		mask.alarm_mask_id = master2.id
+		mask.alarm_mask_id = main2.id
 
-	and     master1.device_type in ('wimax')
+	and     main1.device_type in ('wimax')
         """
 	qry = """
 	SELECT 
-		master1.oid,master1.severity ,master2.oid mask_oid,master2.severity mask_severity
+		main1.oid,main1.severity ,main2.oid mask_oid,main2.severity mask_severity
 	FROM
 		alarm_masking_table mask
 	INNER JOIN
-		master_alarm_table master1
+		main_alarm_table main1
 	ON
-		mask.alarm_id = master1.id
+		mask.alarm_id = main1.id
 	INNER JOIN
-		master_alarm_table master2
+		main_alarm_table main2
 	ON
-		mask.alarm_mask_id = master2.id
+		mask.alarm_mask_id = main2.id
 
-	and     master1.device_type not in ('wimax')
+	and     main1.device_type not in ('wimax')
 	"""
 	my_cnx = self.conn_base.mysql_cnx(db_name='snmptt_db')
 	cursor = my_cnx.cursor()
@@ -128,7 +128,7 @@ class Eventmapper(object):
         SELECT
                 alarm_name, severity
         FROM
-                master_alarm_table
+                main_alarm_table
         WHERE        
                 device_type in ('wimax')
         """
@@ -136,7 +136,7 @@ class Eventmapper(object):
         SELECT
                 oid, severity
         FROM
-                master_alarm_table
+                main_alarm_table
         WHERE
                 device_type not in ('wimax')
         """

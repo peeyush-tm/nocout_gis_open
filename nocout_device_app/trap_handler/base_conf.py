@@ -20,7 +20,7 @@ application_db = {
 traps_db = application_db
 
 # connection to redis db for invent info
-redis_master = {
+redis_main = {
 		'host': '10.133.19.165',
 		'port': 6380,
 		'db': 3

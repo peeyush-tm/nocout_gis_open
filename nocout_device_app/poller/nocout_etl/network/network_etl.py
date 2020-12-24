@@ -366,7 +366,7 @@ def pivot_timestamp_fwd(timestamp):
 
 @app.task(name='network-main')
 def main(**opts):
-	#opts = {'site_name': 'pub_slave_1'}
+	#opts = {'site_name': 'pub_subordinate_1'}
 	DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
 	conf = ConfigParser()
 	conf.read(DB_CONF)

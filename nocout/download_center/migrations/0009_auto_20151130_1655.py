@@ -12,17 +12,17 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='bsoutagemasterdaily',
+            model_name='bsoutagemaindaily',
             name='s_no',
             field=models.CharField(max_length=128, null=True, verbose_name=b'S. No.', blank=True),
         ),
         migrations.AddField(
-            model_name='bsoutagemastermonthly',
+            model_name='bsoutagemainmonthly',
             name='s_no',
             field=models.CharField(max_length=128, null=True, verbose_name=b'S. No.', blank=True),
         ),
         migrations.AddField(
-            model_name='bsoutagemasterweekly',
+            model_name='bsoutagemainweekly',
             name='s_no',
             field=models.CharField(max_length=128, null=True, verbose_name=b'S. No.', blank=True),
         ),

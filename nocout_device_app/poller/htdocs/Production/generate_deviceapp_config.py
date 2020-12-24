@@ -12,7 +12,7 @@ from celery import Celery
 from celery_sentinel import register_celery_alias
 register_celery_alias('redis-sentinel')
 
-nocout_site_name= 'master_UA'
+nocout_site_name= 'main_UA'
 db_ops_module = imp.load_source('db_ops', '/apps/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 
@@ -182,7 +182,7 @@ def prepare_hosts_file():
     disabled_services = get_disabled_services()
     #print disabled_services
     # This file contains device names, to be updated in configuration db
-    open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
+    open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
     #try:
     bs_devices = make_BS_data(disabled_services)
     #except Exception, exp:
@@ -281,7 +281,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     mrotek_devices, rici_devices, cisco_switch_devices, juniper_switch_devices = [], [], [],[]
     processed = []
     cisco_juniper = ['cisco','juniper']
-    hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    hosts_only = open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
         if str(device[2].lower()) == 'cisco':
         	port_wise_capacities = [0]*26
@@ -470,7 +470,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     #print len(dr_en_devices)
     data = filter(lambda e: e[9] == '' or e[9] == None or (e[9] and e[9].lower() == 'no'), data)
     # dr_enabled devices ids
-    # dr_configured_on_devices would be treated as master device
+    # dr_configured_on_devices would be treated as main device
     dr_configured_on_ids = map(lambda e: e[10], dr_en_devices)
     #print '--dr_configured_on_ids----'
     #print len(dr_configured_on_ids)
@@ -480,7 +480,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     #print '-- final_dr_devices --'
     #print len(final_dr_devices)
 
-    hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    hosts_only = open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 
     for entry in final_dr_devices:
         if (str(entry[0][1]) in processed) or (str(entry[1][0]) in processed):
@@ -494,11 +494,11 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         disabled_service_tags_entry = ''
         if disabled_service_tags:
             disabled_service_tags_entry = '|' +  '|'.join(disabled_service_tags)
-        # Append the `site_name` for slave dr device, we need them in active checks
-        # We believe that dr master/slave pair is being monitored on same site
-        # Entries for master dr device
+        # Append the `site_name` for subordinate dr device, we need them in active checks
+        # We believe that dr main/subordinate pair is being monitored on same site
+        # Entries for main dr device
         dr_device_entry = str(entry[0][1]) + '|' + str(entry[0][2]) + '|' + str(entry[0][3]) + \
-                '| dr: ' + str(entry[1][0]) + '|dr_master|wan|prod|' + str(entry[0][5]) + '|site:' \
+                '| dr: ' + str(entry[1][0]) + '|dr_main|wan|prod|' + str(entry[0][5]) + '|site:' \
                 + str(entry[0][7]) + disabled_service_tags_entry + '|wato|//'
         all_hosts.append(dr_device_entry)
         ipaddresses.update({str(entry[0][1]): str(entry[0][0])})
@@ -515,11 +515,11 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         disabled_service_tags_entry = ''
         if disabled_service_tags:
             disabled_service_tags_entry = '|' +  '|'.join(disabled_service_tags)
-        # Entries for slave dr device
-        # slave dr device stands for device which got its entry as `dr_configured_on_id` in
+        # Entries for subordinate dr device
+        # subordinate dr device stands for device which got its entry as `dr_configured_on_id` in
         # inventory_sector table
         dr_device_entry = str(entry[1][0]) + '|' + str(entry[0][2]) + '|' + str(entry[1][2]) + \
-                '| dr: ' + str(entry[0][1]) + '|dr_slave|wan|prod|' + str(entry[0][5]) + '|site:' \
+                '| dr: ' + str(entry[0][1]) + '|dr_subordinate|wan|prod|' + str(entry[0][5]) + '|site:' \
                 + str(entry[0][7]) + disabled_service_tags_entry + '|wato|//'
         all_hosts.append(dr_device_entry)
         ipaddresses.update({str(entry[1][0]): str(entry[1][1])})
@@ -559,9 +559,9 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     T1.all_hosts, T1.ipaddresses, T1.host_attributes = all_hosts, ipaddresses, host_attributes
 
     # Get the wimax BS devices (we need them for active checks)
-    # Ex entry : ('device_1', 'ospf4_slave_1')
+    # Ex entry : ('device_1', 'ospf4_subordinate_1')
     L0 = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'wimax', data))
-    # Ex entry : ('device_1', 'ospf4_slave_1', 'dr_site')
+    # Ex entry : ('device_1', 'ospf4_subordinate_1', 'dr_site')
     L1 = map(lambda e: (e[0][1], e[0][7], e[1][0]), final_dr_devices)
     #for entry in final_dr_devices:
     #    L1.append((entry[0][1], entry[0][7]))
@@ -574,7 +574,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
 
     final_radwin_devices_entry = []
     # Get the Radwin BS devices (We need them to generate active and static checks)
-    # Ex entry : ('device_1', 'ospf4_slave_1', '5120')
+    # Ex entry : ('device_1', 'ospf4_subordinate_1', '5120')
     radwin_bs_devices = map(lambda e: (e[1], e[7], e[12]), filter(lambda e: e[11].lower() == 'p2p', data))
     # Calculate the QoS, needed as input to static checks in form of warning/critical values
     qos_values = eval_qos(map(lambda e: e[2], radwin_bs_devices))
@@ -593,7 +593,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
 def get_dr_configured_on_devices(device_ids=[]):
     """
     dr_configured_on_devices would be treaed as
-    master device in this case
+    main device in this case
     """
     dr_configured_on_devices = []
     if device_ids:
@@ -645,7 +645,7 @@ def eval_qos(vals, out=None):
 
 
 def write_hosts_file(all_hosts, ipaddresses, host_attributes):
-    with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
+    with open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
         f.write("# encoding: utf-8\n\n")
         f.write("\nhost_contactgroups += []\n\n\n")
         f.write("all_hosts += %s\n" % pformat(all_hosts))
@@ -655,7 +655,7 @@ def write_hosts_file(all_hosts, ipaddresses, host_attributes):
 
     
     ## Write DR enabled devices to separate .mk file
-    #with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/wimax_dr_en.mk', 'w') as f:
+    #with open('/omd/sites/main_UA/etc/check_mk/conf.d/wato/wimax_dr_en.mk', 'w') as f:
     #   f.write("# encoding: utf-8\n\n")
     #   f.write("\nhost_contactgroups += []\n\n\n")
     #   f.write("all_hosts += %s\n" % pformat(dr_all_hosts))
@@ -728,7 +728,7 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
         'all_hosts', 'ipaddresses', 'host_attributes',
         'radwin_ss_devices', 'wimax_ss_devices', 'cambium_ss_devices'])
     processed = []
-    hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    hosts_only = open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
         if str(device[4]) in processed:
             continue
@@ -786,7 +786,7 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
     db = mysql_conn()
     if update_device_table:
         hosts = []
-        with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
+        with open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
             hosts = map(lambda t: t.strip(), list(f))
         if hosts:
             query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
@@ -925,7 +925,7 @@ group by
     #dict_switch.update(dict_switch2) # back_haul dict updated with basestation dict
     #print "dict is_bas ", dict_switch2
     #print "dict is ", dict_switch
-    key = "master_ua" + "_switch"
+    key = "main_ua" + "_switch"
     memc_obj.set(key, dict_switch)
     processed = []
     active_check_services = []
@@ -1239,7 +1239,7 @@ def make_active_check_rows(container, devices, services, active_checks_threshold
             elif 'wimax' in service and '_ss_' not in service:
                 dr_site = host_tuple[2] if len(host_tuple) == 3 else ''
                 container[service].append(((str(service), {'host': str(host_tuple[0]), \
-                        'site': str(host_tuple[1]), 'war': war, 'crit': crit, 'dr_slave': dr_site}), [], [str(host_tuple[0])]))
+                        'site': str(host_tuple[1]), 'war': war, 'crit': crit, 'dr_subordinate': dr_site}), [], [str(host_tuple[0])]))
             else:
                 container[service].append(((str(service), {'host': str(host_tuple[0]), \
                         'site': str(host_tuple[1]), 'war': war, 'crit': crit}), [], [str(host_tuple[0])]))
@@ -1420,7 +1420,7 @@ def write_rules_file(settings_out, final_active_checks):
         snmp_communities_db = settings_out.snmp_communities_db
     if len(settings_out.snmp_ports_db):
         snmp_ports_db = settings_out.snmp_ports_db
-    with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
+    with open('/apps/omd/sites/main_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
         f.write("# encoding: utf-8")
         f.write("\n\n\n")
         f.write("bulkwalk_hosts += %s" % pformat(bulkwalk_hosts))

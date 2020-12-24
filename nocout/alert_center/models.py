@@ -36,7 +36,7 @@ class ClearAlarms(GenericAlarm):
     pass
 
 
-class MasterAlarm(models.Model):
+class MainAlarm(models.Model):
     """
 
     """
@@ -62,4 +62,4 @@ class MasterAlarm(models.Model):
     alarm_category = models.CharField('Alarm Category', max_length=256, null=True, blank=True)
 
     class Meta:
-        db_table = 'master_alarm_table'
+        db_table = 'main_alarm_table'

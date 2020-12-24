@@ -226,7 +226,7 @@ on
 where
 	lower(circuit.circuit_type) = 'backhaul';
 """
-# Query result for Master alarm table in snmptt database.
+# Query result for Main alarm table in snmptt database.
 query3 = """
 select
 	alarm_name as alarm_name,
@@ -251,25 +251,25 @@ select
 	IF(isnull(category_id), 'NA', category_id) as category_id,
 	IF(isnull(refer), 'NA', refer) as refer
 from
-	master_alarm_table;
+	main_alarm_table;
 """
 
 query_4 = """
-SELECT master1.alarm_name, master1.severity, master2.alarm_name,master2.severity
+SELECT main1.alarm_name, main1.severity, main2.alarm_name,main2.severity
 FROM
 	alarm_masking_table mask
 INNER JOIN
-	master_alarm_table master1
+	main_alarm_table main1
 ON
-	mask.alarm_id = master1.id
+	mask.alarm_id = main1.id
 INNER JOIN
-	master_alarm_table master2
+	main_alarm_table main2
 ON
-	mask.alarm_mask_id = master2.id
+	mask.alarm_mask_id = main2.id
 """
 
 query_5 = """
-SELECT master.alarm_name,master.severity,master.priority from master_alarm_table as master
+SELECT main.alarm_name,main.severity,main.priority from main_alarm_table as main
 """
 @app.task(base=DatabaseTask, name='mysql_to_inventory_data',queue='correlation')
 def mysql_to_inventory_data():
@@ -304,7 +304,7 @@ def mysql_to_inventory_data():
     inv.insert_data_in_redis(alarm_mapping)
 
     # Alarm - Priority mapping
-    cur.execute("SELECT master.alarm_name,master.severity,master.priority from master_alarm_table as master")
+    cur.execute("SELECT main.alarm_name,main.severity,main.priority from main_alarm_table as main")
     alarm_priority = cur.fetchall()
     for (name,severity,priority) in alarm_priority:
 	alarm_priority_dict[(name,severity)] = priority

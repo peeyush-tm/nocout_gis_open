@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='MasterAlarm',
+            name='MainAlarm',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('alarm_name', models.CharField(max_length=256, null=True, verbose_name=b'Alarm Name', blank=True)),
@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
                 ('alarm_category', models.CharField(max_length=256, null=True, verbose_name=b'Alarm Category', blank=True)),
             ],
             options={
-                'db_table': 'master_alarm_table',
+                'db_table': 'main_alarm_table',
             },
         ),
     ]

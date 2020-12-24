@@ -224,7 +224,7 @@ on
 where
 	lower(circuit.circuit_type) = 'backhaul';
 """
-# Query result for Master alarm table in snmptt database.
+# Query result for Main alarm table in snmptt database.
 query3 = """
 select
 	alarm_name as alarm_name,
@@ -249,7 +249,7 @@ select
 	IF(isnull(category_id), 'NA', category_id) as category_id,
 	IF(isnull(refer), 'NA', refer) as refer
 from
-	master_alarm_table;
+	main_alarm_table;
 """
 @app.task(base=DatabaseTask, name='mysql_to_inventory_data')
 def mysql_to_inventory_data():

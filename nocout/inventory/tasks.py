@@ -5729,11 +5729,11 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                 # idu ip
                 idu_ip = row['IDU IP'] if 'IDU IP' in row.keys() else ""
 
-                # master device
-                master_device = base_station
+                # main device
+                main_device = base_station
 
-                # slave device
-                slave_device = ""
+                # subordinate device
+                subordinate_device = ""
 
                 # *********************************************************************************************
                 # ********************************* MRC Case Handling (Start) *********************************
@@ -5751,15 +5751,15 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                 # ************************ DR handling according to ip address (Start) ************************
                 # *********************************************************************************************
 
-                # Rule for identifying master/slave device:
-                # Master device ip address is just previous to ip address of slave device.
-                # For e.g. if master device ip is '10.156.4.2' than slave device ip is '10.156.4.3'
+                # Rule for identifying main/subordinate device:
+                # Main device ip address is just previous to ip address of subordinate device.
+                # For e.g. if main device ip is '10.156.4.2' than subordinate device ip is '10.156.4.3'
 
-                # identify whether device is master/slave if 'dr site' is 'yes' and current sector is already present
+                # identify whether device is main/subordinate if 'dr site' is 'yes' and current sector is already present
                 if dr_site.lower() == "yes":
                     if idu_ip:
-                        # master/slave identifier from workbook
-                        ms_identifier = row['DR Master/Slave'] if 'DR Master/Slave' in row.keys() else ""
+                        # main/subordinate identifier from workbook
+                        ms_identifier = row['DR Main/Subordinate'] if 'DR Main/Subordinate' in row.keys() else ""
                         # current sector
                         current_sector = ""
 
@@ -5796,14 +5796,14 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                                 # idu ip address 'ipaddr' object
                                 idu_ip_address = ipaddr.IPAddress(idu_ip)
 
-                                # identify master/slave device corresponding to master/slave bit
+                                # identify main/subordinate device corresponding to main/subordinate bit
                                 if ms_identifier:
-                                    if ms_identifier == "Master":
-                                        master_device = base_station
-                                        slave_device = ""
-                                    elif ms_identifier == "Slave":
-                                        master_device = ""
-                                        slave_device = base_station
+                                    if ms_identifier == "Main":
+                                        main_device = base_station
+                                        subordinate_device = ""
+                                    elif ms_identifier == "Subordinate":
+                                        main_device = ""
+                                        subordinate_device = base_station
                                     else:
                                         pass
                                 else:
@@ -5812,27 +5812,27 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                                     # than make current 'sector_configured_on' device to 'dr_configured_on' device
                                     # and make 'base_station' device new 'sector_configured_on' device
                                     if idu_ip_address == sd_prev_ip:
-                                        master_device = base_station
-                                        slave_device = sector_device
+                                        main_device = base_station
+                                        subordinate_device = sector_device
                                     # if 'idu_ip_address' is ip address just next to 'sector_configured_on' device
                                     # than just 'base_station' device new 'dr_configured_on' device
                                     # and 'sector_configured_on' device remains the same
                                     elif idu_ip_address == sd_next_ip:
-                                        master_device = sector_device
-                                        slave_device = base_station
+                                        main_device = sector_device
+                                        subordinate_device = base_station
                                     else:
                                         pass
                         else:
                             # if current sector not exist in database and needs to be created
-                            # than if master/slave bit 'ms_identifier' exist than assign sector devices according
+                            # than if main/subordinate bit 'ms_identifier' exist than assign sector devices according
                             # to the corresponding bit else continue with the normal flow
                             if ms_identifier:
-                                if ms_identifier == "Master":
-                                    master_device = base_station
-                                    slave_device = ""
-                                elif ms_identifier == "Slave":
-                                    master_device = ""
-                                    slave_device = base_station
+                                if ms_identifier == "Main":
+                                    main_device = base_station
+                                    subordinate_device = ""
+                                elif ms_identifier == "Subordinate":
+                                    main_device = ""
+                                    subordinate_device = base_station
                                 else:
                                     pass
 
@@ -5847,13 +5847,13 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype, auto=''):
                     'sector_id': row['Sector ID'].strip().lower() if 'Sector ID' in row.keys() else "",
                     'base_station': basestation,
                     'bs_technology': 3,
-                    'sector_configured_on': master_device,
+                    'sector_configured_on': main_device,
                     'sector_configured_on_port': port,
                     'antenna': sector_antenna,
                     'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'dr_site': dr_site,
                     'mrc': row['MRC'].strip() if 'MRC' in row.keys() else "",
-                    'dr_configured_on': slave_device,
+                    'dr_configured_on': subordinate_device,
                     'description': 'Sector created on {}.'.format(full_time)
                 }
 
@@ -11312,10 +11312,10 @@ def get_ptp_machine_and_site(ip):
         test_ip = IP(ip)
         if test_ip.iptype() == 'PRIVATE':
             machine = Machine.objects.get(name='vrfprv')
-            site = SiteInstance.objects.get(name='vrfprv_slave_1')
+            site = SiteInstance.objects.get(name='vrfprv_subordinate_1')
         elif test_ip.iptype() == 'PUBLIC':
             machine = Machine.objects.get(name='pub')
-            site = SiteInstance.objects.get(name='pub_slave_1')
+            site = SiteInstance.objects.get(name='pub_subordinate_1')
         else:
             machine = ""
     except Exception as e:
@@ -11510,25 +11510,25 @@ def get_machine_details(mc_name, machine_numbers=None):
         ospf_machines_dict (dict):  {
                                         'ospf4': [
                                             {
-                                                u'ospf4_slave_1': 0
+                                                u'ospf4_subordinate_1': 0
                                             }
                                         ],
                                         'ospf1': [
                                             {
-                                                u'ospf1_slave_1': 41
+                                                u'ospf1_subordinate_1': 41
                                             },
                                             {
-                                                u'ospf1_slave_2': 0
+                                                u'ospf1_subordinate_2': 0
                                             }
                                         ],
                                         'ospf3': [
                                             {
-                                                u'ospf3_slave_1': 0
+                                                u'ospf3_subordinate_1': 0
                                             }
                                         ],
                                         'ospf2': [
                                             {
-                                                u'ospf2_slave_1': 0
+                                                u'ospf2_subordinate_1': 0
                                             }
                                         ]
                                     }
@@ -11608,10 +11608,10 @@ def get_machine_and_site(machines_dict):
         machines_dict (list): {
                                     'ospf1': [
                                         {
-                                            u'ospf1_slave_1': 49
+                                            u'ospf1_subordinate_1': 49
                                         },
                                         {
-                                            u'ospf1_slave_2': 0
+                                            u'ospf1_subordinate_2': 0
                                         }
                                     ]
                                 }
@@ -11619,7 +11619,7 @@ def get_machine_and_site(machines_dict):
     Returns:
         (dict):  {
                     'machine': <Machine: ospf1>,
-                    'site': <SiteInstance: ospf1_slave_1>
+                    'site': <SiteInstance: ospf1_subordinate_1>
                 }
 
     """
@@ -11778,7 +11778,7 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
                        'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
                        'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port',
                        'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname',
-                       'Sector Utilization DL', 'Sector Utilization UL', 'PE IP', 'DR Site', 'DR Master/Slave',
+                       'Sector Utilization DL', 'Sector Utilization UL', 'PE IP', 'DR Site', 'DR Main/Subordinate',
                        'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Frequency', 'MRC', 'IDU Type', 'System Uptime',
                        'Latency', 'PD']
 
@@ -13965,11 +13965,11 @@ def get_selected_wimax_inventory(base_station, sector):
     except Exception as e:
         logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
 
-    # dr site master/slave
+    # dr site main/subordinate
     if sector.dr_site.lower() == "yes":
-        wimax_bs_row['DR Master/Slave'] = "Master"
+        wimax_bs_row['DR Main/Subordinate'] = "Main"
     else:
-        wimax_bs_row['DR Master/Slave'] = ""
+        wimax_bs_row['DR Main/Subordinate'] = ""
 
     # ************************************* BS Perf Parameters **********************************
     # pl
@@ -14436,7 +14436,7 @@ def get_selected_wimax_inventory(base_station, sector):
                 try:
                     copy_bs_row = copy.deepcopy(wimax_bs_row)
                     copy_bs_row['IDU IP'] = sector.dr_configured_on.ip_address
-                    copy_bs_row['DR Master/Slave'] = "Slave"
+                    copy_bs_row['DR Main/Subordinate'] = "Subordinate"
                     wimax_bs_rows.append(copy_bs_row)
                 except Exception as e:
                     logger.info("DR Device not exist. Exception: ", e.message)

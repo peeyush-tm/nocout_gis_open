@@ -298,7 +298,7 @@ def extract_cisco_util_data(host_params,**args):
     if len(service_list) > 0:     
 	build_export.s(args['site_name'], service_list).apply_async()
 
-def extract_wimax_connected_ss(hostname,dr_slave,memc_conn):
+def extract_wimax_connected_ss(hostname,dr_subordinate,memc_conn):
     dr_pmp1_conn_ss_ip = dr_pmp2_conn_ss_ip = []
     pmp1_conn_ss_ip = pmp2_conn_ss_ip = []
     try:
@@ -313,11 +313,11 @@ def extract_wimax_connected_ss(hostname,dr_slave,memc_conn):
                 pmp2_conn_ss_ip=ss_connected_list.get(2)
         except:
             pass
-        if dr_slave:
+        if dr_subordinate:
             dr_ss_connected_list = memc_conn.get("%s_conn_ss" % str(hostname))
 	    #dr_ss_connected_list = eval(dr_ss_connected_list)
-            #dr_pmp1_ss_connected = args['memc'].get("pmp1_%s" % dr_slave)
-            #dr_pmp2_ss_connected = args['memc'].get("pmp2_%s" % dr_slave)
+            #dr_pmp1_ss_connected = args['memc'].get("pmp1_%s" % dr_subordinate)
+            #dr_pmp2_ss_connected = args['memc'].get("pmp2_%s" % dr_subordinate)
             if dr_ss_connected_list:
                 dr_pmp1_conn_ss_ip=dr_ss_connected_list.get(1)
                 dr_pmp2_conn_ss_ip=dr_ss_connected_list.get(2)
@@ -703,14 +703,14 @@ def extract_wimax_util_data(host_params,**args):
     service_list=[]
 
     for entry in host_params:
-        total = util = dr_util = sec_bw = dr_slave = None
+        total = util = dr_util = sec_bw = dr_subordinate = None
         state_string = "unknown"
         perf = sec_kpi = sec_id = plugin_message = ''
         if entry  and len(eval(entry[0]))  == 4:
-            hostname, site, ip_address, dr_slave = eval(entry[0])
+            hostname, site, ip_address, dr_subordinate = eval(entry[0])
         elif entry and len(eval(entry[0])) == 3:
             hostname, site, ip_address = eval(entry[0])
-            dr_slave  = None
+            dr_subordinate  = None
         else:
             break
 
@@ -735,8 +735,8 @@ def extract_wimax_util_data(host_params,**args):
                     util = literal_eval(util)
                 #warning('util: {0} ,{1},{2}'.format(util,hostname,service_name))
                 #warning('sec_id: {0}'.format(sec_bw))
-                if dr_slave:
-                    dr_util = args['memc'].get(str(dr_slave) + util_suffix)
+                if dr_subordinate:
+                    dr_util = args['memc'].get(str(dr_subordinate) + util_suffix)
                     if dr_util != None and isinstance(dr_util,basestring):
                         dr_util = literal_eval(dr_util)
         except Exception,e:
@@ -1703,13 +1703,13 @@ def extract_wimax_ul_issue_data(**args):
         if entry:
             if len(literal_eval(entry[0])) == 3:
                 host_name,site_name,ip_address  = literal_eval(entry[0])
-                dr_slave = None
+                dr_subordinate = None
             elif len(literal_eval(entry[0])) == 4:
-                host_name,site_name,ip_address,dr_slave = literal_eval(entry[0])
+                host_name,site_name,ip_address,dr_subordinate = literal_eval(entry[0])
         else:
             break
         pmp1_sect_id,pmp2_sect_id = extract_wimax_bs_sec_id(host_name,memc_conn)
-        pmp1_conn_ss_ip,pmp2_conn_ss_ip = extract_wimax_connected_ss(host_name,dr_slave,memc_conn)
+        pmp1_conn_ss_ip,pmp2_conn_ss_ip = extract_wimax_connected_ss(host_name,dr_subordinate,memc_conn)
         pmp2_ss_key = map(lambda x: 
                 redis_cnx.keys(pattern="wimax:ss:*:%s" %x) ,pmp2_conn_ss_ip)
         pmp1_ss_key = map(lambda x: 
@@ -1782,4 +1782,4 @@ def extract_cambium_ul_issue_data(**args):
 
 
 if __name__ == '__main__':
-	call_kpi_services.delay(site_name='ospf2_slave_7')
+	call_kpi_services.delay(site_name='ospf2_subordinate_7')
